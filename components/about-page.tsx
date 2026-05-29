@@ -16,7 +16,7 @@ export function AboutPage() {
           {/* Text */}
           <div>
             <h2 className="font-sans font-black text-2xl md:text-3xl text-blue-3 dark:text-blue-4 leading-tight mb-4">
-              Your <span className="text-wa-green">Neighbourhood</span> Digital Hub
+              Your <span className="text-[#F4A261]">Neighbourhood</span> Digital Hub
             </h2>
             <p className="text-muted-foreground leading-relaxed text-[0.92rem] mb-3">
               Apexbytes Hub is a home-based service business in Kgotsong, Bothaville. We started with one simple goal: make technology and important services accessible to everyone in our community — no jargon, no stress.
@@ -57,7 +57,7 @@ export function AboutPage() {
                 { value: "✅", label: "Community Trusted" },
               ].map((stat) => (
                 <div key={stat.label} className="bg-white/10 rounded-[13px] p-4 text-center">
-                  <div className="font-sans font-black text-2xl md:text-3xl text-wa-green">{stat.value}</div>
+                  <div className="font-sans font-black text-2xl md:text-3xl text-[#F4A261]">{stat.value}</div>
                   <div className="text-[0.72rem] text-white/70 mt-1">{stat.label}</div>
                 </div>
               ))}

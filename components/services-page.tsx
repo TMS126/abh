@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowRight, X } from "lucide-react"
-import { HUBS, PRICING, type HubId } from "@/lib/data"
+import { ArrowRight, X, ChevronDown } from "lucide-react"
+import { HUBS, type HubId } from "@/lib/data"
 import { cn } from "@/lib/utils"
+import { useTheme } from "next-themes"
 
 interface ServiceModalProps {
   hubId: HubId | null
@@ -12,15 +13,17 @@ interface ServiceModalProps {
 }
 
 export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModalProps) {
-  const [expandedSections, setExpandedSections] = useState<Record<number, boolean>>({ 0: true })
+  const [openAccordion, setOpenAccordion] = useState<number | null>(null)
+  const { theme } = useTheme()
 
   if (!hubId) return null
 
   const hub = HUBS[hubId]
-  const pricing = PRICING[hubId]
+  const isDark = theme === 'dark'
+  const tagStyle = isDark ? hub.tagStyleDark : hub.tagStyle
 
-  const toggleSection = (index: number) => {
-    setExpandedSections(prev => ({ ...prev, [index]: !prev[index] }))
+  const toggleAccordion = (index: number) => {
+    setOpenAccordion(openAccordion === index ? null : index)
   }
 
   return (
@@ -31,78 +34,103 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModal
       }}
     >
       {/* Blur background */}
-      <div className="absolute inset-0 backdrop-blur-[16px] brightness-[0.4] saturate-[0.6] bg-[rgba(8,20,40,0.6)]" onClick={onClose} />
+      <div 
+        className="absolute inset-0 backdrop-blur-[16px] backdrop-brightness-[0.38] backdrop-saturate-50 bg-[rgba(8,20,40,0.6)]" 
+        onClick={onClose} 
+      />
       
       {/* Modal box */}
-      <div className="relative z-10 bg-card rounded-[24px] max-w-[580px] w-full max-h-[88vh] overflow-hidden flex flex-col shadow-[0_32px_64px_rgba(0,0,0,0.2)] animate-fade-up">
-        {/* Header */}
-        <div className="px-6 md:px-8 py-6 md:py-7 relative shrink-0 bg-gradient-to-br from-blue-1 to-blue-3">
+      <div 
+        className="relative z-10 bg-card rounded-[24px] max-w-[560px] w-full max-h-[88vh] overflow-hidden flex flex-col shadow-[0_32px_80px_rgba(0,0,0,0.45)] animate-in zoom-in-95 fade-in duration-300"
+      >
+        {/* Header with gradient */}
+        <div 
+          className="px-6 md:px-8 py-5 md:py-6 relative shrink-0"
+          style={{ background: hub.grad }}
+        >
           <button 
             onClick={onClose}
-            className="absolute top-4 right-4 w-[34px] h-[34px] rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:rotate-90"
+            className="absolute top-4 right-4 w-[34px] h-[34px] rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/30 transition-colors duration-200"
           >
             <X className="w-4 h-4" />
           </button>
           <span className="text-4xl mb-2 block">{hub.icon}</span>
           <h2 className="font-sans font-black text-xl md:text-2xl text-white">{hub.title}</h2>
-          <p className="text-white/80 text-sm mt-1">{hub.sub}</p>
         </div>
 
         {/* Body */}
-        <div className="px-6 md:px-8 py-6 overflow-y-auto flex-1">
-          <p className="text-muted-foreground text-[0.9rem] leading-relaxed mb-5 pb-4 border-b border-border">
+        <div className="px-5 md:px-7 py-5 overflow-y-auto flex-1">
+          <p className="text-muted-foreground text-[0.88rem] leading-relaxed mb-5 pb-4 border-b border-border">
             {hub.desc}
           </p>
 
-          {/* Sections */}
-          {hub.sections.map((section, idx) => (
-            <div key={idx} className="mb-4">
-              <button
-                onClick={() => toggleSection(idx)}
-                className="flex items-center gap-2 font-sans font-extrabold text-[0.82rem] text-muted-foreground uppercase tracking-wider mb-2 cursor-pointer select-none w-full text-left"
+          {/* Accordion sections */}
+          <div className="space-y-2">
+            {hub.sections.map((section, idx) => (
+              <div 
+                key={idx} 
+                className="border border-border rounded-[13px] overflow-hidden"
               >
-                <span className={cn(
-                  "transition-transform duration-200",
-                  expandedSections[idx] ? "rotate-90" : ""
-                )}>▶</span>
-                {section.title}
-              </button>
-              {expandedSections[idx] && (
-                <div className="flex flex-wrap gap-1.5 mb-1">
-                  {section.items.map((item) => (
-                    <span 
-                      key={item}
-                      className="group relative inline-block px-3 py-1 rounded-[14px] text-[0.76rem] font-bold font-sans bg-secondary text-secondary-foreground cursor-default transition-all duration-200 hover:scale-105"
-                    >
-                      {item}
-                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-black text-wa-green px-3 py-2 rounded-lg text-[0.7rem] font-extrabold whitespace-nowrap opacity-0 pointer-events-none transition-opacity duration-200 group-hover:opacity-100 z-10">
-                        {pricing[item as keyof typeof pricing] || 'Ask us'}
-                      </span>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+                <button
+                  onClick={() => toggleAccordion(idx)}
+                  className="flex items-center justify-between w-full px-4 py-3 bg-secondary hover:bg-muted transition-colors duration-200 cursor-pointer select-none"
+                >
+                  <span className="font-sans font-extrabold text-[0.88rem] text-foreground">
+                    {section.title}
+                  </span>
+                  <ChevronDown 
+                    className={cn(
+                      "w-4 h-4 text-muted-foreground transition-transform duration-300",
+                      openAccordion === idx && "rotate-180"
+                    )}
+                  />
+                </button>
+                
+                {openAccordion === idx && (
+                  <div className="px-4 py-3 bg-background">
+                    <div className="flex flex-wrap gap-1.5">
+                      {section.items.map((item, itemIdx) => (
+                        <span 
+                          key={itemIdx}
+                          className="group relative inline-flex items-center px-3 py-1.5 rounded-2xl text-[0.76rem] font-semibold font-sans cursor-default transition-all duration-200 hover:-translate-y-0.5"
+                          style={{ 
+                            background: tagStyle.bg, 
+                            color: tagStyle.color 
+                          }}
+                        >
+                          {item.name}
+                          {/* Price tooltip */}
+                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 bg-wa-green text-white px-3 py-1.5 rounded-lg text-[0.78rem] font-extrabold whitespace-nowrap opacity-0 pointer-events-none transition-all duration-200 scale-90 group-hover:opacity-100 group-hover:scale-100 shadow-[0_6px_20px_rgba(37,211,102,0.55)] z-10">
+                            {item.price}
+                            <span className="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-wa-green" />
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
 
           {/* CTA buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-5 border-t border-border">
+          <div className="flex flex-col sm:flex-row gap-3 mt-5 pt-4 border-t border-border">
             <a
               href="https://wa.me/27753338260"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 text-center py-3 px-4 rounded-xl font-sans font-extrabold text-[0.88rem] bg-wa-green text-white hover:bg-[#1ebe5a] transition-all duration-200 hover:-translate-y-0.5"
+              className="flex-1 text-center py-3 px-4 rounded-xl font-sans font-extrabold text-[0.88rem] bg-wa-green text-white hover:bg-[#1ebe5a] transition-all duration-250 hover:-translate-y-0.5"
             >
-              📱 WhatsApp Us
+              WhatsApp Us
             </a>
             <button
               onClick={() => {
                 onClose()
                 onNavigateContact()
               }}
-              className="flex-1 text-center py-3 px-4 rounded-xl font-sans font-extrabold text-[0.88rem] bg-secondary text-primary border-2 border-blue-4 hover:bg-blue-4 transition-all duration-200 hover:-translate-y-0.5"
+              className="flex-1 text-center py-3 px-4 rounded-xl font-sans font-extrabold text-[0.88rem] bg-secondary text-blue-1 border-2 border-blue-4 hover:bg-blue-4 transition-all duration-250 hover:-translate-y-0.5"
             >
-              📩 Send Enquiry
+              Send Enquiry
             </button>
           </div>
         </div>
@@ -118,46 +146,44 @@ interface HubCardProps {
 
 function HubCard({ hubId, onSelect }: HubCardProps) {
   const hub = HUBS[hubId]
-  
-  const colorClasses: Record<HubId, string> = {
-    print: "bg-[#EBF5FB] text-[#0F3F66] dark:bg-[#1E3A52] dark:text-blue-4",
-    doc: "bg-[#EAFAF1] text-[#3E6B0E] dark:bg-[#1A3010] dark:text-green-4",
-    design: "bg-[#FEF3C7] text-[#B86F34] dark:bg-[#3A2010] dark:text-orange-4",
-    eservice: "bg-[#EBF5FB] text-[#0F3F66] dark:bg-[#1E3A52] dark:text-blue-4",
-    tech: "bg-[#F0F3F6] text-[#2C3E50] dark:bg-[#1E2A38] dark:text-[#B8CCE0]",
-  }
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
+  const tagStyle = isDark ? hub.tagStyleDark : hub.tagStyle
 
   return (
     <div 
       onClick={() => onSelect(hubId)}
-      className="bg-card rounded-[22px] shadow-[var(--shadow)] border-2 border-[var(--card-border)] transition-all duration-300 cursor-pointer overflow-hidden flex flex-col hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(30,111,168,0.16)] hover:bg-secondary"
+      className="bg-card rounded-[22px] shadow-[var(--shadow)] border-2 border-[var(--card-border)] transition-all duration-300 cursor-pointer overflow-hidden flex flex-col hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(30,111,168,0.18)]"
     >
-      <div className="px-6 py-5 flex items-start gap-4 relative">
-        <span className="text-4xl shrink-0 mt-0.5">{hub.icon}</span>
-        <div>
-          <h3 className="font-sans font-black text-lg text-primary mb-1">{hub.title}</h3>
-        </div>
-        <span className="absolute top-5 right-5 w-[30px] h-[30px] bg-secondary rounded-full flex items-center justify-center text-sm transition-all duration-200 group-hover:bg-primary group-hover:text-white">
+      {/* Header with gradient background */}
+      <div 
+        className="px-5 py-4 flex items-center gap-3 relative"
+        style={{ background: hub.grad }}
+      >
+        <span className="text-[2rem] shrink-0">{hub.icon}</span>
+        <h3 className="font-sans font-black text-lg text-white">{hub.title}</h3>
+        <span className="ml-auto w-[30px] h-[30px] bg-white/20 rounded-full flex items-center justify-center text-white text-sm shrink-0 transition-all duration-300 group-hover:bg-white/35 group-hover:translate-x-1">
           <ArrowRight className="w-4 h-4" />
         </span>
       </div>
-      <div className="px-6 pb-5 flex-1">
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {hub.highlights.map((highlight) => (
+      
+      {/* Body */}
+      <div className="px-5 py-4 flex-1">
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {hub.previews.map((preview) => (
             <span 
-              key={highlight.name}
-              className={cn(
-                "group relative inline-block px-3 py-1 rounded-[14px] text-[0.72rem] font-bold font-sans cursor-pointer transition-all duration-200 hover:scale-105",
-                colorClasses[hubId]
-              )}
+              key={preview}
+              className="inline-block px-3 py-1 rounded-[14px] text-[0.73rem] font-bold font-sans"
+              style={{ 
+                background: tagStyle.bg, 
+                color: tagStyle.color 
+              }}
             >
-              {highlight.name}
-              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-black text-white px-3 py-2 rounded-lg text-[0.7rem] font-extrabold whitespace-nowrap opacity-0 pointer-events-none transition-opacity duration-200 group-hover:opacity-100 z-10">
-                {highlight.price}
-              </span>
+              {preview}
             </span>
           ))}
         </div>
+        <p className="text-[0.8rem] text-muted-foreground italic">and more...</p>
       </div>
     </div>
   )
@@ -184,7 +210,7 @@ export function ServicesPage({ onNavigate }: ServicesPageProps) {
         <section className="px-4 md:px-8 py-12 md:py-16">
           <div className="max-w-[680px] mx-auto mb-8 md:mb-10 text-center">
             <p className="text-muted-foreground text-[0.95rem] leading-relaxed">
-              {"We've organised all our services into 5 hubs. Each hub covers a range of related services — click any card to see everything we offer inside it."}
+              {"We've organised all our services into 5 hubs. Tap any card to explore everything inside — and hover over any service to see its price."}
             </p>
           </div>
           <div className="max-w-[1080px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-7">

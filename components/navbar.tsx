@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useTheme } from "next-themes"
-import { Menu, X, Sun, Moon } from "lucide-react"
+import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface NavbarProps {
@@ -29,27 +29,99 @@ export function Navbar({ activePage, onNavigate }: NavbarProps) {
 
   return (
     <>
-      {/* Mobile overlay */}
-      {mobileMenuOpen && (
+      {/* Immersive fullscreen mobile menu */}
+      <div 
+        className={cn(
+          "fixed inset-0 z-[99999] flex items-center justify-center transition-all duration-300 md:hidden",
+          mobileMenuOpen 
+            ? "opacity-100 pointer-events-auto" 
+            : "opacity-0 pointer-events-none"
+        )}
+      >
+        {/* Blur background */}
         <div 
-          className="fixed inset-0 z-[9998] bg-black/50 backdrop-blur-sm md:hidden"
+          className="absolute inset-0 bg-background/95 backdrop-blur-xl"
           onClick={() => setMobileMenuOpen(false)}
         />
-      )}
+        
+        {/* Close button */}
+        <button
+          onClick={() => setMobileMenuOpen(false)}
+          className="absolute top-5 right-5 w-12 h-12 rounded-full bg-secondary flex items-center justify-center z-10 hover:bg-muted transition-colors"
+        >
+          <X className="w-6 h-6 text-foreground" />
+        </button>
+        
+        {/* Centered navigation links */}
+        <nav className="relative z-10 flex flex-col items-center gap-4 px-8 w-full max-w-sm">
+          {navItems.map((item, index) => (
+            <button
+              key={item.id}
+              onClick={() => handleNavigate(item.id)}
+              className={cn(
+                "w-full py-4 px-8 rounded-2xl font-sans font-bold text-lg transition-all duration-300",
+                mobileMenuOpen 
+                  ? "translate-y-0 opacity-100" 
+                  : "translate-y-4 opacity-0",
+                item.isCta
+                  ? "bg-[#F4A261] text-white hover:bg-[#D9894B]"
+                  : activePage === item.id
+                    ? "bg-blue-1 text-white"
+                    : "bg-secondary text-foreground hover:bg-muted"
+              )}
+              style={{ 
+                transitionDelay: mobileMenuOpen ? `${index * 50}ms` : '0ms' 
+              }}
+            >
+              {item.label}
+            </button>
+          ))}
+          
+          {/* Theme toggle in mobile menu */}
+          <div 
+            className={cn(
+              "flex items-center gap-4 mt-6 transition-all duration-300",
+              mobileMenuOpen 
+                ? "translate-y-0 opacity-100" 
+                : "translate-y-4 opacity-0"
+            )}
+            style={{ 
+              transitionDelay: mobileMenuOpen ? `${navItems.length * 50}ms` : '0ms' 
+            }}
+          >
+            <span className="text-muted-foreground text-sm font-medium">Theme</span>
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className={cn(
+                "w-14 h-8 rounded-full relative transition-colors duration-300 flex items-center p-1",
+                theme === "dark" ? "bg-blue-1" : "bg-border"
+              )}
+            >
+              <span 
+                className={cn(
+                  "w-6 h-6 rounded-full bg-white shadow-md transition-transform duration-300 flex items-center justify-center text-xs",
+                  theme === "dark" ? "translate-x-6" : "translate-x-0"
+                )}
+              >
+                {theme === "dark" ? "🌙" : "☀️"}
+              </span>
+            </button>
+          </div>
+        </nav>
+      </div>
       
-      <nav className="fixed top-0 left-0 right-0 h-[68px] bg-[var(--nav-bg)] backdrop-blur-[10px] shadow-[0_2px_24px_rgba(30,111,168,0.09)] z-[9999] flex items-center justify-between px-4 md:px-6">
+      <nav className="fixed top-0 left-0 right-0 h-[68px] bg-[var(--nav-bg)] backdrop-blur-[10px] shadow-[0_2px_24px_rgba(30,111,168,0.09)] z-[9999] flex items-center justify-between px-4 md:px-6 transition-colors duration-300">
         {/* Logo */}
         <div 
-          className="flex items-center gap-3 cursor-pointer select-none"
+          className="flex items-center gap-2.5 cursor-pointer select-none"
           onClick={() => handleNavigate("home")}
         >
-          <div className="flex flex-col">
-            <span className="font-sans font-black text-[1.1rem] tracking-tight bg-gradient-to-r from-blue-1 to-green-1 bg-clip-text text-transparent dark:from-blue-4 dark:to-green-4">
-              ApexbytesHub
-            </span>
-            <span className="text-green-1 dark:text-green-4 text-[0.65rem] -mt-1 tracking-wider font-semibold">
-              Digital Solutions
-            </span>
+          <div className="w-[50px] h-[50px] rounded-xl bg-gradient-to-br from-blue-3 to-blue-1 flex items-center justify-center shadow-[0_3px_12px_rgba(30,111,168,0.35)] dark:from-[#1A2C3E] dark:to-[#243648] dark:shadow-[0_3px_12px_rgba(0,0,0,0.4)]">
+            <span className="text-2xl brightness-[3] contrast-[1.2] saturate-[0.3] dark:brightness-[4] dark:contrast-100 dark:saturate-0">🖨️</span>
+          </div>
+          <div className="font-sans font-black text-[1.25rem] leading-none tracking-tight">
+            <span className="text-[#1E6FA8] dark:text-[#7EC8F0]">Apexbytes</span>
+            <span className="text-[#6FBF1A] dark:text-[#A8E05A]">Hub</span>
           </div>
         </div>
 
@@ -63,7 +135,7 @@ export function Navbar({ activePage, onNavigate }: NavbarProps) {
                   className={cn(
                     "px-4 py-2 rounded-[22px] font-sans font-bold text-[0.86rem] transition-all duration-250",
                     item.isCta
-                      ? "bg-wa-green text-white hover:bg-[#1ebe5a]"
+                      ? "bg-[#F4A261] text-white hover:bg-[#D9894B]"
                       : activePage === item.id
                         ? "bg-blue-1 text-white"
                         : "text-muted-foreground hover:bg-secondary hover:text-blue-1"
@@ -98,8 +170,8 @@ export function Navbar({ activePage, onNavigate }: NavbarProps) {
           </div>
         </div>
 
-        {/* Mobile menu button */}
-        <div className="flex md:hidden items-center gap-2">
+        {/* Mobile menu button (hamburger) */}
+        <div className="flex md:hidden items-center gap-3">
           <span className="text-sm">
             {theme === "dark" ? "🌙" : "☀️"}
           </span>
@@ -119,38 +191,14 @@ export function Navbar({ activePage, onNavigate }: NavbarProps) {
             />
           </button>
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-1"
+            onClick={() => setMobileMenuOpen(true)}
+            className="flex flex-col gap-[5px] p-1"
           >
-            {mobileMenuOpen ? (
-              <X className="w-6 h-6 text-blue-1" />
-            ) : (
-              <Menu className="w-6 h-6 text-blue-1" />
-            )}
+            <span className="block w-6 h-[2.5px] bg-blue-1 rounded-sm transition-all" />
+            <span className="block w-6 h-[2.5px] bg-blue-1 rounded-sm transition-all" />
+            <span className="block w-6 h-[2.5px] bg-blue-1 rounded-sm transition-all" />
           </button>
         </div>
-
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="absolute top-[68px] left-0 right-0 bg-[var(--nav-bg)] p-6 md:hidden z-[9997] flex flex-col gap-3 max-h-[calc(100vh-68px)] overflow-y-auto">
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => handleNavigate(item.id)}
-                className={cn(
-                  "w-full py-3 px-6 rounded-[14px] font-sans font-bold text-[0.86rem] transition-all duration-250 text-center",
-                  item.isCta
-                    ? "bg-wa-green text-white"
-                    : activePage === item.id
-                      ? "bg-blue-1 text-white"
-                      : "text-muted-foreground hover:bg-secondary"
-                )}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        )}
       </nav>
     </>
   )
