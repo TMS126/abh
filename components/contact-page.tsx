@@ -1,0 +1,154 @@
+"use client"
+
+import { useState } from "react"
+
+export function ContactPage() {
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    service: "",
+    message: "",
+  })
+
+  const handleSubmit = () => {
+    const text = `Hello Apexbytes Hub! 👋
+
+Name: ${formData.name || 'N/A'}
+Phone: ${formData.phone || 'N/A'}
+Service: ${formData.service || 'N/A'}
+Message: ${formData.message || 'N/A'}`
+    
+    window.open(`https://wa.me/27753338260?text=${encodeURIComponent(text)}`, '_blank')
+  }
+
+  const contactCards = [
+    { icon: "📱", title: "WhatsApp Us", value: "075 333 8260", href: "https://wa.me/27753338260", color: "bg-[#DCFCE7]" },
+    { icon: "📞", title: "Call Us", value: "075 333 8260", href: "tel:+27753338260", color: "bg-[#DBEAFE]" },
+    { icon: "✉️", title: "Email Us", value: "apexbytesza@gmail.com", href: "mailto:apexbytesza@gmail.com", color: "bg-[#FEF3C7]" },
+    { icon: "📍", title: "Visit Us", value: "Kgotsong, 9660", href: "https://maps.google.com/?q=5878+Mpumalanga+Section+Kgotsong+Bothaville+9660+South+Africa", color: "bg-[#F3E8FF]" },
+  ]
+
+  return (
+    <div className="animate-fade-up">
+      {/* Hero */}
+      <section className="bg-gradient-to-br from-blue-3 via-blue-1 to-[#2980b9] px-4 md:px-8 py-12 md:py-14 text-center relative overflow-hidden">
+        <div className="absolute -top-[60px] -right-[60px] w-[300px] h-[300px] bg-[radial-gradient(circle,rgba(169,214,242,0.2)_0%,transparent_70%)] rounded-full" />
+        <h1 className="font-sans font-black text-2xl md:text-4xl text-white relative z-10">Contact Us</h1>
+        <p className="text-blue-4 text-base mt-2 relative z-10">{"We're here and ready to help — reach out any way you prefer"}</p>
+      </section>
+
+      {/* Contact section */}
+      <section className="px-4 md:px-8 py-12 md:py-16">
+        <div className="max-w-[980px] mx-auto grid md:grid-cols-2 gap-8 md:gap-12">
+          {/* Left - Contact info */}
+          <div>
+            <h2 className="font-sans font-black text-xl md:text-2xl text-blue-3 dark:text-blue-4 mb-2">Get In Touch</h2>
+            <p className="text-muted-foreground text-[0.9rem] mb-6">
+              {"WhatsApp, call, email or visit us in Kgotsong — we're always happy to help."}
+            </p>
+            <div className="flex flex-col gap-3">
+              {contactCards.map((card) => (
+                <a
+                  key={card.title}
+                  href={card.href}
+                  target={card.href.startsWith('http') ? '_blank' : undefined}
+                  rel={card.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  className="flex items-center gap-4 bg-secondary rounded-[14px] p-4 transition-all duration-300 hover:bg-blue-4 dark:hover:bg-[#1E3A52] hover:translate-x-1.5 no-underline"
+                >
+                  <div className={`w-[46px] h-[46px] rounded-xl flex items-center justify-center text-xl shrink-0 ${card.color}`}>
+                    {card.icon}
+                  </div>
+                  <div>
+                    <h4 className="font-sans font-bold text-blue-3 dark:text-blue-4 text-[0.82rem]">{card.title}</h4>
+                    <p className="text-muted-foreground text-[0.88rem] mt-0.5">{card.value}</p>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Right - Form */}
+          <div className="bg-secondary rounded-[20px] p-6 md:p-8 transition-colors duration-300">
+            <h3 className="font-sans font-extrabold text-blue-3 dark:text-blue-4 text-lg mb-5">💬 Send a Message</h3>
+            
+            <div className="mb-4">
+              <label className="block text-[0.82rem] font-semibold text-muted-foreground mb-1.5 font-sans">Your Name</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="e.g. Thabo Dlamini"
+                className="w-full px-4 py-3 border-2 border-border rounded-[10px] bg-background text-foreground text-[0.88rem] transition-colors duration-200 focus:border-primary outline-none"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-[0.82rem] font-semibold text-muted-foreground mb-1.5 font-sans">Phone / WhatsApp Number</label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                placeholder="e.g. 082 000 0000"
+                className="w-full px-4 py-3 border-2 border-border rounded-[10px] bg-background text-foreground text-[0.88rem] transition-colors duration-200 focus:border-primary outline-none"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-[0.82rem] font-semibold text-muted-foreground mb-1.5 font-sans">Service Needed</label>
+              <select
+                value={formData.service}
+                onChange={(e) => setFormData(prev => ({ ...prev, service: e.target.value }))}
+                className="w-full px-4 py-3 border-2 border-border rounded-[10px] bg-background text-foreground text-[0.88rem] transition-colors duration-200 focus:border-primary outline-none"
+              >
+                <option value="">-- Select a hub --</option>
+                <option>🖨️ Print Hub</option>
+                <option>📄 Document Hub</option>
+                <option>🎨 Design Hub</option>
+                <option>🌐 E-Service Hub</option>
+                <option>💻 Tech Hub</option>
+                <option>Not Sure — Please Advise</option>
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-[0.82rem] font-semibold text-muted-foreground mb-1.5 font-sans">Your Message</label>
+              <textarea
+                value={formData.message}
+                onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
+                placeholder="Tell us what you need..."
+                rows={4}
+                className="w-full px-4 py-3 border-2 border-border rounded-[10px] bg-background text-foreground text-[0.88rem] transition-colors duration-200 focus:border-primary outline-none resize-y min-h-[95px]"
+              />
+            </div>
+
+            <button
+              onClick={handleSubmit}
+              className="w-full bg-wa-green text-white py-3.5 rounded-[11px] font-sans font-extrabold text-base transition-all duration-300 hover:bg-[#1ebe5a] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(37,211,102,0.3)]"
+            >
+              Send via WhatsApp 📲
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Map bar */}
+      <div className="mx-4 md:mx-8 mb-8 md:mb-12 max-w-[980px] md:mx-auto">
+        <div className="bg-gradient-to-br from-blue-3 to-blue-1 rounded-[20px] p-6 md:p-8 flex flex-col md:flex-row items-start gap-4 md:gap-6 text-white">
+          <span className="text-4xl shrink-0">📍</span>
+          <div>
+            <h3 className="font-sans font-black text-lg">5878 Mpumalanga Section, Kgotsong Location</h3>
+            <p className="text-blue-4 text-sm mt-1">Bothaville, Free State · 9660 · Home-based · Walk-in or by appointment</p>
+            <a
+              href="https://maps.google.com/?q=5878+Mpumalanga+Section+Kgotsong+Bothaville+9660+South+Africa"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 mt-3 bg-white/20 text-white px-4 py-2 rounded-[20px] text-sm font-bold transition-all duration-200 hover:bg-white/30 no-underline"
+            >
+              🗺️ Open in Google Maps
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
