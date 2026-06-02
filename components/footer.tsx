@@ -24,6 +24,9 @@ export function Footer({ onNavigate }: FooterProps) {
           <p className="text-blue-4 text-[0.83rem] leading-relaxed">
             Your local tech and print partner in Kgotsong. Five hubs, 50+ services — all in one friendly place.
           </p>
+          <p className="text-blue-4 text-[0.83rem] mt-3">
+            🕐 Mon – Sat: 8:00 AM – 6:00 PM
+          </p>
         </div>
 
         {/* Pages */}
@@ -35,6 +38,44 @@ export function Footer({ onNavigate }: FooterProps) {
             {pages.map((page) => (
               <li 
                 key={page.id}
+                onClick={() => onNavigate(page.id)}
+                className="text-blue-4 text-[0.83rem] cursor-pointer transition-colors duration-200 hover:text-white"
+              >
+                {page.label}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Contact */}
+        <div>
+          <h4 className="font-sans font-bold text-[0.85rem] text-orange-4 mb-4 tracking-wider uppercase">
+            Contact
+          </h4>
+          <ul className="flex flex-col gap-2">
+            <li className="text-blue-4 text-[0.83rem]">
+              <a href="https://wa.me/27753338260" className="hover:text-white transition-colors duration-200">
+                📱 075 333 8260
+              </a>
+            </li>
+            <li className="text-blue-4 text-[0.83rem]">
+              <a href="mailto:apexbytesza@gmail.com" className="hover:text-white transition-colors duration-200">
+                ✉️ apexbytesza@gmail.com
+              </a>
+            </li>
+            <li className="text-blue-4 text-[0.83rem]">📍 Kgotsong, 9660</li>
+          </ul>
+        </div>
+      </div>
+
+      {/* Bottom */}
+      <div className="max-w-[1080px] mx-auto border-t border-white/10 pt-5 flex flex-col md:flex-row justify-between items-center gap-2 text-center md:text-left">
+        <p className="text-blue-4 text-[0.78rem]">© 2026 Apexbytes Hub. All rights reserved.</p>
+        <p className="text-blue-4 text-[0.78rem]">Made with ❤️ for the Kgotsong community</p>
+      </div>
+    </footer>
+  )
+}                key={page.id}
                 onClick={() => onNavigate(page.id)}
                 className="text-blue-4 text-[0.83rem] cursor-pointer transition-colors duration-200 hover:text-white"
               >
