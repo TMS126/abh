@@ -24,7 +24,7 @@ export function Footer({ onNavigate }: FooterProps) {
             Your local tech and print partner in Kgotsong. Five hubs, 50+ services — all in one friendly place.
           </p>
           <p className="text-blue-4 text-[0.83rem] mt-3">
-            🕐 Mon – Sat: 8:00 AM – 6:00 PM
+            🕐 Mon – Sat: 7:00 AM – 8:00 PM
           </p>
         </div>
 
@@ -52,7 +52,7 @@ export function Footer({ onNavigate }: FooterProps) {
           <ul className="flex flex-col gap-2">
             <li className="text-blue-4 text-[0.83rem]">📱 075 333 8260</li>
             <li className="text-blue-4 text-[0.83rem]">✉️ apexbytesza@gmail.com</li>
-            <li className="text-blue-4 text-[0.83rem]">📍 Kgotsong, 9660</li>
+            <li className="text-blue-4 text-[0.83rem]">📍 5878 Mpumalanga Section, Kgotsong, 9660</li>
           </ul>
         </div>
       </div>
