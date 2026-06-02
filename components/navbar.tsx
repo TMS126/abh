@@ -1,5 +1,8 @@
 "use client"
 
+
+// All nav buttons — add to className:
+"transition-all duration-200 ease-in-out active:scale-95"
 import { useState } from "react"
 import { useTheme } from "next-themes"
 import { X } from "lucide-react"
