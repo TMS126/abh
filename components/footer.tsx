@@ -24,8 +24,10 @@ export function Footer({ onNavigate }: FooterProps) {
             Your local tech and print partner in Kgotsong. Five hubs, 50+ services — all in one friendly place.
           </p>
           <p className="text-blue-4 text-[0.83rem] mt-3">
-            🕐 Mon – Sat: 7:00 AM – 8:00 PM
-          </p>
+        
+          <p>🕒: 🖨️ 📄		Mon – Sun: 7:00 AM – 8:00 PM | Holidays: Open </p>
+          <p>🕒: 🌐 🎨 💻 Mon – Fri: 9:00 AM – 5:00 PM | Sat: 9:00 AM - 12:00 PM | Holidays: Closed</p>
+      
         </div>
 
         <div>
@@ -58,7 +60,7 @@ export function Footer({ onNavigate }: FooterProps) {
       </div>
 
       <div className="max-w-[1080px] mx-auto border-t border-white/10 pt-5 flex flex-col md:flex-row justify-between items-center gap-2 text-center md:text-left">
-        <p className="text-blue-4 text-[0.78rem]">© 2026 Apexbytes Hub. All rights reserved.</p>
+        <p className="text-blue-4 text-[0.78rem]">© 2026 ApexbytesHub. All rights reserved.</p>
         <p className="text-blue-4 text-[0.78rem]">Made with ❤️ for the Kgotsong community</p>
       </div>
     </footer>
