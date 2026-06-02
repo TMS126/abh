@@ -20,18 +20,19 @@ export function Footer({ onNavigate }: FooterProps) {
           <h3 className="font-sans font-black text-xl md:text-2xl mb-2">
             Apexbytes <span className="text-[#F4A261]">Hub</span>
           </h3>
-          <p className="text-blue-4 text-[0.83rem] leading-relaxed">
+          <p className="text-[#A9D6F2] text-[0.83rem] leading-relaxed">
             Your local tech and print partner in Kgotsong. Five hubs, 50+ services — all in one friendly place.
           </p>
-          <p className="text-blue-4 text-[0.83rem] mt-3">
-        
-          <p>🕒: 🖨️ 📄		Mon – Sun: 7:00 AM – 8:00 PM | Holidays: Open </p>
-          <p>🕒: 🌐 🎨 💻 Mon – Fri: 9:00 AM – 5:00 PM | Sat: 9:00 AM - 12:00 PM | Holidays: Closed</p>
-      
+          <p className="text-[#A9D6F2] text-[0.83rem] mt-3">
+            🕒 🖨️ 📄 Mon – Sun: 7:00 AM – 8:00 PM | Holidays: Open
+          </p>
+          <p className="text-[#A9D6F2] text-[0.83rem] mt-1">
+            🕒 🌐 🎨 💻 Mon – Fri: 9:00 AM – 5:00 PM | Sat: 9:00 AM – 12:00 PM | Sundays & Holidays: Closed
+          </p>
         </div>
 
         <div>
-          <h4 className="font-sans font-bold text-[0.85rem] text-orange-4 mb-4 tracking-wider uppercase">
+          <h4 className="font-sans font-bold text-[0.85rem] text-[#F4A261] mb-4 tracking-wider uppercase">
             Pages
           </h4>
           <ul className="flex flex-col gap-2">
@@ -39,7 +40,7 @@ export function Footer({ onNavigate }: FooterProps) {
               <li
                 key={page.id}
                 onClick={() => onNavigate(page.id)}
-                className="text-blue-4 text-[0.83rem] cursor-pointer transition-colors duration-200 hover:text-white"
+                className="text-[#A9D6F2] text-[0.83rem] cursor-pointer transition-colors duration-200 hover:text-white"
               >
                 {page.label}
               </li>
@@ -48,21 +49,21 @@ export function Footer({ onNavigate }: FooterProps) {
         </div>
 
         <div>
-          <h4 className="font-sans font-bold text-[0.85rem] text-orange-4 mb-4 tracking-wider uppercase">
+          <h4 className="font-sans font-bold text-[0.85rem] text-[#F4A261] mb-4 tracking-wider uppercase">
             Contact
           </h4>
           <ul className="flex flex-col gap-2">
-            <li className="text-blue-4 text-[0.83rem]">📱 075 333 8260</li>
-            <li className="text-blue-4 text-[0.83rem]">✉️ apexbytesza@gmail.com</li>
-            <li className="text-blue-4 text-[0.83rem]">📍 5878 Mpumalanga Section, Kgotsong, 9660</li>
+            <li className="text-[#A9D6F2] text-[0.83rem]">📱 075 333 8260</li>
+            <li className="text-[#A9D6F2] text-[0.83rem]">✉️ apexbytesza@gmail.com</li>
+            <li className="text-[#A9D6F2] text-[0.83rem]">📍 5878 Mpumalanga Section, Kgotsong, 9660</li>
           </ul>
         </div>
       </div>
 
       <div className="max-w-[1080px] mx-auto border-t border-white/10 pt-5 flex flex-col md:flex-row justify-between items-center gap-2 text-center md:text-left">
-        <p className="text-blue-4 text-[0.78rem]">© 2026 ApexbytesHub. All rights reserved.</p>
-        <p className="text-blue-4 text-[0.78rem]">Made with ❤️ for the Kgotsong community</p>
+        <p className="text-[#A9D6F2] text-[0.78rem]">© 2026 Apexbytes Hub. All rights reserved.</p>
+        <p className="text-[#A9D6F2] text-[0.78rem]">Made with ❤️ for the Kgotsong community</p>
       </div>
     </footer>
   )
-}
+} 
