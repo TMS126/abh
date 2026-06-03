@@ -1,23 +1,147 @@
 "use client"
 
 import { ArrowRight } from "lucide-react"
+import { useEffect, useRef } from "react"
 
 interface HeroSectionProps {
   onNavigate: (page: string) => void
 }
 
+const COLORS = [
+  "#1E6FA8", "#15537D", "#0F3F66", "#A9D6F2",
+  "#6FBF1A", "#548F14", "#3E6B0E", "#CDEB9F",
+  "#F4A261", "#D9894B", "#B86F34", "#F9D1B0",
+  "#1E6FA8", "#6FBF1A", "#F4A261", "#A9D6F2",
+]
+
+function pick(arr: string[]) {
+  return arr[Math.floor(Math.random() * arr.length)]
+}
+
 export function HeroSection({ onNavigate }: HeroSectionProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    let animId: number
+    let w = 0
+    let h = 0
+
+    // Each orb has position, velocity, size, and color
+    const orbs = Array.from({ length: 6 }, () => ({
+      x: Math.random(),
+      y: Math.random(),
+      vx: (Math.random() - 0.5) * 0.0008,
+      vy: (Math.random() - 0.5) * 0.0008,
+      r: 0.45 + Math.random() * 0.35,
+      color: pick(COLORS),
+      nextColor: pick(COLORS),
+      t: Math.random(), // color interpolation progress
+      speed: 0.002 + Math.random() * 0.003,
+    }))
+
+    function hexToRgb(hex: string) {
+      const r = parseInt(hex.slice(1, 3), 16)
+      const g = parseInt(hex.slice(3, 5), 16)
+      const b = parseInt(hex.slice(5, 7), 16)
+      return { r, g, b }
+    }
+
+    function lerpColor(a: string, b: string, t: number) {
+      const ca = hexToRgb(a)
+      const cb = hexToRgb(b)
+      const r = Math.round(ca.r + (cb.r - ca.r) * t)
+      const g = Math.round(ca.g + (cb.g - ca.g) * t)
+      const bl = Math.round(ca.b + (cb.b - ca.b) * t)
+      return `rgb(${r},${g},${bl})`
+    }
+
+    function resize() {
+      w = canvas.offsetWidth
+      h = canvas.offsetHeight
+      canvas.width = w
+      canvas.height = h
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, w, h)
+
+      // Dark base
+      ctx.fillStyle = "#0A1A2E"
+      ctx.fillRect(0, 0, w, h)
+
+      // Draw each orb as a radial gradient blob
+      for (const orb of orbs) {
+        orb.t += orb.speed
+        if (orb.t >= 1) {
+          orb.t = 0
+          orb.color = orb.nextColor
+          orb.nextColor = pick(COLORS)
+        }
+
+        orb.x += orb.vx
+        orb.y += orb.vy
+        if (orb.x < -0.1) orb.x = 1.1
+        if (orb.x > 1.1) orb.x = -0.1
+        if (orb.y < -0.1) orb.y = 1.1
+        if (orb.y > 1.1) orb.y = -0.1
+
+        const cx = orb.x * w
+        const cy = orb.y * h
+        const radius = orb.r * Math.max(w, h)
+        const color = lerpColor(orb.color, orb.nextColor, orb.t)
+
+        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius)
+        grad.addColorStop(0, color.replace("rgb", "rgba").replace(")", ",0.38)"))
+        grad.addColorStop(1, "rgba(0,0,0,0)")
+
+        ctx.fillStyle = grad
+        ctx.fillRect(0, 0, w, h)
+      }
+
+      animId = requestAnimationFrame(draw)
+    }
+
+    resize()
+    draw()
+
+    const ro = new ResizeObserver(resize)
+    ro.observe(canvas)
+
+    return () => {
+      cancelAnimationFrame(animId)
+      ro.disconnect()
+    }
+  }, [])
+
   return (
-    <section className="bg-gradient-to-br from-blue-3 via-blue-1 to-[#2889c8] min-h-[calc(100vh-68px)] flex items-center px-4 md:px-8 py-16 md:py-20 relative overflow-hidden">
-      <div className="absolute -top-[100px] -right-[80px] w-[520px] h-[520px] bg-[radial-gradient(circle,rgba(169,214,242,0.18)_0%,transparent_65%)] rounded-full" />
-      <div className="absolute -bottom-[80px] -left-[60px] w-[380px] h-[380px] bg-[radial-gradient(circle,rgba(111,191,26,0.12)_0%,transparent_65%)] rounded-full" />
+    <section className="relative min-h-[calc(100vh-68px)] flex items-center px-4 md:px-8 py-16 md:py-20 overflow-hidden">
+      {/* Animated canvas background */}
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full"
+        style={{ display: "block" }}
+      />
+
+      {/* Subtle noise/grain overlay for depth */}
+      <div
+        className="absolute inset-0 opacity-[0.04] pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          backgroundSize: "128px 128px",
+        }}
+      />
 
       <div className="max-w-[1200px] mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center relative z-10">
         <div className="text-center md:text-left">
-          <h1 className="font-sans font-black text-3xl md:text-4xl lg:text-[3.1rem] text-white leading-tight mb-4 md:mb-5 text-balance">
+          <h1 className="font-sans font-black text-3xl md:text-4xl lg:text-[3.1rem] text-white leading-tight mb-4 md:mb-5 text-balance drop-shadow-md">
             Your <span className="text-[#F4A261]">Local Tech</span> &amp; Print Partner
           </h1>
-          <p className="text-blue-4 text-base md:text-lg leading-relaxed mb-6 md:mb-8 text-pretty">
+          <p className="text-white/75 text-base md:text-lg leading-relaxed mb-6 md:mb-8 text-pretty drop-shadow-sm">
             From printing your documents to navigating government services — we make it simple, fast, and friendly. Right here in Kgotsong.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start">
@@ -38,7 +162,8 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
           </div>
         </div>
 
-        <div className="bg-white/10 backdrop-blur-[12px] border border-white/20 rounded-[22px] p-5 md:p-7">
+        {/* Hero card */}
+        <div className="bg-white/10 backdrop-blur-[16px] border border-white/20 rounded-[22px] p-5 md:p-7 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
           <h3 className="font-sans font-extrabold text-base text-white mb-4">What We Offer</h3>
           <div className="flex flex-wrap gap-2">
             {[
@@ -68,7 +193,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
               <div className="text-[0.7rem] text-white/70 mt-0.5">Services</div>
             </div>
             <div>
-              <div className="font-sans font-black text-xl md:text-2xl text-[#F4A261]">Quick</div>
+              <div className="font-sans font-black text-xl md:text-2xl text-[#F4A261]">1-Day</div>
               <div className="text-[0.7rem] text-white/70 mt-0.5">Turnaround</div>
             </div>
           </div>
@@ -76,4 +201,4 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
       </div>
     </section>
   )
-}
+          }
