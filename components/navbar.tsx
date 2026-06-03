@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useTheme } from "next-themes"
-import { X, MessageCircle } from "lucide-react"
+import { X, MessageCircle, Sun, Moon } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 
 interface NavbarProps {
@@ -134,7 +134,7 @@ export function Navbar({ activePage, onNavigate }: NavbarProps) {
                   theme === "dark" ? "translate-x-6" : "translate-x-0"
                 )}
               >
-                {theme === "dark" ? "🌙" : "☀️"}
+                {theme === "dark" ? <Moon size={16} /> : <Sun size={16} />}
               </span>
             </button>
           </div>
@@ -214,7 +214,7 @@ export function Navbar({ activePage, onNavigate }: NavbarProps) {
           {/* Theme toggle */}
           <div className="flex items-center gap-2 ml-2">
             <span className="text-sm">
-              {theme === "dark" ? "🌙" : "☀️"}
+              {theme === "dark" ? <Moon size={16} /> : <Sun size={16} />}
             </span>
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -237,7 +237,7 @@ export function Navbar({ activePage, onNavigate }: NavbarProps) {
         {/* ── Mobile controls ── */}
         <div className="flex md:hidden items-center gap-3">
           <span className="text-sm">
-            {theme === "dark" ? "🌙" : "☀️"}
+            {theme === "dark" ? <Moon size={16} /> : <Sun size={16} />}
           </span>
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -286,4 +286,3 @@ export function Navbar({ activePage, onNavigate }: NavbarProps) {
       </div>
     </>
   )
-}
