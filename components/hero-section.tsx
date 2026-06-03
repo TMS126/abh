@@ -11,7 +11,6 @@ const COLORS = [
   "#1E6FA8", "#15537D", "#0F3F66", "#A9D6F2",
   "#6FBF1A", "#548F14", "#3E6B0E", "#CDEB9F",
   "#F4A261", "#D9894B", "#B86F34", "#F9D1B0",
-  "#1E6FA8", "#6FBF1A", "#F4A261", "#A9D6F2",
 ]
 
 function pick(arr: string[]) {
