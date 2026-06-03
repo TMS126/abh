@@ -68,7 +68,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
               <div className="text-[0.7rem] text-white/70 mt-0.5">Services</div>
             </div>
             <div>
-              <div className="font-sans font-black text-xl md:text-2xl text-[#F4A261]">1-Day</div>
+              <div className="font-sans font-black text-xl md:text-2xl text-[#F4A261]">Quick</div>
               <div className="text-[0.7rem] text-white/70 mt-0.5">Turnaround</div>
             </div>
           </div>
