@@ -49,7 +49,7 @@ Message: ${formData.message || 'N/A'}`
               <p className="text-[0.82rem] text-muted-foreground">🖨️Print & 📄Document Hub</p>
               <p className="text-[0.82rem] text-foreground font-semibold mb-2">Mon – Sun: 07:00 – 20:00 · Open on holidays</p>
               <p className="text-[0.82rem] text-muted-foreground">💻Tech, 🎨Design & 🌐E-Service Hub</p>
-              <p className="text-[0.82rem] text-foreground font-semibold">Mon – Fri: 09:00 – 17:00 · Sat: 09:00 – 12:00 · Sun · Holidays: Closed</p>
+              <p className="text-[0.82rem] text-foreground font-semibold">Mon – Fri: 09:00 – 17:00 · Sat: 09:00 – 12:00 · Sun & Holidays: Closed</p>
             </div>
 
             <div className="flex flex-col gap-3">
