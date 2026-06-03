@@ -52,13 +52,13 @@ export function Footer({ onNavigate }: FooterProps) {
           <ul className="flex flex-col gap-2">
             <li className="text-blue-4 text-[0.83rem]">📱 075 333 8260</li>
             <li className="text-blue-4 text-[0.83rem]">✉️ apexbytesza@gmail.com</li>
-            <li className="text-blue-4 text-[0.83rem]">📍 Kgotsong, 9660</li>
+            <li className="text-blue-4 text-[0.83rem]">📍 5878 Mpumalanga Section, Kgotsong, Bothaville, 9660</li>
           </ul>
         </div>
       </div>
 
       <div className="max-w-[1080px] mx-auto border-t border-white/10 pt-5 flex flex-col md:flex-row justify-between items-center gap-2 text-center md:text-left">
-        <p className="text-blue-4 text-[0.78rem]">© 2026 Apexbytes Hub. All rights reserved.</p>
+        <p className="text-blue-4 text-[0.78rem]">© 2026 ApexbytesHub. All rights reserved.</p>
         <p className="text-blue-4 text-[0.78rem]">Made with ❤️ for the Kgotsong community</p>
       </div>
     </footer>
