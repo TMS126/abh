@@ -5,7 +5,7 @@ export function StripSection() {
     { icon: "🚀", title: "Fast Turnaround", desc: "No long waits, quick service" },
     { icon: "💰", title: "Affordable Rates", desc: "Fair pricing for everyone" },
     { icon: "🤝", title: "Friendly Help", desc: "We explain, never judge" },
-    { icon: "📍", title: "Walk-ins Welcome", desc: "Kgotsong, Bothaville 9660" },
+    { icon: "📍", title: "Walk-ins Welcome", desc: "5878 Mpumalanga, Kgotsong, Bothaville 9660" },
   ]
 
   return (
