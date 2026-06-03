@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect, useRef } from "react"
 import { useTheme } from "next-themes"
 import { X, MessageCircle, Sun, Moon } from "@phosphor-icons/react"
