@@ -119,8 +119,7 @@ export function Navbar({ activePage, onNavigate }: NavbarProps) {
           className="flex items-center gap-2.5 cursor-pointer select-none"
           onClick={() => handleNavigate("home")}
         >
-          <div className="w-[50px] h-[50px] rounded-xl bg-gradient-to-br from-blue-3 to-blue-1 flex items-center justify-center shadow-[0_3px_12px_rgba(30,111,168,0.35)] dark:from-[#1A2C3E] dark:to-[#243648] dark:shadow-[0_3px_12px_rgba(0,0,0,0.4)]">
-          </div>
+          
           <div className="font-sans font-black text-[1.25rem] leading-none tracking-tight">
             <span className="text-[#1E6FA8] dark:text-[#7EC8F0]">Apexbytes</span>
             <span className="text-[#6FBF1A] dark:text-[#A8E05A]">Hub</span>
