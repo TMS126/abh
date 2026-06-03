@@ -45,9 +45,6 @@ export function GalleryPage({ onNavigate }: GalleryPageProps) {
                 <div className="text-4xl mb-3">{item.icon}</div>
                 <h4 className="font-sans font-black text-blue-3 dark:text-blue-4 text-[0.95rem] mb-1">{item.label}</h4>
                 <p className="text-muted-foreground text-[0.8rem]">{item.desc}</p>
-                <div className="mt-4 h-[6px] bg-secondary rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-blue-3 to-blue-1 rounded-full w-3/4 animate-pulse" />
-                </div>
               </div>
             ))}
           </div>
@@ -58,11 +55,11 @@ export function GalleryPage({ onNavigate }: GalleryPageProps) {
               onClick={() => onNavigate("contact")}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-[28px] font-sans font-extrabold text-[0.92rem] bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(37,211,102,0.3)]"
             >
-              💬 Ask Us on WhatsApp
+              Ask Us on WhatsApp
             </button>
           </div>
         </div>
       </section>
     </div>
   )
-}
+} 
