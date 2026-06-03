@@ -286,3 +286,4 @@ export function Navbar({ activePage, onNavigate }: NavbarProps) {
       </div>
     </>
   )
+} 
