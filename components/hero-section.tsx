@@ -8,9 +8,9 @@ interface HeroSectionProps {
 }
 
 const COLORS = [
-  "#1E6FA8", "#15537D", "#0F3F66", "#A9D6F2",
-  "#6FBF1A", "#548F14", "#3E6B0E", "#CDEB9F",
-  "#F4A261", "#D9894B", "#B86F34", "#F9D1B0",
+  "#1E6FA8", "#15537D", "#A9D6F2",
+  "#6FBF1A", "#548F14", "#3E6B0E",
+  "#F4A261", "#D9894B","#F9D1B0",
 ]
 
 function pick(arr: string[]) {
@@ -138,7 +138,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
       <div className="max-w-[1200px] mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center relative z-10">
         <div className="text-center md:text-left">
           <h1 className="font-sans font-black text-3xl md:text-4xl lg:text-[3.1rem] text-white leading-tight mb-4 md:mb-5 text-balance drop-shadow-md">
-            Your <span className="text-[#F4A261]">Local Tech</span> &amp; Print Partner
+            Your <span className="text-[#F4A261]">Local Tech </span> &amp; Print Partner
           </h1>
           <p className="text-white/75 text-base md:text-lg leading-relaxed mb-6 md:mb-8 text-pretty drop-shadow-sm">
             From printing your documents to navigating government services — we make it simple, fast, and friendly. Right here in Kgotsong.
@@ -192,7 +192,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
               <div className="text-[0.7rem] text-white/70 mt-0.5">Services</div>
             </div>
             <div>
-              <div className="font-sans font-black text-xl md:text-2xl text-[#F4A261]">1-Day</div>
+              <div className="font-sans font-black text-xl md:text-2xl text-[#F4A261]">Faster</div>
               <div className="text-[0.7rem] text-white/70 mt-0.5">Turnaround</div>
             </div>
           </div>
