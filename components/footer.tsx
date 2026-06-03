@@ -18,13 +18,13 @@ export function Footer({ onNavigate }: FooterProps) {
       <div className="max-w-[1080px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
         <div>
           <h3 className="font-sans font-black text-xl md:text-2xl mb-2">
-            Apexbytes <span className="text-[#F4A261]">Hub</span>
+            Apexbytes<span className="text-[#F4A261]">Hub</span>
           </h3>
           <p className="text-blue-4 text-[0.83rem] leading-relaxed">
             Your local tech and print partner in Kgotsong. Five hubs, 50+ services — all in one friendly place.
           </p>
           <p className="text-blue-4 text-[0.83rem] mt-3">
-            🕐 Mon – Sat: 8:00 AM – 6:00 PM
+          
           </p>
         </div>
 
