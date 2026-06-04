@@ -180,4 +180,3 @@ export function GalleryPage({ onNavigate }: GalleryPageProps) {
     </div>
   )
 }
- 
