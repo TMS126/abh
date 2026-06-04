@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowRight, X, ChevronDown, WhatsappLogo, Printer, FileText, PaintBrush, Globe, Desktop, ChatCircle } from "@phosphor-icons/react"
+import { ArrowRight, X, CaretDown, WhatsappLogo, Printer, FileText, PaintBrush, Globe, Desktop, ChatCircle } from "@phosphor-icons/react"
 import { HUBS, type HubId } from "@/lib/data"
 import { cn } from "@/lib/utils"
 import { useTheme } from "next-themes"
@@ -431,7 +431,7 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModal
                     className="flex items-center justify-between w-full px-4 py-3 bg-secondary hover:bg-muted active:scale-[0.99] transition-all duration-200 ease-in-out cursor-pointer select-none"
                   >
                     <span className="font-sans font-extrabold text-[0.88rem] text-foreground">{section.title}</span>
-                    <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform duration-300", openAccordion === idx && "rotate-180")} />
+                    <CaretDown className={cn("w-4 h-4 text-muted-foreground transition-transform duration-300", openAccordion === idx && "rotate-180")} />
                   </button>
                   <div className={cn("transition-all duration-300 ease-in-out overflow-hidden", openAccordion === idx ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0")}>
                     <div className="px-4 py-3 bg-background">
