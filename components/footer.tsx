@@ -13,6 +13,7 @@ import {
   Globe, 
   Cpu, 
   Receipt,
+  Info,
   Heart
 } from "@phosphor-icons/react"
 
@@ -41,7 +42,7 @@ export function Footer({ onNavigate }: FooterProps) {
             Apexbytes<span className="text-[#F4A261]">Hub</span>
           </h3>
           <p className="text-blue-4 text-[0.83rem] leading-relaxed">
-            Your local tech and print partner in Kgotsong. Five hubs, 50+ services — all in one friendly place.[span_1](start_span)[span_1](end_span)
+            Your local tech and print partner in Kgotsong. Five hubs, 50+ services — all in one friendly place.
           </p>
         </div>
 
@@ -57,7 +58,7 @@ export function Footer({ onNavigate }: FooterProps) {
                 onClick={() => onNavigate(page.id)}
                 className="text-blue-4 text-[0.83rem] cursor-pointer transition-colors duration-200 hover:text-white"
               >
-                {page.label}[span_2](start_span)[span_2](end_span)
+                {page.label}
               </li>
             ))}
           </ul>
@@ -77,7 +78,7 @@ export function Footer({ onNavigate }: FooterProps) {
                 className="flex items-center gap-2 text-blue-4 text-[0.83rem] hover:text-white transition-colors duration-200 no-underline"
               >
                 <WhatsappLogo weight="fill" className="w-4 h-4 text-[#25D366] shrink-0" />
-                075 333 8260[span_3](start_span)[span_3](end_span)
+                075 333 8260
               </a>
             </li>
             <li>
@@ -86,7 +87,7 @@ export function Footer({ onNavigate }: FooterProps) {
                 className="flex items-center gap-2 text-blue-4 text-[0.83rem] hover:text-white transition-colors duration-200 no-underline"
               >
                 <Phone weight="fill" className="w-4 h-4 text-[#1E6FA8] shrink-0" />
-                075 333 8260[span_4](start_span)[span_4](end_span)
+                075 333 8260
               </a>
             </li>
             <li>
@@ -95,12 +96,12 @@ export function Footer({ onNavigate }: FooterProps) {
                 className="flex items-center gap-2 text-blue-4 text-[0.83rem] hover:text-white transition-colors duration-200 no-underline"
               >
                 <EnvelopeSimple weight="fill" className="w-4 h-4 text-[#D9894B] shrink-0" />
-                apexbytesza@gmail.com[span_5](start_span)[span_5](end_span)
+                apexbytesza@gmail.com
               </a>
             </li>
             <li className="flex items-start gap-2 text-blue-4 text-[0.83rem]">
               <MapPin weight="fill" className="w-4 h-4 text-[#9333ea] shrink-0 mt-0.5" />
-              5878 Mpumalanga Section, Kgotsong, Bothaville, 9660[span_6](start_span)[span_6](end_span)
+              5878 Mpumalanga Section, Kgotsong, Bothaville, 9660
             </li>
           </ul>
         </div>
@@ -109,7 +110,7 @@ export function Footer({ onNavigate }: FooterProps) {
       {/* Bottom Bar */}
       <div className="max-w-[1080px] mx-auto border-t border-white/10 pt-5 flex flex-col md:flex-row justify-between items-center gap-2 text-center md:text-left">
         <p className="text-blue-4 text-[0.78rem]">
-          © 2026 ApexbytesHub. All rights reserved.[span_7](start_span)[span_7](end_span)
+          © 2026 ApexbytesHub. All rights reserved.
           <span className="mx-2">|</span>
           <button 
             onClick={() => setIsTermsOpen(true)}
@@ -152,7 +153,19 @@ export function Footer({ onNavigate }: FooterProps) {
             {/* Scrollable Policy Content */}
             <div className="p-6 overflow-y-auto space-y-6 text-[0.82rem] md:text-sm leading-relaxed font-sans">
               
-              {/* 1. PRINT HUB */}
+              {/* 1. OPERATIONAL RULE */}
+              <div className="space-y-2 bg-zinc-50 dark:bg-zinc-950 p-4 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                <h4 className="font-black text-xs uppercase tracking-wider text-[#F4A261] flex items-center gap-2">
+                  <Info weight="fill" className="w-4 h-4" /> ApexbytesHub Operational Rule
+                </h4>
+                <p className="text-muted-foreground text-[0.8rem] md:text-[0.85rem]">
+                  Apexbytes Hub operates as a premium, home-based digital service and design studio in Kgotsong, Bothaville. By starting any order sequence or sending us a message through our automated WhatsApp channels, you confirm that you fully agree to and align with all our operational rules and terms listed below.
+                </p>
+              </div>
+
+              <hr className="border-zinc-100 dark:border-zinc-800" />
+
+              {/* 2. PRINT HUB */}
               <div className="space-y-2">
                 <h4 className="font-black text-xs uppercase tracking-wider text-[#1E6FA8] dark:text-[#A9D6F2] flex items-center gap-2">
                   <Printer weight="fill" className="w-4 h-4" /> Print Hub – Everything Paper
@@ -166,7 +179,7 @@ export function Footer({ onNavigate }: FooterProps) {
 
               <hr className="border-zinc-100 dark:border-zinc-800" />
 
-              {/* 2. DOCUMENT HUB */}
+              {/* 3. DOCUMENT HUB */}
               <div className="space-y-2">
                 <h4 className="font-black text-xs uppercase tracking-wider text-[#1E6FA8] dark:text-[#A9D6F2] flex items-center gap-2">
                   <FileText weight="fill" className="w-4 h-4" /> Document Hub – All Document Work
@@ -180,7 +193,7 @@ export function Footer({ onNavigate }: FooterProps) {
 
               <hr className="border-zinc-100 dark:border-zinc-800" />
 
-              {/* 3. DESIGN HUB */}
+              {/* 4. DESIGN HUB */}
               <div className="space-y-2">
                 <h4 className="font-black text-xs uppercase tracking-wider text-[#1E6FA8] dark:text-[#A9D6F2] flex items-center gap-2">
                   <Palette weight="fill" className="w-4 h-4" /> Design Hub – Creative Work
@@ -193,7 +206,7 @@ export function Footer({ onNavigate }: FooterProps) {
 
               <hr className="border-zinc-100 dark:border-zinc-800" />
 
-              {/* 4. E-SERVICE HUB */}
+              {/* 5. E-SERVICE HUB */}
               <div className="space-y-2">
                 <h4 className="font-black text-xs uppercase tracking-wider text-[#1E6FA8] dark:text-[#A9D6F2] flex items-center gap-2">
                   <Globe weight="fill" className="w-4 h-4" /> e-Service Hub – External Systems
@@ -207,7 +220,7 @@ export function Footer({ onNavigate }: FooterProps) {
 
               <hr className="border-zinc-100 dark:border-zinc-800" />
 
-              {/* 5. TECH HUB */}
+              {/* 6. TECH HUB */}
               <div className="space-y-2">
                 <h4 className="font-black text-xs uppercase tracking-wider text-[#1E6FA8] dark:text-[#A9D6F2] flex items-center gap-2">
                   <Cpu weight="fill" className="w-4 h-4" /> Tech Hub – Computer Work
@@ -220,7 +233,7 @@ export function Footer({ onNavigate }: FooterProps) {
 
               <hr className="border-zinc-100 dark:border-zinc-800" />
 
-              {/* 6. BUSINESS ADMINISTRATION */}
+              {/* 7. BUSINESS ADMINISTRATION */}
               <div className="space-y-2">
                 <h4 className="font-black text-xs uppercase tracking-wider text-[#F4A261] flex items-center gap-2">
                   <Receipt weight="fill" className="w-4 h-4" /> Business Administration &amp; Essentials
@@ -249,4 +262,3 @@ export function Footer({ onNavigate }: FooterProps) {
     </footer>
   )
 }
- 
