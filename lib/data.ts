@@ -1,4 +1,3 @@
-// Pricing data for all services
 export const PRICING = {
   print: {
     'B&W Print': 'R5/page',
@@ -37,14 +36,14 @@ export const PRICING = {
     'Revision — After Completion': 'R70',
   },
   eservice: {
-    'SASSA Status Check': 'R20',
+    'SASSA Status Check': 'R10',
     'SASSA Payment/Balance': 'R15',
     'SASSA Update': 'R20',
     'SASSA Reapply': 'R30',
-    'SASSA SRD': 'R40',
+    'SASSA SRD': 'R30',
     'SASSA Appeal': 'R40',
-    'SASSA Banking Update': 'R40',
-    'SASSA Grant Application': 'R80',
+    'SASSA Banking Update': 'R30',
+    'SASSA Grant Application': 'R70',
     'SARS Enquiry/Statement': 'R50',
     'SARS eFiling/New Taxpayer': 'R70',
     'SARS Tax Pin/Penalty': 'R100',
@@ -106,7 +105,8 @@ export interface HubSection {
 }
 
 export interface Hub {
-  icon: string
+  iconName: string
+  iconColor: string
   title: string
   grad: string
   desc: string
@@ -118,7 +118,8 @@ export interface Hub {
 
 export const HUBS: Record<HubId, Hub> = {
   print: {
-    icon: '🖨️',
+    iconName: 'Printer',
+    iconColor: '#A9D6F2',
     title: 'Print Hub',
     grad: 'linear-gradient(135deg, #1E6FA8, #0F3F66)',
     desc: 'Fast, clear and affordable printing for every need — from a single page to bulk jobs.',
@@ -127,46 +128,47 @@ export const HUBS: Record<HubId, Hub> = {
     previews: ['B&W Printing', 'Colour Printing', 'Photo Prints'],
     sections: [
       {
-        title: '🖨️ Printing',
+        title: 'Printing',
         items: [
           { name: 'Black & White', price: 'R5/page' },
           { name: 'Colour', price: 'R8/page' },
         ],
       },
       {
-        title: '📋 Copying',
+        title: 'Copying',
         items: [
           { name: 'Black & White', price: 'R3/page' },
           { name: 'Colour', price: 'R5/page' },
         ],
       },
       {
-        title: '🖼️ Photo Printing',
+        title: 'Photo Printing',
         items: [
-          { name: '4×6 Glossy', price: 'R20' },
+          { name: '4x6 Glossy', price: 'R20' },
           { name: 'A4 Glossy', price: 'R40' },
         ],
       },
     ],
   },
   doc: {
-    icon: '📄',
+    iconName: 'FileText',
+    iconColor: '#CDEB9F',
     title: 'Document Hub',
     grad: 'linear-gradient(135deg, #3E6B0E, #6FBF1A)',
-    desc: "From typing and printing to professional CVs and laminating — we handle your paperwork.",
+    desc: 'From typing and printing to professional CVs and laminating — we handle your paperwork.',
     tagStyle: { bg: '#EAFAF1', color: '#3E6B0E' },
     tagStyleDark: { bg: '#1A3010', color: '#CDEB9F' },
     previews: ['CV Services', 'Typing & Documents', 'Laminating'],
     sections: [
       {
-        title: '📝 Typing + Printing',
+        title: 'Typing + Printing',
         items: [
           { name: 'Black & White', price: 'R15/page' },
           { name: 'Colour', price: 'R18/page' },
         ],
       },
       {
-        title: '📄 CV Services',
+        title: 'CV Services',
         items: [
           { name: 'CV from Scratch', price: 'R30' },
           { name: 'CV Upgrade/Fix', price: 'R40' },
@@ -174,19 +176,19 @@ export const HUBS: Record<HubId, Hub> = {
         ],
       },
       {
-        title: '📃 Other Documents',
+        title: 'Other Documents',
         items: [
           { name: 'Affidavit / Letter', price: 'R20' },
         ],
       },
       {
-        title: '📠 Scanning',
+        title: 'Scanning',
         items: [
           { name: 'Scan to Digital', price: 'R5/page' },
         ],
       },
       {
-        title: '🛡️ Laminating',
+        title: 'Laminating',
         items: [
           { name: 'A5', price: 'R12' },
           { name: 'A4', price: 'R15' },
@@ -196,7 +198,8 @@ export const HUBS: Record<HubId, Hub> = {
     ],
   },
   design: {
-    icon: '🎨',
+    iconName: 'PaintBrush',
+    iconColor: '#F9D1B0',
     title: 'Design Hub',
     grad: 'linear-gradient(135deg, #B86F34, #F4A261)',
     desc: 'Professional designs for your brand, events and marketing — eye-catching and print-ready.',
@@ -205,7 +208,7 @@ export const HUBS: Record<HubId, Hub> = {
     previews: ['Logo Design', 'Flyers & Posters', 'Invitations'],
     sections: [
       {
-        title: '🧩 Logos',
+        title: 'Logos',
         items: [
           { name: 'Basic Logo', price: 'R300' },
           { name: 'Standard Logo', price: 'R500' },
@@ -213,14 +216,14 @@ export const HUBS: Record<HubId, Hub> = {
         ],
       },
       {
-        title: '💼 Business Cards',
+        title: 'Business Cards',
         items: [
           { name: 'Single Side', price: 'R120' },
           { name: 'Double Side', price: 'R180' },
         ],
       },
       {
-        title: '📢 Flyers & Posters',
+        title: 'Flyers & Posters',
         items: [
           { name: 'Simple', price: 'R150' },
           { name: 'Custom', price: 'R250' },
@@ -228,21 +231,21 @@ export const HUBS: Record<HubId, Hub> = {
         ],
       },
       {
-        title: '📱 Social Media',
+        title: 'Social Media',
         items: [
           { name: 'Post', price: 'R80' },
           { name: 'Post + Story', price: 'R120' },
         ],
       },
       {
-        title: '🎉 Invitations',
+        title: 'Invitations',
         items: [
           { name: 'Image/Static', price: 'R150' },
           { name: 'Video', price: 'R300' },
         ],
       },
       {
-        title: '🔄 Revisions',
+        title: 'Revisions',
         items: [
           { name: 'While Busy', price: 'R50' },
           { name: 'After Completion', price: 'R70' },
@@ -251,7 +254,8 @@ export const HUBS: Record<HubId, Hub> = {
     ],
   },
   eservice: {
-    icon: '🌐',
+    iconName: 'Globe',
+    iconColor: '#A9D6F2',
     title: 'E-Service Hub',
     grad: 'linear-gradient(135deg, #0F3F66, #15537D)',
     desc: "Government platforms made easy. We handle registrations, applications and updates so you don't have to stress.",
@@ -260,20 +264,20 @@ export const HUBS: Record<HubId, Hub> = {
     previews: ['SASSA', 'SARS eFiling', 'UIF & CSD'],
     sections: [
       {
-        title: '🏛️ SASSA',
+        title: 'SASSA',
         items: [
-          { name: 'Status Check', price: 'R10' },
+          { name: 'Status Check', price: 'R20' },
           { name: 'Payment/Balance Check', price: 'R15' },
-          { name: 'Update Details', price: 'R20' },
-          { name: 'Reapplication', price: 'R30' },
-          { name: 'SRD Application', price: 'R30' },
+          { name: 'Update Details', price: 'R30' },
+          { name: 'Reapplication', price: 'R40' },
+          { name: 'SRD Application', price: 'R40' },
           { name: 'Appeal', price: 'R40' },
-          { name: 'Banking Update', price: 'R30' },
-          { name: 'Grant Application', price: 'R70' },
+          { name: 'Banking Update', price: 'R60' },
+          { name: 'Grant Application', price: 'R80' },
         ],
       },
       {
-        title: '🧾 SARS',
+        title: 'SARS',
         items: [
           { name: 'Enquiry / Statement', price: 'R50' },
           { name: 'New Taxpayer / eFiling', price: 'R70' },
@@ -284,20 +288,20 @@ export const HUBS: Record<HubId, Hub> = {
         ],
       },
       {
-        title: '🪪 PSIRA',
+        title: 'PSIRA',
         items: [
-          { name: 'Status Check', price: 'R20' },
-          { name: 'Update / Certificate', price: 'R30' },
-          { name: 'Lost Certificate', price: 'R50' },
+          { name: 'PSIRA Status Check', price: 'R20' },
+          { name: 'Update / Certificate', price: 'R50' },
+          { name: 'Lost Certificate', price: 'R60' },
           { name: 'Renewal / New Registration', price: 'R80' },
           { name: 'ID Application', price: 'R100' },
         ],
       },
       {
-        title: '🌍 Online Applications',
+        title: 'Online Applications',
         items: [
-          { name: 'NSFAS Status Check', price: 'R15' },
-          { name: 'NSFAS Banking Update', price: 'R20' },
+          { name: 'NSFAS Status Check', price: 'R20' },
+          { name: 'NSFAS Banking Update', price: 'R30' },
           { name: 'Learnership Application', price: 'R30' },
           { name: 'Job / DPSA Application', price: 'R40' },
           { name: 'Bursary Application', price: 'R40' },
@@ -307,13 +311,13 @@ export const HUBS: Record<HubId, Hub> = {
         ],
       },
       {
-        title: '📧 Email Services',
+        title: 'Email Services',
         items: [
           { name: 'Setup / Send / Receive', price: 'R15' },
         ],
       },
       {
-        title: '🏢 Business Services',
+        title: 'Business Services',
         items: [
           { name: 'Good Standing Letter', price: 'R60' },
           { name: 'Google Business Setup', price: 'R80' },
@@ -325,7 +329,7 @@ export const HUBS: Record<HubId, Hub> = {
         ],
       },
       {
-        title: '📲 Digital Setup',
+        title: 'Digital Setup',
         items: [
           { name: 'Social Media Setup', price: 'R50' },
           { name: "Learner's Licence Booking", price: 'R50' },
@@ -335,16 +339,17 @@ export const HUBS: Record<HubId, Hub> = {
     ],
   },
   tech: {
-    icon: '💻',
+    iconName: 'Desktop',
+    iconColor: '#B8CCE0',
     title: 'Tech Hub',
     grad: 'linear-gradient(135deg, #2C3E50, #4A6785)',
-    desc: "From slow laptops to fresh Windows installs — everyday tech problems solved quickly and affordably.",
+    desc: 'From slow laptops to fresh Windows installs — everyday tech problems solved quickly and affordably.',
     tagStyle: { bg: '#F0F3F6', color: '#2C3E50' },
     tagStyleDark: { bg: '#1E2A38', color: '#B8CCE0' },
     previews: ['Windows Install', 'Virus Removal', 'PC Setup'],
     sections: [
       {
-        title: '⚙️ Software',
+        title: 'Software',
         items: [
           { name: 'Software Install', price: 'R80' },
           { name: 'Driver Installation', price: 'R80' },
@@ -352,14 +357,14 @@ export const HUBS: Record<HubId, Hub> = {
         ],
       },
       {
-        title: '🔌 Hardware',
+        title: 'Hardware',
         items: [
           { name: 'Printer Setup', price: 'R100' },
           { name: 'PC Setup', price: 'R200' },
         ],
       },
       {
-        title: '🛠️ Support',
+        title: 'Support',
         items: [
           { name: 'Troubleshooting', price: 'R150/hr' },
           { name: 'PC Cleanup', price: 'R150' },
@@ -368,7 +373,7 @@ export const HUBS: Record<HubId, Hub> = {
         ],
       },
       {
-        title: '🪟 Windows & Office',
+        title: 'Windows & Office',
         items: [
           { name: 'Windows Install (No Activation)', price: 'R250' },
           { name: 'Windows Install + Activation', price: 'R320' },
@@ -378,4 +383,4 @@ export const HUBS: Record<HubId, Hub> = {
       },
     ],
   },
-    }
+}
