@@ -1,15 +1,28 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowRight, X, ChevronDown } from "lucide-react"
+import { ArrowRight, X, ChevronDown, WhatsappLogo, Printer, FileText, PaintBrush, Globe, Desktop } from "@phosphor-icons/react"
 import { HUBS, type HubId } from "@/lib/data"
 import { cn } from "@/lib/utils"
 import { useTheme } from "next-themes"
 
+// ─── Hub icon renderer ───────────────────────────────────────────────────────
+
+function HubIcon({ name, color, size = 32 }: { name: string; color: string; size?: number }) {
+  const props = { size, color, weight: "fill" as const }
+  switch (name) {
+    case 'Printer': return <Printer {...props} />
+    case 'FileText': return <FileText {...props} />
+    case 'PaintBrush': return <PaintBrush {...props} />
+    case 'Globe': return <Globe {...props} />
+    case 'Desktop': return <Desktop {...props} />
+    default: return null
+  }
+}
+
 // ─── Service descriptions + WApp sample texts ───────────────────────────────
 
 const SERVICE_INFO: Record<string, { desc: string; waText: string }> = {
-  // PRINT HUB
   "Black & White": {
     desc: "Standard single-sided black & white printing on A4 80gsm paper.",
     waText: "Hi Apexbytes Hub! I need Black & White Printing. How many pages can I bring?",
@@ -18,27 +31,13 @@ const SERVICE_INFO: Record<string, { desc: string; waText: string }> = {
     desc: "Vibrant full-colour printing on A4 paper — great for forms, certificates and anything that needs to stand out.",
     waText: "Hi Apexbytes Hub! I need Colour Printing. How do I proceed?",
   },
-  "4×6 Glossy": {
-    desc: "High-quality glossy photo print at standard 4×6 size — ideal for portraits, memories and keepsakes.",
-    waText: "Hi Apexbytes Hub! I'd like to print 4×6 Glossy Photos. What format should I send my images in?",
+  "4x6 Glossy": {
+    desc: "High-quality glossy photo print at standard 4x6 size — ideal for portraits, memories and keepsakes.",
+    waText: "Hi Apexbytes Hub! I'd like to print 4x6 Glossy Photos. What format should I send my images in?",
   },
   "A4 Glossy": {
     desc: "Large glossy photo print on A4 — perfect for framing, events or professional display.",
     waText: "Hi Apexbytes Hub! I need an A4 Glossy Photo Print. How do I send you my image?",
-  },
-
-  // DOCUMENT HUB
-  "Black & White Typing": {
-    desc: "We type your content and print it in black & white — per page, ready to use.",
-    waText: "Hi Apexbytes Hub! I need a document typed and printed in B&W. Can you assist?",
-  },
-  "Colour Typing": {
-    desc: "We type your content and print it in full colour — per page, great for applications and forms.",
-    waText: "Hi Apexbytes Hub! I need a document typed and printed in colour. Can you assist?",
-  },
-  "Affidavit / Letter": {
-    desc: "We type your affidavit or formal letter — ready for signing or submission.",
-    waText: "Hi Apexbytes Hub! I need an affidavit or letter typed. Can you help?",
   },
   "CV from Scratch": {
     desc: "We build your CV from zero — professional layout, your details, ready to send to employers.",
@@ -51,6 +50,10 @@ const SERVICE_INFO: Record<string, { desc: string; waText: string }> = {
   "Cover Letter": {
     desc: "A professional cover letter tailored to the job you're applying for.",
     waText: "Hi Apexbytes Hub! I need a cover letter written. Can you help?",
+  },
+  "Affidavit / Letter": {
+    desc: "We type your affidavit or formal letter — ready for signing or submission.",
+    waText: "Hi Apexbytes Hub! I need an affidavit or letter typed. Can you help?",
   },
   "Scan to Digital": {
     desc: "We scan your physical document and send it to you as a PDF or JPG.",
@@ -68,8 +71,6 @@ const SERVICE_INFO: Record<string, { desc: string; waText: string }> = {
     desc: "Laminate your A3 poster or document — durable, clean and professional.",
     waText: "Hi Apexbytes Hub! I need an A3 document laminated. Are you available today?",
   },
-
-  // DESIGN HUB
   "Basic Logo": {
     desc: "A clean, simple logo — one concept, two revisions, delivered as PNG/PDF.",
     waText: "Hi Apexbytes Hub! I need a Basic Logo designed. What info do you need from me?",
@@ -126,8 +127,6 @@ const SERVICE_INFO: Record<string, { desc: string; waText: string }> = {
     desc: "A revision after the final file has been delivered — changes to an already completed design.",
     waText: "Hi Apexbytes Hub! I need a revision on a completed design. Can you assist?",
   },
-
-  // E-SERVICE HUB
   "Status Check": {
     desc: "We check your SASSA application or grant status online on your behalf.",
     waText: "Hi Apexbytes Hub! I need my SASSA status checked. Can I come in?",
@@ -280,8 +279,6 @@ const SERVICE_INFO: Record<string, { desc: string; waText: string }> = {
     desc: "We set up your WhatsApp Business profile with your business name, hours and catalogue.",
     waText: "Hi Apexbytes Hub! I need my WhatsApp Business set up. Can you help?",
   },
-
-  // TECH HUB
   "Software Install": {
     desc: "We install any software or application you need on your laptop or PC.",
     waText: "Hi Apexbytes Hub! I need software installed on my device. Can I bring it in?",
@@ -351,7 +348,6 @@ function SubServiceModal({ name, price, tagStyle, hubGrad, onClose }: SubService
     desc: "Professional service provided at Apexbytes Hub.",
     waText: `Hi Apexbytes Hub! I need help with ${name}. Can you assist?`,
   }
-
   const waUrl = `https://wa.me/27753338260?text=${encodeURIComponent(info.waText)}`
 
   return (
@@ -359,49 +355,31 @@ function SubServiceModal({ name, price, tagStyle, hubGrad, onClose }: SubService
       className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 bg-card rounded-[20px] max-w-[340px] w-full shadow-[0_24px_60px_rgba(0,0,0,0.4)] animate-in zoom-in-95 fade-in duration-200 overflow-hidden">
-        {/* Coloured top strip */}
         <div className="h-[6px] w-full" style={{ background: hubGrad }} />
-
         <div className="px-5 py-5">
-          {/* Close */}
           <button
             onClick={onClose}
             className="absolute top-4 right-4 w-[28px] h-[28px] rounded-full bg-secondary flex items-center justify-center hover:bg-muted active:scale-90 transition-all duration-200"
           >
             <X className="w-3.5 h-3.5 text-muted-foreground" />
           </button>
-
-          {/* Service name */}
           <span
             className="inline-block px-3 py-1 rounded-2xl text-[0.75rem] font-bold font-sans mb-3"
             style={{ background: tagStyle.bg, color: tagStyle.color }}
           >
             {name}
           </span>
-
-          {/* Description */}
-          <p className="text-foreground text-[0.88rem] leading-relaxed mb-4">
-            {info.desc}
-          </p>
-
-          {/* Price */}
-          <p className="text-[1rem] font-black font-sans mb-4" style={{ color: tagStyle.color }}>
-            {price}
-          </p>
-
-          {/* WhatsApp button */}
+          <p className="text-foreground text-[0.88rem] leading-relaxed mb-4">{info.desc}</p>
+          <p className="text-[1rem] font-black font-sans mb-4" style={{ color: tagStyle.color }}>{price}</p>
           <a
             href={waUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 w-full py-3 rounded-[11px] font-sans font-extrabold text-[0.88rem] bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-0.5"
           >
-            📲 WhatsApp Us
+            <WhatsappLogo weight="fill" className="w-5 h-5" /> WhatsApp Us
           </a>
         </div>
       </div>
@@ -409,7 +387,7 @@ function SubServiceModal({ name, price, tagStyle, hubGrad, onClose }: SubService
   )
 }
 
-// ─── Hub service modal (accordion) ──────────────────────────────────────────
+// ─── Hub service modal ────────────────────────────────────────────────────────
 
 interface ServiceModalProps {
   hubId: HubId | null
@@ -435,18 +413,20 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModal
         onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
       >
         <div
-          className="absolute inset-0 backdrop-blur-[16px] backdrop-brightness-[0.38] backdrop-saturate-50 bg-[rgba(8,20,40,0.6)] transition-opacity duration-300"
+          className="absolute inset-0 backdrop-blur-[16px] backdrop-brightness-[0.38] backdrop-saturate-50 bg-[rgba(8,20,40,0.6)]"
           onClick={onClose}
         />
         <div className="relative z-10 bg-card rounded-[24px] max-w-[560px] w-full max-h-[88vh] overflow-hidden flex flex-col shadow-[0_32px_80px_rgba(0,0,0,0.45)] animate-in zoom-in-95 fade-in duration-300">
           <div className="px-6 md:px-8 py-5 md:py-6 relative shrink-0" style={{ background: hub.grad }}>
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 w-[34px] h-[34px] rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/35 active:scale-90 transition-all duration-200 ease-in-out"
+              className="absolute top-4 right-4 w-[34px] h-[34px] rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/35 active:scale-90 transition-all duration-200"
             >
               <X className="w-4 h-4" />
             </button>
-            <span className="text-4xl mb-2 block">{hub.icon}</span>
+            <div className="mb-2">
+              <HubIcon name={hub.iconName} color={hub.iconColor} size={36} />
+            </div>
             <h2 className="font-sans font-black text-xl md:text-2xl text-white">{hub.title}</h2>
           </div>
 
@@ -463,9 +443,8 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModal
                     className="flex items-center justify-between w-full px-4 py-3 bg-secondary hover:bg-muted active:scale-[0.99] transition-all duration-200 ease-in-out cursor-pointer select-none"
                   >
                     <span className="font-sans font-extrabold text-[0.88rem] text-foreground">{section.title}</span>
-                    <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform duration-300 ease-in-out", openAccordion === idx && "rotate-180")} />
+                    <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform duration-300", openAccordion === idx && "rotate-180")} />
                   </button>
-
                   <div className={cn("transition-all duration-300 ease-in-out overflow-hidden", openAccordion === idx ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0")}>
                     <div className="px-4 py-3 bg-background">
                       <p className="text-[0.73rem] text-muted-foreground mb-2 italic">Tap a service to see details & price</p>
@@ -492,9 +471,9 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModal
                 href="https://wa.me/27753338260"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 text-center py-3 px-4 rounded-xl font-sans font-extrabold text-[0.88rem] bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-0.5"
+                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-sans font-extrabold text-[0.88rem] bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-0.5"
               >
-                WhatsApp Us
+                <WhatsappLogo weight="fill" className="w-5 h-5" /> WhatsApp Us
               </a>
               <button
                 onClick={() => { onClose(); onNavigateContact() }}
@@ -507,7 +486,6 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModal
         </div>
       </div>
 
-      {/* Sub-service detail modal */}
       {subService && (
         <SubServiceModal
           name={subService.name}
@@ -540,10 +518,10 @@ function HubCard({ hubId, onSelect }: HubCardProps) {
       className="bg-card rounded-[22px] shadow-[var(--shadow)] border-2 border-[var(--card-border)] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden flex flex-col hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(30,111,168,0.18)] active:scale-[0.98]"
     >
       <div className="px-5 py-4 flex items-center gap-3" style={{ background: hub.grad }}>
-        <span className="text-[2rem] shrink-0">{hub.icon}</span>
+        <HubIcon name={hub.iconName} color={hub.iconColor} size={28} />
         <h3 className="font-sans font-black text-lg text-white">{hub.title}</h3>
-        <span className="ml-auto w-[30px] h-[30px] bg-white/20 rounded-full flex items-center justify-center text-white text-sm shrink-0">
-          <ArrowRight className="w-4 h-4" />
+        <span className="ml-auto w-[30px] h-[30px] bg-white/20 rounded-full flex items-center justify-center shrink-0">
+          <ArrowRight weight="bold" className="w-4 h-4 text-white" />
         </span>
       </div>
       <div className="px-5 py-4 flex-1">
@@ -551,20 +529,20 @@ function HubCard({ hubId, onSelect }: HubCardProps) {
           {hub.previews.map((preview) => (
             <span
               key={preview}
-              className="inline-block px-3 py-1 rounded-[14px] text-[0.73rem] font-bold font-sans transition-all duration-200 ease-in-out"
+              className="inline-block px-3 py-1 rounded-[14px] text-[0.73rem] font-bold font-sans"
               style={{ background: tagStyle.bg, color: tagStyle.color }}
             >
               {preview}
             </span>
           ))}
         </div>
-        <p className="text-[0.8rem] text-muted-foreground italic">tap to see prices & full list...</p>
+        <p className="text-[0.8rem] text-muted-foreground italic">Tap to see prices & full list...</p>
       </div>
     </div>
   )
 }
 
-// ─── Services page ───────────────────────────────────────────────────────────
+// ─── Services page ────────────────────────────────────────────────────────────
 
 interface ServicesPageProps {
   onNavigate: (page: string) => void
@@ -605,4 +583,4 @@ export function ServicesPage({ onNavigate }: ServicesPageProps) {
       )}
     </>
   )
-          } 
+}
