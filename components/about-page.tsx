@@ -1,8 +1,48 @@
 "use client"
 
-import { Target, Heart, Lightning, WhatsappLogo, ShieldCheck } from "@phosphor-icons/react"
+import { useState } from "react"
+import { 
+  Target, 
+  Heart, 
+  Lightning, 
+  WhatsappLogo, 
+  ShieldCheck,
+  Desktop,
+  Printer,
+  Scissors,
+  DeviceMobile
+} from "@phosphor-icons/react"
 
 export function AboutPage() {
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null)
+
+  const standards = [
+    {
+      id: 1,
+      icon: Desktop,
+      title: "Premium Vector Accuracy",
+      description: "We design entirely on our studio workstation using professional vector tools. No generic, low-quality templates—every logo, card layout, and letterhead is built custom for sharp execution at any size.",
+    },
+    {
+      id: 2,
+      icon: Printer,
+      title: "Megatank Economy Prints",
+      description: "Equipped with the high-yield Canon Pixma G3420 continuous ink system, we provide rich, vibrant color layouts and documents at a fraction of the price of massive commercial retail chains.",
+    },
+    {
+      id: 3,
+      icon: Scissors,
+      title: "Hand-Crafted Sealing & Care",
+      description: "We take genuine pride in manual precision. Using our Bell laminating machine, professional scissors, and Bostik adhesives, every single card, document pack, and flyer is individually hand-cut and sealed to tactile perfection.",
+    },
+    {
+      id: 4,
+      icon: DeviceMobile,
+      title: "Direct Samsung Control Hub",
+      description: "No long automated queues or unreturned emails. Our business runs directly via a secure Samsung mobile pipeline on WhatsApp, ensuring your portal tracking, updates, and orders are answered instantly.",
+    }
+  ]
+
   return (
     <div className="animate-fade-up">
       {/* Hero */}
@@ -79,6 +119,60 @@ export function AboutPage() {
               ))}
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ── NEW DEDICATED QUALITY STANDARDS TRUST GRID ── */}
+      <section className="py-16 px-4 bg-gray-50 dark:bg-zinc-950 border-t border-b border-gray-200 dark:border-zinc-900 transition-colors duration-300">
+        <div className="max-w-[1000px] mx-auto">
+          
+          <div className="text-center mb-12">
+            <h2 className="font-sans font-black text-2xl md:text-3xl text-[#1E6FA8] dark:text-[#A9D6F2] mb-3">
+              Our Everyday Toolkit Standards
+            </h2>
+            <p className="text-muted-foreground text-sm max-w-xl mx-auto">
+              How we combine professional technical accuracy with hand-finished local care to bring premium results straight to your doorstep.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {standards.map((item) => {
+              const Icon = item.icon
+              const isHovered = hoveredCard === item.id
+              
+              return (
+                <div
+                  key={item.id}
+                  onMouseEnter={() => setHoveredCard(item.id)}
+                  onMouseLeave={() => setHoveredCard(null)}
+                  className="p-5 rounded-[20px] bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 transition-all duration-300 shadow-sm flex flex-col h-full"
+                  style={{
+                    borderColor: isHovered ? "#1E6FA8" : "",
+                    transform: isHovered ? "translateY(-4px)" : "none"
+                  }}
+                >
+                  <div 
+                    className="w-11 h-11 rounded-[14px] flex items-center justify-center mb-4 transition-colors duration-300"
+                    style={{
+                      backgroundColor: isHovered ? "#1E6FA8" : "rgba(30, 111, 168, 0.1)",
+                      color: isHovered ? "#FFFFFF" : "#1E6FA8"
+                    }}
+                  >
+                    <Icon weight="bold" className="w-5 h-5" />
+                  </div>
+
+                  <h3 className="font-sans font-black text-base text-foreground mb-2 leading-tight">
+                    {item.title}
+                  </h3>
+                  
+                  <p className="text-muted-foreground text-[0.82rem] md:text-sm leading-relaxed grow">
+                    {item.description}
+                  </p>
+                </div>
+              )
+            })}
+          </div>
+
         </div>
       </section>
 
