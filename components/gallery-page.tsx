@@ -164,6 +164,21 @@ export function GalleryPage({ onNavigate }: GalleryPageProps) {
       <section className="px-4 py-10">
         <div className="max-w-[1200px] mx-auto">
           
+          {/* ── CENTRALIZED PORTFOLIO VISUAL NOTICE BANNER ── */}
+          <div className="w-full max-w-[1200px] mx-auto mb-10 p-5 rounded-[18px] bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/40 flex flex-col sm:flex-row gap-4 items-center sm:items-start text-center sm:text-left transition-colors duration-300 shadow-sm">
+            <div className="w-10 h-10 rounded-[12px] bg-[#F4A261] text-white flex items-center justify-center shrink-0 shadow-sm font-sans font-black text-lg select-none">
+              !
+            </div>
+            <div className="space-y-1">
+              <h4 className="font-sans font-black text-sm text-[#D9894B] dark:text-[#F9D1B0]">
+                A Note on Our Portfolio Visuals
+              </h4>
+              <p className="text-muted-foreground text-[0.82rem] md:text-sm leading-relaxed">
+                Please note that the showcase graphics, mockups, and layout workstation environments displayed below serve as our premium design benchmarks and upcoming studio expansion targets. Every print run, custom vector layout, and administrative document pack we compile is individually hand-crafted to meet these exact corporate precision and alignment standards using our agile home-based toolkit.
+              </p>
+            </div>
+          </div>
+
           {/* Tabs — Only clicked tab shows brand Blue, others show clean Gray */}
           <div className="flex flex-wrap justify-center gap-2 mb-8">
             {CATEGORIES.map((cat) => {
@@ -340,3 +355,4 @@ export function GalleryPage({ onNavigate }: GalleryPageProps) {
     </div>
   )
 }
+ 
