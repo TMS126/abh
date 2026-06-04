@@ -8,6 +8,11 @@ import {
   MapPin,
   Clock,
   PaperPlaneTilt,
+  Printer,
+  FileText,
+  Monitor,
+  Palette,
+  Globe,
 } from "@phosphor-icons/react"
 
 export function ContactPage() {
@@ -66,20 +71,51 @@ export function ContactPage() {
         <div className="max-w-[980px] mx-auto grid md:grid-cols-2 gap-8 md:gap-12">
           <div>
             <h2 className="font-sans font-black text-xl md:text-2xl text-blue-3 dark:text-blue-4 mb-2">Get In Touch</h2>
-            <p className="text-muted-foreground text-[0.9rem] mb-4">
+            <p className="text-muted-foreground text-[0.9rem] mb-6">
               {"WhatsApp, call, email or visit us in Kgotsong — we're always happy to help."}
             </p>
 
-            {/* Hours */}
-            <div className="bg-secondary rounded-[14px] p-4 mb-4 transition-colors duration-300">
-              <div className="flex items-center gap-2 mb-2">
-                <Clock weight="fill" className="w-4 h-4 text-[#1E6FA8]" />
-                <h4 className="font-sans font-bold text-blue-3 dark:text-blue-4 text-[0.85rem]">Business Hours</h4>
+            {/* Premium Business Hours Block */}
+            <div className="bg-secondary rounded-[18px] p-5 mb-6 border border-border/60 transition-colors duration-300">
+              <div className="flex items-center gap-2 mb-4 border-b border-border/40 pb-2.5">
+                <Clock weight="bold" className="w-5 h-5 text-[#1E6FA8]" />
+                <h4 className="font-sans font-black text-blue-3 dark:text-blue-4 text-[0.95rem] uppercase tracking-wider">Business Hours</h4>
               </div>
-              <p className="text-[0.82rem] text-muted-foreground">🖨️ Print & 📄 Document Hub</p>
-              <p className="text-[0.82rem] text-foreground font-semibold mb-2">Mon – Sun: 07:00 – 20:00 · Open on holidays</p>
-              <p className="text-[0.82rem] text-muted-foreground">💻 Tech, 🎨 Design & 🌐 E-Service Hub</p>
-              <p className="text-[0.82rem] text-foreground font-semibold">Mon – Fri: 09:00 – 17:00 · Sat: 09:00 – 12:00 · Sun & Holidays: Closed</p>
+              
+              <div className="flex flex-col gap-4">
+                {/* Division Group 1 */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-[#1E6FA8] dark:text-[#A9D6F2] font-sans font-bold text-[0.85rem]">
+                    <Printer weight="bold" className="w-4 h-4 text-[#1E6FA8]" />
+                    <span>Print Hub</span>
+                    <span className="text-muted-foreground/40 font-normal">|</span>
+                    <FileText weight="bold" className="w-4 h-4 text-[#6FBF1A]" />
+                    <span>Document Hub</span>
+                  </div>
+                  <p className="text-[0.85rem] text-foreground font-medium pl-6">
+                    Mon – Sun: <span className="font-bold text-[#6FBF1A]">07:00 – 20:00</span> <span className="text-muted-foreground text-xs ml-1">(Open on holidays)</span>
+                  </p>
+                </div>
+
+                {/* Division Group 2 */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-[#1E6FA8] dark:text-[#A9D6F2] font-sans font-bold text-[0.85rem]">
+                    <Monitor weight="bold" className="w-4 h-4 text-[#1E6FA8]" />
+                    <span>Tech Hub</span>
+                    <span className="text-muted-foreground/40 font-normal">|</span>
+                    <Palette weight="bold" className="w-4 h-4 text-[#F4A261]" />
+                    <span>Design Hub</span>
+                    <span className="text-muted-foreground/40 font-normal">|</span>
+                    <Globe weight="bold" className="w-4 h-4 text-[#6FBF1A]" />
+                    <span>E-Service Hub</span>
+                  </div>
+                  <div className="text-[0.85rem] text-foreground font-medium pl-6 space-y-0.5">
+                    <p>Mon – Fri: <span className="font-bold">09:00 – 17:00</span></p>
+                    <p>Sat: <span className="font-bold">09:00 – 12:00</span></p>
+                    <p className="text-muted-foreground text-xs font-semibold">Sun & Holidays: <span className="text-[#D9894B]">Closed</span></p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="flex flex-col gap-3">
@@ -136,11 +172,11 @@ export function ContactPage() {
                 className="w-full px-4 py-3 border-2 border-border rounded-[10px] bg-background text-foreground text-[0.88rem] transition-all duration-200 ease-in-out focus:border-primary outline-none"
               >
                 <option value="">-- Select a hub --</option>
-                <option>🖨️ Print Hub</option>
-                <option>📄 Document Hub</option>
-                <option>🎨 Design Hub</option>
-                <option>🌐 E-Service Hub</option>
-                <option>💻 Tech Hub</option>
+                <option>Print Hub</option>
+                <option>Document Hub</option>
+                <option>Design Hub</option>
+                <option>E-Service Hub</option>
+                <option>Tech Hub</option>
                 <option>Not Sure — Please Advise</option>
               </select>
             </div>
