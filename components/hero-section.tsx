@@ -1,7 +1,8 @@
 "use client"
 
+import { useState, useEffect, useRef } from "react"
 import { ArrowRight, WhatsappLogo } from "@phosphor-icons/react"
-import { useEffect, useRef } from "react"
+import { cn } from "@/lib/utils"
 
 interface HeroSectionProps {
   onNavigate: (page: string) => void
@@ -9,7 +10,7 @@ interface HeroSectionProps {
 
 const COLORS = [
   "#1E6FA8", "#A9D6F2",
-  "#6FBF1A", "#548F14", "#3E6B0E",
+  "#6FBF1A", "#3E6B0E",
   "#D9894B", "#F9D1B0",
 ]
 
@@ -19,6 +20,10 @@ function pick(arr: string[]) {
 
 export function HeroSection({ onNavigate }: HeroSectionProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const ctaButtonRef = useRef<HTMLButtonElement>(null)
+  
+  // Animation state handling for the dead-click pop out focus
+  const [isCtaPopping, setIsCtaPopping] = useState(false)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -113,11 +118,37 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     }
   }, [])
 
+  // Captures any click hitting a dead background zone on the hero layout
+  const handleDeadClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement
+    
+    // Safely bypass if user clicks an actual button, text input, link or anchor tag
+    if (
+      target.closest("button") || 
+      target.closest("a") || 
+      target.closest("[role='button']") ||
+      window.getSelection()?.toString()
+    ) {
+      return
+    }
+
+    // Fire smooth focus zoom scale manipulation hook
+    setIsCtaPopping(true)
+
+    // Clear hook cleanly after css transition cycle completes
+    setTimeout(() => {
+      setIsCtaPopping(false)
+    }, 500)
+  }
+
   return (
-    <section className="relative min-h-[calc(100vh-68px)] flex items-center px-4 md:px-8 py-16 md:py-20 overflow-hidden">
+    <section 
+      onClick={handleDeadClick}
+      className="relative min-h-[calc(100vh-68px)] flex items-center px-4 md:px-8 py-16 md:py-20 overflow-hidden cursor-default select-none animate-fade-in"
+    >
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 w-full h-full"
+        className="absolute inset-0 w-full h-full pointer-events-none"
         style={{ display: "block" }}
       />
       <div
@@ -128,7 +159,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
         }}
       />
 
-      <div className="max-w-[1200px] mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center relative z-10">
+      <div className="max-w-[1200px] mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center relative z-10 w-full">
         <div className="text-center md:text-left">
           <h1 className="font-sans font-black text-3xl md:text-4xl lg:text-[3.1rem] text-white leading-tight mb-4 md:mb-5 text-balance drop-shadow-md">
             Your <span className="text-[#F4A261]">Local Tech </span> &amp; Print Partner
@@ -136,24 +167,34 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
           <p className="text-white/75 text-base md:text-lg leading-relaxed mb-6 md:mb-8 text-pretty drop-shadow-sm">
             From printing your documents to navigating government services — we make it simple, fast, and friendly. Right here in Kgotsong.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start">
+          
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start items-center">
+            {/* ── THE ZOOM ATTENTION TARGET ACTION BUTTON ── */}
             <button
+              ref={ctaButtonRef}
               onClick={() => onNavigate("services")}
-              className="inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base bg-[#F4A261] text-white hover:bg-[#D9894B] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(244,162,97,0.4)]"
+              className={cn(
+                "w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base text-white transition-all duration-300 ease-out transform-gpu",
+                isCtaPopping
+                  ? "bg-[#6FBF1A] border-2 border-[#548F14] scale-115 rotate-1 shadow-[0_0_35px_rgba(111,191,26,0.55)] z-50"
+                  : "bg-[#F4A261] hover:bg-[#D9894B] hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(244,162,97,0.4)] active:scale-95"
+              )}
             >
               See Our Services <ArrowRight weight="bold" className="w-4 h-4" />
             </button>
+            
             <a
               href="https://wa.me/27753338260"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(37,211,102,0.35)]"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(37,211,102,0.35)]"
             >
               <WhatsappLogo weight="fill" className="w-5 h-5" /> WhatsApp Us
             </a>
           </div>
         </div>
 
+        {/* Info Grid Component Block Display Card */}
         <div className="bg-white/10 backdrop-blur-[16px] border border-white/20 rounded-[22px] p-5 md:p-7 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
           <h3 className="font-sans font-extrabold text-base text-white mb-4">What We Offer</h3>
           <div className="flex flex-wrap gap-2">
