@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowRight, X, ChevronDown, WhatsappLogo, Printer, FileText, PaintBrush, Globe, Desktop } from "@phosphor-icons/react"
+import { ArrowRight, X, ChevronDown, WhatsappLogo, Printer, FileText, PaintBrush, Globe, Desktop, ChatCircle } from "@phosphor-icons/react"
 import { HUBS, type HubId } from "@/lib/data"
 import { cn } from "@/lib/utils"
 import { useTheme } from "next-themes"
@@ -287,18 +287,6 @@ const SERVICE_INFO: Record<string, { desc: string; waText: string }> = {
     desc: "We find and install the correct drivers for your printer, sound, display or other hardware.",
     waText: "Hi Apexbytes Hub! I need drivers installed on my PC. Can I bring it in?",
   },
-  "App / Office Updates": {
-    desc: "We update your apps or Microsoft Office to the latest version.",
-    waText: "Hi Apexbytes Hub! I need my apps or Office updated. Can I bring my device?",
-  },
-  "Printer Setup": {
-    desc: "We set up your printer — install drivers, connect to your PC or laptop, and test print.",
-    waText: "Hi Apexbytes Hub! I need my printer set up. Can I bring it in?",
-  },
-  "PC Setup": {
-    desc: "We unbox, assemble and configure your new PC or laptop — ready to use out of the box.",
-    waText: "Hi Apexbytes Hub! I need my PC set up. Can I bring it in?",
-  },
   "Troubleshooting": {
     desc: "We diagnose and fix whatever issue your device has — billed per hour.",
     waText: "Hi Apexbytes Hub! I need help troubleshooting my device. Can I bring it in?",
@@ -477,9 +465,9 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModal
               </a>
               <button
                 onClick={() => { onClose(); onNavigateContact() }}
-                className="flex-1 text-center py-3 px-4 rounded-xl font-sans font-extrabold text-[0.88rem] bg-secondary text-blue-1 border-2 border-blue-4 hover:bg-blue-4 active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-0.5"
+                className="flex-1 flex items-center justify-center gap-2 text-center py-3 px-4 rounded-xl font-sans font-extrabold text-[0.88rem] bg-secondary text-blue-1 border-2 border-blue-4 hover:bg-blue-4 active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-0.5"
               >
-                Send Enquiry
+                <ChatCircle weight="fill" className="w-5 h-5" /> Send Enquiry
               </button>
             </div>
           </div>
@@ -583,4 +571,4 @@ export function ServicesPage({ onNavigate }: ServicesPageProps) {
       )}
     </>
   )
-}
+          } 
