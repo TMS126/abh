@@ -1,5 +1,7 @@
 "use client"
 
+import { Target, Heart, Lightning, WhatsappLogo, ShieldCheck } from "@phosphor-icons/react"
+
 export function AboutPage() {
   return (
     <div className="animate-fade-up">
@@ -28,12 +30,24 @@ export function AboutPage() {
             {/* Values */}
             <div className="flex flex-col gap-4 mt-6">
               {[
-                { icon: "🎯", title: "We Keep It Simple", desc: "No confusing jargon. We explain everything in plain language." },
-                { icon: "❤️", title: "Community First", desc: "We serve our neighbourhood with pride and genuine care." },
-                { icon: "⚡", title: "Fast & Reliable", desc: "We respect your time and always deliver with consistency." },
-              ].map((item) => (
-                <div key={item.title} className="flex gap-4 items-start">
-                  <div className="w-10 h-10 rounded-[11px] bg-green-4 dark:bg-[#1A3010] flex items-center justify-center text-lg shrink-0">
+                { 
+                  icon: <Target weight="fill" className="w-5 h-5 text-[#6FBF1A]" />, 
+                  title: "We Keep It Simple", 
+                  desc: "No confusing jargon. We explain everything in plain language." 
+                },
+                { 
+                  icon: <Heart weight="fill" className="w-5 h-5 text-[#6FBF1A]" />, 
+                  title: "Community First", 
+                  desc: "We serve our neighbourhood with pride and genuine care." 
+                },
+                { 
+                  icon: <Lightning weight="fill" className="w-5 h-5 text-[#6FBF1A]" />, 
+                  title: "Fast & Reliable", 
+                  desc: "We respect your time and always deliver with consistency." 
+                },
+              ].map((item, index) => (
+                <div key={index} className="flex gap-4 items-start">
+                  <div className="w-10 h-10 rounded-[11px] bg-green-4 dark:bg-[#1A3010] flex items-center justify-center shrink-0">
                     {item.icon}
                   </div>
                   <div>
@@ -53,11 +67,13 @@ export function AboutPage() {
               {[
                 { value: "5", label: "Hubs" },
                 { value: "50+", label: "Services" },
-                { value: "💬", label: "WhatsApp Ready" },
-                { value: "✅", label: "Community Trusted" },
-              ].map((stat) => (
-                <div key={stat.label} className="bg-white/10 rounded-[13px] p-4 text-center">
-                  <div className="font-sans font-black text-2xl md:text-3xl text-[#F4A261]">{stat.value}</div>
+                { value: <WhatsappLogo weight="fill" className="w-7 h-7 text-[#F4A261] mx-auto" />, label: "WhatsApp Ready" },
+                { value: <ShieldCheck weight="fill" className="w-7 h-7 text-[#F4A261] mx-auto" />, label: "Community Trusted" },
+              ].map((stat, index) => (
+                <div key={index} className="bg-white/10 rounded-[13px] p-4 text-center flex flex-col justify-center items-center min-h-[92px]">
+                  <div className="font-sans font-black text-2xl md:text-3xl text-[#F4A261] flex items-center justify-center">
+                    {stat.value}
+                  </div>
                   <div className="text-[0.72rem] text-white/70 mt-1">{stat.label}</div>
                 </div>
               ))}
