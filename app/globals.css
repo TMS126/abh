@@ -141,3 +141,20 @@
 .animate-fade-up {
   animation: fadeUp 0.5s ease both;
 }
+
+/* ── Flat emoji font override ── */
+@font-face {
+  font-family: 'Noto Emoji';
+  src: local('Noto Emoji');
+  unicode-range: U+1F000-1FFFF, U+2600-27BF, U+2300-23FF, U+2B50, U+2764, U+FE0F;
+}
+
+* {
+  font-variant-emoji: text;
+}
+
+.emoji, 
+[class*="emoji"],
+body {
+  font-family: var(--font-nunito), var(--font-dm-sans), 'Noto Emoji', sans-serif;
+}
