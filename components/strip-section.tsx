@@ -1,11 +1,13 @@
 "use client"
 
+import { Rocket, CurrencyDollar, HandHeart, MapPin, WhatsappLogo } from "@phosphor-icons/react"
+
 export function StripSection() {
   const items = [
-    { icon: "🚀", title: "Fast Turnaround", desc: "No long waits, quick service" },
-    { icon: "💰", title: "Affordable Rates", desc: "Fair pricing for everyone" },
-    { icon: "🤝", title: "Friendly Help", desc: "We explain, never judge" },
-    { icon: "📍", title: "Walk-ins Welcome", desc: "5878 Mpumalanga, Kgotsong, Bothaville 9660" },
+    { icon: <Rocket weight="fill" className="w-6 h-6 text-[#1E6FA8]" />, title: "Fast Turnaround", desc: "No long waits, quick service" },
+    { icon: <CurrencyDollar weight="fill" className="w-6 h-6 text-[#6FBF1A]" />, title: "Affordable Rates", desc: "Fair pricing for everyone" },
+    { icon: <HandHeart weight="fill" className="w-6 h-6 text-[#F4A261]" />, title: "Friendly Help", desc: "We explain, never judge" },
+    { icon: <MapPin weight="fill" className="w-6 h-6 text-[#1E6FA8]" />, title: "Walk-ins Welcome", desc: "5878 Mpumalanga, Kgotsong, Bothaville 9660" },
   ]
 
   return (
@@ -13,7 +15,7 @@ export function StripSection() {
       <div className="max-w-[1080px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {items.map((item) => (
           <div key={item.title} className="flex items-center gap-4 transition-all duration-200 ease-in-out hover:-translate-y-1">
-            <div className="w-[50px] h-[50px] bg-card rounded-[13px] flex items-center justify-center text-2xl shadow-[var(--shadow)] shrink-0 transition-transform duration-200 ease-in-out">
+            <div className="w-[50px] h-[50px] bg-card rounded-[13px] flex items-center justify-center shadow-[var(--shadow)] shrink-0">
               {item.icon}
             </div>
             <div>
@@ -47,6 +49,7 @@ export function CtaBar({ title, description, buttonText, buttonHref, onButtonCli
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 px-7 py-3 rounded-[28px] font-sans font-extrabold text-[0.95rem] bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(37,211,102,0.4)]"
         >
+          <WhatsappLogo weight="fill" className="w-5 h-5" />
           {buttonText}
         </a>
       ) : (
@@ -54,6 +57,7 @@ export function CtaBar({ title, description, buttonText, buttonHref, onButtonCli
           onClick={onButtonClick}
           className="inline-flex items-center gap-2 px-7 py-3 rounded-[28px] font-sans font-extrabold text-[0.95rem] bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(37,211,102,0.4)]"
         >
+          <WhatsappLogo weight="fill" className="w-5 h-5" />
           {buttonText}
         </button>
       )}
