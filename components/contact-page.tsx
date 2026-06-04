@@ -107,7 +107,7 @@ export function ContactPage() {
                     <span>Document Hub</span>
                   </div>
                   <p className="text-[0.85rem] text-foreground font-medium pl-6">
-                    Mon – Sun: <span className="font-bold text-[#6FBF1A]">07:00 – 20:00</span> <span className="text-muted-foreground text-xs ml-1">(Open on holidays)</span>
+                    Mon – Sun: <span className="font-bold">07:00 – 20:00</span> <span className="text-muted-foreground text-xs ml-1">(Open on holidays)</span>
                   </p>
                 </div>
 
