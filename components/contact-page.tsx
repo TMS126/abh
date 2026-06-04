@@ -19,7 +19,7 @@ export function ContactPage() {
   })
 
   const handleSubmit = () => {
-    const text = `Hello Apexbytes Hub! 👋\n\nName: ${formData.name || "N/A"}\nPhone: ${formData.phone || "N/A"}\nService: ${formData.service || "N/A"}\nMessage: ${formData.message || "N/A"}`
+    const text = `Hello Apexbytes Hub! \n\nName: ${formData.name || "N/A"}\nPhone: ${formData.phone || "N/A"}\nService: ${formData.service || "N/A"}\nMessage: ${formData.message || "N/A"}`
     window.open(`https://wa.me/27753338260?text=${encodeURIComponent(text)}`, "_blank")
   }
 
