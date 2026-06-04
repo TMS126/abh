@@ -32,11 +32,10 @@ function lerpColor(a: string, b: string, t: number) {
 }
 
 export function HeroSection({ onNavigate }: HeroSectionProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const btnRef    = useRef<HTMLButtonElement>(null)
+  const canvasRef  = useRef<HTMLCanvasElement>(null)
+  const btnRef     = useRef<HTMLButtonElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // ── Canvas orb animation ──────────────────────────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -80,16 +79,14 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
         if (orb.y < -0.1) orb.y = 1.1
         if (orb.y > 1.1)  orb.y = -0.1
 
-        const cx     = orb.x * w
-        const cy     = orb.y * h
+        const px     = orb.x * w
+        const py     = orb.y * h
         const radius = orb.r * Math.max(w, h)
         const color  = lerpColor(orb.color, orb.nextColor, orb.t)
-        const { r, g, b } = hexToRgb(color.slice(4, -1).split(",").reduce(
-          (acc, v, i) => { acc[i] = v; return acc }, [] as string[]
-        ) as unknown as { 0: string; 1: string; 2: string })
+        const rgb    = hexToRgb(orb.color)
 
-        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius)
-        grad.addColorStop(0, `rgba(${hexToRgb(orb.color).r},${hexToRgb(orb.color).g},${hexToRgb(orb.color).b},0.38)`)
+        const grad = ctx.createRadialGradient(px, py, 0, px, py, radius)
+        grad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},0.38)`)
         grad.addColorStop(1, "rgba(0,0,0,0)")
         ctx.fillStyle = grad
         ctx.fillRect(0, 0, w, h)
@@ -105,7 +102,6 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     return () => { cancelAnimationFrame(animId); ro.disconnect() }
   }, [])
 
-  // ── Dead-click handler ────────────────────────────────────────────────
   const handleDeadClick = useCallback((e: React.MouseEvent<HTMLElement>) => {
     const target = e.target as HTMLElement
     if (
@@ -118,36 +114,33 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     const btn = btnRef.current
     if (!btn) return
 
-    // Clear any running timeout
     if (timeoutRef.current) clearTimeout(timeoutRef.current)
-
-    // Apply zoom class directly on the DOM node — no re-render needed
-    btn.classList.add("dead-click-zoom")
+    btn.classList.remove("dead-click-invert")
+    // force reflow so animation restarts if clicked again mid-animation
+    void btn.offsetWidth
+    btn.classList.add("dead-click-invert")
 
     timeoutRef.current = setTimeout(() => {
-      btn.classList.remove("dead-click-zoom")
-    }, 420)
+      btn.classList.remove("dead-click-invert")
+    }, 500)
   }, [])
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current) }
   }, [])
 
   return (
     <>
-      {/* Dead-click zoom keyframe — injected once */}
-     
-style>{`
-  @keyframes dead-click-invert {
-    0%   { background: #F4A261; color: #fff; border: 2px solid transparent; box-shadow: none; }
-    40%  { background: transparent; color: #A8E05A; border: 2px solid #A8E05A; box-shadow: 0 0 24px rgba(168,224,90,0.5); }
-    100% { background: #F4A261; color: #fff; border: 2px solid transparent; box-shadow: none; }
-  }
-  .dead-click-invert {
-    animation: dead-click-invert 420ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  }
-`}</style>
+      <style>{`
+        @keyframes dead-click-invert {
+          0%   { background: #F4A261; color: #ffffff; border: 2px solid transparent; box-shadow: none; }
+          40%  { background: transparent; color: #A8E05A; border: 2px solid #A8E05A; box-shadow: 0 0 28px rgba(168,224,90,0.55); }
+          100% { background: #F4A261; color: #ffffff; border: 2px solid transparent; box-shadow: none; }
+        }
+        .dead-click-invert {
+          animation: dead-click-invert 500ms cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+        }
+      `}</style>
 
       <section
         aria-label="Hero"
@@ -180,8 +173,8 @@ style>{`
               <button
                 ref={btnRef}
                 onClick={() => onNavigate("services")}
-                style={{ willChange: "transform" }}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base text-white bg-[#F4A261] hover:bg-[#D9894B] hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(244,162,97,0.4)] active:scale-95 transition-all duration-200 ease-in-out"
+                style={{ willChange: "transform, background, color, border, box-shadow" }}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base text-white bg-[#F4A261] border-2 border-transparent hover:bg-[#D9894B] hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(244,162,97,0.4)] active:scale-95 transition-all duration-200 ease-in-out"
               >
                 See Our Services <ArrowRight weight="bold" className="w-4 h-4" />
               </button>
