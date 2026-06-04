@@ -20,14 +20,17 @@ function pick(arr: string[]) {
 export function HeroSection({ onNavigate }: HeroSectionProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const sectionRef = useRef<HTMLElement>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
 
-  // Floating CTA state
-  const [floatPos, setFloatPos] = useState<{ x: number; y: number } | null>(null)
-  const [isFloating, setIsFloating] = useState(false)
-  const [trail, setTrail] = useState<{ x: number; y: number; id: number }[]>([])
-  const trailIdRef = useRef(0)
-  const releaseTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Drag state
+  const [dragging, setDragging] = useState(false)
+  const [pos, setPos] = useState({ x: 0, y: 0 }) // offset from origin in px
+  const originRef = useRef<{ x: number; y: number } | null>(null)
+  const rafRef = useRef<number | null>(null)
+  const targetPos = useRef({ x: 0, y: 0 })
+  const currentPos = useRef({ x: 0, y: 0 })
 
+  // Canvas orbs
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -35,184 +38,213 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     if (!ctx) return
 
     let animId: number
-    let w = 0
-    let h = 0
+    let w = 0, h = 0
 
     const orbs = Array.from({ length: 6 }, () => ({
-      x: Math.random(),
-      y: Math.random(),
+      x: Math.random(), y: Math.random(),
       vx: (Math.random() - 0.5) * 0.0008,
       vy: (Math.random() - 0.5) * 0.0008,
       r: 0.45 + Math.random() * 0.35,
-      color: pick(COLORS),
-      nextColor: pick(COLORS),
-      t: Math.random(),
-      speed: 0.002 + Math.random() * 0.003,
+      color: pick(COLORS), nextColor: pick(COLORS),
+      t: Math.random(), speed: 0.002 + Math.random() * 0.003,
     }))
 
     function hexToRgb(hex: string) {
-      const r = parseInt(hex.slice(1, 3), 16)
-      const g = parseInt(hex.slice(3, 5), 16)
-      const b = parseInt(hex.slice(5, 7), 16)
-      return { r, g, b }
+      return {
+        r: parseInt(hex.slice(1, 3), 16),
+        g: parseInt(hex.slice(3, 5), 16),
+        b: parseInt(hex.slice(5, 7), 16),
+      }
     }
 
     function lerpColor(a: string, b: string, t: number) {
-      const ca = hexToRgb(a)
-      const cb = hexToRgb(b)
-      const r = Math.round(ca.r + (cb.r - ca.r) * t)
-      const g = Math.round(ca.g + (cb.g - ca.g) * t)
-      const bl = Math.round(ca.b + (cb.b - ca.b) * t)
-      return `rgb(${r},${g},${bl})`
+      const ca = hexToRgb(a), cb = hexToRgb(b)
+      return `rgb(${Math.round(ca.r + (cb.r - ca.r) * t)},${Math.round(ca.g + (cb.g - ca.g) * t)},${Math.round(ca.b + (cb.b - ca.b) * t)})`
     }
 
     function resize() {
-      w = canvas.offsetWidth
-      h = canvas.offsetHeight
-      canvas.width = w
-      canvas.height = h
+      w = canvas.offsetWidth; h = canvas.offsetHeight
+      canvas.width = w; canvas.height = h
     }
 
     function draw() {
       ctx.clearRect(0, 0, w, h)
       ctx.fillStyle = "#0A1A2E"
       ctx.fillRect(0, 0, w, h)
-
       for (const orb of orbs) {
         orb.t += orb.speed
-        if (orb.t >= 1) {
-          orb.t = 0
-          orb.color = orb.nextColor
-          orb.nextColor = pick(COLORS)
-        }
-
-        orb.x += orb.vx
-        orb.y += orb.vy
+        if (orb.t >= 1) { orb.t = 0; orb.color = orb.nextColor; orb.nextColor = pick(COLORS) }
+        orb.x += orb.vx; orb.y += orb.vy
         if (orb.x < -0.1) orb.x = 1.1
         if (orb.x > 1.1) orb.x = -0.1
         if (orb.y < -0.1) orb.y = 1.1
         if (orb.y > 1.1) orb.y = -0.1
-
-        const cx = orb.x * w
-        const cy = orb.y * h
+        const cx = orb.x * w, cy = orb.y * h
         const radius = orb.r * Math.max(w, h)
         const color = lerpColor(orb.color, orb.nextColor, orb.t)
-
         const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius)
         grad.addColorStop(0, color.replace("rgb", "rgba").replace(")", ",0.38)"))
         grad.addColorStop(1, "rgba(0,0,0,0)")
-
         ctx.fillStyle = grad
         ctx.fillRect(0, 0, w, h)
       }
-
       animId = requestAnimationFrame(draw)
     }
 
-    resize()
-    draw()
-
+    resize(); draw()
     const ro = new ResizeObserver(resize)
     ro.observe(canvas)
-
-    return () => {
-      cancelAnimationFrame(animId)
-      ro.disconnect()
-    }
+    return () => { cancelAnimationFrame(animId); ro.disconnect() }
   }, [])
 
-  // Spawn trail bubble at position
-  const spawnTrail = (x: number, y: number) => {
-    const id = trailIdRef.current++
-    setTrail((prev) => [...prev.slice(-6), { x, y, id }])
-    setTimeout(() => {
-      setTrail((prev) => prev.filter((t) => t.id !== id))
-    }, 600)
+  // Smooth liquid follow loop
+  function startLiquidLoop() {
+    function loop() {
+      const lerpFactor = 0.12
+      currentPos.current.x += (targetPos.current.x - currentPos.current.x) * lerpFactor
+      currentPos.current.y += (targetPos.current.y - currentPos.current.y) * lerpFactor
+      setPos({ x: currentPos.current.x, y: currentPos.current.y })
+      rafRef.current = requestAnimationFrame(loop)
+    }
+    rafRef.current = requestAnimationFrame(loop)
   }
 
-  const getEventPos = (
-    e: React.MouseEvent<HTMLElement> | React.TouchEvent<HTMLElement>
-  ): { x: number; y: number } | null => {
-    const section = sectionRef.current
-    if (!section) return null
-    const rect = section.getBoundingClientRect()
+  function stopLiquidLoop() {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    rafRef.current = null
+  }
 
-    if ("touches" in e) {
-      const touch = e.touches[0] || e.changedTouches[0]
-      if (!touch) return null
-      return {
-        x: touch.clientX - rect.left,
-        y: touch.clientY - rect.top,
+  // Get pointer coords relative to section
+  function getRelativeCoords(clientX: number, clientY: number) {
+    const section = sectionRef.current
+    const btn = btnRef.current
+    if (!section || !btn) return null
+    const sr = section.getBoundingClientRect()
+    const br = btn.getBoundingClientRect()
+    // btn center in section coords
+    const btnCenterX = br.left + br.width / 2 - sr.left
+    const btnCenterY = br.top + br.height / 2 - sr.top
+    // pointer in section coords
+    const px = clientX - sr.left
+    const py = clientY - sr.top
+    return { dx: px - btnCenterX, dy: py - btnCenterY }
+  }
+
+  // ── Mouse events ──
+  const handleMouseDown = (e: React.MouseEvent) => {
+    const coords = getRelativeCoords(e.clientX, e.clientY)
+    if (!coords) return
+    originRef.current = { x: 0, y: 0 }
+    targetPos.current = coords
+    currentPos.current = { x: 0, y: 0 }
+    setDragging(true)
+    startLiquidLoop()
+  }
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!dragging) return
+    const coords = getRelativeCoords(e.clientX, e.clientY)
+    if (!coords) return
+    targetPos.current = coords
+  }
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (!dragging) return
+    // Check if released near origin (within 40px) — navigate
+    const dist = Math.sqrt(currentPos.current.x ** 2 + currentPos.current.y ** 2)
+    if (dist < 40) onNavigate("services")
+    stopLiquidLoop()
+    targetPos.current = { x: 0, y: 0 }
+    // Snap back smoothly
+    function snapBack() {
+      currentPos.current.x += (0 - currentPos.current.x) * 0.18
+      currentPos.current.y += (0 - currentPos.current.y) * 0.18
+      setPos({ x: currentPos.current.x, y: currentPos.current.y })
+      if (Math.abs(currentPos.current.x) > 0.5 || Math.abs(currentPos.current.y) > 0.5) {
+        rafRef.current = requestAnimationFrame(snapBack)
+      } else {
+        currentPos.current = { x: 0, y: 0 }
+        setPos({ x: 0, y: 0 })
+        setDragging(false)
       }
     }
-    return {
-      x: (e as React.MouseEvent).clientX - rect.left,
-      y: (e as React.MouseEvent).clientY - rect.top,
+    rafRef.current = requestAnimationFrame(snapBack)
+  }
+
+  // ── Touch events ──
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0]
+    const coords = getRelativeCoords(t.clientX, t.clientY)
+    if (!coords) return
+    originRef.current = { x: 0, y: 0 }
+    targetPos.current = coords
+    currentPos.current = { x: 0, y: 0 }
+    setDragging(true)
+    startLiquidLoop()
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!dragging) return
+    e.preventDefault()
+    const t = e.touches[0]
+    const coords = getRelativeCoords(t.clientX, t.clientY)
+    if (!coords) return
+    targetPos.current = coords
+  }
+
+  const handleTouchEnd = () => {
+    if (!dragging) return
+    stopLiquidLoop()
+    targetPos.current = { x: 0, y: 0 }
+    function snapBack() {
+      currentPos.current.x += (0 - currentPos.current.x) * 0.18
+      currentPos.current.y += (0 - currentPos.current.y) * 0.18
+      setPos({ x: currentPos.current.x, y: currentPos.current.y })
+      if (Math.abs(currentPos.current.x) > 0.5 || Math.abs(currentPos.current.y) > 0.5) {
+        rafRef.current = requestAnimationFrame(snapBack)
+      } else {
+        currentPos.current = { x: 0, y: 0 }
+        setPos({ x: 0, y: 0 })
+        setDragging(false)
+      }
     }
+    rafRef.current = requestAnimationFrame(snapBack)
   }
 
-  const handlePress = (
-    e: React.MouseEvent<HTMLElement> | React.TouchEvent<HTMLElement>
-  ) => {
-    const target = e.target as HTMLElement
-    if (
-      target.closest("button") ||
-      target.closest("a") ||
-      target.closest("[role='button']")
-    ) return
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
+  }, [])
 
-    const pos = getEventPos(e)
-    if (!pos) return
+  // Stretch: how far is the button from origin
+  const dist = Math.sqrt(pos.x ** 2 + pos.y ** 2)
+  const maxDist = 300
+  const progress = Math.min(dist / maxDist, 1) // 0 = at origin, 1 = far away
 
-    if (releaseTimer.current) clearTimeout(releaseTimer.current)
-    spawnTrail(pos.x, pos.y)
-    setFloatPos(pos)
-    setIsFloating(true)
-  }
+  // Scale grows as it moves away, from 1 to 1.35
+  const scale = dragging ? 1 + progress * 0.35 : 1
 
-  const handleMove = (
-    e: React.MouseEvent<HTMLElement> | React.TouchEvent<HTMLElement>
-  ) => {
-    if (!isFloating) return
-    const target = e.target as HTMLElement
-    if (target.closest("button") || target.closest("a")) return
+  // Opacity of the "liquid trail" line
+  const trailOpacity = dragging ? progress * 0.6 : 0
 
-    const pos = getEventPos(e)
-    if (!pos) return
-
-    spawnTrail(pos.x, pos.y)
-    setFloatPos(pos)
-  }
-
-  const handleRelease = () => {
-    if (!isFloating) return
-    releaseTimer.current = setTimeout(() => {
-      setIsFloating(false)
-      setFloatPos(null)
-      setTrail([])
-    }, 200)
-  }
+  // Angle of the drag
+  const angle = Math.atan2(pos.y, pos.x) * (180 / Math.PI)
 
   return (
     <section
       ref={sectionRef}
-      onMouseDown={handlePress}
-      onMouseMove={handleMove}
-      onMouseUp={handleRelease}
-      onMouseLeave={handleRelease}
-      onTouchStart={handlePress}
-      onTouchMove={handleMove}
-      onTouchEnd={handleRelease}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       className="relative min-h-[calc(100vh-68px)] flex items-center px-4 md:px-8 py-16 md:py-20 overflow-hidden cursor-default select-none"
     >
-      {/* Canvas background */}
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full pointer-events-none"
         style={{ display: "block" }}
       />
-
-      {/* Noise overlay */}
       <div
         className="absolute inset-0 opacity-[0.04] pointer-events-none"
         style={{
@@ -221,64 +253,69 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
         }}
       />
 
-      {/* ── Liquid trail bubbles ── */}
-      {trail.map((t) => (
-        <span
-          key={t.id}
-          className="absolute pointer-events-none rounded-full bg-[#F4A261]/40 animate-ping"
-          style={{
-            left: t.x - 10,
-            top: t.y - 10,
-            width: 20,
-            height: 20,
-            zIndex: 50,
-            animationDuration: "0.5s",
-            animationIterationCount: 1,
-          }}
-        />
-      ))}
-
-      {/* ── Floating CTA button — follows press ── */}
-      {isFloating && floatPos && (
-        <button
-          onClick={() => {
-            setIsFloating(false)
-            setFloatPos(null)
-            setTrail([])
-            onNavigate("services")
-          }}
-          className="absolute z-[60] inline-flex items-center justify-center gap-2 px-7 py-4 rounded-[32px] font-sans font-extrabold text-base bg-[#F4A261] text-white shadow-[0_0_40px_rgba(244,162,97,0.7)] pointer-events-auto"
-          style={{
-            left: floatPos.x,
-            top: floatPos.y,
-            transform: "translate(-50%, -50%) scale(1.15)",
-            transition: "left 0.18s cubic-bezier(0.22,1,0.36,1), top 0.18s cubic-bezier(0.22,1,0.36,1), transform 0.2s ease",
-          }}
-        >
-          See Our Services <ArrowRight weight="bold" className="w-4 h-4" />
-        </button>
-      )}
-
       <div className="max-w-[1200px] mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center relative z-10 w-full">
         <div className="text-center md:text-left">
           <h1 className="font-sans font-black text-3xl md:text-4xl lg:text-[3.1rem] text-white leading-tight mb-4 md:mb-5 text-balance drop-shadow-md">
-            Your <span className="text-[#F4A261]">Local Tech</span> &amp; Print Partner
+            Your <span className="text-[#F4A261]">Local Tech </span> &amp; Print Partner
           </h1>
           <p className="text-white/75 text-base md:text-lg leading-relaxed mb-6 md:mb-8 text-pretty drop-shadow-sm">
             From printing your documents to navigating government services — we make it simple, fast, and friendly. Right here in Kgotsong.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start items-center">
-            {/* Original button — hidden while floating */}
-            <button
-              onClick={() => onNavigate("services")}
-              className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base bg-[#F4A261] text-white hover:bg-[#D9894B] hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(244,162,97,0.4)] active:scale-95 transition-all duration-200 ease-in-out ${
-                isFloating ? "opacity-0 pointer-events-none" : "opacity-100"
-              }`}
-              style={{ transition: "opacity 0.15s ease" }}
-            >
-              See Our Services <ArrowRight weight="bold" className="w-4 h-4" />
-            </button>
+
+            {/* ── LIQUID DRAG BUTTON ── */}
+            <div className="relative w-full sm:w-auto flex justify-center md:justify-start">
+
+              {/* Liquid trail line from origin to button */}
+              {dragging && dist > 8 && (
+                <div
+                  className="absolute pointer-events-none z-0"
+                  style={{
+                    left: "50%",
+                    top: "50%",
+                    width: `${dist}px`,
+                    height: `${Math.max(6 - progress * 3, 2)}px`,
+                    marginLeft: 0,
+                    marginTop: `-${Math.max(6 - progress * 3, 2) / 2}px`,
+                    transformOrigin: "left center",
+                    transform: `rotate(${angle}deg)`,
+                    background: `linear-gradient(to right, rgba(244,162,97,${trailOpacity}), rgba(244,162,97,0))`,
+                    borderRadius: "999px",
+                    filter: "blur(2px)",
+                  }}
+                />
+              )}
+
+              {/* Ghost origin placeholder — only visible when dragging */}
+              {dragging && (
+                <div
+                  className="absolute inset-0 rounded-[28px] border-2 border-dashed border-white/20 pointer-events-none"
+                  style={{ zIndex: 0 }}
+                />
+              )}
+
+              {/* The button itself */}
+              <button
+                ref={btnRef}
+                onMouseDown={handleMouseDown}
+                onTouchStart={handleTouchStart}
+                onClick={() => { if (!dragging) onNavigate("services") }}
+                style={{
+                  transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})`,
+                  transition: dragging ? "none" : "transform 0.05s ease-out",
+                  opacity: dragging ? 0.85 : 1,
+                  zIndex: dragging ? 50 : 1,
+                  position: "relative",
+                  willChange: "transform",
+                }}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base bg-[#F4A261] text-white hover:bg-[#D9894B] shadow-[0_8px_24px_rgba(244,162,97,0.35)] cursor-grab active:cursor-grabbing select-none touch-none"
+              >
+                {dragging ? "See Our Services" : (
+                  <>See Our Services <ArrowRight weight="bold" className="w-4 h-4" /></>
+                )}
+              </button>
+            </div>
 
             <a
               href="https://wa.me/27753338260"
@@ -330,4 +367,4 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
       </div>
     </section>
   )
-}
+      } 
