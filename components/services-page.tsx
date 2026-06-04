@@ -571,4 +571,4 @@ export function ServicesPage({ onNavigate }: ServicesPageProps) {
       )}
     </>
   )
-          } 
+}
