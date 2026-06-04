@@ -19,7 +19,14 @@ function pick(arr: string[]) {
 
 export function HeroSection({ onNavigate }: HeroSectionProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [isCtaPopping, setIsCtaPopping] = useState(false)
+  const sectionRef = useRef<HTMLElement>(null)
+
+  // Floating CTA state
+  const [floatPos, setFloatPos] = useState<{ x: number; y: number } | null>(null)
+  const [isFloating, setIsFloating] = useState(false)
+  const [trail, setTrail] = useState<{ x: number; y: number; id: number }[]>([])
+  const trailIdRef = useRef(0)
+  const releaseTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -114,34 +121,98 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     }
   }, [])
 
-  const handleDeadClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLElement
-    
-    if (
-      target.closest("button") || 
-      target.closest("a") || 
-      target.closest("[role='button']") ||
-      window.getSelection()?.toString()
-    ) {
-      return
-    }
-
-    setIsCtaPopping(true)
+  // Spawn trail bubble at position
+  const spawnTrail = (x: number, y: number) => {
+    const id = trailIdRef.current++
+    setTrail((prev) => [...prev.slice(-6), { x, y, id }])
     setTimeout(() => {
-      setIsCtaPopping(false)
-    }, 400) // Matches timing of standard ease-out transitions
+      setTrail((prev) => prev.filter((t) => t.id !== id))
+    }, 600)
+  }
+
+  const getEventPos = (
+    e: React.MouseEvent<HTMLElement> | React.TouchEvent<HTMLElement>
+  ): { x: number; y: number } | null => {
+    const section = sectionRef.current
+    if (!section) return null
+    const rect = section.getBoundingClientRect()
+
+    if ("touches" in e) {
+      const touch = e.touches[0] || e.changedTouches[0]
+      if (!touch) return null
+      return {
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top,
+      }
+    }
+    return {
+      x: (e as React.MouseEvent).clientX - rect.left,
+      y: (e as React.MouseEvent).clientY - rect.top,
+    }
+  }
+
+  const handlePress = (
+    e: React.MouseEvent<HTMLElement> | React.TouchEvent<HTMLElement>
+  ) => {
+    const target = e.target as HTMLElement
+    if (
+      target.closest("button") ||
+      target.closest("a") ||
+      target.closest("[role='button']")
+    ) return
+
+    const pos = getEventPos(e)
+    if (!pos) return
+
+    if (releaseTimer.current) clearTimeout(releaseTimer.current)
+    spawnTrail(pos.x, pos.y)
+    setFloatPos(pos)
+    setIsFloating(true)
+  }
+
+  const handleMove = (
+    e: React.MouseEvent<HTMLElement> | React.TouchEvent<HTMLElement>
+  ) => {
+    if (!isFloating) return
+    const target = e.target as HTMLElement
+    if (target.closest("button") || target.closest("a")) return
+
+    const pos = getEventPos(e)
+    if (!pos) return
+
+    spawnTrail(pos.x, pos.y)
+    setFloatPos(pos)
+  }
+
+  const handleRelease = () => {
+    if (!isFloating) return
+    releaseTimer.current = setTimeout(() => {
+      setIsFloating(false)
+      setFloatPos(null)
+      setTrail([])
+    }, 200)
   }
 
   return (
-    <section 
-      onClick={handleDeadClick}
+    <section
+      ref={sectionRef}
+      onMouseDown={handlePress}
+      onMouseMove={handleMove}
+      onMouseUp={handleRelease}
+      onMouseLeave={handleRelease}
+      onTouchStart={handlePress}
+      onTouchMove={handleMove}
+      onTouchEnd={handleRelease}
       className="relative min-h-[calc(100vh-68px)] flex items-center px-4 md:px-8 py-16 md:py-20 overflow-hidden cursor-default select-none"
     >
+      {/* Canvas background */}
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full pointer-events-none"
         style={{ display: "block" }}
       />
+
+      {/* Noise overlay */}
       <div
         className="absolute inset-0 opacity-[0.04] pointer-events-none"
         style={{
@@ -150,29 +221,65 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
         }}
       />
 
+      {/* ── Liquid trail bubbles ── */}
+      {trail.map((t) => (
+        <span
+          key={t.id}
+          className="absolute pointer-events-none rounded-full bg-[#F4A261]/40 animate-ping"
+          style={{
+            left: t.x - 10,
+            top: t.y - 10,
+            width: 20,
+            height: 20,
+            zIndex: 50,
+            animationDuration: "0.5s",
+            animationIterationCount: 1,
+          }}
+        />
+      ))}
+
+      {/* ── Floating CTA button — follows press ── */}
+      {isFloating && floatPos && (
+        <button
+          onClick={() => {
+            setIsFloating(false)
+            setFloatPos(null)
+            setTrail([])
+            onNavigate("services")
+          }}
+          className="absolute z-[60] inline-flex items-center justify-center gap-2 px-7 py-4 rounded-[32px] font-sans font-extrabold text-base bg-[#F4A261] text-white shadow-[0_0_40px_rgba(244,162,97,0.7)] pointer-events-auto"
+          style={{
+            left: floatPos.x,
+            top: floatPos.y,
+            transform: "translate(-50%, -50%) scale(1.15)",
+            transition: "left 0.18s cubic-bezier(0.22,1,0.36,1), top 0.18s cubic-bezier(0.22,1,0.36,1), transform 0.2s ease",
+          }}
+        >
+          See Our Services <ArrowRight weight="bold" className="w-4 h-4" />
+        </button>
+      )}
+
       <div className="max-w-[1200px] mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center relative z-10 w-full">
         <div className="text-center md:text-left">
           <h1 className="font-sans font-black text-3xl md:text-4xl lg:text-[3.1rem] text-white leading-tight mb-4 md:mb-5 text-balance drop-shadow-md">
-            Your <span className="text-[#F4A261]">Local Tech </span> &amp; Print Partner
+            Your <span className="text-[#F4A261]">Local Tech</span> &amp; Print Partner
           </h1>
           <p className="text-white/75 text-base md:text-lg leading-relaxed mb-6 md:mb-8 text-pretty drop-shadow-sm">
             From printing your documents to navigating government services — we make it simple, fast, and friendly. Right here in Kgotsong.
           </p>
-          
+
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start items-center">
-            
-            {/* ── REFINED SYMMETRICAL POPPING ACTION BUTTON ── */}
+            {/* Original button — hidden while floating */}
             <button
               onClick={() => onNavigate("services")}
-              className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base text-white transform-gpu origin-center transition-all duration-300 ${
-                isCtaPopping
-                  ? "bg-[#6FBF1A] scale-110 shadow-[0_0_30px_rgba(111,191,26,0.6)] brightness-105"
-                  : "bg-[#F4A261] hover:bg-[#D9894B] hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(244,162,97,0.4)] active:scale-95"
+              className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base bg-[#F4A261] text-white hover:bg-[#D9894B] hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(244,162,97,0.4)] active:scale-95 transition-all duration-200 ease-in-out ${
+                isFloating ? "opacity-0 pointer-events-none" : "opacity-100"
               }`}
+              style={{ transition: "opacity 0.15s ease" }}
             >
               See Our Services <ArrowRight weight="bold" className="w-4 h-4" />
             </button>
-            
+
             <a
               href="https://wa.me/27753338260"
               target="_blank"
@@ -184,7 +291,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
           </div>
         </div>
 
-        {/* Info Grid Component Block Display Card */}
+        {/* Info card */}
         <div className="bg-white/10 backdrop-blur-[16px] border border-white/20 rounded-[22px] p-5 md:p-7 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
           <h3 className="font-sans font-extrabold text-base text-white mb-4">What We Offer</h3>
           <div className="flex flex-wrap gap-2">
