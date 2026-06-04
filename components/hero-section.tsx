@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react"
 import { ArrowRight, WhatsappLogo } from "@phosphor-icons/react"
-import { cn } from "@/lib/utils"
 
 interface HeroSectionProps {
   onNavigate: (page: string) => void
@@ -10,7 +9,7 @@ interface HeroSectionProps {
 
 const COLORS = [
   "#1E6FA8", "#A9D6F2",
-  "#6FBF1A", "#3E6B0E",
+  "#6FBF1A", "#548F14",
   "#D9894B", "#F9D1B0",
 ]
 
@@ -20,9 +19,6 @@ function pick(arr: string[]) {
 
 export function HeroSection({ onNavigate }: HeroSectionProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const ctaButtonRef = useRef<HTMLButtonElement>(null)
-  
-  // Animation state handling for the dead-click pop out focus
   const [isCtaPopping, setIsCtaPopping] = useState(false)
 
   useEffect(() => {
@@ -118,11 +114,9 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     }
   }, [])
 
-  // Captures any click hitting a dead background zone on the hero layout
   const handleDeadClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement
     
-    // Safely bypass if user clicks an actual button, text input, link or anchor tag
     if (
       target.closest("button") || 
       target.closest("a") || 
@@ -132,19 +126,16 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
       return
     }
 
-    // Fire smooth focus zoom scale manipulation hook
     setIsCtaPopping(true)
-
-    // Clear hook cleanly after css transition cycle completes
     setTimeout(() => {
       setIsCtaPopping(false)
-    }, 500)
+    }, 400) // Matches timing of standard ease-out transitions
   }
 
   return (
     <section 
       onClick={handleDeadClick}
-      className="relative min-h-[calc(100vh-68px)] flex items-center px-4 md:px-8 py-16 md:py-20 overflow-hidden cursor-default select-none animate-fade-in"
+      className="relative min-h-[calc(100vh-68px)] flex items-center px-4 md:px-8 py-16 md:py-20 overflow-hidden cursor-default select-none"
     >
       <canvas
         ref={canvasRef}
@@ -169,16 +160,15 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start items-center">
-            {/* ── THE ZOOM ATTENTION TARGET ACTION BUTTON ── */}
+            
+            {/* ── REFINED SYMMETRICAL POPPING ACTION BUTTON ── */}
             <button
-              ref={ctaButtonRef}
               onClick={() => onNavigate("services")}
-              className={cn(
-                "w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base text-white transition-all duration-300 ease-out transform-gpu",
+              className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base text-white transform-gpu origin-center transition-all duration-300 ${
                 isCtaPopping
-                  ? "bg-[#6FBF1A] border-2 border-[#548F14] scale-115 rotate-1 shadow-[0_0_35px_rgba(111,191,26,0.55)] z-50"
+                  ? "bg-[#6FBF1A] scale-110 shadow-[0_0_30px_rgba(111,191,26,0.6)] brightness-105"
                   : "bg-[#F4A261] hover:bg-[#D9894B] hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(244,162,97,0.4)] active:scale-95"
-              )}
+              }`}
             >
               See Our Services <ArrowRight weight="bold" className="w-4 h-4" />
             </button>
