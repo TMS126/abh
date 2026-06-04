@@ -1,7 +1,7 @@
 "use client" 
 import { useState, useEffect, useRef } from "react"
 import { useTheme } from "next-themes"
-import { X, MessageCircle, Sun, Moon } from "@phosphor-icons/react"
+import { X, ChatCircle, Sun, Moon } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 
 interface NavbarProps {
@@ -188,7 +188,7 @@ export function Navbar({ activePage, onNavigate }: NavbarProps) {
                     {navVisible ? (
                       "Contact Us"
                     ) : (
-                      <MessageCircle className="w-5 h-5" />
+                      <ChatCircle className="w-5 h-5" />
                     )}
                   </button>
                 </li>
@@ -280,9 +280,9 @@ export function Navbar({ activePage, onNavigate }: NavbarProps) {
           title="Contact Us"
           className="w-11 h-11 rounded-full bg-[#F4A261] hover:bg-[#D9894B] text-white flex items-center justify-center shadow-[0_4px_16px_rgba(244,162,97,0.5)] active:scale-95 transition-all duration-200"
         >
-          <MessageCircle className="w-5 h-5" />
+          <ChatCircle className="w-5 h-5" />
         </button>
       </div>
     </>
   )
-} 
+}
