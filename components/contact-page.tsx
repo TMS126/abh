@@ -23,17 +23,19 @@ export function ContactPage() {
     message: "",
   })
 
-  // Check if all required fields have text inside them
+  // Global mobile validation regex (allows optional leading '+', country codes, spaces, or hyphens, tracking 7 to 15 digits total)
+  const phoneRegex = /^\+?[0-9\s\-]{7,15}$/
+
+  // Strict dynamic validation: Name, valid worldwide mobile string, service, and message text checks
   const isFormValid = 
     formData.name.trim() !== "" && 
-    formData.phone.trim() !== "" && 
+    phoneRegex.test(formData.phone.trim()) && 
     formData.service !== "" && 
     formData.message.trim() !== ""
 
   const handleSubmit = () => {
-    // Strict block: if form is invalid, do nothing
     if (!isFormValid) {
-      alert("Please fill in all the fields before sending your message.")
+      alert("Please enter a valid global phone number and complete all fields.")
       return
     }
 
@@ -88,7 +90,7 @@ export function ContactPage() {
               {"WhatsApp, call, email or visit us in Kgotsong — we're always happy to help."}
             </p>
 
-            {/* Premium Business Hours Block */}
+            {/* Business Hours Block */}
             <div className="bg-secondary rounded-[18px] p-5 mb-6 border border-border/60 transition-colors duration-300">
               <div className="flex items-center gap-2 mb-4 border-b border-border/40 pb-2.5">
                 <Clock weight="bold" className="w-5 h-5 text-[#1E6FA8]" />
@@ -170,7 +172,7 @@ export function ContactPage() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
-                placeholder="e.g. 075 333 8260"
+                placeholder="e.g. +27 75 333 8260"
                 className="w-full px-4 py-3 border-2 border-border rounded-[10px] bg-background text-foreground text-[0.88rem] transition-all duration-200 ease-in-out focus:border-primary outline-none"
               />
             </div>
@@ -203,7 +205,6 @@ export function ContactPage() {
               />
             </div>
 
-            {/* Locked validation configuration applied below */}
             <button
               onClick={handleSubmit}
               disabled={!isFormValid}
