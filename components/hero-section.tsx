@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, WhatsappLogo } from "@phosphor-icons/react"
 import { useEffect, useRef } from "react"
 
 interface HeroSectionProps {
@@ -10,7 +10,7 @@ interface HeroSectionProps {
 const COLORS = [
   "#1E6FA8", "#15537D", "#A9D6F2",
   "#6FBF1A", "#548F14", "#3E6B0E",
-  "#F4A261", "#D9894B","#F9D1B0",
+  "#F4A261", "#D9894B", "#F9D1B0",
 ]
 
 function pick(arr: string[]) {
@@ -30,7 +30,6 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     let w = 0
     let h = 0
 
-    // Each orb has position, velocity, size, and color
     const orbs = Array.from({ length: 6 }, () => ({
       x: Math.random(),
       y: Math.random(),
@@ -39,7 +38,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
       r: 0.45 + Math.random() * 0.35,
       color: pick(COLORS),
       nextColor: pick(COLORS),
-      t: Math.random(), // color interpolation progress
+      t: Math.random(),
       speed: 0.002 + Math.random() * 0.003,
     }))
 
@@ -68,12 +67,9 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
 
     function draw() {
       ctx.clearRect(0, 0, w, h)
-
-      // Dark base
       ctx.fillStyle = "#0A1A2E"
       ctx.fillRect(0, 0, w, h)
 
-      // Draw each orb as a radial gradient blob
       for (const orb of orbs) {
         orb.t += orb.speed
         if (orb.t >= 1) {
@@ -119,14 +115,11 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
 
   return (
     <section className="relative min-h-[calc(100vh-68px)] flex items-center px-4 md:px-8 py-16 md:py-20 overflow-hidden">
-      {/* Animated canvas background */}
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full"
         style={{ display: "block" }}
       />
-
-      {/* Subtle noise/grain overlay for depth */}
       <div
         className="absolute inset-0 opacity-[0.04] pointer-events-none"
         style={{
@@ -138,7 +131,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
       <div className="max-w-[1200px] mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center relative z-10">
         <div className="text-center md:text-left">
           <h1 className="font-sans font-black text-3xl md:text-4xl lg:text-[3.1rem] text-white leading-tight mb-4 md:mb-5 text-balance drop-shadow-md">
-            Your <span className="text-[#F4A261]">Local Tech </span> &amp; Print Partner
+            Your <span className="text-[#F4A261]">Local Tech</span> &amp; Print Partner
           </h1>
           <p className="text-white/75 text-base md:text-lg leading-relaxed mb-6 md:mb-8 text-pretty drop-shadow-sm">
             From printing your documents to navigating government services — we make it simple, fast, and friendly. Right here in Kgotsong.
@@ -148,7 +141,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
               onClick={() => onNavigate("services")}
               className="inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base bg-[#F4A261] text-white hover:bg-[#D9894B] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(244,162,97,0.4)]"
             >
-              See Our Services <ArrowRight className="w-4 h-4" />
+              See Our Services <ArrowRight weight="bold" className="w-4 h-4" />
             </button>
             <a
               href="https://wa.me/27753338260"
@@ -156,12 +149,11 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(37,211,102,0.35)]"
             >
-              WhatsApp Us
+              <WhatsappLogo weight="fill" className="w-5 h-5" /> WhatsApp Us
             </a>
           </div>
         </div>
 
-        {/* Hero card */}
         <div className="bg-white/10 backdrop-blur-[16px] border border-white/20 rounded-[22px] p-5 md:p-7 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
           <h3 className="font-sans font-extrabold text-base text-white mb-4">What We Offer</h3>
           <div className="flex flex-wrap gap-2">
@@ -192,7 +184,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
               <div className="text-[0.7rem] text-white/70 mt-0.5">Services</div>
             </div>
             <div>
-              <div className="font-sans font-black text-xl md:text-2xl text-[#F4A261]">Faster</div>
+              <div className="font-sans font-black text-xl md:text-2xl text-[#F4A261]">Fast</div>
               <div className="text-[0.7rem] text-white/70 mt-0.5">Turnaround</div>
             </div>
           </div>
@@ -200,4 +192,4 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
       </div>
     </section>
   )
-          }
+}
