@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Nunito, DM_Sans } from 'next/font/google'
+import { Nunito, DM_Sans, Noto_Emoji } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
@@ -14,6 +14,13 @@ const dmSans = DM_Sans({
   subsets: ['latin'],
   variable: '--font-dm-sans',
   display: 'swap',
+})
+
+const notoEmoji = Noto_Emoji({
+  subsets: ['emoji'],
+  variable: '--font-noto-emoji',
+  display: 'swap',
+  weight: '400',
 })
 
 export const metadata: Metadata = {
@@ -50,7 +57,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${nunito.variable} ${dmSans.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${nunito.variable} ${dmSans.variable} ${notoEmoji.variable}`}>
       <body className="font-sans antialiased">
         <ThemeProvider
           attribute="class"
