@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { ArrowRight, WhatsappLogo } from "@phosphor-icons/react"
 
 interface HeroSectionProps {
@@ -22,15 +22,12 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
   const sectionRef = useRef<HTMLElement>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
 
-  // Drag state
-  const [dragging, setDragging] = useState(false)
-  const [pos, setPos] = useState({ x: 0, y: 0 }) // offset from origin in px
+  // Position of the floating button relative to viewport
+  const [drag, setDrag] = useState<{ x: number; y: number } | null>(null)
+  const [isReleasing, setIsReleasing] = useState(false)
   const originRef = useRef<{ x: number; y: number } | null>(null)
-  const rafRef = useRef<number | null>(null)
-  const targetPos = useRef({ x: 0, y: 0 })
-  const currentPos = useRef({ x: 0, y: 0 })
 
-  // Canvas orbs
+  // ── Canvas orb animation ──────────────────────────────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -63,8 +60,10 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     }
 
     function resize() {
-      w = canvas.offsetWidth; h = canvas.offsetHeight
-      canvas.width = w; canvas.height = h
+      w = canvas.offsetWidth
+      h = canvas.offsetHeight
+      canvas.width = w
+      canvas.height = h
     }
 
     function draw() {
@@ -91,153 +90,74 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
       animId = requestAnimationFrame(draw)
     }
 
-    resize(); draw()
+    resize()
+    draw()
     const ro = new ResizeObserver(resize)
     ro.observe(canvas)
     return () => { cancelAnimationFrame(animId); ro.disconnect() }
   }, [])
 
-  // Smooth liquid follow loop
-  function startLiquidLoop() {
-    function loop() {
-      const lerpFactor = 0.12
-      currentPos.current.x += (targetPos.current.x - currentPos.current.x) * lerpFactor
-      currentPos.current.y += (targetPos.current.y - currentPos.current.y) * lerpFactor
-      setPos({ x: currentPos.current.x, y: currentPos.current.y })
-      rafRef.current = requestAnimationFrame(loop)
-    }
-    rafRef.current = requestAnimationFrame(loop)
-  }
+  // ── Dead-click: section pointer down → button follows cursor/touch ─────────
+  const handleSectionPointerDown = useCallback((e: React.PointerEvent<HTMLElement>) => {
+    const target = e.target as HTMLElement
+    // Ignore if clicking actual buttons/links
+    if (
+      target.closest("button") ||
+      target.closest("a") ||
+      target.closest("[role='button']")
+    ) return
 
-  function stopLiquidLoop() {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current)
-    rafRef.current = null
-  }
-
-  // Get pointer coords relative to section
-  function getRelativeCoords(clientX: number, clientY: number) {
-    const section = sectionRef.current
+    // Get button origin in viewport coords
     const btn = btnRef.current
-    if (!section || !btn) return null
-    const sr = section.getBoundingClientRect()
-    const br = btn.getBoundingClientRect()
-    // btn center in section coords
-    const btnCenterX = br.left + br.width / 2 - sr.left
-    const btnCenterY = br.top + br.height / 2 - sr.top
-    // pointer in section coords
-    const px = clientX - sr.left
-    const py = clientY - sr.top
-    return { dx: px - btnCenterX, dy: py - btnCenterY }
-  }
-
-  // ── Mouse events ──
-  const handleMouseDown = (e: React.MouseEvent) => {
-    const coords = getRelativeCoords(e.clientX, e.clientY)
-    if (!coords) return
-    originRef.current = { x: 0, y: 0 }
-    targetPos.current = coords
-    currentPos.current = { x: 0, y: 0 }
-    setDragging(true)
-    startLiquidLoop()
-  }
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!dragging) return
-    const coords = getRelativeCoords(e.clientX, e.clientY)
-    if (!coords) return
-    targetPos.current = coords
-  }
-
-  const handleMouseUp = (e: React.MouseEvent) => {
-    if (!dragging) return
-    // Check if released near origin (within 40px) — navigate
-    const dist = Math.sqrt(currentPos.current.x ** 2 + currentPos.current.y ** 2)
-    if (dist < 40) onNavigate("services")
-    stopLiquidLoop()
-    targetPos.current = { x: 0, y: 0 }
-    // Snap back smoothly
-    function snapBack() {
-      currentPos.current.x += (0 - currentPos.current.x) * 0.18
-      currentPos.current.y += (0 - currentPos.current.y) * 0.18
-      setPos({ x: currentPos.current.x, y: currentPos.current.y })
-      if (Math.abs(currentPos.current.x) > 0.5 || Math.abs(currentPos.current.y) > 0.5) {
-        rafRef.current = requestAnimationFrame(snapBack)
-      } else {
-        currentPos.current = { x: 0, y: 0 }
-        setPos({ x: 0, y: 0 })
-        setDragging(false)
-      }
+    if (!btn) return
+    const rect = btn.getBoundingClientRect()
+    originRef.current = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
     }
-    rafRef.current = requestAnimationFrame(snapBack)
-  }
 
-  // ── Touch events ──
-  const handleTouchStart = (e: React.TouchEvent) => {
-    const t = e.touches[0]
-    const coords = getRelativeCoords(t.clientX, t.clientY)
-    if (!coords) return
-    originRef.current = { x: 0, y: 0 }
-    targetPos.current = coords
-    currentPos.current = { x: 0, y: 0 }
-    setDragging(true)
-    startLiquidLoop()
-  }
+    setIsReleasing(false)
+    setDrag({ x: e.clientX, y: e.clientY })
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!dragging) return
-    e.preventDefault()
-    const t = e.touches[0]
-    const coords = getRelativeCoords(t.clientX, t.clientY)
-    if (!coords) return
-    targetPos.current = coords
-  }
-
-  const handleTouchEnd = () => {
-    if (!dragging) return
-    stopLiquidLoop()
-    targetPos.current = { x: 0, y: 0 }
-    function snapBack() {
-      currentPos.current.x += (0 - currentPos.current.x) * 0.18
-      currentPos.current.y += (0 - currentPos.current.y) * 0.18
-      setPos({ x: currentPos.current.x, y: currentPos.current.y })
-      if (Math.abs(currentPos.current.x) > 0.5 || Math.abs(currentPos.current.y) > 0.5) {
-        rafRef.current = requestAnimationFrame(snapBack)
-      } else {
-        currentPos.current = { x: 0, y: 0 }
-        setPos({ x: 0, y: 0 })
-        setDragging(false)
-      }
-    }
-    rafRef.current = requestAnimationFrame(snapBack)
-  }
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
+    // Capture pointer so we track even if cursor leaves element
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
   }, [])
 
-  // Stretch: how far is the button from origin
-  const dist = Math.sqrt(pos.x ** 2 + pos.y ** 2)
-  const maxDist = 300
-  const progress = Math.min(dist / maxDist, 1) // 0 = at origin, 1 = far away
+  const handleSectionPointerMove = useCallback((e: React.PointerEvent<HTMLElement>) => {
+    if (!drag) return
+    setDrag({ x: e.clientX, y: e.clientY })
+  }, [drag])
 
-  // Scale grows as it moves away, from 1 to 1.35
-  const scale = dragging ? 1 + progress * 0.35 : 1
+  const handleSectionPointerUp = useCallback(() => {
+    if (!drag) return
+    setIsReleasing(true)
+    setDrag(null)
+    setTimeout(() => setIsReleasing(false), 500)
+  }, [drag])
 
-  // Opacity of the "liquid trail" line
-  const trailOpacity = dragging ? progress * 0.6 : 0
+  // ── Compute floating button style ─────────────────────────────────────────
+  const isDragging = drag !== null
+  const origin = originRef.current
 
-  // Angle of the drag
-  const angle = Math.atan2(pos.y, pos.x) * (180 / Math.PI)
+  // How far the button has moved from origin — used to draw the liquid trail
+  const dx = isDragging && origin ? drag.x - origin.x : 0
+  const dy = isDragging && origin ? drag.y - origin.y : 0
+  const dist = Math.sqrt(dx * dx + dy * dy)
+
+  // Squish the button: stretch along drag direction, compress perpendicular
+  // Max squish at 200px drag
+  const squishFactor = Math.min(dist / 200, 1)
+  const angle = Math.atan2(dy, dx) * (180 / Math.PI)
+  const scaleX = isDragging ? 1 + squishFactor * 0.45 : 1
+  const scaleY = isDragging ? 1 - squishFactor * 0.25 : 1
 
   return (
     <section
       ref={sectionRef}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
+      onPointerDown={handleSectionPointerDown}
+      onPointerMove={handleSectionPointerMove}
+      onPointerUp={handleSectionPointerUp}
+      onPointerCancel={handleSectionPointerUp}
       className="relative min-h-[calc(100vh-68px)] flex items-center px-4 md:px-8 py-16 md:py-20 overflow-hidden cursor-default select-none"
     >
       <canvas
@@ -253,10 +173,56 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
         }}
       />
 
+      {/* ── Liquid trail SVG ── */}
+      {isDragging && origin && dist > 10 && (
+        <svg
+          className="absolute inset-0 w-full h-full pointer-events-none z-20"
+          style={{ overflow: "visible" }}
+        >
+          <defs>
+            <filter id="liquid" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
+              <feColorMatrix in="blur" mode="matrix"
+                values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -7"
+                result="goo"
+              />
+            </filter>
+          </defs>
+          <g filter="url(#liquid)">
+            {/* Origin blob — shrinks as button moves away */}
+            <ellipse
+              cx={origin.x}
+              cy={origin.y}
+              rx={Math.max(8, 28 - squishFactor * 20)}
+              ry={Math.max(8, 28 - squishFactor * 20)}
+              fill="rgba(244,162,97,0.55)"
+            />
+            {/* Connecting trail */}
+            <line
+              x1={origin.x}
+              y1={origin.y}
+              x2={drag.x}
+              y2={drag.y}
+              stroke="rgba(244,162,97,0.45)"
+              strokeWidth={Math.max(4, 20 - squishFactor * 14)}
+              strokeLinecap="round"
+            />
+            {/* Cursor blob */}
+            <ellipse
+              cx={drag.x}
+              cy={drag.y}
+              rx={28 + squishFactor * 8}
+              ry={28 + squishFactor * 8}
+              fill="rgba(244,162,97,0.55)"
+            />
+          </g>
+        </svg>
+      )}
+
       <div className="max-w-[1200px] mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center relative z-10 w-full">
         <div className="text-center md:text-left">
           <h1 className="font-sans font-black text-3xl md:text-4xl lg:text-[3.1rem] text-white leading-tight mb-4 md:mb-5 text-balance drop-shadow-md">
-            Your <span className="text-[#F4A261]">Local Tech </span> &amp; Print Partner
+            Your <span className="text-[#F4A261]">Local Tech</span> &amp; Print Partner
           </h1>
           <p className="text-white/75 text-base md:text-lg leading-relaxed mb-6 md:mb-8 text-pretty drop-shadow-sm">
             From printing your documents to navigating government services — we make it simple, fast, and friendly. Right here in Kgotsong.
@@ -264,56 +230,63 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
 
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start items-center">
 
-            {/* ── LIQUID DRAG BUTTON ── */}
-            <div className="relative w-full sm:w-auto flex justify-center md:justify-start">
+            {/* ── See Our Services — dead-click liquid button ── */}
+            <div className="relative w-full sm:w-auto">
+              {/* Ghost placeholder — keeps layout space when button is dragged */}
+              <div
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base"
+                style={{ visibility: "hidden" }}
+                aria-hidden
+              >
+                See Our Services <ArrowRight className="w-4 h-4" />
+              </div>
 
-              {/* Liquid trail line from origin to button */}
-              {dragging && dist > 8 && (
-                <div
-                  className="absolute pointer-events-none z-0"
-                  style={{
-                    left: "50%",
-                    top: "50%",
-                    width: `${dist}px`,
-                    height: `${Math.max(6 - progress * 3, 2)}px`,
-                    marginLeft: 0,
-                    marginTop: `-${Math.max(6 - progress * 3, 2) / 2}px`,
-                    transformOrigin: "left center",
-                    transform: `rotate(${angle}deg)`,
-                    background: `linear-gradient(to right, rgba(244,162,97,${trailOpacity}), rgba(244,162,97,0))`,
-                    borderRadius: "999px",
-                    filter: "blur(2px)",
-                  }}
-                />
-              )}
-
-              {/* Ghost origin placeholder — only visible when dragging */}
-              {dragging && (
-                <div
-                  className="absolute inset-0 rounded-[28px] border-2 border-dashed border-white/20 pointer-events-none"
-                  style={{ zIndex: 0 }}
-                />
-              )}
-
-              {/* The button itself */}
+              {/* Actual button — fixed to viewport when dragging */}
               <button
                 ref={btnRef}
-                onMouseDown={handleMouseDown}
-                onTouchStart={handleTouchStart}
-                onClick={() => { if (!dragging) onNavigate("services") }}
-                style={{
-                  transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})`,
-                  transition: dragging ? "none" : "transform 0.05s ease-out",
-                  opacity: dragging ? 0.85 : 1,
-                  zIndex: dragging ? 50 : 1,
-                  position: "relative",
-                  willChange: "transform",
+                onClick={() => {
+                  if (!isDragging && !isReleasing) onNavigate("services")
                 }}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base bg-[#F4A261] text-white hover:bg-[#D9894B] shadow-[0_8px_24px_rgba(244,162,97,0.35)] cursor-grab active:cursor-grabbing select-none touch-none"
+                className="absolute inset-0 w-full inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base text-white"
+                style={
+                  isDragging && origin
+                    ? {
+                        // Follow cursor — fixed to viewport
+                        position: "fixed",
+                        left: drag.x,
+                        top: drag.y,
+                        transform: `translate(-50%, -50%) rotate(${angle}deg) scaleX(${scaleX}) scaleY(${scaleY}) rotate(${-angle}deg)`,
+                        background: "rgba(244,162,97,0.55)",
+                        backdropFilter: "blur(8px)",
+                        WebkitBackdropFilter: "blur(8px)",
+                        border: "1.5px solid rgba(255,255,255,0.25)",
+                        boxShadow: `0 0 ${20 + squishFactor * 40}px rgba(244,162,97,0.5)`,
+                        transition: "none",
+                        zIndex: 99999,
+                        width: "auto",
+                        inset: "unset",
+                      }
+                    : isReleasing
+                    ? {
+                        position: "absolute",
+                        inset: 0,
+                        background: "#F4A261",
+                        transform: "scale(1)",
+                        transition: "all 0.45s cubic-bezier(0.34,1.56,0.64,1)",
+                        zIndex: 1,
+                      }
+                    : {
+                        position: "absolute",
+                        inset: 0,
+                        background: "#F4A261",
+                        transition: "all 0.2s ease",
+                        zIndex: 1,
+                      }
+                }
               >
-                {dragging ? "See Our Services" : (
-                  <>See Our Services <ArrowRight weight="bold" className="w-4 h-4" /></>
-                )}
+                {/* Hide arrow while dragging */}
+                See Our Services
+                {!isDragging && <ArrowRight weight="bold" className="w-4 h-4" />}
               </button>
             </div>
 
@@ -348,7 +321,6 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
               </span>
             ))}
           </div>
-
           <div className="grid grid-cols-3 gap-3 mt-5 pt-5 border-t border-white/20 text-center">
             <div>
               <div className="font-sans font-black text-xl md:text-2xl text-[#F4A261]">5</div>
@@ -367,4 +339,4 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
       </div>
     </section>
   )
-      } 
+}
