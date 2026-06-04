@@ -176,7 +176,8 @@ export function ContactPage() {
             <div className="mb-4">
               <label className="block text-[0.82rem] font-semibold text-muted-foreground mb-1.5 font-sans">Phone / WhatsApp Number</label>
               <input
-                type="tel"
+                type="text"
+                inputMode="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
                 placeholder="e.g. +27 75 333 8260"
