@@ -137,17 +137,17 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
   return (
     <>
       {/* Dead-click zoom keyframe — injected once */}
-      <style>{`
-        @keyframes dead-click-zoom {
-          0%   { transform: scale(1);    box-shadow: 0 0 0px rgba(111,191,26,0); background-color: #F4A261; }
-          35%  { transform: scale(1.13); box-shadow: 0 0 32px rgba(111,191,26,0.65); background-color: #6FBF1A; }
-          70%  { transform: scale(1.07); box-shadow: 0 0 18px rgba(111,191,26,0.35); background-color: #6FBF1A; }
-          100% { transform: scale(1);    box-shadow: 0 0 0px rgba(111,191,26,0); background-color: #F4A261; }
-        }
-        .dead-click-zoom {
-          animation: dead-click-zoom 420ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        }
-      `}</style>
+     
+style>{`
+  @keyframes dead-click-invert {
+    0%   { background: #F4A261; color: #fff; border: 2px solid transparent; box-shadow: none; }
+    40%  { background: transparent; color: #A8E05A; border: 2px solid #A8E05A; box-shadow: 0 0 24px rgba(168,224,90,0.5); }
+    100% { background: #F4A261; color: #fff; border: 2px solid transparent; box-shadow: none; }
+  }
+  .dead-click-invert {
+    animation: dead-click-invert 420ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+`}</style>
 
       <section
         aria-label="Hero"
