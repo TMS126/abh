@@ -1,7 +1,8 @@
-"use client" 
+"use client"
+
 import { useState, useEffect, useRef } from "react"
 import { useTheme } from "next-themes"
-import { X, ChatCircle, Sun, Moon } from "@phosphor-icons/react"
+import { X, Sun, Moon } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 
 interface NavbarProps {
@@ -18,12 +19,12 @@ const navItems = [
 ]
 
 export function Navbar({ activePage, onNavigate }: NavbarProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const { theme, setTheme } = useTheme()
 
-  // Scroll state
-  const [scrolled, setScrolled] = useState(false)       // true = past threshold
-  const [navVisible, setNavVisible] = useState(true)    // desktop: hide on scroll down
+  // Scroll visibility states
+  const [scrolled, setScrolled] = useState(false)
+  const [navVisible, setNavVisible] = useState(true)
   const lastScrollY = useRef(0)
 
   useEffect(() => {
@@ -33,7 +34,6 @@ export function Navbar({ activePage, onNavigate }: NavbarProps) {
 
       setScrolled(y > 20)
 
-      // Desktop: hide bar when scrolling down past 80px, show when scrolling up
       if (y > 80) {
         setNavVisible(!goingDown)
       } else {
@@ -49,239 +49,143 @@ export function Navbar({ activePage, onNavigate }: NavbarProps) {
 
   const handleNavigate = (page: string) => {
     onNavigate(page)
-    setMobileMenuOpen(false)
+    setMenuOpen(false)
   }
 
   return (
     <>
-      {/* ── Immersive fullscreen mobile menu ── */}
+      {/* ── 1. GLOBAL STICKY HAMBURGER TRIGGER ── */}
       <div
         className={cn(
-          "fixed inset-0 z-[99999] flex items-center justify-center transition-all duration-300 md:hidden",
-          mobileMenuOpen
-            ? "opacity-100 pointer-events-auto"
-            : "opacity-0 pointer-events-none"
+          "fixed left-0 right-0 top-0 z-[9999] flex justify-center px-4 transition-transform duration-300 h-[74px] items-center pointer-events-none",
+          !navVisible && !menuOpen && "-translate-y-full"
         )}
       >
-        {/* Blurred background — adapts to page bg */}
-        <div
-          className="absolute inset-0 backdrop-blur-2xl"
-          style={{
-            background: "rgba(10, 26, 46, 0.92)",
-          }}
-          onClick={() => setMobileMenuOpen(false)}
-        />
-
-        {/* Close button */}
-        <button
-          onClick={() => setMobileMenuOpen(false)}
-          className="absolute top-5 right-5 w-12 h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center z-10 hover:bg-white/20 transition-colors"
-        >
-          <X className="w-6 h-6 text-white" />
-        </button>
-
-        {/* Centered navigation links */}
-        <nav className="relative z-10 flex flex-col items-center gap-4 px-8 w-full max-w-sm">
-          {navItems.map((item, index) => (
-            <button
-              key={item.id}
-              onClick={() => handleNavigate(item.id)}
-              className={cn(
-                "w-full py-4 px-8 rounded-2xl font-sans font-bold text-lg transition-all duration-300 active:scale-95",
-                mobileMenuOpen
-                  ? "translate-y-0 opacity-100"
-                  : "translate-y-4 opacity-0",
-                item.isCta
-                  ? "bg-[#F4A261] text-white hover:bg-[#D9894B]"
-                  : activePage === item.id
-                    ? "bg-[#1E6FA8] text-white"
-                    : "bg-white/10 border border-white/15 text-white hover:bg-white/20"
-              )}
-              style={{
-                transitionDelay: mobileMenuOpen ? `${index * 50}ms` : "0ms",
-              }}
-            >
-              {item.label}
-            </button>
-          ))}
-
-          {/* Theme toggle in mobile menu */}
+        <div className="flex items-center justify-between w-full max-w-[1200px]">
+          {/* Left Side: Brand Logo */}
           <div
-            className={cn(
-              "flex items-center gap-4 mt-6 transition-all duration-300",
-              mobileMenuOpen
-                ? "translate-y-0 opacity-100"
-                : "translate-y-4 opacity-0"
-            )}
-            style={{
-              transitionDelay: mobileMenuOpen
-                ? `${navItems.length * 50}ms`
-                : "0ms",
-            }}
+            className="flex items-center gap-2 cursor-pointer select-none pointer-events-auto bg-background/60 backdrop-blur-md px-4 py-2 rounded-full border border-border/40"
+            onClick={() => handleNavigate("home")}
           >
-            <span className="text-white/60 text-sm font-medium">Theme</span>
+            <div className="font-sans font-black text-[1.1rem] leading-none tracking-tight">
+              <span className="text-[#1E6FA8] dark:text-[#7EC8F0]">Apexbytes</span>
+              <span className="text-[#6FBF1A] dark:text-[#A8E05A]">Hub</span>
+            </div>
+          </div>
+
+          {/* Center: Custom Rounded Sticky Trigger */}
+          <div className="absolute left-1/2 -translate-x-1/2 pointer-events-auto">
             <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              onClick={() => setMenuOpen(!menuOpen)}
               className={cn(
-                "w-14 h-8 rounded-full relative transition-colors duration-300 flex items-center p-1",
-                theme === "dark" ? "bg-[#1E6FA8]" : "bg-white/30"
+                "w-12 h-12 rounded-full flex flex-row items-center justify-center gap-[3.5px] transition-all duration-300 shadow-md active:scale-95 border",
+                menuOpen
+                  ? "bg-[#D9894B] border-[#F4A261] text-white rotate-90"
+                  : scrolled
+                    ? "bg-[#1E6FA8] border-[#15537D] text-white"
+                    : "bg-background/90 border-border text-foreground"
               )}
+              aria-label="Toggle Navigation Menu"
             >
-              <span
-                className={cn(
-                  "w-6 h-6 rounded-full bg-white shadow-md transition-transform duration-300 flex items-center justify-center text-xs",
-                  theme === "dark" ? "translate-x-6" : "translate-x-0"
-                )}
-              >
-                {theme === "dark" ? <Moon size={16} /> : <Sun size={16} />}
-              </span>
+              {menuOpen ? (
+                <X weight="bold" className="w-5 h-5 -rotate-90" />
+              ) : (
+                <>
+                  <span className="block w-[2.5px] h-5 bg-current rounded-sm" />
+                  <span className="block w-[2.5px] h-5 bg-current rounded-sm" />
+                  <span className="block w-[2.5px] h-5 bg-current rounded-sm" />
+                </>
+              )}
             </button>
           </div>
-        </nav>
-      </div>
 
-      {/* ── Main navbar ── */}
-      <nav
-        className={cn(
-          // Base layout
-          "fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between px-4 md:px-6 transition-all duration-300",
-          // Height: normal when visible, shrink when hiding
-          "h-[68px]",
-          // Blur & bg intensity scales with scroll
-          scrolled
-            ? "bg-background/80 backdrop-blur-xl shadow-[0_2px_24px_rgba(30,111,168,0.12)]"
-            : "bg-background/40 backdrop-blur-md",
-          // Desktop hide/show on scroll
-          "md:transition-transform md:duration-300",
-          !navVisible && "md:-translate-y-full"
-        )}
-      >
-        {/* Logo */}
-        <div
-          className="flex items-center gap-2.5 cursor-pointer select-none"
-          onClick={() => handleNavigate("home")}
-        >
-          <div className="font-sans font-black text-[1.25rem] leading-none tracking-tight">
-            <span className="text-[#1E6FA8] dark:text-[#7EC8F0]">Apexbytes</span>
-            <span className="text-[#6FBF1A] dark:text-[#A8E05A]">Hub</span>
-          </div>
-        </div>
-
-        {/* ── Desktop Navigation ── */}
-        <div className="hidden md:flex items-center gap-2">
-          <ul className="flex gap-1">
-            {navItems.map((item) =>
-              item.isCta ? (
-                // When nav is hidden, this stays as icon; when visible, full label
-                <li key={item.id}>
-                  <button
-                    onClick={() => handleNavigate(item.id)}
-                    title="Contact Us"
-                    className={cn(
-                      "flex items-center justify-center gap-2 rounded-full font-sans font-bold text-[0.86rem] transition-all duration-200 ease-in-out active:scale-95",
-                      // When scrolled hidden: icon-only circle
-                      !navVisible
-                        ? "w-10 h-10 bg-[#F4A261] hover:bg-[#D9894B] text-white"
-                        : "px-4 py-2 bg-[#F4A261] hover:bg-[#D9894B] text-white"
-                    )}
-                  >
-                    {navVisible ? (
-                      "Contact Us"
-                    ) : (
-                      <ChatCircle className="w-5 h-5" />
-                    )}
-                  </button>
-                </li>
-              ) : (
-                <li key={item.id}>
-                  <button
-                    onClick={() => handleNavigate(item.id)}
-                    className={cn(
-                      "px-4 py-2 rounded-[22px] font-sans font-bold text-[0.86rem] transition-all duration-200 active:scale-95",
-                      activePage === item.id
-                        ? "bg-[#1E6FA8] text-white"
-                        : "text-muted-foreground hover:bg-secondary hover:text-[#1E6FA8]"
-                    )}
-                  >
-                    {item.label}
-                  </button>
-                </li>
-              )
-            )}
-          </ul>
-
-          {/* Theme toggle */}
-          <div className="flex items-center gap-2 ml-2">
-            <span className="text-sm">
-              {theme === "dark" ? <Moon size={16} /> : <Sun size={16} />}
+          {/* Right Side: Quick Utilities */}
+          <div className="flex items-center gap-2 pointer-events-auto bg-background/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-border/40">
+            <span className="text-muted-foreground">
+              {theme === "dark" ? <Moon size={15} weight="bold" /> : <Sun size={15} weight="bold" />}
             </span>
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               className={cn(
-                "w-[42px] h-[24px] rounded-full relative transition-colors duration-300 flex items-center p-[2px]",
+                "w-[38px] h-[20px] rounded-full relative transition-colors duration-300 flex items-center p-[2px]",
                 theme === "dark" ? "bg-[#1E6FA8]" : "bg-border"
               )}
-              aria-label="Toggle dark mode"
+              aria-label="Toggle Theme Mode"
             >
               <span
                 className={cn(
-                  "w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-300",
+                  "w-[16px] h-[16px] rounded-full bg-white shadow-sm transition-transform duration-300",
                   theme === "dark" ? "translate-x-[18px]" : "translate-x-0"
                 )}
               />
             </button>
           </div>
         </div>
+      </div>
 
-        {/* ── Mobile controls ── */}
-        <div className="flex md:hidden items-center gap-3">
-          <span className="text-sm">
-            {theme === "dark" ? <Moon size={16} /> : <Sun size={16} />}
-          </span>
-          <button
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className={cn(
-              "w-[42px] h-[24px] rounded-full relative transition-colors duration-300 flex items-center p-[2px]",
-              theme === "dark" ? "bg-[#1E6FA8]" : "bg-border"
-            )}
-            aria-label="Toggle dark mode"
-          >
-            <span
-              className={cn(
-                "w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-300",
-                theme === "dark" ? "translate-x-[18px]" : "translate-x-0"
-              )}
-            />
-          </button>
-          {/* Hamburger */}
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            className="flex flex-col gap-[5px] p-1"
-            aria-label="Open menu"
-          >
-            <span className="block w-6 h-[2.5px] bg-[#1E6FA8] rounded-sm" />
-            <span className="block w-6 h-[2.5px] bg-[#1E6FA8] rounded-sm" />
-            <span className="block w-6 h-[2.5px] bg-[#1E6FA8] rounded-sm" />
-          </button>
-        </div>
-      </nav>
-
-      {/* ── Floating Contact icon — desktop only, appears when nav is hidden ── */}
+      {/* ── 2. IMMERSIVE OVERLAY MENU (UNIVERSAL DESKTOP & MOBILE) ── */}
       <div
         className={cn(
-          "fixed top-4 right-4 z-[9998] hidden md:flex transition-all duration-300",
-          !navVisible && scrolled
-            ? "opacity-100 translate-y-0 pointer-events-auto"
-            : "opacity-0 -translate-y-2 pointer-events-none"
+          "fixed inset-0 z-[9998] flex flex-col items-center justify-between py-12 px-6 transition-all duration-300",
+          menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
       >
-        <button
-          onClick={() => handleNavigate("contact")}
-          title="Contact Us"
-          className="w-11 h-11 rounded-full bg-[#F4A261] hover:bg-[#D9894B] text-white flex items-center justify-center shadow-[0_4px_16px_rgba(244,162,97,0.5)] active:scale-95 transition-all duration-200"
+        {/* Dynamic Dark Backdrop Overlay */}
+        <div
+          className="absolute inset-0 backdrop-blur-2xl transition-opacity duration-300"
+          style={{
+            background: theme === "dark" ? "rgba(10, 26, 46, 0.96)" : "rgba(255, 255, 255, 0.96)",
+          }}
+          onClick={() => setMenuOpen(false)}
+        />
+
+        {/* Top spacer to align nicely with center button positioning */}
+        <div className="h-[60px] w-full shrink-0" />
+
+        {/* Navigation Link Blocks */}
+        <nav className="relative z-10 w-full max-w-[1000px] flex flex-col items-center justify-center grow">
+          {/* Responsive Layout wrapper: Horizontal row on Desktop, Stacked list on Mobile */}
+          <div className="flex flex-col md:flex-row md:flex-wrap items-center justify-center gap-4 w-full">
+            {navItems.map((item, index) => (
+              <button
+                key={item.id}
+                onClick={() => handleNavigate(item.id)}
+                className={cn(
+                  "py-4 px-8 md:py-3 md:px-6 rounded-2xl font-sans font-black text-lg md:text-base transition-all duration-300 active:scale-95 text-center shrink-0",
+                  "w-full md:w-auto",
+                  menuOpen ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
+                  item.isCta
+                    ? "bg-[#F4A261] text-white hover:bg-[#D9894B] shadow-[0_4px_14px_rgba(244,162,97,0.3)]"
+                    : activePage === item.id
+                      ? "bg-[#1E6FA8] text-white"
+                      : "bg-secondary border border-border/40 text-foreground hover:bg-muted"
+                )}
+                style={{
+                  transitionDelay: menuOpen ? `${index * 40}ms` : "0ms",
+                }}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </nav>
+
+        {/* Modern, Neat Branding Signature at the Bottom */}
+        <div
+          className={cn(
+            "relative z-10 text-center select-none transition-all duration-500 transform mt-8 shrink-0",
+            menuOpen ? "translate-y-0 opacity-100 scale-100" : "translate-y-4 opacity-0 scale-95"
+          )}
+          style={{ transitionDelay: menuOpen ? `${navItems.length * 40 + 60}ms` : "0ms" }}
         >
-          <ChatCircle className="w-5 h-5" />
-        </button>
+          <div className="font-sans font-black text-lg tracking-tight inline-flex items-center gap-1.5">
+            <span className="text-[#1E6FA8] dark:text-[#A9D6F2]">Apexbytes</span>
+            <span className="text-[#6FBF1A] dark:text-[#CDEB9F]">Hub</span>
+          </div>
+          <p className="text-[#777777] dark:text-[#9A9A9A] text-[0.72rem] font-medium tracking-wide mt-1 uppercase">
+            Your local tech &amp; print partner in Kgotsong
+          </p>
+        </div>
       </div>
     </>
   )
