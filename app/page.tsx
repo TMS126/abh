@@ -34,7 +34,7 @@ export default function ApexbytesHub() {
             <CtaBar 
               title="Ready to get started?"
               description="WhatsApp us or visit us in Kgotsong — we're always happy to help."
-              buttonText="📱 WhatsApp Us Now"
+              buttonText="WhatsApp Us Now"
               buttonHref="https://wa.me/27753338260"
             />
           </div>
@@ -47,7 +47,7 @@ export default function ApexbytesHub() {
             <CtaBar 
               title="Not sure what you need?"
               description="Just WhatsApp us and we'll guide you in the right direction."
-              buttonText="📱 Chat With Us"
+              buttonText="Chat With Us"
               buttonHref="https://wa.me/27753338260"
             />
           </>
