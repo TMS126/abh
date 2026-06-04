@@ -23,13 +23,20 @@ export function ContactPage() {
     message: "",
   })
 
+  
   // Global mobile validation regex (allows optional leading '+', country codes, spaces, or hyphens, tracking 7 to 15 digits total)
   const phoneRegex = /^\+?[0-9\s\-]{7,15}$/
 
-  // Strict dynamic validation: Name, valid worldwide mobile string, service, and message text checks
+  // Strip out spaces, hyphens, and parentheses to check the actual digit count
+  const cleanPhone = formData.phone.replace(/[\s\-\(\)\+]/g, "")
+  
+  // Validates if it's purely digits and falls within standard international lengths (7 to 15 digits)
+  const isPhoneValid = /^\d+$/.test(cleanPhone) && cleanPhone.length >= 7 && cleanPhone.length <= 15
+
+  // Master validation check
   const isFormValid = 
     formData.name.trim() !== "" && 
-    phoneRegex.test(formData.phone.trim()) && 
+    isPhoneValid && 
     formData.service !== "" && 
     formData.message.trim() !== ""
 
