@@ -15,7 +15,6 @@ import {
   CaretLeft,
   CaretRight
 } from "@phosphor-icons/react"
-import { cn } from "@/lib/utils"
 
 interface GalleryPageProps {
   onNavigate: (page: string) => void
@@ -26,14 +25,12 @@ interface PortfolioItem {
   title: string
   category: string
   description: string
-  // Array of live online images for the slider popup modal workspace
   images: string[]
   clientName?: string
   dateCompleted?: string
   extendedDetails?: string
 }
 
-// Complete category registry mapped to Apexbytes Hub service divisions
 const CATEGORIES = [
   { id: "all", label: "All Work", icon: ImageIcon },
   { id: "print", label: "Print Hub", icon: Printer },
@@ -43,7 +40,6 @@ const CATEGORIES = [
   { id: "tech", label: "Tech Hub", icon: Cpu },
 ]
 
-// Portfolio Items populated with direct online web links to show immediately on mobile
 const GALLERY_ITEMS: PortfolioItem[] = [
   {
     id: 1,
@@ -133,14 +129,13 @@ export function GalleryPage({ onNavigate }: GalleryPageProps) {
   const [selectedProject, setSelectedProject] = useState<PortfolioItem | null>(null)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
 
-  // Filter computation logic
   const filteredItems = activeTab === "all" 
     ? GALLERY_ITEMS 
     : GALLERY_ITEMS.filter(item => item.category === activeTab)
 
   const handleOpenModal = (item: PortfolioItem) => {
     setSelectedProject(item)
-    setActiveImageIndex(0) // Reset back to the first screenshot index
+    setActiveImageIndex(0)
   }
 
   const handleNextImage = (e: React.MouseEvent, max: number) => {
@@ -154,37 +149,23 @@ export function GalleryPage({ onNavigate }: GalleryPageProps) {
   }
 
   return (
-    <div className="animate-fade-up min-h-screen bg-background">
-      {/* ── HERO BANNER SECTION ── */}
-      <section className="bg-gradient-to-br from-[#1E6FA8] via-[#15537D] to-[#0F3F66] px-4 md:px-8 py-12 md:py-14 text-center relative overflow-hidden">
-        <div className="absolute -top-[60px] -right-[60px] w-[300px] h-[300px] bg-[radial-gradient(circle,rgba(169,214,242,0.18)_0%,transparent_70%)] rounded-full" />
-        <h1 className="font-sans font-black text-2xl md:text-4xl text-white relative z-10">
+    <div className="min-h-screen bg-background">
+      {/* BANNER */}
+      <section className="bg-gradient-to-br from-[#1E6FA8] via-[#15537D] to-[#0F3F66] px-4 py-12 text-center relative overflow-hidden">
+        <h1 className="font-sans font-black text-2xl text-white relative z-10">
           Gallery &amp; Portfolio
         </h1>
-        <p className="text-[#A9D6F2] text-sm md:text-base mt-2 relative z-10 max-w-md mx-auto">
-          Real work, real people, real results
+        <p className="text-[#A9D6F2] text-sm mt-2 relative z-10">
+          Real work, real results — look through what we do every single day.
         </p>
       </section>
 
-      {/* ── WORKSPACE DISPLAY CONTAINER ── */}
-      <section className="px-4 md:px-8 py-12 md:py-16">
+      {/* WORKSPACE */}
+      <section className="px-4 py-10">
         <div className="max-w-[1200px] mx-auto">
           
-          {/* Section Heading Label */}
-          <div className="text-center mb-10">
-            <span className="inline-flex items-center gap-1.5 bg-[#CDEB9F] text-[#3E6B0E] dark:bg-[#1A3010] dark:text-[#A8E05A] px-4 py-1.5 rounded-[20px] text-[0.78rem] font-bold font-sans tracking-wider mb-3">
-              <Sparkles weight="fill" className="w-3.5 h-3.5" /> LIVE WORKS MATRIX
-            </span>
-            <h2 className="font-sans font-black text-2xl md:text-3xl text-[#1E6FA8] dark:text-[#A9D6F2] mb-3">
-              Our Work Speaks for Itself
-            </h2>
-            <p className="text-muted-foreground text-[0.92rem] leading-relaxed max-w-[560px] mx-auto">
-              Explore our verified project tracks below. Click on any image card to see detailed multi-angle work photography.
-            </p>
-          </div>
-
-          {/* Tab Filter Controls Block — ONLY clicked tab lights up branded Blue */}
-          <div className="flex flex-wrap justify-center gap-2 mb-10">
+          {/* Tabs — Only clicked tab shows brand Blue, others show clean Gray */}
+          <div className="flex flex-wrap justify-center gap-2 mb-8">
             {CATEGORIES.map((cat) => {
               const Icon = cat.icon
               const isActive = activeTab === cat.id
@@ -192,12 +173,11 @@ export function GalleryPage({ onNavigate }: GalleryPageProps) {
                 <button
                   key={cat.id}
                   onClick={() => setActiveTab(cat.id)}
-                  className={cn(
-                    "inline-flex items-center gap-2 px-4 py-2.5 rounded-full font-sans font-bold text-xs md:text-sm transition-all duration-200 active:scale-95 border",
+                  className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-full font-sans font-bold text-xs md:text-sm transition-all duration-200 active:scale-95 border ${
                     isActive
-                      ? "bg-[#1E6FA8] border-[#0F3F66] text-white shadow-sm" // Apexbytes Hub Branded Blue
-                      : "bg-secondary/40 border-border/40 text-muted-foreground/80 hover:bg-secondary hover:text-foreground" // Clean neutral gray
-                  )}
+                      ? "bg-[#1E6FA8] border-[#0F3F66] text-white shadow-sm"
+                      : "bg-gray-100 dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-400 hover:bg-gray-200"
+                  }`}
                 >
                   <Icon weight="fill" className="w-4 h-4" />
                   {cat.label}
@@ -206,29 +186,25 @@ export function GalleryPage({ onNavigate }: GalleryPageProps) {
             })}
           </div>
 
-          {/* Interactive Photo Grid Framework */}
+          {/* Card Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredItems.map((item) => (
               <div
                 key={item.id}
                 onClick={() => handleOpenModal(item)}
-                className="group bg-card border-2 border-border/40 rounded-[18px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full hover:-translate-y-1 cursor-pointer"
+                className="group bg-card border-2 border-gray-200 dark:border-zinc-800 rounded-[18px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full cursor-pointer"
               >
-                {/* Visual Real Photo Thumbnail Box */}
-                <div className="aspect-[4/3] bg-muted relative overflow-hidden select-none">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-[#1E6FA8]/10 to-transparent z-10 pointer-events-none" />
+                <div className="aspect-[4/3] bg-muted relative overflow-hidden">
                   <img 
                     src={item.images[0]} 
                     alt={item.title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    loading="lazy"
                   />
-                  <span className="absolute bottom-3 left-3 z-20 text-[0.62rem] uppercase tracking-wider font-extrabold px-2.5 py-1 rounded-md bg-background/90 text-foreground border border-border/50 backdrop-blur-sm">
-                    {item.category.replace("eservice", "E-Service")} Hub
+                  <span className="absolute bottom-3 left-3 z-20 text-[0.62rem] uppercase tracking-wider font-extrabold px-2.5 py-1 rounded-md bg-white/90 dark:bg-black/90 text-foreground shadow-sm">
+                    {item.category === "eservice" ? "E-Service" : item.category.charAt(0).toUpperCase() + item.category.slice(1)} Hub
                   </span>
                 </div>
 
-                {/* Metadata Description Content Area */}
                 <div className="p-5 flex flex-col grow">
                   <h4 className="font-sans font-black text-foreground text-[0.98rem] leading-snug mb-1.5 group-hover:text-[#1E6FA8] transition-colors line-clamp-1">
                     {item.title}
@@ -236,27 +212,19 @@ export function GalleryPage({ onNavigate }: GalleryPageProps) {
                   <p className="text-muted-foreground text-[0.82rem] leading-relaxed line-clamp-2 grow mb-4">
                     {item.description}
                   </p>
-                  <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1E6FA8] dark:text-[#A9D6F2] mt-auto">
-                    View Project Images ({item.images.length}) <ArrowRight size={14} weight="bold" />
+                  <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1E6FA8]">
+                    View Images ({item.images.length}) <ArrowRight size={14} weight="bold" />
                   </div>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Empty Fallback */}
-          {filteredItems.length === 0 && (
-            <div className="text-center py-16 border-2 border-dashed border-border/40 rounded-[22px] max-w-sm mx-auto">
-              <p className="text-muted-foreground text-sm font-semibold">No entries uploaded in this segment.</p>
-            </div>
-          )}
-
-          {/* Call To Action Block Footer */}
-          <div className="text-center mt-12 pt-6 border-t border-border/40">
-            <p className="text-muted-foreground text-[0.88rem] mb-4">Want to see physical print proofs before ordering?</p>
+          {/* Footer CTA */}
+          <div className="text-center mt-12 pt-6 border-t border-gray-200 dark:border-zinc-800">
             <button
               onClick={() => onNavigate("contact")}
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-[28px] font-sans font-extrabold text-[0.92rem] bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(37,211,102,0.35)]"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-[28px] font-sans font-extrabold text-[0.92rem] bg-[#25D366] text-white hover:bg-[#1ebe5a] active:scale-95 transition-all"
             >
               <WhatsappLogo weight="fill" className="w-5 h-5" /> Ask Us on WhatsApp
             </button>
@@ -265,113 +233,102 @@ export function GalleryPage({ onNavigate }: GalleryPageProps) {
         </div>
       </section>
 
-      {/* ── 3. DETAILED MEDIUM-BIG MULTI-IMAGE CAROUSEL MODAL ── */}
+      {/* POPUP MODAL */}
       {selectedProject && (
         <div 
           onClick={() => setSelectedProject(null)}
-          className="fixed inset-0 z-[10000] flex items-center justify-center p-4 md:p-6 bg-black/85 backdrop-blur-sm animate-fade-in"
+          className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
         >
           <div 
-            className="relative bg-background border border-border w-full max-w-3xl rounded-[24px] overflow-hidden shadow-2xl flex flex-col max-h-[92vh] animate-scale-up"
+            className="relative bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 w-full max-w-2xl rounded-[24px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Close Button */}
+            {/* Close Button */}
             <button
               onClick={() => setSelectedProject(null)}
-              className="absolute top-4 right-4 z-50 p-2 rounded-full bg-background/80 border border-border text-foreground hover:bg-muted active:scale-90 transition-all backdrop-blur-sm"
-              aria-label="Close Preview"
+              className="absolute top-4 right-4 z-50 p-2 rounded-full bg-white/90 dark:bg-black/90 text-foreground shadow-md"
             >
               <X size={18} weight="bold" />
             </button>
 
             <div className="overflow-y-auto w-full">
-              {/* Carousel Showcase Media Frame */}
-              <div className="w-full aspect-[16/10] bg-muted relative border-b border-border select-none group/carousel">
+              {/* Image Carousel Display Area */}
+              <div className="w-full aspect-[16/10] bg-zinc-100 dark:bg-zinc-800 relative select-none">
                 <img 
                   src={selectedProject.images[activeImageIndex]} 
-                  alt={`${selectedProject.title} view ${activeImageIndex + 1}`} 
-                  className="w-full h-full object-cover transition-all duration-300"
+                  alt="Gallery content" 
+                  className="w-full h-full object-cover"
                 />
 
-                {/* Image Navigation Controls (Hidden if only 1 image exists) */}
                 {selectedProject.images.length > 1 && (
                   <>
                     <button
                       onClick={(e) => handlePrevImage(e, selectedProject.images.length)}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-background/90 text-foreground shadow-md hover:bg-muted active:scale-90 transition-all border border-border"
-                      aria-label="Previous Image"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 dark:bg-black/90 text-foreground shadow-md"
                     >
-                      <CaretLeft size={20} weight="bold" />
+                      <CaretLeft size={18} weight="bold" />
                     </button>
                     <button
                       onClick={(e) => handleNextImage(e, selectedProject.images.length)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-background/90 text-foreground shadow-md hover:bg-muted active:scale-90 transition-all border border-border"
-                      aria-label="Next Image"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 dark:bg-black/90 text-foreground shadow-md"
                     >
-                      <CaretRight size={20} weight="bold" />
+                      <CaretRight size={18} weight="bold" />
                     </button>
                   </>
                 )}
 
-                {/* Bottom Dot Counters Tracking Stack Index */}
-                <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5 z-20">
+                {/* Dots */}
+                <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-20">
                   {selectedProject.images.map((_, idx) => (
                     <button
                       key={idx}
                       onClick={(e) => { e.stopPropagation(); setActiveImageIndex(idx); }}
-                      className={cn(
-                        "h-2 rounded-full transition-all duration-300",
-                        idx === activeImageIndex ? "w-6 bg-[#1E6FA8]" : "w-2 bg-white/60 hover:bg-white"
-                      )}
+                      className={`h-1.5 rounded-full transition-all ${
+                        idx === activeImageIndex ? "w-5 bg-[#1E6FA8]" : "w-1.5 bg-white/60"
+                      }`}
                     />
                   ))}
                 </div>
               </div>
 
-              {/* Specification Detail Area */}
-              <div className="p-6 md:p-8">
-                <span className="inline-block px-3 py-1 rounded-full bg-[#A9D6F2]/30 text-[#15537D] dark:bg-[#1E6FA8]/40 dark:text-[#A9D6F2] font-sans font-extrabold text-[0.68rem] tracking-wider uppercase mb-3">
-                  {selectedProject.category.replace("eservice", "E-Service")} Hub Track
+              {/* Info Text Meta Details Area */}
+              <div className="p-6">
+                <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#A9D6F2]/40 text-[#15537D] dark:text-[#A9D6F2] font-sans font-extrabold text-[0.65rem] tracking-wider uppercase mb-2">
+                  {selectedProject.category === "eservice" ? "E-Service" : selectedProject.category.toUpperCase()} HUB PROJECT
                 </span>
                 
-                <h3 className="font-sans font-black text-foreground text-xl md:text-2xl leading-tight mb-4">
+                <h3 className="font-sans font-black text-foreground text-lg md:text-xl mb-3">
                   {selectedProject.title}
                 </h3>
 
-                {/* Tracking Data Info Board */}
-                <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-secondary/50 border border-border/40 mb-6 text-xs font-sans">
+                <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 text-[0.75rem] mb-4">
                   <div>
-                    <span className="block text-muted-foreground font-medium mb-0.5">Project Client Track:</span>
-                    <span className="block text-foreground font-bold">{selectedProject.clientName || "General Intake Account"}</span>
+                    <span className="text-muted-foreground block">Client:</span>
+                    <span className="text-foreground font-bold">{selectedProject.clientName || "Community Account"}</span>
                   </div>
                   <div>
-                    <span className="block text-muted-foreground font-medium mb-0.5">Completion Reference:</span>
-                    <span className="block text-foreground font-bold">{selectedProject.dateCompleted || "Active Track Cycle"}</span>
+                    <span className="text-muted-foreground block">Completed:</span>
+                    <span className="text-foreground font-bold">{selectedProject.dateCompleted || "2026 Tracking"}</span>
                   </div>
                 </div>
 
-                {/* Subpage Case Work Details */}
-                <div className="space-y-3">
-                  <h5 className="font-sans font-black text-xs text-foreground uppercase tracking-wider">Project Case Profile</h5>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    {selectedProject.extendedDetails}
-                  </p>
-                </div>
+                <p className="text-muted-foreground text-xs md:text-sm leading-relaxed">
+                  {selectedProject.extendedDetails}
+                </p>
 
-                {/* Immediate Order Routing Integration Footer */}
-                <div className="mt-8 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="mt-6 pt-4 border-t border-gray-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="text-center sm:text-left">
-                    <span className="block text-[0.72rem] text-muted-foreground font-medium">Love this specific quality turnaround?</span>
-                    <span className="block text-xs font-black text-foreground">Order a custom service stream package now</span>
+                    <span className="block text-[0.7rem] text-muted-foreground font-medium">Need this specific setup?</span>
+                    <span className="block text-xs font-black text-foreground">Order your hub package service track directly</span>
                   </div>
                   <button
                     onClick={() => {
                       setSelectedProject(null)
                       onNavigate("contact")
                     }}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full font-sans font-black text-xs md:text-sm bg-[#1E6FA8] border border-[#0F3F66] text-white hover:bg-[#15537D] active:scale-95 transition-all shadow-sm"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-full font-sans font-black text-xs bg-[#1E6FA8] text-white"
                   >
-                    Request Similar Build Package <ArrowRight size={14} weight="bold" />
+                    Request Service Build <ArrowRight size={12} weight="bold" />
                   </button>
                 </div>
 
