@@ -103,7 +103,7 @@ export function ContactPage() {
                     <Printer weight="bold" className="w-4 h-4 text-[#1E6FA8]" />
                     <span>Print Hub</span>
                     <span className="text-muted-foreground/40 font-normal">|</span>
-                    <FileText weight="bold" className="w-4 h-4 text-[#6FBF1A]" />
+                    <FileText weight="bold" className="w-4 h-4 text-[#1E6FA8]" />
                     <span>Document Hub</span>
                   </div>
                   <p className="text-[0.85rem] text-foreground font-medium pl-6">
@@ -116,10 +116,10 @@ export function ContactPage() {
                     <Monitor weight="bold" className="w-4 h-4 text-[#1E6FA8]" />
                     <span>Tech Hub</span>
                     <span className="text-muted-foreground/40 font-normal">|</span>
-                    <Palette weight="bold" className="w-4 h-4 text-[#F4A261]" />
+                    <Palette weight="bold" className="w-4 h-4 text-[#1E6FA8]" />
                     <span>Design Hub</span>
                     <span className="text-muted-foreground/40 font-normal">|</span>
-                    <Globe weight="bold" className="w-4 h-4 text-[#6FBF1A]" />
+                    <Globe weight="bold" className="w-4 h-4 text-[#1E6FA8]" />
                     <span>E-Service Hub</span>
                   </div>
                   <div className="text-[0.85rem] text-foreground font-medium pl-6 space-y-0.5">
