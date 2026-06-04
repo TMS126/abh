@@ -1,16 +1,18 @@
 "use client"
 
+import { WhatsappLogo, Printer, FileText, PaintBrush, Globe, Desktop, Confetti } from "@phosphor-icons/react"
+
 interface GalleryPageProps {
   onNavigate: (page: string) => void
 }
 
 const comingSoonItems = [
-  { icon: "🖨️", label: "Print Jobs", desc: "Bulk printing, photo prints & more" },
-  { icon: "📄", label: "CV & Documents", desc: "Professional CVs & typed letters" },
-  { icon: "🎨", label: "Logo & Branding", desc: "Business cards, logos & flyers" },
-  { icon: "🌐", label: "E-Service Assists", desc: "SASSA, SARS, UIF & more" },
-  { icon: "💻", label: "Tech Work", desc: "Windows installs & repairs" },
-  { icon: "🎉", label: "Invitations", desc: "Static & video event invites" },
+  { icon: <Printer weight="fill" className="w-8 h-8 text-[#1E6FA8]" />, label: "Print Jobs", desc: "Bulk printing, photo prints & more" },
+  { icon: <FileText weight="fill" className="w-8 h-8 text-[#6FBF1A]" />, label: "CV & Documents", desc: "Professional CVs & typed letters" },
+  { icon: <PaintBrush weight="fill" className="w-8 h-8 text-[#F4A261]" />, label: "Logo & Branding", desc: "Business cards, logos & flyers" },
+  { icon: <Globe weight="fill" className="w-8 h-8 text-[#1E6FA8]" />, label: "E-Service Assists", desc: "SASSA, SARS, UIF & more" },
+  { icon: <Desktop weight="fill" className="w-8 h-8 text-[#555555]" />, label: "Tech Work", desc: "Windows installs & repairs" },
+  { icon: <Confetti weight="fill" className="w-8 h-8 text-[#F4A261]" />, label: "Invitations", desc: "Static & video event invites" },
 ]
 
 export function GalleryPage({ onNavigate }: GalleryPageProps) {
@@ -42,7 +44,7 @@ export function GalleryPage({ onNavigate }: GalleryPageProps) {
                 key={item.label}
                 className="bg-card border-2 border-[var(--card-border)] rounded-[18px] p-6 text-center transition-all duration-200 ease-in-out hover:-translate-y-1 hover:shadow-[0_12px_32px_rgba(30,111,168,0.12)]"
               >
-                <div className="text-4xl mb-3">{item.icon}</div>
+                <div className="flex justify-center mb-3">{item.icon}</div>
                 <h4 className="font-sans font-black text-blue-3 dark:text-blue-4 text-[0.95rem] mb-1">{item.label}</h4>
                 <p className="text-muted-foreground text-[0.8rem]">{item.desc}</p>
               </div>
@@ -55,11 +57,11 @@ export function GalleryPage({ onNavigate }: GalleryPageProps) {
               onClick={() => onNavigate("contact")}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-[28px] font-sans font-extrabold text-[0.92rem] bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(37,211,102,0.3)]"
             >
-              Ask Us on WhatsApp
+              <WhatsappLogo weight="fill" className="w-5 h-5" /> Ask Us on WhatsApp
             </button>
           </div>
         </div>
       </section>
     </div>
   )
-} 
+}
