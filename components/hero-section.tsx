@@ -149,7 +149,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(37,211,102,0.35)]"
             >
-              <WhatsappLogo weight="fill" className="w-5 h-5" /> WhatsApp Us</b>
+              <WhatsappLogo weight="fill" className="w-5 h-5" /> WhatsApp Us
             </a>
           </div>
         </div>
