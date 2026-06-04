@@ -22,7 +22,7 @@ export function Navbar({ activePage, onNavigate }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const { theme, setTheme } = useTheme()
 
-  // Scroll visibility states
+  // Scroll tracking visibility states
   const [scrolled, setScrolled] = useState(false)
   const [navVisible, setNavVisible] = useState(true)
   const lastScrollY = useRef(0)
@@ -54,97 +54,95 @@ export function Navbar({ activePage, onNavigate }: NavbarProps) {
 
   return (
     <>
-      {/* ── 1. GLOBAL STICKY HAMBURGER TRIGGER ── */}
+      {/* ── 1. FIXED CONTENT INTERFACE HEADER ── */}
       <div
         className={cn(
-          "fixed left-0 right-0 top-0 z-[9999] flex justify-center px-4 transition-transform duration-300 h-[74px] items-center pointer-events-none",
+          "fixed left-0 right-0 top-0 z-[9999] flex justify-center px-4 md:px-8 transition-all duration-300 h-[74px] items-center pointer-events-none",
           !navVisible && !menuOpen && "-translate-y-full"
         )}
       >
         <div className="flex items-center justify-between w-full max-w-[1200px]">
-          {/* Left Side: Brand Logo */}
+          {/* Left Block: Elite Clean Brand Architecture */}
           <div
-            className="flex items-center gap-2 cursor-pointer select-none pointer-events-auto bg-background/60 backdrop-blur-md px-4 py-2 rounded-full border border-border/40"
+            className="flex items-center gap-2.5 cursor-pointer select-none pointer-events-auto bg-background/80 backdrop-blur-md px-4 py-2 rounded-full border border-border/50 shadow-sm"
             onClick={() => handleNavigate("home")}
           >
-            <div className="font-sans font-black text-[1.1rem] leading-none tracking-tight">
+            <div className="font-sans font-black text-[1.15rem] leading-none tracking-tight">
               <span className="text-[#1E6FA8] dark:text-[#7EC8F0]">Apexbytes</span>
               <span className="text-[#6FBF1A] dark:text-[#A8E05A]">Hub</span>
             </div>
           </div>
 
-          {/* Center: Custom Rounded Sticky Trigger */}
-          <div className="absolute left-1/2 -translate-x-1/2 pointer-events-auto">
+          {/* Right Block: Controls Cluster Panel */}
+          <div className="flex items-center gap-3 pointer-events-auto ml-auto">
+            {/* Smooth Theme Switching Module */}
+            <div className="flex items-center gap-2 bg-background/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-border/50 shadow-sm h-11">
+              <span className="text-muted-foreground">
+                {theme === "dark" ? <Moon size={14} weight="bold" /> : <Sun size={14} weight="bold" />}
+              </span>
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className={cn(
+                  "w-[36px] h-[18px] rounded-full relative transition-colors duration-300 flex items-center p-[2px]",
+                  theme === "dark" ? "bg-[#1E6FA8]" : "bg-border"
+                )}
+                aria-label="Toggle Theme Mode"
+              >
+                <span
+                  className={cn(
+                    "w-[14px] h-[14px] rounded-full bg-white shadow-sm transition-transform duration-300",
+                    theme === "dark" ? "translate-x-[16px]" : "translate-x-0"
+                  )}
+                />
+              </button>
+            </div>
+
+            {/* High-Contrast Standout Horizontal Hamburger Button */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className={cn(
-                "w-12 h-12 rounded-full flex flex-row items-center justify-center gap-[3.5px] transition-all duration-300 shadow-md active:scale-95 border",
+                "w-11 h-11 rounded-full flex flex-col items-center justify-center gap-[4.5px] transition-all duration-300 active:scale-95 border shadow-[0_4px_14px_rgba(244,162,97,0.35)]",
                 menuOpen
-                  ? "bg-[#D9894B] border-[#F4A261] text-white rotate-90"
-                  : scrolled
-                    ? "bg-[#1E6FA8] border-[#15537D] text-white"
-                    : "bg-background/90 border-border text-foreground"
+                  ? "bg-[#1E6FA8] border-[#0f3f66] text-white rotate-90"
+                  : "bg-[#F4A261] border-[#D9894B] text-white hover:bg-[#D9894B]"
               )}
               aria-label="Toggle Navigation Menu"
             >
               {menuOpen ? (
-                <X weight="bold" className="w-5 h-5 -rotate-90" />
+                <X weight="bold" className="w-4 h-4 -rotate-90" />
               ) : (
                 <>
-                  <span className="block w-[2.5px] h-5 bg-current rounded-sm" />
-                  <span className="block w-[2.5px] h-5 bg-current rounded-sm" />
-                  <span className="block w-[2.5px] h-5 bg-current rounded-sm" />
+                  <span className="block w-5 h-[2.5px] bg-white rounded-full" />
+                  <span className="block w-5 h-[2.5px] bg-white rounded-full" />
+                  <span className="block w-5 h-[2.5px] bg-white rounded-full" />
                 </>
               )}
-            </button>
-          </div>
-
-          {/* Right Side: Quick Utilities */}
-          <div className="flex items-center gap-2 pointer-events-auto bg-background/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-border/40">
-            <span className="text-muted-foreground">
-              {theme === "dark" ? <Moon size={15} weight="bold" /> : <Sun size={15} weight="bold" />}
-            </span>
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className={cn(
-                "w-[38px] h-[20px] rounded-full relative transition-colors duration-300 flex items-center p-[2px]",
-                theme === "dark" ? "bg-[#1E6FA8]" : "bg-border"
-              )}
-              aria-label="Toggle Theme Mode"
-            >
-              <span
-                className={cn(
-                  "w-[16px] h-[16px] rounded-full bg-white shadow-sm transition-transform duration-300",
-                  theme === "dark" ? "translate-x-[18px]" : "translate-x-0"
-                )}
-              />
             </button>
           </div>
         </div>
       </div>
 
-      {/* ── 2. IMMERSIVE OVERLAY MENU (UNIVERSAL DESKTOP & MOBILE) ── */}
+      {/* ── 2. FULLSCREEN OVERLAY COMPONENT INTERFACE ── */}
       <div
         className={cn(
           "fixed inset-0 z-[9998] flex flex-col items-center justify-between py-12 px-6 transition-all duration-300",
           menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
       >
-        {/* Dynamic Dark Backdrop Overlay */}
+        {/* Dynamic Contextual Layer Backdrop Blur */}
         <div
           className="absolute inset-0 backdrop-blur-2xl transition-opacity duration-300"
           style={{
-            background: theme === "dark" ? "rgba(10, 26, 46, 0.96)" : "rgba(255, 255, 255, 0.96)",
+            background: theme === "dark" ? "rgba(10, 26, 46, 0.97)" : "rgba(255, 255, 255, 0.97)",
           }}
           onClick={() => setMenuOpen(false)}
         />
 
-        {/* Top spacer to align nicely with center button positioning */}
-        <div className="h-[60px] w-full shrink-0" />
+        {/* Header Spacer layout clear */}
+        <div className="h-[70px] w-full shrink-0" />
 
-        {/* Navigation Link Blocks */}
+        {/* Global Navigation Hub Link Wrappers */}
         <nav className="relative z-10 w-full max-w-[1000px] flex flex-col items-center justify-center grow">
-          {/* Responsive Layout wrapper: Horizontal row on Desktop, Stacked list on Mobile */}
           <div className="flex flex-col md:flex-row md:flex-wrap items-center justify-center gap-4 w-full">
             {navItems.map((item, index) => (
               <button
@@ -170,7 +168,7 @@ export function Navbar({ activePage, onNavigate }: NavbarProps) {
           </div>
         </nav>
 
-        {/* Modern, Neat Branding Signature at the Bottom */}
+        {/* Modern Minimal Signature Brand Placement */}
         <div
           className={cn(
             "relative z-10 text-center select-none transition-all duration-500 transform mt-8 shrink-0",
