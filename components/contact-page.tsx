@@ -23,8 +23,21 @@ export function ContactPage() {
     message: "",
   })
 
+  // Check if all required fields have text inside them
+  const isFormValid = 
+    formData.name.trim() !== "" && 
+    formData.phone.trim() !== "" && 
+    formData.service !== "" && 
+    formData.message.trim() !== ""
+
   const handleSubmit = () => {
-    const text = `Hello Apexbytes Hub! \n\nName: ${formData.name || "N/A"}\nPhone: ${formData.phone || "N/A"}\nService: ${formData.service || "N/A"}\nMessage: ${formData.message || "N/A"}`
+    // Strict block: if form is invalid, do nothing
+    if (!isFormValid) {
+      alert("Please fill in all the fields before sending your message.")
+      return
+    }
+
+    const text = `Hello Apexbytes Hub! \n\nName: ${formData.name}\nPhone: ${formData.phone}\nService: ${formData.service}\nMessage: ${formData.message}`
     window.open(`https://wa.me/27753338260?text=${encodeURIComponent(text)}`, "_blank")
   }
 
@@ -83,7 +96,6 @@ export function ContactPage() {
               </div>
               
               <div className="flex flex-col gap-4">
-                {/* Division Group 1 */}
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-[#1E6FA8] dark:text-[#A9D6F2] font-sans font-bold text-[0.85rem]">
                     <Printer weight="bold" className="w-4 h-4 text-[#1E6FA8]" />
@@ -97,7 +109,6 @@ export function ContactPage() {
                   </p>
                 </div>
 
-                {/* Division Group 2 */}
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-[#1E6FA8] dark:text-[#A9D6F2] font-sans font-bold text-[0.85rem]">
                     <Monitor weight="bold" className="w-4 h-4 text-[#1E6FA8]" />
@@ -192,9 +203,15 @@ export function ContactPage() {
               />
             </div>
 
+            {/* Locked validation configuration applied below */}
             <button
               onClick={handleSubmit}
-              className="w-full flex items-center justify-center gap-2 bg-wa-green text-white py-3.5 rounded-[11px] font-sans font-extrabold text-base transition-all duration-200 ease-in-out hover:bg-[#1ebe5a] active:scale-[0.98] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(37,211,102,0.3)]"
+              disabled={!isFormValid}
+              className={`w-full flex items-center justify-center gap-2 text-white py-3.5 rounded-[11px] font-sans font-extrabold text-base transition-all duration-200 ease-in-out ${
+                isFormValid 
+                  ? "bg-wa-green hover:bg-[#1ebe5a] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(37,211,102,0.3)] active:scale-[0.98]" 
+                  : "bg-muted text-muted-foreground opacity-50 cursor-not-allowed"
+              }`}
             >
               <PaperPlaneTilt weight="fill" className="w-5 h-5" />
               Send via WhatsApp
@@ -203,7 +220,6 @@ export function ContactPage() {
         </div>
       </section>
 
-      {/* Map embed */}
       <div className="px-4 md:px-8 mb-8 md:mb-12">
         <div className="max-w-[980px] mx-auto rounded-[20px] overflow-hidden shadow-[var(--shadow)]">
           <iframe
@@ -219,7 +235,6 @@ export function ContactPage() {
         </div>
       </div>
 
-      {/* Address bar */}
       <div className="px-4 md:px-8 mb-8 md:mb-12">
         <div className="max-w-[980px] mx-auto bg-gradient-to-br from-blue-3 to-blue-1 rounded-[20px] p-6 md:p-8 flex flex-col md:flex-row items-start gap-4 md:gap-6 text-white">
           <MapPin weight="fill" className="w-10 h-10 shrink-0 text-white/80" />
