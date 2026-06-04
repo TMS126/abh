@@ -41,7 +41,7 @@ export function Footer({ onNavigate }: FooterProps) {
             Apexbytes<span className="text-[#F4A261]">Hub</span>
           </h3>
           <p className="text-blue-4 text-[0.83rem] leading-relaxed">
-            Your local tech and print partner in Kgotsong. Five hubs, 50+ services — all in one friendly place.
+            Your local tech and print partner in Kgotsong. Five hubs, 50+ services — all in one friendly place.[span_1](start_span)[span_1](end_span)
           </p>
         </div>
 
@@ -57,7 +57,7 @@ export function Footer({ onNavigate }: FooterProps) {
                 onClick={() => onNavigate(page.id)}
                 className="text-blue-4 text-[0.83rem] cursor-pointer transition-colors duration-200 hover:text-white"
               >
-                {page.label}
+                {page.label}[span_2](start_span)[span_2](end_span)
               </li>
             ))}
           </ul>
@@ -77,7 +77,7 @@ export function Footer({ onNavigate }: FooterProps) {
                 className="flex items-center gap-2 text-blue-4 text-[0.83rem] hover:text-white transition-colors duration-200 no-underline"
               >
                 <WhatsappLogo weight="fill" className="w-4 h-4 text-[#25D366] shrink-0" />
-                075 333 8260
+                075 333 8260[span_3](start_span)[span_3](end_span)
               </a>
             </li>
             <li>
@@ -86,7 +86,7 @@ export function Footer({ onNavigate }: FooterProps) {
                 className="flex items-center gap-2 text-blue-4 text-[0.83rem] hover:text-white transition-colors duration-200 no-underline"
               >
                 <Phone weight="fill" className="w-4 h-4 text-[#1E6FA8] shrink-0" />
-                075 333 8260
+                075 333 8260[span_4](start_span)[span_4](end_span)
               </a>
             </li>
             <li>
@@ -95,12 +95,12 @@ export function Footer({ onNavigate }: FooterProps) {
                 className="flex items-center gap-2 text-blue-4 text-[0.83rem] hover:text-white transition-colors duration-200 no-underline"
               >
                 <EnvelopeSimple weight="fill" className="w-4 h-4 text-[#D9894B] shrink-0" />
-                apexbytesza@gmail.com
+                apexbytesza@gmail.com[span_5](start_span)[span_5](end_span)
               </a>
             </li>
             <li className="flex items-start gap-2 text-blue-4 text-[0.83rem]">
               <MapPin weight="fill" className="w-4 h-4 text-[#9333ea] shrink-0 mt-0.5" />
-              5878 Mpumalanga Section, Kgotsong, Bothaville, 9660
+              5878 Mpumalanga Section, Kgotsong, Bothaville, 9660[span_6](start_span)[span_6](end_span)
             </li>
           </ul>
         </div>
@@ -109,7 +109,7 @@ export function Footer({ onNavigate }: FooterProps) {
       {/* Bottom Bar */}
       <div className="max-w-[1080px] mx-auto border-t border-white/10 pt-5 flex flex-col md:flex-row justify-between items-center gap-2 text-center md:text-left">
         <p className="text-blue-4 text-[0.78rem]">
-          © 2026 ApexbytesHub. All rights reserved.
+          © 2026 ApexbytesHub. All rights reserved.[span_7](start_span)[span_7](end_span)
           <span className="mx-2">|</span>
           <button 
             onClick={() => setIsTermsOpen(true)}
@@ -139,7 +139,7 @@ export function Footer({ onNavigate }: FooterProps) {
                 <h3 className="font-sans font-black text-lg text-[#1E6FA8] dark:text-[#A9D6F2]">
                   Terms &amp; Service Policies
                 </h3>
-                <p className="text-[0.7rem] text-muted-foreground mt-0.5">Apexbytes Hub • Effective June 2026</p>
+                <p className="text-[0.7rem] text-muted-foreground mt-0.5">Apexbytes Hub • Full Service Rules</p>
               </div>
               <button 
                 onClick={() => setIsTermsOpen(false)}
@@ -149,65 +149,86 @@ export function Footer({ onNavigate }: FooterProps) {
               </button>
             </div>
 
-            {/* Scrollable Policy Layout Content */}
+            {/* Scrollable Policy Content */}
             <div className="p-6 overflow-y-auto space-y-6 text-[0.82rem] md:text-sm leading-relaxed font-sans">
               
-              <div>
-                <h4 className="font-black text-xs uppercase tracking-wider text-[#F4A261] mb-1">1. Operational Scope</h4>
-                <p className="text-muted-foreground">
-                  Apexbytes Hub operates as a premium, home-based digital service and design studio in Kgotsong, Bothaville. Initiating order sequences through our automated WhatsApp channels confirms full user alignment with these operational parameters.
-                </p>
-              </div>
-
-              <hr className="border-zinc-100 dark:border-zinc-800" />
-
-              <div>
-                <h4 className="font-black text-xs uppercase tracking-wider text-[#1E6FA8] dark:text-[#A9D6F2] mb-3">2. Divisional Terms</h4>
-                <ul className="space-y-4 text-muted-foreground">
-                  <li className="flex items-start gap-2.5">
-                    <Printer weight="fill" className="w-4 h-4 text-[#1E6FA8] shrink-0 mt-0.5" />
-                    <span>
-                      <strong className="text-foreground">Print Hub:</strong> Hard-copy processing, including bulk text duplication runs and glossy photo printing (4x6 and A4 sizes), requires explicit proof verification. Apexbytes Hub is not liable for structural text or visual layout errors present on client-approved mockups.
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <FileText weight="fill" className="w-4 h-4 text-[#1E6FA8] shrink-0 mt-0.5" />
-                    <span>
-                      <strong className="text-foreground">Document Hub:</strong> Clients retain full responsibility for the biographical accuracy of information submitted for CV writing, professional typing, formatting, and administrative templates. Digital outputs derived from hard scans are retained securely for a maximum of 30 days before permanent erasure.
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <Palette weight="fill" className="w-4 h-4 text-[#1E6FA8] shrink-0 mt-0.5" />
-                    <span>
-                      <strong className="text-foreground">Design Hub:</strong> Custom vector packages, corporate brand logos, layout assets, flyers, and event cards are engineered entirely from scratch using Adobe Illustrator vector tools. Full reproduction permissions transfer to client control only upon complete payment authorization.
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <Globe weight="fill" className="w-4 h-4 text-[#1E6FA8] shrink-0 mt-0.5" />
-                    <span>
-                      <strong className="text-foreground">e-Service Hub:</strong> We execute fast-tracked portal lookup assistance (SARS, SASSA, CSD, PSIRA, UIF, online entries). Because these systems depend entirely on external public servers, we assume no liability for third-party service timeouts. Administrative verification tracking fees (such as our R20 SASSA status check) cover lookup processing labor and remain payable upon execution.
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <Cpu weight="fill" className="w-4 h-4 text-[#1E6FA8] shrink-0 mt-0.5" />
-                    <span>
-                      <strong className="text-foreground">Tech Hub:</strong> System optimizations, operating software updates, basic equipment setup, and local virus mitigation tasks require clients to securely secure independent data file backups before service processing begins.
-                    </span>
-                  </li>
+              {/* 1. PRINT HUB */}
+              <div className="space-y-2">
+                <h4 className="font-black text-xs uppercase tracking-wider text-[#1E6FA8] dark:text-[#A9D6F2] flex items-center gap-2">
+                  <Printer weight="fill" className="w-4 h-4" /> Print Hub – Everything Paper
+                </h4>
+                <ul className="space-y-1.5 text-muted-foreground list-disc list-inside pl-1">
+                  <li><strong className="text-foreground">Printing Services:</strong> Black &amp; White, Colour, and Bulk printing are done to high quality standards. For bulk printing discounts, your entire order track must be submitted together. You must confirm your digital layout before we push large print runs.</li>
+                  <li><strong className="text-foreground">Copying Services:</strong> Fast, clear photocopying for all your official layout documents. Please make sure to check your printed pages for completeness before leaving the shop.</li>
+                  <li><strong className="text-foreground">Photo Printing:</strong> Glossy photo printing in standard 4x6 and A4 sizes. Please send high-resolution digital files through WhatsApp to avoid any blurry prints.</li>
                 </ul>
               </div>
 
               <hr className="border-zinc-100 dark:border-zinc-800" />
 
-              <div>
-                <h4 className="font-black text-xs uppercase tracking-wider text-[#F4A261] mb-2 flex items-center gap-1.5">
-                  <Receipt weight="fill" className="w-4 h-4" /> 3. Business Administration Rules
+              {/* 2. DOCUMENT HUB */}
+              <div className="space-y-2">
+                <h4 className="font-black text-xs uppercase tracking-wider text-[#1E6FA8] dark:text-[#A9D6F2] flex items-center gap-2">
+                  <FileText weight="fill" className="w-4 h-4" /> Document Hub – All Document Work
                 </h4>
-                <ul className="space-y-2 text-muted-foreground list-disc list-inside pl-1">
-                  <li><span className="font-bold text-foreground">Turnaround Metrics:</span> Basic printing and portal tracking are processed same-day. Complex multi-page CV typing or custom vector asset engineering holds an execution pipeline of 24 to 48 hours.</li>
-                  <li><span className="font-bold text-foreground">Payment Pipeline:</span> Digital administrative lookups require completion payments. Custom vector portfolios or heavy-volume print runs necessitate complete authorization clearance before physical production cycles step forward.</li>
-                  <li><span className="font-bold text-foreground">Studio Pickup:</span> Material items, laminated sheets, and hardware sets must be collected from our specified Kgotsong home studio location following direct mobile status notifications.</li>
-                  <li><span className="font-bold text-foreground">Corrections Framework:</span> Original scopes of service allocate up to two layout amendment updates. Structural adjustments falling outside original specifications will be treated as fresh product requests.</li>
+                <ul className="space-y-1.5 text-muted-foreground list-disc list-inside pl-1">
+                  <li><strong className="text-foreground">Document Assistance:</strong> Full CV creation, custom typing, text editing, and application page formatting. You are responsible for ensuring that all structural text and certification info you provide is correct.</li>
+                  <li><strong className="text-foreground">Scanning Services:</strong> Turning physical papers into clean digital files sent straight to your device.</li>
+                  <li><strong className="text-foreground">Laminating Services:</strong> Durable A5, A4, and A3 hot laminating for protection. Please collect your laminated items promptly. We hold digital file records safely for only 30 days before secure deletion.</li>
+                </ul>
+              </div>
+
+              <hr className="border-zinc-100 dark:border-zinc-800" />
+
+              {/* 3. DESIGN HUB */}
+              <div className="space-y-2">
+                <h4 className="font-black text-xs uppercase tracking-wider text-[#1E6FA8] dark:text-[#A9D6F2] flex items-center gap-2">
+                  <Palette weight="fill" className="w-4 h-4" /> Design Hub – Creative Work
+                </h4>
+                <ul className="space-y-1.5 text-muted-foreground list-disc list-inside pl-1">
+                  <li><strong className="text-foreground">Branding Design:</strong> Professional logo creation and business card vector layouts engineered exclusively inside Adobe Illustrator. No cheap generic templates used.</li>
+                  <li><strong className="text-foreground">Marketing &amp; Events:</strong> Custom flyers, local posters, social media banners, invitations, and public announcements. Every design brief includes two rounds of small adjustments. Major layout redesigns outside the original plan will count as a new job. Intellectual rights unlock completely upon finalized payment setup.</li>
+                </ul>
+              </div>
+
+              <hr className="border-zinc-100 dark:border-zinc-800" />
+
+              {/* 4. E-SERVICE HUB */}
+              <div className="space-y-2">
+                <h4 className="font-black text-xs uppercase tracking-wider text-[#1E6FA8] dark:text-[#A9D6F2] flex items-center gap-2">
+                  <Globe weight="fill" className="w-4 h-4" /> e-Service Hub – External Systems
+                </h4>
+                <ul className="space-y-1.5 text-muted-foreground list-disc list-inside pl-1">
+                  <li><strong className="text-foreground">Government Services &amp; Online Applications:</strong> Admin help for filling out forms and submissions across official portals (SARS, SASSA, CSD, PSIRA, UIF, etc.). We manage your submissions fast, but Apexbytes Hub is not responsible for external government portal network downtime.</li>
+                  <li><strong className="text-foreground">SASSA Status Checks:</strong> Fixed at R20 per verification lookup. This fee covers our administrative labor to log into the portal, track the file, and print your official reference slip. The R20 fee is payable immediately upon execution, regardless of the system outcome.</li>
+                  <li><strong className="text-foreground">Email Services:</strong> Fast assistance with setting up new personal email profiles, writing out formal messages, and sending or receiving official documents.</li>
+                </ul>
+              </div>
+
+              <hr className="border-zinc-100 dark:border-zinc-800" />
+
+              {/* 5. TECH HUB */}
+              <div className="space-y-2">
+                <h4 className="font-black text-xs uppercase tracking-wider text-[#1E6FA8] dark:text-[#A9D6F2] flex items-center gap-2">
+                  <Cpu weight="fill" className="w-4 h-4" /> Tech Hub – Computer Work
+                </h4>
+                <ul className="space-y-1.5 text-muted-foreground list-disc list-inside pl-1">
+                  <li><strong className="text-foreground">Software &amp; Hardware Assistance:</strong> Safe installation of desktop programs, basic operating updates, and physical hardware or home printer connections.</li>
+                  <li><strong className="text-foreground">Troubleshooting &amp; Support:</strong> Virus removals, performance tune-ups, and structural computer optimizations. Please ensure you back up your critical documents and family photos before we handle performance work. We are not liable for data loss on previously corrupted hardware.</li>
+                </ul>
+              </div>
+
+              <hr className="border-zinc-100 dark:border-zinc-800" />
+
+              {/* 6. BUSINESS ADMINISTRATION */}
+              <div className="space-y-2">
+                <h4 className="font-black text-xs uppercase tracking-wider text-[#F4A261] flex items-center gap-2">
+                  <Receipt weight="fill" className="w-4 h-4" /> Business Administration &amp; Essentials
+                </h4>
+                <ul className="space-y-1.5 text-muted-foreground list-disc list-inside pl-1">
+                  <li><span className="font-bold text-foreground">Turnaround Metrics:</span> Basic printing, photocopying work, and portal verifications are generally finished same-day. Custom graphics engineering, text layout typing, and complex multi-page CV packages require 24 to 48 hours for precise vector alignment.</li>
+                  <li><span className="font-bold text-foreground">Order Process &amp; WhatsApp Rule:</span> Hit any service category button across our platform to launch a pre-filled template message straight into our active chat thread. Send all reference layout files and raw copy text clearly within that channel.</li>
+                  <li><span className="font-bold text-foreground">Payment &amp; Studio Delivery:</span> Immediate administrative lookups and small printing batches operate on cash-on-delivery. High-volume print jobs or custom brand identity design suites require an authorization deposit before processing begins. Physical collection happens directly at our designated home collection point in Mpumalanga Section, Kgotsong, Bothaville.</li>
                 </ul>
               </div>
 
