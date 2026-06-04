@@ -1,37 +1,17 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useEffect, useRef, useCallback } from "react"
 import { ArrowRight, WhatsappLogo } from "@phosphor-icons/react"
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface HeroSectionProps {
   onNavigate: (page: string) => void
 }
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const COLORS = [
   "#1E6FA8", "#A9D6F2",
   "#6FBF1A", "#548F14",
   "#D9894B", "#F9D1B0",
 ]
-
-const HUB_BADGES = [
-  { label: "Print Hub",     dot: "#F4A261" },
-  { label: "Document Hub",  dot: "#6FBF1A" },
-  { label: "Design Hub",    dot: "#F4A261" },
-  { label: "E-Service Hub", dot: "#A9D6F2" },
-  { label: "Tech Hub",      dot: "#6FBF1A" },
-]
-
-const STATS = [
-  { value: "5",    label: "Hubs"        },
-  { value: "50+",  label: "Services"    },
-  { value: "Fast", label: "Turnarounds" },
-]
-
-// ─── Pure utilities (outside component — never recreated) ─────────────────────
 
 function pick(arr: string[]) {
   return arr[Math.floor(Math.random() * arr.length)]
@@ -48,15 +28,15 @@ function hexToRgb(hex: string) {
 function lerpColor(a: string, b: string, t: number) {
   const ca = hexToRgb(a)
   const cb = hexToRgb(b)
-  const r  = Math.round(ca.r + (cb.r - ca.r) * t)
-  const g  = Math.round(ca.g + (cb.g - ca.g) * t)
-  const bl = Math.round(ca.b + (cb.b - ca.b) * t)
-  return `rgba(${r},${g},${bl},0.38)`
+  return `rgb(${Math.round(ca.r + (cb.r - ca.r) * t)},${Math.round(ca.g + (cb.g - ca.g) * t)},${Math.round(ca.b + (cb.b - ca.b) * t)})`
 }
 
-// ─── Custom hook: orb canvas animation ───────────────────────────────────────
+export function HeroSection({ onNavigate }: HeroSectionProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const btnRef    = useRef<HTMLButtonElement>(null)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-function useOrbCanvas(canvasRef: React.RefObject<HTMLCanvasElement>) {
+  // ── Canvas orb animation ──────────────────────────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -67,25 +47,22 @@ function useOrbCanvas(canvasRef: React.RefObject<HTMLCanvasElement>) {
     let w = 0, h = 0
 
     const orbs = Array.from({ length: 6 }, () => ({
-      x:         Math.random(),
-      y:         Math.random(),
-      vx:        (Math.random() - 0.5) * 0.0008,
-      vy:        (Math.random() - 0.5) * 0.0008,
-      r:         0.45 + Math.random() * 0.35,
-      color:     pick(COLORS),
-      nextColor: pick(COLORS),
-      t:         Math.random(),
-      speed:     0.002 + Math.random() * 0.003,
+      x: Math.random(), y: Math.random(),
+      vx: (Math.random() - 0.5) * 0.0008,
+      vy: (Math.random() - 0.5) * 0.0008,
+      r: 0.45 + Math.random() * 0.35,
+      color: pick(COLORS), nextColor: pick(COLORS),
+      t: Math.random(), speed: 0.002 + Math.random() * 0.003,
     }))
 
-    function resize() {
+    const resize = () => {
       w = canvas.offsetWidth
       h = canvas.offsetHeight
-      canvas.width  = w
+      canvas.width = w
       canvas.height = h
     }
 
-    function draw() {
+    const draw = () => {
       ctx.clearRect(0, 0, w, h)
       ctx.fillStyle = "#0A1A2E"
       ctx.fillRect(0, 0, w, h)
@@ -93,27 +70,27 @@ function useOrbCanvas(canvasRef: React.RefObject<HTMLCanvasElement>) {
       for (const orb of orbs) {
         orb.t += orb.speed
         if (orb.t >= 1) {
-          orb.t         = 0
-          orb.color     = orb.nextColor
+          orb.t = 0
+          orb.color = orb.nextColor
           orb.nextColor = pick(COLORS)
         }
-
-        orb.x += orb.vx
-        orb.y += orb.vy
+        orb.x += orb.vx; orb.y += orb.vy
         if (orb.x < -0.1) orb.x = 1.1
-        if (orb.x >  1.1) orb.x = -0.1
+        if (orb.x > 1.1)  orb.x = -0.1
         if (orb.y < -0.1) orb.y = 1.1
-        if (orb.y >  1.1) orb.y = -0.1
+        if (orb.y > 1.1)  orb.y = -0.1
 
-        const px     = orb.x * w
-        const py     = orb.y * h
+        const cx     = orb.x * w
+        const cy     = orb.y * h
         const radius = orb.r * Math.max(w, h)
         const color  = lerpColor(orb.color, orb.nextColor, orb.t)
+        const { r, g, b } = hexToRgb(color.slice(4, -1).split(",").reduce(
+          (acc, v, i) => { acc[i] = v; return acc }, [] as string[]
+        ) as unknown as { 0: string; 1: string; 2: string })
 
-        const grad = ctx.createRadialGradient(px, py, 0, px, py, radius)
-        grad.addColorStop(0, color)
+        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius)
+        grad.addColorStop(0, `rgba(${hexToRgb(orb.color).r},${hexToRgb(orb.color).g},${hexToRgb(orb.color).b},0.38)`)
         grad.addColorStop(1, "rgba(0,0,0,0)")
-
         ctx.fillStyle = grad
         ctx.fillRect(0, 0, w, h)
       }
@@ -123,142 +100,139 @@ function useOrbCanvas(canvasRef: React.RefObject<HTMLCanvasElement>) {
 
     resize()
     draw()
-
     const ro = new ResizeObserver(resize)
     ro.observe(canvas)
+    return () => { cancelAnimationFrame(animId); ro.disconnect() }
+  }, [])
 
-    return () => {
-      cancelAnimationFrame(animId)
-      ro.disconnect()
-    }
-  }, [canvasRef])
-}
-
-// ─── HeroSection ─────────────────────────────────────────────────────────────
-
-export function HeroSection({ onNavigate }: HeroSectionProps) {
-  const canvasRef   = useRef<HTMLCanvasElement>(null)
-  const popTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [isCtaPopping, setIsCtaPopping] = useState(false)
-
-  useOrbCanvas(canvasRef)
-
+  // ── Dead-click handler ────────────────────────────────────────────────
   const handleDeadClick = useCallback((e: React.MouseEvent<HTMLElement>) => {
     const target = e.target as HTMLElement
-
     if (
-      target.closest("button")          ||
-      target.closest("a")               ||
+      target.closest("button") ||
+      target.closest("a") ||
       target.closest("[role='button']") ||
       window.getSelection()?.toString()
     ) return
 
-    // Clear any in-flight timer before starting a new one
-    if (popTimerRef.current) clearTimeout(popTimerRef.current)
+    const btn = btnRef.current
+    if (!btn) return
 
-    setIsCtaPopping(true)
-    popTimerRef.current = setTimeout(() => {
-      setIsCtaPopping(false)
-      popTimerRef.current = null
-    }, 400)
+    // Clear any running timeout
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+
+    // Apply zoom class directly on the DOM node — no re-render needed
+    btn.classList.add("dead-click-zoom")
+
+    timeoutRef.current = setTimeout(() => {
+      btn.classList.remove("dead-click-zoom")
+    }, 420)
   }, [])
 
-  // Cleanup timer on unmount
+  // Cleanup on unmount
   useEffect(() => {
-    return () => {
-      if (popTimerRef.current) clearTimeout(popTimerRef.current)
-    }
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current) }
   }, [])
 
   return (
-    <section
-      aria-label="Hero — Apexbytes Hub"
-      onPointerDown={handleDeadClick as unknown as React.PointerEventHandler<HTMLElement>}
-      className="relative min-h-[calc(100vh-68px)] flex items-center px-4 md:px-8 py-16 md:py-20 overflow-hidden cursor-default select-none"
-      /* select-none is intentional: dead-click area should not trigger text selection */
-    >
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 w-full h-full pointer-events-none"
-        style={{ display: "block" }}
-      />
+    <>
+      {/* Dead-click zoom keyframe — injected once */}
+      <style>{`
+        @keyframes dead-click-zoom {
+          0%   { transform: scale(1);    box-shadow: 0 0 0px rgba(111,191,26,0); background-color: #F4A261; }
+          35%  { transform: scale(1.13); box-shadow: 0 0 32px rgba(111,191,26,0.65); background-color: #6FBF1A; }
+          70%  { transform: scale(1.07); box-shadow: 0 0 18px rgba(111,191,26,0.35); background-color: #6FBF1A; }
+          100% { transform: scale(1);    box-shadow: 0 0 0px rgba(111,191,26,0); background-color: #F4A261; }
+        }
+        .dead-click-zoom {
+          animation: dead-click-zoom 420ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+      `}</style>
 
-      {/* Grain overlay */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 opacity-[0.04] pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-          backgroundSize: "128px 128px",
-        }}
-      />
+      <section
+        aria-label="Hero"
+        onClick={handleDeadClick}
+        className="relative min-h-[calc(100vh-68px)] flex items-center px-4 md:px-8 py-16 md:py-20 overflow-hidden cursor-default select-none"
+      >
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full pointer-events-none"
+          style={{ display: "block" }}
+        />
+        <div
+          className="absolute inset-0 opacity-[0.04] pointer-events-none"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+            backgroundSize: "128px 128px",
+          }}
+        />
 
-      <div className="max-w-[1200px] mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center relative z-10 w-full">
+        <div className="max-w-[1200px] mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center relative z-10 w-full">
+          <div className="text-center md:text-left">
+            <h1 className="font-sans font-black text-3xl md:text-4xl lg:text-[3.1rem] text-white leading-tight mb-4 md:mb-5 text-balance drop-shadow-md">
+              Your <span className="text-[#F4A261]">Local Tech </span> &amp; Print Partner
+            </h1>
+            <p className="text-white/75 text-base md:text-lg leading-relaxed mb-6 md:mb-8 text-pretty drop-shadow-sm">
+              From printing your documents to navigating government services — we make it simple, fast, and friendly. Right here in Kgotsong.
+            </p>
 
-        {/* Left col */}
-        <div className="text-center md:text-left">
-          <h1 className="font-sans font-black text-3xl md:text-4xl lg:text-[3.1rem] text-white leading-tight mb-4 md:mb-5 text-balance drop-shadow-md">
-            Your <span className="text-[#F4A261]">Local Tech </span> &amp; Print Partner
-          </h1>
-          <p className="text-white/75 text-base md:text-lg leading-relaxed mb-6 md:mb-8 text-pretty drop-shadow-sm">
-            From printing your documents to navigating government services — we make it simple, fast, and friendly. Right here in Kgotsong.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start items-center">
-
-            {/* CTA — dead-click reactive */}
-            <button
-              onClick={() => onNavigate("services")}
-              aria-label={isCtaPopping ? "See Our Services — activated" : "See Our Services"}
-              style={{ willChange: "transform" }}
-              className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base text-white transform-gpu origin-center transition-all duration-300 ${
-                isCtaPopping
-                  ? "bg-[#6FBF1A] scale-110 shadow-[0_0_30px_rgba(111,191,26,0.6)] brightness-105"
-                  : "bg-[#F4A261] hover:bg-[#D9894B] hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(244,162,97,0.4)] active:scale-95"
-              }`}
-            >
-              See Our Services <ArrowRight weight="bold" className="w-4 h-4" />
-            </button>
-
-            {/* WhatsApp */}
-            <a
-              href="https://wa.me/27753338260"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(37,211,102,0.35)]"
-            >
-              <WhatsappLogo weight="fill" className="w-5 h-5" /> WhatsApp Us
-            </a>
-          </div>
-        </div>
-
-        {/* Right col — info card */}
-        <div className="bg-white/10 backdrop-blur-[16px] border border-white/20 rounded-[22px] p-5 md:p-7 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
-          <h3 className="font-sans font-extrabold text-base text-white mb-4">What We Offer</h3>
-
-          <div className="flex flex-wrap gap-2">
-            {HUB_BADGES.map((item) => (
-              <span
-                key={item.label}
-                className="inline-flex items-center gap-2 bg-white/15 text-white px-3 py-1.5 rounded-[18px] text-sm transition-all duration-200 ease-in-out hover:bg-white/25"
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start items-center">
+              <button
+                ref={btnRef}
+                onClick={() => onNavigate("services")}
+                style={{ willChange: "transform" }}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base text-white bg-[#F4A261] hover:bg-[#D9894B] hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(244,162,97,0.4)] active:scale-95 transition-all duration-200 ease-in-out"
               >
-                <span className="w-2 h-2 rounded-full" style={{ background: item.dot }} />
-                {item.label}
-              </span>
-            ))}
+                See Our Services <ArrowRight weight="bold" className="w-4 h-4" />
+              </button>
+
+              <a
+                href="https://wa.me/27753338260"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(37,211,102,0.35)]"
+              >
+                <WhatsappLogo weight="fill" className="w-5 h-5" /> WhatsApp Us
+              </a>
+            </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 mt-5 pt-5 border-t border-white/20 text-center">
-            {STATS.map((stat) => (
-              <div key={stat.label}>
-                <div className="font-sans font-black text-xl md:text-2xl text-[#F4A261]">{stat.value}</div>
-                <div className="text-[0.7rem] text-white/70 mt-0.5">{stat.label}</div>
+          <div className="bg-white/10 backdrop-blur-[16px] border border-white/20 rounded-[22px] p-5 md:p-7 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+            <h3 className="font-sans font-extrabold text-base text-white mb-4">What We Offer</h3>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { label: "Print Hub",     dot: "#F4A261" },
+                { label: "Document Hub",  dot: "#6FBF1A" },
+                { label: "Design Hub",    dot: "#F4A261" },
+                { label: "E-Service Hub", dot: "#A9D6F2" },
+                { label: "Tech Hub",      dot: "#6FBF1A" },
+              ].map((item) => (
+                <span
+                  key={item.label}
+                  className="inline-flex items-center gap-2 bg-white/15 text-white px-3 py-1.5 rounded-[18px] text-sm transition-all duration-200 ease-in-out hover:bg-white/25"
+                >
+                  <span className="w-2 h-2 rounded-full" style={{ background: item.dot }} />
+                  {item.label}
+                </span>
+              ))}
+            </div>
+            <div className="grid grid-cols-3 gap-3 mt-5 pt-5 border-t border-white/20 text-center">
+              <div>
+                <div className="font-sans font-black text-xl md:text-2xl text-[#F4A261]">5</div>
+                <div className="text-[0.7rem] text-white/70 mt-0.5">Hubs</div>
               </div>
-            ))}
+              <div>
+                <div className="font-sans font-black text-xl md:text-2xl text-[#F4A261]">50+</div>
+                <div className="text-[0.7rem] text-white/70 mt-0.5">Services</div>
+              </div>
+              <div>
+                <div className="font-sans font-black text-xl md:text-2xl text-[#F4A261]">Fast</div>
+                <div className="text-[0.7rem] text-white/70 mt-0.5">Turnarounds</div>
+              </div>
+            </div>
           </div>
         </div>
-
-      </div>
-    </section>
+      </section>
+    </>
   )
 }
