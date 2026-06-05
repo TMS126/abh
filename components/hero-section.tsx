@@ -319,7 +319,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
             </div>
 
             
-              href="https://wa.me/27753338260"
+              <a href="https://wa.me/27753338260"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(37,211,102,0.35)]"
