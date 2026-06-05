@@ -7,9 +7,21 @@ interface HeroSectionProps {
   onNavigate: (page: string) => void
 }
 
+const COLORS = [
+  "#1E6FA8", "#A9D6F2",
+  "#6FBF1A", "#548F14",
+  "#D9894B", "#F9D1B0",
+]
+
+function pick(arr: string[]) {
+  return arr[Math.floor(Math.random() * arr.length)]
+}
+
 export function HeroSection({ onNavigate }: HeroSectionProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
   const sectionRef = useRef<HTMLElement>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
+  const isMobile = useRef(false)
 
   const isDragging = useRef(false)
   const dragStartPos = useRef({ x: 0, y: 0 })
@@ -21,6 +33,92 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
   const [isDragged, setIsDragged] = useState(false)
   const [scale, setScale] = useState(1)
 
+  // ── Detect mobile ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    isMobile.current = window.matchMedia("(max-width: 767px)").matches
+    const mq = window.matchMedia("(max-width: 767px)")
+    const handler = (e: MediaQueryListEvent) => { isMobile.current = e.matches }
+    mq.addEventListener("change", handler)
+    return () => mq.removeEventListener("change", handler)
+  }, [])
+
+  // ── Canvas — mobile only ───────────────────────────────────────────────────
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    // Desktop: canvas hidden, static gradient handles bg
+    if (!isMobile.current) {
+      canvas.style.display = "none"
+      return
+    }
+
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    let animId: number
+    let w = 0, h = 0
+
+    const orbs = Array.from({ length: 6 }, () => ({
+      x: Math.random(), y: Math.random(),
+      vx: (Math.random() - 0.5) * 0.0008,
+      vy: (Math.random() - 0.5) * 0.0008,
+      r: 0.45 + Math.random() * 0.35,
+      color: pick(COLORS), nextColor: pick(COLORS),
+      t: Math.random(), speed: 0.002 + Math.random() * 0.003,
+    }))
+
+    function hexToRgb(hex: string) {
+      return {
+        r: parseInt(hex.slice(1, 3), 16),
+        g: parseInt(hex.slice(3, 5), 16),
+        b: parseInt(hex.slice(5, 7), 16),
+      }
+    }
+
+    function lerpColor(a: string, b: string, t: number) {
+      const ca = hexToRgb(a), cb = hexToRgb(b)
+      return `rgb(${Math.round(ca.r + (cb.r - ca.r) * t)},${Math.round(ca.g + (cb.g - ca.g) * t)},${Math.round(ca.b + (cb.b - ca.b) * t)})`
+    }
+
+    function resize() {
+      w = canvas.offsetWidth
+      h = canvas.offsetHeight
+      canvas.width = w
+      canvas.height = h
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, w, h)
+      ctx.fillStyle = "#0A1A2E"
+      ctx.fillRect(0, 0, w, h)
+      for (const orb of orbs) {
+        orb.t += orb.speed
+        if (orb.t >= 1) { orb.t = 0; orb.color = orb.nextColor; orb.nextColor = pick(COLORS) }
+        orb.x += orb.vx; orb.y += orb.vy
+        if (orb.x < -0.1) orb.x = 1.1
+        if (orb.x > 1.1) orb.x = -0.1
+        if (orb.y < -0.1) orb.y = 1.1
+        if (orb.y > 1.1) orb.y = -0.1
+        const cx = orb.x * w, cy = orb.y * h
+        const radius = orb.r * Math.max(w, h)
+        const color = lerpColor(orb.color, orb.nextColor, orb.t)
+        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius)
+        grad.addColorStop(0, color.replace("rgb", "rgba").replace(")", ",0.38)"))
+        grad.addColorStop(1, "rgba(0,0,0,0)")
+        ctx.fillStyle = grad
+        ctx.fillRect(0, 0, w, h)
+      }
+      animId = requestAnimationFrame(draw)
+    }
+
+    resize(); draw()
+    const ro = new ResizeObserver(resize)
+    ro.observe(canvas)
+    return () => { cancelAnimationFrame(animId); ro.disconnect() }
+  }, [])
+
+  // ── Snap back ──────────────────────────────────────────────────────────────
   const snapBack = useCallback(() => {
     isDragging.current = false
     setIsDragged(false)
@@ -45,6 +143,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     animFrame.current = requestAnimationFrame(animate)
   }, [])
 
+  // ── Pointer events ─────────────────────────────────────────────────────────
   const getPos = (e: MouseEvent | TouchEvent) => {
     if ("touches" in e) return { x: e.touches[0].clientX, y: e.touches[0].clientY }
     return { x: (e as MouseEvent).clientX, y: (e as MouseEvent).clientY }
@@ -127,24 +226,35 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
       onMouseDown={onPointerDown}
       onTouchStart={onPointerDown}
       className="relative min-h-[calc(100vh-68px)] flex items-center px-4 md:px-8 py-16 md:py-20 overflow-hidden cursor-default select-none"
-      style={{
-        touchAction: "none",
-        background: `
-          radial-gradient(ellipse at 80% 20%, rgba(111,191,26,0.18) 0%, transparent 50%),
-          radial-gradient(ellipse at 95% 80%, rgba(244,162,97,0.12) 0%, transparent 40%),
-          radial-gradient(ellipse at 10% 90%, rgba(21,83,125,0.35) 0%, transparent 55%),
-          linear-gradient(135deg,
-            #0F3F66 0%,
-            #15537D 25%,
-            #1E6FA8 50%,
-            #15537D 65%,
-            #3E6B0E 82%,
-            #B86F34 100%
-          )
-        `,
-      }}
+      style={{ touchAction: "none" }}
     >
-      {/* Noise overlay for depth */}
+      {/* ── Mobile: animated canvas ── */}
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full pointer-events-none md:hidden"
+        style={{ display: "block" }}
+      />
+
+      {/* ── Desktop: static gradient — blue 60%, green 30%, orange 10% ── */}
+      <div
+        className="absolute inset-0 pointer-events-none hidden md:block"
+        style={{
+          background: `
+            radial-gradient(ellipse 70% 80% at 15% 50%, #0F3F66 0%, transparent 70%),
+            radial-gradient(ellipse 55% 65% at 50% 30%, #1E6FA8 0%, transparent 65%),
+            radial-gradient(ellipse 45% 55% at 80% 60%, #15537D 0%, transparent 60%),
+            radial-gradient(ellipse 35% 45% at 65% 85%, #3E6B0E 0%, transparent 55%),
+            radial-gradient(ellipse 30% 40% at 30% 75%, #548F14 0%, transparent 50%),
+            radial-gradient(ellipse 20% 30% at 92% 15%, #D9894B 0%, transparent 55%),
+            linear-gradient(135deg, #0A1A2E 0%, #0F3F66 35%, #15537D 55%, #3E6B0E 78%, #548F14 88%, #B86F34 100%)
+          `,
+        }}
+      />
+
+      {/* ── Mobile: dark base under canvas ── */}
+      <div className="absolute inset-0 pointer-events-none md:hidden" style={{ background: "#0A1A2E" }} />
+
+      {/* Noise overlay */}
       <div
         className="absolute inset-0 opacity-[0.04] pointer-events-none"
         style={{
@@ -197,7 +307,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
                 className="absolute inset-0 inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base text-white"
                 style={{
                   background: isDragged
-                    ? `rgba(244,162,97,${Math.max(0.55, 1 - dragDist / 260)})`
+                    ? `rgba(244, 162, 97, ${Math.max(0.55, 1 - dragDist / 260)})`
                     : "#F4A261",
                   transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
                   transition: isDragging.current
