@@ -7,7 +7,7 @@ import { Footer } from "@/components/footer"
 import { CtaBar } from "@/components/strip-section"
 import * as DataModule from "@/lib/data" 
 
-// 1. Next.js Route Page component (Must be default export)
+// Next.js Route Page component (Must be a default export)
 export default function ServicesRoute() {
   const router = useRouter()
   const [activeHubId, setActiveHubId] = useState("print") 
@@ -44,7 +44,7 @@ export default function ServicesRoute() {
             <button
               key={hub.id}
               onClick={() => setActiveHubId(hub.id)}
-              className={`px-5 py-2.5 rounded-full font-sans font-bold text-sm transition-all whitespace-nowrap snap- Gaza-style ${
+              className={`px-5 py-2.5 rounded-full font-sans font-bold text-sm transition-all whitespace-nowrap snap-center ${
                 activeHubId === hub.id 
                   ? "bg-[#1E6FA8] text-white shadow-md shadow-[#1E6FA8]/20" 
                   : "bg-[#EDEDED] dark:bg-white/10 text-[#333333] dark:text-white hover:bg-[#D6D6D6]"
