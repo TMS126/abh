@@ -1,12 +1,9 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { ArrowRight, WhatsappLogo, PlusCircle, Gear, Wrench } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
-
-interface HeroSectionProps {
-  onNavigate: (page: string) => void
-}
 
 // Strictly Locked Corporate Brand Palette
 const COLORS = [
@@ -37,7 +34,8 @@ function pick(arr: string[]) {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
-export function HeroSection({ onNavigate }: HeroSectionProps) {
+export function HeroSection() {
+  const router = useRouter()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isTextPopping, setIsTextPopping] = useState(false)
 
@@ -171,6 +169,11 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     setTimeout(() => setIsTextPopping(false), 500)
   }
 
+  const handleNavigate = (path: string) => {
+    router.push(path)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
   return (
     <section 
       onClick={handleDeadClick}
@@ -204,7 +207,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
         {/* Safe Navigation Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-xs sm:max-w-none mb-12">
           <button
-            onClick={() => onNavigate("services")}
+            onClick={() => handleNavigate("/services")}
             className="w-full sm:w-[168px] relative inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-[32px] font-sans font-black text-sm text-white border-2 border-[#F4A261] bg-[#F4A261] hover:bg-[#D9894B] dark:border-[#D9894B] dark:bg-[#D9894B]/40 dark:text-[#F9D1B0] dark:backdrop-blur-[12px] dark:hover:bg-[#D9894B]/50 active:scale-95 transition-all duration-300 ease-out overflow-hidden group shadow-[0_8px_20px_rgba(244,162,97,0.3)]"
           >
             <span className={cn(
@@ -299,4 +302,3 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     </section>
   )
 }
- 

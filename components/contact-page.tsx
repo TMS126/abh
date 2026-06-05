@@ -305,49 +305,14 @@ export function ContactPage() {
               }`}
             >
               <PaperPlaneTilt weight="fill" className="w-5 h-5" />
-              Send via WhatsApp
+              Send to WhatsApp
             </button>
           </div>
         </div>
       </section>
 
-      {/* Map */}
-      <div className="px-4 md:px-8 mb-8 md:mb-12">
-        <div className="max-w-[980px] mx-auto rounded-[20px] overflow-hidden shadow-[var(--shadow)]">
-          <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3527.4!2d26.6233!3d-27.3878!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2s5878+Mpumalanga+Section+Kgotsong+Bothaville+9660!5e0!3m2!1sen!2sza!4v1"
-            width="100%"
-            height="300"
-            style={{ border: 0, display: "block" }}
-            allowFullScreen
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            title="Apexbytes Hub Location"
-          />
-        </div>
-      </div>
-
-      {/* Address bar */}
-      <div className="px-4 md:px-8 mb-8 md:mb-12">
-        <div className="max-w-[980px] mx-auto bg-gradient-to-br from-blue-3 to-blue-1 rounded-[20px] p-6 md:p-8 flex flex-col md:flex-row items-start gap-4 md:gap-6 text-white">
-          <MapPin weight="fill" className="w-10 h-10 shrink-0 text-white/80" />
-          <div>
-            <h3 className="font-sans font-black text-lg">5878 Mpumalanga Section, Kgotsong Location</h3>
-            <p className="text-blue-4 text-sm mt-1">Bothaville, Free State · 9660 · Home-based · Walk-in or by appointment</p>
-            <a
-              href="https://maps.google.com/?q=5878+Mpumalanga+Section+Kgotsong+Bothaville+9660+South+Africa"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 mt-3 bg-white/20 text-white px-4 py-2 rounded-[20px] text-sm font-bold transition-all duration-200 ease-in-out hover:bg-white/30 active:scale-95 no-underline"
-            >
-              <MapPin weight="fill" className="w-4 h-4" /> Open in Google Maps
-            </a>
-          </div>
-        </div>
-      </div>
-
       {/* FAQ */}
       <FAQAccordion />
     </div>
   )
-      } 
+}

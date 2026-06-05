@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { 
   WhatsappLogo, 
   Printer, 
@@ -15,10 +16,6 @@ import {
   CaretLeft,
   CaretRight
 } from "@phosphor-icons/react"
-
-interface GalleryPageProps {
-  onNavigate: (page: string) => void
-}
 
 interface PortfolioItem {
   id: number
@@ -124,7 +121,8 @@ const GALLERY_ITEMS: PortfolioItem[] = [
   },
 ]
 
-export function GalleryPage({ onNavigate }: GalleryPageProps) {
+export function GalleryPage() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState("all")
   const [selectedProject, setSelectedProject] = useState<PortfolioItem | null>(null)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
@@ -146,6 +144,11 @@ export function GalleryPage({ onNavigate }: GalleryPageProps) {
   const handlePrevImage = (e: React.MouseEvent, max: number) => {
     e.stopPropagation()
     setActiveImageIndex((prev) => (prev - 1 + max) % max)
+  }
+
+  const handleNavigate = (path: string) => {
+    router.push(path)
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   return (
@@ -238,7 +241,7 @@ export function GalleryPage({ onNavigate }: GalleryPageProps) {
           {/* Footer CTA */}
           <div className="text-center mt-12 pt-6 border-t border-gray-200 dark:border-zinc-800">
             <button
-              onClick={() => onNavigate("contact")}
+              onClick={() => handleNavigate("/contact")}
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-[28px] font-sans font-extrabold text-[0.92rem] bg-[#25D366] text-white hover:bg-[#1ebe5a] active:scale-95 transition-all"
             >
               <WhatsappLogo weight="fill" className="w-5 h-5" /> Ask Us on WhatsApp
@@ -315,38 +318,45 @@ export function GalleryPage({ onNavigate }: GalleryPageProps) {
                 <h3 className="font-sans font-black text-foreground text-lg md:text-xl mb-3">
                   {selectedProject.title}
                 </h3>
-
-                <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 text-[0.75rem] mb-4">
-                  <div>
-                    <span className="text-muted-foreground block">Client:</span>
-                    <span className="text-foreground font-bold">{selectedProject.clientName || "Community Account"}</span>
+                
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="bg-gray-50 dark:bg-zinc-800/50 p-3 rounded-xl border border-gray-100 dark:border-zinc-800">
+                    <p className="text-[0.6rem] uppercase tracking-widest text-muted-foreground font-bold mb-0.5">Client Segment</p>
+                    <p className="text-xs font-black text-foreground">{selectedProject.clientName || "Community Member"}</p>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground block">Completed:</span>
-                    <span className="text-foreground font-bold">{selectedProject.dateCompleted || "2026 Tracking"}</span>
+                  <div className="bg-gray-50 dark:bg-zinc-800/50 p-3 rounded-xl border border-gray-100 dark:border-zinc-800">
+                    <p className="text-[0.6rem] uppercase tracking-widest text-muted-foreground font-bold mb-0.5">Completion Date</p>
+                    <p className="text-xs font-black text-foreground">{selectedProject.dateCompleted || "2026 Q2"}</p>
                   </div>
                 </div>
 
-                <p className="text-muted-foreground text-xs md:text-sm leading-relaxed">
-                  {selectedProject.extendedDetails}
-                </p>
-
-                <div className="mt-6 pt-4 border-t border-gray-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="text-center sm:text-left">
-                    <span className="block text-[0.7rem] text-muted-foreground font-medium">Need this specific setup?</span>
-                    <span className="block text-xs font-black text-foreground">Order your hub package service track directly</span>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h5 className="font-sans font-black text-xs uppercase tracking-wider text-[#1E6FA8]">Technical Overview</h5>
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                      {selectedProject.extendedDetails}
+                    </p>
                   </div>
-                  <button
-                    onClick={() => {
-                      setSelectedProject(null)
-                      onNavigate("contact")
-                    }}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-full font-sans font-black text-xs bg-[#1E6FA8] text-white"
-                  >
-                    Request Service Build <ArrowRight size={12} weight="bold" />
-                  </button>
-                </div>
 
+                  <hr className="border-gray-100 dark:border-zinc-800" />
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <a
+                      href="https://wa.me/27753338260"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 inline-flex items-center justify-center gap-2 py-3.5 rounded-xl bg-[#25D366] text-white font-sans font-black text-xs uppercase tracking-widest hover:bg-[#1ebe5a] transition-all"
+                    >
+                      <WhatsappLogo weight="fill" size={18} /> Request Similar Job
+                    </a>
+                    <button
+                      onClick={() => setSelectedProject(null)}
+                      className="px-8 py-3.5 rounded-xl bg-gray-100 dark:bg-zinc-800 text-foreground font-sans font-black text-xs uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-zinc-700 transition-all"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -355,4 +365,3 @@ export function GalleryPage({ onNavigate }: GalleryPageProps) {
     </div>
   )
 }
- 

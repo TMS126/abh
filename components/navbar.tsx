@@ -2,22 +2,23 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useTheme } from "next-themes"
+import { useRouter } from "next/navigation"
 import { X, Sun, Moon } from "@phosphor-icons/react"
 
 interface NavbarProps {
   activePage: string
-  onNavigate: (page: string) => void
 }
 
 const navItems = [
-  { id: "home", label: "Home" },
-  { id: "services", label: "Services" },
-  { id: "about", label: "About Us" },
-  { id: "gallery", label: "Gallery" },
-  { id: "contact", label: "Contact Us", isCta: true },
+  { id: "home", label: "Home", path: "/" },
+  { id: "services", label: "Services", path: "/services" },
+  { id: "about", label: "About Us", path: "/about" },
+  { id: "gallery", label: "Gallery", path: "/gallery" },
+  { id: "contact", label: "Contact Us", isCta: true, path: "/contact" },
 ]
 
-export function Navbar({ activePage, onNavigate }: NavbarProps) {
+export function Navbar({ activePage }: NavbarProps) {
+  const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
   const { theme, setTheme } = useTheme()
 
@@ -45,9 +46,10 @@ export function Navbar({ activePage, onNavigate }: NavbarProps) {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  const handleNavigate = (page: string) => {
-    onNavigate(page)
+  const handleNavigate = (path: string) => {
+    router.push(path)
     setMenuOpen(false)
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   return (
@@ -62,7 +64,7 @@ export function Navbar({ activePage, onNavigate }: NavbarProps) {
           {/* Brand Identity Label Frame */}
           <div
             className="flex items-center gap-2.5 cursor-pointer select-none pointer-events-auto bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md px-4 py-2 rounded-full border border-gray-200 dark:border-zinc-800 shadow-sm"
-            onClick={() => handleNavigate("home")}
+            onClick={() => handleNavigate("/")}
           >
             <div className="font-sans font-black text-[1.15rem] leading-none tracking-tight">
               <span className="text-[#1E6FA8] dark:text-[#A9D6F2]">Apexbytes</span>
@@ -148,7 +150,7 @@ export function Navbar({ activePage, onNavigate }: NavbarProps) {
               return (
                 <button
                   key={item.id}
-                  onClick={() => handleNavigate(item.id)}
+                  onClick={() => handleNavigate(item.path)}
                   className={`py-3.5 px-6 md:py-2.5 md:px-5 rounded-[16px] font-sans font-black text-sm transition-all duration-300 active:scale-95 text-center shrink-0 w-full md:w-auto transform ${
                     menuOpen ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
                   } ${

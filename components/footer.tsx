@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { 
   WhatsappLogo, 
   EnvelopeSimple, 
@@ -19,26 +20,23 @@ import {
   Question
 } from "@phosphor-icons/react"
 
-interface FooterProps {
-  onNavigate: (page: string) => void
-}
-
 interface FAQItem {
   question: string
   answer: string
 }
 
-export function Footer({ onNavigate }: FooterProps) {
+export function Footer() {
+  const router = useRouter()
   const [isTermsOpen, setIsTermsOpen] = useState(false)
   const [isFaqOpen, setIsFaqOpen] = useState(false)
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null)
 
   const pages = [
-    { id: "home", label: "Home" },
-    { id: "services", label: "Services" },
-    { id: "about", label: "About Us" },
-    { id: "gallery", label: "Gallery" },
-    { id: "contact", label: "Contact" },
+    { id: "home", label: "Home", path: "/" },
+    { id: "services", label: "Services", path: "/services" },
+    { id: "about", label: "About Us", path: "/about" },
+    { id: "gallery", label: "Gallery", path: "/gallery" },
+    { id: "contact", label: "Contact", path: "/contact" },
   ]
 
   const faqs: FAQItem[] = [
@@ -63,6 +61,11 @@ export function Footer({ onNavigate }: FooterProps) {
       answer: "No. All layouts, vector files, and brand assets are built from scratch using industry-standard design tools to ensure sharp, clean results — not generic consumer-level web templates.",
     },
   ]
+
+  const handleNavigate = (path: string) => {
+    router.push(path)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
 
   return (
     <footer className="bg-[#0F3F66] text-white px-4 md:px-8 py-10 md:py-12 relative font-sans">
@@ -98,7 +101,7 @@ export function Footer({ onNavigate }: FooterProps) {
             {pages.map((page) => (
               <li
                 key={page.id}
-                onClick={() => onNavigate(page.id)}
+                onClick={() => handleNavigate(page.path)}
                 className="text-[#A9D6F2] text-[0.83rem] cursor-pointer transition-colors duration-200 hover:text-white"
               >
                 {page.label}
@@ -277,37 +280,37 @@ export function Footer({ onNavigate }: FooterProps) {
               {/* 6. TECH HUB */}
               <div className="space-y-2">
                 <h4 className="font-black text-xs uppercase tracking-wider text-[#1E6FA8] dark:text-[#A9D6F2] flex items-center gap-2">
-                  <Cpu weight="fill" className="w-4 h-4" /> Tech Hub – Computer Work
+                  <Cpu weight="fill" className="w-4 h-4" /> Tech Hub – Hardware &amp; Software
                 </h4>
                 <ul className="space-y-1.5 text-zinc-600 dark:text-zinc-400 list-disc list-inside pl-1">
-                  <li><strong className="text-zinc-900 dark:text-zinc-100">Software &amp; Hardware Assistance:</strong> Safe installation of desktop programs, basic operating updates, and physical hardware or home printer connections.</li>
-                  <li><strong className="text-zinc-900 dark:text-zinc-100">Troubleshooting &amp; Support:</strong> Virus removals, performance tune-ups, and structural computer optimizations. Please ensure you back up your critical documents and family photos before we handle performance work. We are not liable for data loss on previously corrupted hardware.</li>
+                  <li><strong className="text-zinc-900 dark:text-zinc-100">System Maintenance:</strong> Software installations, system cleaning, and performance optimization for laptops and desktops.</li>
+                  <li><strong className="text-zinc-900 dark:text-zinc-100">Component Upgrades:</strong> RAM and SSD installation to make your old computer run like new.</li>
+                  <li><strong className="text-zinc-900 dark:text-zinc-100">Digital Support:</strong> General tech troubleshooting and device setup assistance.</li>
                 </ul>
               </div>
 
               <hr className="border-zinc-100 dark:border-zinc-800" />
 
-              {/* 7. BUSINESS ADMINISTRATION */}
-              <div className="space-y-2">
-                <h4 className="font-black text-xs uppercase tracking-wider text-[#F4A261] flex items-center gap-2">
-                  <Receipt weight="fill" className="w-4 h-4" /> Business Administration &amp; Essentials
+              {/* 7. STUDIO HUB */}
+              <div className="space-y-2 pb-4">
+                <h4 className="font-black text-xs uppercase tracking-wider text-[#1E6FA8] dark:text-[#A9D6F2] flex items-center gap-2">
+                  <Receipt weight="fill" className="w-4 h-4" /> Studio Hub – Admin &amp; General
                 </h4>
                 <ul className="space-y-1.5 text-zinc-600 dark:text-zinc-400 list-disc list-inside pl-1">
-                  <li><span className="font-bold text-zinc-900 dark:text-zinc-100">Turnaround Metrics:</span> Basic printing, photocopying work, and portal verifications are generally finished same-day. Custom graphics engineering, text layout typing, and complex multi-page CV packages require 24 to 48 hours for precise vector alignment.</li>
-                  <li><span className="font-bold text-zinc-900 dark:text-zinc-100">Order Process &amp; WhatsApp Rule:</span> Hit any service category button across our platform to launch a pre-filled template message straight into our active chat thread. Send all reference layout files and raw copy text clearly within that channel.</li>
-                  <li><span className="font-bold text-zinc-900 dark:text-zinc-100">Payment &amp; Studio Delivery:</span> Immediate administrative lookups and small printing batches operate on cash-on-delivery. High-volume print jobs or custom brand identity design suites require an authorization deposit before processing begins. Physical collection happens directly at our designated home collection point in Mpumalanga Section, Kgotsong, Bothaville.</li>
+                  <li><strong className="text-zinc-900 dark:text-zinc-100">General Admin:</strong> Any other digital task not listed above — just ask us.</li>
+                  <li><strong className="text-zinc-900 dark:text-zinc-100">Pricing &amp; Payment:</strong> All services are priced competitively. We accept Cash and EFT. For high-volume work, we require a deposit or full payment before starting production.</li>
                 </ul>
               </div>
 
             </div>
 
-            {/* Bottom Dismiss Footer Area */}
+            {/* Sticky Bottom Close Button */}
             <div className="p-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 flex justify-end">
               <button 
                 onClick={() => setIsTermsOpen(false)}
-                className="px-5 py-2 font-bold text-xs bg-[#1E6FA8] text-white hover:bg-[#15537D] rounded-full transition-colors"
+                className="bg-[#1E6FA8] hover:bg-[#165a8a] text-white font-black text-xs uppercase tracking-widest px-8 py-3 rounded-full transition-all active:scale-95"
               >
-                I Understand &amp; Agree
+                Close Policy
               </button>
             </div>
           </div>
@@ -324,13 +327,13 @@ export function Footer({ onNavigate }: FooterProps) {
             onClick={(e) => e.stopPropagation()}
             className="bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 w-full max-w-2xl rounded-[24px] border border-zinc-200 dark:border-zinc-800 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-modal-fade"
           >
-            {/* Top Header Block */}
+            {/* Header Block */}
             <div className="p-5 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-zinc-950">
               <div>
-                <h3 className="font-black text-lg text-[#1E6FA8] dark:text-[#A9D6F2]">
+                <h3 className="font-black text-lg text-[#F4A261]">
                   Frequently Asked Questions
                 </h3>
-                <p className="text-[0.7rem] text-zinc-500 dark:text-zinc-400 mt-0.5">Apexbytes Hub • Operations &amp; Ordering Help</p>
+                <p className="text-[0.7rem] text-zinc-500 dark:text-zinc-400 mt-0.5">Quick answers to common Hub questions</p>
               </div>
               <button 
                 onClick={() => setIsFaqOpen(false)}
@@ -340,49 +343,66 @@ export function Footer({ onNavigate }: FooterProps) {
               </button>
             </div>
 
-            {/* Scrollable FAQ Items */}
-            <div className="p-6 overflow-y-auto space-y-3">
-              {faqs.map((faq, index) => {
-                const isOpen = openFaqIndex === index
-                return (
-                  <div
-                    key={index}
-                    className="border border-zinc-200 dark:border-zinc-800 rounded-[16px] overflow-hidden bg-zinc-50 dark:bg-zinc-950 transition-colors duration-200"
+            {/* FAQ List */}
+            <div className="p-6 overflow-y-auto">
+              <div className="space-y-3">
+                {faqs.map((faq, idx) => (
+                  <div 
+                    key={idx}
+                    className={`border rounded-2xl transition-all duration-300 ${
+                      openFaqIndex === idx 
+                        ? "border-[#1E6FA8]/30 bg-[#1E6FA8]/5 dark:bg-[#A9D6F2]/5" 
+                        : "border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700"
+                    }`}
                   >
                     <button
-                      onClick={() => setOpenFaqIndex(isOpen ? null : index)}
-                      className="w-full p-4 text-left flex items-center justify-between gap-4 font-bold text-[0.88rem] text-[#1E6FA8] dark:text-[#A9D6F2] hover:text-[#15537D] dark:hover:text-white transition-colors focus:outline-none"
+                      onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
+                      className="w-full p-4 flex items-center justify-between text-left focus:outline-none"
                     >
-                      <span className="leading-tight">{faq.question}</span>
-                      <CaretDown
-                        weight="bold"
-                        className="w-4 h-4 shrink-0 transition-transform duration-300 ease-in-out text-zinc-400"
-                        style={{
-                          transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-                          color: isOpen ? "#F4A261" : "",
-                        }}
+                      <span className="font-bold text-[0.85rem] md:text-sm pr-4">
+                        {faq.question}
+                      </span>
+                      <CaretDown 
+                        size={16} 
+                        weight="bold" 
+                        className={`transition-transform duration-300 shrink-0 text-[#1E6FA8] ${openFaqIndex === idx ? "rotate-180" : ""}`} 
                       />
                     </button>
-                    <div
-                      className="transition-all duration-300 ease-in-out overflow-hidden"
-                      style={{ maxHeight: isOpen ? "200px" : "0px", opacity: isOpen ? 1 : 0 }}
+                    <div 
+                      className={`overflow-hidden transition-all duration-300 ${
+                        openFaqIndex === idx ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
+                      }`}
                     >
-                      <div className="px-4 pb-4 border-t border-zinc-100 dark:border-zinc-800/50 text-zinc-600 dark:text-zinc-400 text-[0.83rem] leading-relaxed pt-3">
+                      <p className="p-4 pt-0 text-zinc-600 dark:text-zinc-400 text-[0.8rem] md:text-[0.85rem] leading-relaxed">
                         {faq.answer}
-                      </div>
+                      </p>
                     </div>
                   </div>
-                )
-              })}
+                ))}
+              </div>
+              
+              {/* Bottom Support Callout */}
+              <div className="mt-8 p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 text-center">
+                <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3">Still have a question?</p>
+                <a 
+                  href="https://wa.me/27753338260"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-[#25D366] text-white font-black text-[0.7rem] uppercase tracking-widest px-6 py-2.5 rounded-full hover:scale-105 transition-transform"
+                >
+                  <WhatsappLogo weight="fill" size={16} />
+                  Chat on WhatsApp
+                </a>
+              </div>
             </div>
 
-            {/* Bottom Close Area */}
+            {/* Bottom Close */}
             <div className="p-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 flex justify-end">
               <button 
                 onClick={() => setIsFaqOpen(false)}
-                className="px-5 py-2 font-bold text-xs bg-[#1E6FA8] text-white hover:bg-[#15537D] rounded-full transition-colors"
+                className="text-zinc-500 hover:text-zinc-800 dark:hover:text-white font-bold text-xs uppercase tracking-widest px-6 py-2 transition-colors"
               >
-                Close FAQs
+                Close FAQ
               </button>
             </div>
           </div>
@@ -391,4 +411,3 @@ export function Footer({ onNavigate }: FooterProps) {
     </footer>
   )
 }
- 
