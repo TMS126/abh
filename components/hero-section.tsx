@@ -152,7 +152,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
       {/* Background Gradients - Blue dominant, Green secondary, Orange highlights */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <div className="absolute inset-0 opacity-60 dark:opacity-0 bg-[radial-gradient(circle_at_20%_30%,#1E6FA8_0%,transparent_50%),radial-gradient(circle_at_80%_70%,#6FBF1A_0%,transparent_45%),radial-gradient(circle_at_90%_20%,#F4A261_0%,transparent_35%)]" />
-        <div className="absolute inset-0 opacity-0 dark:opacity-45 bg-[radial-gradient(circle_at_30%_20%,#1E6FA8_0%,transparent_60%),radial-gradient(circle_at_70%_80%,#0F3F66_0%,transparent_50%),radial-gradient(circle_at_50%_50%,#3E6B0E_0%,transparent_40%)]" />
+        <div className="absolute inset-0 opacity-0 dark:opacity-45 bg-[radial-gradient(circle_at_30%_20%,#1E6FA8_0%,transparent_60%),radial-gradient(circle_at_70%_80%,#0F3F66_0%,transparent_50%),radial-gradient(circle_at_85%_30%,#F4A261_0%,transparent_40%)]" />
         
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-80 dark:opacity-50" style={{ display: "block" }} />
         
@@ -166,8 +166,8 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
       </div>
 
       <div className="max-w-[1200px] mx-auto flex flex-col items-center text-center relative z-10 w-full mb-12">
-        {/* Heading - Monochromatic blue */}
-        <h1 className="font-sans font-black text-3xl md:text-5xl lg:text-[3.5rem] text-[#1E6FA8] dark:text-[#A9D6F2] leading-tight mb-6 text-balance">
+        {/* Heading - Darker monochromatic blue */}
+        <h1 className="font-sans font-black text-3xl md:text-5xl lg:text-[3.5rem] text-[#0F3F66] dark:text-[#A9D6F2] leading-tight mb-6 text-balance">
           Your Local Tech &amp; Print Partner
         </h1>
         
@@ -177,28 +177,28 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full mb-14">
-          {/* Glassmorphism Services Button - Orange with smooth slide transition */}
+          {/* Glassmorphism Services Button - Darker Orange, 30% Smaller Width */}
           <button
             onClick={handleServicesClick}
-            className="w-full sm:w-[240px] relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-[32px] font-sans font-black text-base text-[#F4A261] dark:text-[#F9D1B0] border-2 border-[#F4A261] bg-[#F4A261]/25 backdrop-blur-[12px] hover:bg-[#F4A261]/35 active:bg-[#F4A261] active:text-white transition-all duration-300 ease-out overflow-hidden group shadow-[0_8px_20px_rgba(244,162,97,0.25)]"
+            className="w-full sm:w-[168px] relative inline-flex items-center justify-center gap-2 px-6 py-4 rounded-[32px] font-sans font-black text-sm text-white dark:text-[#F9D1B0] border-2 border-[#D9894B] bg-[#D9894B] dark:bg-[#D9894B]/40 backdrop-blur-[12px] hover:bg-[#B86F34] dark:hover:bg-[#D9894B]/50 active:bg-[#D9894B] active:text-white transition-all duration-300 ease-out overflow-hidden group shadow-[0_8px_20px_rgba(217,137,75,0.3)]"
           >
             <span className={cn(
               "transition-all duration-300 ease-out inline-flex items-center justify-center gap-2 w-full h-full",
               isTextPopping ? "scale-115 tracking-wide" : "scale-100"
             )}>
-              See Our Services <ArrowRight weight="bold" className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+              See Our Services <ArrowRight weight="bold" className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </span>
           </button>
           
-          {/* Glassmorphism WhatsApp Button - Green with smooth slide transition */}
+          {/* Glassmorphism WhatsApp Button - Darker Green, 30% Smaller Width */}
           <a
             href="https://wa.me/27753338260?text=Hi%20Apexbytes%20Hub%21%20I%27m%20interested%20in%20your%20services.%20Can%20you%20tell%20me%20more%3F"
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleWhatsAppClick}
-            className="w-full sm:w-[240px] inline-flex items-center justify-center gap-2 px-8 py-4 rounded-[32px] font-sans font-black text-base text-[#25D366] border-2 border-[#25D366] bg-[#25D366]/25 backdrop-blur-[12px] hover:bg-[#25D366]/35 active:bg-[#25D366] active:text-white transition-all duration-300 ease-in-out shadow-[0_8px_20px_rgba(37,211,102,0.25)]"
+            className="w-full sm:w-[168px] inline-flex items-center justify-center gap-2 px-6 py-4 rounded-[32px] font-sans font-black text-sm text-white border-2 border-[#1E7E34] bg-[#1E7E34] dark:bg-[#1E7E34]/40 backdrop-blur-[12px] hover:bg-[#155724] dark:hover:bg-[#1E7E34]/50 active:bg-[#1E7E34] active:text-white transition-all duration-300 ease-in-out shadow-[0_8px_20px_rgba(30,126,52,0.3)]"
           >
-            <WhatsappLogo weight="fill" className="w-6 h-6" /> WhatsApp Us
+            <WhatsappLogo weight="fill" className="w-5 h-5" /> WhatsApp Us
           </a>
         </div>
 
@@ -238,37 +238,41 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
         </div>
       </div>
 
-      {/* Flowing Text Marquee - Text only, no housing, full text display */}
-      <div className="relative w-full mt-auto z-10 py-4">
+      {/* Flowing Text Marquee - Text only, no housing, full text display with proper looping */}
+      <div className="relative w-full mt-auto z-10 py-4 overflow-hidden">
         <div 
           ref={tickerRef}
-          className="flex overflow-hidden animate-marquee-flow"
+          className="flex animate-marquee-continuous"
         >
-          <span className="text-[#1E6FA8] dark:text-[#A9D6F2] font-sans font-black text-sm md:text-base px-2 tracking-tight whitespace-nowrap">
+          <span className="text-[#1E6FA8] dark:text-[#A9D6F2] font-sans font-black text-sm md:text-base px-2 tracking-tight whitespace-nowrap flex-shrink-0">
             {tickerText}
           </span>
-          <span className="text-[#1E6FA8] dark:text-[#A9D6F2] font-sans font-black text-sm md:text-base px-2 tracking-tight whitespace-nowrap">
+          <span className="text-[#1E6FA8] dark:text-[#A9D6F2] font-sans font-black text-sm md:text-base px-2 tracking-tight whitespace-nowrap flex-shrink-0">
             {tickerText}
           </span>
-          <span className="text-[#1E6FA8] dark:text-[#A9D6F2] font-sans font-black text-sm md:text-base px-2 tracking-tight whitespace-nowrap">
+          <span className="text-[#1E6FA8] dark:text-[#A9D6F2] font-sans font-black text-sm md:text-base px-2 tracking-tight whitespace-nowrap flex-shrink-0">
+            {tickerText}
+          </span>
+          <span className="text-[#1E6FA8] dark:text-[#A9D6F2] font-sans font-black text-sm md:text-base px-2 tracking-tight whitespace-nowrap flex-shrink-0">
             {tickerText}
           </span>
         </div>
       </div>
 
       <style jsx>{`
-        @keyframes marquee-flow {
+        @keyframes marquee-continuous {
           0% { 
             transform: translateX(0); 
           }
           100% { 
-            transform: translateX(calc(-33.333% - 0px)); 
+            transform: translateX(-25%); 
           }
         }
-        .animate-marquee-flow {
-          animation: marquee-flow 12s linear infinite;
+        .animate-marquee-continuous {
+          animation: marquee-continuous 16s linear infinite;
         }
       `}</style>
     </section>
   )
 }
+ 
