@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Navbar } from "@/components/navbar"
 import { HeroSection } from "@/components/hero-section"
 import { StripSection, CtaBar } from "@/components/strip-section"
@@ -12,26 +12,56 @@ import { Footer } from "@/components/footer"
 
 type PageId = "home" | "services" | "about" | "gallery" | "contact"
 
+const VALID_PAGES: PageId[] = ["home", "services", "about", "gallery", "contact"]
+
+function isValidPage(p: string): p is PageId {
+  return VALID_PAGES.includes(p as PageId)
+}
+
 export default function ApexbytesHub() {
   const [activePage, setActivePage] = useState<PageId>("home")
 
+  // On first load, read the URL path and set the correct page
+  useEffect(() => {
+    const path = window.location.pathname.replace("/", "") || "home"
+    if (isValidPage(path)) {
+      setActivePage(path)
+    }
+    // Push initial state so the very first back press works correctly
+    window.history.replaceState({ page: path }, "", window.location.pathname)
+  }, [])
+
+  // Listen for browser back/forward button
+  useEffect(() => {
+    const handlePop = (e: PopStateEvent) => {
+      const page = e.state?.page ?? "home"
+      if (isValidPage(page)) {
+        setActivePage(page)
+        window.scrollTo({ top: 0, behavior: "smooth" })
+      }
+    }
+    window.addEventListener("popstate", handlePop)
+    return () => window.removeEventListener("popstate", handlePop)
+  }, [])
+
   const handleNavigate = (page: string) => {
-    setActivePage(page as PageId)
+    if (!isValidPage(page)) return
+    const url = page === "home" ? "/" : `/${page}`
+    window.history.pushState({ page }, "", url)
+    setActivePage(page)
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar activePage={activePage} onNavigate={handleNavigate} />
-      
-      {/* Main content area with padding for fixed navbar */}
+
       <main className="pt-[68px]">
-        {/* Home Page */}
         {activePage === "home" && (
           <div className="animate-fade-up">
             <HeroSection onNavigate={handleNavigate} />
             <StripSection />
-            <CtaBar 
+            <CtaBar
               title="Ready to get started?"
               description="WhatsApp us or visit us in Kgotsong — we're always happy to help."
               buttonText="WhatsApp Us Now"
@@ -40,11 +70,10 @@ export default function ApexbytesHub() {
           </div>
         )}
 
-        {/* Services Page */}
         {activePage === "services" && (
           <>
             <ServicesPage onNavigate={handleNavigate} />
-            <CtaBar 
+            <CtaBar
               title="Not sure what you need?"
               description="Just WhatsApp us and we'll guide you in the right direction."
               buttonText="Chat With Us"
@@ -53,13 +82,10 @@ export default function ApexbytesHub() {
           </>
         )}
 
-        {/* About Page */}
         {activePage === "about" && <AboutPage />}
 
-        {/* Gallery Page */}
         {activePage === "gallery" && <GalleryPage onNavigate={handleNavigate} />}
 
-        {/* Contact Page */}
         {activePage === "contact" && <ContactPage />}
       </main>
 
