@@ -1,34 +1,17 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { ArrowRight, WhatsappLogo } from "@phosphor-icons/react"
+import { ArrowRight, WhatsappLogo, IdentificationCard, Printer, FileText, PaintBrush, Globe, Desktop, Gear, Wrench, Monitor, Cpu, PlusCircle, CheckCircle } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 
 interface HeroSectionProps {
   onNavigate: (page: string) => void
 }
 
-// Strictly Locked Corporate Brand Palette
 const COLORS = [
-  "#1E6FA8", // Primary Blue
-  "#A9D6F2", // Light Blue Accent
-  "#6FBF1A", // Primary Green
-  "#548F14", // Darker Green
-  "#3E6B0E", // Deep Green Asset Tint
-  "#D9894B", // Core Mid-Orange
-  "#F4A261", // Accent Orange
-]
-
-// Actionable operational tasks for the continuous ticker marquee
-const MARQUEE_ITEMS = [
-  "Apply for SASSA",
-  "Print your photos (4x6 & A4)",
-  "Update your CV & Formatting",
-  "Laminate Documents (A5, A4 & A3)",
-  "Register a Company & Logo Design",
-  "Print Flyers & Posters",
-  "Submit SARS, CSD & PSIRA Applications",
-  "Setup Emails & Software Installations"
+  "#1E6FA8", "#A9D6F2",
+  "#6FBF1A", "#548F14", "#3E6B0E",
+  "#F4A261", "#F9D1B0",
 ]
 
 function pick(arr: string[]) {
@@ -38,9 +21,8 @@ function pick(arr: string[]) {
 export function HeroSection({ onNavigate }: HeroSectionProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const ctaButtonRef = useRef<HTMLButtonElement>(null)
-  const mouseRef = useRef({ x: 0.5, y: 0.5, targetX: 0.5, targetY: 0.5 })
   
-  // Animation state handling for the background click macro focus
+  // Animation state handling for the dead-click pop out focus
   const [isCtaPopping, setIsCtaPopping] = useState(false)
 
   useEffect(() => {
@@ -53,12 +35,11 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     let w = 0
     let h = 0
 
-    // Setup 6 premium fluid interactive color orbs
     const orbs = Array.from({ length: 6 }, () => ({
       x: Math.random(),
       y: Math.random(),
-      vx: (Math.random() - 0.5) * 0.0006,
-      vy: (Math.random() - 0.5) * 0.0006,
+      vx: (Math.random() - 0.5) * 0.0008,
+      vy: (Math.random() - 0.5) * 0.0008,
       r: 0.45 + Math.random() * 0.35,
       color: pick(COLORS),
       nextColor: pick(COLORS),
@@ -91,15 +72,10 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
 
     function draw() {
       ctx.clearRect(0, 0, w, h)
-      
-      // Enforce dark mode canvas architecture background: Corporate Deep Blue
-      ctx.fillStyle = "#0F3F66"
+      // Base: Deep brand blue for Dark Mode, White for Light Mode handled via CSS/Theme
+      // We'll use a neutral base here and let the CSS handle the background theme
+      ctx.fillStyle = "transparent"
       ctx.fillRect(0, 0, w, h)
-
-      // Smoothly interpolate current mouse tracking location values
-      const mouse = mouseRef.current
-      mouse.x += (mouse.targetX - mouse.x) * 0.08
-      mouse.y += (mouse.targetY - mouse.y) * 0.08
 
       for (const orb of orbs) {
         orb.t += orb.speed
@@ -109,21 +85,12 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
           orb.nextColor = pick(COLORS)
         }
 
-        // Apply natural base orbit velocities
         orb.x += orb.vx
         orb.y += orb.vy
-
-        // Option 3 Implementation: Subtle gravitational attraction towards client cursor path
-        const dx = mouse.x - orb.x
-        const dy = mouse.y - orb.y
-        orb.x += dx * 0.0012
-        orb.y += dy * 0.0012
-
-        // Canvas boundary wrapping safeguards
-        if (orb.x < -0.2) orb.x = 1.2
-        if (orb.x > 1.2) orb.x = -0.2
-        if (orb.y < -0.2) orb.y = 1.2
-        if (orb.y > 1.2) orb.y = -0.2
+        if (orb.x < -0.1) orb.x = 1.1
+        if (orb.x > 1.1) orb.x = -0.1
+        if (orb.y < -0.1) orb.y = 1.1
+        if (orb.y > 1.1) orb.y = -0.1
 
         const cx = orb.x * w
         const cy = orb.y * h
@@ -131,7 +98,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
         const color = lerpColor(orb.color, orb.nextColor, orb.t)
 
         const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius)
-        grad.addColorStop(0, color.replace("rgb", "rgba").replace(")", ",0.32)"))
+        grad.addColorStop(0, color.replace("rgb", "rgba").replace(")", ",0.2)"))
         grad.addColorStop(1, "rgba(0,0,0,0)")
 
         ctx.fillStyle = grad
@@ -153,16 +120,11 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     }
   }, [])
 
-  // Tracks cursor position normalized across canvas window bounds
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    mouseRef.current.targetX = (e.clientX - rect.left) / rect.width
-    mouseRef.current.targetY = (e.clientY - rect.top) / rect.height
-  }
-
-  // Captures any click hitting an empty background layout region
+  // Captures any click hitting a dead background zone on the hero layout
   const handleDeadClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement
+    
+    // Safely bypass if user clicks an actual button, text input, link or anchor tag
     if (
       target.closest("button") || 
       target.closest("a") || 
@@ -172,52 +134,65 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
       return
     }
 
+    // Fire smooth focus zoom scale manipulation hook
     setIsCtaPopping(true)
-    setTimeout(() => setIsCtaPopping(false), 500)
+
+    // Clear hook cleanly after css transition cycle completes
+    setTimeout(() => {
+      setIsCtaPopping(false)
+    }, 500)
   }
+
+  const tickerText = "Apply for SASSA • Print your photos • Create a professional CV • Scan documents to digital • Design custom logos & business cards • Black & White or Colour printing • Lamination up to A3 • SARS & CSD registrations • Fast photocopying • Setup, send & receive emails • Design flyers & posters • Event invitations • Software installation & system updates • Computer troubleshooting & support • Hardware setup & connections"
 
   return (
     <section 
       onClick={handleDeadClick}
-      onMouseMove={handleMouseMove}
-      className="relative min-h-[calc(100vh-68px)] flex items-center px-4 sm:px-6 md:px-8 py-10 md:py-16 overflow-hidden cursor-default select-none"
+      className="relative min-h-[calc(100vh-68px)] flex flex-col items-center justify-center px-4 md:px-8 pt-16 md:pt-20 pb-8 overflow-hidden cursor-default select-none animate-fade-in bg-white dark:bg-[#0A1A2E]"
     >
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 w-full h-full pointer-events-none"
-        style={{ display: "block" }}
-      />
-      
-      {/* Texture Grain Overlay */}
-      <div
-        className="absolute inset-0 opacity-[0.035] pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-          backgroundSize: "128px 128px",
-        }}
-      />
-
-      <div className="max-w-[1140px] mx-auto grid md:grid-cols-5 gap-8 md:gap-8 items-center relative z-10 w-full">
+      {/* Dynamic Background Gradients */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        {/* Light Mode Gradient: Dominant Blue, Moderate Green, Minimal Orange */}
+        <div className="absolute inset-0 opacity-40 dark:opacity-0 bg-[radial-gradient(circle_at_20%_30%,#1E6FA8_0%,transparent_50%),radial-gradient(circle_at_80%_20%,#6FBF1A_0%,transparent_40%),radial-gradient(circle_at_50%_80%,#F4A261_0%,transparent_30%)]" />
         
-        {/* Left Column Text Content */}
-        <div className="text-center md:text-left md:col-span-3 flex flex-col justify-center px-2 sm:px-0">
-          <h1 className="font-sans font-black text-3xl sm:text-4xl lg:text-[3.25rem] text-white leading-tight mb-4 md:mb-5 text-balance drop-shadow-md">
-            Your <span className="text-[#F4A261]">Local Tech</span> &amp; Print Partner
+        {/* Dark Mode Gradient: Brand Blues accented with Deep Green */}
+        <div className="absolute inset-0 opacity-0 dark:opacity-30 bg-[radial-gradient(circle_at_30%_20%,#1E6FA8_0%,transparent_60%),radial-gradient(circle_at_70%_80%,#0F3F66_0%,transparent_50%),radial-gradient(circle_at_50%_50%,#3E6B0E_0%,transparent_40%)]" />
+        
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full opacity-60 dark:opacity-40"
+          style={{ display: "block" }}
+        />
+        
+        {/* Noise Overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+            backgroundSize: "128px 128px",
+          }}
+        />
+      </div>
+
+      <div className="max-w-[1200px] mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center relative z-10 w-full mb-12">
+        <div className="text-center md:text-left">
+          <h1 className="font-sans font-black text-3xl md:text-4xl lg:text-[3.1rem] text-[#333333] dark:text-white leading-tight mb-4 md:mb-5 text-balance drop-shadow-sm">
+            Your <span className="text-[#1E6FA8] dark:text-[#A9D6F2]">Local Tech </span> &amp; <span className="text-[#6FBF1A]">Print</span> Partner
           </h1>
-          <p className="text-[#A9D6F2] text-sm md:text-base leading-relaxed mb-6 md:mb-8 text-pretty drop-shadow-sm max-w-[520px] mx-auto md:mx-0">
+          <p className="text-[#555555] dark:text-white/75 text-base md:text-lg leading-relaxed mb-6 md:mb-8 text-pretty">
             From printing your documents to navigating government services — we make it simple, fast, and friendly. Right here in Kgotsong.
           </p>
           
-          {/* Fixed Button Layout with Rigid Constraints based on 1000026761.jpg */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start items-center mb-8 w-full max-w-md mx-auto md:mx-0">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start items-center">
+            {/* Action Button with constraints */}
             <button
               ref={ctaButtonRef}
               onClick={() => onNavigate("services")}
               className={cn(
-                "w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-[28px] font-sans font-black text-sm md:text-base text-white transition-all duration-300 ease-out transform-gpu shadow-md",
+                "w-full sm:max-w-[240px] inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base text-white transition-all duration-300 ease-out transform-gpu",
                 isCtaPopping
-                  ? "bg-[#6FBF1A] border-2 border-[#548F14] scale-105 rotate-1 shadow-[0_0_35px_rgba(111,191,26,0.65)] z-50"
-                  : "bg-[#F4A261] hover:bg-[#D9894B] hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(244,162,97,0.35)] active:scale-95"
+                  ? "bg-[#6FBF1A] border-2 border-[#548F14] scale-110 shadow-[0_0_35px_rgba(111,191,26,0.55)] z-50"
+                  : "bg-[#F4A261] hover:bg-[#D9894B] hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(244,162,97,0.4)] active:scale-95"
               )}
             >
               See Our Services <ArrowRight weight="bold" className="w-4 h-4" />
@@ -227,108 +202,78 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
               href="https://wa.me/27753338260"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-[28px] font-sans font-black text-sm md:text-base bg-[#6FBF1A] text-white hover:bg-[#548F14] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(111,191,26,0.3)] no-underline shadow-md"
+              className="w-full sm:max-w-[240px] inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base bg-[#25D366] text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(37,211,102,0.35)]"
             >
               <WhatsappLogo weight="fill" className="w-5 h-5" /> WhatsApp Us
             </a>
           </div>
+        </div>
 
-          {/* Fixed Continuous Text Marquee Container Spacing */}
-          <div className="w-full overflow-hidden relative py-2.5 bg-black/20 backdrop-blur-sm rounded-xl border border-white/5 max-w-[560px] mx-auto md:mx-0 mt-2">
-            <div className="flex whitespace-nowrap animate-marquee items-center gap-6">
-              {Array.from({ length: 2 }).map((_, setIdx) => (
-                <div key={setIdx} className="flex items-center gap-6 shrink-0">
-                  {MARQUEE_ITEMS.map((item, idx) => (
-                    <span key={idx} className="inline-flex items-center gap-2.5 text-xs font-bold text-[#A9D6F2] tracking-wide uppercase">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#F4A261] shrink-0" />
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              ))}
+        {/* Info Grid Component Block Display Card */}
+        <div className="bg-white/40 dark:bg-white/10 backdrop-blur-[16px] border border-[#EDEDED] dark:border-white/20 rounded-[22px] p-5 md:p-7 shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+          <h3 className="font-sans font-extrabold text-base text-[#333333] dark:text-white mb-4 flex items-center gap-2">
+            <CheckCircle weight="fill" className="text-[#6FBF1A]" /> What We Offer
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { label: "Print Hub", icon: <Printer weight="fill" className="w-4 h-4" />, color: "#F4A261" },
+              { label: "Document Hub", icon: <FileText weight="fill" className="w-4 h-4" />, color: "#6FBF1A" },
+              { label: "Design Hub", icon: <PaintBrush weight="fill" className="w-4 h-4" />, color: "#F4A261" },
+              { label: "E-Service Hub", icon: <Globe weight="fill" className="w-4 h-4" />, color: "#1E6FA8" },
+              { label: "Tech Hub", icon: <Desktop weight="fill" className="w-4 h-4" />, color: "#6FBF1A" },
+            ].map((item) => (
+              <span
+                key={item.label}
+                className="inline-flex items-center gap-2 bg-white/60 dark:bg-white/15 text-[#333333] dark:text-white px-3 py-1.5 rounded-[18px] text-sm transition-all duration-200 ease-in-out hover:bg-white/80 dark:hover:bg-white/25 border border-[#EDEDED] dark:border-transparent"
+              >
+                <span className="flex items-center justify-center" style={{ color: item.color }}>{item.icon}</span>
+                {item.label}
+              </span>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-3 gap-3 mt-5 pt-5 border-t border-[#EDEDED] dark:border-white/20 text-center">
+            <div>
+              <div className="flex justify-center mb-1 text-[#F4A261]"><PlusCircle weight="fill" size={20} /></div>
+              <div className="font-sans font-black text-xl md:text-2xl text-[#1E6FA8] dark:text-[#A9D6F2]">5</div>
+              <div className="text-[0.7rem] text-[#777777] dark:text-white/70 mt-0.5 uppercase tracking-wider font-bold">Hubs</div>
+            </div>
+            <div>
+              <div className="flex justify-center mb-1 text-[#6FBF1A]"><Gear weight="fill" size={20} /></div>
+              <div className="font-sans font-black text-xl md:text-2xl text-[#1E6FA8] dark:text-[#A9D6F2]">50+</div>
+              <div className="text-[0.7rem] text-[#777777] dark:text-white/70 mt-0.5 uppercase tracking-wider font-bold">Services</div>
+            </div>
+            <div>
+              <div className="flex justify-center mb-1 text-[#1E6FA8] dark:text-[#A9D6F2]"><Wrench weight="fill" size={20} /></div>
+              <div className="font-sans font-black text-xl md:text-2xl text-[#1E6FA8] dark:text-[#A9D6F2]">Fast</div>
+              <div className="text-[0.7rem] text-[#777777] dark:text-white/70 mt-0.5 uppercase tracking-wider font-bold">Turnaround</div>
             </div>
           </div>
         </div>
-
-        {/* Portfolio Showcase Card Element */}
-        <div className="w-full md:col-span-2 relative group flex justify-center items-center mt-4 md:mt-0">
-          <div className="absolute inset-0 bg-gradient-to-tr from-[#1E6FA8] to-[#6FBF1A] opacity-20 blur-[40px] rounded-full transition-opacity duration-500 group-hover:opacity-30 pointer-events-none" />
-          
-          <div className="bg-white/5 backdrop-blur-[24px] border border-white/10 rounded-[24px] p-5 sm:p-6 md:p-7 shadow-[0_15px_45px_rgba(0,0,0,0.3)] w-full relative z-10 transition-transform duration-500 hover:scale-[1.015]">
-            <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-5">
-              <h3 className="font-sans font-black text-xs uppercase tracking-wider text-[#A9D6F2]">Operational Portfolio</h3>
-              <div className="flex gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
-                <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
-                <span className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
-              </div>
-            </div>
-
-            {/* Comprehensive Corporate Division Token Badges */}
-            <div className="flex flex-wrap gap-2 mb-6">
-              {[
-                { label: "Print Hub", color: "#F4A261" },
-                { label: "Document Hub", color: "#6FBF1A" },
-                { label: "Design Hub", color: "#F4A261" },
-                { label: "E-Service Hub", color: "#A9D6F2" },
-                { label: "Tech Hub", color: "#6FBF1A" },
-              ].map((item) => (
-                <span
-                  key={item.label}
-                  className="inline-flex items-center gap-2 bg-white/10 text-white px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 border border-white/5 hover:bg-white/20"
-                >
-                  <span className="w-2 h-2 rounded-full" style={{ background: item.color }} />
-                  {item.label}
-                </span>
-              ))}
-            </div>
-
-            {/* Terminal Workspace Element */}
-            <div className="bg-black/20 border border-white/5 rounded-xl p-4 mb-6">
-              <div className="flex justify-between items-center text-[0.7rem] text-[#A9D6F2]/70 font-mono mb-3">
-                <span> studio_terminal.sh</span>
-                <span className="text-[#6FBF1A]">● Active</span>
-              </div>
-              <div className="space-y-2 font-mono text-xs text-white/90">
-                <p className="text-white/40">&gt; npm run build:apexbytes</p>
-                <p className="text-[#A9D6F2]">✓ Enforced structural branding palette config</p>
-                <p className="text-[#6FBF1A]">✓ Sanitized workspace vectors &amp; code markers</p>
-                <p className="text-[#F4A261]">✓ Optimized localized execution matrix</p>
-              </div>
-            </div>
-
-            {/* Performance Metric Architecture Grid */}
-            <div className="grid grid-cols-3 gap-3 pt-5 border-t border-white/10 text-center">
-              <div>
-                <div className="font-sans font-black text-xl md:text-2xl text-[#F4A261]">5</div>
-                <div className="text-[0.65rem] font-black text-[#A9D6F2] uppercase tracking-wider mt-0.5">Hubs</div>
-              </div>
-              <div>
-                <div className="font-sans font-black text-xl md:text-2xl text-[#6FBF1A]">50+</div>
-                <div className="text-[0.65rem] font-black text-[#A9D6F2] uppercase tracking-wider mt-0.5">Services</div>
-              </div>
-              <div>
-                <div className="font-sans font-black text-xl md:text-2xl text-[#F4A261]">Fast</div>
-                <div className="text-[0.65rem] font-black text-[#A9D6F2] uppercase tracking-wider mt-0.5">Turns</div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
       </div>
 
-      {/* Global CSS Global Styles Matrix Injection for Marquee Smooth Loop */}
-      <style jsx global>{`
+      {/* Dynamic Service Ticker (Horizontal Marquee) */}
+      <div className="relative w-full overflow-hidden py-4 mt-auto z-10">
+        <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-white dark:from-[#0A1A2E] to-transparent z-10" />
+        <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-white dark:from-[#0A1A2E] to-transparent z-10" />
+        
+        <div className="flex whitespace-nowrap animate-marquee">
+          <span className="text-[#333333] dark:text-[#A9D6F2] font-sans font-bold text-sm md:text-base px-4">
+            {tickerText}
+          </span>
+          <span className="text-[#333333] dark:text-[#A9D6F2] font-sans font-bold text-sm md:text-base px-4">
+            {tickerText}
+          </span>
+        </div>
+      </div>
+
+      <style jsx>{`
         @keyframes marquee {
-          0% { transform: translateX(0%); }
+          0% { transform: translateX(0); }
           100% { transform: translateX(-50%); }
         }
         .animate-marquee {
-          animation: marquee 25s linear infinite;
-        }
-        .animate-marquee:hover {
-          animation-play-state: paused;
+          animation: marquee 40s linear infinite;
         }
       `}</style>
     </section>
