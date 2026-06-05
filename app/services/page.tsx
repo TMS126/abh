@@ -5,17 +5,15 @@ import { useRouter } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { CtaBar } from "@/components/strip-section"
-import * as DataModule from "@/lib/data" 
+import { HUBS } from "@/lib/data" 
 
 // Next.js Route Page component (Must be a default export)
 export default function ServicesRoute() {
   const router = useRouter()
   const [activeHubId, setActiveHubId] = useState("print") 
 
-  // Safety Guard: Pull the HUBS data collection safely regardless of array/object wrappers
-  const hubsArray = Array.isArray(DataModule.HUBS) 
-    ? DataModule.HUBS 
-    : (DataModule.default?.HUBS || [])
+  // Safety Guard: Safely handle data structure availability
+  const hubsArray = Array.isArray(HUBS) ? HUBS : []
 
   // Safely look up the selected hub data matching the active ID
   const activeHub = hubsArray.length > 0 
