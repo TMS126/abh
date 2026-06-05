@@ -223,7 +223,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
         style={{ display: "block" }}
       />
 
-      {/* Desktop: static gradient — blue 60%, green 30%, orange 10% */}
+      {/* Desktop: static gradient */}
       <div
         className="absolute inset-0 pointer-events-none hidden md:block"
         style={{
@@ -318,14 +318,16 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
               </button>
             </div>
 
-            
-              <a href="https://wa.me/27753338260"
+            {/* WhatsApp button */}
+            <a
+              href="https://wa.me/27753338260"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-[28px] font-sans font-extrabold text-sm md:text-base bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(37,211,102,0.35)]"
             >
               <WhatsappLogo weight="fill" className="w-5 h-5" /> WhatsApp Us
             </a>
+
           </div>
         </div>
 
