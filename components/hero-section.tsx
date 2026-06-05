@@ -35,14 +35,18 @@ const TICKER_ITEMS = [
   "Register on CSD",
 ]
 
+// Single dot color for the ticker — soft orange
+const TICKER_DOT = "#D9894B"
+
 export function HeroSection({ onNavigate }: HeroSectionProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isCtaPopping, setIsCtaPopping] = useState(false)
 
-  // Canvas runs on mobile only — detected via CSS media query after mount
+  // Canvas: always in DOM via md:hidden, we just control animation here
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)")
-    if (!mq.matches) return // desktop: skip entirely
+    // Only animate on mobile — check after mount, never during SSR
+    if (typeof window === "undefined") return
+    if (!window.matchMedia("(max-width: 767px)").matches) return
 
     const canvas = canvasRef.current
     if (!canvas) return
@@ -117,12 +121,11 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
         const cy = orb.y * h
         const radius = orb.r * Math.max(w, h)
         const color = lerpColor(orb.color, orb.nextColor, orb.t)
-        const rgba = (opacity: number) =>
-          color.replace("rgb", "rgba").replace(")", `, ${opacity})`)
+        const rgba = (o: number) => color.replace("rgb", "rgba").replace(")", `, ${o})`)
 
         const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius)
-        grad.addColorStop(0,    rgba(0.22))
-        grad.addColorStop(0.4,  rgba(0.10))
+        grad.addColorStop(0,    rgba(0.20))
+        grad.addColorStop(0.4,  rgba(0.09))
         grad.addColorStop(0.75, rgba(0.03))
         grad.addColorStop(1,    rgba(0))
         ctx.fillStyle = grad
@@ -158,63 +161,74 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
       onClick={handleDeadClick}
       className="relative min-h-[calc(100vh-68px)] flex items-center px-4 md:px-8 py-16 md:py-20 overflow-hidden cursor-default select-none"
     >
-      {/* Mobile: liquid canvas — always rendered, hidden on desktop via CSS */}
+
+      {/* Mobile canvas — always in DOM, hidden on desktop via CSS */}
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full pointer-events-none md:hidden"
-        style={{ display: "block" }}
       />
 
-      {/* Desktop: static multi-layer gradient */}
+      {/* Mobile dark base — sits under canvas */}
+      <div
+        className="absolute inset-0 pointer-events-none md:hidden"
+        style={{ background: "#07111F" }}
+      />
+
+      {/* Desktop static gradient — never runs JS, pure CSS */}
       <div
         className="absolute inset-0 pointer-events-none hidden md:block"
         style={{
-          background: [
-            "radial-gradient(ellipse 90% 70% at 10% 40%, rgba(15,63,102,0.95) 0%, transparent 60%)",
-            "radial-gradient(ellipse 70% 60% at 55% 20%, rgba(30,111,168,0.7) 0%, transparent 60%)",
-            "radial-gradient(ellipse 55% 55% at 85% 65%, rgba(21,83,125,0.65) 0%, transparent 55%)",
-            "radial-gradient(ellipse 50% 50% at 60% 90%, rgba(62,107,14,0.55) 0%, transparent 55%)",
-            "radial-gradient(ellipse 40% 45% at 25% 80%, rgba(84,143,20,0.45) 0%, transparent 50%)",
-            "radial-gradient(ellipse 30% 35% at 95% 10%, rgba(217,137,75,0.4) 0%, transparent 50%)",
-            "linear-gradient(160deg, #07111F 0%, #0F3F66 30%, #15537D 52%, #2A5A10 72%, #3E6B0E 85%, #8B5020 100%)",
-          ].join(", "),
+          background: `
+            radial-gradient(ellipse 100% 80% at 0% 50%,   rgba(15,63,102,0.9)   0%, transparent 55%),
+            radial-gradient(ellipse 70%  60% at 50% 15%,  rgba(30,111,168,0.65) 0%, transparent 55%),
+            radial-gradient(ellipse 60%  55% at 90% 60%,  rgba(21,83,125,0.55)  0%, transparent 50%),
+            radial-gradient(ellipse 55%  50% at 55% 95%,  rgba(62,107,14,0.50)  0%, transparent 50%),
+            radial-gradient(ellipse 45%  45% at 20% 85%,  rgba(84,143,20,0.40)  0%, transparent 48%),
+            radial-gradient(ellipse 35%  35% at 98% 5%,   rgba(184,111,52,0.35) 0%, transparent 48%),
+            linear-gradient(155deg, #07111F 0%, #0D3558 28%, #134D72 48%, #1F4D0A 68%, #2E5C0A 82%, #6B3A10 100%)
+          `,
         }}
       />
 
-      {/* Dark base for mobile (under canvas) */}
-      <div className="absolute inset-0 pointer-events-none md:hidden" style={{ background: "#07111F" }} />
-
-      {/* Noise overlay */}
+      {/* Noise texture — both breakpoints */}
       <div
-        className="absolute inset-0 opacity-[0.035] pointer-events-none"
+        className="absolute inset-0 opacity-[0.03] pointer-events-none"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
           backgroundSize: "128px 128px",
         }}
       />
 
+      {/* Content */}
       <div className="max-w-[1200px] mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center relative z-10 w-full">
         <div className="text-center md:text-left">
 
-          {/* Heading — replaces old subheading */}
-          <h1 className="font-sans font-black text-4xl md:text-4xl lg:text-[3.1rem] text-white leading-tight mb-4 md:mb-5 drop-shadow-md">
-            Design.{" "}
-            <span className="text-[#F4A261]">Print.</span>{" "}
-            <span className="text-[#6FBF1A]">Upgrade.</span>
+          {/* Tagline — 3 brand colors, muted, always one line */}
+          <p className="whitespace-nowrap text-xs md:text-sm font-bold uppercase tracking-[0.16em] mb-3 overflow-hidden text-ellipsis">
+            <span style={{ color: "#8BB8D4" }}>Design</span>
+            <span className="text-white/30 mx-1">·</span>
+            <span style={{ color: "#8FBF5A" }}>Print</span>
+            <span className="text-white/30 mx-1">·</span>
+            <span style={{ color: "#C8936A" }}>Upgrade</span>
+          </p>
+
+          {/* Heading */}
+          <h1 className="font-sans font-black text-3xl md:text-4xl lg:text-[3.1rem] text-white leading-tight mb-4 md:mb-5 drop-shadow-md">
+            Your <span className="text-[#F4A261]">Local Tech</span> &amp; Print Partner
           </h1>
 
-          <p className="text-white/70 text-base md:text-lg leading-relaxed mb-6 md:mb-8 drop-shadow-sm">
+          <p className="text-white/70 text-base md:text-lg leading-relaxed mb-7 md:mb-8 drop-shadow-sm">
             From printing your documents to navigating government services — we make it simple, fast, and friendly. Right here in Kgotsong.
           </p>
 
-          {/* Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start">
+          {/* Buttons — inline-flex, no w-full, natural width */}
+          <div className="flex flex-wrap gap-3 justify-center md:justify-start">
             <button
               onClick={() => onNavigate("services")}
-              className={`inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-sans font-extrabold text-sm text-white transform-gpu transition-all duration-300 ${
+              className={`inline-flex items-center gap-2 px-6 py-3 rounded-full font-sans font-extrabold text-sm text-white transition-all duration-300 transform-gpu ${
                 isCtaPopping
-                  ? "bg-[#6FBF1A] scale-110 shadow-[0_0_28px_rgba(111,191,26,0.55)]"
-                  : "bg-[#F4A261] hover:bg-[#D9894B] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(244,162,97,0.4)] active:scale-95"
+                  ? "bg-[#6FBF1A] scale-110 shadow-[0_0_26px_rgba(111,191,26,0.5)]"
+                  : "bg-[#F4A261] hover:bg-[#D9894B] hover:-translate-y-0.5 hover:shadow-[0_8px_22px_rgba(244,162,97,0.4)] active:scale-95"
               }`}
             >
               See Our Services <ArrowRight weight="bold" className="w-4 h-4" />
@@ -224,34 +238,37 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
               href="https://wa.me/27753338260"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-sans font-extrabold text-sm bg-[#25D366] text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(37,211,102,0.35)]"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-sans font-extrabold text-sm text-white bg-[#25D366] hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_22px_rgba(37,211,102,0.35)]"
             >
               <WhatsappLogo weight="fill" className="w-4 h-4" /> WhatsApp Us
             </a>
           </div>
 
-          {/* Scrolling ticker — below buttons */}
-          <div className="overflow-hidden mt-6 md:mt-8 -mx-4 md:mx-0">
-            <div className="ticker-track flex whitespace-nowrap">
+          {/* Ticker — below buttons, single dot color */}
+          <div className="overflow-hidden mt-6 -mx-4 md:mx-0">
+            <div className="ticker-track inline-flex whitespace-nowrap">
               {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
                 <span
                   key={i}
-                  className="inline-flex items-center gap-2 text-[11px] font-semibold text-white/45 px-4 flex-shrink-0"
+                  className="inline-flex items-center gap-2 text-[11px] font-medium text-white/40 px-4 flex-shrink-0"
                 >
                   <span
                     className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                    style={{ background: COLORS[i % COLORS.length] }}
+                    style={{ background: TICKER_DOT }}
                   />
                   {item}
                 </span>
               ))}
             </div>
           </div>
+
         </div>
 
         {/* Info card */}
-        <div className="bg-white/[0.08] backdrop-blur-[20px] border border-white/[0.15] rounded-[22px] p-5 md:p-7 shadow-[0_8px_40px_rgba(0,0,0,0.4)]">
-          <h3 className="font-sans font-extrabold text-sm text-white/90 mb-4 uppercase tracking-wide">What We Offer</h3>
+        <div className="bg-white/[0.07] backdrop-blur-[18px] border border-white/[0.12] rounded-[22px] p-5 md:p-7 shadow-[0_8px_40px_rgba(0,0,0,0.35)]">
+          <h3 className="font-sans font-extrabold text-sm text-white/85 mb-4 uppercase tracking-wide">
+            What We Offer
+          </h3>
           <div className="flex flex-wrap gap-2">
             {[
               { label: "Print Hub",     dot: "#F4A261" },
@@ -262,7 +279,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
             ].map((item) => (
               <span
                 key={item.label}
-                className="inline-flex items-center gap-2 bg-white/10 text-white/85 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 hover:bg-white/20"
+                className="inline-flex items-center gap-2 bg-white/10 text-white/80 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 hover:bg-white/20"
               >
                 <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: item.dot }} />
                 {item.label}
@@ -270,18 +287,18 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
             ))}
           </div>
 
-          <div className="grid grid-cols-3 gap-3 mt-5 pt-5 border-t border-white/[0.12] text-center">
+          <div className="grid grid-cols-3 gap-3 mt-5 pt-5 border-t border-white/[0.10] text-center">
             <div>
               <div className="font-sans font-black text-2xl text-[#F4A261]">5</div>
-              <div className="text-[0.68rem] text-white/55 mt-0.5">Hubs</div>
+              <div className="text-[0.68rem] text-white/50 mt-0.5">Hubs</div>
             </div>
             <div>
               <div className="font-sans font-black text-2xl text-[#F4A261]">50+</div>
-              <div className="text-[0.68rem] text-white/55 mt-0.5">Services</div>
+              <div className="text-[0.68rem] text-white/50 mt-0.5">Services</div>
             </div>
             <div>
               <div className="font-sans font-black text-2xl text-[#F4A261]">Fast</div>
-              <div className="text-[0.68rem] text-white/55 mt-0.5">Turnarounds</div>
+              <div className="text-[0.68rem] text-white/50 mt-0.5">Turnarounds</div>
             </div>
           </div>
         </div>
@@ -299,4 +316,3 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     </section>
   )
 }
- 
