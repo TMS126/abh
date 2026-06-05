@@ -21,6 +21,7 @@ function pick(arr: string[]) {
 export function HeroSection({ onNavigate }: HeroSectionProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isTextPopping, setIsTextPopping] = useState(false)
+  const [isExiting, setIsExiting] = useState(false)
   const tickerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -125,17 +126,28 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     setTimeout(() => setIsTextPopping(false), 500)
   }
 
+  const handleServicesClick = () => {
+    setIsExiting(true)
+    setTimeout(() => {
+      onNavigate("services")
+    }, 600)
+  }
+
   const tickerText = "Apply for SASSA • Print your photos • Create a professional CV • Scan documents to digital • Design custom logos & business cards • Black & White or Colour printing • Lamination up to A3 • SARS & CSD registrations • Fast photocopying • Setup, send & receive emails • Design flyers & posters • Event invitations • Software installation & system updates • Computer troubleshooting & support • Hardware setup & connections"
 
   return (
     <section 
       onClick={handleDeadClick}
-      className="relative min-h-[calc(100vh-68px)] flex flex-col items-center justify-center px-4 md:px-8 pt-12 md:pt-16 pb-12 overflow-hidden cursor-default select-none animate-fade-in bg-white dark:bg-[#081428]"
+      className={cn(
+        "relative min-h-[calc(100vh-68px)] flex flex-col items-center justify-center px-4 md:px-8 pt-12 md:pt-16 pb-12 overflow-hidden cursor-default select-none transition-all duration-700 ease-in-out",
+        isExiting ? "-translate-x-full opacity-0" : "translate-x-0 opacity-100 animate-fade-in",
+        "bg-white dark:bg-[#081428]"
+      )}
     >
-      {/* Background Gradients */}
+      {/* Background Gradients - Blue dominant, Green secondary, Orange highlights */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute inset-0 opacity-40 dark:opacity-0 bg-[radial-gradient(circle_at_20%_30%,#1E6FA8_0%,transparent_50%),radial-gradient(circle_at_80%_20%,#6FBF1A_0%,transparent_40%),radial-gradient(circle_at_50%_80%,#F4A261_0%,transparent_30%)]" />
-        <div className="absolute inset-0 opacity-0 dark:opacity-45 bg-[radial-gradient(circle_at_30%_20%,#1E6FA8_0%,transparent_60%),radial-gradient(circle_at_70%_80%,#0F3F66_0%,transparent_50%),radial-gradient(circle_at_50%_50%,#3E6B0E_0%,transparent_40%)]" />
+        <div className="absolute inset-0 opacity-40 dark:opacity-0 bg-[radial-gradient(circle_at_20%_30%,#1E6FA8_0%,transparent_50%),radial-gradient(circle_at_80%_70%,#6FBF1A_0%,transparent_45%),radial-gradient(circle_at_90%_20%,#F4A261_0%,transparent_35%)]" />
+        <div className="absolute inset-0 opacity-0 dark:opacity-45 bg-[radial-gradient(circle_at_30%_20%,#1E6FA8_0%,transparent_60%),radial-gradient(circle_at_70%_80%,#0F3F66_0%,transparent_50%),radial-gradient(circle_at_85%_30%,#F4A261_0%,transparent_40%)]" />
         
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-60 dark:opacity-50" style={{ display: "block" }} />
         
@@ -152,28 +164,32 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
         <h1 className="font-sans font-black text-3xl md:text-5xl lg:text-[3.5rem] text-[#333333] dark:text-white leading-tight mb-6 text-balance">
           Your <span className="text-[#1E6FA8] dark:text-[#7EC8F0]">Local Tech </span> &amp; <span className="text-[#3E6B0E] dark:text-[#6FBF1A]">Print</span> Partner
         </h1>
-        <p className="text-[#555555] dark:text-white/80 text-base md:text-xl leading-relaxed mb-10 max-w-[700px]">
+        
+        {/* Tagline with single color */}
+        <p className="text-[#1E6FA8] dark:text-[#A9D6F2] text-base md:text-xl leading-relaxed mb-10 max-w-[700px] font-semibold">
           From printing your documents to navigating government services — we make it simple, fast, and friendly. Right here in Kgotsong.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full mb-14">
+          {/* Glassmorphism Services Button - Orange with solid on click */}
           <button
-            onClick={() => onNavigate("services")}
-            className="w-full sm:w-[240px] relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-[32px] font-sans font-black text-base text-white bg-[#F4A261] hover:bg-[#D9894B] hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(244,162,97,0.4)] active:scale-95 transition-all duration-300 ease-out overflow-hidden"
+            onClick={handleServicesClick}
+            className="w-full sm:w-[240px] relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-[32px] font-sans font-black text-base text-[#F4A261] dark:text-[#F9D1B0] border-2 border-[#F4A261] bg-[#F4A261]/15 backdrop-blur-[12px] hover:bg-[#F4A261]/25 active:bg-[#F4A261] active:text-white transition-all duration-300 ease-out overflow-hidden group shadow-[0_8px_20px_rgba(244,162,97,0.15)]"
           >
             <span className={cn(
               "transition-all duration-300 ease-out inline-flex items-center justify-center gap-2 w-full h-full",
               isTextPopping ? "scale-115 tracking-wide" : "scale-100"
             )}>
-              See Our Services <ArrowRight weight="bold" className="w-5 h-5" />
+              See Our Services <ArrowRight weight="bold" className="w-5 h-5 transition-transform group-hover:translate-x-1" />
             </span>
           </button>
           
+          {/* Glassmorphism WhatsApp Button - Green with solid on click */}
           <a
             href="https://wa.me/27753338260"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full sm:w-[240px] inline-flex items-center justify-center gap-2 px-8 py-4 rounded-[32px] font-sans font-black text-base bg-[#25D366] text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(37,211,102,0.35)]"
+            className="w-full sm:w-[240px] inline-flex items-center justify-center gap-2 px-8 py-4 rounded-[32px] font-sans font-black text-base text-[#25D366] border-2 border-[#25D366] bg-[#25D366]/15 backdrop-blur-[12px] hover:bg-[#25D366]/25 active:bg-[#25D366] active:text-white transition-all duration-300 ease-in-out shadow-[0_8px_20px_rgba(37,211,102,0.15)]"
           >
             <WhatsappLogo weight="fill" className="w-6 h-6" /> WhatsApp Us
           </a>
@@ -215,23 +231,21 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
         </div>
       </div>
 
-      {/* Full Width Modern Ticker */}
-      <div className="relative w-full mt-auto z-10">
-        <div className="bg-white/60 dark:bg-white/5 backdrop-blur-md border-y border-[#EDEDED] dark:border-white/10 py-5 relative overflow-hidden">
-          <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-white dark:from-[#081428] to-transparent z-10 pointer-events-none" />
-          <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-white dark:from-[#081428] to-transparent z-10 pointer-events-none" />
-          
-          <div 
-            ref={tickerRef}
-            className="flex whitespace-nowrap overflow-x-auto no-scrollbar cursor-grab active:cursor-grabbing animate-marquee-fast hover:pause"
-          >
-            <span className="text-[#333333] dark:text-[#A9D6F2] font-sans font-extrabold text-base md:text-lg px-4">
-              {tickerText} •&nbsp;
-            </span>
-            <span className="text-[#333333] dark:text-[#A9D6F2] font-sans font-extrabold text-base md:text-lg px-4">
-              {tickerText} •&nbsp;
-            </span>
-          </div>
+      {/* Flowing Text Marquee - No house icon */}
+      <div className="relative w-full mt-auto z-10 py-6">
+        <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-white dark:from-[#081428] to-transparent z-10 pointer-events-none" />
+        <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-white dark:from-[#081428] to-transparent z-10 pointer-events-none" />
+        
+        <div 
+          ref={tickerRef}
+          className="flex whitespace-nowrap overflow-x-auto no-scrollbar cursor-grab active:cursor-grabbing animate-marquee-fast"
+        >
+          <span className="text-[#333333] dark:text-[#A9D6F2] font-sans font-black text-base md:text-xl px-4 tracking-tight">
+            {tickerText}&nbsp;
+          </span>
+          <span className="text-[#333333] dark:text-[#A9D6F2] font-sans font-black text-base md:text-xl px-4 tracking-tight">
+            {tickerText}&nbsp;
+          </span>
         </div>
       </div>
 
@@ -244,12 +258,9 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
           100% { transform: translateX(-50%); }
         }
         .animate-marquee-fast {
-          animation: marquee 18s linear infinite;
-        }
-        .hover\:pause:hover {
-          animation-play-state: paused;
+          animation: marquee 15s linear infinite;
         }
       `}</style>
     </section>
   )
-}
+} 
