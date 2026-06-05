@@ -137,7 +137,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
   const handleWhatsAppClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     setWhatsappExiting(true)
     setTimeout(() => {
-      // Allow the link to proceed
+      // Navigation happens naturally via href
     }, 600)
   }
 
@@ -272,3 +272,4 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     </section>
   )
 }
+ 
