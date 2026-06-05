@@ -8,10 +8,29 @@ interface HeroSectionProps {
   onNavigate: (page: string) => void
 }
 
+// Strictly Locked Corporate Brand Palette
 const COLORS = [
-  "#1E6FA8", "#A9D6F2",
-  "#6FBF1A", "#548F14", "#3E6B0E",
-  "#F4A261", "#F9D1B0",
+  "#1E6FA8", // Primary Blue
+  "#A9D6F2", // Light Blue Accent
+  "#6FBF1A", // Primary Green
+  "#548F14", // Darker Green
+  "#3E6B0E", // Deep Green Asset Tint
+  "#D9894B", // Core Mid-Orange
+  "#F4A261", // Accent Orange
+]
+
+// Actionable operational tasks for the continuous ticker marquee
+const MARQUEE_ITEMS = [
+  "Apply for SASSA",
+  "Print your photos (4x6 & A4)",
+  "Update your CV & Formatting",
+  "Laminate Documents (A5, A4 & A3)",
+  "Register a Company & Logo Design",
+  "Print Flyers & Posters",
+  "Submit SARS, CSD & PSIRA Applications",
+  "Setup Emails & Software Installations",
+  "Computer troubleshooting & support",
+  "Hardware setup & connections"
 ]
 
 function pick(arr: string[]) {
@@ -23,7 +42,6 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
   const [isTextPopping, setIsTextPopping] = useState(false)
   const [isExiting, setIsExiting] = useState(false)
   const [whatsappExiting, setWhatsappExiting] = useState(false)
-  const tickerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -134,22 +152,16 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     }, 600)
   }
 
-  const handleWhatsAppClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    setWhatsappExiting(true)
-  }
-
-  const tickerText = "Apply for SASSA • Print your photos • Create a professional CV • Scan documents to digital • Design custom logos & business cards • Black & White or Colour printing • Lamination up to A3 • SARS & CSD registrations • Fast photocopying • Setup, send & receive emails • Design flyers & posters • Event invitations • Software installation & system updates • Computer troubleshooting & support • Hardware setup & connections"
-
   return (
     <section 
       onClick={handleDeadClick}
       className={cn(
-        "relative min-h-[calc(100vh-68px)] flex flex-col items-center justify-center px-4 md:px-8 pt-12 md:pt-16 pb-12 overflow-hidden cursor-default select-none transition-all duration-700 ease-in-out",
+        "relative min-h-[calc(100vh-68px)] flex flex-col items-center justify-center px-4 md:px-8 pt-12 md:pt-16 pb-6 overflow-hidden cursor-default select-none transition-all duration-700 ease-in-out",
         isExiting || whatsappExiting ? "-translate-x-full opacity-0" : "translate-x-0 opacity-100 animate-fade-in",
         "bg-white dark:bg-[#081428]"
       )}
     >
-      {/* Background Gradients - Blue dominant, Green secondary, Orange highlights */}
+      {/* Dynamic Background Layout Canvas Assets */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <div className="absolute inset-0 opacity-60 dark:opacity-0 bg-[radial-gradient(circle_at_20%_30%,#1E6FA8_0%,transparent_50%),radial-gradient(circle_at_80%_70%,#6FBF1A_0%,transparent_45%),radial-gradient(circle_at_90%_20%,#F4A261_0%,transparent_35%)]" />
         <div className="absolute inset-0 opacity-0 dark:opacity-45 bg-[radial-gradient(circle_at_30%_20%,#1E6FA8_0%,transparent_60%),radial-gradient(circle_at_70%_80%,#0F3F66_0%,transparent_50%),radial-gradient(circle_at_85%_30%,#F4A261_0%,transparent_40%)]" />
@@ -165,45 +177,42 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
         />
       </div>
 
-      <div className="max-w-[1200px] mx-auto flex flex-col items-center text-center relative z-10 w-full mb-12">
-        {/* Heading - Darker monochromatic blue */}
+      <div className="max-w-[1200px] mx-auto flex flex-col items-center text-center relative z-10 w-full mb-8">
         <h1 className="font-sans font-black text-3xl md:text-5xl lg:text-[3.5rem] text-[#0F3F66] dark:text-[#A9D6F2] leading-tight mb-6 text-balance">
           Your Local Tech &amp; Print Partner
         </h1>
         
-        {/* Subtext - Default black */}
-        <p className="text-[#333333] dark:text-white/80 text-base md:text-lg leading-relaxed mb-10 max-w-[700px]">
+        <p className="text-[#333333] dark:text-white/80 text-base md:text-lg leading-relaxed mb-10 max-w-[700px] px-2">
           From printing your documents to navigating government services — we make it simple, fast, and friendly. Right here in Kgotsong.
         </p>
         
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full mb-14">
-          {/* Glassmorphism Services Button - Darker Orange, 30% Smaller Width */}
+        {/* Adjusted Buttons for Vibrant, Clean Look in Light Mode */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-xs sm:max-w-none mb-12">
           <button
             onClick={handleServicesClick}
-            className="w-full sm:w-[168px] relative inline-flex items-center justify-center gap-2 px-6 py-4 rounded-[32px] font-sans font-black text-sm text-white dark:text-[#F9D1B0] border-2 border-[#D9894B] bg-[#D9894B] dark:bg-[#D9894B]/40 backdrop-blur-[12px] hover:bg-[#B86F34] dark:hover:bg-[#D9894B]/50 active:bg-[#D9894B] active:text-white transition-all duration-300 ease-out overflow-hidden group shadow-[0_8px_20px_rgba(217,137,75,0.3)]"
+            className="w-full sm:w-[168px] relative inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-[32px] font-sans font-black text-sm text-white border-2 border-[#F4A261] bg-[#F4A261] hover:bg-[#D9894B] dark:border-[#D9894B] dark:bg-[#D9894B]/40 dark:text-[#F9D1B0] dark:backdrop-blur-[12px] dark:hover:bg-[#D9894B]/50 active:scale-95 transition-all duration-300 ease-out overflow-hidden group shadow-[0_8px_20px_rgba(244,162,97,0.3)]"
           >
             <span className={cn(
               "transition-all duration-300 ease-out inline-flex items-center justify-center gap-2 w-full h-full",
-              isTextPopping ? "scale-115 tracking-wide" : "scale-100"
+              isTextPopping ? "scale-105" : "scale-100"
             )}>
               See Our Services <ArrowRight weight="bold" className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </span>
           </button>
           
-          {/* Glassmorphism WhatsApp Button - Darker Green, 30% Smaller Width */}
           <a
             href="https://wa.me/27753338260?text=Hi%20Apexbytes%20Hub%21%20I%27m%20interested%20in%20your%20services.%20Can%20you%20tell%20me%20more%3F"
             target="_blank"
             rel="noopener noreferrer"
-            onClick={handleWhatsAppClick}
-            className="w-full sm:w-[168px] inline-flex items-center justify-center gap-2 px-6 py-4 rounded-[32px] font-sans font-black text-sm text-white border-2 border-[#1E7E34] bg-[#1E7E34] dark:bg-[#1E7E34]/40 backdrop-blur-[12px] hover:bg-[#155724] dark:hover:bg-[#1E7E34]/50 active:bg-[#1E7E34] active:text-white transition-all duration-300 ease-in-out shadow-[0_8px_20px_rgba(30,126,52,0.3)]"
+            onClick={() => setWhatsappExiting(true)}
+            className="w-full sm:w-[168px] inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-[32px] font-sans font-black text-sm text-white border-2 border-[#6FBF1A] bg-[#6FBF1A] hover:bg-[#548F14] dark:border-[#1E7E34] dark:bg-[#1E7E34]/40 dark:backdrop-blur-[12px] dark:hover:bg-[#1E7E34]/50 active:scale-95 transition-all duration-300 ease-in-out shadow-[0_8px_20px_rgba(111,191,26,0.3)]"
           >
             <WhatsappLogo weight="fill" className="w-5 h-5" /> WhatsApp Us
           </a>
         </div>
 
-        {/* Centered What We Offer Card */}
-        <div className="w-full max-w-[800px] bg-white/60 dark:bg-white/5 backdrop-blur-[20px] border border-[#EDEDED] dark:border-white/10 rounded-[30px] p-6 md:p-10 shadow-[0_15px_45px_rgba(0,0,0,0.12)] dark:shadow-[0_15px_45px_rgba(0,0,0,0.2)]">
+        {/* Centered Showcase Panel — All Outlines & Token Borders Completely Removed */}
+        <div className="w-full max-w-[800px] bg-white/60 dark:bg-white/5 backdrop-blur-[20px] border border-[#EDEDED] dark:border-white/10 rounded-[30px] p-6 md:p-10 shadow-[0_15px_45px_rgba(0,0,0,0.08)] dark:shadow-[0_15px_45px_rgba(0,0,0,0.2)]">
           <h3 className="font-sans font-black text-xl text-[#1E6FA8] dark:text-white mb-8">What We Offer</h3>
           <div className="flex flex-wrap justify-center gap-3 mb-10">
             {[
@@ -211,7 +220,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
             ].map((label) => (
               <span
                 key={label}
-                className="px-5 py-2.5 rounded-[20px] text-sm font-bold bg-white/80 dark:bg-white/10 text-[#1E6FA8] dark:text-[#A9D6F2] border border-[#1E6FA8]/40 dark:border-transparent transition-all duration-200 hover:scale-105"
+                className="px-5 py-2.5 rounded-[20px] text-sm font-bold bg-white dark:bg-white/10 text-[#1E6FA8] dark:text-[#A9D6F2] transition-all duration-200 hover:scale-105 shadow-sm"
               >
                 {label}
               </span>
@@ -238,41 +247,43 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
         </div>
       </div>
 
-      {/* Flowing Text Marquee - Text only, no housing, full text display with proper looping */}
-      <div className="relative w-full mt-auto z-10 py-4 overflow-hidden">
-        <div 
-          ref={tickerRef}
-          className="flex animate-marquee-continuous"
-        >
-          <span className="text-[#1E6FA8] dark:text-[#A9D6F2] font-sans font-black text-sm md:text-base px-2 tracking-tight whitespace-nowrap flex-shrink-0">
-            {tickerText}
-          </span>
-          <span className="text-[#1E6FA8] dark:text-[#A9D6F2] font-sans font-black text-sm md:text-base px-2 tracking-tight whitespace-nowrap flex-shrink-0">
-            {tickerText}
-          </span>
-          <span className="text-[#1E6FA8] dark:text-[#A9D6F2] font-sans font-black text-sm md:text-base px-2 tracking-tight whitespace-nowrap flex-shrink-0">
-            {tickerText}
-          </span>
-          <span className="text-[#1E6FA8] dark:text-[#A9D6F2] font-sans font-black text-sm md:text-base px-2 tracking-tight whitespace-nowrap flex-shrink-0">
-            {tickerText}
-          </span>
+      {/* Flawless Double-Buffered Infinite Marquee Track Loop */}
+      <div className="relative w-full mt-auto z-10 py-2 overflow-hidden select-none pointer-events-none">
+        <div className="flex whitespace-nowrap animate-marquee-continuous-track w-max">
+          {/* Track Frame Array 1 */}
+          <div className="flex items-center gap-8 px-4 shrink-0">
+            {MARQUEE_ITEMS.map((item, idx) => (
+              <span key={`t1-${idx}`} className="inline-flex items-center gap-3 text-[#1E6FA8] dark:text-[#A9D6F2] font-sans font-black text-sm md:text-base uppercase tracking-wider">
+                <span>{item}</span>
+                <span className="text-[#F4A261] font-black text-lg">•</span>
+              </span>
+            ))}
+          </div>
+          {/* Track Frame Array 2 — Perfectly loops seamlessly back into position zero */}
+          <div className="flex items-center gap-8 px-4 shrink-0">
+            {MARQUEE_ITEMS.map((item, idx) => (
+              <span key={`t2-${idx}`} className="inline-flex items-center gap-3 text-[#1E6FA8] dark:text-[#A9D6F2] font-sans font-black text-sm md:text-base uppercase tracking-wider">
+                <span>{item}</span>
+                <span className="text-[#F4A261] font-black text-lg">•</span>
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
-      <style jsx>{`
-        @keyframes marquee-continuous {
+      <style jsx global>{`
+        @keyframes marquee-continuous-track {
           0% { 
-            transform: translateX(0); 
+            transform: translate3d(0, 0, 0); 
           }
           100% { 
-            transform: translateX(-25%); 
+            transform: translate3d(-50%, 0, 0); 
           }
         }
-        .animate-marquee-continuous {
-          animation: marquee-continuous 16s linear infinite;
+        .animate-marquee-continuous-track {
+          animation: marquee-continuous-track 30s linear infinite;
         }
       `}</style>
     </section>
   )
 }
- 
