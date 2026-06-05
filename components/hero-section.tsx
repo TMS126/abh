@@ -22,6 +22,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isTextPopping, setIsTextPopping] = useState(false)
   const [isExiting, setIsExiting] = useState(false)
+  const [whatsappExiting, setWhatsappExiting] = useState(false)
   const tickerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -133,6 +134,13 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     }, 600)
   }
 
+  const handleWhatsAppClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    setWhatsappExiting(true)
+    setTimeout(() => {
+      // Allow the link to proceed
+    }, 600)
+  }
+
   const tickerText = "Apply for SASSA • Print your photos • Create a professional CV • Scan documents to digital • Design custom logos & business cards • Black & White or Colour printing • Lamination up to A3 • SARS & CSD registrations • Fast photocopying • Setup, send & receive emails • Design flyers & posters • Event invitations • Software installation & system updates • Computer troubleshooting & support • Hardware setup & connections"
 
   return (
@@ -140,16 +148,16 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
       onClick={handleDeadClick}
       className={cn(
         "relative min-h-[calc(100vh-68px)] flex flex-col items-center justify-center px-4 md:px-8 pt-12 md:pt-16 pb-12 overflow-hidden cursor-default select-none transition-all duration-700 ease-in-out",
-        isExiting ? "-translate-x-full opacity-0" : "translate-x-0 opacity-100 animate-fade-in",
+        isExiting || whatsappExiting ? "-translate-x-full opacity-0" : "translate-x-0 opacity-100 animate-fade-in",
         "bg-white dark:bg-[#081428]"
       )}
     >
       {/* Background Gradients - Blue dominant, Green secondary, Orange highlights */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute inset-0 opacity-40 dark:opacity-0 bg-[radial-gradient(circle_at_20%_30%,#1E6FA8_0%,transparent_50%),radial-gradient(circle_at_80%_70%,#6FBF1A_0%,transparent_45%),radial-gradient(circle_at_90%_20%,#F4A261_0%,transparent_35%)]" />
+        <div className="absolute inset-0 opacity-50 dark:opacity-0 bg-[radial-gradient(circle_at_20%_30%,#1E6FA8_0%,transparent_50%),radial-gradient(circle_at_80%_70%,#6FBF1A_0%,transparent_45%),radial-gradient(circle_at_90%_20%,#F4A261_0%,transparent_35%)]" />
         <div className="absolute inset-0 opacity-0 dark:opacity-45 bg-[radial-gradient(circle_at_30%_20%,#1E6FA8_0%,transparent_60%),radial-gradient(circle_at_70%_80%,#0F3F66_0%,transparent_50%),radial-gradient(circle_at_85%_30%,#F4A261_0%,transparent_40%)]" />
         
-        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-60 dark:opacity-50" style={{ display: "block" }} />
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-70 dark:opacity-50" style={{ display: "block" }} />
         
         <div
           className="absolute inset-0 opacity-[0.03] dark:opacity-[0.06]"
@@ -161,20 +169,25 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
       </div>
 
       <div className="max-w-[1200px] mx-auto flex flex-col items-center text-center relative z-10 w-full mb-12">
-        <h1 className="font-sans font-black text-3xl md:text-5xl lg:text-[3.5rem] text-[#333333] dark:text-white leading-tight mb-6 text-balance">
+        <h1 className="font-sans font-black text-3xl md:text-5xl lg:text-[3.5rem] text-[#1E6FA8] dark:text-white leading-tight mb-6 text-balance">
           Your <span className="text-[#1E6FA8] dark:text-[#7EC8F0]">Local Tech </span> &amp; <span className="text-[#3E6B0E] dark:text-[#6FBF1A]">Print</span> Partner
         </h1>
         
-        {/* Tagline with single color */}
-        <p className="text-[#1E6FA8] dark:text-[#A9D6F2] text-base md:text-xl leading-relaxed mb-10 max-w-[700px] font-semibold">
-          From printing your documents to navigating government services — we make it simple, fast, and friendly. Right here in Kgotsong.
+        {/* Tagline with monochromatic blue color */}
+        <p className="text-[#1E6FA8] dark:text-[#A9D6F2] text-base md:text-xl leading-relaxed font-black mb-4 max-w-[700px]">
+          From printing your documents to navigating government services
+        </p>
+        
+        {/* Subtext with default black color */}
+        <p className="text-[#333333] dark:text-white/80 text-base md:text-lg leading-relaxed mb-10 max-w-[700px]">
+          we make it simple, fast, and friendly. Right here in Kgotsong.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full mb-14">
-          {/* Glassmorphism Services Button - Orange with solid on click */}
+          {/* Glassmorphism Services Button - Orange with smooth slide transition */}
           <button
             onClick={handleServicesClick}
-            className="w-full sm:w-[240px] relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-[32px] font-sans font-black text-base text-[#F4A261] dark:text-[#F9D1B0] border-2 border-[#F4A261] bg-[#F4A261]/15 backdrop-blur-[12px] hover:bg-[#F4A261]/25 active:bg-[#F4A261] active:text-white transition-all duration-300 ease-out overflow-hidden group shadow-[0_8px_20px_rgba(244,162,97,0.15)]"
+            className="w-full sm:w-[240px] relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-[32px] font-sans font-black text-base text-[#F4A261] dark:text-[#F9D1B0] border-2 border-[#F4A261] bg-[#F4A261]/20 backdrop-blur-[12px] hover:bg-[#F4A261]/30 active:bg-[#F4A261] active:text-white transition-all duration-300 ease-out overflow-hidden group shadow-[0_8px_20px_rgba(244,162,97,0.2)]"
           >
             <span className={cn(
               "transition-all duration-300 ease-out inline-flex items-center justify-center gap-2 w-full h-full",
@@ -184,27 +197,28 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
             </span>
           </button>
           
-          {/* Glassmorphism WhatsApp Button - Green with solid on click */}
+          {/* Glassmorphism WhatsApp Button - Green with smooth slide transition */}
           <a
             href="https://wa.me/27753338260"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full sm:w-[240px] inline-flex items-center justify-center gap-2 px-8 py-4 rounded-[32px] font-sans font-black text-base text-[#25D366] border-2 border-[#25D366] bg-[#25D366]/15 backdrop-blur-[12px] hover:bg-[#25D366]/25 active:bg-[#25D366] active:text-white transition-all duration-300 ease-in-out shadow-[0_8px_20px_rgba(37,211,102,0.15)]"
+            onClick={handleWhatsAppClick}
+            className="w-full sm:w-[240px] inline-flex items-center justify-center gap-2 px-8 py-4 rounded-[32px] font-sans font-black text-base text-[#25D366] border-2 border-[#25D366] bg-[#25D366]/20 backdrop-blur-[12px] hover:bg-[#25D366]/30 active:bg-[#25D366] active:text-white transition-all duration-300 ease-in-out shadow-[0_8px_20px_rgba(37,211,102,0.2)]"
           >
             <WhatsappLogo weight="fill" className="w-6 h-6" /> WhatsApp Us
           </a>
         </div>
 
         {/* Centered What We Offer Card */}
-        <div className="w-full max-w-[800px] bg-white/40 dark:bg-white/5 backdrop-blur-[20px] border border-[#EDEDED] dark:border-white/10 rounded-[30px] p-6 md:p-10 shadow-[0_15px_45px_rgba(0,0,0,0.08)] dark:shadow-[0_15px_45px_rgba(0,0,0,0.2)]">
-          <h3 className="font-sans font-black text-xl text-[#333333] dark:text-white mb-8">What We Offer</h3>
+        <div className="w-full max-w-[800px] bg-white/50 dark:bg-white/5 backdrop-blur-[20px] border border-[#EDEDED] dark:border-white/10 rounded-[30px] p-6 md:p-10 shadow-[0_15px_45px_rgba(0,0,0,0.1)] dark:shadow-[0_15px_45px_rgba(0,0,0,0.2)]">
+          <h3 className="font-sans font-black text-xl text-[#1E6FA8] dark:text-white mb-8">What We Offer</h3>
           <div className="flex flex-wrap justify-center gap-3 mb-10">
             {[
               "Print Hub", "Document Hub", "Design Hub", "E-Service Hub", "Tech Hub"
             ].map((label) => (
               <span
                 key={label}
-                className="px-5 py-2.5 rounded-[20px] text-sm font-bold bg-white/60 dark:bg-white/10 text-[#1E6FA8] dark:text-[#A9D6F2] border border-[#EDEDED] dark:border-transparent transition-all duration-200 hover:scale-105"
+                className="px-5 py-2.5 rounded-[20px] text-sm font-bold bg-white/70 dark:bg-white/10 text-[#1E6FA8] dark:text-[#A9D6F2] border border-[#1E6FA8]/30 dark:border-transparent transition-all duration-200 hover:scale-105"
               >
                 {label}
               </span>
@@ -231,34 +245,28 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
         </div>
       </div>
 
-      {/* Flowing Text Marquee - No house icon */}
-      <div className="relative w-full mt-auto z-10 py-6">
-        <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-white dark:from-[#081428] to-transparent z-10 pointer-events-none" />
-        <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-white dark:from-[#081428] to-transparent z-10 pointer-events-none" />
-        
+      {/* Flowing Text Marquee - Text only, no housing */}
+      <div className="relative w-full mt-auto z-10 py-4">
         <div 
           ref={tickerRef}
-          className="flex whitespace-nowrap overflow-x-auto no-scrollbar cursor-grab active:cursor-grabbing animate-marquee-fast"
+          className="flex whitespace-nowrap overflow-hidden animate-marquee-speed"
         >
-          <span className="text-[#333333] dark:text-[#A9D6F2] font-sans font-black text-base md:text-xl px-4 tracking-tight">
-            {tickerText}&nbsp;
+          <span className="text-[#1E6FA8] dark:text-[#A9D6F2] font-sans font-black text-sm md:text-base px-2 tracking-tight">
+            {tickerText}
           </span>
-          <span className="text-[#333333] dark:text-[#A9D6F2] font-sans font-black text-base md:text-xl px-4 tracking-tight">
-            {tickerText}&nbsp;
+          <span className="text-[#1E6FA8] dark:text-[#A9D6F2] font-sans font-black text-sm md:text-base px-2 tracking-tight">
+            {tickerText}
           </span>
         </div>
       </div>
 
       <style jsx>{`
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
         @keyframes marquee {
           0% { transform: translateX(0); }
           100% { transform: translateX(-50%); }
         }
-        .animate-marquee-fast {
-          animation: marquee 15s linear infinite;
+        .animate-marquee-speed {
+          animation: marquee 8s linear infinite;
         }
       `}</style>
     </section>
