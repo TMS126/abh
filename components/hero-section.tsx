@@ -122,7 +122,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
       return
     }
     setIsTextPopping(true)
-    setTimeout(() => setIsTextPopping(false), 600)
+    setTimeout(() => setIsTextPopping(false), 500)
   }
 
   const tickerText = "Apply for SASSA • Print your photos • Create a professional CV • Scan documents to digital • Design custom logos & business cards • Black & White or Colour printing • Lamination up to A3 • SARS & CSD registrations • Fast photocopying • Setup, send & receive emails • Design flyers & posters • Event invitations • Software installation & system updates • Computer troubleshooting & support • Hardware setup & connections"
@@ -135,7 +135,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
       {/* Background Gradients */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <div className="absolute inset-0 opacity-40 dark:opacity-0 bg-[radial-gradient(circle_at_20%_30%,#1E6FA8_0%,transparent_50%),radial-gradient(circle_at_80%_20%,#6FBF1A_0%,transparent_40%),radial-gradient(circle_at_50%_80%,#F4A261_0%,transparent_30%)]" />
-        <div className="absolute inset-0 opacity-0 dark:opacity-40 bg-[radial-gradient(circle_at_30%_20%,#1E6FA8_0%,transparent_60%),radial-gradient(circle_at_70%_80%,#0F3F66_0%,transparent_50%),radial-gradient(circle_at_50%_50%,#3E6B0E_0%,transparent_40%)]" />
+        <div className="absolute inset-0 opacity-0 dark:opacity-45 bg-[radial-gradient(circle_at_30%_20%,#1E6FA8_0%,transparent_60%),radial-gradient(circle_at_70%_80%,#0F3F66_0%,transparent_50%),radial-gradient(circle_at_50%_50%,#3E6B0E_0%,transparent_40%)]" />
         
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-60 dark:opacity-50" style={{ display: "block" }} />
         
@@ -150,7 +150,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
 
       <div className="max-w-[1200px] mx-auto flex flex-col items-center text-center relative z-10 w-full mb-12">
         <h1 className="font-sans font-black text-3xl md:text-5xl lg:text-[3.5rem] text-[#333333] dark:text-white leading-tight mb-6 text-balance">
-          Your <span className="text-[#1E6FA8] dark:text-[#7EC8F0]">Local Tech </span> &amp; <span className="text-[#6FBF1A]">Print</span> Partner
+          Your <span className="text-[#1E6FA8] dark:text-[#7EC8F0]">Local Tech </span> &amp; <span className="text-[#3E6B0E] dark:text-[#6FBF1A]">Print</span> Partner
         </h1>
         <p className="text-[#555555] dark:text-white/80 text-base md:text-xl leading-relaxed mb-10 max-w-[700px]">
           From printing your documents to navigating government services — we make it simple, fast, and friendly. Right here in Kgotsong.
@@ -159,11 +159,11 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full mb-14">
           <button
             onClick={() => onNavigate("services")}
-            className="w-full sm:w-[240px] relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-[32px] font-sans font-black text-base text-white bg-[#F4A261] hover:bg-[#D9894B] hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(244,162,97,0.4)] active:scale-95 transition-all duration-300 ease-out overflow-visible"
+            className="w-full sm:w-[240px] relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-[32px] font-sans font-black text-base text-white bg-[#F4A261] hover:bg-[#D9894B] hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(244,162,97,0.4)] active:scale-95 transition-all duration-300 ease-out overflow-hidden"
           >
             <span className={cn(
-              "transition-all duration-500 ease-out inline-flex items-center gap-2",
-              isTextPopping ? "scale-125 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]" : "scale-100"
+              "transition-all duration-300 ease-out inline-flex items-center justify-center gap-2 w-full h-full",
+              isTextPopping ? "scale-115 tracking-wide" : "scale-100"
             )}>
               See Our Services <ArrowRight weight="bold" className="w-5 h-5" />
             </span>
@@ -197,12 +197,12 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
 
           <div className="grid grid-cols-3 gap-6 pt-8 border-t border-[#EDEDED] dark:border-white/10">
             <div className="flex flex-col items-center">
-              <div className="text-[#F4A261] mb-2"><PlusCircle weight="fill" size={28} /></div>
+              <div className="text-[#1E6FA8] dark:text-[#7EC8F0] mb-2"><PlusCircle weight="fill" size={28} /></div>
               <div className="font-sans font-black text-2xl md:text-3xl text-[#1E6FA8] dark:text-[#A9D6F2]">5</div>
               <div className="text-[0.75rem] text-[#777777] dark:text-white/60 mt-1 uppercase tracking-widest font-bold">Hubs</div>
             </div>
             <div className="flex flex-col items-center">
-              <div className="text-[#6FBF1A] mb-2"><Gear weight="fill" size={28} /></div>
+              <div className="text-[#1E6FA8] dark:text-[#7EC8F0] mb-2"><Gear weight="fill" size={28} /></div>
               <div className="font-sans font-black text-2xl md:text-3xl text-[#1E6FA8] dark:text-[#A9D6F2]">50+</div>
               <div className="text-[0.75rem] text-[#777777] dark:text-white/60 mt-1 uppercase tracking-widest font-bold">Services</div>
             </div>
@@ -215,22 +215,21 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
         </div>
       </div>
 
-      {/* Modern Swipeable Ticker */}
-      <div className="relative w-full max-w-[1100px] mt-auto z-10">
-        <div className="bg-white/60 dark:bg-white/5 backdrop-blur-md border border-[#EDEDED] dark:border-white/10 rounded-[40px] py-5 px-1 relative overflow-hidden shadow-sm">
-          <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-white/80 dark:from-[#081428]/80 to-transparent z-10 pointer-events-none" />
-          <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-white/80 dark:from-[#081428]/80 to-transparent z-10 pointer-events-none" />
+      {/* Full Width Modern Ticker */}
+      <div className="relative w-full mt-auto z-10">
+        <div className="bg-white/60 dark:bg-white/5 backdrop-blur-md border-y border-[#EDEDED] dark:border-white/10 py-5 relative overflow-hidden">
+          <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-white dark:from-[#081428] to-transparent z-10 pointer-events-none" />
+          <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-white dark:from-[#081428] to-transparent z-10 pointer-events-none" />
           
           <div 
             ref={tickerRef}
             className="flex whitespace-nowrap overflow-x-auto no-scrollbar cursor-grab active:cursor-grabbing animate-marquee-fast hover:pause"
-            style={{ scrollBehavior: 'smooth' }}
           >
-            <span className="text-[#333333] dark:text-[#A9D6F2] font-sans font-extrabold text-base md:text-lg px-6">
-              {tickerText}
+            <span className="text-[#333333] dark:text-[#A9D6F2] font-sans font-extrabold text-base md:text-lg px-4">
+              {tickerText} •&nbsp;
             </span>
-            <span className="text-[#333333] dark:text-[#A9D6F2] font-sans font-extrabold text-base md:text-lg px-6">
-              {tickerText}
+            <span className="text-[#333333] dark:text-[#A9D6F2] font-sans font-extrabold text-base md:text-lg px-4">
+              {tickerText} •&nbsp;
             </span>
           </div>
         </div>
@@ -245,7 +244,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
           100% { transform: translateX(-50%); }
         }
         .animate-marquee-fast {
-          animation: marquee 25s linear infinite;
+          animation: marquee 18s linear infinite;
         }
         .hover\:pause:hover {
           animation-play-state: paused;
@@ -253,4 +252,4 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
       `}</style>
     </section>
   )
-} 
+}
