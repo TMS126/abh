@@ -25,7 +25,7 @@ const MARQUEE_ITEMS = [
   "Print your photos (4x6 & A4)",
   "Update your CV & Formatting",
   "Laminate Documents (A5, A4 & A3)",
-  "Register a Company & Logo Design",
+  "Business Cards & Logo Design",
   "Print Flyers & Posters",
   "Submit SARS, CSD & PSIRA Applications",
   "Setup Emails & Software Installations",
@@ -40,18 +40,17 @@ function pick(arr: string[]) {
 export function HeroSection({ onNavigate }: HeroSectionProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isTextPopping, setIsTextPopping] = useState(false)
-  const [isExiting, setIsExiting] = useState(false)
-  const [whatsappExiting, setWhatsappExiting] = useState(false)
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const ctx = canvas.getContext("2d")
+    let ctx = canvas.getContext("2d")
     if (!ctx) return
 
     let animId: number
     let w = 0
     let h = 0
+    let isRunning = true
 
     const orbs = Array.from({ length: 8 }, () => ({
       x: Math.random(),
@@ -82,6 +81,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     }
 
     function resize() {
+      if (!canvas || !isRunning) return
       w = canvas.offsetWidth
       h = canvas.offsetHeight
       canvas.width = w
@@ -89,9 +89,12 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     }
 
     function draw() {
+      if (!canvas || !ctx || !isRunning || w === 0 || h === 0) {
+        animId = requestAnimationFrame(draw)
+        return
+      }
+
       ctx.clearRect(0, 0, w, h)
-      ctx.fillStyle = "transparent"
-      ctx.fillRect(0, 0, w, h)
 
       for (const orb of orbs) {
         orb.t += orb.speed
@@ -111,28 +114,51 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
         const cx = orb.x * w
         const cy = orb.y * h
         const radius = orb.r * Math.max(w, h)
+        
+        if (radius <= 0) continue
+
         const color = lerpColor(orb.color, orb.nextColor, orb.t)
 
-        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius)
-        grad.addColorStop(0, color.replace("rgb", "rgba").replace(")", ",0.25)"))
-        grad.addColorStop(1, "rgba(0,0,0,0)")
+        try {
+          const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius)
+          grad.addColorStop(0, color.replace("rgb", "rgba").replace(")", ",0.25)"))
+          grad.addColorStop(1, "rgba(0,0,0,0)")
 
-        ctx.fillStyle = grad
-        ctx.fillRect(0, 0, w, h)
+          ctx.fillStyle = grad
+          ctx.fillRect(0, 0, w, h)
+        } catch (e) {
+          console.warn("Canvas background repaint suspended gracefully", e)
+        }
       }
 
       animId = requestAnimationFrame(draw)
     }
 
+    function handleVisibilityChange() {
+      if (document.hidden) {
+        if (animId) cancelAnimationFrame(animId)
+      } else {
+        ctx = canvas?.getContext("2d") || null
+        resize()
+      }
+    }
+
     resize()
     draw()
 
-    const ro = new ResizeObserver(resize)
+    const ro = new ResizeObserver(() => {
+      if (canvas && canvas.offsetWidth > 0) {
+        resize()
+      }
+    })
     ro.observe(canvas)
+    document.addEventListener("visibilitychange", handleVisibilityChange)
 
     return () => {
+      isRunning = false
       cancelAnimationFrame(animId)
       ro.disconnect()
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
     }
   }, [])
 
@@ -145,23 +171,12 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     setTimeout(() => setIsTextPopping(false), 500)
   }
 
-  const handleServicesClick = () => {
-    setIsExiting(true)
-    setTimeout(() => {
-      onNavigate("services")
-    }, 600)
-  }
-
   return (
     <section 
       onClick={handleDeadClick}
-      className={cn(
-        "relative min-h-[calc(100vh-68px)] flex flex-col items-center justify-center px-4 md:px-8 pt-12 md:pt-16 pb-6 overflow-hidden cursor-default select-none transition-all duration-700 ease-in-out",
-        isExiting || whatsappExiting ? "-translate-x-full opacity-0" : "translate-x-0 opacity-100 animate-fade-in",
-        "bg-white dark:bg-[#081428]"
-      )}
+      className="relative min-h-[calc(100vh-68px)] w-full flex flex-col items-center justify-center px-4 md:px-8 pt-12 md:pt-16 pb-6 overflow-hidden cursor-default select-none bg-white dark:bg-[#081428]"
     >
-      {/* Dynamic Background Layout Canvas Assets */}
+      {/* Background Core Engine */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <div className="absolute inset-0 opacity-60 dark:opacity-0 bg-[radial-gradient(circle_at_20%_30%,#1E6FA8_0%,transparent_50%),radial-gradient(circle_at_80%_70%,#6FBF1A_0%,transparent_45%),radial-gradient(circle_at_90%_20%,#F4A261_0%,transparent_35%)]" />
         <div className="absolute inset-0 opacity-0 dark:opacity-45 bg-[radial-gradient(circle_at_30%_20%,#1E6FA8_0%,transparent_60%),radial-gradient(circle_at_70%_80%,#0F3F66_0%,transparent_50%),radial-gradient(circle_at_85%_30%,#F4A261_0%,transparent_40%)]" />
@@ -186,10 +201,10 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
           From printing your documents to navigating government services — we make it simple, fast, and friendly. Right here in Kgotsong.
         </p>
         
-        {/* Adjusted Buttons for Vibrant, Clean Look in Light Mode */}
+        {/* Safe Navigation Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-xs sm:max-w-none mb-12">
           <button
-            onClick={handleServicesClick}
+            onClick={() => onNavigate("services")}
             className="w-full sm:w-[168px] relative inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-[32px] font-sans font-black text-sm text-white border-2 border-[#F4A261] bg-[#F4A261] hover:bg-[#D9894B] dark:border-[#D9894B] dark:bg-[#D9894B]/40 dark:text-[#F9D1B0] dark:backdrop-blur-[12px] dark:hover:bg-[#D9894B]/50 active:scale-95 transition-all duration-300 ease-out overflow-hidden group shadow-[0_8px_20px_rgba(244,162,97,0.3)]"
           >
             <span className={cn(
@@ -204,14 +219,13 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
             href="https://wa.me/27753338260?text=Hi%20Apexbytes%20Hub%21%20I%27m%20interested%20in%20your%20services.%20Can%20you%20tell%20me%20more%3F"
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => setWhatsappExiting(true)}
             className="w-full sm:w-[168px] inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-[32px] font-sans font-black text-sm text-white border-2 border-[#6FBF1A] bg-[#6FBF1A] hover:bg-[#548F14] dark:border-[#1E7E34] dark:bg-[#1E7E34]/40 dark:backdrop-blur-[12px] dark:hover:bg-[#1E7E34]/50 active:scale-95 transition-all duration-300 ease-in-out shadow-[0_8px_20px_rgba(111,191,26,0.3)]"
           >
             <WhatsappLogo weight="fill" className="w-5 h-5" /> WhatsApp Us
           </a>
         </div>
 
-        {/* Centered Showcase Panel — All Outlines & Token Borders Completely Removed */}
+        {/* Showcase Panel Card */}
         <div className="w-full max-w-[800px] bg-white/60 dark:bg-white/5 backdrop-blur-[20px] border border-[#EDEDED] dark:border-white/10 rounded-[30px] p-6 md:p-10 shadow-[0_15px_45px_rgba(0,0,0,0.08)] dark:shadow-[0_15px_45px_rgba(0,0,0,0.2)]">
           <h3 className="font-sans font-black text-xl text-[#1E6FA8] dark:text-white mb-8">What We Offer</h3>
           <div className="flex flex-wrap justify-center gap-3 mb-10">
@@ -247,10 +261,9 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
         </div>
       </div>
 
-      {/* Flawless Double-Buffered Infinite Marquee Track Loop */}
+      {/* Double-Buffered Infinite Marquee Track Loop */}
       <div className="relative w-full mt-auto z-10 py-2 overflow-hidden select-none pointer-events-none">
         <div className="flex whitespace-nowrap animate-marquee-continuous-track w-max">
-          {/* Track Frame Array 1 */}
           <div className="flex items-center gap-8 px-4 shrink-0">
             {MARQUEE_ITEMS.map((item, idx) => (
               <span key={`t1-${idx}`} className="inline-flex items-center gap-3 text-[#1E6FA8] dark:text-[#A9D6F2] font-sans font-black text-sm md:text-base uppercase tracking-wider">
@@ -259,7 +272,6 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
               </span>
             ))}
           </div>
-          {/* Track Frame Array 2 — Perfectly loops seamlessly back into position zero */}
           <div className="flex items-center gap-8 px-4 shrink-0">
             {MARQUEE_ITEMS.map((item, idx) => (
               <span key={`t2-${idx}`} className="inline-flex items-center gap-3 text-[#1E6FA8] dark:text-[#A9D6F2] font-sans font-black text-sm md:text-base uppercase tracking-wider">
@@ -287,3 +299,4 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     </section>
   )
 }
+ 
