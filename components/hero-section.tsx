@@ -28,8 +28,7 @@ const MARQUEE_ITEMS = [
   "Register a Company & Logo Design",
   "Print Flyers & Posters",
   "Submit SARS, CSD & PSIRA Applications",
-  "Setup Emails & Software Installations",
-  "and more...",
+  "Setup Emails & Software Installations"
 ]
 
 function pick(arr: string[]) {
@@ -181,7 +180,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     <section 
       onClick={handleDeadClick}
       onMouseMove={handleMouseMove}
-      className="relative min-h-[calc(100vh-68px)] flex items-center px-4 md:px-8 py-12 md:py-16 overflow-hidden cursor-default select-none"
+      className="relative min-h-[calc(100vh-68px)] flex items-center px-4 sm:px-6 md:px-8 py-10 md:py-16 overflow-hidden cursor-default select-none"
     >
       <canvas
         ref={canvasRef}
@@ -198,26 +197,26 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
         }}
       />
 
-      <div className="max-w-[1140px] mx-auto grid md:grid-cols-5 gap-10 md:gap-8 items-center relative z-10 w-full">
+      <div className="max-w-[1140px] mx-auto grid md:grid-cols-5 gap-8 md:gap-8 items-center relative z-10 w-full">
         
         {/* Left Column Text Content */}
-        <div className="text-center md:text-left md:col-span-3 flex flex-col justify-center">
-          <h1 className="font-sans font-black text-3xl md:text-4xl lg:text-[3.25rem] text-white leading-tight mb-4 md:mb-5 text-balance drop-shadow-md">
+        <div className="text-center md:text-left md:col-span-3 flex flex-col justify-center px-2 sm:px-0">
+          <h1 className="font-sans font-black text-3xl sm:text-4xl lg:text-[3.25rem] text-white leading-tight mb-4 md:mb-5 text-balance drop-shadow-md">
             Your <span className="text-[#F4A261]">Local Tech</span> &amp; Print Partner
           </h1>
           <p className="text-[#A9D6F2] text-sm md:text-base leading-relaxed mb-6 md:mb-8 text-pretty drop-shadow-sm max-w-[520px] mx-auto md:mx-0">
             From printing your documents to navigating government services — we make it simple, fast, and friendly. Right here in Kgotsong.
           </p>
           
-          {/* Button Layout with Rigid Ergonomic Inline Padding Constraints */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start items-center mb-8 w-full">
+          {/* Fixed Button Layout with Rigid Constraints based on 1000026761.jpg */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start items-center mb-8 w-full max-w-md mx-auto md:mx-0">
             <button
               ref={ctaButtonRef}
               onClick={() => onNavigate("services")}
               className={cn(
-                "w-full max-w-xs sm:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-7 py-3.5 rounded-[28px] font-sans font-extrabold text-sm md:text-base text-white transition-all duration-300 ease-out transform-gpu",
+                "w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-[28px] font-sans font-black text-sm md:text-base text-white transition-all duration-300 ease-out transform-gpu shadow-md",
                 isCtaPopping
-                  ? "bg-[#6FBF1A] border-2 border-[#548F14] scale-110 rotate-1 shadow-[0_0_35px_rgba(111,191,26,0.65)] z-50"
+                  ? "bg-[#6FBF1A] border-2 border-[#548F14] scale-105 rotate-1 shadow-[0_0_35px_rgba(111,191,26,0.65)] z-50"
                   : "bg-[#F4A261] hover:bg-[#D9894B] hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(244,162,97,0.35)] active:scale-95"
               )}
             >
@@ -228,16 +227,15 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
               href="https://wa.me/27753338260"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full max-w-xs sm:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-7 py-3.5 rounded-[28px] font-sans font-extrabold text-sm md:text-base bg-[#25D366] text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(37,211,102,0.3)] no-underline"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-[28px] font-sans font-black text-sm md:text-base bg-[#6FBF1A] text-white hover:bg-[#548F14] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(111,191,26,0.3)] no-underline shadow-md"
             >
               <WhatsappLogo weight="fill" className="w-5 h-5" /> WhatsApp Us
             </a>
           </div>
 
-          {/* Option 2 & Part 3 Directive: Dynamic Horizontal Continuous Text Marquee */}
-          <div className="w-full overflow-hidden relative py-2 bg-black/10 backdrop-blur-sm rounded-xl border border-white/5 max-w-[560px] mx-auto md:mx-0">
+          {/* Fixed Continuous Text Marquee Container Spacing */}
+          <div className="w-full overflow-hidden relative py-2.5 bg-black/20 backdrop-blur-sm rounded-xl border border-white/5 max-w-[560px] mx-auto md:mx-0 mt-2">
             <div className="flex whitespace-nowrap animate-marquee items-center gap-6">
-              {/* Render Duplicated Content Sets to Guarantee Loop Flow Transition */}
               {Array.from({ length: 2 }).map((_, setIdx) => (
                 <div key={setIdx} className="flex items-center gap-6 shrink-0">
                   {MARQUEE_ITEMS.map((item, idx) => (
@@ -252,12 +250,11 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
           </div>
         </div>
 
-        {/* Option 1 & Directive 1 Image Showcase Mockup Grid Panel */}
-        <div className="w-full md:col-span-2 relative group flex justify-center items-center">
-          {/* Accent Glow Backplate Element matching Dark Mode Architecture rules */}
+        {/* Portfolio Showcase Card Element */}
+        <div className="w-full md:col-span-2 relative group flex justify-center items-center mt-4 md:mt-0">
           <div className="absolute inset-0 bg-gradient-to-tr from-[#1E6FA8] to-[#6FBF1A] opacity-20 blur-[40px] rounded-full transition-opacity duration-500 group-hover:opacity-30 pointer-events-none" />
           
-          <div className="bg-white/5 backdrop-blur-[24px] border border-white/10 rounded-[24px] p-6 md:p-7 shadow-[0_15px_45px_rgba(0,0,0,0.3)] w-full relative z-10 transition-transform duration-500 hover:scale-[1.015]">
+          <div className="bg-white/5 backdrop-blur-[24px] border border-white/10 rounded-[24px] p-5 sm:p-6 md:p-7 shadow-[0_15px_45px_rgba(0,0,0,0.3)] w-full relative z-10 transition-transform duration-500 hover:scale-[1.015]">
             <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-5">
               <h3 className="font-sans font-black text-xs uppercase tracking-wider text-[#A9D6F2]">Operational Portfolio</h3>
               <div className="flex gap-1.5">
@@ -286,7 +283,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
               ))}
             </div>
 
-            {/* Nested Interactive Mockup Dashboard Element */}
+            {/* Terminal Workspace Element */}
             <div className="bg-black/20 border border-white/5 rounded-xl p-4 mb-6">
               <div className="flex justify-between items-center text-[0.7rem] text-[#A9D6F2]/70 font-mono mb-3">
                 <span> studio_terminal.sh</span>
@@ -337,4 +334,3 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     </section>
   )
 }
- 
