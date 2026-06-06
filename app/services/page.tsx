@@ -13,7 +13,7 @@ export default function ServicesRoute() {
       {/* 1. Global Navigation Bar */}
       <Navbar activePage="services" />
       
-      {/* 2. Interactive Service Cards, Modals, and Accordions */}
+      {/* 2. Your Native Interactive Layout Component */}
       <main className="pt-[68px]">
         <ServicesPage onNavigate={(page) => router.push(`/${page}`)} />
       </main>
