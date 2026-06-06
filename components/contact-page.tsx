@@ -149,14 +149,13 @@ export function ContactPage() {
       href: "mailto:apexbytesza@gmail.com",
       color: "bg-[#FEF3C7]",
     },
-       {
+    {
       icon: <MapPin weight="fill" className="w-6 h-6 text-[#9333ea]" />,
       title: "Visit Us",
       value: "5878 Mpumalanga, Kgotsong Location, 9660",
-      href: "https://www.google.com/maps/search/?api=1&query=-27.3790259,26.6599050",
+      href: "https://maps.app.goo.gl/EWqtimji8ZG7U2Dt5?g_st=ac",
       color: "bg-[#F3E8FF]",
     },
-
   ]
 
   return (
@@ -240,11 +239,11 @@ export function ContactPage() {
               ))}
             </div>
 
-            {/* Integrated Map Layer pointing directly to coordinates -27.3790259, 26.6599050 */}
+            {/* Map */}
             <div className="w-full h-[240px] rounded-[18px] border-2 border-border overflow-hidden shadow-sm relative">
               <iframe
                 title="Apexbytes Hub Studio Map Location"
-                src="https://maps.google.com/maps?q=-27.3790259,26.6599050&z=15&output=embed"
+                src="https://maps.google.com/maps?q=-27.3790259,26.6599050&z=16&output=embed"
                 className="w-full h-full border-0"
                 allowFullScreen={false}
                 loading="lazy"
