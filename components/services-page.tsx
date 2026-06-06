@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ArrowRight, X, CaretDown, WhatsappLogo, Printer, FileText, PaintBrush, Globe, Desktop, ChatCircle } from "@phosphor-icons/react"
+import { ArrowRight, X, CaretDown, WhatsappLogo, Printer, FileText, PaintBrush, Globe, Desktop, ChatCircle, Briefcase, Buildings } from "@phosphor-icons/react"
 import { HUBS, type HubId } from "@/lib/data"
 import { cn } from "@/lib/utils"
 import { useTheme } from "next-themes"
@@ -295,7 +295,111 @@ const SERVICE_INFO: Record<string, { desc: string; waText: string }> = {
   },
 }
 
-// ─── SubService Modal ────────────────────────────────────────────────────────
+// ─── Hub subtexts ─────────────────────────────────────────────────────────────
+const HUB_SUBTEXTS: Record<string, string> = {
+  "Print Hub": "Printing · Copies · Photos",
+  "Document Hub": "CVs · Typing · Scanning · Laminating",
+  "Design Hub": "Logos · Flyers · Branding",
+  "E-Service Hub": "SARS · SASSA · UIF · CSD",
+  "Tech Hub": "Windows · Software · Repairs",
+}
+
+// ─── Bundle data ──────────────────────────────────────────────────────────────
+const BUNDLES = [
+  {
+    id: "job-seeker",
+    icon: <Briefcase weight="fill" className="w-7 h-7 text-white" />,
+    title: "Job Seeker Bundle",
+    price: "R100",
+    grad: "linear-gradient(135deg, #1E6FA8 0%, #0F3F66 100%)",
+    accentColor: "#A9D6F2",
+    items: [
+      "CV from Scratch",
+      "Cover Letter",
+      "Job Application Assistance",
+      "Email Assistance (Send/Receive Help)",
+    ],
+    saving: "Save R25 — valued at R125",
+    waText: "Hi Apexbytes Hub! I'm interested in the Job Seeker Bundle (R100). How do we start?",
+  },
+  {
+    id: "business-starter",
+    icon: <Buildings weight="fill" className="w-7 h-7 text-white" />,
+    title: "Business Starter Bundle",
+    price: "R500",
+    grad: "linear-gradient(135deg, #D9894B 0%, #a0522d 100%)",
+    accentColor: "#FDDCBA",
+    items: [
+      "Logo Design (Basic)",
+      "Business Card (Single Side)",
+      "Simple Flyer",
+      "WhatsApp Business Setup",
+    ],
+    saving: "Save R130 — valued at R630",
+    waText: "Hi Apexbytes Hub! I'm interested in the Business Starter Bundle (R500). How do we start?",
+  },
+]
+
+// ─── Bundle Card ──────────────────────────────────────────────────────────────
+function BundleCard({ bundle }: { bundle: typeof BUNDLES[0] }) {
+  const waUrl = `https://wa.me/27753338260?text=${encodeURIComponent(bundle.waText)}`
+  return (
+    <div
+      className="rounded-[22px] overflow-hidden flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.18)] border-2 border-white/10 flex-shrink-0 w-[78vw] md:w-auto snap-start"
+    >
+      {/* Header */}
+      <div className="px-5 py-4 flex items-center gap-3" style={{ background: bundle.grad }}>
+        {bundle.icon}
+        <div>
+          <h3 className="font-sans font-black text-base text-white leading-tight">{bundle.title}</h3>
+          <p className="text-[0.72rem] font-bold mt-0.5" style={{ color: bundle.accentColor }}>{bundle.saving}</p>
+        </div>
+        <span className="ml-auto font-sans font-black text-2xl text-white">{bundle.price}</span>
+      </div>
+      {/* Items */}
+      <div className="bg-card px-5 py-4 flex-1 flex flex-col gap-2">
+        {bundle.items.map((item) => (
+          <div key={item} className="flex items-start gap-2">
+            <span className="mt-0.5 w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 text-[0.65rem] font-black text-white" style={{ background: bundle.grad }}>✓</span>
+            <span className="text-[0.84rem] text-foreground font-medium">{item}</span>
+          </div>
+        ))}
+        <a
+          href={waUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-[11px] font-sans font-extrabold text-[0.88rem] text-white transition-all duration-200 ease-in-out hover:-translate-y-0.5 active:scale-95"
+          style={{ background: bundle.grad }}
+        >
+          <WhatsappLogo weight="fill" className="w-5 h-5" />
+          Get This Bundle
+        </a>
+      </div>
+    </div>
+  )
+}
+
+// ─── Featured Bundles Section ─────────────────────────────────────────────────
+function FeaturedBundles() {
+  return (
+    <section className="px-4 md:px-8 py-12 md:py-16 bg-secondary transition-colors duration-300">
+      <div className="max-w-[1080px] mx-auto">
+        <div className="mb-8">
+          <h2 className="font-sans font-black text-2xl md:text-3xl text-blue-3 dark:text-blue-4">Featured Bundles</h2>
+          <p className="text-muted-foreground text-[0.9rem] mt-1">Everything you need, grouped and discounted — one price, done.</p>
+        </div>
+        {/* Mobile: horizontal scroll. Desktop: side by side */}
+        <div className="flex md:grid md:grid-cols-2 gap-5 overflow-x-auto md:overflow-visible snap-x snap-mandatory pb-2 md:pb-0 scrollbar-hide">
+          {BUNDLES.map((bundle) => (
+            <BundleCard key={bundle.id} bundle={bundle} />
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ─── SubService Modal ─────────────────────────────────────────────────────────
 interface SubServiceModalProps {
   name: string
   price: string
@@ -460,36 +564,27 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModal
 }
 
 // ─── Hub Card (3-tier: collapsed → accordion peek → modal) ───────────────────
-function HubCard({ hubId, onSelect }: { hubId: HubId; onSelect: (id: HubId) => void }) {
+interface HubCardProps {
+  hubId: HubId
+  isExpanded: boolean
+  onExpand: (id: HubId | null) => void
+  onSelect: (id: HubId) => void
+}
+
+function HubCard({ hubId, isExpanded, onExpand, onSelect }: HubCardProps) {
   const hub = HUBS[hubId]
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const tagStyle = isDark ? hub.tagStyleDark : hub.tagStyle
-
-  // Track whether accordion peek is open (mobile tap / desktop hover)
-  const [peekOpen, setPeekOpen] = useState(false)
-  const cardRef = useRef<HTMLDivElement>(null)
-
-  // Close peek when clicking outside on mobile
-  useEffect(() => {
-    function handleOutsideClick(e: MouseEvent) {
-      if (peekOpen && cardRef.current && !cardRef.current.contains(e.target as Node)) {
-        setPeekOpen(false)
-      }
-    }
-    document.addEventListener("mousedown", handleOutsideClick)
-    return () => document.removeEventListener("mousedown", handleOutsideClick)
-  }, [peekOpen])
+  const subtext = HUB_SUBTEXTS[hub.title] ?? ""
 
   if (!hub) return null
 
   const handleCardClick = () => {
-    // On mobile (no hover): first tap opens peek, second tap opens modal
-    // On desktop: hover handles peek, click always opens modal
     const isTouchDevice = window.matchMedia("(hover: none)").matches
     if (isTouchDevice) {
-      if (!peekOpen) {
-        setPeekOpen(true)
+      if (!isExpanded) {
+        onExpand(hubId)
       } else {
         onSelect(hubId)
       }
@@ -505,29 +600,38 @@ function HubCard({ hubId, onSelect }: { hubId: HubId; onSelect: (id: HubId) => v
 
   return (
     <div
-      ref={cardRef}
       onClick={handleCardClick}
-      onMouseEnter={() => setPeekOpen(true)}
-      onMouseLeave={() => setPeekOpen(false)}
+      onMouseEnter={() => onExpand(hubId)}
+      onMouseLeave={() => onExpand(null)}
       className="bg-card rounded-[22px] shadow-[var(--shadow)] border-2 border-[var(--card-border)] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden flex flex-col hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(30,111,168,0.18)] active:scale-[0.98]"
     >
       {/* Header — always visible */}
       <div className="px-5 py-4 flex items-center gap-3" style={{ background: hub.grad }}>
         <HubIcon name={hub.iconName} color={hub.iconColor} size={28} />
-        <h3 className="font-sans font-black text-lg text-white">{hub.title}</h3>
+
+        {/* Title block — stacked on desktop, inline on mobile */}
+        <div className="flex-1 min-w-0 flex md:flex-col md:items-start items-center justify-between gap-2 md:gap-0.5">
+          <h3 className="font-sans font-black text-lg text-white leading-tight">{hub.title}</h3>
+          {subtext && (
+            <span className="text-white/70 font-sans font-semibold md:text-[0.72rem] text-[0.68rem] md:mt-0.5 shrink-0 md:shrink text-right md:text-left">
+              {subtext}
+            </span>
+          )}
+        </div>
+
         <button
           onClick={handleArrowClick}
-          className="ml-auto w-[30px] h-[30px] bg-white/20 rounded-full flex items-center justify-center shrink-0 hover:bg-white/35 transition-all duration-200 active:scale-90"
+          className="ml-2 w-[30px] h-[30px] bg-white/20 rounded-full flex items-center justify-center shrink-0 hover:bg-white/35 transition-all duration-200 active:scale-90"
           aria-label={`Open ${hub.title}`}
         >
           <ArrowRight weight="bold" className="w-4 h-4 text-white" />
         </button>
       </div>
 
-      {/* Accordion peek — shown on hover (desktop) or first tap (mobile) */}
+      {/* Accordion peek */}
       <div
         className="transition-all duration-300 ease-in-out overflow-hidden"
-        style={{ maxHeight: peekOpen ? "160px" : "0px", opacity: peekOpen ? 1 : 0 }}
+        style={{ maxHeight: isExpanded ? "160px" : "0px", opacity: isExpanded ? 1 : 0 }}
       >
         <div className="px-5 py-4">
           <div className="flex flex-wrap gap-1.5 mb-2">
@@ -555,6 +659,7 @@ interface ServicesPageProps {
 
 export function ServicesPage({ onNavigate }: ServicesPageProps) {
   const [selectedHub, setSelectedHub] = useState<HubId | null>(null)
+  const [expandedHub, setExpandedHub] = useState<HubId | null>(null)
   const hubIds = Object.keys(HUBS) as HubId[]
 
   return (
@@ -575,10 +680,36 @@ export function ServicesPage({ onNavigate }: ServicesPageProps) {
 
           <div className="max-w-[1080px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-7">
             {hubIds.map((id) => (
-              <HubCard key={id} hubId={id} onSelect={setSelectedHub} />
+              <HubCard
+                key={id}
+                hubId={id}
+                isExpanded={expandedHub === id}
+                onExpand={(id) => setExpandedHub(id)}
+                onSelect={setSelectedHub}
+              />
             ))}
           </div>
         </section>
+
+        {/* Chat CTA — immediately after hub cards */}
+        <section className="px-4 md:px-8 py-12 bg-gradient-to-br from-[#2d7a2d] via-[#3a9a3a] to-[#25D366] text-center">
+          <h2 className="font-sans font-black text-xl md:text-2xl text-white mb-2">Still not sure what you need?</h2>
+          <p className="text-white/85 text-[0.95rem] mb-6 max-w-[480px] mx-auto">
+            Send a WhatsApp message and we'll recommend the right service for you.
+          </p>
+          <a
+            href="https://wa.me/27753338260"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-white text-[#2d7a2d] font-sans font-extrabold text-base px-7 py-3.5 rounded-[14px] shadow-[0_8px_24px_rgba(0,0,0,0.18)] hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(0,0,0,0.22)] active:scale-95 transition-all duration-200 ease-in-out"
+          >
+            <WhatsappLogo weight="fill" className="w-5 h-5" />
+            Chat With Us
+          </a>
+        </section>
+
+        {/* Featured Bundles */}
+        <FeaturedBundles />
       </div>
 
       {selectedHub && (
