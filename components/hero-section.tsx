@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowRight, WhatsappLogo, PlusCircle, Gear, Wrench } from "@phosphor-icons/react"
+import { ArrowRight, WhatsappLogo, PlusCircle, Gear, Wrench, Rocket, CurrencyDollar, HandHeart, MapPin } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 
-// Strictly Locked Corporate Brand Palette
+// ─── Strictly Locked Corporate Brand Palette ────────────────────────────────
 const COLORS = [
   "#1E6FA8", // Primary Blue
   "#A9D6F2", // Light Blue Accent
@@ -16,7 +16,7 @@ const COLORS = [
   "#F4A261", // Accent Orange
 ]
 
-// Actionable operational tasks for the continuous ticker marquee
+// ─── MARQUEE ITEMS ──────────────────────────────────────────────────────────
 const MARQUEE_ITEMS = [
   "Apply for SASSA",
   "Print your photos (4x6 & A4)",
@@ -34,6 +34,7 @@ function pick(arr: string[]) {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
+// ─── HERO SECTION ─────────────────────────────────────────────────────────────
 export function HeroSection() {
   const router = useRouter()
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -204,32 +205,27 @@ export function HeroSection() {
           From printing your documents to navigating government services — we make it simple, fast, and friendly. Right here in Kgotsong.
         </p>
         
-        {/* Safe Navigation Action Buttons */}
+        {/* Action Buttons — Pill shaped, solid, with glow */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-xs sm:max-w-none mb-12">
           <button
             onClick={() => handleNavigate("/services")}
-            className="w-full sm:w-[168px] relative inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-[32px] font-sans font-black text-sm text-white border-2 border-[#F4A261] bg-[#F4A261] hover:bg-[#D9894B] dark:border-[#D9894B] dark:bg-[#D9894B]/40 dark:text-[#F9D1B0] dark:backdrop-blur-[12px] dark:hover:bg-[#D9894B]/50 active:scale-95 transition-all duration-300 ease-out overflow-hidden group shadow-[0_8px_20px_rgba(244,162,97,0.3)]"
+            className="w-full sm:w-[180px] relative inline-flex items-center justify-center gap-2 px-6 py-4 rounded-[32px] font-sans font-black text-sm text-white bg-[#F4A261] hover:bg-[#D9894B] active:scale-95 transition-all duration-300 ease-out shadow-[0_8px_20px_rgba(244,162,97,0.4)] group"
           >
-            <span className={cn(
-              "transition-all duration-300 ease-out inline-flex items-center justify-center gap-2 w-full h-full",
-              isTextPopping ? "scale-105" : "scale-100"
-            )}>
-              See Our Services <ArrowRight weight="bold" className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-            </span>
+            See Our Services <ArrowRight weight="bold" className="w-4 h-4 transition-transform group-hover:translate-x-1" />
           </button>
           
           <a
             href="https://wa.me/27753338260?text=Hi%20Apexbytes%20Hub%21%20I%27m%20interested%20in%20your%20services.%20Can%20you%20tell%20me%20more%3F"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full sm:w-[168px] inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-[32px] font-sans font-black text-sm text-white border-2 border-[#6FBF1A] bg-[#6FBF1A] hover:bg-[#548F14] dark:border-[#1E7E34] dark:bg-[#1E7E34]/40 dark:backdrop-blur-[12px] dark:hover:bg-[#1E7E34]/50 active:scale-95 transition-all duration-300 ease-in-out shadow-[0_8px_20px_rgba(111,191,26,0.3)]"
+            className="w-full sm:w-[180px] inline-flex items-center justify-center gap-2 px-6 py-4 rounded-[32px] font-sans font-black text-sm text-white bg-[#6FBF1A] hover:bg-[#548F14] active:scale-95 transition-all duration-300 ease-in-out shadow-[0_8px_20px_rgba(111,191,26,0.4)]"
           >
             <WhatsappLogo weight="fill" className="w-5 h-5" /> WhatsApp Us
           </a>
         </div>
 
-        {/* Showcase Panel Card */}
-        <div className="w-full max-w-[800px] bg-white/60 dark:bg-white/5 backdrop-blur-[20px] border border-[#EDEDED] dark:border-white/10 rounded-[30px] p-6 md:p-10 shadow-[0_15px_45px_rgba(0,0,0,0.08)] dark:shadow-[0_15px_45px_rgba(0,0,0,0.2)]">
+        {/* Showcase Panel Card — Solid feel */}
+        <div className="w-full max-w-[800px] bg-white dark:bg-[#152a4a] border border-[#EDEDED] dark:border-white/10 rounded-[30px] p-6 md:p-10 shadow-[0_15px_45px_rgba(0,0,0,0.08)]">
           <h3 className="font-sans font-black text-xl text-[#1E6FA8] dark:text-white mb-8">What We Offer</h3>
           <div className="flex flex-wrap justify-center gap-3 mb-10">
             {[
@@ -237,7 +233,7 @@ export function HeroSection() {
             ].map((label) => (
               <span
                 key={label}
-                className="px-5 py-2.5 rounded-[20px] text-sm font-bold bg-white dark:bg-white/10 text-[#1E6FA8] dark:text-[#A9D6F2] transition-all duration-200 hover:scale-105 shadow-sm"
+                className="px-5 py-2.5 rounded-[20px] text-sm font-bold bg-gray-100 dark:bg-white/10 text-[#1E6FA8] dark:text-[#A9D6F2] transition-all duration-200 hover:scale-105"
               >
                 {label}
               </span>
@@ -264,7 +260,7 @@ export function HeroSection() {
         </div>
       </div>
 
-      {/* Double-Buffered Infinite Marquee Track Loop */}
+      {/* Marquee Track */}
       <div className="relative w-full mt-auto z-10 py-2 overflow-hidden select-none pointer-events-none">
         <div className="flex whitespace-nowrap animate-marquee-continuous-track w-max">
           <div className="flex items-center gap-8 px-4 shrink-0">
@@ -288,17 +284,64 @@ export function HeroSection() {
 
       <style jsx global>{`
         @keyframes marquee-continuous-track {
-          0% { 
-            transform: translate3d(0, 0, 0); 
-          }
-          100% { 
-            transform: translate3d(-50%, 0, 0); 
-          }
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-50%, 0, 0); }
         }
         .animate-marquee-continuous-track {
           animation: marquee-continuous-track 30s linear infinite;
         }
       `}</style>
+    </section>
+  )
+}
+
+// ─── STRIP SECTION ────────────────────────────────────────────────────────────
+export function StripSection() {
+  const items = [
+    { icon: <Rocket weight="fill" className="w-6 h-6 text-[#1E6FA8]" />, title: "Fast Turnaround", desc: "No long waits, quick service" },
+    { icon: <CurrencyDollar weight="fill" className="w-6 h-6 text-[#6FBF1A]" />, title: "Affordable Rates", desc: "Fair pricing for everyone" },
+    { icon: <HandHeart weight="fill" className="w-6 h-6 text-[#F4A261]" />, title: "Friendly Help", desc: "We explain, never judge" },
+    { icon: <MapPin weight="fill" className="w-6 h-6 text-[#1E6FA8]" />, title: "Walk-ins Welcome", desc: "5878 Mpumalanga, Kgotsong, Bothaville 9660" },
+  ]
+
+  return (
+    <section className="bg-secondary py-10 md:py-12 px-4 md:px-8 transition-colors duration-300">
+      <div className="max-w-[1080px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {items.map((item) => (
+          <div key={item.title} className="flex items-center gap-4 transition-all duration-200 ease-in-out hover:-translate-y-1">
+            <div className="w-[50px] h-[50px] bg-card rounded-[13px] flex items-center justify-center shadow-sm shrink-0 border border-border/50">
+              {item.icon}
+            </div>
+            <div>
+              <h4 className="font-sans font-bold text-foreground text-[0.92rem]">{item.title}</h4>
+              <p className="text-muted-foreground text-[0.78rem] mt-0.5">{item.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+// ─── CTA BAR ──────────────────────────────────────────────────────────────────
+export function CtaBar({ title, description, buttonText, buttonHref, onButtonClick }: {
+  title: string; description: string; buttonText: string; buttonHref?: string; onButtonClick?: () => void
+}) {
+  const buttonClasses = "inline-flex items-center gap-2 px-8 py-4 rounded-[32px] font-sans font-black text-[0.95rem] bg-[#25D366] text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 shadow-[0_8px_20px_rgba(37,211,102,0.4)]"
+  
+  return (
+    <section className="bg-[#1E6FA8] py-12 px-4 md:px-8 text-center text-white">
+      <h2 className="font-sans font-black text-xl md:text-3xl mb-3">{title}</h2>
+      <p className="text-[#A9D6F2] mb-8 text-[1rem] max-w-[600px] mx-auto">{description}</p>
+      {buttonHref ? (
+        <a href={buttonHref} target="_blank" rel="noopener noreferrer" className={buttonClasses}>
+          <WhatsappLogo weight="fill" className="w-5 h-5" /> {buttonText}
+        </a>
+      ) : (
+        <button onClick={onButtonClick} className={buttonClasses}>
+          <WhatsappLogo weight="fill" className="w-5 h-5" /> {buttonText}
+        </button>
+      )}
     </section>
   )
 }
