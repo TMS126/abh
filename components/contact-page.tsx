@@ -244,7 +244,7 @@ export function ContactPage() {
               <iframe
                 title="Apexbytes Hub Studio Map Location"
                 src="https://maps.google.com/maps?q=-27.3790259,26.6599050&z=16&output=embed"
-                className="w-full h-full border-0"
+                className="w-full h-full border-0 dark:brightness-75"
                 allowFullScreen={false}
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
