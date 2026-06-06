@@ -299,16 +299,16 @@ function HubCard({ hubId, isExpanded, onToggle, onOpenModal }: {
         <HubIcon name={hub.iconName} color={hub.iconColor} size={30} />
         <h3 className="font-sans font-black text-lg text-white text-center leading-tight">{hub.title}</h3>
 
-        {/* Expand indicator on mobile */}
+        {/* Expand indicator on mobile only */}
         <CaretDown className={cn(
           "w-4 h-4 text-white/60 transition-transform duration-300 md:hidden",
           isExpanded && "rotate-180"
         )} />
       </div>
 
-      {/* Accordion body */}
+      {/* Accordion body — mobile only */}
       <div
-        className="bg-card overflow-hidden transition-all duration-500 ease-in-out"
+        className="bg-card overflow-hidden transition-all duration-500 ease-in-out md:hidden"
         style={{ maxHeight: isExpanded ? "400px" : "0px", opacity: isExpanded ? 1 : 0 }}
       >
         <div className="px-5 py-4 flex flex-col gap-4">
