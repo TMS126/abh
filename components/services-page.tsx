@@ -295,6 +295,11 @@ const SERVICE_INFO: Record<string, { desc: string; waText: string }> = {
   },
 }
 
+// ─── Hub display name overrides ───────────────────────────────────────────────
+const HUB_DISPLAY_NAMES: Record<string, string> = {
+  "Document Hub": "Docu Hub",
+}
+
 // ─── Hub subtexts ─────────────────────────────────────────────────────────────
 const HUB_SUBTEXTS: Record<string, string> = {
   "Print Hub": "Printing · Copies · Photos",
@@ -344,10 +349,7 @@ const BUNDLES = [
 function BundleCard({ bundle }: { bundle: typeof BUNDLES[0] }) {
   const waUrl = `https://wa.me/27753338260?text=${encodeURIComponent(bundle.waText)}`
   return (
-    <div
-      className="rounded-[22px] overflow-hidden flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.18)] border-2 border-white/10 flex-shrink-0 w-[78vw] md:w-auto snap-start"
-    >
-      {/* Header */}
+    <div className="rounded-[22px] overflow-hidden flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.18)] border-2 border-white/10 flex-shrink-0 w-[78vw] md:w-auto snap-start">
       <div className="px-5 py-4 flex items-center gap-3" style={{ background: bundle.grad }}>
         {bundle.icon}
         <div>
@@ -356,11 +358,13 @@ function BundleCard({ bundle }: { bundle: typeof BUNDLES[0] }) {
         </div>
         <span className="ml-auto font-sans font-black text-2xl text-white">{bundle.price}</span>
       </div>
-      {/* Items */}
       <div className="bg-card px-5 py-4 flex-1 flex flex-col gap-2">
         {bundle.items.map((item) => (
           <div key={item} className="flex items-start gap-2">
-            <span className="mt-0.5 w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 text-[0.65rem] font-black text-white" style={{ background: bundle.grad }}>✓</span>
+            <span
+              className="mt-0.5 w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 text-[0.65rem] font-black text-white"
+              style={{ background: bundle.grad }}
+            >✓</span>
             <span className="text-[0.84rem] text-foreground font-medium">{item}</span>
           </div>
         ))}
@@ -388,7 +392,6 @@ function FeaturedBundles() {
           <h2 className="font-sans font-black text-2xl md:text-3xl text-blue-3 dark:text-blue-4">Featured Bundles</h2>
           <p className="text-muted-foreground text-[0.9rem] mt-1">Everything you need, grouped and discounted — one price, done.</p>
         </div>
-        {/* Mobile: horizontal scroll. Desktop: side by side */}
         <div className="flex md:grid md:grid-cols-2 gap-5 overflow-x-auto md:overflow-visible snap-x snap-mandatory pb-2 md:pb-0 scrollbar-hide">
           {BUNDLES.map((bundle) => (
             <BundleCard key={bundle.id} bundle={bundle} />
@@ -498,7 +501,6 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModal
             <p className="text-muted-foreground text-[0.88rem] leading-relaxed mb-5 pb-4 border-b border-border">
               {hub.desc}
             </p>
-
             <div className="space-y-2">
               {hub.sections?.map((section, idx) => (
                 <div key={idx} className="border border-border rounded-[13px] overflow-hidden">
@@ -529,7 +531,6 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModal
                 </div>
               ))}
             </div>
-
             <div className="flex flex-col sm:flex-row gap-3 mt-5 pt-4 border-t border-border">
               <a
                 href="https://wa.me/27753338260"
@@ -563,7 +564,7 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModal
   )
 }
 
-// ─── Hub Card (3-tier: collapsed → accordion peek → modal) ───────────────────
+// ─── Hub Card ─────────────────────────────────────────────────────────────────
 interface HubCardProps {
   hubId: HubId
   isExpanded: boolean
@@ -576,11 +577,13 @@ function HubCard({ hubId, isExpanded, onExpand, onSelect }: HubCardProps) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const tagStyle = isDark ? hub.tagStyleDark : hub.tagStyle
+  const displayName = HUB_DISPLAY_NAMES[hub.title] ?? hub.title
   const subtext = HUB_SUBTEXTS[hub.title] ?? ""
 
   if (!hub) return null
 
-  const handleCardClick = () => {
+  // Header click: on desktop — toggle expand (not modal); on mobile — first tap expands, second tap opens modal
+  const handleHeaderClick = () => {
     const isTouchDevice = window.matchMedia("(hover: none)").matches
     if (isTouchDevice) {
       if (!isExpanded) {
@@ -589,7 +592,12 @@ function HubCard({ hubId, isExpanded, onExpand, onSelect }: HubCardProps) {
         onSelect(hubId)
       }
     } else {
-      onSelect(hubId)
+      // Desktop: header click toggles the peek open/closed
+      if (isExpanded) {
+        onExpand(null)
+      } else {
+        onExpand(hubId)
+      }
     }
   }
 
@@ -600,18 +608,21 @@ function HubCard({ hubId, isExpanded, onExpand, onSelect }: HubCardProps) {
 
   return (
     <div
-      onClick={handleCardClick}
       onMouseEnter={() => onExpand(hubId)}
       onMouseLeave={() => onExpand(null)}
-      className="bg-card rounded-[22px] shadow-[var(--shadow)] border-2 border-[var(--card-border)] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden flex flex-col hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(30,111,168,0.18)] active:scale-[0.98]"
+      className="bg-card rounded-[22px] shadow-[var(--shadow)] border-2 border-[var(--card-border)] transition-all duration-300 ease-in-out overflow-hidden flex flex-col"
     >
-      {/* Header — always visible */}
-      <div className="px-5 py-4 flex items-center gap-3" style={{ background: hub.grad }}>
+      {/* Header — always visible, clickable */}
+      <div
+        onClick={handleHeaderClick}
+        className="px-5 py-4 flex items-center gap-3 cursor-pointer select-none"
+        style={{ background: hub.grad }}
+      >
         <HubIcon name={hub.iconName} color={hub.iconColor} size={28} />
 
-        {/* Title block — stacked on desktop, inline on mobile */}
+        {/* Title + subtext */}
         <div className="flex-1 min-w-0 flex md:flex-col md:items-start items-center justify-between gap-2 md:gap-0.5">
-          <h3 className="font-sans font-black text-lg text-white leading-tight">{hub.title}</h3>
+          <h3 className="font-sans font-black text-lg text-white leading-tight">{displayName}</h3>
           {subtext && (
             <span className="text-white/70 font-sans font-semibold md:text-[0.72rem] text-[0.68rem] md:mt-0.5 shrink-0 md:shrink text-right md:text-left">
               {subtext}
@@ -619,16 +630,17 @@ function HubCard({ hubId, isExpanded, onExpand, onSelect }: HubCardProps) {
           )}
         </div>
 
+        {/* Arrow — always goes straight to modal */}
         <button
           onClick={handleArrowClick}
           className="ml-2 w-[30px] h-[30px] bg-white/20 rounded-full flex items-center justify-center shrink-0 hover:bg-white/35 transition-all duration-200 active:scale-90"
-          aria-label={`Open ${hub.title}`}
+          aria-label={`Open ${displayName}`}
         >
           <ArrowRight weight="bold" className="w-4 h-4 text-white" />
         </button>
       </div>
 
-      {/* Accordion peek */}
+      {/* Accordion peek body */}
       <div
         className="transition-all duration-300 ease-in-out overflow-hidden"
         style={{ maxHeight: isExpanded ? "160px" : "0px", opacity: isExpanded ? 1 : 0 }}
@@ -684,26 +696,29 @@ export function ServicesPage({ onNavigate }: ServicesPageProps) {
                 key={id}
                 hubId={id}
                 isExpanded={expandedHub === id}
-                onExpand={(id) => setExpandedHub(id)}
+                onExpand={setExpandedHub}
                 onSelect={setSelectedHub}
               />
             ))}
           </div>
         </section>
 
-        {/* Chat CTA — immediately after hub cards */}
-        <section className="px-4 md:px-8 py-12 bg-gradient-to-br from-[#2d7a2d] via-[#3a9a3a] to-[#25D366] text-center">
-          <h2 className="font-sans font-black text-xl md:text-2xl text-white mb-2">Still not sure what you need?</h2>
-          <p className="text-white/85 text-[0.95rem] mb-6 max-w-[480px] mx-auto">
+        {/* Still not sure CTA — blue brand gradient, one instance */}
+        <section className="px-4 md:px-8 py-12 text-center bg-gradient-to-br from-[#1E6FA8] via-[#0F3F66] to-[#2980b9] relative overflow-hidden">
+          <div className="absolute -bottom-[60px] -left-[60px] w-[280px] h-[280px] bg-[radial-gradient(circle,rgba(169,214,242,0.15)_0%,transparent_70%)] rounded-full" />
+          <h2 className="font-sans font-black text-xl md:text-2xl text-white mb-2 relative z-10">
+            Still not sure what you need?
+          </h2>
+          <p className="text-white/80 text-[0.95rem] mb-6 max-w-[480px] mx-auto relative z-10">
             Send a WhatsApp message and we'll recommend the right service for you.
           </p>
           <a
             href="https://wa.me/27753338260"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-white text-[#2d7a2d] font-sans font-extrabold text-base px-7 py-3.5 rounded-[14px] shadow-[0_8px_24px_rgba(0,0,0,0.18)] hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(0,0,0,0.22)] active:scale-95 transition-all duration-200 ease-in-out"
+            className="relative z-10 inline-flex items-center gap-2 bg-white text-[#0F3F66] font-sans font-extrabold text-base px-7 py-3.5 rounded-[14px] shadow-[0_8px_24px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(0,0,0,0.25)] active:scale-95 transition-all duration-200 ease-in-out"
           >
-            <WhatsappLogo weight="fill" className="w-5 h-5" />
+            <WhatsappLogo weight="fill" className="w-5 h-5 text-[#25D366]" />
             Chat With Us
           </a>
         </section>
