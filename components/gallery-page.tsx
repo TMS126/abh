@@ -45,16 +45,6 @@ const GALLERY_ITEMS: PortfolioItem[] = [
   { id: 6, title: "Portal Verification Direct Administrative Support", category: "eservice", description: "Accurate status checking and streamlined administrative documentation assistance.", images: ["https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=800&auto=format&fit=crop", "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=800&auto=format&fit=crop"], clientName: "Walk-in Resident Support", dateCompleted: "June 2026", extendedDetails: "Fast-tracked verification workflows enabling seamless processing and immediate status check reference slip printing." },
 ]
 
-const MATTE_HERO = [
-  "radial-gradient(ellipse 70% 80% at 15% 50%, #0F3F66 0%, transparent 70%)",
-  "radial-gradient(ellipse 55% 65% at 50% 30%, #1E6FA8 0%, transparent 65%)",
-  "radial-gradient(ellipse 45% 55% at 80% 60%, #15537D 0%, transparent 60%)",
-  "radial-gradient(ellipse 35% 45% at 65% 85%, #3E6B0E 0%, transparent 55%)",
-  "radial-gradient(ellipse 30% 40% at 30% 75%, #548F14 0%, transparent 50%)",
-  "radial-gradient(ellipse 20% 30% at 92% 15%, #D9894B 0%, transparent 55%)",
-  "linear-gradient(135deg, #0A1A2E 0%, #0F3F66 35%, #15537D 55%, #3E6B0E 78%, #548F14 88%, #B86F34 100%)",
-].join(", ")
-
 export function GalleryPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("all")
@@ -69,13 +59,16 @@ export function GalleryPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero */}
-      <section className="px-4 py-12 text-center relative overflow-hidden" style={{ background: MATTE_HERO }}>
-        <h1 className="font-sans font-black text-2xl text-white relative z-10">Gallery &amp; Portfolio</h1>
-        <p className="text-white/75 text-sm mt-2 relative z-10">Real work, real results — look through what we do every single day.</p>
+      {/* Hero — Clean background with solid line separator */}
+      <section className="px-4 py-12 text-center relative overflow-hidden bg-white dark:bg-[#081428]">
+        <h1 className="font-sans font-black text-2xl text-[#0F3F66] dark:text-[#A9D6F2] relative z-10">Gallery & Portfolio</h1>
+        <p className="text-[#333333] dark:text-white/75 text-sm mt-2 relative z-10">Real work, real results — look through what we do every single day.</p>
+        
+        {/* Solid line separator */}
+        <div className="mt-6 h-[1px] bg-[#E5E5E5] dark:bg-white/10 max-w-[200px] mx-auto" />
       </section>
 
-      <section className="px-4 py-10">
+      <section className="px-4 py-10 bg-white dark:bg-[#081428]">
         <div className="max-w-[1200px] mx-auto">
 
           {/* Notice banner */}
@@ -141,7 +134,7 @@ export function GalleryPage() {
           <div className="text-center mt-12 pt-6 border-t border-gray-200 dark:border-zinc-800">
             <button
               onClick={() => { router.push("/contact"); window.scrollTo({ top: 0, behavior: "smooth" }) }}
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-[14px] font-sans font-extrabold text-[0.92rem] bg-[#25D366] text-white hover:bg-[#1ebe5a] active:scale-95 transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-[14px] font-sans font-extrabold text-[0.92rem] bg-[#25D366] text-white hover:bg-[#1ebe5a] active:scale-95 transition-all shadow-[0_4px_12px_rgba(37,211,102,0.2)]"
             >
               <WhatsappLogo weight="fill" className="w-5 h-5" /> Ask Us on WhatsApp
             </button>
@@ -161,10 +154,10 @@ export function GalleryPage() {
                 <img src={selectedProject.images[activeImageIndex]} alt="Gallery content" className="w-full h-full object-cover" />
                 {selectedProject.images.length > 1 && (
                   <>
-                    <button onClick={(e) => handlePrevImage(e, selectedProject.images.length)} className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-[10px] bg-white/90 dark:bg-black/90 text-foreground shadow-md">
+                    <button onClick={(e) => handlePrevImage(e, selectedProject.images.length)} className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-[10px] bg-white/90 dark:bg-black/90 text-foreground shadow-md hover:-translate-x-1 transition-all">
                       <CaretLeft size={18} weight="bold" />
                     </button>
-                    <button onClick={(e) => handleNextImage(e, selectedProject.images.length)} className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-[10px] bg-white/90 dark:bg-black/90 text-foreground shadow-md">
+                    <button onClick={(e) => handleNextImage(e, selectedProject.images.length)} className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-[10px] bg-white/90 dark:bg-black/90 text-foreground shadow-md hover:translate-x-1 transition-all">
                       <CaretRight size={18} weight="bold" />
                     </button>
                   </>
@@ -197,10 +190,10 @@ export function GalleryPage() {
                   </div>
                   <hr className="border-gray-100 dark:border-zinc-800" />
                   <div className="flex flex-col sm:flex-row gap-3">
-                    <a href="https://wa.me/27753338260" target="_blank" rel="noopener noreferrer" className="flex-1 inline-flex items-center justify-center gap-2 py-3.5 rounded-[14px] bg-[#25D366] text-white font-sans font-black text-xs uppercase tracking-widest hover:bg-[#1ebe5a] transition-all active:scale-95">
+                    <a href="https://wa.me/27753338260" target="_blank" rel="noopener noreferrer" className="flex-1 inline-flex items-center justify-center gap-2 py-3.5 rounded-[14px] bg-[#25D366] text-white font-sans font-black text-xs uppercase tracking-widest hover:bg-[#1ebe5a] transition-all active:scale-95 shadow-[0_4px_12px_rgba(37,211,102,0.2)]">
                       <WhatsappLogo weight="fill" size={18} /> Request Similar Job
                     </a>
-                    <button onClick={() => setSelectedProject(null)} className="px-8 py-3.5 rounded-[14px] bg-gray-100 dark:bg-zinc-800 text-foreground font-sans font-black text-xs uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-zinc-700 transition-all active:scale-95">
+                    <button onClick={() => setSelectedProject(null)} className="flex-1 inline-flex items-center justify-center gap-2 py-3.5 rounded-[14px] bg-secondary text-foreground font-sans font-black text-xs uppercase tracking-widest border border-border hover:bg-muted transition-all active:scale-95">
                       Close
                     </button>
                   </div>
@@ -212,4 +205,4 @@ export function GalleryPage() {
       )}
     </div>
   )
-}
+   } 
