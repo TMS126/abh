@@ -1,307 +1,113 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import { ArrowRight, X, CaretDown, WhatsappLogo, Printer, FileText, PaintBrush, Globe, Desktop, ChatCircle, Briefcase, Buildings } from "@phosphor-icons/react"
+import { useState } from "react"
+import { X, CaretDown, WhatsappLogo, Printer, FileText, PaintBrush, Globe, Desktop, ChatCircle, Briefcase, Buildings } from "@phosphor-icons/react"
 import { HUBS, type HubId } from "@/lib/data"
 import { cn } from "@/lib/utils"
 import { useTheme } from "next-themes"
 
-// ─── Hub icon renderer ───────────────────────────────────────────────────────
+// ─── Matte flat gradient helper ───────────────────────────────────────────────
+// Each hub keeps its own colour family, rendered flat (no shine)
+const HUB_MATTE: Record<HubId, string> = {
+  print:    "linear-gradient(150deg, #1E6FA8 0%, #15537D 50%, #0F3F66 100%)",
+  doc:      "linear-gradient(150deg, #3E6B0E 0%, #548F14 50%, #6FBF1A 100%)",
+  design:   "linear-gradient(150deg, #B86F34 0%, #D9894B 50%, #F4A261 100%)",
+  eservice: "linear-gradient(150deg, #0A2A44 0%, #0F3F66 50%, #15537D 100%)",
+  tech:     "linear-gradient(150deg, #1E2A38 0%, #2C3E50 50%, #4A6785 100%)",
+}
+
+// ─── Hub icon renderer ────────────────────────────────────────────────────────
 function HubIcon({ name, color, size = 32 }: { name: string; color: string; size?: number }) {
   const props = { size, color, weight: "fill" as const }
   switch (name) {
-    case 'Printer': return <Printer {...props} />
-    case 'FileText': return <FileText {...props} />
+    case 'Printer':    return <Printer {...props} />
+    case 'FileText':   return <FileText {...props} />
     case 'PaintBrush': return <PaintBrush {...props} />
-    case 'Globe': return <Globe {...props} />
-    case 'Desktop': return <Desktop {...props} />
-    default: return null
+    case 'Globe':      return <Globe {...props} />
+    case 'Desktop':    return <Desktop {...props} />
+    default:           return null
   }
 }
 
-// ─── Service descriptions + WApp sample texts ───────────────────────────────
+// ─── Service descriptions ─────────────────────────────────────────────────────
 const SERVICE_INFO: Record<string, { desc: string; waText: string }> = {
-  "Black & White": {
-    desc: "Standard single-sided black & white printing on A4 80gsm paper.",
-    waText: "Hi Apexbytes Hub! I need Black & White Printing. How many pages can I bring?",
-  },
-  "Colour": {
-    desc: "Vibrant full-colour printing on A4 paper — great for forms, certificates and anything that needs to stand out.",
-    waText: "Hi Apexbytes Hub! I need Colour Printing. How do I proceed?",
-  },
-  "4x6 Glossy": {
-    desc: "High-quality glossy photo print at standard 4x6 size — ideal for portraits, memories and keepsakes.",
-    waText: "Hi Apexbytes Hub! I'd like to print 4x6 Glossy Photos. What format should I send my images in?",
-  },
-  "A4 Glossy": {
-    desc: "Large glossy photo print on A4 — perfect for framing, events or professional display.",
-    waText: "Hi Apexbytes Hub! I need an A4 Glossy Photo Print. How do I send you my image?",
-  },
-  "CV from Scratch": {
-    desc: "We build your CV from zero — professional layout, your details, ready to send to employers.",
-    waText: "Hi Apexbytes Hub! I need a new CV created from scratch. What info do I need to bring?",
-  },
-  "CV Upgrade/Fix": {
-    desc: "We update or improve your existing CV — better layout, corrected content, job-ready.",
-    waText: "Hi Apexbytes Hub! I need my existing CV upgraded. Can I WhatsApp it to you?",
-  },
-  "Cover Letter": {
-    desc: "A professional cover letter tailored to the job you're applying for.",
-    waText: "Hi Apexbytes Hub! I need a cover letter written. Can you help?",
-  },
-  "Affidavit / Letter": {
-    desc: "We type your affidavit or formal letter — ready for signing or submission.",
-    waText: "Hi Apexbytes Hub! I need an affidavit or letter typed. Can you help?",
-  },
-  "Scan to Digital": {
-    desc: "We scan your physical document and send it to you as a PDF or JPG.",
-    waText: "Hi Apexbytes Hub! I need documents scanned to digital. How many pages can I bring?",
-  },
-  "A5": {
-    desc: "Laminate your A5 document or card for protection and a professional finish.",
-    waText: "Hi Apexbytes Hub! I need an A5 document laminated. Can I come in today?",
-  },
-  "A4": {
-    desc: "Laminate your A4 document for long-lasting protection — great for certificates and IDs.",
-    waText: "Hi Apexbytes Hub! I need an A4 document laminated. Can I come in today?",
-  },
-  "A3": {
-    desc: "Laminate your A3 poster or document — durable, clean and professional.",
-    waText: "Hi Apexbytes Hub! I need an A3 document laminated. Are you available today?",
-  },
-  "Basic Logo": {
-    desc: "A clean, simple logo — one concept, two revisions, delivered as PNG/PDF.",
-    waText: "Hi Apexbytes Hub! I need a Basic Logo designed. What info do you need from me?",
-  },
-  "Standard Logo": {
-    desc: "A polished logo with more detail — includes multiple formats and a revision round.",
-    waText: "Hi Apexbytes Hub! I'm interested in a Standard Logo. How do we start?",
-  },
-  "Premium Logo": {
-    desc: "Full brand-ready logo — multiple concepts, colour variants, all file formats included.",
-    waText: "Hi Apexbytes Hub! I want a Premium Logo for my brand. Can we discuss?",
-  },
-  "Single Side": {
-    desc: "Business card design for one side — your name, number, and brand, print-ready.",
-    waText: "Hi Apexbytes Hub! I need a single-sided business card designed. What details do I send?",
-  },
-  "Double Side": {
-    desc: "Business card designed on both sides — more info, more impact.",
-    waText: "Hi Apexbytes Hub! I need a double-sided business card designed. Can you help?",
-  },
-  "Simple": {
-    desc: "A clean, straightforward flyer or poster with your text and basic layout.",
-    waText: "Hi Apexbytes Hub! I need a simple flyer/poster designed. What do I send you?",
-  },
-  "Custom": {
-    desc: "A fully customised flyer or poster with your brand colours, images and layout.",
-    waText: "Hi Apexbytes Hub! I need a custom flyer/poster. Can we discuss the design?",
-  },
-  "Complex": {
-    desc: "A detailed, premium design — multiple elements, high visual impact, print or digital ready.",
-    waText: "Hi Apexbytes Hub! I need a complex flyer/poster design. How do we start?",
-  },
-  "Post": {
-    desc: "A single branded social media post — sized and ready for Facebook, Instagram or WhatsApp.",
-    waText: "Hi Apexbytes Hub! I need a social media post designed. What info do I send?",
-  },
-  "Post + Story": {
-    desc: "A matching post and story set — consistent look across your social platforms.",
-    waText: "Hi Apexbytes Hub! I need a social media Post + Story designed. Can you help?",
-  },
-  "Image/Static": {
-    desc: "A beautifully designed static invitation image — for weddings, birthdays, graduations and more.",
-    waText: "Hi Apexbytes Hub! I need a static invitation designed. What details do I send you?",
-  },
-  "Video": {
-    desc: "An animated video invitation — eye-catching, shareable, perfect for WhatsApp and social media.",
-    waText: "Hi Apexbytes Hub! I need a video invitation designed. How do we start?",
-  },
-  "While Busy": {
-    desc: "One revision while the project is still in progress — small tweaks before final delivery.",
-    waText: "Hi Apexbytes Hub! I'd like to request a revision on my current design project.",
-  },
-  "After Completion": {
-    desc: "A revision after the final file has been delivered — changes to an already completed design.",
-    waText: "Hi Apexbytes Hub! I need a revision on a completed design. Can you assist?",
-  },
-  "Status Check": {
-    desc: "We check your registration or platform status online on your behalf.",
-    waText: "Hi Apexbytes Hub! I need my online status checked. Can I come in?",
-  },
-  "Update Details": {
-    desc: "We update your personal, contact, or business profile details securely.",
-    waText: "Hi Apexbytes Hub! I need to update my details profile. Can you assist?",
-  },
-  "Enquiry / Statement": {
-    desc: "We log into SARS eFiling and retrieve your account statement or answer your tax enquiry.",
-    waText: "Hi Apexbytes Hub! I need a SARS enquiry or statement. Can you assist?",
-  },
-  "New Taxpayer / eFiling": {
-    desc: "We register you as a new taxpayer or set up your SARS eFiling account.",
-    waText: "Hi Apexbytes Hub! I need to register for SARS or set up eFiling. What do I bring?",
-  },
-  "Tax Pin / Penalty": {
-    desc: "We retrieve your tax compliance PIN or submit a penalty remission request.",
-    waText: "Hi Apexbytes Hub! I need help with my SARS Tax Pin or a penalty. Can you assist?",
-  },
-  "Tax Clearance": {
-    desc: "We apply for your SARS Tax Clearance Certificate — needed for tenders, jobs and travel.",
-    waText: "Hi Apexbytes Hub! I need a SARS Tax Clearance Certificate. What do I bring?",
-  },
-  "Tax Return / VAT / PAYE": {
-    desc: "We file your annual tax return (ITR12), VAT or PAYE submission on SARS eFiling.",
-    waText: "Hi Apexbytes Hub! I need help filing my SARS Tax Return / VAT / PAYE. Can you assist?",
-  },
-  "Pin Submission": {
-    desc: "We submit your SARS compliance pin as part of a tender, contract or verification process.",
-    waText: "Hi Apexbytes Hub! I need a SARS Pin Submission done. Can you help?",
-  },
-  "PSIRA Status Check": {
-    desc: "We check your PSIRA registration status — confirm if you're active and compliant.",
-    waText: "Hi Apexbytes Hub! I need my PSIRA status checked. Can I come in?",
-  },
-  "Update / Certificate": {
-    desc: "We update your PSIRA details or help you obtain your registration certificate.",
-    waText: "Hi Apexbytes Hub! I need my PSIRA details updated or a certificate. Can you assist?",
-  },
-  "Lost Certificate": {
-    desc: "We apply for a replacement PSIRA certificate if yours has been lost or damaged.",
-    waText: "Hi Apexbytes Hub! I lost my PSIRA certificate and need a replacement. Can you help?",
-  },
-  "Renewal / New Registration": {
-    desc: "We renew your PSIRA registration or register you fresh as a new security officer.",
-    waText: "Hi Apexbytes Hub! I need my PSIRA renewed or a new registration. What do I bring?",
-  },
-  "ID Application": {
-    desc: "We assist with your PSIRA ID card application — submitted through the official portal.",
-    waText: "Hi Apexbytes Hub! I need to apply for a PSIRA ID card. Can you assist?",
-  },
-  "NSFAS Status Check": {
-    desc: "We check your NSFAS application or funding status on the NSFAS portal.",
-    waText: "Hi Apexbytes Hub! I need my NSFAS status checked. Can I come in?",
-  },
-  "NSFAS Banking Update": {
-    desc: "We update your banking details on the NSFAS system so your allowance pays correctly.",
-    waText: "Hi Apexbytes Hub! I need to update my NSFAS banking details. What do I bring?",
-  },
-  "Learnership Application": {
-    desc: "We find and apply for a learnership programme that matches your qualifications.",
-    waText: "Hi Apexbytes Hub! I need help applying for a learnership. Can you assist?",
-  },
-  "Job / DPSA Application": {
-    desc: "We apply for a government job on your behalf via DPSA or other job portals.",
-    waText: "Hi Apexbytes Hub! I need help applying for a government job. Can you assist?",
-  },
-  "Bursary Application": {
-    desc: "We find and apply for a bursary that suits your field of study.",
-    waText: "Hi Apexbytes Hub! I need help applying for a bursary. Can you assist?",
-  },
-  "NSFAS Appeal": {
-    desc: "We submit an NSFAS appeal if your application was rejected or funding was withdrawn.",
-    waText: "Hi Apexbytes Hub! I need to appeal my NSFAS decision. Can you help?",
-  },
-  "NSFAS Application": {
-    desc: "We complete and submit your NSFAS application for university or TVET college funding.",
-    waText: "Hi Apexbytes Hub! I need to apply for NSFAS. What documents do I bring?",
-  },
-  "University Application": {
-    desc: "We apply to a university of your choice on your behalf — fully completed and submitted.",
-    waText: "Hi Apexbytes Hub! I need help applying to a university. Can you assist?",
-  },
-  "Setup / Send / Receive": {
-    desc: "We set up your email account or help you send and receive important emails.",
-    waText: "Hi Apexbytes Hub! I need help with email setup or sending/receiving emails. Can I come in?",
-  },
-  "Good Standing Letter": {
-    desc: "We apply for your CIPC Letter of Good Standing — required for tenders and contracts.",
-    waText: "Hi Apexbytes Hub! I need a Letter of Good Standing. Can you assist?",
-  },
-  "Google Business Setup": {
-    desc: "We create and verify your Google Business Profile so customers can find you on Google Maps.",
-    waText: "Hi Apexbytes Hub! I need a Google Business Profile set up. Can you help?",
-  },
-  "UIF Monthly Declaration": {
-    desc: "We submit your monthly UIF employer declaration on uFiling on your behalf.",
-    waText: "Hi Apexbytes Hub! I need help with my monthly UIF declaration. Can you assist?",
-  },
-  "CSD Update": {
-    desc: "We update your business details on the Central Supplier Database.",
-    waText: "Hi Apexbytes Hub! I need my CSD profile updated. What do I bring?",
-  },
-  "UIF Registration": {
-    desc: "We register you or your business for UIF on the Department of Labour portal.",
-    waText: "Hi Apexbytes Hub! I need to register for UIF. What documents do I need?",
-  },
-  "UIF Claims": {
-    desc: "We submit your UIF unemployment, maternity or illness claim on your behalf.",
-    waText: "Hi Apexbytes Hub! I need to claim from UIF. Can you assist me?",
-  },
-  "CSD Registration": {
-    desc: "We register your business on the Central Supplier Database — required for government tenders.",
-    waText: "Hi Apexbytes Hub! I need to register on the CSD. What documents do I bring?",
-  },
-  "Social Media Setup": {
-    desc: "We create your Facebook, Instagram or TikTok business page — ready to post.",
-    waText: "Hi Apexbytes Hub! I need a social media account set up for my business. Can you help?",
-  },
-  "Learner's Licence Booking": {
-    desc: "We book your learner's licence test at the DLTC on the eNaTIS system.",
-    waText: "Hi Apexbytes Hub! I need to book my learner's licence test. Can you assist?",
-  },
-  "WhatsApp Business Setup": {
-    desc: "We set up your WhatsApp Business profile with your business name, hours and catalogue.",
-    waText: "Hi Apexbytes Hub! I need my WhatsApp Business set up. Can you help?",
-  },
-  "Software Install": {
-    desc: "We install any software or application you need on your laptop or PC.",
-    waText: "Hi Apexbytes Hub! I need software installed on my device. Can I bring it in?",
-  },
-  "Driver Installation": {
-    desc: "We find and install the correct drivers for your printer, sound, display or other hardware.",
-    waText: "Hi Apexbytes Hub! I need drivers installed on my PC. Can I bring it in?",
-  },
-  "Troubleshooting": {
-    desc: "We diagnose and fix whatever issue your device has — billed per hour.",
-    waText: "Hi Apexbytes Hub! I need help troubleshooting my device. Can I bring it in?",
-  },
-  "PC Cleanup": {
-    desc: "We clean up your PC — remove junk files, fix startup, and make it run faster.",
-    waText: "Hi Apexbytes Hub! I need my PC cleaned up and optimised. Can I bring it in?",
-  },
-  "Virus / Malware Removal": {
-    desc: "We scan and remove viruses, malware and unwanted programs from your device.",
-    waText: "Hi Apexbytes Hub! I think my PC has a virus. Can I bring it in for removal?",
-  },
-  "OS Update": {
-    desc: "We run a full Windows OS update — keeping your system secure and up to date.",
-    waText: "Hi Apexbytes Hub! I need my Windows updated. Can I bring my device in?",
-  },
-  "Windows Install (No Activation)": {
-    desc: "We do a clean Windows installation without activation — your licence key needed separately.",
-    waText: "Hi Apexbytes Hub! I need Windows installed on my PC. Can I bring it in?",
-  },
-  "Windows Install + Activation": {
-    desc: "We install and fully activate Windows — your PC is licensed and ready to use.",
-    waText: "Hi Apexbytes Hub! I need Windows installed and activated. Can I bring my PC in?",
-  },
-  "Activation Only": {
-    desc: "We activate your existing Windows installation using a valid licence key.",
-    waText: "Hi Apexbytes Hub! I need my Windows activated. Can I bring my device in?",
-  },
-  "Microsoft 365 Setup": {
-    desc: "We set up Microsoft 365 on your device — Word, Excel, Outlook and more, ready to use.",
-    waText: "Hi Apexbytes Hub! I need Microsoft 365 set up on my device. Can I bring it in?",
-  },
-}
-
-// ─── Hub subtexts ─────────────────────────────────────────────────────────────
-const HUB_SUBTEXTS: Record<string, string> = {
-  "Print Hub":     "Printing · Copies · Photos",
-  "Docu Hub":      "CVs · Typing · Scanning · Laminating",
-  "Design Hub":    "Logos · Flyers · Branding",
-  "E-Service Hub": "SARS · SASSA · UIF · CSD",
-  "Tech Hub":      "Windows · Software · Repairs",
+  "Black & White": { desc: "Standard single-sided black & white printing on A4 80gsm paper.", waText: "Hi Apexbytes Hub! I need Black & White Printing. How many pages can I bring?" },
+  "Colour": { desc: "Vibrant full-colour printing on A4 paper — great for forms, certificates and anything that needs to stand out.", waText: "Hi Apexbytes Hub! I need Colour Printing. How do I proceed?" },
+  "4x6 Glossy": { desc: "High-quality glossy photo print at standard 4x6 size — ideal for portraits, memories and keepsakes.", waText: "Hi Apexbytes Hub! I'd like to print 4x6 Glossy Photos. What format should I send my images in?" },
+  "A4 Glossy": { desc: "Large glossy photo print on A4 — perfect for framing, events or professional display.", waText: "Hi Apexbytes Hub! I need an A4 Glossy Photo Print. How do I send you my image?" },
+  "CV from Scratch": { desc: "We build your CV from zero — professional layout, your details, ready to send to employers.", waText: "Hi Apexbytes Hub! I need a new CV created from scratch. What info do I need to bring?" },
+  "CV Upgrade/Fix": { desc: "We update or improve your existing CV — better layout, corrected content, job-ready.", waText: "Hi Apexbytes Hub! I need my existing CV upgraded. Can I WhatsApp it to you?" },
+  "Cover Letter": { desc: "A professional cover letter tailored to the job you're applying for.", waText: "Hi Apexbytes Hub! I need a cover letter written. Can you help?" },
+  "Affidavit / Letter": { desc: "We type your affidavit or formal letter — ready for signing or submission.", waText: "Hi Apexbytes Hub! I need an affidavit or letter typed. Can you help?" },
+  "Scan to Digital": { desc: "We scan your physical document and send it to you as a PDF or JPG.", waText: "Hi Apexbytes Hub! I need documents scanned to digital. How many pages can I bring?" },
+  "A5": { desc: "Laminate your A5 document or card for protection and a professional finish.", waText: "Hi Apexbytes Hub! I need an A5 document laminated. Can I come in today?" },
+  "A4": { desc: "Laminate your A4 document for long-lasting protection — great for certificates and IDs.", waText: "Hi Apexbytes Hub! I need an A4 document laminated. Can I come in today?" },
+  "A3": { desc: "Laminate your A3 poster or document — durable, clean and professional.", waText: "Hi Apexbytes Hub! I need an A3 document laminated. Are you available today?" },
+  "Basic Logo": { desc: "A clean, simple logo — one concept, two revisions, delivered as PNG/PDF.", waText: "Hi Apexbytes Hub! I need a Basic Logo designed. What info do you need from me?" },
+  "Standard Logo": { desc: "A polished logo with more detail — includes multiple formats and a revision round.", waText: "Hi Apexbytes Hub! I'm interested in a Standard Logo. How do we start?" },
+  "Premium Logo": { desc: "Full brand-ready logo — multiple concepts, colour variants, all file formats included.", waText: "Hi Apexbytes Hub! I want a Premium Logo for my brand. Can we discuss?" },
+  "Single Side": { desc: "Business card design for one side — your name, number, and brand, print-ready.", waText: "Hi Apexbytes Hub! I need a single-sided business card designed. What details do I send?" },
+  "Double Side": { desc: "Business card designed on both sides — more info, more impact.", waText: "Hi Apexbytes Hub! I need a double-sided business card designed. Can you help?" },
+  "Simple": { desc: "A clean, straightforward flyer or poster with your text and basic layout.", waText: "Hi Apexbytes Hub! I need a simple flyer/poster designed. What do I send you?" },
+  "Custom": { desc: "A fully customised flyer or poster with your brand colours, images and layout.", waText: "Hi Apexbytes Hub! I need a custom flyer/poster. Can we discuss the design?" },
+  "Complex": { desc: "A detailed, premium design — multiple elements, high visual impact, print or digital ready.", waText: "Hi Apexbytes Hub! I need a complex flyer/poster design. How do we start?" },
+  "Post": { desc: "A single branded social media post — sized and ready for Facebook, Instagram or WhatsApp.", waText: "Hi Apexbytes Hub! I need a social media post designed. What info do I send?" },
+  "Post + Story": { desc: "A matching post and story set — consistent look across your social platforms.", waText: "Hi Apexbytes Hub! I need a social media Post + Story designed. Can you help?" },
+  "Image/Static": { desc: "A beautifully designed static invitation image — for weddings, birthdays, graduations and more.", waText: "Hi Apexbytes Hub! I need a static invitation designed. What details do I send you?" },
+  "Video": { desc: "An animated video invitation — eye-catching, shareable, perfect for WhatsApp and social media.", waText: "Hi Apexbytes Hub! I need a video invitation designed. How do we start?" },
+  "While Busy": { desc: "One revision while the project is still in progress — small tweaks before final delivery.", waText: "Hi Apexbytes Hub! I'd like to request a revision on my current design project." },
+  "After Completion": { desc: "A revision after the final file has been delivered — changes to an already completed design.", waText: "Hi Apexbytes Hub! I need a revision on a completed design. Can you assist?" },
+  "Status Check": { desc: "We check your SASSA application or grant status online on your behalf.", waText: "Hi Apexbytes Hub! I need my SASSA status checked. Can I come in?" },
+  "Payment/Balance Check": { desc: "We check when your next SASSA payment is due or confirm your balance.", waText: "Hi Apexbytes Hub! I need to check my SASSA payment date or balance." },
+  "Update Details": { desc: "We update your personal or contact details on your SASSA profile.", waText: "Hi Apexbytes Hub! I need to update my SASSA details. Can you assist?" },
+  "Reapplication": { desc: "We reapply for your SASSA grant after a rejection or lapse.", waText: "Hi Apexbytes Hub! I need to reapply for my SASSA grant. Can you help?" },
+  "SRD Application": { desc: "We apply for the SASSA R370 Social Relief of Distress grant on your behalf.", waText: "Hi Apexbytes Hub! I need to apply for the SASSA SRD grant. What do I bring?" },
+  "Appeal": { desc: "We submit a formal appeal if your SASSA application was declined.", waText: "Hi Apexbytes Hub! I need to appeal my SASSA rejection. Can you assist?" },
+  "Banking Update": { desc: "We update your banking details on SASSA so your grant pays to the right account.", waText: "Hi Apexbytes Hub! I need to update my banking details on SASSA. What do I bring?" },
+  "Grant Application": { desc: "We apply for a SASSA grant on your behalf — child support, disability, old age and more.", waText: "Hi Apexbytes Hub! I need to apply for a SASSA grant. Which documents do I need?" },
+  "Enquiry / Statement": { desc: "We log into SARS eFiling and retrieve your account statement or answer your tax enquiry.", waText: "Hi Apexbytes Hub! I need a SARS enquiry or statement. Can you assist?" },
+  "New Taxpayer / eFiling": { desc: "We register you as a new taxpayer or set up your SARS eFiling account.", waText: "Hi Apexbytes Hub! I need to register for SARS or set up eFiling. What do I bring?" },
+  "Tax Pin / Penalty": { desc: "We retrieve your tax compliance PIN or submit a penalty remission request.", waText: "Hi Apexbytes Hub! I need help with my SARS Tax Pin or a penalty. Can you assist?" },
+  "Tax Clearance": { desc: "We apply for your SARS Tax Clearance Certificate — needed for tenders, jobs and travel.", waText: "Hi Apexbytes Hub! I need a SARS Tax Clearance Certificate. What do I bring?" },
+  "Tax Return / VAT / PAYE": { desc: "We file your annual tax return (ITR12), VAT or PAYE submission on SARS eFiling.", waText: "Hi Apexbytes Hub! I need help filing my SARS Tax Return / VAT / PAYE. Can you assist?" },
+  "Pin Submission": { desc: "We submit your SARS compliance pin as part of a tender, contract or verification process.", waText: "Hi Apexbytes Hub! I need a SARS Pin Submission done. Can you help?" },
+  "PSIRA Status Check": { desc: "We check your PSIRA registration status — confirm if you're active and compliant.", waText: "Hi Apexbytes Hub! I need my PSIRA status checked. Can I come in?" },
+  "Update / Certificate": { desc: "We update your PSIRA details or help you obtain your registration certificate.", waText: "Hi Apexbytes Hub! I need my PSIRA details updated or a certificate. Can you assist?" },
+  "Lost Certificate": { desc: "We apply for a replacement PSIRA certificate if yours has been lost or damaged.", waText: "Hi Apexbytes Hub! I lost my PSIRA certificate and need a replacement. Can you help?" },
+  "Renewal / New Registration": { desc: "We renew your PSIRA registration or register you fresh as a new security officer.", waText: "Hi Apexbytes Hub! I need my PSIRA renewed or a new registration. What do I bring?" },
+  "ID Application": { desc: "We assist with your PSIRA ID card application — submitted through the official portal.", waText: "Hi Apexbytes Hub! I need to apply for a PSIRA ID card. Can you assist?" },
+  "NSFAS Status Check": { desc: "We check your NSFAS application or funding status on the NSFAS portal.", waText: "Hi Apexbytes Hub! I need my NSFAS status checked. Can I come in?" },
+  "NSFAS Banking Update": { desc: "We update your banking details on the NSFAS system so your allowance pays correctly.", waText: "Hi Apexbytes Hub! I need to update my NSFAS banking details. What do I bring?" },
+  "Learnership Application": { desc: "We find and apply for a learnership programme that matches your qualifications.", waText: "Hi Apexbytes Hub! I need help applying for a learnership. Can you assist?" },
+  "Job / DPSA Application": { desc: "We apply for a government job on your behalf via DPSA or other job portals.", waText: "Hi Apexbytes Hub! I need help applying for a government job. Can you assist?" },
+  "Bursary Application": { desc: "We find and apply for a bursary that suits your field of study.", waText: "Hi Apexbytes Hub! I need help applying for a bursary. Can you assist?" },
+  "NSFAS Appeal": { desc: "We submit an NSFAS appeal if your application was rejected or funding was withdrawn.", waText: "Hi Apexbytes Hub! I need to appeal my NSFAS decision. Can you help?" },
+  "NSFAS Application": { desc: "We complete and submit your NSFAS application for university or TVET college funding.", waText: "Hi Apexbytes Hub! I need to apply for NSFAS. What documents do I bring?" },
+  "University Application": { desc: "We apply to a university of your choice on your behalf — fully completed and submitted.", waText: "Hi Apexbytes Hub! I need help applying to a university. Can you assist?" },
+  "Setup / Send / Receive": { desc: "We set up your email account or help you send and receive important emails.", waText: "Hi Apexbytes Hub! I need help with email setup or sending/receiving emails. Can I come in?" },
+  "Good Standing Letter": { desc: "We apply for your CIPC Letter of Good Standing — required for tenders and contracts.", waText: "Hi Apexbytes Hub! I need a Letter of Good Standing. Can you assist?" },
+  "Google Business Setup": { desc: "We create and verify your Google Business Profile so customers can find you on Google Maps.", waText: "Hi Apexbytes Hub! I need a Google Business Profile set up. Can you help?" },
+  "UIF Monthly Declaration": { desc: "We submit your monthly UIF employer declaration on uFiling on your behalf.", waText: "Hi Apexbytes Hub! I need help with my monthly UIF declaration. Can you assist?" },
+  "CSD Update": { desc: "We update your business details on the Central Supplier Database.", waText: "Hi Apexbytes Hub! I need my CSD profile updated. What do I bring?" },
+  "UIF Registration": { desc: "We register you or your business for UIF on the Department of Labour portal.", waText: "Hi Apexbytes Hub! I need to register for UIF. What documents do I need?" },
+  "UIF Claims": { desc: "We submit your UIF unemployment, maternity or illness claim on your behalf.", waText: "Hi Apexbytes Hub! I need to claim from UIF. Can you assist me?" },
+  "CSD Registration": { desc: "We register your business on the Central Supplier Database — required for government tenders.", waText: "Hi Apexbytes Hub! I need to register on the CSD. What documents do I bring?" },
+  "Social Media Setup": { desc: "We create your Facebook, Instagram or TikTok business page — ready to post.", waText: "Hi Apexbytes Hub! I need a social media account set up for my business. Can you help?" },
+  "Learner's Licence Booking": { desc: "We book your learner's licence test at the DLTC on the eNaTIS system.", waText: "Hi Apexbytes Hub! I need to book my learner's licence test. Can you assist?" },
+  "WhatsApp Business Setup": { desc: "We set up your WhatsApp Business profile with your business name, hours and catalogue.", waText: "Hi Apexbytes Hub! I need my WhatsApp Business set up. Can you help?" },
+  "Software Install": { desc: "We install any software or application you need on your laptop or PC.", waText: "Hi Apexbytes Hub! I need software installed on my device. Can I bring it in?" },
+  "Driver Installation": { desc: "We find and install the correct drivers for your printer, sound, display or other hardware.", waText: "Hi Apexbytes Hub! I need drivers installed on my PC. Can I bring it in?" },
+  "App / Office Updates": { desc: "We update your apps or Microsoft Office to the latest version.", waText: "Hi Apexbytes Hub! I need my apps or Office updated. Can I bring my device?" },
+  "Printer Setup": { desc: "We set up your printer — install drivers, connect to your PC or laptop, and test print.", waText: "Hi Apexbytes Hub! I need my printer set up. Can I bring it in?" },
+  "PC Setup": { desc: "We unbox, assemble and configure your new PC or laptop — ready to use.", waText: "Hi Apexbytes Hub! I need my PC set up. Can I bring it in?" },
+  "Troubleshooting": { desc: "We diagnose and fix whatever issue your device has — billed per hour.", waText: "Hi Apexbytes Hub! I need help troubleshooting my device. Can I bring it in?" },
+  "PC Cleanup": { desc: "We clean up your PC — remove junk files, fix startup, and make it run faster.", waText: "Hi Apexbytes Hub! I need my PC cleaned up and optimised. Can I bring it in?" },
+  "Virus / Malware Removal": { desc: "We scan and remove viruses, malware and unwanted programs from your device.", waText: "Hi Apexbytes Hub! I think my PC has a virus. Can I bring it in for removal?" },
+  "OS Update": { desc: "We run a full Windows OS update — keeping your system secure and up to date.", waText: "Hi Apexbytes Hub! I need my Windows updated. Can I bring my device in?" },
+  "Windows Install (No Activation)": { desc: "We do a clean Windows installation without activation — your licence key needed separately.", waText: "Hi Apexbytes Hub! I need Windows installed on my PC. Can I bring it in?" },
+  "Windows Install + Activation": { desc: "We install and fully activate Windows — your PC is licensed and ready to use.", waText: "Hi Apexbytes Hub! I need Windows installed and activated. Can I bring my PC in?" },
+  "Activation Only": { desc: "We activate your existing Windows installation using a valid licence key.", waText: "Hi Apexbytes Hub! I need my Windows activated. Can I bring my device in?" },
+  "Microsoft 365 Setup": { desc: "We set up Microsoft 365 on your device — Word, Excel, Outlook and more, ready to use.", waText: "Hi Apexbytes Hub! I need Microsoft 365 set up on my device. Can I bring it in?" },
 }
 
 // ─── Bundle data ──────────────────────────────────────────────────────────────
@@ -311,15 +117,10 @@ const BUNDLES = [
     icon: <Briefcase weight="fill" className="w-7 h-7 text-white" />,
     title: "Job Seeker Bundle",
     price: "R100",
-    grad: "linear-gradient(135deg, #1E6FA8 0%, #0F3F66 100%)",
+    grad: "linear-gradient(150deg, #1E6FA8 0%, #15537D 50%, #0F3F66 100%)",
     accentColor: "#A9D6F2",
-    items: [
-      "CV from Scratch",
-      "Cover Letter",
-      "Job Application Assistance",
-      "Email Assistance (Send/Receive Help)",
-    ],
-    saving: "Save R25 — valued at R125",
+    items: ["CV from Scratch", "Cover Letter", "Job Application Assistance", "Email Assistance"],
+    saving: "Save R25",
     waText: "Hi Apexbytes Hub! I'm interested in the Job Seeker Bundle (R100). How do we start?",
   },
   {
@@ -327,15 +128,10 @@ const BUNDLES = [
     icon: <Buildings weight="fill" className="w-7 h-7 text-white" />,
     title: "Business Starter Bundle",
     price: "R500",
-    grad: "linear-gradient(135deg, #D9894B 0%, #a0522d 100%)",
+    grad: "linear-gradient(150deg, #B86F34 0%, #D9894B 50%, #F4A261 100%)",
     accentColor: "#FDDCBA",
-    items: [
-      "Logo Design (Basic)",
-      "Business Card (Single Side)",
-      "Simple Flyer",
-      "WhatsApp Business Setup",
-    ],
-    saving: "Save R130 — valued at R630",
+    items: ["Logo Design (Basic)", "Business Card (Single Side)", "Simple Flyer", "WhatsApp Business Setup"],
+    saving: "Save R130",
     waText: "Hi Apexbytes Hub! I'm interested in the Business Starter Bundle (R500). How do we start?",
   },
 ]
@@ -344,7 +140,7 @@ const BUNDLES = [
 function BundleCard({ bundle }: { bundle: typeof BUNDLES[0] }) {
   const waUrl = `https://wa.me/27753338260?text=${encodeURIComponent(bundle.waText)}`
   return (
-    <div className="rounded-[22px] overflow-hidden flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.18)] border-2 border-white/10 flex-shrink-0 w-[78vw] md:w-auto snap-start">
+    <div className="rounded-[22px] overflow-hidden flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.18)] border border-white/10 flex-shrink-0 w-[78vw] md:w-auto snap-start">
       <div className="px-5 py-4 flex items-center gap-3" style={{ background: bundle.grad }}>
         {bundle.icon}
         <div>
@@ -356,7 +152,9 @@ function BundleCard({ bundle }: { bundle: typeof BUNDLES[0] }) {
       <div className="bg-card px-5 py-4 flex-1 flex flex-col gap-2">
         {bundle.items.map((item) => (
           <div key={item} className="flex items-start gap-2">
-            <span className="mt-0.5 w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 text-[0.65rem] font-black text-white" style={{ background: bundle.grad }}>✓</span>
+            <span className="mt-0.5 w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 text-[0.65rem] font-black text-white" style={{ background: bundle.grad }}>
+              ✓
+            </span>
             <span className="text-[0.84rem] text-foreground font-medium">{item}</span>
           </div>
         ))}
@@ -364,7 +162,7 @@ function BundleCard({ bundle }: { bundle: typeof BUNDLES[0] }) {
           href={waUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-[11px] font-sans font-extrabold text-[0.88rem] text-white transition-all duration-200 ease-in-out hover:-translate-y-0.5 active:scale-95"
+          className="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-[14px] font-sans font-extrabold text-[0.88rem] text-white transition-all duration-200 ease-in-out hover:-translate-y-0.5 active:scale-95"
           style={{ background: bundle.grad }}
         >
           <WhatsappLogo weight="fill" className="w-5 h-5" />
@@ -375,7 +173,7 @@ function BundleCard({ bundle }: { bundle: typeof BUNDLES[0] }) {
   )
 }
 
-// ─── Featured Bundles Section ─────────────────────────────────────────────────
+// ─── Featured Bundles ─────────────────────────────────────────────────────────
 function FeaturedBundles() {
   return (
     <section className="px-4 md:px-8 py-12 md:py-16 bg-secondary transition-colors duration-300">
@@ -384,7 +182,7 @@ function FeaturedBundles() {
           <h2 className="font-sans font-black text-2xl md:text-3xl text-blue-3 dark:text-blue-4">Featured Bundles</h2>
           <p className="text-muted-foreground text-[0.9rem] mt-1">Everything you need, grouped and discounted — one price, done.</p>
         </div>
-        <div className="flex md:grid md:grid-cols-2 gap-5 overflow-x-auto md:overflow-visible snap-x snap-mandatory pb-2 md:pb-0 scrollbar-hide">
+        <div className="flex md:grid md:grid-cols-2 gap-5 overflow-x-auto md:overflow-visible snap-x snap-mandatory pb-2 md:pb-0">
           {BUNDLES.map((bundle) => (
             <BundleCard key={bundle.id} bundle={bundle} />
           ))}
@@ -421,12 +219,12 @@ function SubServiceModal({ name, price, tagStyle, hubGrad, onClose }: SubService
         <div className="px-5 py-5">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 w-[28px] h-[28px] rounded-full bg-secondary flex items-center justify-center hover:bg-muted active:scale-90 transition-all duration-200"
+            className="absolute top-4 right-4 w-[28px] h-[28px] rounded-[8px] bg-secondary flex items-center justify-center hover:bg-muted active:scale-90 transition-all duration-200"
           >
             <X className="w-3.5 h-3.5 text-muted-foreground" />
           </button>
           <span
-            className="inline-block px-3 py-1 rounded-2xl text-[0.75rem] font-bold font-sans mb-3"
+            className="inline-block px-3 py-1 rounded-[10px] text-[0.75rem] font-bold font-sans mb-3"
             style={{ background: tagStyle.bg, color: tagStyle.color }}
           >
             {name}
@@ -437,7 +235,7 @@ function SubServiceModal({ name, price, tagStyle, hubGrad, onClose }: SubService
             href={waUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full py-3 rounded-[11px] font-sans font-extrabold text-[0.88rem] bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-0.5"
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-[14px] font-sans font-extrabold text-[0.88rem] bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-0.5"
           >
             <WhatsappLogo weight="fill" className="w-5 h-5" /> WhatsApp Us
           </a>
@@ -464,6 +262,7 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModal
   const hub = HUBS[hubId]
   const isDark = theme === 'dark'
   const tagStyle = isDark ? hub.tagStyleDark : hub.tagStyle
+  const matteGrad = HUB_MATTE[hubId]
 
   return (
     <>
@@ -471,15 +270,12 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModal
         className="fixed inset-0 z-[99998] flex items-center justify-center p-4 md:p-6"
         onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
       >
-        <div
-          className="absolute inset-0 backdrop-blur-[16px] backdrop-brightness-[0.38] backdrop-saturate-50 bg-[rgba(8,20,40,0.6)]"
-          onClick={onClose}
-        />
-        <div className="relative z-10 bg-card rounded-[24px] max-w-[560px] w-full max-h-[88vh] overflow-hidden flex flex-col shadow-[0_32px_80px_rgba(0,0,0,0.45)] animate-in zoom-in-95 fade-in duration-300">
-          <div className="px-6 md:px-8 py-5 md:py-6 relative shrink-0" style={{ background: hub.grad }}>
+        <div className="absolute inset-0 backdrop-blur-[16px] backdrop-brightness-[0.38] backdrop-saturate-50 bg-[rgba(8,20,40,0.6)]" onClick={onClose} />
+        <div className="relative z-10 bg-card rounded-[22px] max-w-[560px] w-full max-h-[88vh] overflow-hidden flex flex-col shadow-[0_32px_80px_rgba(0,0,0,0.45)] animate-in zoom-in-95 fade-in duration-300">
+          <div className="px-6 md:px-8 py-5 md:py-6 relative shrink-0" style={{ background: matteGrad }}>
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 w-[34px] h-[34px] rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/35 active:scale-90 transition-all duration-200"
+              className="absolute top-4 right-4 w-[34px] h-[34px] rounded-[10px] bg-white/20 text-white flex items-center justify-center hover:bg-white/35 active:scale-90 transition-all duration-200"
             >
               <X className="w-4 h-4" />
             </button>
@@ -493,10 +289,9 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModal
             <p className="text-muted-foreground text-[0.88rem] leading-relaxed mb-5 pb-4 border-b border-border">
               {hub.desc}
             </p>
-
             <div className="space-y-2">
               {hub.sections?.map((section, idx) => (
-                <div key={idx} className="border border-border rounded-[13px] overflow-hidden">
+                <div key={idx} className="border border-border rounded-[14px] overflow-hidden">
                   <button
                     onClick={() => setOpenAccordion(openAccordion === idx ? null : idx)}
                     className="flex items-center justify-between w-full px-4 py-3 bg-secondary hover:bg-muted active:scale-[0.99] transition-all duration-200 ease-in-out cursor-pointer select-none"
@@ -512,7 +307,7 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModal
                           <button
                             key={itemIdx}
                             onClick={() => setSubService({ name: item.name, price: item.price })}
-                            className="inline-flex items-center px-3 py-1.5 rounded-2xl text-[0.76rem] font-semibold font-sans cursor-pointer transition-all duration-200 ease-in-out hover:-translate-y-0.5 active:scale-95"
+                            className="inline-flex items-center px-3 py-1.5 rounded-[10px] text-[0.76rem] font-semibold font-sans cursor-pointer transition-all duration-200 ease-in-out hover:-translate-y-0.5 active:scale-95"
                             style={{ background: tagStyle.bg, color: tagStyle.color }}
                           >
                             {item.name}
@@ -524,19 +319,18 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModal
                 </div>
               ))}
             </div>
-
             <div className="flex flex-col sm:flex-row gap-3 mt-5 pt-4 border-t border-border">
               <a
                 href="https://wa.me/27753338260"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-sans font-extrabold text-[0.88rem] bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-0.5"
+                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-[14px] font-sans font-extrabold text-[0.88rem] bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-0.5"
               >
                 <WhatsappLogo weight="fill" className="w-5 h-5" /> WhatsApp Us
               </a>
               <button
                 onClick={() => { onClose(); onNavigateContact() }}
-                className="flex-1 flex items-center justify-center gap-2 text-center py-3 px-4 rounded-xl font-sans font-extrabold text-[0.88rem] bg-secondary text-blue-1 border-2 border-blue-4 hover:bg-blue-4 active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-0.5"
+                className="flex-1 flex items-center justify-center gap-2 text-center py-3 px-4 rounded-[14px] font-sans font-extrabold text-[0.88rem] bg-secondary text-blue-1 border-2 border-blue-4 hover:bg-blue-4 active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-0.5"
               >
                 <ChatCircle weight="fill" className="w-5 h-5" /> Send Enquiry
               </button>
@@ -544,13 +338,12 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModal
           </div>
         </div>
       </div>
-
       {subService && (
         <SubServiceModal
           name={subService.name}
           price={subService.price}
           tagStyle={tagStyle}
-          hubGrad={hub.grad}
+          hubGrad={matteGrad}
           onClose={() => setSubService(null)}
         />
       )}
@@ -558,100 +351,49 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModal
   )
 }
 
-// ─── Hub Card ────────────────────────────────────────────────────────────────
+// ─── Hub Card ─────────────────────────────────────────────────────────────────
 interface HubCardProps {
   hubId: HubId
   isExpanded: boolean
-  onExpand: (id: HubId | null) => void
-  onSelect: (id: HubId) => void
+  onToggle: (id: HubId) => void
+  onOpenModal: (id: HubId) => void
 }
 
-function HubCard({ hubId, isExpanded, onExpand, onSelect }: HubCardProps) {
+function HubCard({ hubId, isExpanded, onToggle, onOpenModal }: HubCardProps) {
   const hub = HUBS[hubId]
-  const { theme } = useTheme()
-  const isDark = theme === 'dark'
-  const tagStyle = isDark ? hub.tagStyleDark : hub.tagStyle
-  const subtext = HUB_SUBTEXTS[hub.title] ?? ""
-
+  const matteGrad = HUB_MATTE[hubId]
   if (!hub) return null
 
-  const handleCardClick = () => {
-    const isTouchDevice = window.matchMedia("(hover: none)").matches
-    if (isTouchDevice) {
-      // On mobile: first tap expands, second tap on expanded card collapses
-      if (!isExpanded) {
-        onExpand(hubId)
-      } else {
-        onExpand(null)
-      }
-    } else {
-      // On desktop: clicking header opens modal directly
-      onSelect(hubId)
-    }
-  }
-
-  const handleArrowClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    onSelect(hubId)
-  }
-
   return (
-    <div
-      onClick={handleCardClick}
-      onMouseEnter={() => {
-        const isTouchDevice = window.matchMedia("(hover: none)").matches
-        if (!isTouchDevice) onExpand(hubId)
-      }}
-      onMouseLeave={() => {
-        const isTouchDevice = window.matchMedia("(hover: none)").matches
-        if (!isTouchDevice) onExpand(null)
-      }}
-      className="rounded-[22px] shadow-[var(--shadow)] border-2 border-[var(--card-border)] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden flex flex-col hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(30,111,168,0.18)] active:scale-[0.98]"
-    >
-      {/* Header — always visible, solid background only */}
-      <div className="px-5 py-4 flex items-center gap-3" style={{ background: hub.grad }}>
-        <HubIcon name={hub.iconName} color={hub.iconColor} size={28} />
+    <div className="rounded-[22px] shadow-[var(--shadow)] border border-[var(--card-border)] overflow-hidden flex flex-col transition-all duration-300 ease-in-out">
+      {/* Header — tap to toggle accordion */}
+      <button
+        onClick={() => onToggle(hubId)}
+        className="w-full px-5 py-4 flex items-center justify-center gap-3 active:scale-[0.98] transition-all duration-200"
+        style={{ background: matteGrad }}
+      >
+        <HubIcon name={hub.iconName} color={hub.iconColor} size={26} />
+        <h3 className="font-sans font-black text-lg text-white text-center">{hub.title}</h3>
+        <CaretDown
+          weight="bold"
+          className={cn("w-4 h-4 text-white/70 transition-transform duration-300 ml-1", isExpanded && "rotate-180")}
+        />
+      </button>
 
-        <div className="flex-1 min-w-0 flex md:flex-col md:items-start items-center justify-between gap-2 md:gap-0.5">
-          <h3 className="font-sans font-black text-lg text-white leading-tight">{hub.title}</h3>
-          {subtext && (
-            <span className="text-white/70 font-sans font-semibold md:text-[0.72rem] text-[0.68rem] md:mt-0.5 shrink-0 md:shrink text-right md:text-left">
-              {subtext}
-            </span>
-          )}
-        </div>
-
-        <button
-          onClick={handleArrowClick}
-          className="ml-2 w-[30px] h-[30px] bg-white/20 rounded-full flex items-center justify-center shrink-0 hover:bg-white/35 transition-all duration-200 active:scale-90"
-          aria-label={`Open ${hub.title}`}
-        >
-          <ArrowRight weight="bold" className="w-4 h-4 text-white" />
-        </button>
-      </div>
-
-      {/*
-        Accordion peek body — bg-card ensures no gradient bleed.
-        max-height drives the open/close animation.
-        overflow-hidden on the parent clips any gradient bleed at the border.
-      */}
+      {/* Accordion body — description + View button */}
       <div
-        className="bg-card transition-all duration-300 ease-in-out overflow-hidden"
+        className="bg-card overflow-hidden transition-all duration-300 ease-in-out"
         style={{ maxHeight: isExpanded ? "160px" : "0px", opacity: isExpanded ? 1 : 0 }}
       >
-        <div className="px-5 py-4">
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {hub.previews?.map((preview) => (
-              <span
-                key={preview}
-                className="inline-block px-3 py-1 rounded-[14px] text-[0.73rem] font-bold font-sans"
-                style={{ background: tagStyle.bg, color: tagStyle.color }}
-              >
-                {preview}
-              </span>
-            ))}
-          </div>
-          <p className="text-[0.8rem] text-muted-foreground italic">Tap the arrow to see prices & full list...</p>
+        <div className="px-5 py-4 flex flex-col gap-3">
+          <p className="text-muted-foreground text-[0.85rem] leading-relaxed">{hub.desc}</p>
+          <button
+            onClick={() => onOpenModal(hubId)}
+            className="self-start inline-flex items-center gap-1.5 px-4 py-2 rounded-[14px] font-sans font-extrabold text-[0.82rem] text-white transition-all duration-200 ease-in-out hover:-translate-y-0.5 active:scale-95"
+            style={{ background: matteGrad }}
+          >
+            View
+          </button>
         </div>
       </div>
     </div>
@@ -668,51 +410,45 @@ export function ServicesPage({ onNavigate }: ServicesPageProps) {
   const [expandedHub, setExpandedHub] = useState<HubId | null>(null)
   const hubIds = Object.keys(HUBS) as HubId[]
 
+  const handleToggle = (id: HubId) => {
+    setExpandedHub(expandedHub === id ? null : id)
+  }
+
   return (
     <>
       <div className="animate-fade-up">
-        <section className="bg-gradient-to-br from-[#1E6FA8] via-[#0F3F66] to-[#2980b9] px-4 md:px-8 py-12 md:py-14 text-center relative overflow-hidden">
-          <div className="absolute -top-[60px] -right-[60px] w-[300px] h-[300px] bg-[radial-gradient(circle,rgba(169,214,242,0.2)_0%,transparent_70%)] rounded-full" />
+        {/* Hero — matte flat gradient blue 60% green 30% orange 10% */}
+        <section
+          className="px-4 md:px-8 py-12 md:py-14 text-center relative overflow-hidden"
+          style={{
+            background: [
+              "radial-gradient(ellipse 70% 80% at 15% 50%, #0F3F66 0%, transparent 70%)",
+              "radial-gradient(ellipse 55% 65% at 50% 30%, #1E6FA8 0%, transparent 65%)",
+              "radial-gradient(ellipse 45% 55% at 80% 60%, #15537D 0%, transparent 60%)",
+              "radial-gradient(ellipse 35% 45% at 65% 85%, #3E6B0E 0%, transparent 55%)",
+              "radial-gradient(ellipse 30% 40% at 30% 75%, #548F14 0%, transparent 50%)",
+              "radial-gradient(ellipse 20% 30% at 92% 15%, #D9894B 0%, transparent 55%)",
+              "linear-gradient(135deg, #0A1A2E 0%, #0F3F66 35%, #15537D 55%, #3E6B0E 78%, #548F14 88%, #B86F34 100%)",
+            ].join(", "),
+          }}
+        >
           <h1 className="font-sans font-black text-2xl md:text-4xl text-white relative z-10">Our Services</h1>
-          <p className="text-white/80 text-base mt-2 relative z-10">Five hubs, one place — tap any card to explore prices</p>
+          <p className="text-white/75 text-base mt-2 relative z-10">Five hubs, one place — tap any card to explore</p>
         </section>
 
+        {/* Hub cards */}
         <section className="px-4 md:px-8 py-12 md:py-16">
-          <div className="max-w-[680px] mx-auto mb-8 md:mb-10 text-center">
-            <p className="text-muted-foreground text-[0.95rem] leading-relaxed">
-              Tap any hub card to preview services. Tap the arrow to see full pricing.
-            </p>
-          </div>
-
-          {/* items-start prevents cards from stretching to match tallest neighbour */}
-          <div className="max-w-[1080px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-7 items-start">
+          <div className="max-w-[1080px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start">
             {hubIds.map((id) => (
               <HubCard
                 key={id}
                 hubId={id}
                 isExpanded={expandedHub === id}
-                onExpand={(id) => setExpandedHub(id)}
-                onSelect={setSelectedHub}
+                onToggle={handleToggle}
+                onOpenModal={setSelectedHub}
               />
             ))}
           </div>
-        </section>
-
-        {/* Chat CTA — directly below hub cards, one instance only */}
-        <section className="px-4 md:px-8 py-12 bg-[#25D366] text-center">
-          <h2 className="font-sans font-black text-xl md:text-2xl text-white mb-2">Still not sure what you need?</h2>
-          <p className="text-white/85 text-[0.95rem] mb-6 max-w-[480px] mx-auto">
-            Send a WhatsApp message and we'll recommend the right service for you.
-          </p>
-          <a
-            href="https://wa.me/27753338260"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-white text-[#2d7a2d] font-sans font-extrabold text-base px-7 py-3.5 rounded-[14px] shadow-[0_8px_24px_rgba(0,0,0,0.18)] hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(0,0,0,0.22)] active:scale-95 transition-all duration-200 ease-in-out"
-          >
-            <WhatsappLogo weight="fill" className="w-5 h-5" />
-            Chat With Us
-          </a>
         </section>
 
         {/* Featured Bundles */}
