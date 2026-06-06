@@ -699,7 +699,7 @@ export function ServicesPage({ onNavigate }: ServicesPageProps) {
         </section>
 
         {/* Chat CTA — directly below hub cards, one instance only */}
-        <section className="px-4 md:px-8 py-12 bg-gradient-to-br from-[#2d7a2d] via-[#3a9a3a] to-[#25D366] text-center">
+        <section className="px-4 md:px-8 py-12 bg-[#25D366] text-center">
           <h2 className="font-sans font-black text-xl md:text-2xl text-white mb-2">Still not sure what you need?</h2>
           <p className="text-white/85 text-[0.95rem] mb-6 max-w-[480px] mx-auto">
             Send a WhatsApp message and we'll recommend the right service for you.
