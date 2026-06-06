@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { ArrowRight, X, CaretDown, WhatsappLogo, Printer, FileText, PaintBrush, Globe, Desktop, ChatCircle } from "@phosphor-icons/react"
 import { HUBS, type HubId } from "@/lib/data"
 import { cn } from "@/lib/utils"
@@ -295,6 +295,7 @@ const SERVICE_INFO: Record<string, { desc: string; waText: string }> = {
   },
 }
 
+// ─── SubService Modal ────────────────────────────────────────────────────────
 interface SubServiceModalProps {
   name: string
   price: string
@@ -347,6 +348,7 @@ function SubServiceModal({ name, price, tagStyle, hubGrad, onClose }: SubService
   )
 }
 
+// ─── Service Modal ────────────────────────────────────────────────────────────
 interface ServiceModalProps {
   hubId: HubId | null
   onClose: () => void
@@ -457,52 +459,102 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModal
   )
 }
 
+// ─── Hub Card (3-tier: collapsed → accordion peek → modal) ───────────────────
 function HubCard({ hubId, onSelect }: { hubId: HubId; onSelect: (id: HubId) => void }) {
   const hub = HUBS[hubId]
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const tagStyle = isDark ? hub.tagStyleDark : hub.tagStyle
 
+  // Track whether accordion peek is open (mobile tap / desktop hover)
+  const [peekOpen, setPeekOpen] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  // Close peek when clicking outside on mobile
+  useEffect(() => {
+    function handleOutsideClick(e: MouseEvent) {
+      if (peekOpen && cardRef.current && !cardRef.current.contains(e.target as Node)) {
+        setPeekOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleOutsideClick)
+    return () => document.removeEventListener("mousedown", handleOutsideClick)
+  }, [peekOpen])
+
   if (!hub) return null
+
+  const handleCardClick = () => {
+    // On mobile (no hover): first tap opens peek, second tap opens modal
+    // On desktop: hover handles peek, click always opens modal
+    const isTouchDevice = window.matchMedia("(hover: none)").matches
+    if (isTouchDevice) {
+      if (!peekOpen) {
+        setPeekOpen(true)
+      } else {
+        onSelect(hubId)
+      }
+    } else {
+      onSelect(hubId)
+    }
+  }
+
+  const handleArrowClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onSelect(hubId)
+  }
 
   return (
     <div
-      onClick={() => onSelect(hubId)}
-      className="bg-card rounded-[22px] shadow-[var(--shadow)] border-2 border-[var(--card-border)] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden flex flex-col hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(30,111,168,0.18)] active:scale-[0.98]"
+      ref={cardRef}
+      onClick={handleCardClick}
+      onMouseEnter={() => setPeekOpen(true)}
+      onMouseLeave={() => setPeekOpen(false)}
+      className="bg-card rounded-[22px] shadow-[var(--shadow)] border-2 border-[var(--card-border)] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden flex flex-col hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(30,111,168,0.18)] active:scale-[0.98]"
     >
+      {/* Header — always visible */}
       <div className="px-5 py-4 flex items-center gap-3" style={{ background: hub.grad }}>
         <HubIcon name={hub.iconName} color={hub.iconColor} size={28} />
         <h3 className="font-sans font-black text-lg text-white">{hub.title}</h3>
-        <span className="ml-auto w-[30px] h-[30px] bg-white/20 rounded-full flex items-center justify-center shrink-0">
+        <button
+          onClick={handleArrowClick}
+          className="ml-auto w-[30px] h-[30px] bg-white/20 rounded-full flex items-center justify-center shrink-0 hover:bg-white/35 transition-all duration-200 active:scale-90"
+          aria-label={`Open ${hub.title}`}
+        >
           <ArrowRight weight="bold" className="w-4 h-4 text-white" />
-        </span>
+        </button>
       </div>
-      <div className="px-5 py-4 flex-1">
-        <div className="flex flex-wrap gap-1.5 mb-2">
-          {hub.previews?.map((preview) => (
-            <span
-              key={preview}
-              className="inline-block px-3 py-1 rounded-[14px] text-[0.73rem] font-bold font-sans"
-              style={{ background: tagStyle.bg, color: tagStyle.color }}
-            >
-              {preview}
-            </span>
-          ))}
+
+      {/* Accordion peek — shown on hover (desktop) or first tap (mobile) */}
+      <div
+        className="transition-all duration-300 ease-in-out overflow-hidden"
+        style={{ maxHeight: peekOpen ? "160px" : "0px", opacity: peekOpen ? 1 : 0 }}
+      >
+        <div className="px-5 py-4">
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {hub.previews?.map((preview) => (
+              <span
+                key={preview}
+                className="inline-block px-3 py-1 rounded-[14px] text-[0.73rem] font-bold font-sans"
+                style={{ background: tagStyle.bg, color: tagStyle.color }}
+              >
+                {preview}
+              </span>
+            ))}
+          </div>
+          <p className="text-[0.8rem] text-muted-foreground italic">Tap to see prices & full list...</p>
         </div>
-        <p className="text-[0.8rem] text-muted-foreground italic">Tap to see prices & full list...</p>
       </div>
     </div>
   )
 }
 
+// ─── Services Page ────────────────────────────────────────────────────────────
 interface ServicesPageProps {
   onNavigate: (page: string) => void
 }
 
 export function ServicesPage({ onNavigate }: ServicesPageProps) {
   const [selectedHub, setSelectedHub] = useState<HubId | null>(null)
-  
-  // Safely grab object keys from the dynamic HUBS Record dictionary
   const hubIds = Object.keys(HUBS) as HubId[]
 
   return (
@@ -520,7 +572,7 @@ export function ServicesPage({ onNavigate }: ServicesPageProps) {
               Tap any hub card to explore all services. Tap a service to see its description and price.
             </p>
           </div>
-          
+
           <div className="max-w-[1080px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-7">
             {hubIds.map((id) => (
               <HubCard key={id} hubId={id} onSelect={setSelectedHub} />
