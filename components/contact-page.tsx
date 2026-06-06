@@ -100,7 +100,7 @@ function FAQAccordion() {
   )
 }
 
-// ─── Contact Page ─────────────────────────────────────────────────────────────
+// ─── Main Contact Page UI ──────────────────────────────────────────────────────
 
 export function ContactPage() {
   const [formData, setFormData] = useState({
@@ -153,31 +153,35 @@ export function ContactPage() {
       icon: <MapPin weight="fill" className="w-6 h-6 text-[#9333ea]" />,
       title: "Visit Us",
       value: "5878 Mpumalanga, Kgotsong Location, 9660",
-      href: "https://maps.google.com/?q=5878+Mpumalanga+Section+Kgotsong+Bothaville+9660+South+Africa",
+      href: "https://maps.google.com/?q=Kgotsong,Bothaville",
       color: "bg-[#F3E8FF]",
     },
   ]
 
   return (
     <div className="animate-fade-up">
-      {/* Hero */}
+      {/* Premium Original Gradient Header */}
       <section className="bg-gradient-to-br from-blue-3 via-blue-1 to-[#2980b9] px-4 md:px-8 py-12 md:py-14 text-center relative overflow-hidden">
         <div className="absolute -top-[60px] -right-[60px] w-[300px] h-[300px] bg-[radial-gradient(circle,rgba(169,214,242,0.2)_0%,transparent_70%)] rounded-full" />
         <h1 className="font-sans font-black text-2xl md:text-4xl text-white relative z-10">Contact Us</h1>
         <p className="text-blue-4 text-base mt-2 relative z-10">{"We're here and ready to help — reach out any way you prefer"}</p>
       </section>
 
-      {/* Contact + Form */}
+      {/* Grid Content Block */}
       <section className="px-4 md:px-8 py-12 md:py-16">
         <div className="max-w-[980px] mx-auto grid md:grid-cols-2 gap-8 md:gap-12">
-          <div>
-            <h2 className="font-sans font-black text-xl md:text-2xl text-blue-3 dark:text-blue-4 mb-2">Get In Touch</h2>
-            <p className="text-muted-foreground text-[0.9rem] mb-6">
-              {"WhatsApp, call, email or visit us in Kgotsong — we're always happy to help."}
-            </p>
+          
+          {/* Left Column: Direct Details & Interactive Map Embed */}
+          <div className="space-y-6">
+            <div>
+              <h2 className="font-sans font-black text-xl md:text-2xl text-blue-3 dark:text-blue-4 mb-2">Get In Touch</h2>
+              <p className="text-muted-foreground text-[0.9rem] mb-6">
+                {"WhatsApp, call, email or visit us in Kgotsong — we're always happy to help."}
+              </p>
+            </div>
 
-            {/* Hours */}
-            <div className="bg-secondary rounded-[18px] p-5 mb-6 border border-border/60 transition-colors duration-300">
+            {/* Original Business Hours Configuration */}
+            <div className="bg-secondary rounded-[18px] p-5 border border-border/60 transition-colors duration-300">
               <div className="flex items-center gap-2 mb-4 border-b border-border/40 pb-2.5">
                 <Clock weight="bold" className="w-5 h-5 text-[#1E6FA8]" />
                 <h4 className="font-sans font-black text-blue-3 dark:text-blue-4 text-[0.95rem] uppercase tracking-wider">Business Hours</h4>
@@ -218,7 +222,7 @@ export function ContactPage() {
               </div>
             </div>
 
-            {/* Contact cards */}
+            {/* Premium Original Interactive Communication Channels */}
             <div className="flex flex-col gap-3">
               {contactCards.map((card) => (
                 <a
@@ -238,10 +242,22 @@ export function ContactPage() {
                 </a>
               ))}
             </div>
+
+            {/* Clean Open-Source Google Maps Embed Frame without API Key Errors */}
+            <div className="bg-secondary border border-border rounded-[20px] p-3 shadow-inner h-[280px] overflow-hidden transition-colors duration-300">
+              <iframe
+                title="Apexbytes Hub Studio Location Map"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3557.348398436402!2d26.6150000!3d-27.3800000!2m3!1f0!2f0!3f0!3m2!1i1025!2i780!4f13.1!3m3!1m2!1s0x1e98eb792ff4cb97%3A0x63cdfa943627b03b!2sBothaville!5e0!3m2!1sen!2sza!4v1717684000000!5m2!1sen!2sza"
+                className="w-full h-full rounded-[14px] border-0 grayscale dark:invert-[0.9] dark:hue-rotate-180 transition-all duration-300"
+                allowFullScreen={false}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
           </div>
 
-          {/* Form */}
-          <div className="bg-secondary rounded-[20px] p-6 md:p-8 transition-colors duration-300">
+          {/* Right Column: Premium Original Form Component Container */}
+          <div className="bg-secondary rounded-[20px] p-6 md:p-8 transition-colors duration-300 h-fit">
             <h3 className="font-sans font-extrabold text-blue-3 dark:text-blue-4 text-lg mb-5">Send a Message</h3>
 
             <div className="mb-4">
@@ -250,7 +266,7 @@ export function ContactPage() {
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="e.g. Theji Koena"
+                placeholder="e.g. Thabo Mokoena"
                 className="w-full px-4 py-3 border-2 border-border rounded-[10px] bg-background text-foreground text-[0.88rem] transition-all duration-200 ease-in-out focus:border-primary outline-none"
               />
             </div>
@@ -272,7 +288,7 @@ export function ContactPage() {
               <select
                 value={formData.service}
                 onChange={(e) => setFormData((prev) => ({ ...prev, service: e.target.value }))}
-                className="w-full px-4 py-3 border-2 border-border rounded-[10px] bg-background text-foreground text-[0.88rem] transition-all duration-200 ease-in-out focus:border-primary outline-none"
+                className="w-full px-4 py-3 border-2 border-border rounded-[10px] bg-background text-foreground text-[0.88rem] transition-all duration-200 ease-in-out focus:border-primary outline-none cursor-pointer"
               >
                 <option value="">-- Select a hub --</option>
                 <option>Print Hub</option>
@@ -311,7 +327,7 @@ export function ContactPage() {
         </div>
       </section>
 
-      {/* FAQ */}
+      {/* FAQ Accordion Section */}
       <FAQAccordion />
     </div>
   )
