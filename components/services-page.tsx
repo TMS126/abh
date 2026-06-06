@@ -30,6 +30,7 @@ function HubIcon({ name, color, size = 32 }: { name: string; color: string; size
 }
 
 // ─── Service descriptions ─────────────────────────────────────────────────────
+// (Truncated mapping logic identical to your original array for space)
 const SERVICE_INFO: Record<string, { desc: string; waText: string }> = {
   "Black & White": { desc: "Standard single-sided black & white printing on A4 80gsm paper.", waText: "Hi Apexbytes Hub! I need Black & White Printing. How many pages can I bring?" },
   "Colour": { desc: "Vibrant full-colour printing on A4 paper — great for forms, certificates and anything that needs to stand out.", waText: "Hi Apexbytes Hub! I need Colour Printing. How do I proceed?" },
@@ -140,7 +141,8 @@ const BUNDLES = [
 function BundleCard({ bundle }: { bundle: typeof BUNDLES[0] }) {
   const waUrl = `https://wa.me/27753338260?text=${encodeURIComponent(bundle.waText)}`
   return (
-    <div className="rounded-[22px] overflow-hidden flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.18)] border border-white/10 flex-shrink-0 w-[78vw] md:w-auto snap-start">
+    // Fixed murky shadow: using light gray diffusion in light mode, soft blend in dark mode.
+    <div className="rounded-[14px] overflow-hidden flex flex-col shadow-lg dark:shadow-[0_8px_30px_rgba(0,0,0,0.2)] border border-gray-200 dark:border-white/10 flex-shrink-0 w-[78vw] md:w-auto snap-start bg-card">
       <div className="px-5 py-4 flex items-center gap-3" style={{ background: bundle.grad }}>
         {bundle.icon}
         <div>
@@ -149,7 +151,7 @@ function BundleCard({ bundle }: { bundle: typeof BUNDLES[0] }) {
         </div>
         <span className="ml-auto font-sans font-black text-2xl text-white">{bundle.price}</span>
       </div>
-      <div className="bg-card px-5 py-4 flex-1 flex flex-col gap-2">
+      <div className="px-5 py-4 flex-1 flex flex-col gap-2">
         {bundle.items.map((item) => (
           <div key={item} className="flex items-start gap-2">
             <span className="mt-0.5 w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 text-[0.65rem] font-black text-white" style={{ background: bundle.grad }}>
@@ -214,7 +216,7 @@ function SubServiceModal({ name, price, tagStyle, hubGrad, onClose }: SubService
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 bg-card rounded-[20px] max-w-[340px] w-full shadow-[0_24px_60px_rgba(0,0,0,0.4)] animate-in zoom-in-95 fade-in duration-200 overflow-hidden">
+      <div className="relative z-10 bg-card rounded-[14px] max-w-[340px] w-full shadow-[0_24px_60px_rgba(0,0,0,0.4)] animate-in zoom-in-95 fade-in duration-200 overflow-hidden">
         <div className="h-[6px] w-full" style={{ background: hubGrad }} />
         <div className="px-5 py-5">
           <button
@@ -235,7 +237,7 @@ function SubServiceModal({ name, price, tagStyle, hubGrad, onClose }: SubService
             href={waUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full py-3 rounded-[14px] font-sans font-extrabold text-[0.88rem] bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-0.5"
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-[14px] font-sans font-extrabold text-[0.88rem] bg-[#25D366] text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-0.5"
           >
             <WhatsappLogo weight="fill" className="w-5 h-5" /> WhatsApp Us
           </a>
@@ -271,7 +273,7 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModal
         onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
       >
         <div className="absolute inset-0 backdrop-blur-[16px] backdrop-brightness-[0.38] backdrop-saturate-50 bg-[rgba(8,20,40,0.6)]" onClick={onClose} />
-        <div className="relative z-10 bg-card rounded-[22px] max-w-[560px] w-full max-h-[88vh] overflow-hidden flex flex-col shadow-[0_32px_80px_rgba(0,0,0,0.45)] animate-in zoom-in-95 fade-in duration-300">
+        <div className="relative z-10 bg-card rounded-[14px] max-w-[560px] w-full max-h-[88vh] overflow-hidden flex flex-col shadow-[0_32px_80px_rgba(0,0,0,0.45)] animate-in zoom-in-95 fade-in duration-300">
           <div className="px-6 md:px-8 py-5 md:py-6 relative shrink-0" style={{ background: matteGrad }}>
             <button
               onClick={onClose}
@@ -324,7 +326,7 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: ServiceModal
                 href="https://wa.me/27753338260"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-[14px] font-sans font-extrabold text-[0.88rem] bg-wa-green text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-0.5"
+                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-[14px] font-sans font-extrabold text-[0.88rem] bg-[#25D366] text-white hover:bg-[#1ebe5a] active:scale-95 transition-all duration-200 ease-in-out hover:-translate-y-0.5"
               >
                 <WhatsappLogo weight="fill" className="w-5 h-5" /> WhatsApp Us
               </a>
@@ -365,35 +367,42 @@ function HubCard({ hubId, isExpanded, onToggle, onOpenModal }: HubCardProps) {
   if (!hub) return null
 
   return (
-    <div className="rounded-[22px] shadow-[var(--shadow)] border border-[var(--card-border)] overflow-hidden flex flex-col transition-all duration-300 ease-in-out">
-      {/* Header — tap to toggle accordion */}
+    // Fixed: Subtle shadow, border visibility, rounded-[14px] squircle.
+    <div className="rounded-[14px] shadow-sm hover:shadow-md border border-gray-200 dark:border-white/5 bg-card overflow-hidden flex flex-col transition-all duration-300 ease-in-out">
+      {/* Header — tap to toggle accordion. Fixed alignment using justify-between. */}
       <button
         onClick={() => onToggle(hubId)}
-        className="w-full px-5 py-4 flex items-center justify-center gap-3 active:scale-[0.98] transition-all duration-200"
+        className="w-full px-5 py-4 flex items-center justify-between active:scale-[0.98] transition-all duration-200"
         style={{ background: matteGrad }}
       >
-        <HubIcon name={hub.iconName} color={hub.iconColor} size={26} />
-        <h3 className="font-sans font-black text-lg text-white text-center">{hub.title}</h3>
+        <div className="flex items-center gap-3">
+          <HubIcon name={hub.iconName} color={hub.iconColor} size={26} />
+          <h3 className="font-sans font-black text-lg text-white">{hub.title}</h3>
+        </div>
+        {/* Dropdown Arrow: ml-auto ensures it sits on the extreme right */}
         <CaretDown
           weight="bold"
-          className={cn("w-4 h-4 text-white/70 transition-transform duration-300 ml-1", isExpanded && "rotate-180")}
+          className={cn("w-5 h-5 text-white/80 ml-auto transition-transform duration-300", isExpanded && "rotate-180")}
         />
       </button>
 
-      {/* Accordion body — description + View button */}
+      {/* Accordion body — Fixed max-height clipping issue by expanding safely */}
       <div
-        className="bg-card overflow-hidden transition-all duration-300 ease-in-out"
-        style={{ maxHeight: isExpanded ? "160px" : "0px", opacity: isExpanded ? 1 : 0 }}
+        className="bg-card overflow-hidden transition-all duration-500 ease-in-out"
+        style={{ maxHeight: isExpanded ? "400px" : "0px", opacity: isExpanded ? 1 : 0 }}
       >
-        <div className="px-5 py-4 flex flex-col gap-3">
+        <div className="px-5 py-4 flex flex-col gap-4">
           <p className="text-muted-foreground text-[0.85rem] leading-relaxed">{hub.desc}</p>
-          <button
-            onClick={() => onOpenModal(hubId)}
-            className="self-start inline-flex items-center gap-1.5 px-4 py-2 rounded-[14px] font-sans font-extrabold text-[0.82rem] text-white transition-all duration-200 ease-in-out hover:-translate-y-0.5 active:scale-95"
-            style={{ background: matteGrad }}
-          >
-            View
-          </button>
+          
+          {/* View Button Section: Pushed to the right, flat color. */}
+          <div className="flex justify-end w-full overflow-visible mt-2">
+            <button
+              onClick={() => onOpenModal(hubId)}
+              className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-[14px] font-sans font-extrabold text-[0.82rem] text-white transition-all duration-200 ease-in-out bg-[#1E6FA8] hover:bg-[#15537D] active:scale-95"
+            >
+              View
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -436,9 +445,9 @@ export function ServicesPage({ onNavigate }: ServicesPageProps) {
           <p className="text-white/75 text-base mt-2 relative z-10">Five hubs, one place — tap any card to explore</p>
         </section>
 
-        {/* Hub cards */}
+        {/* Hub cards — Fixed breathing space with gap-6 md:gap-8 */}
         <section className="px-4 md:px-8 py-12 md:py-16">
-          <div className="max-w-[1080px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start">
+          <div className="max-w-[1080px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 items-start">
             {hubIds.map((id) => (
               <HubCard
                 key={id}
