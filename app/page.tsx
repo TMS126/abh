@@ -1,46 +1,35 @@
 "use client"
 
-import { useState } from "react"
-import { HUBS } from "@/lib/data"
+import { useRouter } from "next/navigation"
+import { HeroSection } from "@/components/hero-section"
+import { StripSection, CtaBar } from "@/components/strip-section"
+import { Navbar } from "@/components/navbar"
+import { Footer } from "@/components/footer"
 
-export default function ServicesRoute() {
-  const [activeHub, setActiveHub] = useState<keyof typeof HUBS>("print")
+export default function HomePage() {
+  const router = useRouter()
 
-  const hub = HUBS[activeHub]
+  const handleNavigate = (page: string) => {
+    router.push(page === "home" ? "/" : `/${page}`)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Services</h1>
-
-      {/* HUB SELECT */}
-      <div className="flex gap-2 flex-wrap">
-        {Object.keys(HUBS).map((key) => (
-          <button
-            key={key}
-            onClick={() => setActiveHub(key as keyof typeof HUBS)}
-            className="px-4 py-2 border rounded"
-          >
-            {HUBS[key as keyof typeof HUBS].title}
-          </button>
-        ))}
-      </div>
-
-      {/* SECTIONS */}
-      <div className="space-y-6">
-        {hub.sections.map((section) => (
-          <div key={section.title} className="border p-4 rounded">
-            <h2 className="text-xl font-semibold">{section.title}</h2>
-
-            <ul className="mt-2 space-y-1">
-              {section.items.map((item) => (
-                <li key={item.name}>
-                  {item.name} - {item.price}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
+    <div className="min-h-screen bg-background">
+      <Navbar activePage="home" />
+      <main className="pt-[68px]">
+        <div className="animate-fade-up">
+          <HeroSection onNavigate={handleNavigate} />
+          <StripSection />
+          <CtaBar
+            title="Ready to get started?"
+            description="WhatsApp us or visit us in Kgotsong — we're always happy to help."
+            buttonText="WhatsApp Us Now"
+            buttonHref="https://wa.me/27753338260"
+          />
+        </div>
+      </main>
+      <Footer />
     </div>
   )
-}
+} 
