@@ -153,12 +153,13 @@ export const HUBS: Record<HubId, Hub> = {
   doc: {
     iconName: 'FileText',
     iconColor: '#CDEB9F',
-    title: 'Document Hub',
+    // ← Renamed from "Document Hub" to "Docu Hub"
+    title: 'Docu Hub',
     grad: 'linear-gradient(135deg, #3E6B0E, #6FBF1A)',
     desc: 'From typing and printing to professional CVs and laminating — we handle your paperwork.',
     tagStyle: { bg: '#EAFAF1', color: '#3E6B0E' },
     tagStyleDark: { bg: '#1A3010', color: '#CDEB9F' },
-    previews: ['CV Services', 'Typing & Documents', 'Laminating'],
+    previews: ['CV Services', 'Typing & Docs', 'Laminating'],
     sections: [
       {
         title: 'Typing + Printing',
