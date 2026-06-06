@@ -1,11 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { 
-  Target, 
-  Heart, 
-  Lightning, 
-  WhatsappLogo, 
+import {
+  Target,
+  Heart,
+  Lightning,
+  WhatsappLogo,
   ShieldCheck,
   Desktop,
   Printer,
@@ -17,45 +17,36 @@ export function AboutPage() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
 
   const standards = [
-    {
-      id: 1,
-      icon: Desktop,
-      title: "Premium Vector Accuracy",
-      description: "We design entirely on our studio workstation using professional vector tools. No generic, low-quality templates—every logo, card layout, and letterhead is built custom for sharp execution at any size.",
-    },
-    {
-      id: 2,
-      icon: Printer,
-      title: "Megatank Economy Prints",
-      description: "Equipped with the high-yield Canon Pixma G3420 continuous ink system, we provide rich, vibrant color layouts and documents at a fraction of the price of massive commercial retail chains.",
-    },
-    {
-      id: 3,
-      icon: Scissors,
-      title: "Hand-Crafted Sealing & Care",
-      description: "We take genuine pride in manual precision. Using our Bell laminating machine, professional scissors, and Bostik adhesives, every single card, document pack, and flyer is individually hand-cut and sealed to tactile perfection.",
-    },
-    {
-      id: 4,
-      icon: DeviceMobile,
-      title: "Direct Samsung Control Hub",
-      description: "No long automated queues or unreturned emails. Our business runs directly via a secure Samsung mobile pipeline on WhatsApp, ensuring your portal tracking, updates, and orders are answered instantly.",
-    }
+    { id: 1, icon: Desktop, title: "Premium Vector Accuracy", description: "We design entirely on our studio workstation using professional vector tools. No generic, low-quality templates—every logo, card layout, and letterhead is built custom for sharp execution at any size." },
+    { id: 2, icon: Printer, title: "Megatank Economy Prints", description: "Equipped with the high-yield Canon Pixma G3420 continuous ink system, we provide rich, vibrant color layouts and documents at a fraction of the price of massive commercial retail chains." },
+    { id: 3, icon: Scissors, title: "Hand-Crafted Sealing & Care", description: "We take genuine pride in manual precision. Using our Bell laminating machine, professional scissors, and Bostik adhesives, every single card, document pack, and flyer is individually hand-cut and sealed to tactile perfection." },
+    { id: 4, icon: DeviceMobile, title: "Direct Samsung Control Hub", description: "No long automated queues or unreturned emails. Our business runs directly via a secure Samsung mobile pipeline on WhatsApp, ensuring your portal tracking, updates, and orders are answered instantly." },
   ]
 
   return (
     <div className="animate-fade-up">
       {/* Hero */}
-      <section className="bg-gradient-to-br from-blue-3 via-blue-1 to-[#2980b9] px-4 md:px-8 py-12 md:py-14 text-center relative overflow-hidden">
-        <div className="absolute -top-[60px] -right-[60px] w-[300px] h-[300px] bg-[radial-gradient(circle,rgba(169,214,242,0.2)_0%,transparent_70%)] rounded-full" />
+      <section
+        className="px-4 md:px-8 py-12 md:py-14 text-center relative overflow-hidden"
+        style={{
+          background: [
+            "radial-gradient(ellipse 70% 80% at 15% 50%, #0F3F66 0%, transparent 70%)",
+            "radial-gradient(ellipse 55% 65% at 50% 30%, #1E6FA8 0%, transparent 65%)",
+            "radial-gradient(ellipse 45% 55% at 80% 60%, #15537D 0%, transparent 60%)",
+            "radial-gradient(ellipse 35% 45% at 65% 85%, #3E6B0E 0%, transparent 55%)",
+            "radial-gradient(ellipse 30% 40% at 30% 75%, #548F14 0%, transparent 50%)",
+            "radial-gradient(ellipse 20% 30% at 92% 15%, #D9894B 0%, transparent 55%)",
+            "linear-gradient(135deg, #0A1A2E 0%, #0F3F66 35%, #15537D 55%, #3E6B0E 78%, #548F14 88%, #B86F34 100%)",
+          ].join(", "),
+        }}
+      >
         <h1 className="font-sans font-black text-2xl md:text-4xl text-white relative z-10">About Us</h1>
-        <p className="text-blue-4 text-base mt-2 relative z-10">A local business built on community, trust, and real help</p>
+        <p className="text-white/75 text-base mt-2 relative z-10">A local business built on community, trust, and real help</p>
       </section>
 
       {/* Main content */}
       <section className="px-4 md:px-8 py-12 md:py-16">
         <div className="max-w-[1000px] mx-auto grid md:grid-cols-2 gap-10 md:gap-14 items-center">
-          {/* Text */}
           <div>
             <h2 className="font-sans font-black text-2xl md:text-3xl text-blue-3 dark:text-blue-4 leading-tight mb-4">
               Your <span className="text-[#F4A261]">Neighbourhood</span> Digital Hub
@@ -66,28 +57,14 @@ export function AboutPage() {
             <p className="text-muted-foreground leading-relaxed text-[0.92rem] mb-6">
               {"We understand that not everyone is tech-savvy, and that's perfectly okay. That's exactly why we're here — to make things easy, friendly, and affordable, without the judgment."}
             </p>
-            
-            {/* Values */}
             <div className="flex flex-col gap-4 mt-6">
               {[
-                { 
-                  icon: <Target weight="fill" className="w-5 h-5 text-[#6FBF1A]" />, 
-                  title: "We Keep It Simple", 
-                  desc: "No confusing jargon. We explain everything in plain language." 
-                },
-                { 
-                  icon: <Heart weight="fill" className="w-5 h-5 text-[#6FBF1A]" />, 
-                  title: "Community First", 
-                  desc: "We serve our neighbourhood with pride and genuine care." 
-                },
-                { 
-                  icon: <Lightning weight="fill" className="w-5 h-5 text-[#6FBF1A]" />, 
-                  title: "Fast & Reliable", 
-                  desc: "We respect your time and always deliver with consistency." 
-                },
+                { icon: <Target weight="fill" className="w-5 h-5 text-[#6FBF1A]" />, title: "We Keep It Simple", desc: "No confusing jargon. We explain everything in plain language." },
+                { icon: <Heart weight="fill" className="w-5 h-5 text-[#6FBF1A]" />, title: "Community First", desc: "We serve our neighbourhood with pride and genuine care." },
+                { icon: <Lightning weight="fill" className="w-5 h-5 text-[#6FBF1A]" />, title: "Fast & Reliable", desc: "We respect your time and always deliver with consistency." },
               ].map((item, index) => (
                 <div key={index} className="flex gap-4 items-start">
-                  <div className="w-10 h-10 rounded-[11px] bg-green-4 dark:bg-[#1A3010] flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-[14px] bg-green-4 dark:bg-[#1A3010] flex items-center justify-center shrink-0">
                     {item.icon}
                   </div>
                   <div>
@@ -99,7 +76,6 @@ export function AboutPage() {
             </div>
           </div>
 
-          {/* Card */}
           <div className="bg-gradient-to-br from-blue-1 to-blue-3 rounded-[22px] p-6 md:p-8 text-white">
             <h3 className="font-sans font-black text-xl md:text-2xl">Apexbytes Hub</h3>
             <p className="text-blue-4 text-sm mt-1 mb-6">Serving Kgotsong & surrounding areas</p>
@@ -110,7 +86,7 @@ export function AboutPage() {
                 { value: <WhatsappLogo weight="fill" className="w-7 h-7 text-[#F4A261] mx-auto" />, label: "WhatsApp Ready" },
                 { value: <ShieldCheck weight="fill" className="w-7 h-7 text-[#F4A261] mx-auto" />, label: "Community Trusted" },
               ].map((stat, index) => (
-                <div key={index} className="bg-white/10 rounded-[13px] p-4 text-center flex flex-col justify-center items-center min-h-[92px]">
+                <div key={index} className="bg-white/10 rounded-[14px] p-4 text-center flex flex-col justify-center items-center min-h-[92px]">
                   <div className="font-sans font-black text-2xl md:text-3xl text-[#F4A261] flex items-center justify-center">
                     {stat.value}
                   </div>
@@ -122,10 +98,9 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* ── NEW DEDICATED QUALITY STANDARDS TRUST GRID ── */}
+      {/* Quality Standards */}
       <section className="py-16 px-4 bg-gray-50 dark:bg-zinc-950 border-t border-b border-gray-200 dark:border-zinc-900 transition-colors duration-300">
         <div className="max-w-[1000px] mx-auto">
-          
           <div className="text-center mb-12">
             <h2 className="font-sans font-black text-2xl md:text-3xl text-[#1E6FA8] dark:text-[#A9D6F2] mb-3">
               Our Everyday Toolkit Standards
@@ -134,52 +109,43 @@ export function AboutPage() {
               How we combine professional technical accuracy with hand-finished local care to bring premium results straight to your doorstep.
             </p>
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {standards.map((item) => {
               const Icon = item.icon
               const isHovered = hoveredCard === item.id
-              
               return (
                 <div
                   key={item.id}
                   onMouseEnter={() => setHoveredCard(item.id)}
                   onMouseLeave={() => setHoveredCard(null)}
-                  className="p-5 rounded-[20px] bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 transition-all duration-300 shadow-sm flex flex-col h-full"
+                  className="p-5 rounded-[18px] bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 transition-all duration-300 shadow-sm flex flex-col h-full"
                   style={{
                     borderColor: isHovered ? "#1E6FA8" : "",
-                    transform: isHovered ? "translateY(-4px)" : "none"
+                    transform: isHovered ? "translateY(-4px)" : "none",
                   }}
                 >
-                  <div 
+                  <div
                     className="w-11 h-11 rounded-[14px] flex items-center justify-center mb-4 transition-colors duration-300"
                     style={{
                       backgroundColor: isHovered ? "#1E6FA8" : "rgba(30, 111, 168, 0.1)",
-                      color: isHovered ? "#FFFFFF" : "#1E6FA8"
+                      color: isHovered ? "#FFFFFF" : "#1E6FA8",
                     }}
                   >
                     <Icon weight="bold" className="w-5 h-5" />
                   </div>
-
-                  <h3 className="font-sans font-black text-base text-foreground mb-2 leading-tight">
-                    {item.title}
-                  </h3>
-                  
-                  <p className="text-muted-foreground text-[0.82rem] md:text-sm leading-relaxed grow">
-                    {item.description}
-                  </p>
+                  <h3 className="font-sans font-black text-base text-foreground mb-2 leading-tight">{item.title}</h3>
+                  <p className="text-muted-foreground text-[0.82rem] md:text-sm leading-relaxed grow">{item.description}</p>
                 </div>
               )
             })}
           </div>
-
         </div>
       </section>
 
       {/* Mission */}
       <section className="bg-secondary px-4 md:px-8 py-12 md:py-14 text-center transition-colors duration-300">
         <div className="max-w-[700px] mx-auto">
-          <span className="inline-block bg-blue-4 text-blue-3 px-4 py-1.5 rounded-[20px] text-[0.78rem] font-bold font-sans tracking-wider">
+          <span className="inline-block bg-blue-4 text-blue-3 px-4 py-1.5 rounded-[14px] text-[0.78rem] font-bold font-sans tracking-wider">
             Our Mission
           </span>
           <h2 className="font-sans font-black text-xl md:text-2xl text-blue-3 dark:text-blue-4 mt-3 mb-4">
