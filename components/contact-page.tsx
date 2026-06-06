@@ -53,7 +53,7 @@ function FAQAccordion() {
     <section className="py-12 md:py-16 px-4 md:px-8 bg-secondary transition-colors duration-300">
       <div className="max-w-[750px] mx-auto">
         <div className="text-center mb-10">
-          <h2 className="font-sans font-black text-2xl md:text-3xl text-blue-3 dark:text-blue-4 mb-3">
+          <h2 className="font-sans font-black text-2xl md:text-3xl text-[#1E6FA8] dark:text-[#A9D6F2] mb-3">
             Frequently Asked Questions
           </h2>
           <p className="text-muted-foreground text-sm">
@@ -71,7 +71,7 @@ function FAQAccordion() {
               >
                 <button
                   onClick={() => setOpenIndex(isOpen ? null : index)}
-                  className="w-full p-5 text-left flex items-center justify-between gap-4 font-sans font-bold text-[0.92rem] text-blue-3 dark:text-blue-4 hover:text-[#1E6FA8] transition-colors focus:outline-none active:scale-[0.99]"
+                  className="w-full p-5 text-left flex items-center justify-between gap-4 font-sans font-bold text-[0.92rem] text-[#1E6FA8] dark:text-[#A9D6F2] hover:text-[#0F3F66] dark:hover:text-white transition-colors focus:outline-none active:scale-[0.99]"
                 >
                   <span className="leading-tight">{faq.question}</span>
                   <CaretDown
@@ -160,27 +160,29 @@ export function ContactPage() {
 
   return (
     <div className="animate-fade-up">
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-blue-3 via-blue-1 to-[#2980b9] px-4 md:px-8 py-12 md:py-14 text-center relative overflow-hidden">
-        <div className="absolute -top-[60px] -right-[60px] w-[300px] h-[300px] bg-[radial-gradient(circle,rgba(169,214,242,0.2)_0%,transparent_70%)] rounded-full" />
-        <h1 className="font-sans font-black text-2xl md:text-4xl text-white relative z-10">Contact Us</h1>
-        <p className="text-blue-4 text-base mt-2 relative z-10">{"We're here and ready to help — reach out any way you prefer"}</p>
+      {/* Hero — Clean background with solid line separator */}
+      <section className="bg-white dark:bg-[#081428] px-4 md:px-8 py-12 md:py-14 text-center relative overflow-hidden">
+        <h1 className="font-sans font-black text-2xl md:text-4xl text-[#0F3F66] dark:text-[#A9D6F2] relative z-10">Contact Us</h1>
+        <p className="text-[#333333] dark:text-white/75 text-base mt-2 relative z-10">We're here and ready to help — reach out any way you prefer</p>
+        
+        {/* Solid line separator */}
+        <div className="mt-6 h-[1px] bg-[#E5E5E5] dark:bg-white/10 max-w-[200px] mx-auto" />
       </section>
 
       {/* Contact + Form */}
-      <section className="px-4 md:px-8 py-12 md:py-16">
+      <section className="px-4 md:px-8 py-12 md:py-16 bg-white dark:bg-[#081428]">
         <div className="max-w-[980px] mx-auto grid md:grid-cols-2 gap-8 md:gap-12">
           <div>
-            <h2 className="font-sans font-black text-xl md:text-2xl text-blue-3 dark:text-blue-4 mb-2">Get In Touch</h2>
+            <h2 className="font-sans font-black text-xl md:text-2xl text-[#1E6FA8] dark:text-[#A9D6F2] mb-2">Get In Touch</h2>
             <p className="text-muted-foreground text-[0.9rem] mb-6">
-              {"WhatsApp, call, email or visit us in Kgotsong — we're always happy to help."}
+              WhatsApp, call, email or visit us in Kgotsong — we're always happy to help.
             </p>
 
             {/* Hours */}
             <div className="bg-secondary rounded-[18px] p-5 mb-6 border border-border/60 transition-colors duration-300">
               <div className="flex items-center gap-2 mb-4 border-b border-border/40 pb-2.5">
                 <Clock weight="bold" className="w-5 h-5 text-[#1E6FA8]" />
-                <h4 className="font-sans font-black text-blue-3 dark:text-blue-4 text-[0.95rem] uppercase tracking-wider">Business Hours</h4>
+                <h4 className="font-sans font-black text-[#1E6FA8] dark:text-[#A9D6F2] text-[0.95rem] uppercase tracking-wider">Business Hours</h4>
               </div>
               <div className="flex flex-col gap-4">
                 <div className="space-y-1">
@@ -226,13 +228,13 @@ export function ContactPage() {
                   href={card.href}
                   target={card.href.startsWith("http") ? "_blank" : undefined}
                   rel={card.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                  className="flex items-center gap-4 bg-secondary rounded-[14px] p-4 transition-all duration-200 ease-in-out hover:bg-blue-4 dark:hover:bg-[#1E3A52] hover:translate-x-1.5 active:scale-[0.98] no-underline"
+                  className="flex items-center gap-4 bg-secondary rounded-[14px] p-4 transition-all duration-200 ease-in-out hover:bg-[#EBF5FB] dark:hover:bg-[#1E3A52] hover:translate-x-1.5 active:scale-[0.98] no-underline"
                 >
                   <div className={`w-[46px] h-[46px] rounded-xl flex items-center justify-center shrink-0 ${card.color}`}>
                     {card.icon}
                   </div>
                   <div>
-                    <h4 className="font-sans font-bold text-blue-3 dark:text-blue-4 text-[0.82rem]">{card.title}</h4>
+                    <h4 className="font-sans font-bold text-[#1E6FA8] dark:text-[#A9D6F2] text-[0.82rem]">{card.title}</h4>
                     <p className="text-muted-foreground text-[0.88rem] mt-0.5">{card.value}</p>
                   </div>
                 </a>
@@ -254,7 +256,7 @@ export function ContactPage() {
 
           {/* Form */}
           <div className="bg-secondary rounded-[20px] p-6 md:p-8 transition-colors duration-300">
-            <h3 className="font-sans font-extrabold text-blue-3 dark:text-blue-4 text-lg mb-5">Send a Message</h3>
+            <h3 className="font-sans font-extrabold text-[#1E6FA8] dark:text-[#A9D6F2] text-lg mb-5">Send a Message</h3>
 
             <div className="mb-4">
               <label className="block text-[0.82rem] font-semibold text-muted-foreground mb-1.5 font-sans">Your Name</label>
@@ -263,7 +265,7 @@ export function ContactPage() {
                 value={formData.name}
                 onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                 placeholder="e.g. Theji Koena"
-                className="w-full px-4 py-3 border-2 border-border rounded-[10px] bg-background text-foreground text-[0.88rem] transition-all duration-200 ease-in-out focus:border-primary outline-none"
+                className="w-full px-4 py-3 border-2 border-border rounded-[10px] bg-background text-foreground text-[0.88rem] transition-all duration-200 ease-in-out focus:border-[#1E6FA8] outline-none"
               />
             </div>
 
@@ -275,7 +277,7 @@ export function ContactPage() {
                 value={formData.phone}
                 onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
                 placeholder="e.g. +27 75 333 8260"
-                className="w-full px-4 py-3 border-2 border-border rounded-[10px] bg-background text-foreground text-[0.88rem] transition-all duration-200 ease-in-out focus:border-primary outline-none"
+                className="w-full px-4 py-3 border-2 border-border rounded-[10px] bg-background text-foreground text-[0.88rem] transition-all duration-200 ease-in-out focus:border-[#1E6FA8] outline-none"
               />
             </div>
 
@@ -284,7 +286,7 @@ export function ContactPage() {
               <select
                 value={formData.service}
                 onChange={(e) => setFormData((prev) => ({ ...prev, service: e.target.value }))}
-                className="w-full px-4 py-3 border-2 border-border rounded-[10px] bg-background text-foreground text-[0.88rem] transition-all duration-200 ease-in-out focus:border-primary outline-none"
+                className="w-full px-4 py-3 border-2 border-border rounded-[10px] bg-background text-foreground text-[0.88rem] transition-all duration-200 ease-in-out focus:border-[#1E6FA8] outline-none"
               >
                 <option value="">-- Select a hub --</option>
                 <option>Print Hub</option>
@@ -303,21 +305,21 @@ export function ContactPage() {
                 onChange={(e) => setFormData((prev) => ({ ...prev, message: e.target.value }))}
                 placeholder="Tell us what you need..."
                 rows={4}
-                className="w-full px-4 py-3 border-2 border-border rounded-[10px] bg-background text-foreground text-[0.88rem] transition-all duration-200 ease-in-out focus:border-primary outline-none resize-y min-h-[95px]"
+                className="w-full px-4 py-3 border-2 border-border rounded-[10px] bg-background text-foreground text-[0.88rem] transition-all duration-200 ease-in-out focus:border-[#1E6FA8] outline-none resize-y min-h-[95px]"
               />
             </div>
 
             <button
               onClick={handleSubmit}
               disabled={!isFormValid}
-              className={`w-full flex items-center justify-center gap-2 text-white py-3.5 rounded-[11px] font-sans font-extrabold text-base transition-all duration-200 ease-in-out ${
+              className={`w-full py-3.5 rounded-[14px] font-sans font-extrabold text-[0.88rem] transition-all duration-200 flex items-center justify-center gap-2 ${
                 isFormValid
-                  ? "bg-wa-green hover:bg-[#1ebe5a] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(37,211,102,0.3)] active:scale-[0.98]"
-                  : "bg-muted text-muted-foreground opacity-50 cursor-not-allowed"
+                  ? "bg-[#F4A261] text-white hover:bg-[#D9894B] active:scale-95 shadow-[0_4px_12px_rgba(244,162,97,0.3)]"
+                  : "bg-gray-300 dark:bg-zinc-700 text-gray-500 dark:text-zinc-400 cursor-not-allowed"
               }`}
             >
-              <PaperPlaneTilt weight="fill" className="w-5 h-5" />
-              Send to WhatsApp
+              <PaperPlaneTilt weight="bold" className="w-4 h-4" />
+              Send Message
             </button>
           </div>
         </div>
