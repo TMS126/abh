@@ -145,9 +145,18 @@ export function Footer() {
                 apexbytesza@gmail.com
               </a>
             </li>
-            <li className="flex items-start gap-2 text-[#A9D6F2] text-[0.83rem]">
-              <MapPin weight="fill" className="w-4 h-4 text-[#6FBF1A] shrink-0 mt-0.5" />
-              5878 Mpumalanga Section, Kgotsong, Bothaville, 9660
+            <li>
+              <a
+                href="https://maps.app.goo.gl/EWqtimji8ZG7U2Dt5?g_st=ac"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-start gap-2 text-[#A9D6F2] text-[0.83rem] hover:text-white transition-colors duration-200 no-underline group"
+              >
+                <MapPin weight="fill" className="w-4 h-4 text-[#6FBF1A] shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
+                <span className="hover:underline decoration-[#6FBF1A] decoration-2 underline-offset-2">
+                  5878 Mpumalanga Section, Kgotsong, Bothaville, 9660
+                </span>
+              </a>
             </li>
             
             {/* Added FAQ Link directly underneath Contact Methods */}
