@@ -6,13 +6,13 @@ import { HUBS, type HubId } from "@/lib/data"
 import { cn } from "@/lib/utils"
 import { useTheme } from "next-themes"
 
-// ─── Matte flat gradients per hub ─────────────────────────────────────────────
-const HUB_MATTE: Record<HubId, string> = {
-  print:    "linear-gradient(150deg, #1E6FA8 0%, #15537D 50%, #0F3F66 100%)",
-  doc:      "linear-gradient(150deg, #3E6B0E 0%, #548F14 50%, #6FBF1A 100%)",
-  design:   "linear-gradient(150deg, #B86F34 0%, #D9894B 50%, #F4A261 100%)",
-  eservice: "linear-gradient(150deg, #0A2A44 0%, #0F3F66 50%, #15537D 100%)",
-  tech:     "linear-gradient(150deg, #1E2A38 0%, #2C3E50 50%, #4A6785 100%)",
+// ─── Solid colors per hub (no gradients) ──────────────────────────────────────
+const HUB_COLORS: Record<HubId, string> = {
+  print:    "#1E6FA8",
+  doc:      "#3E6B0E",
+  design:   "#B86F34",
+  eservice: "#0F3F66",
+  tech:     "#2C3E50",
 }
 
 // ─── Page hero gradient (same as hero-section desktop) ────────────────────────
@@ -106,7 +106,6 @@ const SERVICE_INFO: Record<string, { desc: string; waText: string }> = {
   "UIF Claims":              { desc: "We submit your UIF unemployment, maternity or illness claim on your behalf.", waText: "Hi Apexbytes Hub! I need to claim from UIF. Can you assist me?" },
   "CSD Registration":        { desc: "We register your business on the Central Supplier Database — required for government tenders.", waText: "Hi Apexbytes Hub! I need to register on the CSD. What documents do I bring?" },
   "Social Media Setup":      { desc: "We create your Facebook, Instagram or TikTok business page — ready to post.", waText: "Hi Apexbytes Hub! I need a social media account set up for my business. Can you help?" },
-  "Learner's Licence Booking": { desc: "We book your learner's licence test at the DLTC on the eNaTIS system.", waText: "Hi Apexbytes Hub! I need to book my learner's licence test. Can you assist?" },
   "WhatsApp Business Setup": { desc: "We set up your WhatsApp Business profile with your business name, hours and catalogue.", waText: "Hi Apexbytes Hub! I need my WhatsApp Business set up. Can you help?" },
   "Software Install":        { desc: "We install any software or application you need on your laptop or PC.", waText: "Hi Apexbytes Hub! I need software installed on my device. Can I bring it in?" },
   "Driver Installation":     { desc: "We find and install the correct drivers for your printer, sound, display or other hardware.", waText: "Hi Apexbytes Hub! I need drivers installed on my PC. Can I bring it in?" },
@@ -130,7 +129,7 @@ const BUNDLES = [
     icon: <Briefcase weight="fill" className="w-6 h-6 text-white" />,
     title: "Job Seeker Bundle",
     price: "R100",
-    grad: HUB_MATTE.print,
+    color: "#1E6FA8",
     accentColor: "#A9D6F2",
     saving: "Save R25 — valued at R125",
     items: ["CV from Scratch", "Cover Letter", "Job Application Assistance", "Email Setup / Send / Receive"],
@@ -141,7 +140,7 @@ const BUNDLES = [
     icon: <Buildings weight="fill" className="w-6 h-6 text-white" />,
     title: "Business Starter Bundle",
     price: "R500",
-    grad: HUB_MATTE.design,
+    color: "#B86F34",
     accentColor: "#F9D1B0",
     saving: "Save R130 — valued at R630",
     items: ["Basic Logo", "Business Card (Single Side)", "Simple Flyer", "WhatsApp Business Setup"],
@@ -151,9 +150,9 @@ const BUNDLES = [
 
 // ─── Sub-service modal ────────────────────────────────────────────────────────
 function SubServiceModal({
-  name, price, hubGrad, tagStyle, onClose,
+  name, price, hubColor, tagStyle, onClose,
 }: {
-  name: string; price: string; hubGrad: string
+  name: string; price: string; hubColor: string
   tagStyle: { bg: string; color: string }; onClose: () => void
 }) {
   const info = SERVICE_INFO[name] ?? {
@@ -166,7 +165,7 @@ function SubServiceModal({
     <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 bg-card rounded-[14px] max-w-[340px] w-full shadow-[0_24px_60px_rgba(0,0,0,0.4)] overflow-hidden">
-        <div className="h-[5px] w-full" style={{ background: hubGrad }} />
+        <div className="h-[5px] w-full" style={{ background: hubColor }} />
         <div className="px-5 py-5">
           <button onClick={onClose} className="absolute top-4 right-4 w-7 h-7 rounded-full bg-secondary flex items-center justify-center hover:bg-muted active:scale-90 transition-all duration-150">
             <X className="w-3.5 h-3.5 text-muted-foreground" />
@@ -194,7 +193,7 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: { hubId: Hub
   const hub = HUBS[hubId]
   const isDark = theme === "dark"
   const tagStyle = isDark ? hub.tagStyleDark : hub.tagStyle
-  const grad = HUB_MATTE[hubId]
+  const color = HUB_COLORS[hubId]
 
   return (
     <>
@@ -202,8 +201,8 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: { hubId: Hub
         <div className="absolute inset-0 backdrop-blur-[14px] bg-black/55" onClick={onClose} />
         <div className="relative z-10 bg-card rounded-[18px] max-w-[540px] w-full max-h-[88vh] overflow-hidden flex flex-col shadow-[0_32px_80px_rgba(0,0,0,0.45)]">
 
-          {/* Modal header — matte gradient */}
-          <div className="px-6 py-5 relative shrink-0 flex items-center gap-3" style={{ background: grad }}>
+          {/* Modal header — solid color */}
+          <div className="px-6 py-5 relative shrink-0 flex items-center gap-3" style={{ background: color }}>
             <HubIcon name={hub.iconName} color={hub.iconColor} size={30} />
             <h2 className="font-sans font-black text-xl text-white">{hub.title}</h2>
             <button onClick={onClose} className="ml-auto w-8 h-8 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/35 active:scale-90 transition-all duration-150">
@@ -259,7 +258,7 @@ export function ServiceModal({ hubId, onClose, onNavigateContact }: { hubId: Hub
       </div>
 
       {subService && (
-        <SubServiceModal name={subService.name} price={subService.price} hubGrad={grad} tagStyle={tagStyle} onClose={() => setSubService(null)} />
+        <SubServiceModal name={subService.name} price={subService.price} hubColor={color} tagStyle={tagStyle} onClose={() => setSubService(null)} />
       )}
     </>
   )
@@ -274,7 +273,7 @@ function HubCard({ hubId, isExpanded, onToggle, onOpenModal }: {
   const { theme } = useTheme()
   const isDark = theme === "dark"
   const tagStyle = isDark ? hub.tagStyleDark : hub.tagStyle
-  const grad = HUB_MATTE[hubId]
+  const color = HUB_COLORS[hubId]
 
   const handleHeaderClick = () => {
     const isTouch = window.matchMedia("(hover: none)").matches
@@ -291,11 +290,11 @@ function HubCard({ hubId, isExpanded, onToggle, onOpenModal }: {
       "shadow-[var(--shadow)] hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(30,111,168,0.15)]",
       "dark:bg-white/5 dark:backdrop-blur-md",
     )}>
-      {/* Card header — matte gradient, centered hub name */}
+      {/* Card header — solid color, centered hub name */}
       <div
         onClick={handleHeaderClick}
         className="px-5 py-5 flex flex-col items-center justify-center gap-3 cursor-pointer select-none active:scale-[0.99] transition-transform duration-150"
-        style={{ background: grad }}
+        style={{ background: color }}
       >
         <HubIcon name={hub.iconName} color={hub.iconColor} size={30} />
         <h3 className="font-sans font-black text-lg text-white text-center leading-tight">{hub.title}</h3>
@@ -318,7 +317,7 @@ function HubCard({ hubId, isExpanded, onToggle, onOpenModal }: {
             <button
               onClick={() => onOpenModal(hubId)}
               className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-[14px] font-extrabold text-[0.82rem] text-white transition-all duration-200 active:scale-95 shadow-[0_4px_14px_rgba(0,0,0,0.25)]"
-              style={{ background: grad }}
+              style={{ background: color }}
             >
               View Prices
             </button>
@@ -331,7 +330,7 @@ function HubCard({ hubId, isExpanded, onToggle, onOpenModal }: {
         <button
           onClick={() => onOpenModal(hubId)}
           className="inline-flex items-center gap-1.5 px-5 py-2 rounded-[14px] font-extrabold text-[0.8rem] text-white transition-all duration-200 active:scale-95 shadow-[0_4px_12px_rgba(0,0,0,0.2)] hover:-translate-y-0.5"
-          style={{ background: grad }}
+          style={{ background: color }}
         >
           View Prices
         </button>
@@ -345,8 +344,11 @@ function BundleCard({ bundle }: { bundle: typeof BUNDLES[0] }) {
   const waUrl = `https://wa.me/27753338260?text=${encodeURIComponent(bundle.waText)}`
   return (
     <div className="rounded-[14px] border border-border overflow-hidden flex flex-col shadow-[var(--shadow)] dark:bg-white/5 dark:backdrop-blur-md">
-      {/* Bundle header — matte gradient */}
-      <div className="px-5 py-4 flex items-center gap-3" style={{ background: bundle.grad }}>
+      {/* Bundle header — solid color */}
+      <div
+        className="px-5 py-4 flex items-center gap-3 shrink-0"
+        style={{ background: bundle.color }}
+      >
         {bundle.icon}
         <div className="flex-1 min-w-0">
           <h3 className="font-sans font-black text-base text-white leading-tight">{bundle.title}</h3>
@@ -365,7 +367,7 @@ function BundleCard({ bundle }: { bundle: typeof BUNDLES[0] }) {
         ))}
         <a href={waUrl} target="_blank" rel="noopener noreferrer"
           className="mt-3 flex items-center justify-center gap-2 w-full py-2.5 rounded-[14px] font-extrabold text-[0.84rem] text-white transition-all duration-200 active:scale-95 shadow-[0_4px_12px_rgba(0,0,0,0.2)] hover:-translate-y-0.5"
-          style={{ background: bundle.grad }}>
+          style={{ background: bundle.color }}>
           <WhatsappLogo weight="fill" className="w-4 h-4" /> Get This Bundle
         </a>
       </div>
@@ -408,14 +410,17 @@ export function ServicesPage({ onNavigate }: ServicesPageProps) {
     <>
       <div className="animate-fade-up">
 
-        {/* Page hero — same matte gradient as hero-section desktop */}
-        <section className="px-4 md:px-8 py-12 md:py-14 text-center relative overflow-hidden" style={{ background: PAGE_GRAD }}>
-          <h1 className="font-sans font-black text-2xl md:text-4xl text-white relative z-10">Our Services</h1>
-          <p className="text-white/75 text-base mt-2 relative z-10">Five hubs, one place — tap any card to explore</p>
+        {/* Page hero — clean background with solid line separator */}
+        <section className="px-4 md:px-8 py-12 md:py-14 text-center relative overflow-hidden bg-white dark:bg-[#081428]">
+          <h1 className="font-sans font-black text-2xl md:text-4xl text-[#0F3F66] dark:text-[#A9D6F2] relative z-10">Our Services</h1>
+          <p className="text-[#333333] dark:text-white/75 text-base mt-2 relative z-10">Five hubs, one place — tap any card to explore</p>
+          
+          {/* Solid line separator */}
+          <div className="mt-8 h-[1px] bg-[#E5E5E5] dark:bg-white/10 max-w-[200px] mx-auto" />
         </section>
 
         {/* Hub cards */}
-        <section className="px-4 md:px-8 py-12 md:py-14">
+        <section className="px-4 md:px-8 py-12 md:py-14 bg-white dark:bg-[#081428]">
           <div className="max-w-[1080px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-7 items-start">
             {hubIds.map((id) => (
               <HubCard
@@ -454,4 +459,4 @@ export function ServicesPage({ onNavigate }: ServicesPageProps) {
       )}
     </>
   )
-            } 
+}
