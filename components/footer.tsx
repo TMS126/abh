@@ -118,7 +118,7 @@ export function Footer() {
           <ul className="flex flex-col gap-3">
             <li>
               <a
-                href="https://wa.me/27753338260"
+                href="https://wa.me/27753338260?text=Hello%20Apexbytes%20Hub%2C%20I%27d%20like%20to%20enquire%20about%20your%20services."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-[#A9D6F2] text-[0.83rem] hover:text-white transition-colors duration-200 no-underline"
