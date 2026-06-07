@@ -288,7 +288,7 @@ export function HeroSection() {
           100% { transform: translate3d(-50%, 0, 0); }
         }
         .animate-marquee-continuous-track {
-          animation: marquee-continuous-track 40s linear infinite;
+          animation: marquee-continuous-track 30s linear infinite;
         }
       `}</style>
     </section>
@@ -344,4 +344,4 @@ export function CtaBar({ title, description, buttonText, buttonHref, onButtonCli
       )}
     </section>
   )
-}
+                              } 
