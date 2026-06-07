@@ -25,37 +25,27 @@ export function AboutPage() {
 
   return (
     <div className="animate-fade-up">
-      {/* Hero */}
-      <section
-        className="px-4 md:px-8 py-12 md:py-14 text-center relative overflow-hidden"
-        style={{
-          background: [
-            "radial-gradient(ellipse 70% 80% at 15% 50%, #0F3F66 0%, transparent 70%)",
-            "radial-gradient(ellipse 55% 65% at 50% 30%, #1E6FA8 0%, transparent 65%)",
-            "radial-gradient(ellipse 45% 55% at 80% 60%, #15537D 0%, transparent 60%)",
-            "radial-gradient(ellipse 35% 45% at 65% 85%, #3E6B0E 0%, transparent 55%)",
-            "radial-gradient(ellipse 30% 40% at 30% 75%, #548F14 0%, transparent 50%)",
-            "radial-gradient(ellipse 20% 30% at 92% 15%, #D9894B 0%, transparent 55%)",
-            "linear-gradient(135deg, #0A1A2E 0%, #0F3F66 35%, #15537D 55%, #3E6B0E 78%, #548F14 88%, #B86F34 100%)",
-          ].join(", "),
-        }}
-      >
-        <h1 className="font-sans font-black text-2xl md:text-4xl text-white relative z-10">About Us</h1>
-        <p className="text-white/75 text-base mt-2 relative z-10">A local business built on community, trust, and real help</p>
+      {/* Hero — Clean background with solid line separator */}
+      <section className="px-4 md:px-8 py-12 md:py-14 text-center relative overflow-hidden bg-white dark:bg-[#081428]">
+        <h1 className="font-sans font-black text-2xl md:text-4xl text-[#0F3F66] dark:text-[#A9D6F2] relative z-10">About Us</h1>
+        <p className="text-[#333333] dark:text-white/75 text-base mt-2 relative z-10">A local business built on community, trust, and real help</p>
+        
+        {/* Solid line separator */}
+        <div className="mt-6 h-[1px] bg-[#E5E5E5] dark:bg-white/10 max-w-[200px] mx-auto" />
       </section>
 
       {/* Main content */}
-      <section className="px-4 md:px-8 py-12 md:py-16">
+      <section className="px-4 md:px-8 py-12 md:py-16 bg-white dark:bg-[#081428]">
         <div className="max-w-[1000px] mx-auto grid md:grid-cols-2 gap-10 md:gap-14 items-center">
           <div>
-            <h2 className="font-sans font-black text-2xl md:text-3xl text-blue-3 dark:text-blue-4 leading-tight mb-4">
+            <h2 className="font-sans font-black text-2xl md:text-3xl text-[#1E6FA8] dark:text-[#A9D6F2] leading-tight mb-4">
               Your <span className="text-[#F4A261]">Neighbourhood</span> Digital Hub
             </h2>
             <p className="text-muted-foreground leading-relaxed text-[0.92rem] mb-3">
               Apexbytes Hub is a home-based service business in Kgotsong, Bothaville. We started with one simple goal: make technology and important services accessible to everyone in our community — no jargon, no stress.
             </p>
             <p className="text-muted-foreground leading-relaxed text-[0.92rem] mb-6">
-              {"We understand that not everyone is tech-savvy, and that's perfectly okay. That's exactly why we're here — to make things easy, friendly, and affordable, without the judgment."}
+              We understand that not everyone is tech-savvy, and that's perfectly okay. That's exactly why we're here — to make things easy, friendly, and affordable, without the judgment.
             </p>
             <div className="flex flex-col gap-4 mt-6">
               {[
@@ -64,11 +54,11 @@ export function AboutPage() {
                 { icon: <Lightning weight="fill" className="w-5 h-5 text-[#6FBF1A]" />, title: "Fast & Reliable", desc: "We respect your time and always deliver with consistency." },
               ].map((item, index) => (
                 <div key={index} className="flex gap-4 items-start">
-                  <div className="w-10 h-10 rounded-[14px] bg-green-4 dark:bg-[#1A3010] flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-[14px] bg-[#E8F5E9] dark:bg-[#1A3010] flex items-center justify-center shrink-0">
                     {item.icon}
                   </div>
                   <div>
-                    <h4 className="font-sans font-bold text-blue-3 dark:text-blue-4 text-[0.92rem]">{item.title}</h4>
+                    <h4 className="font-sans font-bold text-[#1E6FA8] dark:text-[#A9D6F2] text-[0.92rem]">{item.title}</h4>
                     <p className="text-muted-foreground text-[0.82rem] mt-0.5">{item.desc}</p>
                   </div>
                 </div>
@@ -76,9 +66,9 @@ export function AboutPage() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-blue-1 to-blue-3 rounded-[22px] p-6 md:p-8 text-white">
+          <div className="bg-[#1E6FA8] rounded-[22px] p-6 md:p-8 text-white">
             <h3 className="font-sans font-black text-xl md:text-2xl">Apexbytes Hub</h3>
-            <p className="text-blue-4 text-sm mt-1 mb-6">Serving Kgotsong & surrounding areas</p>
+            <p className="text-[#A9D6F2] text-sm mt-1 mb-6">Serving Kgotsong & surrounding areas</p>
             <div className="grid grid-cols-2 gap-4">
               {[
                 { value: "5", label: "Hubs" },
@@ -145,10 +135,10 @@ export function AboutPage() {
       {/* Mission */}
       <section className="bg-secondary px-4 md:px-8 py-12 md:py-14 text-center transition-colors duration-300">
         <div className="max-w-[700px] mx-auto">
-          <span className="inline-block bg-blue-4 text-blue-3 px-4 py-1.5 rounded-[14px] text-[0.78rem] font-bold font-sans tracking-wider">
+          <span className="inline-block bg-[#A9D6F2] text-[#1E6FA8] px-4 py-1.5 rounded-[14px] text-[0.78rem] font-bold font-sans tracking-wider">
             Our Mission
           </span>
-          <h2 className="font-sans font-black text-xl md:text-2xl text-blue-3 dark:text-blue-4 mt-3 mb-4">
+          <h2 className="font-sans font-black text-xl md:text-2xl text-[#1E6FA8] dark:text-[#A9D6F2] mt-3 mb-4">
             Bridging the Digital Gap in Our Community
           </h2>
           <p className="text-muted-foreground leading-relaxed text-[0.95rem]">
