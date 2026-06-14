@@ -58,7 +58,7 @@ export const BIZ = {
   founder:      "Theji Meje",
   year:         "2026",
   hubCount:     5,
-  serviceCount: "50+",
+  serviceCount: "70+",
 } as const
 
 // ─── WHATSAPP HELPERS ───────────────────────────────────────────────────────
