@@ -32,7 +32,6 @@ export function HeroSection() {
 
   const handleNavigate = (path: string) => {
     router.push(path)
-    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   return (
