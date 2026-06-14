@@ -64,7 +64,7 @@ export function HeroSection() {
         <div className="flex flex-col sm:flex-row gap-5 justify-center items-center w-full mb-8">
           <button
             onClick={() => handleNavigate("/services")}
-            className="abh-btn-cta inline-flex items-center gap-3 group"
+            className="inline-flex items-center gap-3 group px-8 py-4 rounded-[14px] font-sans font-black text-lg text-white transition-all duration-300 active:scale-95 shadow-lg bg-brand-blue active:bg-brand-orange hover:opacity-90"
           >
             View Services
             <ArrowRight weight="bold" className="w-6 h-6 transition-transform group-hover:translate-x-1" aria-hidden="true" />

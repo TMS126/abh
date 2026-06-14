@@ -219,7 +219,7 @@ export function Navbar() {
                     className={cn(
                       "py-2.5 px-8 rounded-[14px] font-sans font-extrabold text-sm transition-all duration-300 active:scale-95 text-center shadow-sm cursor-pointer w-[160px]",
                       item.isCta
-                        ? "bg-brand-orange text-white hover:bg-brand-orange-dark dark:bg-brand-light-blue dark:text-brand-blue-dark dark:hover:bg-brand-blue dark:hover:text-white border-none"
+                        ? "bg-brand-blue text-white active:bg-brand-orange hover:opacity-90 dark:bg-brand-blue dark:text-white dark:active:bg-brand-orange border-none"
                         : "bg-zinc-50 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border border-zinc-100 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     )}
                     style={{ transitionDelay: menuOpen ? `${index * 35}ms` : "0ms" }}

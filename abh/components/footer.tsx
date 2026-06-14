@@ -7,7 +7,7 @@ import {
   WhatsappLogo, EnvelopeSimple,
   X, Printer, FileText, Palette,
   Globe, Cpu, Info, Heart,
-  Question, CaretDown, PaperPlaneTilt,
+  Question, CaretDown,
 } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, WA, FOOTER_NAV, FAQS } from "@/lib/brand"
@@ -93,15 +93,15 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null)
 
   return (
-    <div className="pt-10 pb-6">
-      <div className="max-w-[1100px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 mb-12 px-4 md:px-8">
+    <div className="pt-16 pb-12">
+      <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16 mb-16 px-6 md:px-8">
         {/* Brand */}
-        <div className="flex flex-col gap-5">
-          <div className="flex items-center gap-2 select-none">
-            <div className="relative w-8 h-8 overflow-hidden rounded-[14px]" aria-hidden="true">
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center gap-2.5 select-none">
+            <div className="relative w-9 h-9 overflow-hidden rounded-[14px]" aria-hidden="true">
               <Image src="/logo.png" alt="" fill className="object-contain dark:invert" />
             </div>
-            <h2 className="font-sans font-black text-xl tracking-tighter">
+            <h2 className="font-sans font-black text-2xl tracking-tighter">
               <span className="text-zinc-900 dark:text-white">Apexbytes</span>
               <span style={{ color: BRAND.orange }}>Hub</span>
             </h2>
@@ -144,8 +144,8 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
             <li>
               <a href={WA.general} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-4 text-sm text-zinc-600 dark:text-zinc-300 hover:text-brand-whatsapp transition-colors">
-                <div className="w-9 h-9 rounded-[14px] border border-zinc-100 dark:border-zinc-800 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900" aria-hidden="true">
-                  <WhatsappLogo weight="fill" className="w-4 h-4" />
+                <div className="w-10 h-10 rounded-[14px] border border-zinc-100 dark:border-zinc-800 flex items-center justify-center bg-white dark:bg-zinc-900 shadow-sm" aria-hidden="true">
+                  <WhatsappLogo weight="fill" className="w-5 h-5" />
                 </div>
                 {BIZ.phone}
               </a>
@@ -153,8 +153,8 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
             <li>
               <a href={`mailto:${BIZ.email}`}
                 className="flex items-center gap-4 text-sm text-zinc-600 dark:text-zinc-300 hover:text-brand-blue transition-colors">
-                <div className="w-9 h-9 rounded-[14px] border border-zinc-100 dark:border-zinc-800 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900" aria-hidden="true">
-                  <EnvelopeSimple weight="fill" className="w-4 h-4" />
+                <div className="w-10 h-10 rounded-[14px] border border-zinc-100 dark:border-zinc-800 flex items-center justify-center bg-white dark:bg-zinc-900 shadow-sm" aria-hidden="true">
+                  <EnvelopeSimple weight="fill" className="w-5 h-5" />
                 </div>
                 {BIZ.email}
               </a>
@@ -163,8 +163,8 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
               <button onClick={() => setIsFaqOpen(true)}
                 className="flex items-center gap-4 text-sm font-black transition-colors"
                 style={{ color: BRAND.orange }}>
-                <div className="w-9 h-9 rounded-[14px] flex items-center justify-center border" style={{ borderColor: `${BRAND.orange}33`, backgroundColor: `${BRAND.orange}0D` }} aria-hidden="true">
-                  <Question weight="bold" className="w-4 h-4" />
+                <div className="w-10 h-10 rounded-[14px] flex items-center justify-center border shadow-sm" style={{ borderColor: `${BRAND.orange}33`, backgroundColor: `${BRAND.orange}0D` }} aria-hidden="true">
+                  <Question weight="bold" className="w-5 h-5" />
                 </div>
                 Help Center (FAQ)
               </button>
@@ -174,8 +174,8 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
       </div>
 
       {/* Legal bar */}
-      <div className="max-w-[1100px] mx-auto border-t border-zinc-100 dark:border-zinc-800 pt-8 px-4 md:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
-        <div className="flex flex-col md:flex-row items-center gap-3 md:gap-6">
+      <div className="max-w-[1200px] mx-auto border-t border-zinc-100 dark:border-zinc-800 pt-10 px-6 md:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="flex flex-col md:flex-row items-center gap-3 md:gap-8">
           <p className="text-[0.75rem] font-semibold text-zinc-400">© {new Date().getFullYear()} {BIZ.nameShort}. All rights reserved.</p>
           <div className="hidden md:block w-1 h-1 rounded-full bg-zinc-200 dark:bg-zinc-800" aria-hidden="true" />
           <button onClick={() => setIsTermsOpen(true)} className="text-[0.75rem] font-bold text-brand-blue hover:underline">
@@ -230,67 +230,12 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
 }
 
 export function Footer() {
-  const [isProfileOpen, setIsProfileOpen] = useState(false)
-  const footer = useInstance("footer")
   const profile = useInstance("profile")
-  const isExpanded = footer.isActive
 
   return (
-    <>
-      {/* ── Footer panel — slides UP from bottom ── */}
-      <div
-        className={cn(
-          "fixed bottom-0 left-0 right-0 z-[10040] bg-background border-t border-zinc-100 dark:border-zinc-800 shadow-[0_-4px_24px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-out",
-          isExpanded ? "translate-y-0" : "translate-y-full"
-        )}
-        style={{ maxHeight: "85vh", overflowY: "auto" }}
-      >
-        <div className="flex justify-end p-3">
-          <button
-            onClick={footer.close}
-            aria-label="Close footer"
-            className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-          >
-            <X size={15} weight="bold" aria-hidden="true" />
-          </button>
-        </div>
-        <FooterContent onOpenProfile={() => {
-          footer.close()
-          profile.open()
-        }} />
-      </div>
-
-      {/* Backdrop when footer is open */}
-      {isExpanded && (
-        <div
-          className="fixed inset-0 z-[10030] bg-black/30 backdrop-blur-sm transition-opacity duration-200"
-          onClick={footer.close}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* ── Footer trigger pill — always at bottom ── */}
-      <footer className="fixed bottom-0 left-0 right-0 z-[10020] flex justify-center py-3 pointer-events-none">
-        <button
-          onClick={() => {
-            if (isExpanded) footer.close()
-            else footer.open()
-          }}
-          aria-expanded={isExpanded}
-          aria-label={isExpanded ? "Close footer" : "Open footer"}
-          className={cn(
-            "flex items-center gap-2 px-6 py-2.5 rounded-[14px] shadow-md text-xs font-extrabold uppercase tracking-widest transition-all duration-300 border pointer-events-auto",
-            isExpanded
-              ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-zinc-900 dark:border-white"
-              : "bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-zinc-400"
-          )}
-        >
-          {isExpanded ? <><X size={12} weight="bold" aria-hidden="true" /> Close</> : <>Footer</>}
-        </button>
-      </footer>
-
-      {/* Profile drawer */}
-      <ProfileDrawer open={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
-    </>
+    <footer className="bg-white dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900">
+      <FooterContent onOpenProfile={() => profile.open()} />
+      <ProfileDrawer open={profile.isActive} onClose={() => profile.close()} />
+    </footer>
   )
 }

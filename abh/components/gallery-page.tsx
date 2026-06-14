@@ -249,6 +249,16 @@ export function GalleryPage() {
           <div className="abh-divider" aria-hidden="true" />
         </div>
 
+        {/* Warning Container */}
+        <div className="max-w-2xl mx-auto mb-10 p-6 rounded-[14px] border border-brand-blue/20 bg-brand-blue/5 dark:bg-brand-blue/10 flex flex-col items-center text-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-brand-blue/10 dark:bg-brand-blue/20 flex items-center justify-center text-brand-blue">
+            <Info size={24} weight="fill" aria-hidden="true" />
+          </div>
+          <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300 leading-relaxed">
+            Please note: We are using high-quality sample photos to represent our services, but the quality and professional standard shown here is exactly what you can expect from our actual work.
+          </p>
+        </div>
+
         {/* ── Filter pills ── */}
         <div className="flex flex-wrap gap-2 justify-center mb-10" role="group" aria-label="Filter by hub">
           {/* All Hubs */}

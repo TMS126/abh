@@ -156,11 +156,17 @@ export function ContactPage() {
 
   const sanitize = (str: string) => str.trim().replace(/[<>]/g, "");
 
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
+
+  const isPhoneValid = (phone: string) => /^\+?[0-9\s-]{7,15}$/.test(phone.trim())
+  const isNameValid = (name: string) => name.trim().length >= 2
+  const isMessageValid = (msg: string) => msg.trim().length >= 5
+
   const isFormValid =
-    formData.name.trim() !== "" &&
-    /^\+?[0-9\s-]{7,15}$/.test(formData.phone.trim()) &&
+    isNameValid(formData.name) &&
+    isPhoneValid(formData.phone) &&
     formData.service !== "" &&
-    formData.message.trim() !== ""
+    isMessageValid(formData.message)
 
   const handleSubmit = () => {
     if (!isFormValid) return;
@@ -310,22 +316,29 @@ export function ContactPage() {
             <div className="space-y-4">
 
               {[
-                { label: "Your Name",              type: "text",  placeholder: "e.g. Theji Koena",  key: "name" },
-                { label: "Phone / WhatsApp Number", type: "tel",   placeholder: `e.g. ${BIZ.phone}`, key: "phone" },
-              ].map((field) => (
-                <div key={field.key}>
-                  <label className="abh-label block mb-1.5">{field.label}</label>
-                  <input
-                    type={field.type}
-                    placeholder={field.placeholder}
-                    className="w-full px-4 py-3 border border-zinc-100 dark:border-zinc-800 rounded-[14px] bg-white dark:bg-background text-[0.84rem] font-semibold text-zinc-800 dark:text-zinc-200 focus:ring-2 focus:ring-offset-0 transition-all"
-                    style={{ "--tw-ring-color": BRAND.blue } as React.CSSProperties}
-                    onFocus={(e) => (e.currentTarget.style.borderColor = BRAND.blue)}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = "")}
-                    onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
-                  />
-                </div>
-              ))}
+                { label: "Your Name",              type: "text",  placeholder: "e.g. Theji Koena",  key: "name", validate: isNameValid, error: "Please enter at least 2 characters" },
+                { label: "Phone / WhatsApp Number", type: "tel",   placeholder: `e.g. ${BIZ.phone}`, key: "phone", validate: isPhoneValid, error: "Please enter a valid phone number" },
+              ].map((field) => {
+                const showError = touched[field.key] && !field.validate(formData[field.key as keyof typeof formData])
+                return (
+                  <div key={field.key}>
+                    <label className="abh-label block mb-1.5">{field.label}</label>
+                    <input
+                      type={field.type}
+                      placeholder={field.placeholder}
+                      className={cn(
+                        "w-full px-4 py-3 border rounded-[14px] bg-white dark:bg-background text-[0.84rem] font-semibold transition-all outline-none",
+                        showError 
+                          ? "border-red-500 text-red-600 dark:text-red-400" 
+                          : "border-zinc-100 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 focus:border-brand-blue"
+                      )}
+                      onBlur={() => setTouched({ ...touched, [field.key]: true })}
+                      onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
+                    />
+                    {showError && <p className="text-[0.68rem] font-bold text-red-500 mt-1">{field.error}</p>}
+                  </div>
+                )
+              })}
 
               <div>
                 <label className="abh-label block mb-1.5">Service Needed</label>
@@ -339,12 +352,19 @@ export function ContactPage() {
                 <label className="abh-label block mb-1.5">Your Message</label>
                 <textarea
                   placeholder="Tell us what you need..."
-                  className="w-full px-4 py-3 border border-zinc-100 dark:border-zinc-800 rounded-[14px] bg-white dark:bg-background text-[0.84rem] font-semibold text-zinc-800 dark:text-zinc-200 focus:ring-2 focus:ring-offset-0 transition-all resize-none"
+                  className={cn(
+                    "w-full px-4 py-3 border rounded-[14px] bg-white dark:bg-background text-[0.84rem] font-semibold transition-all outline-none resize-none",
+                    touched.message && !isMessageValid(formData.message)
+                      ? "border-red-500 text-red-600 dark:text-red-400"
+                      : "border-zinc-100 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 focus:border-brand-blue"
+                  )}
                   rows={5}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = BRAND.blue)}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = "")}
+                  onBlur={() => setTouched({ ...touched, message: true })}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 />
+                {touched.message && !isMessageValid(formData.message) && (
+                  <p className="text-[0.68rem] font-bold text-red-500 mt-1">Please enter at least 5 characters</p>
+                )}
               </div>
 
               <button

@@ -104,7 +104,7 @@ function buildWaMsg(svcName: string, price: string, hubId: HubId, hubTitle: stri
 }
 
 /* ── Icons ── */
-function HubIcon({ id, size = 22, color }: { id: HubId; size?: number; color?: string }) {
+function HubIcon({ id, size = 28, color }: { id: HubId; size?: number; color?: string }) {
   const p = { size, weight: "fill" as const, color: color ?? "currentColor", "aria-hidden": true }
   switch (id) {
     case "print":    return <Printer    {...p} />
@@ -169,11 +169,11 @@ function ServiceModal({ svc, onClose }: { svc: SelectedService | null; onClose: 
   const waText  = buildWaMsg(svc.name, svc.price, svc.hubId, hub.title)
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={svc.name} className="fixed inset-0 z-[10100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+    <div role="dialog" aria-modal="true" aria-label={svc.name} className="fixed inset-0 z-[10100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={onClose} aria-hidden="true" />
 
       {/* Dark modal card — theme-aware */}
-      <div ref={ref} className="relative w-full max-w-sm rounded-[14px] overflow-hidden shadow-2xl bg-white dark:bg-zinc-950">
+      <div ref={ref} className="relative w-full max-w-md rounded-[20px] overflow-hidden shadow-2xl bg-white dark:bg-zinc-950 animate-in zoom-in-95 spin-in-1 duration-500">
 
         {/* ✕ */}
         <button
@@ -185,22 +185,22 @@ function ServiceModal({ svc, onClose }: { svc: SelectedService | null; onClose: 
         </button>
 
         {/* Header */}
-        <div className="px-6 pt-7 pb-1 pr-14">
-          <div className="flex items-baseline gap-2 flex-wrap mb-3">
-            <span className="font-black text-base uppercase tracking-wide" style={{ color: accent }}>
+        <div className="px-8 pt-10 pb-2 pr-16">
+          <div className="flex items-baseline gap-3 flex-wrap mb-4">
+            <span className="font-black text-xl uppercase tracking-wider" style={{ color: accent }}>
               {svc.sectionTitle}
             </span>
-            <span className="text-sm font-semibold text-zinc-400">— {svc.name}</span>
+            <span className="text-base font-bold text-zinc-400">— {svc.name}</span>
           </div>
-          <div className="h-[2px] w-full rounded-full" style={{ backgroundColor: accent }} />
+          <div className="h-[3px] w-full rounded-full" style={{ backgroundColor: accent }} />
         </div>
 
         {/* Description */}
-        <p className="px-6 pt-5 pb-1 text-sm leading-relaxed text-zinc-300">{desc}</p>
+        <p className="px-8 pt-6 pb-2 text-base leading-relaxed text-zinc-600 dark:text-zinc-300 font-medium">{desc}</p>
 
         {/* Price */}
-        <div className="px-6 py-5 text-left">
-          <span className="font-black text-4xl" style={{ color: accent }}>{svc.price}</span>
+        <div className="px-8 py-8 text-left">
+          <span className="font-black text-5xl tracking-tighter" style={{ color: accent }}>{svc.price}</span>
         </div>
 
         {/* CTA */}
