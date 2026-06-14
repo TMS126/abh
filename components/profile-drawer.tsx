@@ -36,12 +36,22 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
     return () => document.removeEventListener("keydown", onKey)
   }, [open, onClose])
 
+  /* Scroll lock when drawer is open */
+  useEffect(() => {
+    if (open) {
+      document.body.classList.add("scroll-locked")
+    } else {
+      document.body.classList.remove("scroll-locked")
+    }
+    return () => { document.body.classList.remove("scroll-locked") }
+  }, [open])
+
   return (
     <>
       {/* Backdrop */}
       <div
         className={cn(
-          "fixed inset-0 z-[10050] bg-black/40 backdrop-blur-sm transition-opacity duration-300",
+          "fixed inset-0 z-[10050] bg-black/60 backdrop-blur-md transition-opacity duration-300",
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
         onClick={onClose}
@@ -56,7 +66,7 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
         aria-modal="true"
         aria-label={`${BIZ.founder} — founder profile`}
         className={cn(
-          "fixed z-[10060] bg-white dark:bg-zinc-900 shadow-2xl transition-transform duration-300 ease-out",
+          "fixed z-[10060] bg-white dark:bg-[#18181B] shadow-2xl transition-transform duration-300 ease-out",
           /* Mobile */
           "bottom-0 left-0 right-0 rounded-t-[14px] max-h-[85vh] overflow-y-auto",
           /* Desktop */
@@ -72,7 +82,7 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
             ref={closeRef}
             onClick={onClose}
             aria-label="Close profile"
-            className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+            className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-[#27272A] flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-[#3f3f46] transition-colors"
           >
             <X size={15} weight="bold" aria-hidden="true" />
           </button>
@@ -90,7 +100,7 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
           </div>
 
           {/* Name & role */}
-          <h2 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-1">{BIZ.founder}</h2>
+          <h2 className="font-sans font-black text-xl text-zinc-900 dark:text-[#FAFAFA] mb-1">{BIZ.founder}</h2>
           <p className="text-sm font-semibold text-brand-blue dark:text-brand-light-blue mb-1">{FOUNDER_ROLE}</p>
           <p className="abh-label text-[0.62rem] mb-6">{BIZ.location}</p>
 
@@ -110,14 +120,14 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
             </a>
             <a
               href={`mailto:${BIZ.email}`}
-              className="flex items-center justify-center gap-3 py-3.5 px-6 rounded-[14px] font-extrabold text-sm border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all active:scale-95"
+              className="flex items-center justify-center gap-3 py-3.5 px-6 rounded-[14px] font-extrabold text-sm border border-zinc-200 dark:border-[#27272A] text-zinc-700 dark:text-[#A1A1AA] hover:bg-zinc-50 dark:hover:bg-[#27272A] transition-all active:scale-95"
             >
               <Envelope size={18} weight="fill" aria-hidden="true" />
               {BIZ.email}
             </a>
             <a
               href={`tel:${BIZ.phoneE164}`}
-              className="flex items-center justify-center gap-3 py-3.5 px-6 rounded-[14px] font-extrabold text-sm border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all active:scale-95"
+              className="flex items-center justify-center gap-3 py-3.5 px-6 rounded-[14px] font-extrabold text-sm border border-zinc-200 dark:border-[#27272A] text-zinc-700 dark:text-[#A1A1AA] hover:bg-zinc-50 dark:hover:bg-[#27272A] transition-all active:scale-95"
             >
               <Phone size={18} weight="fill" aria-hidden="true" />
               {BIZ.phone}

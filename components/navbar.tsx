@@ -176,7 +176,7 @@ export function Navbar() {
         </div>
       </header>
 
-      {/* ── Fullscreen Drawer ── */}
+      {/* ── Fullscreen Drawer with solid background ── */}
       <div
         id="nav-drawer"
         ref={menuRef}
@@ -188,12 +188,17 @@ export function Navbar() {
           menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
       >
+        {/* Solid blurred background layer */}
         <div
-          className="absolute inset-0 backdrop-blur-md cursor-pointer"
+          className={cn(
+            "absolute inset-0 backdrop-blur-xl bg-white/90 dark:bg-black/90 transition-opacity duration-300",
+            menuOpen ? "opacity-100" : "opacity-0"
+          )}
           onClick={() => setMenuOpen(false)}
           aria-hidden="true"
         />
 
+        {/* Nav menu panel */}
         <nav className="relative z-10 w-full max-w-[320px] px-6 flex flex-col items-center gap-6">
           <div
             className={cn(

@@ -62,51 +62,51 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --card-border:          transparent;
 
   /* ── SHADCN SEMANTIC TOKENS (light) ── */
-  --background:           #FFFFFF;
-  --foreground:           #333333;
+  --background:           #F8FAFC;
+  --foreground:           #0F172A;
   --card:                 #FFFFFF;
-  --card-foreground:      #333333;
+  --card-foreground:      #0F172A;
   --popover:              #FFFFFF;
-  --popover-foreground:   #333333;
+  --popover-foreground:   #0F172A;
   --primary:              #1E6FA8;
   --primary-foreground:   #FFFFFF;
-  --secondary:            #F4F4F4;
-  --secondary-foreground: #333333;
-  --muted:                #EDEDED;
-  --muted-foreground:     #777777;
+  --secondary:            #F1F5F9;
+  --secondary-foreground: #0F172A;
+  --muted:                #F1F5F9;
+  --muted-foreground:     #64748B;
   --accent:               #6FBF1A;
   --accent-foreground:    #FFFFFF;
   --destructive:          #ef4444;
   --destructive-foreground: #FFFFFF;
-  --border:               #D6D6D6;
-  --input:                #EDEDED;
+  --border:               #E2E8F0;
+  --input:                #F1F5F9;
   --ring:                 #1E6FA8;
 }
 
 .dark {
-  --background:           #0D1B2A;
-  --foreground:           #E8EFF6;
-  --card:                 #1A2C3E;
-  --card-foreground:      #E8EFF6;
-  --popover:              #1A2C3E;
-  --popover-foreground:   #E8EFF6;
+  --background:           #000000;
+  --foreground:           #FAFAFA;
+  --card:                 #18181B;
+  --card-foreground:      #FAFAFA;
+  --popover:              #18181B;
+  --popover-foreground:   #FAFAFA;
   --primary:              #A9D6F2;
-  --primary-foreground:   #0D1B2A;
-  --secondary:            #1A2C3E;
-  --secondary-foreground: #E8EFF6;
-  --muted:                #142233;
-  --muted-foreground:     #8AABBF;
+  --primary-foreground:   #000000;
+  --secondary:            #27272A;
+  --secondary-foreground: #FAFAFA;
+  --muted:                #09090B;
+  --muted-foreground:     #A1A1AA;
   --accent:               #CDEB9F;
-  --accent-foreground:    #0D1B2A;
+  --accent-foreground:    #000000;
   --destructive:          #ef4444;
   --destructive-foreground: #FFFFFF;
-  --border:               #243648;
-  --input:                #243648;
+  --border:               #27272A;
+  --input:                #27272A;
   --ring:                 #A9D6F2;
-  --nav-bg:               rgba(13, 27, 42, 0.97);
-  --footer-bg:            #091524;
-  --shadow:               0 4px 28px rgba(0, 0, 0, 0.3);
-  --card-border:          #243648;
+  --nav-bg:               rgba(0, 0, 0, 0.97);
+  --footer-bg:            #09090B;
+  --shadow:               0 4px 28px rgba(0, 0, 0, 0.4);
+  --card-border:          #27272A;
 }
 
 /* ── Tailwind color utilities from brand tokens ── */
@@ -296,6 +296,11 @@ button, a, [role="button"] {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ── Scroll lock utility ── */
+body.scroll-locked {
+  overflow: hidden !important;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────

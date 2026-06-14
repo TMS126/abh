@@ -134,7 +134,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   const { resolvedTheme } = useTheme()
   const isDark   = resolvedTheme === "dark"
   const ref      = useRef<HTMLDivElement>(null)
-  
+
   useEffect(() => {
     if (!svc) return
     const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
@@ -152,28 +152,28 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
 
   return (
     <div className="fixed inset-0 z-[10200] flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div ref={ref} className="relative w-full max-w-sm rounded-[24px] overflow-hidden shadow-2xl bg-white dark:bg-zinc-950 animate-in zoom-in-95 duration-300 border border-zinc-100 dark:border-zinc-800">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
+      <div ref={ref} className="relative w-full max-w-sm rounded-[14px] overflow-hidden shadow-2xl bg-white dark:bg-[#18181B] animate-in zoom-in-95 duration-300 border border-zinc-100 dark:border-[#27272A]">
         <div className="p-8">
           <div className="flex justify-between items-start mb-6">
             <div>
               <span className="text-[0.65rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>
                 {svc.sectionTitle}
               </span>
-              <h3 className="font-sans font-black text-2xl text-zinc-900 dark:text-zinc-50 leading-tight">{svc.name}</h3>
+              <h3 className="font-sans font-black text-2xl text-zinc-900 dark:text-[#FAFAFA] leading-tight">{svc.name}</h3>
             </div>
-            <button onClick={onClose} className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 transition-colors">
+            <button onClick={onClose} className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-[#27272A] flex items-center justify-center text-zinc-500 hover:bg-zinc-200 transition-colors">
               <X size={16} weight="bold" />
             </button>
           </div>
-          <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400 mb-8 font-medium">{desc}</p>
+          <p className="text-sm leading-relaxed text-zinc-600 dark:text-[#A1A1AA] mb-8 font-medium">{desc}</p>
           <div className="flex items-baseline gap-1 mb-8">
             <span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
           </div>
           <a
             href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waText)}`}
             target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-3 w-full py-4 rounded-[18px] font-black text-sm text-white transition-all active:scale-95 hover:opacity-90 shadow-lg shadow-brand-whatsapp/20"
+            className="flex items-center justify-center gap-3 w-full py-4 rounded-[14px] font-black text-sm text-white transition-all active:scale-95 hover:opacity-90 shadow-lg shadow-brand-whatsapp/20"
             style={{ backgroundColor: "#25D366" }}
           >
             <WhatsappLogo size={20} weight="fill" />
@@ -189,9 +189,9 @@ function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; on
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
   const [openSectionIdx, setOpenSectionIdx] = useState<number | null>(0)
-  
+
   if (!hubId) return null
-  
+
   const hub    = HUBS[hubId]
   const colors = HUB_COLORS[hubId as HubKey]
   const accent = isDark ? colors.tagTextDark : colors.tagText
@@ -199,32 +199,31 @@ function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; on
   return (
     <div className="fixed inset-0 z-[10100] flex items-center justify-center p-4 animate-in fade-in duration-300">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
-      <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 spin-in-1 duration-500 border border-zinc-100 dark:border-zinc-800">
-        <div className="p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center" style={{ backgroundColor: `${accent}05` }}>
+      <div className="relative w-full max-w-2xl bg-white dark:bg-[#18181B] rounded-[14px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 spin-in-1 duration-500 border border-zinc-100 dark:border-[#27272A]">
+        <div className="p-8 border-b border-zinc-100 dark:border-[#27272A] flex justify-between items-center" style={{ backgroundColor: `${accent}05` }}>
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: accent }}>
+            <div className="w-14 h-14 rounded-[14px] flex items-center justify-center shadow-lg" style={{ backgroundColor: accent }}>
               <HubIcon id={hubId} size={32} color="#fff" />
             </div>
             <div>
-              <h2 className="font-sans font-black text-2xl text-zinc-900 dark:text-zinc-50">{hub.title}</h2>
-              <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mt-1">{hub.sections.length} Service Categories</p>
+              <h2 className="font-sans font-black text-2xl text-zinc-900 dark:text-[#FAFAFA]">{hub.title}</h2>
             </div>
           </div>
-          <button onClick={onClose} className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center text-zinc-500 shadow-sm hover:bg-zinc-50 transition-all">
+          <button onClick={onClose} className="w-10 h-10 rounded-full bg-white dark:bg-[#27272A] flex items-center justify-center text-zinc-500 shadow-sm hover:bg-zinc-50 transition-all">
             <X size={20} weight="bold" />
           </button>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto p-8 space-y-4">
-          <p className="text-base text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium mb-8">{hub.desc}</p>
-          
+          <p className="text-base text-zinc-600 dark:text-[#A1A1AA] leading-relaxed font-medium mb-8">{hub.desc}</p>
+
           <div className="space-y-3">
             {hub.sections.map((section, sIdx) => {
               const isOpen = openSectionIdx === sIdx
               return (
-                <div key={sIdx} className={cn("rounded-[20px] border transition-all duration-300", isOpen ? "bg-zinc-50 dark:bg-zinc-900/50" : "bg-white dark:bg-zinc-950")} style={{ borderColor: isOpen ? `${accent}30` : "transparent" }}>
+                <div key={sIdx} className={cn("rounded-[14px] border transition-all duration-300", isOpen ? "bg-zinc-50 dark:bg-[#27272A]/50" : "bg-white dark:bg-[#18181B]")} style={{ borderColor: isOpen ? `${accent}30` : "transparent" }}>
                   <button onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)} className="w-full flex items-center justify-between p-5 text-left">
-                    <span className={cn("font-black text-sm tracking-tight transition-colors", isOpen ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-500 dark:text-zinc-400")}>{section.title}</span>
+                    <span className={cn("font-black text-sm tracking-tight transition-colors", isOpen ? "text-zinc-900 dark:text-[#FAFAFA]" : "text-zinc-500 dark:text-[#A1A1AA]")}>{section.title}</span>
                     <CaretDown size={16} className={cn("transition-transform duration-300", isOpen ? "rotate-180" : "rotate-0")} style={{ color: isOpen ? accent : undefined }} />
                   </button>
                   <Accordion open={isOpen}>
@@ -233,7 +232,7 @@ function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; on
                         <button
                           key={iIdx}
                           onClick={() => onSelectService({ name: item.name, price: item.price, hubId, sectionTitle: section.title })}
-                          className="px-4 py-2.5 rounded-[12px] border text-[0.8rem] font-bold transition-all hover:-translate-y-0.5 active:scale-95"
+                          className="px-4 py-2.5 rounded-[14px] border text-[0.8rem] font-bold transition-all hover:-translate-y-0.5 active:scale-95"
                           style={{ borderColor: `${accent}20`, backgroundColor: `${accent}05`, color: accent }}
                         >
                           {item.name}
@@ -246,12 +245,12 @@ function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; on
             })}
           </div>
         </div>
-        
-        <div className="p-8 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 flex flex-col sm:flex-row gap-3">
-          <a href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-2 py-4 rounded-[18px] font-black text-sm text-white bg-brand-whatsapp shadow-lg shadow-brand-whatsapp/20 hover:opacity-90 transition-all">
+
+        <div className="p-8 border-t border-zinc-100 dark:border-[#27272A] bg-zinc-50/50 dark:bg-[#27272A]/30 flex flex-col sm:flex-row gap-3">
+          <a href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-2 py-4 rounded-[14px] font-black text-sm text-white bg-brand-whatsapp shadow-lg shadow-brand-whatsapp/20 hover:opacity-90 transition-all">
             <WhatsappLogo size={20} weight="fill" /> WhatsApp General Enquiry
           </a>
-          <button onClick={onClose} className="px-8 py-4 rounded-[18px] font-black text-sm border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800 transition-all">
+          <button onClick={onClose} className="px-8 py-4 rounded-[14px] font-black text-sm border border-zinc-200 dark:border-[#27272A] text-zinc-600 dark:text-[#A1A1AA] hover:bg-white dark:hover:bg-[#27272A] transition-all">
             Back to Hubs
           </button>
         </div>
@@ -266,6 +265,17 @@ export function ServicesPage() {
   const [activeHub, setActiveHub] = useState<HubId | null>(null)
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
 
+  /* Scroll lock when modals are open */
+  useEffect(() => {
+    const isLocked = activeHub !== null || selectedService !== null
+    if (isLocked) {
+      document.body.classList.add("scroll-locked")
+    } else {
+      document.body.classList.remove("scroll-locked")
+    }
+    return () => { document.body.classList.remove("scroll-locked") }
+  }, [activeHub, selectedService])
+
   return (
     <section className="min-h-screen bg-background pt-[calc(var(--nav-h)+2rem)] pb-24 px-4 md:px-8">
       <div className="max-w-[1300px] mx-auto">
@@ -275,30 +285,30 @@ export function ServicesPage() {
           <div className="abh-divider" />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        {/* Mobile: stacked vertical | Tablet: 2 cols | Desktop: horizontal row */}
+        <div className="flex flex-col md:grid md:grid-cols-2 lg:flex lg:flex-row lg:overflow-x-auto lg:pb-4 lg:gap-6 lg:no-scrollbar gap-6">
           {HUB_ORDER.map(hubId => {
             const hub = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
             const accent = isDark ? colors.tagTextDark : colors.tagText
-            
+
             return (
               <button
                 key={hubId}
                 onClick={() => setActiveHub(hubId)}
-                className="group relative flex flex-col items-center p-8 rounded-[32px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 text-center overflow-hidden"
+                className="group relative flex flex-col items-center p-8 rounded-[14px] border border-zinc-100 dark:border-[#27272A] bg-white dark:bg-[#18181B] hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 text-center overflow-hidden lg:shrink-0 lg:w-[calc(20%-1.2rem)]"
               >
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: `radial-gradient(circle at center, ${accent}08 0%, transparent 70%)` }} />
-                
-                <div className="w-20 h-20 rounded-[24px] flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110 shadow-lg" style={{ backgroundColor: `${accent}10`, color: accent }}>
+
+                <div className="w-20 h-20 rounded-[14px] flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110 shadow-lg" style={{ backgroundColor: `${accent}10`, color: accent }}>
                   <HubIcon id={hubId} size={40} />
                 </div>
-                
-                <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-3 transition-colors group-hover:text-brand-blue">{hub.title}</h3>
-                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 leading-relaxed mb-6 line-clamp-3">{hub.desc}</p>
-                
+
+                <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-[#FAFAFA] mb-3 transition-colors group-hover:text-brand-blue">{hub.title}</h3>
+                <p className="text-sm font-medium text-zinc-500 dark:text-[#A1A1AA] leading-relaxed mb-6 line-clamp-3">{hub.desc}</p>
+
                 <div className="mt-auto flex flex-col items-center gap-4">
                   <div className="h-1.5 w-12 rounded-full transition-all duration-500 group-hover:w-24" style={{ backgroundColor: accent }} />
-                  <span className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200 transition-colors">View {hub.sections.length} Categories</span>
                 </div>
               </button>
             )

@@ -30,7 +30,7 @@ function StripCard({ item }: { item: any }) {
       <div
         className={cn(
           "w-12 h-12 rounded-[14px] flex items-center justify-center shrink-0 border transition-all duration-300 mb-5",
-          "bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800",
+          "bg-white dark:bg-[#18181B] border-zinc-100 dark:border-[#27272A]",
           "group-hover:text-white group-hover:border-transparent"
         )}
         style={{
@@ -80,7 +80,7 @@ export function CtaBar({
               rel="noopener noreferrer"
               onClick={onButtonClick}
               aria-label={buttonText}
-              className="abh-wa-btn w-20 h-20 rounded-[18px] flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-all"
+              className="abh-wa-btn w-20 h-20 rounded-[14px] flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-all"
             >
               <WhatsappLogo weight="fill" className="w-10 h-10" aria-hidden="true" />
             </a>

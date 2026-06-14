@@ -20,7 +20,7 @@ import {
     HubKey,
   } from "@/lib/brand"
 
-// ─── Hub options for the form selector ────────────────────────────────────────
+// ─── Hub options for the form selector ───────────────────────────────────────────────────────────────────
 const FORM_HUBS: Record<string, string> = {
     "Print Hub":                HUB_COLORS.print.primary,
     "Document Hub":             HUB_COLORS.doc.primary,
@@ -30,7 +30,7 @@ const FORM_HUBS: Record<string, string> = {
     "Not Sure — Please Advise": BRAND.neutral500,
   }
 
-// ─── FAQ Accordion ────────────────────────────────────────────────────────────
+// ─── FAQ Accordion ────────────────────────────────────────────────────────────────────────────────────────────────────────
 function FAQAccordion() {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
 
@@ -68,7 +68,7 @@ function FAQAccordion() {
                 </button>
                 <div
                   className="transition-all duration-300 ease-in-out overflow-hidden"
-                  style={{ maxHeight: isOpen ? "320px" : "0px", opacity: isOpen ? 1 : 0 }}
+                  style={{ maxHeight: isOpen ? "800px" : "0px", opacity: isOpen ? 1 : 0 }}
                 >
                   <div className="px-5 pb-5 pt-3 border-t border-zinc-100 dark:border-zinc-800 abh-body">
                     {faq.answer}
@@ -83,7 +83,7 @@ function FAQAccordion() {
   )
 }
 
-// ─── Hub Selector ────────────────────────────────────────────────────────────
+// ─── Hub Selector ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
 function HubSelect({ value, onChange }: { value: string; onChange: (val: string) => void }) {
   const [isOpen, setIsOpen]   = useState(false)
   const ref                   = useRef<HTMLDivElement>(null)
@@ -148,7 +148,7 @@ function HubSelect({ value, onChange }: { value: string; onChange: (val: string)
   )
 }
 
-// ─── Contact Page ────────────────────────────────────────────────────────────
+// ─── Contact Page ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
 export function ContactPage() {
   const [formData, setFormData] = useState({
     name: "", phone: "", service: "", message: "",
