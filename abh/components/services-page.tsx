@@ -1,16 +1,15 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { X, WhatsappLogo, Printer, FileText, PaintBrush, Globe, Desktop, CaretDown, PaperPlaneTilt } from "@phosphor-icons/react"
+import { X, WhatsappLogo, Printer, FileText, PaintBrush, Globe, Desktop, CaretDown, PaperPlaneTilt, Info } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { BIZ, HUB_COLORS, HubKey } from "@/lib/brand"
 import { HUBS, HubId } from "@/lib/data"
-import { useInstanceGuard } from "@/hooks/use-instance-guard"
 
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
-/* ── Service descriptions (one per service name) ── */
+/* ── Service descriptions ── */
 const SVC_DESC: Record<string, string> = {
   "Black & White":               "Standard B&W printing on A4 paper. Ideal for documents, school work, and official letters.",
   "Colour":                      "Vibrant full-colour printing on A4. Perfect for flyers, forms, and colourful documents.",
@@ -91,7 +90,6 @@ const SVC_DESC: Record<string, string> = {
   "Microsoft 365 Setup":        "Install and configure Microsoft 365 — Word, Excel, Outlook — on your device.",
 }
 
-/* ── Dynamic WA messages per hub ── */
 function buildWaMsg(svcName: string, price: string, hubId: HubId, hubTitle: string): string {
   const msgs: Record<HubId, string> = {
     print:    `Hi ${BIZ.name}! I need "${svcName}" (${price}). I'll be coming in — are you available today?`,
@@ -103,7 +101,6 @@ function buildWaMsg(svcName: string, price: string, hubId: HubId, hubTitle: stri
   return msgs[hubId]
 }
 
-/* ── Icons ── */
 function HubIcon({ id, size = 28, color }: { id: HubId; size?: number; color?: string }) {
   const p = { size, weight: "fill" as const, color: color ?? "currentColor", "aria-hidden": true }
   switch (id) {
@@ -115,8 +112,7 @@ function HubIcon({ id, size = 28, color }: { id: HubId; size?: number; color?: s
   }
 }
 
-/* ── Measured accordion ── */
-function MiniAccordion({ open, children }: { open: boolean; children: React.ReactNode }) {
+function Accordion({ open, children }: { open: boolean; children: React.ReactNode }) {
   const inner = useRef<HTMLDivElement>(null)
   const [h, setH] = useState(0)
   useEffect(() => {
@@ -126,39 +122,25 @@ function MiniAccordion({ open, children }: { open: boolean; children: React.Reac
     return () => ro.disconnect()
   }, [])
   return (
-    <div style={{ height: open ? h : 0 }} className="overflow-hidden transition-[height] duration-250 ease-in-out">
+    <div style={{ height: open ? h : 0 }} className="overflow-hidden transition-[height] duration-300 ease-in-out">
       <div ref={inner}>{children}</div>
     </div>
   )
 }
 
-/* ── Service modal — matches screenshot (dark card) ── */
 interface SelectedService { name: string; price: string; hubId: HubId; sectionTitle: string }
 
-function ServiceModal({ svc, onClose }: { svc: SelectedService | null; onClose: () => void }) {
+function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onClose: () => void }) {
   const { resolvedTheme } = useTheme()
   const isDark   = resolvedTheme === "dark"
   const ref      = useRef<HTMLDivElement>(null)
-  const closeRef = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => { if (svc) closeRef.current?.focus() }, [svc])
+  
   useEffect(() => {
     if (!svc) return
-    const fn = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { onClose(); return }
-      if (e.key !== "Tab" || !ref.current) return
-      const els = ref.current.querySelectorAll<HTMLElement>('button,[href],[tabindex]:not([tabindex="-1"])')
-      const first = els[0]; const last = els[els.length - 1]
-      if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last?.focus() } }
-      else            { if (document.activeElement === last)  { e.preventDefault(); first?.focus() } }
-    }
+    const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
     document.addEventListener("keydown", fn)
     return () => document.removeEventListener("keydown", fn)
   }, [svc, onClose])
-  useEffect(() => {
-    document.body.style.overflow = svc ? "hidden" : ""
-    return () => { document.body.style.overflow = "" }
-  }, [svc])
 
   if (!svc) return null
 
@@ -169,50 +151,33 @@ function ServiceModal({ svc, onClose }: { svc: SelectedService | null; onClose: 
   const waText  = buildWaMsg(svc.name, svc.price, svc.hubId, hub.title)
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={svc.name} className="fixed inset-0 z-[10100] flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={onClose} aria-hidden="true" />
-
-      {/* Dark modal card — theme-aware */}
-      <div ref={ref} className="relative w-full max-w-md rounded-[20px] overflow-hidden shadow-2xl bg-white dark:bg-zinc-950 animate-in zoom-in-95 spin-in-1 duration-500">
-
-        {/* ✕ */}
-        <button
-          ref={closeRef} onClick={onClose} aria-label="Close"
-          className="absolute top-4 right-4 w-7 h-7 rounded-full flex items-center justify-center z-10 transition-opacity hover:opacity-80"
-          style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
-        >
-          <X size={13} weight="bold" color="white" aria-hidden="true" />
-        </button>
-
-        {/* Header */}
-        <div className="px-8 pt-10 pb-2 pr-16">
-          <div className="flex items-baseline gap-3 flex-wrap mb-4">
-            <span className="font-black text-xl uppercase tracking-wider" style={{ color: accent }}>
-              {svc.sectionTitle}
-            </span>
-            <span className="text-base font-bold text-zinc-400">— {svc.name}</span>
+    <div className="fixed inset-0 z-[10200] flex items-center justify-center p-4 animate-in fade-in duration-300">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div ref={ref} className="relative w-full max-w-sm rounded-[24px] overflow-hidden shadow-2xl bg-white dark:bg-zinc-950 animate-in zoom-in-95 duration-300 border border-zinc-100 dark:border-zinc-800">
+        <div className="p-8">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <span className="text-[0.65rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>
+                {svc.sectionTitle}
+              </span>
+              <h3 className="font-sans font-black text-2xl text-zinc-900 dark:text-zinc-50 leading-tight">{svc.name}</h3>
+            </div>
+            <button onClick={onClose} className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 transition-colors">
+              <X size={16} weight="bold" />
+            </button>
           </div>
-          <div className="h-[3px] w-full rounded-full" style={{ backgroundColor: accent }} />
-        </div>
-
-        {/* Description */}
-        <p className="px-8 pt-6 pb-2 text-base leading-relaxed text-zinc-600 dark:text-zinc-300 font-medium">{desc}</p>
-
-        {/* Price */}
-        <div className="px-8 py-8 text-left">
-          <span className="font-black text-5xl tracking-tighter" style={{ color: accent }}>{svc.price}</span>
-        </div>
-
-        {/* CTA */}
-        <div className="px-6 pb-7">
+          <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400 mb-8 font-medium">{desc}</p>
+          <div className="flex items-baseline gap-1 mb-8">
+            <span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
+          </div>
           <a
             href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waText)}`}
             target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2.5 w-full py-4 rounded-[14px] font-extrabold text-sm text-white transition-all active:scale-95 hover:opacity-90"
+            className="flex items-center justify-center gap-3 w-full py-4 rounded-[18px] font-black text-sm text-white transition-all active:scale-95 hover:opacity-90 shadow-lg shadow-brand-whatsapp/20"
             style={{ backgroundColor: "#25D366" }}
           >
-            <WhatsappLogo size={18} weight="fill" aria-hidden="true" />
-            WhatsApp Us
+            <WhatsappLogo size={20} weight="fill" />
+            Order on WhatsApp
           </a>
         </div>
       </div>
@@ -220,207 +185,129 @@ function ServiceModal({ svc, onClose }: { svc: SelectedService | null; onClose: 
   )
 }
 
-/* ── Hub Card ── */
-function HubCard({ hubId, onSelectService }: { hubId: HubId; onSelectService: (svc: SelectedService) => void }) {
+function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; onClose: () => void; onSelectService: (svc: SelectedService) => void }) {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
+  const [openSectionIdx, setOpenSectionIdx] = useState<number | null>(0)
+  
+  if (!hubId) return null
+  
   const hub    = HUBS[hubId]
   const colors = HUB_COLORS[hubId as HubKey]
-  const { resolvedTheme } = useTheme()
-  const isDark  = resolvedTheme === "dark"
-  const accent  = isDark ? colors.tagTextDark : colors.tagText
-
-  const [isFlipped,      setIsFlipped]      = useState(false)
-  const [isHovered,      setIsHovered]      = useState(false)
-  const [hasHover,       setHasHover]       = useState(true)
-  const [openSectionIdx, setOpenSectionIdx] = useState<number | null>(null)
-  const { active, activate, deactivate } = useInstanceGuard()
-
-  const instanceKey = `hub-${hubId}` as any
-
-  useEffect(() => { setHasHover(window.matchMedia("(hover: hover)").matches) }, [])
-
-  const handleFrontClick = useCallback(() => {
-    if (isFlipped) return
-    if (hasHover) {
-      // Desktop hover: request instance slot
-      if (active === instanceKey || active === null) {
-        activate(instanceKey)
-        setIsFlipped(true)
-      }
-    } else {
-      // Mobile: single tap flips
-      if (active === instanceKey || active === null) {
-        activate(instanceKey)
-        setIsFlipped(true)
-      }
-    }
-  }, [isFlipped, hasHover, active, instanceKey, activate])
-
-  const flipBack = useCallback((e: React.MouseEvent | React.KeyboardEvent) => {
-    e.stopPropagation(); setIsFlipped(false); deactivate(instanceKey)
-  }, [instanceKey, deactivate])
-
-  const isHighlighted = hasHover ? isHovered : isFlipped
-  const hasAnyOpen    = openSectionIdx !== null
+  const accent = isDark ? colors.tagTextDark : colors.tagText
 
   return (
-    <div className="relative w-full" style={{ perspective: "1100px", height: "500px" }}>
-      <div
-        className="relative w-full h-full transition-transform duration-500 ease-out"
-        style={{ transformStyle: "preserve-3d", transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)" }}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        {/* ══ FRONT ══ */}
-        <div
-          className="absolute inset-0 rounded-[14px] p-7 flex flex-col gap-4 border bg-white dark:bg-zinc-900 transition-all duration-300 cursor-pointer"
-          style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", borderColor: isHighlighted ? accent : undefined, boxShadow: isHighlighted ? `0 8px 30px ${accent}20` : undefined }}
-          onClick={handleFrontClick}
-          role="button" tabIndex={0} aria-label={`${hub.title} — tap to see services`}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleFrontClick() } }}
-        >
-          <div className="w-14 h-14 flex items-center justify-center transition-all duration-300"
-            style={{ transform: isHighlighted ? "scale(1.15)" : "scale(1)" }}>
-            <HubIcon id={hubId} size={isHighlighted ? 30 : 24} color={isHighlighted ? accent : (isDark ? "#a1a1aa" : "#71717a")} />
-          </div>
-          <h3 className="font-sans font-black leading-tight transition-all duration-300"
-            style={{ color: isHighlighted ? accent : (isDark ? "#f4f4f5" : "#18181b"), fontSize: isHighlighted ? "1.55rem" : "1.05rem" }}>
-            {hub.title}
-          </h3>
-          <div className="h-1 w-10 rounded-full shrink-0" style={{ backgroundColor: accent }} aria-hidden="true" />
-          <p className="text-sm leading-relaxed transition-colors duration-300 line-clamp-4"
-            style={{ color: isHighlighted ? accent : (isDark ? "#a1a1aa" : "#71717a") }}>
-            {hub.desc}
-          </p>
-          <div className="flex flex-wrap gap-1.5 mt-auto" aria-hidden="true">
-            {hub.previews.map(p => (
-              <span key={p} className="text-[0.62rem] font-black uppercase tracking-wider px-2.5 py-1 rounded-full"
-                style={{ backgroundColor: `${accent}15`, color: accent }}>{p}</span>
-            ))}
-          </div>
-        </div>
-
-        {/* ══ BACK ══ */}
-        <div
-          className="absolute inset-0 rounded-[14px] overflow-hidden flex flex-col"
-          style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)", backgroundColor: isDark ? "#0f172a" : "#ffffff", border: `1.5px solid ${accent}` }}
-        >
-          {/* Back header — click to flip back */}
-          <div
-            className="flex items-center justify-between px-5 py-4 shrink-0 cursor-pointer select-none"
-            style={{ backgroundColor: isDark ? "#27272a" : "#f4f4f5" }}
-            onClick={flipBack}
-            role="button" tabIndex={0} aria-label={`Flip back to ${hub.title}`}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") flipBack(e) }}
-          >
-            <div className="flex items-center gap-2.5">
-              <HubIcon id={hubId} size={18} color="#fff" />
-              <span className="font-extrabold text-sm text-white">{hub.title}</span>
+    <div className="fixed inset-0 z-[10100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
+      <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 spin-in-1 duration-500 border border-zinc-100 dark:border-zinc-800">
+        <div className="p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center" style={{ backgroundColor: `${accent}05` }}>
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: accent }}>
+              <HubIcon id={hubId} size={32} color="#fff" />
             </div>
-            <button onClick={flipBack} aria-label="Flip back"
-              className="w-7 h-7 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: "rgba(255,255,255,0.2)" }}>
-              <X size={13} weight="bold" color="white" aria-hidden="true" />
-            </button>
+            <div>
+              <h2 className="font-sans font-black text-2xl text-zinc-900 dark:text-zinc-50">{hub.title}</h2>
+              <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mt-1">{hub.sections.length} Service Categories</p>
+            </div>
           </div>
-
-          {/* Description */}
-          <p className="px-5 pt-3 pb-2 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400 shrink-0">{hub.desc}</p>
-
-          {/* Accordion sections */}
-          <div className="flex-1 overflow-y-auto px-3 pb-1">
+          <button onClick={onClose} className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center text-zinc-500 shadow-sm hover:bg-zinc-50 transition-all">
+            <X size={20} weight="bold" />
+          </button>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-8 space-y-4">
+          <p className="text-base text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium mb-8">{hub.desc}</p>
+          
+          <div className="space-y-3">
             {hub.sections.map((section, sIdx) => {
-              const isOpen   = openSectionIdx === sIdx
-              const isDimmed = hasAnyOpen && !isOpen
+              const isOpen = openSectionIdx === sIdx
               return (
-                <div key={sIdx} className="mb-1 rounded-[10px] overflow-hidden transition-all duration-300"
-                  style={{ filter: isDimmed ? "grayscale(100%)" : "none", opacity: isDimmed ? 0.28 : 1, transform: isDimmed ? "scale(0.98)" : "scale(1)" }}>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setOpenSectionIdx(isOpen ? null : sIdx) }}
-                    aria-expanded={isOpen} aria-controls={`sec-${hubId}-${sIdx}`}
-                    className="w-full flex items-center justify-between px-4 py-3 text-left rounded-[10px] transition-colors"
-                    style={{ backgroundColor: isOpen ? `${accent}15` : "transparent", color: isOpen ? accent : (isDark ? "#a1a1aa" : "#52525b") }}
-                  >
-                    <span className="font-extrabold text-xs">{section.title}</span>
-                    <CaretDown size={12} className={cn("transition-transform duration-200", isOpen && "rotate-180")} aria-hidden="true" />
+                <div key={sIdx} className={cn("rounded-[20px] border transition-all duration-300", isOpen ? "bg-zinc-50 dark:bg-zinc-900/50" : "bg-white dark:bg-zinc-950")} style={{ borderColor: isOpen ? `${accent}30` : "transparent" }}>
+                  <button onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)} className="w-full flex items-center justify-between p-5 text-left">
+                    <span className={cn("font-black text-sm tracking-tight transition-colors", isOpen ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-500 dark:text-zinc-400")}>{section.title}</span>
+                    <CaretDown size={16} className={cn("transition-transform duration-300", isOpen ? "rotate-180" : "rotate-0")} style={{ color: isOpen ? accent : undefined }} />
                   </button>
-                  <div id={`sec-${hubId}-${sIdx}`} role="region" aria-label={section.title}>
-                    <MiniAccordion open={isOpen}>
-                      <div className="px-3 pt-1 pb-3">
-                        <p className="text-[0.6rem] italic mb-2 px-1" style={{ color: isDark ? "#52525b" : "#a1a1aa" }}>
-                          Tap a service to see details &amp; price
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {section.items.map((item, iIdx) => (
-                            <button key={iIdx}
-                              onClick={(e) => { e.stopPropagation(); onSelectService({ name: item.name, price: item.price, hubId, sectionTitle: section.title }) }}
-                              className="text-[0.7rem] font-semibold px-2.5 py-1.5 rounded-[8px] border transition-all duration-150 active:scale-95"
-                              style={{ borderColor: `${accent}45`, color: accent, backgroundColor: `${accent}10` }}
-                              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = `${accent}22` }}
-                              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = `${accent}10` }}
-                            >
-                              {item.name}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </MiniAccordion>
-                  </div>
+                  <Accordion open={isOpen}>
+                    <div className="px-5 pb-5 flex flex-wrap gap-2">
+                      {section.items.map((item, iIdx) => (
+                        <button
+                          key={iIdx}
+                          onClick={() => onSelectService({ name: item.name, price: item.price, hubId, sectionTitle: section.title })}
+                          className="px-4 py-2.5 rounded-[12px] border text-[0.8rem] font-bold transition-all hover:-translate-y-0.5 active:scale-95"
+                          style={{ borderColor: `${accent}20`, backgroundColor: `${accent}05`, color: accent }}
+                        >
+                          {item.name}
+                        </button>
+                      ))}
+                    </div>
+                  </Accordion>
                 </div>
               )
             })}
           </div>
-
-          {/* Bottom CTAs */}
-          <div className="px-4 pb-4 pt-2 flex flex-col gap-2 shrink-0 border-t" style={{ borderColor: `${accent}20` }}>
-            <a
-              href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(`Hi ${BIZ.name}! I'm interested in your ${hub.title}. Can you tell me more?`)}`}
-              target="_blank" rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="flex items-center justify-center gap-2 py-3 rounded-[14px] font-extrabold text-xs text-white transition-all active:scale-95 hover:opacity-90"
-              style={{ backgroundColor: "#25D366" }}
-            >
-              <WhatsappLogo size={15} weight="fill" aria-hidden="true" /> WhatsApp Us
-            </a>
-            <a
-              href={`mailto:${BIZ.email}?subject=Enquiry: ${encodeURIComponent(hub.title)}&body=Hi ${BIZ.name}, I'd like to enquire about your ${hub.title}.`}
-              onClick={(e) => e.stopPropagation()}
-              className="flex items-center justify-center gap-2 py-2.5 rounded-[14px] font-extrabold text-xs border transition-all active:scale-95"
-              style={{ borderColor: `${accent}40`, color: accent }}
-            >
-              <PaperPlaneTilt size={13} weight="fill" aria-hidden="true" /> Send Enquiry
-            </a>
-          </div>
+        </div>
+        
+        <div className="p-8 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 flex flex-col sm:flex-row gap-3">
+          <a href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-2 py-4 rounded-[18px] font-black text-sm text-white bg-brand-whatsapp shadow-lg shadow-brand-whatsapp/20 hover:opacity-90 transition-all">
+            <WhatsappLogo size={20} weight="fill" /> WhatsApp General Enquiry
+          </a>
+          <button onClick={onClose} className="px-8 py-4 rounded-[18px] font-black text-sm border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800 transition-all">
+            Back to Hubs
+          </button>
         </div>
       </div>
     </div>
   )
 }
 
-/* ── Page ── */
 export function ServicesPage() {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
+  const [activeHub, setActiveHub] = useState<HubId | null>(null)
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
-  const closeModal = useCallback(() => setSelectedService(null), [])
 
   return (
-    <section id="main-content" aria-label="Our services"
-      className="min-h-screen bg-background pt-[calc(var(--nav-h)+2.5rem)] pb-24 px-4 md:px-8">
+    <section className="min-h-screen bg-background pt-[calc(var(--nav-h)+2rem)] pb-24 px-4 md:px-8">
       <div className="max-w-[1300px] mx-auto">
-        <div className="text-center mb-14">
-          <h1 className="abh-page-title mb-4">Our Services</h1>
-          <p className="abh-tagline max-w-2xl mx-auto">
-            Tap a hub to explore. Tap a service to see pricing and order via WhatsApp.
-          </p>
-          <div className="abh-divider" aria-hidden="true" />
+        <div className="text-center mb-16">
+          <h1 className="abh-page-title mb-4">Our Service Hubs</h1>
+          <p className="abh-tagline max-w-2xl mx-auto">Explore our ecosystem. Tap a hub to view all available services and instant pricing.</p>
+          <div className="abh-divider" />
         </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-          {HUB_ORDER.map(hubId => (
-            <div key={hubId} className="min-w-[260px]">
-              <HubCard hubId={hubId} onSelectService={setSelectedService} />
-            </div>
-          ))}
+          {HUB_ORDER.map(hubId => {
+            const hub = HUBS[hubId]
+            const colors = HUB_COLORS[hubId as HubKey]
+            const accent = isDark ? colors.tagTextDark : colors.tagText
+            
+            return (
+              <button
+                key={hubId}
+                onClick={() => setActiveHub(hubId)}
+                className="group relative flex flex-col items-center p-8 rounded-[32px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 text-center overflow-hidden"
+              >
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: `radial-gradient(circle at center, ${accent}08 0%, transparent 70%)` }} />
+                
+                <div className="w-20 h-20 rounded-[24px] flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110 shadow-lg" style={{ backgroundColor: `${accent}10`, color: accent }}>
+                  <HubIcon id={hubId} size={40} />
+                </div>
+                
+                <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-3 transition-colors group-hover:text-brand-blue">{hub.title}</h3>
+                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 leading-relaxed mb-6 line-clamp-3">{hub.desc}</p>
+                
+                <div className="mt-auto flex flex-col items-center gap-4">
+                  <div className="h-1.5 w-12 rounded-full transition-all duration-500 group-hover:w-24" style={{ backgroundColor: accent }} />
+                  <span className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200 transition-colors">View {hub.sections.length} Categories</span>
+                </div>
+              </button>
+            )
+          })}
         </div>
       </div>
-      <ServiceModal svc={selectedService} onClose={closeModal} />
+
+      <HubModal hubId={activeHub} onClose={() => setActiveHub(null)} onSelectService={setSelectedService} />
+      <ServiceDetailModal svc={selectedService} onClose={() => setSelectedService(null)} />
     </section>
   )
 }

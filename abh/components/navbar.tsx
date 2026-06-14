@@ -189,7 +189,7 @@ export function Navbar() {
         )}
       >
         <div
-          className="absolute inset-0 backdrop-blur-md bg-white/80 dark:bg-[#081428]/85 cursor-pointer"
+          className="absolute inset-0 backdrop-blur-md cursor-pointer"
           onClick={() => setMenuOpen(false)}
           aria-hidden="true"
         />
@@ -202,28 +202,25 @@ export function Navbar() {
             )}
           >
             {NAV_ITEMS.map((item, index) => {
-              const isActive = pathname === item.path && !item.isCta
+              const isActive = pathname === item.path
               return (
                 <div key={item.id} className="relative flex items-center w-full justify-center">
-                  {isActive && (
-                    <CaretLeft
-                      weight="fill"
-                      size={14}
-                      className="absolute left-[calc(50%-90px)] text-brand-blue"
-                      aria-hidden="true"
-                    />
-                  )}
                   <button
                     onClick={() => navigate(item.path)}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "py-2.5 px-8 rounded-[14px] font-sans font-extrabold text-sm transition-all duration-300 active:scale-95 text-center shadow-sm cursor-pointer w-[160px]",
+                      "py-3 px-8 rounded-[14px] font-sans font-black text-sm transition-all duration-300 active:scale-95 text-center cursor-pointer w-[180px] relative overflow-hidden group",
                       item.isCta
-                        ? "bg-brand-blue text-white active:bg-brand-orange hover:opacity-90 dark:bg-brand-blue dark:text-white dark:active:bg-brand-orange border-none"
-                        : "bg-zinc-50 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border border-zinc-100 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        ? "bg-brand-blue text-white active:bg-brand-orange hover:shadow-lg"
+                        : isActive
+                          ? "bg-brand-blue/10 text-brand-blue dark:bg-brand-blue/20 dark:text-brand-light-blue border-none"
+                          : "text-zinc-500 dark:text-zinc-400 hover:text-brand-blue dark:hover:text-brand-light-blue"
                     )}
                     style={{ transitionDelay: menuOpen ? `${index * 35}ms` : "0ms" }}
                   >
+                    {isActive && !item.isCta && (
+                      <span className="absolute left-0 top-0 bottom-0 w-1 bg-brand-blue rounded-full" />
+                    )}
                     {item.label}
                   </button>
                 </div>
