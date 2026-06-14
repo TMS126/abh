@@ -19,8 +19,8 @@ const dmSans = DM_Sans({
 })
 
 export const metadata: Metadata = {
-  title: `${BIZ.name} — Your Local Tech & Print Partner`,
-  description: `From printing your documents to navigating government services — we make it simple, fast, and friendly. Right here in ${BIZ.location}.`,
+  title: `${BIZ.name} — ${BIZ.tagline}`,
+  description: `We make technology and important services accessible to everyone — no jargon, no stress. Right here in ${BIZ.location}.`,
   keywords: ['printing', 'CV services', 'tech support', 'government services', 'SASSA', 'SARS', 'Kgotsong', 'Bothaville'],
   authors: [{ name: BIZ.name }],
   icons: {
