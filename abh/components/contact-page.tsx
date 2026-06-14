@@ -154,17 +154,24 @@ export function ContactPage() {
     name: "", phone: "", service: "", message: "",
   })
 
+  const sanitize = (str: string) => str.trim().replace(/[<>]/g, "");
+
   const isFormValid =
     formData.name.trim() !== "" &&
-    formData.phone.length >= 7 &&
+    /^\+?[0-9\s-]{7,15}$/.test(formData.phone.trim()) &&
     formData.service !== "" &&
     formData.message.trim() !== ""
 
   const handleSubmit = () => {
-    if (!isFormValid) return
-    const text = `Hello ${BIZ.name}!\n\nName: ${formData.name}\nPhone: ${formData.phone}\nService: ${formData.service}\nMessage: ${formData.message}`
-    window.open(`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(text)}`, "_blank")
-  }
+    if (!isFormValid) return;
+    const sName = sanitize(formData.name);
+    const sPhone = sanitize(formData.phone);
+    const sService = sanitize(formData.service);
+    const sMessage = sanitize(formData.message);
+
+    const text = `Hello ${BIZ.name}!\n\nName: ${sName}\nPhone: ${sPhone}\nService: ${sService}\nMessage: ${sMessage}`;
+    window.open(`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(text)}`, "_blank");
+  };
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300 pt-[74px]">

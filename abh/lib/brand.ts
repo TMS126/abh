@@ -162,7 +162,14 @@ export const HUB_COLORS: Record<HubKey, {
 }
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
-export const NAV_ITEMS = [
+export type NavItem = {
+  id: string;
+  label: string;
+  path: string;
+  isCta?: boolean;
+};
+
+export const NAV_ITEMS: NavItem[] = [
   { id: "home",     label: "Home",     path: "/" },
   { id: "services", label: "Services", path: "/services" },
   { id: "about",    label: "About",    path: "/about" },
