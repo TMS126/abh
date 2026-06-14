@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Nunito, DM_Sans } from 'next/font/google'
+import { Nunito, DM_Sans, Geist_Mono } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Analytics } from '@vercel/analytics/next'
 import { InstanceGuardProvider } from '@/hooks/use-instance-guard'
@@ -15,6 +15,12 @@ const nunito = Nunito({
 const dmSans = DM_Sans({ 
   subsets: ['latin'],
   variable: '--font-dm-sans',
+  display: 'swap',
+})
+
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
   display: 'swap',
 })
 
@@ -46,7 +52,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${nunito.variable} ${dmSans.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${nunito.variable} ${dmSans.variable} ${geistMono.variable}`}>
       <body className="font-sans antialiased min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors duration-300">
         <ThemeProvider
           attribute="class"
