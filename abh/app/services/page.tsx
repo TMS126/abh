@@ -2,6 +2,8 @@ import { ServicesPage } from "@/components/services-page"
 import { CtaBar } from "@/components/strip-section"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import { WhatsappLogo } from "@phosphor-icons/react"
+
 
 export const metadata = {
   title: "Services — Apexbytes Hub",
