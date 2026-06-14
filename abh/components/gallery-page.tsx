@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react"
 import { ArrowLeft, ArrowRight, X, Check } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { BRAND, HUB_COLORS, HubKey } from "@/lib/brand"
 import { PROJECTS } from "@/lib/data"
@@ -25,8 +26,16 @@ function ProjectImage({ src, alt, className }: { src: string; alt: string; class
       <span className="text-xs text-zinc-400 select-none">No image</span>
     </div>
   ) : (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt={alt} className={cn("object-cover w-full h-full", className)} onError={() => setErr(true)} />
+    <div className={cn("relative", className)}>
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        className="object-cover"
+        onError={() => setErr(true)}
+      />
+    </div>
   )
 }
 

@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { Analytics } from '@vercel/analytics/next'
 import { InstanceGuardProvider } from '@/hooks/use-instance-guard'
 import { BIZ, BRAND } from '@/lib/brand'
+import { LocalBusinessJsonLd } from '@/components/ui/json-ld'
 import './globals.css'
 
 const nunito = Nunito({ 
@@ -60,6 +61,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange={false}
         >
+          <LocalBusinessJsonLd />
           <InstanceGuardProvider>
             {children}
           </InstanceGuardProvider>
