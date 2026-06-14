@@ -1,0 +1,6 @@
+{
+  "rootDirectory": "abh",
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "buildCommand": "next build",
+  "framework": "nextjs"
+}
