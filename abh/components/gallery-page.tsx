@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback, useEffect } from "react"
-import { ArrowLeft, ArrowRight, X, Check } from "@phosphor-icons/react"
+import { ArrowLeft, ArrowRight, X, Check, Info } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
