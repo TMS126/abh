@@ -188,8 +188,8 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
 
       <Modal open={isTermsOpen} onClose={() => setIsTermsOpen(false)} title="Terms & Service Policies" subtitle={`${BIZ.name} • Studio Rules`}>
         <div className="p-8 space-y-8">
-          <div className="p-6 rounded-[14px] border" style={{ backgroundColor: `${BRAND.orange}0D`, borderColor: `${BRAND.orange}1A` }}>
-            <h3 className="font-bold flex items-center gap-2 mb-3 text-sm" style={{ color: BRAND.orange }}><Info weight="fill" className="w-4 h-4" aria-hidden="true" /> Operational Rule</h3>
+          <div className="p-6 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+            <h3 className="font-bold flex items-center gap-2 mb-3 text-sm text-brand-orange"><Info weight="fill" className="w-4 h-4" aria-hidden="true" /> Operational Rule</h3>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">By starting any order or sending a message through our WhatsApp channels, you confirm full agreement with all operational rules and terms below.</p>
           </div>
           {TERMS_SECTIONS.map((s, i) => (
@@ -216,7 +216,7 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
                 </button>
                 <div id={`faq-${i}`} role="region" aria-label={faq.question}>
                   <Accordion open={open}>
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-3 leading-relaxed">{faq.answer}</p>
+                    <div className="text-sm text-zinc-500 dark:text-zinc-400 mt-3 leading-relaxed">{faq.answer}</div>
                   </Accordion>
                 </div>
               </div>

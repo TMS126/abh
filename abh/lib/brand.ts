@@ -163,11 +163,11 @@ export const HUB_COLORS: Record<HubKey, {
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
 export const NAV_ITEMS = [
-  { id: "home",     label: "Home",       path: "/" },
-  { id: "services", label: "Services",   path: "/services" },
-  { id: "about",    label: "About Us",   path: "/about" },
-  { id: "gallery",  label: "Gallery",    path: "/gallery" },
-  { id: "contact",  label: "Contact Us", path: "/contact", isCta: true },
+  { id: "home",     label: "Home",     path: "/" },
+  { id: "services", label: "Services", path: "/services" },
+  { id: "about",    label: "About",    path: "/about" },
+  { id: "gallery",  label: "Gallery",  path: "/gallery" },
+  { id: "contact",  label: "Contact",  path: "/contact", isCta: true },
 ] as const
 
 // ─── MARQUEE CONTENT ─────────────────────────────────────────────────────────

@@ -171,8 +171,8 @@ function ServiceModal({ svc, onClose }: { svc: SelectedService | null; onClose: 
     <div role="dialog" aria-modal="true" aria-label={svc.name} className="fixed inset-0 z-[10100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
 
-      {/* Dark modal card — premium feel matching screenshot */}
-      <div ref={ref} className="relative w-full max-w-sm rounded-[14px] overflow-hidden shadow-2xl" style={{ backgroundColor: "#0f172a" }}>
+      {/* Dark modal card — theme-aware */}
+      <div ref={ref} className="relative w-full max-w-sm rounded-[14px] overflow-hidden shadow-2xl bg-white dark:bg-zinc-950">
 
         {/* ✕ */}
         <button
@@ -239,10 +239,10 @@ function HubCard({ hubId, onSelectService }: { hubId: HubId; onSelectService: (s
     if (isFlipped) return
     if (hasHover) { setIsFlipped(true) }
     else {
-      if (tapCount === 0) setTapCount(1)
-      else { setTapCount(0); setIsFlipped(true) }
+      // Single tap flips on mobile
+      setIsFlipped(true)
     }
-  }, [isFlipped, hasHover, tapCount])
+  }, [isFlipped, hasHover])
 
   const flipBack = useCallback((e: React.MouseEvent | React.KeyboardEvent) => {
     e.stopPropagation(); setIsFlipped(false); setTapCount(0)
@@ -267,9 +267,9 @@ function HubCard({ hubId, onSelectService }: { hubId: HubId; onSelectService: (s
           role="button" tabIndex={0} aria-label={`${hub.title} — tap to see services`}
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleFrontClick() } }}
         >
-          <div className="w-14 h-14 rounded-[14px] flex items-center justify-center transition-all duration-300"
-            style={{ backgroundColor: isHighlighted ? `${accent}18` : (isDark ? "#27272a" : "#f4f4f5"), transform: isHighlighted ? "scale(1.15)" : "scale(1)" }}>
-            <HubIcon id={hubId} size={isHighlighted ? 30 : 24} color={isHighlighted ? accent : (isDark ? "#71717a" : "#71717a")} />
+          <div className="w-14 h-14 flex items-center justify-center transition-all duration-300"
+            style={{ transform: isHighlighted ? "scale(1.15)" : "scale(1)" }}>
+            <HubIcon id={hubId} size={isHighlighted ? 30 : 24} color={isHighlighted ? accent : (isDark ? "#a1a1aa" : "#71717a")} />
           </div>
           <h3 className="font-sans font-black leading-tight transition-all duration-300"
             style={{ color: isHighlighted ? accent : (isDark ? "#f4f4f5" : "#18181b"), fontSize: isHighlighted ? "1.55rem" : "1.05rem" }}>
@@ -296,7 +296,7 @@ function HubCard({ hubId, onSelectService }: { hubId: HubId; onSelectService: (s
           {/* Back header — click to flip back */}
           <div
             className="flex items-center justify-between px-5 py-4 shrink-0 cursor-pointer select-none"
-            style={{ background: hub.grad }}
+            style={{ backgroundColor: isDark ? "#27272a" : "#f4f4f5" }}
             onClick={flipBack}
             role="button" tabIndex={0} aria-label={`Flip back to ${hub.title}`}
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") flipBack(e) }}
@@ -401,7 +401,7 @@ export function ServicesPage() {
           </p>
           <div className="abh-divider" aria-hidden="true" />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 overflow-x-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           {HUB_ORDER.map(hubId => (
             <div key={hubId} className="min-w-[260px]">
               <HubCard hubId={hubId} onSelectService={setSelectedService} />
