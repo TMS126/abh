@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { Rocket, CurrencyDollar, HandHeart, MapPin, WhatsappLogo } from "@phosphor-icons/react"
+import { Rocket, CurrencyDollar, HandHeart, MapPin } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 import { WA, STRIP_ITEMS } from "@/lib/brand"
 
