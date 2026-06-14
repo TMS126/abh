@@ -13,7 +13,7 @@ const ROW_ORDER: { id: HubId; label: string; short: string }[] = [
   { id: "print",    label: "Print Hub",      short: "Print" },
   { id: "design",   label: "Design Hub",     short: "Design" },
   { id: "doc",      label: "Document Hub",   short: "Document" },
-  { id: "eservice", label: "EServices Hub",  short: "EServices" },
+  { id: "eservice", label: "E-Service Hub",  short: "E-Service" },
   { id: "tech",     label: "Tech Hub",       short: "Tech" },
 ]
 
