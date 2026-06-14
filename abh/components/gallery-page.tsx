@@ -38,7 +38,7 @@ function DesktopCard({ project, accent }: { project: ProjectData; accent: string
   const [imgIdx,    setImgIdx]    = useState(0)
 
   return (
-    <div className="relative shrink-0 w-[300px]" style={{ perspective: "1200px", height: "360px" }}>
+    <div className="relative flex-1 max-w-[340px] min-w-[280px]" style={{ perspective: "1200px", height: "360px" }}>
       <div
         className="relative w-full h-full transition-transform duration-500 ease-out"
         style={{ transformStyle: "preserve-3d", transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)" }}
@@ -296,9 +296,9 @@ export function GalleryPage() {
                   <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: accent }} aria-hidden="true" />
                   {label}
                 </h2>
-                <div className="flex gap-5 overflow-x-auto pb-3">
+                <div className="flex flex-wrap gap-5 justify-center">
                   {projects.length === 0
-                    ? <p className="text-sm text-zinc-400 italic py-6 px-2">Projects coming soon…</p>
+                    ? <p className="text-sm text-zinc-400 italic py-6 px-2 w-full text-center">Projects coming soon…</p>
                     : projects.map(project => <DesktopCard key={project.id} project={project} accent={accent} />)
                   }
                 </div>
