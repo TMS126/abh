@@ -392,9 +392,9 @@ export const PROJECTS = [
     hub: "design",
     title: "Shuttle Service Pricing Flyer Design",
     tag: "Design Hub",
-    shortDesc: "Professional pricing flyer for a local shuttle service covering day and night rates.",
-    image: "/gallery/design/flyer.jpg",
-    images: ["/gallery/design/flyer.jpg", "/gallery/design/logo.jpg", "/gallery/design/business-card.jpg"],
+    shortDesc: "Professional pricing flyer for Sol's Shuttle Services covering day and night rates.",
+    image: "/Sol.jpg",
+    images: ["/Sol.jpg"],
     clientGoal: "The client needed a clear and professional pricing flyer to showcase their shuttle service rates for both day and night, making it easy for customers to understand distance-based pricing.",
     whatWeDid: [
       "Designed full pricing layout (Day vs Evening rates)",

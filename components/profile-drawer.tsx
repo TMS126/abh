@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { X, WhatsappLogo, Envelope, Phone } from "@phosphor-icons/react"
+import { X, WhatsappLogo, Envelope, Phone, Smiley } from "@phosphor-icons/react"
 import { BIZ, WA, BRAND } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 
@@ -92,11 +92,11 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
         <div className="px-8 pb-10 flex flex-col items-center text-center">
           {/* Avatar */}
           <div
-            className="w-16 h-16 rounded-full flex items-center justify-center mb-4 text-2xl font-black text-white shrink-0"
+            className="w-16 h-16 rounded-full flex items-center justify-center mb-4 text-white shrink-0"
             style={{ background: `linear-gradient(135deg, ${BRAND.blue}, ${BRAND.green})` }}
             aria-hidden="true"
           >
-            {BIZ.founder.split(" ").map(n => n[0]).join("")}
+            <Smiley weight="fill" size={32} />
           </div>
 
           {/* Name & role */}
