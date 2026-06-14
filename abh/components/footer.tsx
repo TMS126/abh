@@ -12,6 +12,7 @@ import {
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, WA, FOOTER_NAV, FAQS } from "@/lib/brand"
 import { ProfileDrawer } from "@/components/profile-drawer"
+import { useInstance } from "@/hooks/use-instance-guard"
 
 const TERMS_SECTIONS = [
   { icon: "Printer",  title: "Print Hub – Everything Paper",     points: [{ label: "Printing Services", text: "B&W, Colour, and Bulk printing. For bulk discounts, submit your entire order together." }, { label: "Copying Services", text: "Fast, clear photocopying. Check pages before leaving." }, { label: "Photo Printing", text: "Glossy 4x6 and A4. Send high-resolution files via WhatsApp to avoid blurry prints." }] },
@@ -229,43 +230,66 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
 }
 
 export function Footer() {
-  const [isExpanded,    setIsExpanded]    = useState(false)
-  const [isInteracting, setIsInteracting] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const footer = useInstance("footer")
+  const profile = useInstance("profile")
+  const isExpanded = footer.isActive
 
   return (
     <>
-      <footer
-        className="border-t border-zinc-100 dark:border-zinc-800 bg-background font-sans transition-opacity duration-300"
-        style={{ opacity: isInteracting ? 1 : 0.6 }}
-        onMouseEnter={() => setIsInteracting(true)}
-        onMouseLeave={() => setIsInteracting(false)}
-        onFocus={() => setIsInteracting(true)}
-        onBlur={() => setIsInteracting(false)}
+      {/* ── Footer slides DOWN from top like a drawer ── */}
+      <div
+        className={cn(
+          "fixed top-0 left-0 right-0 z-[10040] bg-background border-b border-zinc-100 dark:border-zinc-800 shadow-[0_4px_24px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-out",
+          isExpanded ? "translate-y-0" : "-translate-y-full"
+        )}
+        style={{ maxHeight: "85vh", overflowY: "auto" }}
       >
-        {/* ── Content expands UPWARD (above the pill) ── */}
-        <Accordion open={isExpanded}>
-          <FooterContent onOpenProfile={() => setIsProfileOpen(true)} />
-        </Accordion>
-
-        {/* ── Pill trigger — always at the bottom ── */}
-        <div className="flex justify-center py-4">
+        <div className="flex justify-end p-3">
           <button
-            onClick={() => setIsExpanded(e => !e)}
-            aria-expanded={isExpanded}
-            aria-label={isExpanded ? "Collapse footer" : "Expand footer"}
-            className={cn(
-              "flex items-center gap-2 px-6 py-2.5 rounded-[14px] shadow-md text-xs font-extrabold uppercase tracking-widest transition-all duration-300 border",
-              isExpanded
-                ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-zinc-900 dark:border-white hover:bg-zinc-700 dark:hover:bg-zinc-100"
-                : "bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-zinc-400"
-            )}
+            onClick={footer.close}
+            aria-label="Close footer"
+            className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
           >
-            {isExpanded ? <><X size={12} weight="bold" aria-hidden="true" /> Close</> : <>Footer</>}
+            <X size={15} weight="bold" aria-hidden="true" />
           </button>
         </div>
+        <FooterContent onOpenProfile={() => {
+          footer.close()
+          profile.open()
+        }} />
+      </div>
+
+      {/* Backdrop when footer is open */}
+      {isExpanded && (
+        <div
+          className="fixed inset-0 z-[10030] bg-black/30 backdrop-blur-sm transition-opacity duration-200"
+          onClick={footer.close}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* ── Footer trigger pill — always at bottom ── */}
+      <footer className="fixed bottom-0 left-0 right-0 z-[10020] flex justify-center py-3 pointer-events-none">
+        <button
+          onClick={() => {
+            if (isExpanded) footer.close()
+            else footer.open()
+          }}
+          aria-expanded={isExpanded}
+          aria-label={isExpanded ? "Close footer" : "Open footer"}
+          className={cn(
+            "flex items-center gap-2 px-6 py-2.5 rounded-[14px] shadow-md text-xs font-extrabold uppercase tracking-widest transition-all duration-300 border pointer-events-auto",
+            isExpanded
+              ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-zinc-900 dark:border-white"
+              : "bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-zinc-400"
+          )}
+        >
+          {isExpanded ? <><X size={12} weight="bold" aria-hidden="true" /> Close</> : <>Footer</>}
+        </button>
       </footer>
 
+      {/* Profile drawer */}
       <ProfileDrawer open={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
     </>
   )

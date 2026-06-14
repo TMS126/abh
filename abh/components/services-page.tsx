@@ -6,6 +6,7 @@ import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { BIZ, HUB_COLORS, HubKey } from "@/lib/brand"
 import { HUBS, HubId } from "@/lib/data"
+import { useInstanceGuard } from "@/hooks/use-instance-guard"
 
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
@@ -228,27 +229,37 @@ function HubCard({ hubId, onSelectService }: { hubId: HubId; onSelectService: (s
   const accent  = isDark ? colors.tagTextDark : colors.tagText
 
   const [isFlipped,      setIsFlipped]      = useState(false)
-  const [tapCount,       setTapCount]       = useState(0)
   const [isHovered,      setIsHovered]      = useState(false)
   const [hasHover,       setHasHover]       = useState(true)
-  const [openSectionIdx, setOpenSectionIdx] = useState<number | null>(0)
+  const [openSectionIdx, setOpenSectionIdx] = useState<number | null>(null)
+  const { active, activate, deactivate } = useInstanceGuard()
+
+  const instanceKey = `hub-${hubId}` as any
 
   useEffect(() => { setHasHover(window.matchMedia("(hover: hover)").matches) }, [])
 
   const handleFrontClick = useCallback(() => {
     if (isFlipped) return
-    if (hasHover) { setIsFlipped(true) }
-    else {
-      // Single tap flips on mobile
-      setIsFlipped(true)
+    if (hasHover) {
+      // Desktop hover: request instance slot
+      if (active === instanceKey || active === null) {
+        activate(instanceKey)
+        setIsFlipped(true)
+      }
+    } else {
+      // Mobile: single tap flips
+      if (active === instanceKey || active === null) {
+        activate(instanceKey)
+        setIsFlipped(true)
+      }
     }
-  }, [isFlipped, hasHover])
+  }, [isFlipped, hasHover, active, instanceKey, activate])
 
   const flipBack = useCallback((e: React.MouseEvent | React.KeyboardEvent) => {
-    e.stopPropagation(); setIsFlipped(false); setTapCount(0)
-  }, [])
+    e.stopPropagation(); setIsFlipped(false); deactivate(instanceKey)
+  }, [instanceKey, deactivate])
 
-  const isHighlighted = hasHover ? isHovered : tapCount >= 1
+  const isHighlighted = hasHover ? isHovered : isFlipped
   const hasAnyOpen    = openSectionIdx !== null
 
   return (

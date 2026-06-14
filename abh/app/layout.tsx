@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Nunito, DM_Sans } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Analytics } from '@vercel/analytics/next'
+import { InstanceGuardProvider } from '@/hooks/use-instance-guard'
 import { BIZ, BRAND } from '@/lib/brand'
 import './globals.css'
 
@@ -53,7 +54,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange={false}
         >
-          {children}
+          <InstanceGuardProvider>
+            {children}
+          </InstanceGuardProvider>
         </ThemeProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

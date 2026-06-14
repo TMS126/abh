@@ -7,11 +7,13 @@ import Image from "next/image"
 import { Sun, Moon, CaretLeft } from "@phosphor-icons/react"
 import { BRAND, BIZ, NAV_ITEMS } from "@/lib/brand"
 import { cn } from "@/lib/utils"
+import { useInstanceGuard } from "@/hooks/use-instance-guard"
 
 export function Navbar() {
   const router   = useRouter()
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
+  const { active, deactivate } = useInstanceGuard()
 
   const [mounted,        setMounted]        = useState(false)
   const [menuOpen,       setMenuOpen]       = useState(false)
