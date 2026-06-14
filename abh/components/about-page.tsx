@@ -26,7 +26,7 @@ export function AboutPage() {
 
       <section className="abh-page-header" aria-labelledby="about-title">
         <h1 id="about-title" className="abh-page-title mb-3">About Us</h1>
-        <p className="abh-tagline max-w-xl mx-auto">A local business built on community, trust, and real help</p>
+        <p className="abh-tagline max-w-xl mx-auto">Your local tech & print partner — right here in Kgotsong</p>
         <div className="abh-divider" aria-hidden="true" />
       </section>
 
