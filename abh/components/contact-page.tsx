@@ -10,23 +10,25 @@ import {
 } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 import {
-  BRAND,
-  BIZ,
-  WA,
-  HOURS,
-  FAQS,
-  CONTACT_LINKS,
-} from "@/lib/brand"
+    BRAND,
+    BIZ,
+    WA,
+    HOURS,
+    FAQS,
+    CONTACT_LINKS,
+    HUB_COLORS,
+    HubKey,
+  } from "@/lib/brand"
 
 // ─── Hub options for the form selector ────────────────────────────────────────
 const FORM_HUBS: Record<string, string> = {
-  "Print Hub":                BRAND.blue,
-  "Document Hub":             BRAND.green,
-  "Design Hub":               BRAND.orangeDark,
-  "E-Service Hub":            BRAND.blueDark,
-  "Tech Hub":                 "#2C3E50",
-  "Not Sure — Please Advise": "#9333ea",
-}
+    "Print Hub":                HUB_COLORS.print.primary,
+    "Document Hub":             HUB_COLORS.doc.primary,
+    "Design Hub":               HUB_COLORS.design.primary,
+    "E-Service Hub":            HUB_COLORS.eservice.primary,
+    "Tech Hub":                 HUB_COLORS.tech.primary,
+    "Not Sure — Please Advise": BRAND.neutral500,
+  }
 
 // ─── FAQ Accordion ────────────────────────────────────────────────────────────
 function FAQAccordion() {
