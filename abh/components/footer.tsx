@@ -237,11 +237,11 @@ export function Footer() {
 
   return (
     <>
-      {/* ── Footer slides DOWN from top like a drawer ── */}
+      {/* ── Footer panel — slides UP from bottom ── */}
       <div
         className={cn(
-          "fixed top-0 left-0 right-0 z-[10040] bg-background border-b border-zinc-100 dark:border-zinc-800 shadow-[0_4px_24px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-out",
-          isExpanded ? "translate-y-0" : "-translate-y-full"
+          "fixed bottom-0 left-0 right-0 z-[10040] bg-background border-t border-zinc-100 dark:border-zinc-800 shadow-[0_-4px_24px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-out",
+          isExpanded ? "translate-y-0" : "translate-y-full"
         )}
         style={{ maxHeight: "85vh", overflowY: "auto" }}
       >
