@@ -231,8 +231,9 @@ export function GalleryPage() {
             onClick={() => setActiveFilter("all")}
             className={cn(
               "px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all",
-              activeFilter === "all" ? "bg-brand-blue text-white shadow-lg" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 hover:bg-zinc-200"
+              activeFilter === "all" ? "text-white shadow-lg" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 hover:bg-zinc-200"
             )}
+            style={activeFilter === "all" ? { backgroundColor: BRAND.orange } : {}}
           >
             All Hubs
           </button>
