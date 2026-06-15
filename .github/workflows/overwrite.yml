@@ -1,0 +1,26 @@
+name: Mobile Root Overwrite
+on: workflow_dispatch
+
+jobs:
+  move-to-root:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Reorganise File Structure
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # Copy /abh contents to root, overwriting conflicts
+          cp -rf abh/* .
+          cp -rf abh/.[!.]* . 2>/dev/null || true
+          rm -rf abh
+          
+          # Commit the result
+          git add -A
+          git commit -m "refactor: merge /abh to root, abh version wins on conflicts"
+          git push
