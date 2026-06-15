@@ -65,7 +65,7 @@ function Modal({ open, onClose, title, subtitle, children }: {
     document.addEventListener("keydown", fn)
     return () => document.removeEventListener("keydown", fn)
   }, [open, onClose])
-  useEffect(() => { document.body.style.overflow = open ? "hidden" : ""; return () => { document.body.style.overflow = "" } }, [open])
+  useEffect(() => { document.body.classList.toggle("scroll-locked", open); return () => { document.body.classList.remove("scroll-locked") } }, [open])
   if (!open) return null
   return (
     <div role="dialog" aria-modal="true" aria-label={title} className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">

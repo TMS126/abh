@@ -35,17 +35,16 @@ function ProjectImage({ src, alt, className }: { src: string; alt: string; class
 function ProjectViewerModal({ project, onClose }: { project: ProjectData | null; onClose: () => void }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [imgIdx, setImgIdx] = useState(0)
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const imgRef = useRef<HTMLDivElement>(null)
+  const textRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!project) return
-    document.body.style.overflow = "hidden"
+    document.body.classList.add("scroll-locked")
     const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
     document.addEventListener("keydown", fn)
     return () => {
-      document.body.style.overflow = ""
+      document.body.classList.remove("scroll-locked")
       document.removeEventListener("keydown", fn)
     }
   }, [project, onClose])
@@ -58,60 +57,67 @@ function ProjectViewerModal({ project, onClose }: { project: ProjectData | null;
     <div className="fixed inset-0 z-[10200] flex items-center justify-center p-4 animate-in fade-in duration-300">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={onClose} />
       <div className="relative w-full max-w-5xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden shadow-2xl flex flex-col md:flex-row h-[85vh] animate-in zoom-in-95 duration-500 border border-zinc-100 dark:border-zinc-800">
-        
+
+        {/* Close button — absolutely positioned top-right */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-[60] w-10 h-10 rounded-full bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md flex items-center justify-center text-zinc-500 hover:bg-zinc-100 transition-colors shadow-lg"
+        >
+          <X size={20} weight="bold" />
+        </button>
+
         {/* Left: Scrollable Images */}
-        <div className="flex-1 overflow-y-auto bg-zinc-50 dark:bg-zinc-900/50 p-4 md:p-8 space-y-6" ref={scrollRef}>
-          {allImages.map((img, idx) => (
-            <div key={idx} className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-lg border border-zinc-200 dark:border-zinc-800">
-              <Image src={img} alt={`${project.title} view ${idx + 1}`} fill className="object-cover" sizes="100vw" />
-            </div>
-          ))}
+        <div className="flex-1 overflow-y-auto bg-zinc-50 dark:bg-zinc-900/50 p-4 md:p-8" ref={imgRef}>
+          <div className="space-y-6">
+            {allImages.map((img, idx) => (
+              <div key={idx} className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-lg border border-zinc-200 dark:border-zinc-800">
+                <Image src={img} alt={`${project.title} view ${idx + 1}`} fill className="object-cover" sizes="100vw" />
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Right: Project Details */}
-        <div className="w-full md:w-[380px] p-8 flex flex-col border-l border-zinc-100 dark:border-zinc-800 overflow-y-auto">
-          <div className="flex justify-between items-start mb-8">
-            <div>
+        {/* Right: Project Details — scrolls independently on all screens */}
+        <div className="w-full md:w-[380px] flex flex-col border-l border-zinc-100 dark:border-zinc-800 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-8" ref={textRef}>
+            <div className="mb-6">
               <span className="text-[0.65rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>
                 {project.tag}
               </span>
               <h2 className="font-sans font-black text-2xl text-zinc-900 dark:text-zinc-50 leading-tight">{project.title}</h2>
             </div>
-            <button onClick={onClose} className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 transition-colors">
-              <X size={20} weight="bold" />
-            </button>
-          </div>
 
-          <div className="space-y-8">
-            <section>
-              <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>The Goal</h4>
-              <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.clientGoal}</p>
-            </section>
+            <div className="space-y-8">
+              <section>
+                <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>The Goal</h4>
+                <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.clientGoal}</p>
+              </section>
 
-            <section>
-              <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>What we did</h4>
-              <ul className="space-y-2">
-                {project.whatWeDid.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-sm text-zinc-600 dark:text-zinc-300 font-medium">
-                    <Check size={14} weight="bold" className="mt-1 shrink-0" style={{ color: accent }} />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </section>
+              <section>
+                <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>What we did</h4>
+                <ul className="space-y-2">
+                  {project.whatWeDid.map((item, i) => (
+                    <li key={i} className="flex items-start gap-2.5 text-sm text-zinc-600 dark:text-zinc-300 font-medium">
+                      <Check size={14} weight="bold" className="mt-1 shrink-0" style={{ color: accent }} />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </section>
 
-            <section>
-              <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>The Result</h4>
-              <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.result}</p>
-            </section>
-          </div>
+              <section>
+                <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>The Result</h4>
+                <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.result}</p>
+              </section>
+            </div>
 
-          <div className="mt-auto pt-8">
-            <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-brand-blue/10 flex items-center justify-center text-brand-blue">
-                <Info size={18} weight="fill" />
+            <div className="mt-8">
+              <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-brand-blue/10 flex items-center justify-center text-brand-blue">
+                  <Info size={18} weight="fill" />
+                </div>
+                <p className="text-[0.65rem] font-bold text-zinc-500 dark:text-zinc-400">Scroll to see all project views.</p>
               </div>
-              <p className="text-[0.65rem] font-bold text-zinc-500 dark:text-zinc-400">Scroll the image panel to see all project views.</p>
             </div>
           </div>
         </div>
@@ -275,7 +281,7 @@ export function GalleryPage() {
                 </div>
 
                 {/* Mobile View */}
-                <div className="md:hidden flex gap-4 overflow-x-auto pb-8 snap-x no-scrollbar px-4">
+                <div className="md:hidden flex gap-4 overflow-x-auto pb-8 snap-x snap-mandatory no-scrollbar px-4">
                   {projects.map(p => (
                     <div key={p.id} className="snap-center shrink-0 w-[280px]" onClick={() => setSelectedProject(p)}>
                       <div className="rounded-[14px] overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950">
@@ -290,24 +296,50 @@ export function GalleryPage() {
                   ))}
                 </div>
 
-                {/* Desktop View: Horizontal Cards */}
-                <div className="hidden md:flex gap-4 overflow-x-auto pb-4 px-4 no-scrollbar">
-                  {projects.map(p => (
-                    <div key={p.id} className="shrink-0 w-[300px]" onClick={() => setSelectedProject(p)}>
-                      <div className="rounded-[14px] overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-lg cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                        <div className="relative aspect-[4/3]">
-                          <Image src={p.image} alt={p.title} fill className="object-cover" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                          <div className="absolute bottom-4 left-4 right-4">
-                            <span className="text-[0.6rem] font-black uppercase tracking-widest px-2 py-1 rounded-full bg-white/20 backdrop-blur-md text-white mb-2 inline-block border border-white/20">
-                              {p.tag}
-                            </span>
-                            <h3 className="text-white font-black text-lg leading-tight">{p.title}</h3>
+                {/* Desktop View: Horizontal Scroll Carousel */}
+                <div className="hidden md:block relative group/carousel">
+                  <div
+                    className="flex gap-4 overflow-x-auto pb-4 px-4 snap-x snap-mandatory no-scrollbar scroll-smooth"
+                    id={`carousel-${row.id}`}
+                  >
+                    {projects.map(p => (
+                      <div key={p.id} className="snap-center shrink-0 w-[300px]" onClick={() => setSelectedProject(p)}>
+                        <div className="rounded-[14px] overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-lg cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                          <div className="relative aspect-[4/3]">
+                            <Image src={p.image} alt={p.title} fill className="object-cover" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                            <div className="absolute bottom-4 left-4 right-4">
+                              <span className="text-[0.6rem] font-black uppercase tracking-widest px-2 py-1 rounded-full bg-white/20 backdrop-blur-md text-white mb-2 inline-block border border-white/20">
+                                {p.tag}
+                              </span>
+                              <h3 className="text-white font-black text-lg leading-tight">{p.title}</h3>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                  {/* Arrow buttons */}
+                  <button
+                    onClick={() => {
+                      const el = document.getElementById(`carousel-${row.id}`)
+                      el?.scrollBy({ left: -316, behavior: "smooth" })
+                    }}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 dark:bg-zinc-900/90 shadow-lg flex items-center justify-center text-zinc-700 dark:text-zinc-200 hover:shadow-xl hover:scale-105 transition-all opacity-0 group-hover/carousel:opacity-100 z-10"
+                    aria-label="Scroll left"
+                  >
+                    <CaretLeft size={20} weight="bold" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      const el = document.getElementById(`carousel-${row.id}`)
+                      el?.scrollBy({ left: 316, behavior: "smooth" })
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 dark:bg-zinc-900/90 shadow-lg flex items-center justify-center text-zinc-700 dark:text-zinc-200 hover:shadow-xl hover:scale-105 transition-all opacity-0 group-hover/carousel:opacity-100 z-10"
+                    aria-label="Scroll right"
+                  >
+                    <CaretRight size={20} weight="bold" />
+                  </button>
                 </div>
               </div>
             )

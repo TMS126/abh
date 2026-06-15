@@ -68,9 +68,9 @@ function FAQAccordion() {
                 </button>
                 <div
                   className="transition-all duration-300 ease-in-out overflow-hidden"
-                  style={{ maxHeight: isOpen ? "600px" : "0px", opacity: isOpen ? 1 : 0 }}
+                  style={{ maxHeight: isOpen ? "1200px" : "0px", opacity: isOpen ? 1 : 0 }}
                 >
-                  <div className="px-5 pb-5 pt-3 border-t border-zinc-100 dark:border-zinc-800 abh-body">
+                  <div className="px-5 pb-8 pt-3 border-t border-zinc-100 dark:border-zinc-800 abh-body">
                     {faq.answer}
                   </div>
                 </div>
@@ -110,7 +110,7 @@ function HubSelect({ value, onChange }: { value: string; onChange: (val: string)
           color: value ? activeColor : undefined,
         }}
       >
-        <span>{value || "Select a hub"}</span>
+        <span style={{ color: value ? "#333333" : undefined }}>{value || "Select a hub"}</span>
         <CaretDown
           weight="bold"
           className="w-4 h-4 shrink-0 text-zinc-500 dark:text-zinc-400 transition-transform duration-300"

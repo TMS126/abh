@@ -137,11 +137,11 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   
   useEffect(() => {
     if (!svc) return
-    document.body.style.overflow = "hidden"
+    document.body.classList.add("scroll-locked")
     const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
     document.addEventListener("keydown", fn)
     return () => {
-      document.body.style.overflow = ""
+      document.body.classList.remove("scroll-locked")
       document.removeEventListener("keydown", fn)
     }
   }, [svc, onClose])
@@ -181,7 +181,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             style={{ backgroundColor: "#25D366" }}
           >
             <WhatsappLogo size={20} weight="fill" />
-            Order on WhatsApp
+            Request {svc.name}
           </a>
         </div>
       </div>
@@ -196,11 +196,11 @@ function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; on
 
   useEffect(() => {
     if (!hubId) {
-      document.body.style.overflow = ""
+      document.body.classList.remove("scroll-locked")
       return
     }
-    document.body.style.overflow = "hidden"
-    return () => { document.body.style.overflow = "" }
+    document.body.classList.add("scroll-locked")
+    return () => { document.body.classList.remove("scroll-locked") }
   }, [hubId])
 
   if (!hubId) return null
@@ -260,13 +260,16 @@ function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; on
           </div>
         </div>
         
-        <div className="p-8 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 flex flex-col sm:flex-row gap-3">
-          <a href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-2 py-4 rounded-[14px] font-black text-sm text-white bg-brand-whatsapp shadow-lg shadow-brand-whatsapp/20 hover:opacity-90 transition-all">
-            <WhatsappLogo size={20} weight="fill" /> WhatsApp General Enquiry
+        <div className="p-8 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 flex flex-col sm:flex-row gap-3 items-center">
+          <a href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}`} target="_blank" rel="noopener noreferrer" className="text-brand-whatsapp hover:opacity-80 transition-opacity" aria-label="WhatsApp">
+            <WhatsappLogo size={36} weight="fill" />
           </a>
-          <button onClick={onClose} className="px-8 py-4 rounded-[14px] font-black text-sm border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800 transition-all">
+          <button onClick={onClose} className="px-8 py-3 rounded-full font-black text-sm border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">
             Back to Hubs
           </button>
+          <a href="/contact" className="font-black text-sm transition-colors hover:underline" style={{ color: accent }}>
+            Send Enquiry
+          </a>
         </div>
       </div>
     </div>
@@ -311,7 +314,7 @@ export function ServicesPage() {
                 
                 <div className="mt-auto flex flex-col items-center gap-4">
                   <div className="h-1.5 w-12 rounded-full transition-all duration-500 group-hover:w-24" style={{ backgroundColor: accent }} />
-                  <span className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200 transition-colors">View All</span>
+                  <span className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200 transition-colors">Explore</span>
                 </div>
               </button>
             )
