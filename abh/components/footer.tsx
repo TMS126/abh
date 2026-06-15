@@ -70,13 +70,13 @@ function Modal({ open, onClose, title, subtitle, children }: {
   return (
     <div role="dialog" aria-modal="true" aria-label={title} className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
       <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
-      <div ref={ref} className="relative w-full max-w-2xl bg-white dark:bg-[#18181B] rounded-[14px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300 border border-zinc-100 dark:border-[#27272A]">
-        <div className="p-6 border-b border-zinc-100 dark:border-[#27272A] flex justify-between items-center bg-zinc-50 dark:bg-[#27272A]/50">
+      <div ref={ref} className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300">
+        <div className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-zinc-900/50">
           <div>
-            <h2 className="font-sans font-black text-xl text-zinc-900 dark:text-[#FAFAFA]">{title}</h2>
+            <h2 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50">{title}</h2>
             {subtitle && <p className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 mt-1">{subtitle}</p>}
           </div>
-          <button ref={closeRef} onClick={onClose} aria-label={`Close ${title}`} className="w-8 h-8 rounded-full bg-white dark:bg-[#27272A] flex items-center justify-center text-zinc-500 hover:bg-zinc-100 transition-all">
+          <button ref={closeRef} onClick={onClose} aria-label={`Close ${title}`} className="w-8 h-8 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-100 transition-all">
             <X size={16} weight="bold" aria-hidden="true" />
           </button>
         </div>
@@ -106,7 +106,7 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
               <span style={{ color: BRAND.orange }}>Hub</span>
             </h2>
           </div>
-          <p className="text-sm leading-relaxed text-zinc-600 dark:text-[#A1A1AA] max-w-xs">
+          <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400 max-w-xs">
             Your local tech and print partner in Kgotsong. {BIZ.hubCount} hubs, {BIZ.serviceCount} services — all in one friendly place.
           </p>
           <p className="text-[0.65rem] font-bold text-zinc-400 uppercase tracking-widest">
@@ -128,7 +128,7 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
               <li key={page.label}>
                 <button
                   onClick={() => { router.push(page.path); window.scrollTo({ top: 0, behavior: "smooth" }) }}
-                  className="text-sm text-zinc-600 dark:text-[#A1A1AA] hover:translate-x-1 hover:text-brand-blue transition-all duration-200 text-left font-medium"
+                  className="text-sm text-zinc-600 dark:text-zinc-300 hover:translate-x-1 hover:text-brand-blue transition-all duration-200 text-left font-medium"
                 >
                   {page.label}
                 </button>
@@ -143,8 +143,8 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
           <ul className="flex flex-col gap-5">
             <li>
               <a href={WA.general} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-4 text-sm text-zinc-600 dark:text-[#A1A1AA] hover:text-brand-whatsapp transition-colors">
-                <div className="w-10 h-10 rounded-[14px] border border-zinc-100 dark:border-[#27272A] flex items-center justify-center bg-white dark:bg-[#18181B] shadow-sm" aria-hidden="true">
+                className="flex items-center gap-4 text-sm text-zinc-600 dark:text-zinc-300 hover:text-brand-whatsapp transition-colors">
+                <div className="w-10 h-10 rounded-[14px] border border-zinc-100 dark:border-zinc-800 flex items-center justify-center bg-white dark:bg-zinc-900 shadow-sm" aria-hidden="true">
                   <WhatsappLogo weight="fill" className="w-5 h-5" />
                 </div>
                 {BIZ.phone}
@@ -152,8 +152,8 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
             </li>
             <li>
               <a href={`mailto:${BIZ.email}`}
-                className="flex items-center gap-4 text-sm text-zinc-600 dark:text-[#A1A1AA] hover:text-brand-blue transition-colors">
-                <div className="w-10 h-10 rounded-[14px] border border-zinc-100 dark:border-[#27272A] flex items-center justify-center bg-white dark:bg-[#18181B] shadow-sm" aria-hidden="true">
+                className="flex items-center gap-4 text-sm text-zinc-600 dark:text-zinc-300 hover:text-brand-blue transition-colors">
+                <div className="w-10 h-10 rounded-[14px] border border-zinc-100 dark:border-zinc-800 flex items-center justify-center bg-white dark:bg-zinc-900 shadow-sm" aria-hidden="true">
                   <EnvelopeSimple weight="fill" className="w-5 h-5" />
                 </div>
                 {BIZ.email}
@@ -174,10 +174,10 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
       </div>
 
       {/* Legal bar */}
-      <div className="max-w-[1200px] mx-auto border-t border-zinc-100 dark:border-[#27272A] pt-10 px-6 md:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+      <div className="max-w-[1200px] mx-auto border-t border-zinc-100 dark:border-zinc-800 pt-10 px-6 md:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex flex-col md:flex-row items-center gap-3 md:gap-8">
           <p className="text-[0.75rem] font-semibold text-zinc-400">© {new Date().getFullYear()} {BIZ.nameShort}. All rights reserved.</p>
-          <div className="hidden md:block w-1 h-1 rounded-full bg-zinc-200 dark:bg-[#27272A]" aria-hidden="true" />
+          <div className="hidden md:block w-1 h-1 rounded-full bg-zinc-200 dark:bg-zinc-800" aria-hidden="true" />
           <button onClick={() => setIsTermsOpen(true)} className="text-[0.75rem] font-bold text-brand-blue hover:underline">
             Terms &amp; Policies
           </button>
@@ -189,15 +189,15 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
 
       <Modal open={isTermsOpen} onClose={() => setIsTermsOpen(false)} title="Terms & Service Policies" subtitle={`${BIZ.name} • Studio Rules`}>
         <div className="p-8 space-y-8">
-          <div className="p-6 rounded-[14px] border border-zinc-100 dark:border-[#27272A] bg-zinc-50 dark:bg-[#27272A]">
+          <div className="p-6 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
             <h3 className="font-bold flex items-center gap-2 mb-3 text-sm text-brand-orange"><Info weight="fill" className="w-4 h-4" aria-hidden="true" /> Operational Rule</h3>
-            <p className="text-sm text-zinc-600 dark:text-[#A1A1AA]">By starting any order or sending a message through our WhatsApp channels, you confirm full agreement with all operational rules and terms below.</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">By starting any order or sending a message through our WhatsApp channels, you confirm full agreement with all operational rules and terms below.</p>
           </div>
           {TERMS_SECTIONS.map((s, i) => (
             <div key={i} className="space-y-4">
               <h3 className="font-black flex items-center gap-2 text-sm text-brand-blue">{ICON_MAP[s.icon]} {s.title}</h3>
               <ul className="space-y-2 list-disc list-inside pl-1">
-                {s.points.map((p, j) => <li key={j} className="text-sm text-zinc-600 dark:text-[#A1A1AA]"><strong>{p.label}:</strong> {p.text}</li>)}
+                {s.points.map((p, j) => <li key={j} className="text-sm text-zinc-600 dark:text-zinc-400"><strong>{p.label}:</strong> {p.text}</li>)}
               </ul>
             </div>
           ))}
@@ -209,15 +209,15 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
           {FAQS.map((faq, i) => {
             const open = openFaqIndex === i
             return (
-              <div key={i} className="rounded-[14px] border border-zinc-100 dark:border-[#27272A] bg-white dark:bg-[#18181B] p-5">
+              <div key={i} className="rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5">
                 <button onClick={() => setOpenFaqIndex(open ? null : i)} aria-expanded={open} aria-controls={`faq-${i}`}
                   className="flex items-center justify-between w-full text-left gap-4">
-                  <h4 className="font-black text-sm text-zinc-900 dark:text-[#FAFAFA]">{faq.question}</h4>
+                  <h4 className="font-black text-sm text-zinc-900 dark:text-zinc-50">{faq.question}</h4>
                   <CaretDown className={cn("w-4 h-4 text-zinc-400 shrink-0 transition-transform duration-200", open && "rotate-180")} aria-hidden="true" />
                 </button>
                 <div id={`faq-${i}`} role="region" aria-label={faq.question}>
                   <Accordion open={open}>
-                    <div className="text-sm text-zinc-500 dark:text-[#A1A1AA] mt-3 leading-relaxed">{faq.answer}</div>
+                    <div className="text-sm text-zinc-500 dark:text-zinc-400 mt-3 leading-relaxed">{faq.answer}</div>
                   </Accordion>
                 </div>
               </div>
@@ -233,7 +233,7 @@ export function Footer() {
   const profile = useInstance("profile")
 
   return (
-    <footer className="bg-white dark:bg-[#18181B] border-t border-zinc-100 dark:border-[#27272A]">
+    <footer className="bg-white dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900">
       <FooterContent onOpenProfile={() => profile.open()} />
       <ProfileDrawer open={profile.isActive} onClose={() => profile.close()} />
     </footer>
