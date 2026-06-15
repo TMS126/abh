@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { X, WhatsappLogo, Printer, FileText, PaintBrush, Globe, Desktop, CaretDown, PaperPlaneTilt, Info } from "@phosphor-icons/react"
+import { X, WhatsappLogo, Printer, FileText, PaintBrush, Globe, Desktop, CaretDown, CaretLeft, PaperPlaneTilt, Info } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { BIZ, HUB_COLORS, HubKey } from "@/lib/brand"
@@ -131,9 +131,7 @@ function Accordion({ open, children }: { open: boolean; children: React.ReactNod
 interface SelectedService { name: string; price: string; hubId: HubId; sectionTitle: string }
 
 function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onClose: () => void }) {
-  const { resolvedTheme } = useTheme()
-  const isDark   = resolvedTheme === "dark"
-  const ref      = useRef<HTMLDivElement>(null)
+  const ref = useRef<HTMLDivElement>(null)
   
   useEffect(() => {
     if (!svc) return
@@ -150,35 +148,36 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
 
   const colors  = HUB_COLORS[svc.hubId as HubKey]
   const hub     = HUBS[svc.hubId]
-  const accent  = isDark ? colors.tagTextDark : colors.tagText
+  const accent  = colors.tagTextDark            // always use light/vibrant tint on dark bg
   const desc    = SVC_DESC[svc.name] ?? `Professional ${svc.name.toLowerCase()} service from our ${hub.title}.`
   const waText  = buildWaMsg(svc.name, svc.price, svc.hubId, hub.title)
 
   return (
     <div className="fixed inset-0 z-[10200] flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-xl" onClick={onClose} />
-      <div ref={ref} className="relative w-full max-w-sm rounded-[14px] overflow-hidden shadow-2xl bg-white dark:bg-zinc-950 animate-in zoom-in-95 duration-300 border border-zinc-100 dark:border-zinc-800">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-xl" onClick={onClose} />
+      <div ref={ref} className="relative w-full max-w-sm rounded-[14px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 border border-white/10" style={{ backgroundColor: "#0f172a" }}>
         <div className="p-8">
+          {/* Header: SECTION — SERVICE */}
           <div className="flex justify-between items-start mb-6">
             <div>
-              <span className="text-[0.65rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>
-                {svc.sectionTitle}
-              </span>
-              <h3 className="font-sans font-black text-2xl text-zinc-900 dark:text-zinc-50 leading-tight">{svc.name}</h3>
+              <p className="text-[0.6rem] font-black uppercase tracking-[0.2em] mb-2" style={{ color: `${accent}80` }}>
+                {svc.sectionTitle.toUpperCase()} — {svc.name.toUpperCase()}
+              </p>
+              <h3 className="font-sans font-black text-2xl leading-tight text-white">{svc.name}</h3>
             </div>
-            <button onClick={onClose} className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 transition-colors">
+            <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center transition-colors" style={{ backgroundColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)" }}>
               <X size={16} weight="bold" />
             </button>
           </div>
-          <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400 mb-8 font-medium">{desc}</p>
+          <p className="text-sm leading-relaxed mb-8 font-medium" style={{ color: "rgba(255,255,255,0.6)" }}>{desc}</p>
           <div className="flex items-baseline gap-1 mb-8">
             <span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
           </div>
           <a
             href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waText)}`}
             target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-3 w-full py-4 rounded-[14px] font-black text-sm text-white transition-all active:scale-95 hover:opacity-90 shadow-lg shadow-brand-whatsapp/20"
-            style={{ backgroundColor: "#25D366" }}
+            className="flex items-center justify-center gap-3 w-full py-4 rounded-[14px] font-black text-sm text-white transition-all active:scale-95 hover:opacity-90 shadow-lg"
+            style={{ backgroundColor: "#25D366", boxShadow: "0 8px 24px rgba(37,211,102,0.25)" }}
           >
             <WhatsappLogo size={20} weight="fill" />
             Request {svc.name}
@@ -279,8 +278,17 @@ function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; on
 export function ServicesPage() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
-  const [activeHub, setActiveHub] = useState<HubId | null>(null)
+  const [flippedHub,    setFlippedHub]    = useState<HubId | null>(null)
+  const [backSectionIdx, setBackSectionIdx] = useState<number>(0)
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
+
+  function flipTo(hubId: HubId) {
+    setFlippedHub(hubId)
+    setBackSectionIdx(0)
+  }
+  function flipBack() {
+    setFlippedHub(null)
+  }
 
   return (
     <section className="min-h-screen bg-background pt-[calc(var(--nav-h)+2rem)] pb-24 px-4 md:px-8">
@@ -293,36 +301,106 @@ export function ServicesPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           {HUB_ORDER.map(hubId => {
-            const hub = HUBS[hubId]
+            const hub    = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
             const accent = isDark ? colors.tagTextDark : colors.tagText
-            
+            const isFlipped = flippedHub === hubId
+
             return (
-              <button
+              <div
                 key={hubId}
-                onClick={() => setActiveHub(hubId)}
-                className="group relative flex flex-col items-center p-8 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 text-center overflow-hidden"
+                className="relative rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 overflow-hidden transition-all duration-500"
+                style={{ minHeight: "360px" }}
               >
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: `radial-gradient(circle at center, ${accent}08 0%, transparent 70%)` }} />
-                
-                <div className="w-20 h-20 rounded-[14px] flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110 shadow-lg" style={{ backgroundColor: `${accent}10`, color: accent }}>
-                  <HubIcon id={hubId} size={40} />
+                {/* ── FRONT FACE ── */}
+                <div className={cn(
+                  "absolute inset-0 flex flex-col items-center p-8 text-center transition-all duration-400",
+                  isFlipped ? "opacity-0 pointer-events-none scale-95" : "opacity-100 scale-100"
+                )}>
+                  <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                    style={{ background: `radial-gradient(circle at center, ${accent}08 0%, transparent 70%)` }} />
+
+                  <div className="w-20 h-20 rounded-[14px] flex items-center justify-center mb-6 shadow-lg" style={{ backgroundColor: `${accent}10`, color: accent }}>
+                    <HubIcon id={hubId} size={40} />
+                  </div>
+                  <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-3">{hub.title}</h3>
+                  <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 leading-relaxed mb-6 line-clamp-3">{hub.desc}</p>
+
+                  <div className="mt-auto flex flex-col items-center gap-4">
+                    <div className="h-1.5 w-12 rounded-full" style={{ backgroundColor: accent }} />
+                    <button
+                      onClick={() => flipTo(hubId)}
+                      className="text-[0.65rem] font-black uppercase tracking-widest transition-colors hover:opacity-70"
+                      style={{ color: accent }}
+                    >
+                      View Services
+                    </button>
+                  </div>
                 </div>
-                
-                <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-3 transition-colors group-hover:text-brand-blue">{hub.title}</h3>
-                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 leading-relaxed mb-6 line-clamp-3">{hub.desc}</p>
-                
-                <div className="mt-auto flex flex-col items-center gap-4">
-                  <div className="h-1.5 w-12 rounded-full transition-all duration-500 group-hover:w-24" style={{ backgroundColor: accent }} />
-                  <span className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200 transition-colors">Explore</span>
+
+                {/* ── BACK FACE ── */}
+                <div className={cn(
+                  "absolute inset-0 flex flex-col transition-all duration-400",
+                  isFlipped ? "opacity-100 scale-100" : "opacity-0 pointer-events-none scale-95"
+                )}>
+                  {/* Back header — click to flip back */}
+                  <button
+                    onClick={flipBack}
+                    className="flex items-center gap-2 px-5 py-4 border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left shrink-0"
+                  >
+                    <CaretLeft size={14} weight="bold" style={{ color: accent }} />
+                    <span className="font-black text-xs uppercase tracking-widest" style={{ color: accent }}>{hub.title}</span>
+                  </button>
+
+                  {/* Accordion sections */}
+                  <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                    {hub.sections.map((section, sIdx) => {
+                      const isOpen   = backSectionIdx === sIdx
+                      const isDimmed = !isOpen
+                      return (
+                        <div
+                          key={sIdx}
+                          className={cn(
+                            "rounded-[14px] border transition-all duration-300",
+                            isOpen
+                              ? "border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900"
+                              : "border-transparent bg-white dark:bg-zinc-950 grayscale opacity-[0.28] scale-[0.98]"
+                          )}
+                        >
+                          <button
+                            onClick={() => setBackSectionIdx(sIdx)}
+                            className="w-full flex items-center justify-between px-4 py-3 text-left"
+                          >
+                            <span className={cn("font-black text-xs tracking-tight", isOpen ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-500")}>
+                              {section.title}
+                            </span>
+                            <CaretDown size={12} className={cn("transition-transform duration-300 shrink-0", isOpen ? "rotate-180" : "")} style={{ color: isOpen ? accent : undefined }} />
+                          </button>
+                          <Accordion open={isOpen}>
+                            <div className="px-4 pb-4 flex flex-wrap gap-1.5">
+                              {section.items.map((item, iIdx) => (
+                                <button
+                                  key={iIdx}
+                                  onClick={() => setSelectedService({ name: item.name, price: item.price, hubId, sectionTitle: section.title })}
+                                  className="px-3 py-1.5 rounded-[14px] border text-[0.75rem] font-bold transition-all hover:-translate-y-0.5 active:scale-95"
+                                  style={{ borderColor: `${accent}25`, backgroundColor: `${accent}08`, color: accent }}
+                                >
+                                  {item.name}
+                                </button>
+                              ))}
+                            </div>
+                          </Accordion>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
-              </button>
+              </div>
             )
           })}
         </div>
       </div>
 
-      <HubModal hubId={activeHub} onClose={() => setActiveHub(null)} onSelectService={setSelectedService} />
       <ServiceDetailModal svc={selectedService} onClose={() => setSelectedService(null)} />
     </section>
   )
