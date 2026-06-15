@@ -70,8 +70,8 @@ export function Navbar() {
   }, [menuOpen])
 
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : ""
-    return () => { document.body.style.overflow = "" }
+    document.body.classList.toggle("scroll-locked", menuOpen)
+    return () => { document.body.classList.remove("scroll-locked") }
   }, [menuOpen])
 
   const navigate = useCallback((path: string) => {
@@ -96,7 +96,7 @@ export function Navbar() {
 
       <header
         role="banner"
-        className="fixed left-0 right-0 top-0 z-[9999] flex justify-center px-4 md:px-8 h-[--nav-h] items-center pointer-events-none"
+        className="fixed left-0 right-0 top-0 z-[9999] flex justify-center px-4 md:px-8 h-[--nav-h] items-center pointer-events-none mt-3 md:mt-0"
       >
         <div className="flex items-center justify-between w-full max-w-[1200px]">
 
@@ -176,7 +176,7 @@ export function Navbar() {
         </div>
       </header>
 
-      {/* ── Fullscreen Drawer with solid background ── */}
+      {/* ── Fullscreen Drawer ── */}
       <div
         id="nav-drawer"
         ref={menuRef}
@@ -188,18 +188,13 @@ export function Navbar() {
           menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
       >
-        {/* Solid blurred background layer */}
         <div
-          className={cn(
-            "absolute inset-0 backdrop-blur-xl bg-white/90 dark:bg-black/90 transition-opacity duration-300",
-            menuOpen ? "opacity-100" : "opacity-0"
-          )}
+          className="absolute inset-0 bg-black/40 backdrop-blur-xl cursor-pointer"
           onClick={() => setMenuOpen(false)}
           aria-hidden="true"
         />
 
-        {/* Nav menu panel */}
-        <nav className="relative z-10 w-full max-w-[320px] px-6 flex flex-col items-center gap-6">
+        <nav className="relative z-10 w-full max-w-[320px] px-6 flex flex-col items-center gap-6 flex-1 justify-center">
           <div
             className={cn(
               "flex flex-col items-center gap-2.5 w-full transition-all duration-300",
@@ -258,7 +253,7 @@ export function Navbar() {
 
         <div
           className={cn(
-            "relative z-10 text-center select-none transition-all duration-500 mt-4",
+            "relative z-10 text-center select-none transition-all duration-500 mt-auto mb-6 pb-2",
             menuOpen ? "translate-y-0 opacity-100 scale-100" : "translate-y-4 opacity-0 scale-95"
           )}
           style={{ transitionDelay: menuOpen ? `${NAV_ITEMS.length * 35 + 100}ms` : "0ms" }}
