@@ -37,7 +37,7 @@ export function AboutPage() {
               Your <span className="text-brand-orange">Neighbourhood</span> Digital Hub
             </h2>
             <p className="abh-body mb-6">
-              {BIZ.name} is a home-based service business in {BIZ.location}. We started with one simple goal: make technology and important services accessible to everyone in our community — no jargon, no stress.
+              {BIZ.name} is a home-based service business in ${BIZ.location}. We started with one simple goal: make technology and important services accessible to everyone in our community — no jargon, no stress.
             </p>
             <p className="abh-body mb-8">
               We understand that not everyone is tech-savvy, and that's perfectly okay. That's exactly why we're here — to make things easy, friendly, and affordable.
@@ -58,7 +58,7 @@ export function AboutPage() {
             </ul>
           </div>
 
-          <div className="abh-card p-8 bg-zinc-50 dark:bg-[#27272A]/50" aria-label="Business overview">
+          <div className="abh-card p-8 bg-zinc-50 dark:bg-zinc-900/50" aria-label="Business overview">
             <h3 className="abh-card-heading text-2xl mb-1">{BIZ.name}</h3>
             <p className="abh-label text-zinc-500 mb-8">Serving Kgotsong & surrounding areas</p>
             <dl className="grid grid-cols-2 gap-4">
@@ -68,7 +68,7 @@ export function AboutPage() {
                 { value: <WhatsappLogo weight="fill" className="w-7 h-7 text-brand-orange" aria-hidden="true" />,           label: "WhatsApp Ready" },
                 { value: <ShieldCheck  weight="fill" className="w-7 h-7 text-brand-orange" aria-hidden="true" />,           label: "Community Trusted" },
               ].map((stat, index) => (
-                <div key={index} className="bg-white dark:bg-[#18181B] rounded-[14px] p-5 text-center flex flex-col justify-center items-center min-h-[100px] border border-zinc-100 dark:border-[#27272A]">
+                <div key={index} className="bg-white dark:bg-zinc-950 rounded-[14px] p-5 text-center flex flex-col justify-center items-center min-h-[100px] border border-zinc-100 dark:border-zinc-800">
                   <dt className="sr-only">{stat.label}</dt>
                   <dd className="font-black text-3xl text-brand-orange mb-1 flex items-center justify-center">{stat.value}</dd>
                   <div className="abh-label text-[0.6rem]" aria-hidden="true">{stat.label}</div>
@@ -79,7 +79,7 @@ export function AboutPage() {
         </div>
       </section>
 
-      <section className="py-20 px-4 bg-zinc-50/50 dark:bg-[#27272A]/20" aria-labelledby="standards-title">
+      <section className="py-20 px-4 bg-zinc-50/50 dark:bg-zinc-900/20" aria-labelledby="standards-title">
         <div className="max-w-[1000px] mx-auto">
           <div className="text-center mb-16">
             <h2 id="standards-title" className="abh-section-heading mb-4">Our Everyday Toolkit Standards</h2>
@@ -108,7 +108,7 @@ export function AboutPage() {
                   <div
                     className={cn(
                       "w-12 h-12 rounded-[14px] flex items-center justify-center mb-6 transition-all duration-300 border",
-                      isHovered ? "bg-brand-blue text-white border-transparent" : "bg-white dark:bg-[#18181B] text-brand-blue border-zinc-100 dark:border-[#27272A]"
+                      isHovered ? "bg-brand-blue text-white border-transparent" : "bg-white dark:bg-zinc-900 text-brand-blue border-zinc-100 dark:border-zinc-800"
                     )}
                     aria-hidden="true"
                   >
@@ -124,7 +124,7 @@ export function AboutPage() {
       </section>
 
       <section className="px-4 md:px-8 py-20 text-center" aria-labelledby="mission-title">
-        <div className="max-w-[700px] mx-auto abh-card p-10 bg-zinc-50 dark:bg-[#27272A]/50">
+        <div className="max-w-[700px] mx-auto abh-card p-10 bg-zinc-50 dark:bg-zinc-900/50">
           <span className="abh-label text-brand-blue bg-brand-blue/10 px-4 py-1.5 rounded-full mb-6 inline-block">Our Mission</span>
           <h2 id="mission-title" className="abh-section-heading mb-4">Bridging the Digital Gap in Our Community</h2>
           <p className="abh-body text-lg max-w-xl mx-auto">

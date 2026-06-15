@@ -390,12 +390,12 @@ export const PROJECTS = [
   {
     id: "shuttle-flyer",
     hub: "design",
-    title: "Shuttle Service Pricing Flyer Design",
+    title: "Sol's Shuttle Services",
     tag: "Design Hub",
-    shortDesc: "Professional pricing flyer for Sol's Shuttle Services covering day and night rates.",
+    shortDesc: "Branding package for a local shuttle service — flyer, logo, and business card.",
     image: "/Sol.jpg",
-    images: ["/Sol.jpg"],
-    clientGoal: "The client needed a clear and professional pricing flyer to showcase their shuttle service rates for both day and night, making it easy for customers to understand distance-based pricing.",
+    images: ["/Sol.jpg", "/gallery/design/logo.jpg", "/gallery/design/business-card.jpg"],
+    clientGoal: "Sol needed a complete brand package for his shuttle service — a flyer to share rates, a logo for brand identity, and business cards for customers.",
     whatWeDid: [
       "Designed full pricing layout (Day vs Evening rates)",
       "Structured pricing into clear distance ranges",

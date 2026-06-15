@@ -339,7 +339,7 @@ export const CONTACT_LINKS = [
 export const FOOTER_NAV = [
   { label: "Home",       path: "/" },
   { label: "Services",   path: "/services" },
-  { label: "About Us",   path: "/about" },
   { label: "Gallery",    path: "/gallery" },
+  { label: "About Us",   path: "/about" },
   { label: "Contact",    path: "/contact" },
 ] as const

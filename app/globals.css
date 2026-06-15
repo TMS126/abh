@@ -52,7 +52,7 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --brand-whatsapp-dark:  #1ebe5a;
 
   /* ── RADIUS SYSTEM ── */
-  --radius:               0.875rem;
+  --radius:               14px;
 
   /* ── LAYOUT TOKENS ── */
   --nav-h:                74px;
@@ -62,51 +62,51 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --card-border:          transparent;
 
   /* ── SHADCN SEMANTIC TOKENS (light) ── */
-  --background:           #F8FAFC;
-  --foreground:           #0F172A;
+  --background:           #FFFFFF;
+  --foreground:           #333333;
   --card:                 #FFFFFF;
-  --card-foreground:      #0F172A;
+  --card-foreground:      #333333;
   --popover:              #FFFFFF;
-  --popover-foreground:   #0F172A;
+  --popover-foreground:   #333333;
   --primary:              #1E6FA8;
   --primary-foreground:   #FFFFFF;
-  --secondary:            #F1F5F9;
-  --secondary-foreground: #0F172A;
-  --muted:                #F1F5F9;
-  --muted-foreground:     #64748B;
+  --secondary:            #F4F4F4;
+  --secondary-foreground: #333333;
+  --muted:                #EDEDED;
+  --muted-foreground:     #777777;
   --accent:               #6FBF1A;
   --accent-foreground:    #FFFFFF;
   --destructive:          #ef4444;
   --destructive-foreground: #FFFFFF;
-  --border:               #E2E8F0;
-  --input:                #F1F5F9;
+  --border:               #D6D6D6;
+  --input:                #EDEDED;
   --ring:                 #1E6FA8;
 }
 
 .dark {
-  --background:           #000000;
-  --foreground:           #FAFAFA;
-  --card:                 #18181B;
-  --card-foreground:      #FAFAFA;
-  --popover:              #18181B;
-  --popover-foreground:   #FAFAFA;
+  --background:           #09090b;
+  --foreground:           #fafafa;
+  --card:                 #18181b;
+  --card-foreground:      #fafafa;
+  --popover:              #18181b;
+  --popover-foreground:   #fafafa;
   --primary:              #A9D6F2;
-  --primary-foreground:   #000000;
-  --secondary:            #27272A;
-  --secondary-foreground: #FAFAFA;
-  --muted:                #09090B;
-  --muted-foreground:     #A1A1AA;
+  --primary-foreground:   #09090b;
+  --secondary:            #18181b;
+  --secondary-foreground: #fafafa;
+  --muted:                #27272a;
+  --muted-foreground:     #a1a1aa;
   --accent:               #CDEB9F;
-  --accent-foreground:    #000000;
+  --accent-foreground:    #09090b;
   --destructive:          #ef4444;
   --destructive-foreground: #FFFFFF;
-  --border:               #27272A;
-  --input:                #27272A;
+  --border:               #27272a;
+  --input:                #27272a;
   --ring:                 #A9D6F2;
-  --nav-bg:               rgba(0, 0, 0, 0.97);
-  --footer-bg:            #09090B;
-  --shadow:               0 4px 28px rgba(0, 0, 0, 0.4);
-  --card-border:          #27272A;
+  --nav-bg:               rgba(9, 9, 11, 0.97);
+  --footer-bg:            #09090b;
+  --shadow:               0 4px 28px rgba(0, 0, 0, 0.5);
+  --card-border:          #27272a;
 }
 
 /* ── Tailwind color utilities from brand tokens ── */
@@ -296,11 +296,6 @@ button, a, [role="button"] {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-}
-
-/* ── Scroll lock utility ── */
-body.scroll-locked {
-  overflow: hidden !important;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────

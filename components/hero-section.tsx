@@ -98,7 +98,7 @@ export function HeroSection() {
         </div>
 
         {/* Bento Box */}
-        <div className="abh-card w-full max-w-[840px] mx-auto p-5 sm:p-8 md:p-10 flex flex-col items-center bg-white/60 dark:bg-[#18181B]/60 backdrop-blur-md">
+        <div className="abh-card w-full max-w-[840px] mx-auto p-5 sm:p-8 md:p-10 flex flex-col items-center bg-white/60 dark:bg-zinc-900/50 backdrop-blur-md">
           <h2 className="abh-section-heading mb-2 text-center">Core Hub Ecosystem</h2>
           <p className="abh-body max-w-[520px] text-center mb-6 sm:mb-8">
             One platform. {BIZ.hubCount} hubs. Everything from printing to government services — done fast.
@@ -155,7 +155,7 @@ export function HeroSection() {
             })}
           </div>
 
-          <div className="w-full h-px bg-zinc-100 dark:border-[#27272A] mb-6 sm:mb-8" aria-hidden="true" />
+          <div className="w-full h-px bg-zinc-100 dark:bg-zinc-800 mb-6 sm:mb-8" aria-hidden="true" />
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-2 sm:gap-4 w-full max-w-[600px] mx-auto" role="list" aria-label="Key stats">
@@ -172,11 +172,11 @@ export function HeroSection() {
                   onMouseEnter={() => setHoveredCard(i)}
                   onMouseLeave={() => setHoveredCard(null)}
                   aria-label={`${stat.value} ${stat.label}`}
-                  className="flex flex-col items-center justify-center gap-1 rounded-[14px] border border-zinc-100 dark:border-[#27272A] bg-white dark:bg-[#18181B] py-3 sm:py-4 px-1 sm:px-2 text-center transition-all duration-300 shadow-sm"
+                  className="flex flex-col items-center justify-center gap-1 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-[#081428] py-3 sm:py-4 px-1 sm:px-2 text-center transition-all duration-300 shadow-sm"
                   style={{ borderColor: isHov ? stat.color : undefined }}
                 >
                   <div
-                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-[14px] flex items-center justify-center border border-zinc-100 dark:border-[#27272A] mb-1 transition-colors duration-300"
+                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-[14px] flex items-center justify-center border border-zinc-100 dark:border-zinc-800 mb-1 transition-colors duration-300"
                     style={{ backgroundColor: isHov ? stat.color : "transparent", color: isHov ? BRAND.white : stat.color }}
                   >
                     {stat.icon}
@@ -210,7 +210,7 @@ export function CtaBar({
 }) {
   const router = useRouter()
   return (
-    <section aria-label="Call to action" className="px-4 md:px-8 py-12 transition-colors duration-300 bg-zinc-50 dark:bg-[#27272A]/50">
+    <section aria-label="Call to action" className="px-4 md:px-8 py-12 transition-colors duration-300 bg-zinc-50 dark:bg-zinc-950/50">
       <div className="max-w-[1000px] mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
         <div className="text-center md:text-left">
           <h2 className="abh-section-heading mb-3">{title}</h2>
