@@ -230,11 +230,43 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
 }
 
 export function Footer() {
-  const profile = useInstance("profile")
+  const profile        = useInstance("profile")
+  const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <footer className="bg-white dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900">
-      <FooterContent onOpenProfile={() => profile.open()} />
+    <footer className="relative z-30">
+      {/* Collapsible content — slides up above the pill */}
+      <div
+        className={cn(
+          "overflow-hidden transition-all duration-500 ease-in-out bg-white dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900",
+          isOpen ? "max-h-[1400px] opacity-100" : "max-h-0 opacity-0 pointer-events-none"
+        )}
+      >
+        <FooterContent onOpenProfile={() => profile.open()} />
+      </div>
+
+      {/* Pill trigger — always pinned at bottom */}
+      <div className="flex justify-center py-4 bg-white dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900">
+        <button
+          onClick={() => setIsOpen(v => !v)}
+          aria-expanded={isOpen}
+          aria-label={isOpen ? "Collapse footer" : "Expand footer"}
+          className={cn(
+            "flex items-center gap-2 px-6 py-3 rounded-[14px] shadow-md text-xs font-black uppercase tracking-widest transition-all duration-300 select-none",
+            isOpen
+              ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900"
+              : "bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
+          )}
+        >
+          <CaretDown
+            size={13}
+            weight="bold"
+            className={cn("transition-transform duration-300", isOpen ? "rotate-180" : "rotate-0")}
+          />
+          {isOpen ? "Close" : "About & Links"}
+        </button>
+      </div>
+
       <ProfileDrawer open={profile.isActive} onClose={() => profile.close()} />
     </footer>
   )
