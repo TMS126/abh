@@ -52,7 +52,7 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --brand-whatsapp-dark:  #1ebe5a;
 
   /* ── RADIUS SYSTEM ── */
-  --radius:               0.875rem;
+  --radius:               14px;
 
   /* ── LAYOUT TOKENS ── */
   --nav-h:                74px;
