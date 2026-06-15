@@ -137,9 +137,13 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   
   useEffect(() => {
     if (!svc) return
+    document.body.style.overflow = "hidden"
     const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
     document.addEventListener("keydown", fn)
-    return () => document.removeEventListener("keydown", fn)
+    return () => {
+      document.body.style.overflow = ""
+      document.removeEventListener("keydown", fn)
+    }
   }, [svc, onClose])
 
   if (!svc) return null
@@ -152,8 +156,8 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
 
   return (
     <div className="fixed inset-0 z-[10200] flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div ref={ref} className="relative w-full max-w-sm rounded-[24px] overflow-hidden shadow-2xl bg-white dark:bg-zinc-950 animate-in zoom-in-95 duration-300 border border-zinc-100 dark:border-zinc-800">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-xl" onClick={onClose} />
+      <div ref={ref} className="relative w-full max-w-sm rounded-[14px] overflow-hidden shadow-2xl bg-white dark:bg-zinc-950 animate-in zoom-in-95 duration-300 border border-zinc-100 dark:border-zinc-800">
         <div className="p-8">
           <div className="flex justify-between items-start mb-6">
             <div>
@@ -173,7 +177,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
           <a
             href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waText)}`}
             target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-3 w-full py-4 rounded-[18px] font-black text-sm text-white transition-all active:scale-95 hover:opacity-90 shadow-lg shadow-brand-whatsapp/20"
+            className="flex items-center justify-center gap-3 w-full py-4 rounded-[14px] font-black text-sm text-white transition-all active:scale-95 hover:opacity-90 shadow-lg shadow-brand-whatsapp/20"
             style={{ backgroundColor: "#25D366" }}
           >
             <WhatsappLogo size={20} weight="fill" />
@@ -189,7 +193,16 @@ function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; on
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
   const [openSectionIdx, setOpenSectionIdx] = useState<number | null>(0)
-  
+
+  useEffect(() => {
+    if (!hubId) {
+      document.body.style.overflow = ""
+      return
+    }
+    document.body.style.overflow = "hidden"
+    return () => { document.body.style.overflow = "" }
+  }, [hubId])
+
   if (!hubId) return null
   
   const hub    = HUBS[hubId]
@@ -198,8 +211,8 @@ function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; on
 
   return (
     <div className="fixed inset-0 z-[10100] flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
-      <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 spin-in-1 duration-500 border border-zinc-100 dark:border-zinc-800">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-xl" onClick={onClose} />
+      <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 spin-in-1 duration-500 border border-zinc-100 dark:border-zinc-800">
         <div className="p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center" style={{ backgroundColor: `${accent}05` }}>
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: accent }}>
@@ -207,7 +220,7 @@ function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; on
             </div>
             <div>
               <h2 className="font-sans font-black text-2xl text-zinc-900 dark:text-zinc-50">{hub.title}</h2>
-              <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mt-1">{hub.sections.length} Service Categories</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mt-1">{hub.sections.length} Services</p>
             </div>
           </div>
           <button onClick={onClose} className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center text-zinc-500 shadow-sm hover:bg-zinc-50 transition-all">
@@ -222,7 +235,7 @@ function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; on
             {hub.sections.map((section, sIdx) => {
               const isOpen = openSectionIdx === sIdx
               return (
-                <div key={sIdx} className={cn("rounded-[20px] border transition-all duration-300", isOpen ? "bg-zinc-50 dark:bg-zinc-900/50" : "bg-white dark:bg-zinc-950")} style={{ borderColor: isOpen ? `${accent}30` : "transparent" }}>
+                <div key={sIdx} className={cn("rounded-[14px] border transition-all duration-300", isOpen ? "bg-zinc-50 dark:bg-zinc-900/50" : "bg-white dark:bg-zinc-950")} style={{ borderColor: isOpen ? `${accent}30` : "transparent" }}>
                   <button onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)} className="w-full flex items-center justify-between p-5 text-left">
                     <span className={cn("font-black text-sm tracking-tight transition-colors", isOpen ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-500 dark:text-zinc-400")}>{section.title}</span>
                     <CaretDown size={16} className={cn("transition-transform duration-300", isOpen ? "rotate-180" : "rotate-0")} style={{ color: isOpen ? accent : undefined }} />
@@ -233,7 +246,7 @@ function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; on
                         <button
                           key={iIdx}
                           onClick={() => onSelectService({ name: item.name, price: item.price, hubId, sectionTitle: section.title })}
-                          className="px-4 py-2.5 rounded-[12px] border text-[0.8rem] font-bold transition-all hover:-translate-y-0.5 active:scale-95"
+                          className="px-4 py-2.5 rounded-[14px] border text-[0.8rem] font-bold transition-all hover:-translate-y-0.5 active:scale-95"
                           style={{ borderColor: `${accent}20`, backgroundColor: `${accent}05`, color: accent }}
                         >
                           {item.name}
@@ -248,10 +261,10 @@ function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; on
         </div>
         
         <div className="p-8 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 flex flex-col sm:flex-row gap-3">
-          <a href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-2 py-4 rounded-[18px] font-black text-sm text-white bg-brand-whatsapp shadow-lg shadow-brand-whatsapp/20 hover:opacity-90 transition-all">
+          <a href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-2 py-4 rounded-[14px] font-black text-sm text-white bg-brand-whatsapp shadow-lg shadow-brand-whatsapp/20 hover:opacity-90 transition-all">
             <WhatsappLogo size={20} weight="fill" /> WhatsApp General Enquiry
           </a>
-          <button onClick={onClose} className="px-8 py-4 rounded-[18px] font-black text-sm border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800 transition-all">
+          <button onClick={onClose} className="px-8 py-4 rounded-[14px] font-black text-sm border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800 transition-all">
             Back to Hubs
           </button>
         </div>
@@ -275,7 +288,7 @@ export function ServicesPage() {
           <div className="abh-divider" />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           {HUB_ORDER.map(hubId => {
             const hub = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
@@ -285,11 +298,11 @@ export function ServicesPage() {
               <button
                 key={hubId}
                 onClick={() => setActiveHub(hubId)}
-                className="group relative flex flex-col items-center p-8 rounded-[32px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 text-center overflow-hidden"
+                className="group relative flex flex-col items-center p-8 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 text-center overflow-hidden"
               >
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: `radial-gradient(circle at center, ${accent}08 0%, transparent 70%)` }} />
                 
-                <div className="w-20 h-20 rounded-[24px] flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110 shadow-lg" style={{ backgroundColor: `${accent}10`, color: accent }}>
+                <div className="w-20 h-20 rounded-[14px] flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110 shadow-lg" style={{ backgroundColor: `${accent}10`, color: accent }}>
                   <HubIcon id={hubId} size={40} />
                 </div>
                 
@@ -298,7 +311,7 @@ export function ServicesPage() {
                 
                 <div className="mt-auto flex flex-col items-center gap-4">
                   <div className="h-1.5 w-12 rounded-full transition-all duration-500 group-hover:w-24" style={{ backgroundColor: accent }} />
-                  <span className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200 transition-colors">View {hub.sections.length} Categories</span>
+                  <span className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200 transition-colors">View All</span>
                 </div>
               </button>
             )

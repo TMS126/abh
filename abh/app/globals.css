@@ -84,29 +84,29 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
 }
 
 .dark {
-  --background:           #0D1B2A;
-  --foreground:           #E8EFF6;
-  --card:                 #1A2C3E;
-  --card-foreground:      #E8EFF6;
-  --popover:              #1A2C3E;
-  --popover-foreground:   #E8EFF6;
+  --background:           #09090b;
+  --foreground:           #fafafa;
+  --card:                 #18181b;
+  --card-foreground:      #fafafa;
+  --popover:              #18181b;
+  --popover-foreground:   #fafafa;
   --primary:              #A9D6F2;
-  --primary-foreground:   #0D1B2A;
-  --secondary:            #1A2C3E;
-  --secondary-foreground: #E8EFF6;
-  --muted:                #142233;
-  --muted-foreground:     #8AABBF;
+  --primary-foreground:   #09090b;
+  --secondary:            #18181b;
+  --secondary-foreground: #fafafa;
+  --muted:                #27272a;
+  --muted-foreground:     #a1a1aa;
   --accent:               #CDEB9F;
-  --accent-foreground:    #0D1B2A;
+  --accent-foreground:    #09090b;
   --destructive:          #ef4444;
   --destructive-foreground: #FFFFFF;
-  --border:               #243648;
-  --input:                #243648;
+  --border:               #27272a;
+  --input:                #27272a;
   --ring:                 #A9D6F2;
-  --nav-bg:               rgba(13, 27, 42, 0.97);
-  --footer-bg:            #091524;
-  --shadow:               0 4px 28px rgba(0, 0, 0, 0.3);
-  --card-border:          #243648;
+  --nav-bg:               rgba(9, 9, 11, 0.97);
+  --footer-bg:            #09090b;
+  --shadow:               0 4px 28px rgba(0, 0, 0, 0.5);
+  --card-border:          #27272a;
 }
 
 /* ── Tailwind color utilities from brand tokens ── */

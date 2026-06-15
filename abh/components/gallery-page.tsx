@@ -41,9 +41,13 @@ function ProjectViewerModal({ project, onClose }: { project: ProjectData | null;
 
   useEffect(() => {
     if (!project) return
+    document.body.style.overflow = "hidden"
     const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
     document.addEventListener("keydown", fn)
-    return () => document.removeEventListener("keydown", fn)
+    return () => {
+      document.body.style.overflow = ""
+      document.removeEventListener("keydown", fn)
+    }
   }, [project, onClose])
 
   if (!project) return null
@@ -52,8 +56,8 @@ function ProjectViewerModal({ project, onClose }: { project: ProjectData | null;
 
   return (
     <div className="fixed inset-0 z-[10200] flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
-      <div className="relative w-full max-w-5xl bg-white dark:bg-zinc-950 rounded-[32px] overflow-hidden shadow-2xl flex flex-col md:flex-row h-[85vh] animate-in zoom-in-95 duration-500 border border-zinc-100 dark:border-zinc-800">
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={onClose} />
+      <div className="relative w-full max-w-5xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden shadow-2xl flex flex-col md:flex-row h-[85vh] animate-in zoom-in-95 duration-500 border border-zinc-100 dark:border-zinc-800">
         
         {/* Left: Scrollable Images */}
         <div className="flex-1 overflow-y-auto bg-zinc-50 dark:bg-zinc-900/50 p-4 md:p-8 space-y-6" ref={scrollRef}>
@@ -155,7 +159,7 @@ function Carousel({ projects, accent, onSelect }: { projects: ProjectData[]; acc
               )}
               onClick={() => isCenter ? onSelect(project) : scrollToIndex(idx)}
             >
-              <div className="rounded-[32px] overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-2xl">
+              <div className="rounded-[14px] overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-2xl">
                 <div className="relative aspect-[4/3]">
                   <Image src={project.image} alt={project.title} fill className="object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -246,7 +250,7 @@ export function GalleryPage() {
         </div>
 
         {/* Warning Container */}
-        <div className="max-w-2xl mx-auto mb-16 p-6 rounded-[24px] border border-brand-blue/20 bg-brand-blue/5 dark:bg-brand-blue/10 flex items-center gap-6">
+        <div className="max-w-2xl mx-auto mb-16 p-6 rounded-[14px] border border-brand-blue/20 bg-brand-blue/5 dark:bg-brand-blue/10 flex items-center gap-6">
           <div className="w-12 h-12 shrink-0 rounded-2xl bg-brand-blue/10 flex items-center justify-center text-brand-blue">
             <Info size={28} weight="fill" />
           </div>
@@ -274,7 +278,7 @@ export function GalleryPage() {
                 <div className="md:hidden flex gap-4 overflow-x-auto pb-8 snap-x no-scrollbar px-4">
                   {projects.map(p => (
                     <div key={p.id} className="snap-center shrink-0 w-[280px]" onClick={() => setSelectedProject(p)}>
-                      <div className="rounded-[24px] overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+                      <div className="rounded-[14px] overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950">
                         <div className="relative aspect-square">
                           <Image src={p.image} alt={p.title} fill className="object-cover" />
                         </div>
@@ -286,9 +290,24 @@ export function GalleryPage() {
                   ))}
                 </div>
 
-                {/* Desktop View: Carousel */}
-                <div className="hidden md:block">
-                  <Carousel projects={projects} accent={accent} onSelect={setSelectedProject} />
+                {/* Desktop View: Horizontal Cards */}
+                <div className="hidden md:flex gap-4 overflow-x-auto pb-4 px-4 no-scrollbar">
+                  {projects.map(p => (
+                    <div key={p.id} className="shrink-0 w-[300px]" onClick={() => setSelectedProject(p)}>
+                      <div className="rounded-[14px] overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-lg cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                        <div className="relative aspect-[4/3]">
+                          <Image src={p.image} alt={p.title} fill className="object-cover" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                          <div className="absolute bottom-4 left-4 right-4">
+                            <span className="text-[0.6rem] font-black uppercase tracking-widest px-2 py-1 rounded-full bg-white/20 backdrop-blur-md text-white mb-2 inline-block border border-white/20">
+                              {p.tag}
+                            </span>
+                            <h3 className="text-white font-black text-lg leading-tight">{p.title}</h3>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )

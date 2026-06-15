@@ -68,7 +68,7 @@ function FAQAccordion() {
                 </button>
                 <div
                   className="transition-all duration-300 ease-in-out overflow-hidden"
-                  style={{ maxHeight: isOpen ? "320px" : "0px", opacity: isOpen ? 1 : 0 }}
+                  style={{ maxHeight: isOpen ? "600px" : "0px", opacity: isOpen ? 1 : 0 }}
                 >
                   <div className="px-5 pb-5 pt-3 border-t border-zinc-100 dark:border-zinc-800 abh-body">
                     {faq.answer}
@@ -119,7 +119,7 @@ function HubSelect({ value, onChange }: { value: string; onChange: (val: string)
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-1.5 w-full bg-white dark:bg-background border border-zinc-100 dark:border-zinc-800 rounded-[14px] shadow-[0_8px_24px_rgba(0,0,0,0.12)] overflow-hidden">
+        <div className="absolute z-50 mt-1.5 w-full bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-zinc-100 dark:border-zinc-800 rounded-[14px] shadow-[0_8px_24px_rgba(0,0,0,0.12)] overflow-hidden">
           {options.map((opt) => {
             const color = FORM_HUBS[opt]
             return (

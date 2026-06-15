@@ -81,12 +81,17 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
         {/* Content */}
         <div className="px-8 pb-10 flex flex-col items-center text-center">
           {/* Avatar */}
-          <div
-            className="w-16 h-16 rounded-full flex items-center justify-center mb-4 text-2xl font-black text-white shrink-0"
-            style={{ background: `linear-gradient(135deg, ${BRAND.blue}, ${BRAND.green})` }}
-            aria-hidden="true"
-          >
-            {BIZ.founder.split(" ").map(n => n[0]).join("")}
+          <div className="relative mb-4">
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black text-white shrink-0"
+              style={{ background: `linear-gradient(135deg, ${BRAND.blue}, ${BRAND.green})` }}
+              aria-hidden="true"
+            >
+              TM
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-sm shadow-sm">
+              ☺
+            </div>
           </div>
 
           {/* Name & role */}

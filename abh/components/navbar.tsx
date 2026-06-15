@@ -189,7 +189,7 @@ export function Navbar() {
         )}
       >
         <div
-          className="absolute inset-0 backdrop-blur-md cursor-pointer"
+          className="absolute inset-0 bg-black/40 backdrop-blur-xl cursor-pointer"
           onClick={() => setMenuOpen(false)}
           aria-hidden="true"
         />
