@@ -45,9 +45,9 @@ export const BRAND = {
 
 // ─── BUSINESS CONSTANTS ──────────────────────────────────────────────────────
 export const BIZ = {
-  name:         "Apexbytes Hub",
+  name:         "ApexbytesHub",
   nameShort:    "ApexbytesHub",
-  tagline:      "Your local tech & print partner in Kgotsong",
+  tagline:      "Your local tech & print partner.",
   location:     "Kgotsong, Bothaville",
   phone:        "075 333 8260",
   phoneE164:    "+27753338260",
@@ -81,7 +81,7 @@ export const HOURS = {
   printAndDoc: {
     label:  "Print Hub · Document Hub",
     hours:  "Mon – Sun · 07:00 – 20:00",
-    note:   "Open on public holidays",
+    note:   "Open on Public Holidays",
     open:   true,
   },
   techDesignEservice: {
@@ -90,7 +90,7 @@ export const HOURS = {
     note:   "Sun & Public Holidays · Closed",
     open:   false,
   },
-  responseTime: "We typically reply within 30 minutes during business hours.",
+  responseTime: "We typically reply within 15 minutes during business hours.",
 } as const
 
 // ─── HUB NAMES & KEYS ────────────────────────────────────────────────────────
