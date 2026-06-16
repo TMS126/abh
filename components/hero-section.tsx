@@ -62,7 +62,7 @@ export function HeroSection() {
 
         {/* IMPROVEMENT 2: Limited description width strictly to max ~600px for enhanced scannability */}
         <p className="abh-body text-base md:text-xl mb-10 max-w-[600px] px-2">
-          From printing your documents to navigating government services — we make it simple, fast, and friendly. Right here in {BIZ.location}.
+          From printing your documents to navigating government services — we make it simple, fast, and friendly.
         </p>
 
         {/* IMPROVEMENT 3: Established an intentional 16px-24px gap system between call-to-actions */}
