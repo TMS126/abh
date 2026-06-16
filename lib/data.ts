@@ -189,8 +189,8 @@ export const HUBS: Record<HubId, Hub> = {
       {
         title: 'Laminating',
         items: [
-          { name: 'A5', price: 'R12' },
-          { name: 'A4', price: 'R15' },
+          { name: 'A5', price: 'R15' },
+          { name: 'A4', price: 'R20' },
           { name: 'A3', price: 'R30' },
         ],
       },
@@ -218,19 +218,19 @@ export const HUBS: Record<HubId, Hub> = {
         title: 'Business Cards',
         items: [
           { name: 'Single Side', price: 'R120' },
-          { name: 'Double Side', price: 'R180' },
+          { name: 'Double Sided', price: 'R180' },
         ],
       },
       {
         title: 'Flyers & Posters',
         items: [
-          { name: 'Simple', price: 'R150' },
-          { name: 'Custom', price: 'R250' },
-          { name: 'Complex', price: 'R350' },
+          { name: 'Simple design', price: 'R150' },
+          { name: 'Custom design', price: 'R250' },
+          { name: 'Complex design', price: 'R300' },
         ],
       },
       {
-        title: 'Social Media',
+        title: 'Social Media Posts',
         items: [
           { name: 'Post', price: 'R80' },
           { name: 'Post + Story', price: 'R120' },
@@ -260,17 +260,16 @@ export const HUBS: Record<HubId, Hub> = {
     desc: "Government platforms made easy. We handle registrations, applications and updates so you don't have to stress.",
     tagStyle: { bg: '#EBF5FB', color: '#0F3F66' },
     tagStyleDark: { bg: '#1E3A52', color: '#A9D6F2' },
-    previews: ['SASSA', 'SARS eFiling', 'UIF & CSD'],
+    previews: ['Job Applications', 'SARS eFiling', 'UIF & CSD'],
     sections: [
       {
         title: 'SASSA',
         items: [
           { name: 'Status Check', price: 'R20' },
-          { name: 'Payment/Balance Check', price: 'R15' },
           { name: 'Update Details', price: 'R30' },
           { name: 'Reapplication', price: 'R40' },
           { name: 'SRD Application', price: 'R40' },
-          { name: 'Appeal', price: 'R40' },
+          { name: 'SRD Appeal', price: 'R40' },
           { name: 'Banking Update', price: 'R40' },
           { name: 'Grant Application', price: 'R80' },
         ],
