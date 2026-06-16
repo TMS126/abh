@@ -111,9 +111,6 @@ export function HeroSection() {
           {/* Layer 1: Title + Description (Isolated with a clean bottom gap) */}
           <div className="w-full flex flex-col items-center mb-10 md:mb-12">
             <h2 className="abh-section-heading mb-3 text-center">Core Hub Ecosystem</h2>
-            <p className="abh-body max-w-[520px] text-center">
-              One platform. {BIZ.hubCount} hubs. Everything from printing to government services — done fast.
-            </p>
           </div>
 
           {/* Layer 2: Icons (Widened the step layout to let items breathe cleanly) */}
