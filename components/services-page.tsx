@@ -5,7 +5,9 @@ import { X, WhatsappLogo, Printer, FileText, PaintBrush, Globe, Desktop, CaretDo
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { BIZ, HUB_COLORS, HubKey } from "@/lib/brand"
-import { HUBS, HubId, PRICING } from "@/lib/data"
+import { HUBS, HubId } from "@/lib/data"
+import { PRICING } from "@/lib/data"
+
 
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
