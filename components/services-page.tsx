@@ -152,6 +152,18 @@ function NoticeBanner({ onDismiss }: { onDismiss: () => void }) {
   )
 }
 
+function NoticeBanner() {
+  return (
+    <div className="mb-10 rounded-[14px] border border-brand-blue/20 bg-brand-blue/5 dark:bg-brand-blue/10 px-5 py-4 flex items-start gap-3">
+      <span className="text-lg flex-shrink-0" aria-hidden="true">📢</span>
+      <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-relaxed">
+        <span className="font-black text-zinc-900 dark:text-zinc-50">Notice to Clients: </span>
+        Add-on services will be available from <span className="font-black">15 September 2026</span>. Minor price adjustments have also been made across some services. We appreciate your continued support and will keep you updated as we grow.
+      </p>
+    </div>
+  )
+}
+
 export function ServicesPage() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
@@ -182,6 +194,8 @@ export function ServicesPage() {
           <p className="abh-tagline max-w-2xl mx-auto">Explore our ecosystem. Tap a hub to view all available services and instant pricing.</p>
           <div className="abh-divider" />
         </div>
+
+        <NoticeBanner />
 
         {showNotice && <NoticeBanner onDismiss={dismissNotice} />}
 
