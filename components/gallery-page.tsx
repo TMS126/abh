@@ -118,10 +118,10 @@ export function GalleryPage() {
           <div className="abh-divider" />
         </div>
         <div className="flex flex-col md:flex-row gap-2 justify-center mb-16">
-          <button onClick={() => setActiveFilter("all")} className={cn("px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all", activeFilter === "all" ? "bg-brand-blue text-white shadow-lg" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 hover:bg-zinc-200")}>All Hubs</button>
+          <button onClick={() => setActiveFilter("all")} className={cn("px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all", activeFilter === "all" ? "bg-brand-blue text-white shadow-lg" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800")}>All Hubs</button>
           {ROW_ORDER.map(row => {
             const accent = getAccent(row.id); const isActive = activeFilter === row.id
-            return <button key={row.id} onClick={() => setActiveFilter(row.id)} className={cn("px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all", isActive ? "text-white shadow-lg" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 hover:bg-zinc-200")} style={isActive ? { backgroundColor: accent } : {}}>{row.short}</button>
+            return <button key={row.id} onClick={() => setActiveFilter(row.id)} className={cn("px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all", isActive ? "text-white shadow-lg" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800")} style={isActive ? { backgroundColor: accent } : {}}>{row.short}</button>
           })}
         </div>
         <div className="max-w-2xl mx-auto mb-16 p-6 rounded-[14px] border border-brand-blue/20 bg-brand-blue/5 dark:bg-brand-blue/10 flex items-center gap-6">
