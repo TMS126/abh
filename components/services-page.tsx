@@ -12,8 +12,9 @@ import { PRICING } from "@/lib/data"
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
 const NOTICE = {
-  id: "addon-services-2026-09-15",
-  text: "Add-on services will be available from 15 September. Minor price adjustments have also been made across some services. We appreciate your continued support and will keep you updated as we grow.",
+  text: "Add-on services will be available from ",
+  date: "15 September 2026",
+  textAfter: ". Minor price adjustments have also been made across some services. We appreciate your continued support and will keep you updated as we grow.",
 }
 
 function HubIcon({ id, size = 28, color }: { id: HubId; size?: number; color?: string }) {
@@ -135,7 +136,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   )
 }
 
-function NoticeBanner({ onDismiss }: { onDismiss: () => void }) {
+function NoticeBanner() {
   return (
     <div className="relative mb-10 rounded-[14px] border border-[#1E6FA8]/20 bg-[#EBF5FB] dark:bg-[#1E3A52]/40 dark:border-[#1E6FA8]/30 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
       <div className="w-9 h-9 rounded-[10px] bg-[#1E6FA8] flex items-center justify-center flex-shrink-0">
@@ -143,23 +144,10 @@ function NoticeBanner({ onDismiss }: { onDismiss: () => void }) {
       </div>
       <div className="flex-1 min-w-0 pt-0.5">
         <span className="text-[0.65rem] font-black uppercase tracking-widest text-[#0F3F66] dark:text-[#A9D6F2] block mb-1">Notice to Clients</span>
-        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-snug">{NOTICE.text}</p>
+        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-snug">
+          {NOTICE.text}<span className="font-black">{NOTICE.date}</span>{NOTICE.textAfter}
+        </p>
       </div>
-      <button onClick={onDismiss} aria-label="Dismiss notice" className="w-7 h-7 rounded-full bg-white/70 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-white dark:hover:bg-zinc-700 transition-colors flex-shrink-0">
-        <X size={14} weight="bold" />
-      </button>
-    </div>
-  )
-}
-
-function NoticeBanner() {
-  return (
-    <div className="mb-10 rounded-[14px] border border-brand-blue/20 bg-brand-blue/5 dark:bg-brand-blue/10 px-5 py-4 flex items-start gap-3">
-      <span className="text-lg flex-shrink-0" aria-hidden="true">📢</span>
-      <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-relaxed">
-        <span className="font-black text-zinc-900 dark:text-zinc-50">Notice to Clients: </span>
-        Add-on services will be available from <span className="font-black">15 September 2026</span>. Minor price adjustments have also been made across some services. We appreciate your continued support and will keep you updated as we grow.
-      </p>
     </div>
   )
 }
@@ -169,17 +157,6 @@ export function ServicesPage() {
   const isDark = resolvedTheme === "dark"
   const [activeHub, setActiveHub] = useState<HubId | null>(null)
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
-  const [showNotice, setShowNotice] = useState(false)
-
-  useEffect(() => {
-    const dismissed = localStorage.getItem(`notice-dismissed-${NOTICE.id}`)
-    if (!dismissed) setShowNotice(true)
-  }, [])
-
-  const dismissNotice = () => {
-    setShowNotice(false)
-    localStorage.setItem(`notice-dismissed-${NOTICE.id}`, "1")
-  }
 
   useEffect(() => {
     document.body.style.overflow = (activeHub || selectedService) ? "hidden" : ""
@@ -196,8 +173,6 @@ export function ServicesPage() {
         </div>
 
         <NoticeBanner />
-
-        {showNotice && <NoticeBanner onDismiss={dismissNotice} />}
 
         <div className="flex flex-col md:flex-row gap-6 pb-8 overflow-x-auto md:overflow-visible no-scrollbar">
           {HUB_ORDER.map(hubId => {
@@ -218,4 +193,5 @@ export function ServicesPage() {
     </section>
   )
 }
+ 
  
