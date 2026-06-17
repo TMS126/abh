@@ -45,7 +45,7 @@ function FAQAccordion() {
                   )}
                 >
                   <div className="overflow-hidden">
-                    <div className="px-5 pb-5 pt-3 border-t border-zinc-100 dark:border-zinc-800 abh-body">
+                    <div className="px-5 pb-8 pt-3 border-t border-zinc-100 dark:border-zinc-800 abh-body whitespace-pre-wrap">
                       {faq.answer}
                     </div>
                   </div>
