@@ -89,6 +89,8 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   const isDark = resolvedTheme === "dark"
   if (!svc) return null
   const colors = HUB_COLORS[svc.hubId as HubKey]; const accent = isDark ? colors.tagTextDark : colors.tagText
+  const hubTitle = HUBS[svc.hubId]?.title || svc.sectionTitle
+  const waMessage = `Hi ${BIZ.name}! I'd like to enquire about ${svc.name} (${svc.sectionTitle} — ${hubTitle}). The price shown is ${svc.price}. Can you assist?`
 
   return (
     <div className="fixed inset-0 z-[10200] flex items-center justify-center p-4 animate-in fade-in duration-300">
@@ -127,8 +129,8 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
         </div>
 
         <div className="p-8 pt-2 flex-shrink-0">
-          <a href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(`Hi! I'm interested in ${svc.name} (${svc.price})`)}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-3 w-full py-4 rounded-[14px] font-black text-sm text-white transition-all active:scale-95 shadow-lg" style={{ backgroundColor: "#25D366" }}>
-            <WhatsappLogo size={20} weight="fill" /> Order on WhatsApp
+          <a href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waMessage)}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-3 w-full py-4 rounded-[14px] font-black text-sm text-white transition-all active:scale-95 shadow-lg text-center" style={{ backgroundColor: "#25D366" }}>
+            <WhatsappLogo size={20} weight="fill" className="shrink-0" /> Order {svc.name} on WhatsApp
           </a>
         </div>
       </div>
