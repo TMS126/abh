@@ -10,8 +10,8 @@ const FORM_HUBS: Record<string, string> = {
   "Print Hub":      BRAND.blue,
   "Document Hub":   BRAND.green,
   "Design Hub":     BRAND.orangeDark,
-  "E-Service Hub":  BRAND.lightBlue,
-  "Tech Hub":       "#B8CCE0",
+  "E-Service Hub":  "#15537D",
+  "Tech Hub":       "#333333",
 }
 
 function FAQAccordion() {
@@ -218,3 +218,4 @@ export function ContactPage() {
     </div>
   )
 }
+ 
