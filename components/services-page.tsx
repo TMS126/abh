@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { X, WhatsappLogo, Printer, FileText, PaintBrush, Globe, Desktop, CaretDown, PaperPlaneTilt, ListChecks, Megaphone } from "@phosphor-icons/react"
+import { X, Printer, FileText, PaintBrush, Globe, Desktop, CaretDown, PaperPlaneTilt, ListChecks, Megaphone } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { BIZ, HUB_COLORS, HubKey } from "@/lib/brand"
@@ -84,13 +84,54 @@ function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; on
   )
 }
 
+// ─── Natural language label builder ───────────────────────────────────────────
+// Word order varies by category: "SASSA" reads naturally BEFORE the service name
+// ("SASSA Status Check"), while "Printing" reads naturally AFTER it
+// ("Black and White Printing"). This map encodes that per section.
+const SUFFIX_SECTIONS: Record<string, string> = {
+  "Printing": "Printing",
+  "Copying": "Copying",
+  "Photo Printing": "Photo Printing",
+  "Typing + Printing": "Typing and Printing",
+  "Laminating": "Laminating",
+  "Business Cards": "Business Cards",
+  "Flyers & Posters": "Flyers and Posters",
+  "Invitations": "Invitations",
+  "Revisions": "Revisions",
+}
+const PREFIX_SECTIONS: Record<string, string> = {
+  "SASSA": "SASSA",
+  "SARS": "SARS",
+  "PSIRA": "PSIRA",
+  "Social Media": "Social Media",
+  "Email Services": "Email",
+}
+
+function cleanText(s: string) {
+  return s.replace(/\s*\/\s*/g, " or ").replace(/\s*\+\s*/g, " and ").replace(/\s*&\s*/g, " and ")
+}
+
+function naturalServiceLabel(name: string, sectionTitle: string) {
+  const cleanName = cleanText(name)
+  if (SUFFIX_SECTIONS[sectionTitle]) {
+    return `${cleanName} ${SUFFIX_SECTIONS[sectionTitle]}`
+  }
+  if (PREFIX_SECTIONS[sectionTitle]) {
+    const keyword = PREFIX_SECTIONS[sectionTitle]
+    if (cleanName.toLowerCase().startsWith(keyword.toLowerCase())) return cleanName
+    return `${keyword} ${cleanName}`
+  }
+  return cleanName
+}
+
 function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onClose: () => void }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
   if (!svc) return null
   const colors = HUB_COLORS[svc.hubId as HubKey]; const accent = isDark ? colors.tagTextDark : colors.tagText
   const hubTitle = HUBS[svc.hubId]?.title || svc.sectionTitle
-  const waMessage = `Hi ${BIZ.name}! I'd like to enquire about ${svc.name} (${svc.sectionTitle} — ${hubTitle}). The price shown is ${svc.price}. Can you assist?`
+  const naturalLabel = naturalServiceLabel(svc.name, svc.sectionTitle)
+  const waMessage = `Hi ${BIZ.name}! I'd like to enquire about ${naturalLabel} (${hubTitle}). The price shown is ${svc.price}. Can you assist?`
 
   return (
     <div className="fixed inset-0 z-[10200] flex items-center justify-center p-4 animate-in fade-in duration-300">
@@ -99,7 +140,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
         <div className="p-8 pb-0 flex-shrink-0">
           <div className="flex justify-between items-start mb-6">
             <div>
-              <span className="text-[0.65rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>{svc.sectionTitle}</span>
+              <span className="text-[0.65rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>{cleanText(svc.sectionTitle)}</span>
               <h3 className="font-sans font-black text-2xl text-zinc-900 dark:text-zinc-50 leading-tight">{svc.name}</h3>
             </div>
             <button onClick={onClose} className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 flex-shrink-0"><X size={16} weight="bold" /></button>
@@ -129,8 +170,8 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
         </div>
 
         <div className="p-8 pt-2 flex-shrink-0">
-          <a href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waMessage)}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-3 w-full py-4 rounded-[14px] font-black text-sm text-white transition-all active:scale-95 shadow-lg text-center" style={{ backgroundColor: "#25D366" }}>
-            <WhatsappLogo size={20} weight="fill" className="shrink-0" /> Order {svc.name} on WhatsApp
+          <a href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waMessage)}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full px-4 py-4 rounded-[14px] font-black text-sm leading-snug text-white text-center transition-all active:scale-95 shadow-lg" style={{ backgroundColor: "#25D366" }}>
+            Order {naturalLabel} on WhatsApp
           </a>
         </div>
       </div>
