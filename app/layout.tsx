@@ -5,6 +5,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { InstanceGuardProvider } from '@/hooks/use-instance-guard'
 import { BIZ, BRAND } from '@/lib/brand'
 import { LocalBusinessJsonLd } from '@/components/ui/json-ld'
+import { QuoteCalculatorWidget } from '@/components/QuoteCalculatorWidget'
 import './globals.css'
 
 const nunito = Nunito({ 
@@ -65,6 +66,7 @@ export default function RootLayout({
           <InstanceGuardProvider>
             {children}
           </InstanceGuardProvider>
+          <QuoteCalculatorWidget />
         </ThemeProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
