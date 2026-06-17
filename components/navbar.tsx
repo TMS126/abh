@@ -74,11 +74,8 @@ export function Navbar() {
             onMouseLeave={handleLogoMouseLeave}
             onClick={() => navigate("/")}
           >
-            <div
-              className="relative w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-[14px] overflow-hidden transition-all duration-300"
-              style={mounted && theme === "dark" ? { filter: "invert(1) sepia(1) saturate(2.5) hue-rotate(150deg) brightness(0.85)" } : undefined}
-            >
-              <Image src="/logo.png" alt="" fill priority sizes="36px" className="object-contain" />
+            <div className="relative w-6 h-6 md:w-7 md:h-7 shrink-0 rounded-[14px] overflow-hidden transition-transform duration-300">
+              <Image src="/logo.png" alt="" fill priority sizes="28px" className="object-contain" />
             </div>
             <div className="font-sans font-black text-[1.1rem] leading-none tracking-tight transition-all duration-500 overflow-hidden flex items-center" style={{ maxWidth: isTextExpanded ? "180px" : "0px", opacity: isTextExpanded ? 1 : 0 }}>
               <span className="text-brand-blue dark:text-brand-light-blue whitespace-nowrap">Apexbytes</span>
@@ -147,4 +144,3 @@ export function Navbar() {
     </>
   )
 }
- 
