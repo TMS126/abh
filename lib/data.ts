@@ -1,7 +1,7 @@
 export const PRICING = {
   print: {
     'B&W Print': 'R5/page',
-    'Colour Print': 'R10/page',
+    'Colour Print': 'R8/page',
     'B&W Copy': 'R3/page',
     'Colour Copy': 'R5/page',
     'Glossy Photo (4x6)': 'R20',
@@ -15,8 +15,8 @@ export const PRICING = {
     'CV Upgrade/Fix': 'R40',
     'Cover Letter': 'R30',
     'Scanning': 'R5/page',
-    'Laminating (A5)': 'R12',
-    'Laminating (A4)': 'R15',
+    'Laminating (A5)': 'R15',
+    'Laminating (A4)': 'R20',
     'Laminating (A3)': 'R30',
   },
   design: {
