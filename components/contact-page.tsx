@@ -12,6 +12,7 @@ const FORM_HUBS: Record<string, { light: string; dark: string }> = {
   "Design Hub":     { light: BRAND.orangeDark, dark: "#F9D1B0" },
   "E-Service Hub":  { light: "#15537D",        dark: "#A9D6F2" },
   "Tech Hub":       { light: "#333333",        dark: "#B8CCE0" },
+  "Not Sure — Help Me Choose": { light: "#777777", dark: "#9A9A9A" },
 }
 
 function FAQAccordion() {
@@ -130,7 +131,10 @@ export function ContactPage() {
 
   const handleSubmit = () => {
     if (!isFormValid) return
-    const msg = `Hi ${BIZ.name}! My name is ${formData.name.trim()}. I'm interested in your ${formData.service}. \n\nMessage: ${formData.message.trim()}`
+    const serviceLine = formData.service.startsWith("Not Sure")
+      ? "I'm not sure which service I need yet — could you help me figure it out?"
+      : `I'm interested in your ${formData.service}.`
+    const msg = `Hi ${BIZ.name}! My name is ${formData.name.trim()}. ${serviceLine} \n\nMessage: ${formData.message.trim()}`
     window.open(`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(msg)}`, "_blank")
   }
 
@@ -170,10 +174,18 @@ export function ContactPage() {
                 <div>
                   <p className="text-[0.7rem] font-black uppercase text-zinc-500 mb-1">{HOURS.printAndDoc.label}</p>
                   <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{HOURS.printAndDoc.hours}</p>
+                  <p className="flex items-center gap-1.5 text-xs font-medium mt-1" style={{ color: BRAND.green }}>
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: BRAND.green }} />
+                    Open on public holidays
+                  </p>
                 </div>
                 <div>
                   <p className="text-[0.7rem] font-black uppercase text-zinc-500 mb-1">{HOURS.techDesignEservice.label}</p>
                   {HOURS.techDesignEservice.lines.map(l => <p key={l} className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{l}</p>)}
+                  <p className="flex items-center gap-1.5 text-xs font-medium mt-1" style={{ color: BRAND.orangeDark }}>
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: BRAND.orangeDark }} />
+                    Sunday &amp; Public Holidays · Closed
+                  </p>
                 </div>
               </div>
             </div>
