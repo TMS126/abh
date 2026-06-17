@@ -115,7 +115,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
               <ol className="space-y-3">
                 {svc.requirements.map((req, idx) => (
                   <li key={idx} className="flex items-start gap-3">
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[0.7rem] font-black text-white mt-0.5" style={{ backgroundColor: accent }}>
+                    <span className={cn("flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[0.7rem] font-black mt-0.5", isDark ? "text-zinc-900" : "text-white")} style={{ backgroundColor: accent }}>
                       {idx + 1}
                     </span>
                     <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-snug pt-0.5">{req}</span>
@@ -193,5 +193,6 @@ export function ServicesPage() {
     </section>
   )
 }
+ 
  
  
