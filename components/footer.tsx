@@ -212,12 +212,14 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
               <div key={i} className="rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5">
                 <button onClick={() => setOpenFaqIndex(open ? null : i)} aria-expanded={open} aria-controls={`faq-${i}`}
                   className="flex items-center justify-between w-full text-left gap-4">
-                  <h4 className="font-black text-sm text-zinc-900 dark:text-zinc-50">{faq.question}</h4>
+                  <h4 className="font-black text-sm text-zinc-900 dark:text-zinc-50 break-words">{faq.question}</h4>
+
                   <CaretDown className={cn("w-4 h-4 text-zinc-400 shrink-0 transition-transform duration-200", open && "rotate-180")} aria-hidden="true" />
                 </button>
                 <div id={`faq-${i}`} role="region" aria-label={faq.question}>
                   <Accordion open={open}>
-                    <div className="text-sm text-zinc-500 dark:text-zinc-400 mt-3 leading-relaxed">{faq.answer}</div>
+                    <div className="text-sm text-zinc-500 dark:text-zinc-400 mt-3 leading-relaxed break-words whitespace-pre-wrap">{faq.answer}</div>
+
                   </Accordion>
                 </div>
               </div>
