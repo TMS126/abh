@@ -6,12 +6,12 @@ import { WhatsappLogo, Phone, Envelope, MapPin, Clock, ChatCircleText, CaretDown
 import { BRAND, BIZ, WA, FAQS, CONTACT_LINKS, HOURS } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 
-const FORM_HUBS: Record<string, { light: string; dark: string }> = {
-  "Print Hub":      { light: BRAND.blue,       dark: "#A9D6F2" },
-  "Document Hub":   { light: BRAND.green,      dark: "#CDEB9F" },
-  "Design Hub":     { light: BRAND.orangeDark, dark: "#F9D1B0" },
-  "E-Service Hub":  { light: "#15537D",        dark: "#A9D6F2" },
-  "Tech Hub":       { light: "#333333",        dark: "#B8CCE0" },
+const FORM_HUBS: Record<string, string> = {
+  "Print Hub":      BRAND.blue,
+  "Document Hub":   BRAND.green,
+  "Design Hub":     BRAND.orangeDark,
+  "E-Service Hub":  BRAND.lightBlue,
+  "Tech Hub":       "#B8CCE0",
 }
 
 function FAQAccordion() {
@@ -62,11 +62,8 @@ function FAQAccordion() {
 function HubSelect({ value, onChange }: { value: string; onChange: (val: string) => void }) {
   const [isOpen, setIsOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
-  const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === "dark"
   const options = Object.keys(FORM_HUBS)
-  const colorFor = (opt: string) => (isDark ? FORM_HUBS[opt].dark : FORM_HUBS[opt].light)
-  const activeColor = value ? colorFor(value) : undefined
+  const activeColor = value ? FORM_HUBS[value] : undefined
 
   useEffect(() => {
     if (!isOpen) return
@@ -89,7 +86,7 @@ function HubSelect({ value, onChange }: { value: string; onChange: (val: string)
       {isOpen && (
         <div className="absolute z-50 mt-1.5 w-full bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-[14px] shadow-xl overflow-hidden">
           {options.map((opt) => {
-            const color = colorFor(opt)
+            const color = FORM_HUBS[opt]
             return (
               <button
                 key={opt}
@@ -161,10 +158,12 @@ export function ContactPage() {
                 <div>
                   <p className="text-[0.7rem] font-black uppercase text-zinc-500 mb-1">{HOURS.printAndDoc.label}</p>
                   <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{HOURS.printAndDoc.hours}</p>
+                  <p className="text-sm font-black mt-0.5" style={{ color: BRAND.green }}>Open on public holidays</p>
                 </div>
                 <div>
                   <p className="text-[0.7rem] font-black uppercase text-zinc-500 mb-1">{HOURS.techDesignEservice.label}</p>
                   {HOURS.techDesignEservice.lines.map(l => <p key={l} className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{l}</p>)}
+                  <p className="text-sm font-black mt-0.5" style={{ color: BRAND.orangeDark }}>Sun & Public Holidays · Closed</p>
                 </div>
               </div>
             </div>
