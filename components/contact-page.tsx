@@ -38,8 +38,17 @@ function FAQAccordion() {
                   <span className="leading-snug">{faq.question}</span>
                   <CaretDown weight="bold" className={cn("w-4 h-4 shrink-0 text-zinc-500 transition-transform duration-300", isOpen ? "rotate-180" : "rotate-0")} />
                 </button>
-                <div className={cn("transition-all duration-500 ease-in-out overflow-y-auto", isOpen ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0")}>
-                  <div className="px-5 pb-5 pt-3 border-t border-zinc-100 dark:border-zinc-800 abh-body">{faq.answer}</div>
+                <div 
+                  className={cn(
+                    "grid transition-all duration-500 ease-in-out", 
+                    isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                  )}
+                >
+                  <div className="overflow-hidden">
+                    <div className="px-5 pb-5 pt-3 border-t border-zinc-100 dark:border-zinc-800 abh-body">
+                      {faq.answer}
+                    </div>
+                  </div>
                 </div>
               </div>
             )
