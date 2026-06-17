@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { X, WhatsappLogo, Printer, FileText, PaintBrush, Globe, Desktop, CaretDown, PaperPlaneTilt } from "@phosphor-icons/react"
+import { X, WhatsappLogo, Printer, FileText, PaintBrush, Globe, Desktop, CaretDown, PaperPlaneTilt, ListChecks } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { BIZ, HUB_COLORS, HubKey } from "@/lib/brand"
-import { HUBS, HubId } from "@/lib/data" 
+import { HUBS, HubId } from "@/lib/data"
+import { PRICING } from "@/lib/data"
 
 
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
@@ -21,7 +22,7 @@ function HubIcon({ id, size = 28, color }: { id: HubId; size?: number; color?: s
   }
 }
 
-interface SelectedService { name: string; price: string; hubId: HubId; sectionTitle: string }
+interface SelectedService { name: string; price: string; hubId: HubId; sectionTitle: string; requirements: string[] }
 
 function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; onClose: () => void; onSelectService: (svc: SelectedService) => void }) {
   const { resolvedTheme } = useTheme()
@@ -61,7 +62,7 @@ function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; on
                 <div className={cn("overflow-hidden transition-all duration-300", isOpen ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0")}>
                   <div className="px-5 pb-5 grid grid-cols-1 gap-2">
                     {section.items.map((item, iIdx) => (
-                      <button key={iIdx} onClick={() => onSelectService({ name: item.name, price: item.price, hubId, sectionTitle: section.title })} className="flex items-center justify-between p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:border-brand-blue transition-all group">
+                      <button key={iIdx} onClick={() => onSelectService({ name: item.name, price: item.price, hubId, sectionTitle: section.title, requirements: item.requirements })} className="flex items-center justify-between p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:border-brand-blue transition-all group">
                         <span className="text-[0.84rem] font-black text-zinc-800 dark:text-zinc-200">{item.name}</span>
                         <span className="text-[0.84rem] font-black" style={{ color: accent }}>{item.price}</span>
                       </button>
@@ -86,18 +87,44 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   return (
     <div className="fixed inset-0 z-[10200] flex items-center justify-center p-4 animate-in fade-in duration-300">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-sm rounded-[14px] overflow-hidden shadow-2xl bg-white dark:bg-zinc-950 animate-in zoom-in-95 duration-300 border border-zinc-100 dark:border-zinc-800 p-8">
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <span className="text-[0.65rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>{svc.sectionTitle}</span>
-            <h3 className="font-sans font-black text-2xl text-zinc-900 dark:text-zinc-50 leading-tight">{svc.name}</h3>
+      <div className="relative w-full max-w-sm rounded-[14px] overflow-hidden shadow-2xl bg-white dark:bg-zinc-950 animate-in zoom-in-95 duration-300 border border-zinc-100 dark:border-zinc-800 max-h-[85vh] flex flex-col">
+        <div className="p-8 pb-0 flex-shrink-0">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <span className="text-[0.65rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>{svc.sectionTitle}</span>
+              <h3 className="font-sans font-black text-2xl text-zinc-900 dark:text-zinc-50 leading-tight">{svc.name}</h3>
+            </div>
+            <button onClick={onClose} className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 flex-shrink-0"><X size={16} weight="bold" /></button>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200"><X size={16} weight="bold" /></button>
+          <div className="flex items-baseline gap-1 mb-6"><span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span></div>
         </div>
-        <div className="flex items-baseline gap-1 mb-8"><span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span></div>
-        <a href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(`Hi! I'm interested in ${svc.name} (${svc.price})`)}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-3 w-full py-4 rounded-[14px] font-black text-sm text-white transition-all active:scale-95 shadow-lg" style={{ backgroundColor: "#25D366" }}>
-          <WhatsappLogo size={20} weight="fill" /> Order on WhatsApp
-        </a>
+
+        <div className="flex-1 overflow-y-auto px-8 min-h-0">
+          {svc.requirements && svc.requirements.length > 0 && (
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <ListChecks size={18} weight="bold" style={{ color: accent }} />
+                <span className="text-xs font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400">What to Bring</span>
+              </div>
+              <ol className="space-y-3">
+                {svc.requirements.map((req, idx) => (
+                  <li key={idx} className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[0.7rem] font-black text-white mt-0.5" style={{ backgroundColor: accent }}>
+                      {idx + 1}
+                    </span>
+                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-snug pt-0.5">{req}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+        </div>
+
+        <div className="p-8 pt-2 flex-shrink-0">
+          <a href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(`Hi! I'm interested in ${svc.name} (${svc.price})`)}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-3 w-full py-4 rounded-[14px] font-black text-sm text-white transition-all active:scale-95 shadow-lg" style={{ backgroundColor: "#25D366" }}>
+            <WhatsappLogo size={20} weight="fill" /> Order on WhatsApp
+          </a>
+        </div>
       </div>
     </div>
   )
