@@ -1,7 +1,7 @@
 export const PRICING = {
   print: {
     'B&W Print': 'R5/page',
-    'Colour Print': 'R8/page',
+    'Colour Print': 'R10/page',
     'B&W Copy': 'R3/page',
     'Colour Copy': 'R5/page',
     'Glossy Photo (4x6)': 'R20',
@@ -15,8 +15,8 @@ export const PRICING = {
     'CV Upgrade/Fix': 'R40',
     'Cover Letter': 'R30',
     'Scanning': 'R5/page',
-    'Laminating (A5)': 'R15',
-    'Laminating (A4)': 'R20',
+    'Laminating (A5)': 'R12',
+    'Laminating (A4)': 'R15',
     'Laminating (A3)': 'R30',
   },
   design: {
@@ -27,7 +27,7 @@ export const PRICING = {
     'Business Card (Double Side)': 'R180',
     'Flyer / Poster — Simple': 'R150',
     'Flyer / Poster — Custom': 'R250',
-    'Flyer / Poster — Complex': 'R300',
+    'Flyer / Poster — Complex': 'R350',
     'Social Media Post': 'R80',
     'Post + Story': 'R120',
     'Static Invitation': 'R150',
@@ -37,6 +37,7 @@ export const PRICING = {
   },
   eservice: {
     'SASSA Status Check': 'R20',
+    'SASSA Payment / Balance Check': 'R15',
     'SASSA Update Details': 'R30',
     'SASSA SRD Application': 'R40',
     'SASSA Reapplication': 'R40',
@@ -96,6 +97,7 @@ export type HubId = 'print' | 'doc' | 'design' | 'eservice' | 'tech'
 export interface ServiceItem {
   name: string
   price: string
+  requirements: string[]
 }
 
 export interface HubSection {
@@ -129,22 +131,22 @@ export const HUBS: Record<HubId, Hub> = {
       {
         title: 'Printing',
         items: [
-          { name: 'Black & White', price: 'R5/page' },
-          { name: 'Colour', price: 'R10/page' },
+          { name: 'Black & White', price: 'R5/page', requirements: ['Bring your file on a USB, phone, or send it via WhatsApp/email', 'Let us know the number of pages and copies needed', 'Specify paper size if not standard A4'] },
+          { name: 'Colour', price: 'R10/page', requirements: ['Bring your file on a USB, phone, or send it via WhatsApp/email', 'Let us know the number of pages and copies needed', 'Specify paper size if not standard A4'] },
         ],
       },
       {
         title: 'Copying',
         items: [
-          { name: 'Black & White', price: 'R3/page' },
-          { name: 'Colour', price: 'R5/page' },
+          { name: 'Black & White', price: 'R3/page', requirements: ['Bring the original physical document to be copied', 'Let us know the number of copies needed'] },
+          { name: 'Colour', price: 'R5/page', requirements: ['Bring the original physical document to be copied', 'Let us know the number of copies needed'] },
         ],
       },
       {
         title: 'Photo Printing',
         items: [
-          { name: '4x6 Glossy', price: 'R20' },
-          { name: 'A4 Glossy', price: 'R40' },
+          { name: '4x6 Glossy', price: 'R20', requirements: ['Send the photo via USB, phone, AirDrop, or WhatsApp', 'Use a high-resolution image for the best print quality'] },
+          { name: 'A4 Glossy', price: 'R40', requirements: ['Send the photo via USB, phone, AirDrop, or WhatsApp', 'Use a high-resolution image for the best print quality'] },
         ],
       },
     ],
@@ -162,36 +164,36 @@ export const HUBS: Record<HubId, Hub> = {
       {
         title: 'Typing + Printing',
         items: [
-          { name: 'Black & White', price: 'R15/page' },
-          { name: 'Colour', price: 'R18/page' },
+          { name: 'Black & White', price: 'R15/page', requirements: ['Bring your handwritten notes or rough draft', 'Clearly state any formatting preferences (font, spacing, layout)', 'Let us know the number of pages and copies needed'] },
+          { name: 'Colour', price: 'R18/page', requirements: ['Bring your handwritten notes or rough draft', 'Clearly state any formatting preferences (font, spacing, layout)', 'Let us know the number of pages and copies needed'] },
         ],
       },
       {
         title: 'CV Services',
         items: [
-          { name: 'CV from Scratch', price: 'R30' },
-          { name: 'CV Upgrade/Fix', price: 'R40' },
-          { name: 'Cover Letter', price: 'R30' },
+          { name: 'CV from Scratch', price: 'R30', requirements: ['Bring your ID document', 'Provide your personal details, education history, and work experience', 'Bring a recent photo if you want one included', 'Share contact details (phone number, email if available)'] },
+          { name: 'CV Upgrade/Fix', price: 'R40', requirements: ['Bring your existing CV (digital file or printed copy)', 'Let us know what changes or updates you need', 'Provide any new information to be added'] },
+          { name: 'Cover Letter', price: 'R30', requirements: ['Bring details of the job you are applying for', 'Bring your CV for reference', 'Mention key skills or experience you want highlighted'] },
         ],
       },
       {
         title: 'Other Documents',
         items: [
-          { name: 'Affidavit / Letter', price: 'R20' },
+          { name: 'Affidavit / Letter', price: 'R20', requirements: ['Bring your ID document', 'Provide the details/facts that need to be included', 'Some affidavits may require a visit to the police station or Commissioner of Oaths to be sworn'] },
         ],
       },
       {
         title: 'Scanning',
         items: [
-          { name: 'Scan to Digital', price: 'R5/page' },
+          { name: 'Scan to Digital', price: 'R5/page', requirements: ['Bring the original physical document(s) to be scanned', 'Let us know the file format you need (PDF, JPG, etc.)', 'Bring a USB or have WhatsApp/email ready to receive the file'] },
         ],
       },
       {
         title: 'Laminating',
         items: [
-          { name: 'A5', price: 'R15' },
-          { name: 'A4', price: 'R20' },
-          { name: 'A3', price: 'R30' },
+          { name: 'A5', price: 'R12', requirements: ['Bring the document or card to be laminated', 'Make sure the item is clean and flat'] },
+          { name: 'A4', price: 'R15', requirements: ['Bring the document to be laminated', 'Make sure the document is clean and flat'] },
+          { name: 'A3', price: 'R30', requirements: ['Bring the document or poster to be laminated', 'Make sure the item is clean and flat'] },
         ],
       },
     ],
@@ -209,45 +211,45 @@ export const HUBS: Record<HubId, Hub> = {
       {
         title: 'Logos',
         items: [
-          { name: 'Basic Logo', price: 'R300' },
-          { name: 'Standard Logo', price: 'R500' },
-          { name: 'Premium Logo', price: 'R800' },
+          { name: 'Basic Logo', price: 'R300', requirements: ['Provide your business name and tagline (if any)', 'Share your preferred colours and style (modern, classic, playful, etc.)', 'Mention any reference logos you like for inspiration'] },
+          { name: 'Standard Logo', price: 'R500', requirements: ['Provide your business name and tagline (if any)', 'Share your preferred colours and style direction', 'Mention any reference logos you like for inspiration', 'Specify if you need multiple initial concepts'] },
+          { name: 'Premium Logo', price: 'R800', requirements: ['Provide your business name and tagline (if any)', 'Share your brand vision, colours, and style direction', 'Mention any reference logos you like for inspiration', 'Specify if you need a full brand style guide and multiple file formats'] },
         ],
       },
       {
         title: 'Business Cards',
         items: [
-          { name: 'Single Side', price: 'R120' },
-          { name: 'Double Sided', price: 'R180' },
+          { name: 'Single Side', price: 'R120', requirements: ['Provide your name, business name, and job title', 'Share contact details (phone, email, WhatsApp, address)', 'Provide your logo if you have one', 'Specify the quantity to be printed'] },
+          { name: 'Double Side', price: 'R180', requirements: ['Provide your name, business name, and job title', 'Share contact details (phone, email, WhatsApp, address)', 'Provide your logo if you have one', 'Let us know what content goes on the back (e.g. services, social media, map)', 'Specify the quantity to be printed'] },
         ],
       },
       {
         title: 'Flyers & Posters',
         items: [
-          { name: 'Simple design', price: 'R150' },
-          { name: 'Custom design', price: 'R250' },
-          { name: 'Complex design', price: 'R300' },
+          { name: 'Simple', price: 'R150', requirements: ['Provide the text/content to be included (event, promo, contact details)', 'Share any photos or logos to be used', 'Mention your preferred colours or style'] },
+          { name: 'Custom', price: 'R250', requirements: ['Provide the text/content to be included', 'Share any photos or logos to be used', 'Mention your preferred colours or style direction', 'Specify size and intended use (print or digital)'] },
+          { name: 'Complex', price: 'R350', requirements: ['Provide the text/content to be included', 'Share photos, logos, and any reference designs', 'Mention your preferred colours or style direction', 'Specify size, layout complexity, and intended use'] },
         ],
       },
       {
-        title: 'Social Media Posts',
+        title: 'Social Media',
         items: [
-          { name: 'Post', price: 'R80' },
-          { name: 'Post + Story', price: 'R120' },
+          { name: 'Post', price: 'R80', requirements: ['Provide the text/message for the post', 'Share any photos or logos to be used', 'Mention the platform (Facebook, Instagram, WhatsApp Status, etc.)'] },
+          { name: 'Post + Story', price: 'R120', requirements: ['Provide the text/message for the post and story', 'Share any photos or logos to be used', 'Mention the platform(s) the content is for'] },
         ],
       },
       {
         title: 'Invitations',
         items: [
-          { name: 'Image/Static', price: 'R150' },
-          { name: 'Video', price: 'R300' },
+          { name: 'Image/Static', price: 'R150', requirements: ['Provide event details (date, time, venue, host)', 'Share any photos or theme preferences', 'Mention your preferred colours or style'] },
+          { name: 'Video', price: 'R300', requirements: ['Provide event details (date, time, venue, host)', 'Share any photos, video clips, or theme preferences', 'Mention your preferred colours, music, or style'] },
         ],
       },
       {
         title: 'Revisions',
         items: [
-          { name: 'While Busy', price: 'R50' },
-          { name: 'After Completion', price: 'R70' },
+          { name: 'While Busy', price: 'R50', requirements: ['Clearly describe the changes you would like made', 'This applies only while the project is still in progress'] },
+          { name: 'After Completion', price: 'R70', requirements: ['Clearly describe the changes you would like made', 'This applies once the project has already been delivered/finalized'] },
         ],
       },
     ],
@@ -260,78 +262,79 @@ export const HUBS: Record<HubId, Hub> = {
     desc: "Government platforms made easy. We handle registrations, applications and updates so you don't have to stress.",
     tagStyle: { bg: '#EBF5FB', color: '#0F3F66' },
     tagStyleDark: { bg: '#1E3A52', color: '#A9D6F2' },
-    previews: ['Job Applications', 'SARS eFiling', 'UIF & CSD'],
+    previews: ['SASSA', 'SARS eFiling', 'UIF & CSD'],
     sections: [
       {
         title: 'SASSA',
         items: [
-          { name: 'Status Check', price: 'R20' },
-          { name: 'Update Details', price: 'R30' },
-          { name: 'Reapplication', price: 'R40' },
-          { name: 'SRD Application', price: 'R40' },
-          { name: 'SRD Appeal', price: 'R40' },
-          { name: 'Banking Update', price: 'R40' },
-          { name: 'Grant Application', price: 'R80' },
+          { name: 'Status Check', price: 'R20', requirements: ['Bring your ID document', 'Bring your SASSA reference number or application number if you have one'] },
+          { name: 'Payment/Balance Check', price: 'R15', requirements: ['Bring your ID document', 'Bring your SASSA card or grant details'] },
+          { name: 'Update Details', price: 'R30', requirements: ['Bring your ID document', 'Bring proof of the new details (e.g. new address, new phone number)', 'Bring your SASSA reference number'] },
+          { name: 'Reapplication', price: 'R40', requirements: ['Bring your ID document', 'Bring proof of previous application or rejection letter if available', 'Bring proof of income/affidavit of unemployment if required'] },
+          { name: 'SRD Application', price: 'R40', requirements: ['Bring your ID document', 'Have your active cellphone number ready (for OTP/SMS)', 'Bring proof of bank account details if applying for bank payment'] },
+          { name: 'Appeal', price: 'R40', requirements: ['Bring your ID document', 'Bring the rejection/decline letter or SMS notification', 'Bring any supporting documents for your appeal'] },
+          { name: 'Banking Update', price: 'R40', requirements: ['Bring your ID document', 'Bring your bank account details or bank confirmation letter', 'Bring your SASSA reference number'] },
+          { name: 'Grant Application', price: 'R80', requirements: ['Bring your ID document', "Bring supporting documents (e.g. child's birth certificate, disability assessment, proof of income)", 'Have your active cellphone number ready for OTP/SMS confirmations'] },
         ],
       },
       {
         title: 'SARS',
         items: [
-          { name: 'Enquiry / Statement / Updates', price: 'R50' },
-          { name: 'New Taxpayer / eFiling', price: 'R70' },
-          { name: 'Tax Pin / Penalty', price: 'R100' },
-          { name: 'Tax Clearance', price: 'R120' },
-          { name: 'Pin Submission', price: 'R120' },
-          { name: 'Tax Return / VAT / PAYE', price: 'R200' },
+          { name: 'Enquiry / Statement / Updates', price: 'R50', requirements: ['Bring your ID document', 'Bring your tax reference number if you have one'] },
+          { name: 'New Taxpayer / eFiling', price: 'R70', requirements: ['Bring your ID document', 'Bring proof of address (utility bill, lease, or affidavit)', 'Have your active cellphone number and email ready'] },
+          { name: 'Tax Pin / Penalty', price: 'R100', requirements: ['Bring your ID document', 'Bring your tax reference number', 'Bring any SARS letters/notices relating to the penalty'] },
+          { name: 'Tax Clearance', price: 'R120', requirements: ['Bring your ID document', 'Bring your tax reference number', 'Make sure your tax returns are up to date (we can assist if not)'] },
+          { name: 'Pin Submission', price: 'R120', requirements: ['Bring your ID document', 'Bring your tax reference number', 'Bring the relevant SARS request/letter'] },
+          { name: 'Tax Return / VAT / PAYE', price: 'R200', requirements: ['Bring your ID document', 'Bring your tax reference number', 'Bring income/expense documents (payslips, invoices, IRP5, bank statements as relevant)'] },
         ],
       },
       {
         title: 'PSIRA',
         items: [
-          { name: 'PSIRA Status Check', price: 'R30' },
-          { name: 'Update / Certificate', price: 'R40' },
-          { name: 'Lost Certificate', price: 'R50' },
-          { name: 'Renewal / New Registration', price: 'R80' },
-          { name: 'ID Application', price: 'R100' },
+          { name: 'PSIRA Status Check', price: 'R30', requirements: ['Bring your ID document', 'Bring your PSIRA registration number'] },
+          { name: 'Update / Certificate', price: 'R40', requirements: ['Bring your ID document', 'Bring your PSIRA registration number', 'Bring proof of the new details to be updated'] },
+          { name: 'Lost Certificate', price: 'R50', requirements: ['Bring your ID document', 'Bring your PSIRA registration number', 'Affidavit confirming the certificate is lost may be required'] },
+          { name: 'Renewal / New Registration', price: 'R80', requirements: ['Bring your ID document', 'Bring proof of relevant training/qualification (for new registration)', 'Bring your PSIRA registration number (for renewal)', 'Have your active cellphone number ready'] },
+          { name: 'ID Application', price: 'R100', requirements: ['Bring your ID document', 'Bring your PSIRA registration number', 'Bring a recent passport-style photo if required'] },
         ],
       },
       {
         title: 'Online Applications',
         items: [
-          { name: 'NSFAS Status Check', price: 'R20' },
-          { name: 'NSFAS Banking Update', price: 'R20' },
-          { name: 'Learnership Application', price: 'R30' },
-          { name: 'Job / DPSA Application', price: 'R40' },
-          { name: 'Bursary Application', price: 'R40' },
-          { name: 'NSFAS Appeal', price: 'R50' },
-          { name: 'NSFAS Application', price: 'R80' },
-          { name: 'University Application', price: 'R100' },
+          { name: 'NSFAS Status Check', price: 'R20', requirements: ['Bring your ID document', 'Bring your NSFAS reference number or login details if you have them'] },
+          { name: 'NSFAS Banking Update', price: 'R20', requirements: ['Bring your ID document', 'Bring your bank account details or confirmation letter', 'Bring your NSFAS reference number'] },
+          { name: 'Learnership Application', price: 'R30', requirements: ['Bring your ID document', 'Bring your highest qualification/certificate', 'Bring your CV if available'] },
+          { name: 'Job / DPSA Application', price: 'R40', requirements: ['Bring your ID document', 'Bring your CV and certified qualifications', 'Have details of the specific position/post number ready'] },
+          { name: 'Bursary Application', price: 'R40', requirements: ['Bring your ID document', 'Bring your academic results/qualifications', 'Bring proof of household income if required', 'Bring acceptance letter from institution if applicable'] },
+          { name: 'NSFAS Appeal', price: 'R50', requirements: ['Bring your ID document', 'Bring the NSFAS rejection/decline notification', 'Bring supporting documents (e.g. proof of income, motivation letter)'] },
+          { name: 'NSFAS Application', price: 'R80', requirements: ['Bring your ID document', 'Bring proof of household income or relevant supporting documents', 'Bring your academic results', 'Have your active cellphone number and email ready'] },
+          { name: 'University Application', price: 'R100', requirements: ['Bring your ID document', 'Bring certified academic results/matric certificate', 'Have application fee details ready if applicable', 'Have your active cellphone number and email ready'] },
         ],
       },
       {
         title: 'Email Services',
         items: [
-          { name: 'Setup / Send / Receive', price: 'R15' },
+          { name: 'Setup / Send / Receive', price: 'R15', requirements: ['Bring your ID document', 'Have an active cellphone number ready for verification', 'If sending/receiving, bring the document or details to be emailed'] },
         ],
       },
       {
         title: 'Business Services',
         items: [
-          { name: 'Good Standing Letter', price: 'R60' },
-          { name: 'Google Business Setup', price: 'R80' },
-          { name: 'UIF Monthly Declaration', price: 'R100' },
-          { name: 'CSD Update', price: 'R120' },
-          { name: 'UIF Registration', price: 'R100' },
-          { name: 'UIF Claims', price: 'R200' },
-          { name: 'CSD Registration', price: 'R300' },
+          { name: 'Good Standing Letter', price: 'R60', requirements: ['Bring your ID document', 'Bring your company registration number', 'Bring CIPC login details if available'] },
+          { name: 'Google Business Setup', price: 'R80', requirements: ['Bring your business name and physical address', 'Bring contact details (phone, email, website if any)', 'Bring your business logo and a few photos if available'] },
+          { name: 'UIF Monthly Declaration', price: 'R100', requirements: ['Bring your UIF reference number', 'Bring employee details and monthly earnings information', 'Bring your UIF login details if available'] },
+          { name: 'CSD Update', price: 'R120', requirements: ['Bring your company registration number', 'Bring your CSD supplier number', 'Bring proof of the details to be updated'] },
+          { name: 'UIF Registration', price: 'R100', requirements: ['Bring your ID document', 'Bring company registration documents (if registering a business)', 'Bring employee details if registering employees'] },
+          { name: 'UIF Claims', price: 'R200', requirements: ['Bring your ID document', 'Bring your UIF reference number', 'Bring termination letter/UI19 form and bank account details'] },
+          { name: 'CSD Registration', price: 'R300', requirements: ['Bring your company registration documents (CIPC)', 'Bring your tax clearance certificate', 'Bring bank confirmation letter', 'Bring BEE certificate/affidavit if applicable'] },
         ],
       },
       {
         title: 'Digital Setup',
         items: [
-          { name: 'Social Media Setup', price: 'R60' },
-          { name: "Learner's Licence Booking", price: 'R60' },
-          { name: 'WhatsApp Business Setup', price: 'R80' },
+          { name: 'Social Media Setup', price: 'R60', requirements: ['Bring your business name and logo', 'Bring contact details and a short business description', 'Specify which platforms you want set up (Facebook, Instagram, etc.)'] },
+          { name: "Learner's Licence Booking", price: 'R60', requirements: ['Bring your ID document', 'Have your active cellphone number ready for booking confirmation', 'Know your preferred testing centre and date range'] },
+          { name: 'WhatsApp Business Setup', price: 'R80', requirements: ['Bring your business name and logo', 'Have the dedicated business phone number ready', 'Bring a short business description and catalog items/prices if available'] },
         ],
       },
     ],
@@ -349,34 +352,34 @@ export const HUBS: Record<HubId, Hub> = {
       {
         title: 'Software',
         items: [
-          { name: 'Software Install', price: 'R80' },
-          { name: 'Driver Installation', price: 'R100' },
-          { name: 'App / Office Updates', price: 'R80' },
+          { name: 'Software Install', price: 'R80', requirements: ['Bring the device (laptop/PC)', 'Bring the installation file or a valid license/product key if required', 'Make sure the device is charged or bring a charger'] },
+          { name: 'Driver Installation', price: 'R100', requirements: ['Bring the device (laptop/PC)', 'Know the device/hardware model (e.g. printer model, graphics card)', 'Make sure the device is charged or bring a charger'] },
+          { name: 'App / Office Updates', price: 'R80', requirements: ['Bring the device (laptop/PC)', 'Make sure the device is connected to power or fully charged', 'Have your software login/license details ready if required'] },
         ],
       },
       {
         title: 'Hardware',
         items: [
-          { name: 'Printer Setup', price: 'R100' },
-          { name: 'PC Setup', price: 'R250' },
+          { name: 'Printer Setup', price: 'R100', requirements: ['Bring the printer and its power/USB cables', 'Bring the device (laptop/PC) the printer will connect to', 'Bring ink/toner cartridges if not already installed'] },
+          { name: 'PC Setup', price: 'R250', requirements: ['Bring the PC/laptop and all its cables', 'Bring any software license keys you want installed', 'Let us know what the device will mainly be used for'] },
         ],
       },
       {
         title: 'Support',
         items: [
-          { name: 'Troubleshooting', price: 'R150/hr' },
-          { name: 'PC Cleanup', price: 'R150' },
-          { name: 'Virus / Malware Removal', price: 'R200' },
-          { name: 'OS Update', price: 'R200' },
+          { name: 'Troubleshooting', price: 'R150/hr', requirements: ['Bring the device experiencing the issue', 'Describe the problem clearly (when it started, error messages, etc.)', 'Minimum 1-hour call-out fee applies', 'Make sure the device is charged or bring a charger'] },
+          { name: 'PC Cleanup', price: 'R150', requirements: ['Bring the device (laptop/PC)', 'Make sure the device is charged or bring a charger', 'Back up any important files beforehand if possible'] },
+          { name: 'Virus / Malware Removal', price: 'R200', requirements: ['Bring the device (laptop/PC)', 'Describe any symptoms noticed (pop-ups, slowness, strange behaviour)', 'Back up important files beforehand if possible'] },
+          { name: 'OS Update', price: 'R200', requirements: ['Bring the device (laptop/PC)', 'Make sure the device is connected to power', 'Back up important files beforehand if possible'] },
         ],
       },
       {
         title: 'Windows & Office',
         items: [
-          { name: 'Windows Install (No Activation)', price: 'R300' },
-          { name: 'Windows Install + Activation', price: 'R350' },
-          { name: 'Activation Only', price: 'R100' },
-          { name: 'Microsoft 365 Setup', price: 'R150' },
+          { name: 'Windows Install (No Activation)', price: 'R300', requirements: ['Bring the device (laptop/PC)', 'Back up all important files beforehand — installation will erase the drive', 'Make sure the device is connected to power'] },
+          { name: 'Windows Install + Activation', price: 'R350', requirements: ['Bring the device (laptop/PC)', 'Bring a valid Windows product key/license', 'Back up all important files beforehand — installation will erase the drive', 'Make sure the device is connected to power'] },
+          { name: 'Activation Only', price: 'R100', requirements: ['Bring the device (laptop/PC)', 'Bring a valid Windows or Microsoft 365 product key/license'] },
+          { name: 'Microsoft 365 Setup', price: 'R150', requirements: ['Bring the device (laptop/PC)', 'Bring your Microsoft 365 account login or product key', 'Make sure the device is connected to the internet'] },
         ],
       },
     ],
