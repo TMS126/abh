@@ -132,7 +132,7 @@ export const HUBS: Record<HubId, Hub> = {
         title: 'Printing',
         items: [
           { name: 'Black & White', price: 'R5/page', requirements: ['Bring your file on a USB, phone, or send it via WhatsApp/email', 'Let us know the number of pages and copies needed', 'Specify paper size if not standard A4'] },
-          { name: 'Colour', price: 'R10/page', requirements: ['Bring your file on a USB, phone, or send it via WhatsApp/email', 'Let us know the number of pages and copies needed', 'Specify paper size if not standard A4'] },
+          { name: 'Colour', price: 'R8/page', requirements: ['Bring your file on a USB, phone, or send it via WhatsApp/email', 'Let us know the number of pages and copies needed', 'Specify paper size if not standard A4'] },
         ],
       },
       {
@@ -191,8 +191,8 @@ export const HUBS: Record<HubId, Hub> = {
       {
         title: 'Laminating',
         items: [
-          { name: 'A5', price: 'R12', requirements: ['Bring the document or card to be laminated', 'Make sure the item is clean and flat'] },
-          { name: 'A4', price: 'R15', requirements: ['Bring the document to be laminated', 'Make sure the document is clean and flat'] },
+          { name: 'A5', price: 'R15', requirements: ['Bring the document or card to be laminated', 'Make sure the item is clean and flat'] },
+          { name: 'A4', price: 'R20', requirements: ['Bring the document to be laminated', 'Make sure the document is clean and flat'] },
           { name: 'A3', price: 'R30', requirements: ['Bring the document or poster to be laminated', 'Make sure the item is clean and flat'] },
         ],
       },
