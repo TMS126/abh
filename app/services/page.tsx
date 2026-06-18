@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { ServicesPage } from "@/components/services-page"
 import { CtaBar } from "@/components/strip-section"
 import { Navbar } from "@/components/navbar"
@@ -15,7 +16,9 @@ export default function ServicesRoute() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main id="main-content">
-        <ServicesPage />
+        <Suspense fallback={null}>
+          <ServicesPage />
+        </Suspense>
         <CtaBar
           title="Not sure what you need?"
           description="Just WhatsApp us and we'll guide you in the right direction."
@@ -27,3 +30,4 @@ export default function ServicesRoute() {
     </div>
   )
 }
+ 
