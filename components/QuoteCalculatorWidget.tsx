@@ -295,4 +295,3 @@ export function QuoteCalculatorWidget() {
     </>
   )
 }
-EOF
