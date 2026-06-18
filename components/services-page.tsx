@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { useSearchParams } from "next/navigation"
 import { X, Printer, FileText, PaintBrush, Globe, Desktop, CaretDown, PaperPlaneTilt, ListChecks, Megaphone } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
@@ -196,8 +197,16 @@ function NoticeBanner() {
 export function ServicesPage() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
+  const searchParams = useSearchParams()
   const [activeHub, setActiveHub] = useState<HubId | null>(null)
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
+
+  useEffect(() => {
+    const hubParam = searchParams.get("hub")
+    if (hubParam && HUB_ORDER.includes(hubParam as HubId)) {
+      setActiveHub(hubParam as HubId)
+    }
+  }, [searchParams])
 
   useEffect(() => {
     const isOpen = !!(activeHub || selectedService)
