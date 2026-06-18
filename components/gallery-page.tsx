@@ -31,16 +31,16 @@ function ProjectViewerModal({ project, onClose }: { project: ProjectData | null;
 
   return (
     <div className="fixed inset-0 z-[10200] flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-md overscroll-contain" onClick={onClose} />
       <div className="relative w-full max-w-5xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden shadow-2xl flex flex-col md:flex-row h-[85vh] animate-in zoom-in-95 duration-500 border border-zinc-100 dark:border-zinc-800">
-        <div className="flex-1 overflow-y-auto bg-zinc-50 dark:bg-zinc-900/50 p-4 md:p-8 space-y-6">
+        <div className="flex-1 overflow-y-auto overscroll-contain bg-zinc-50 dark:bg-zinc-900/50 p-4 md:p-8 space-y-6">
           {allImages.map((img, idx) => (
             <div key={idx} className="relative aspect-[16/10] rounded-[14px] overflow-hidden shadow-lg border border-zinc-200 dark:border-zinc-800">
               <Image src={img} alt={`${project.title} view ${idx + 1}`} fill className="object-cover" sizes="100vw" />
             </div>
           ))}
         </div>
-        <div className="w-full md:w-[380px] p-8 flex flex-col border-l border-zinc-100 dark:border-zinc-800 overflow-y-auto">
+        <div className="w-full md:w-[380px] p-8 flex flex-col border-l border-zinc-100 dark:border-zinc-800 overflow-y-auto overscroll-contain">
           <div className="flex justify-between items-start mb-8">
             <div>
               <span className="text-[0.65rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>{project.tag}</span>
@@ -103,8 +103,24 @@ export function GalleryPage() {
   const [activeFilter, setActiveFilter] = useState<HubId | "all">("all")
   const [selectedProject, setSelectedProject] = useState<ProjectData | null>(null)
   useEffect(() => {
-    document.body.style.overflow = selectedProject ? "hidden" : ""
-    return () => { document.body.style.overflow = "" }
+    if (!selectedProject) return
+    const scrollY = window.scrollY
+    const { style } = document.body
+    style.position = "fixed"
+    style.top = `-${scrollY}px`
+    style.left = "0"
+    style.right = "0"
+    style.width = "100%"
+    style.overflow = "hidden"
+    return () => {
+      style.position = ""
+      style.top = ""
+      style.left = ""
+      style.right = ""
+      style.width = ""
+      style.overflow = ""
+      window.scrollTo(0, scrollY)
+    }
   }, [selectedProject])
   const getAccent = useCallback((id: HubId) => { const c = HUB_COLORS[id as HubKey]; return isDark ? c.tagTextDark : c.tagText }, [isDark])
   const filteredRows = activeFilter === "all" ? ROW_ORDER : ROW_ORDER.filter(r => r.id === activeFilter)
@@ -153,3 +169,4 @@ export function GalleryPage() {
     </section>
   )
 }
+ 
