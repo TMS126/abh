@@ -1,5 +1,5 @@
 import { Navbar } from "@/components/navbar"
-import { HeroSection } from "@/components/hero-section"
+import { HeroSection, StatsBar } from "@/components/hero-section"
 import { StripSection, CtaBar } from "@/components/strip-section"
 import { Footer } from "@/components/footer"
 import { BIZ } from "@/lib/brand"
@@ -11,6 +11,7 @@ export default function HomeRoute() {
       <main id="main-content">
         <div className="animate-fade-up">
           <HeroSection />
+          <StatsBar />
           <StripSection />
           <CtaBar
             title="Ready to get started?"
