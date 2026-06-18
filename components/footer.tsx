@@ -48,11 +48,11 @@ function Modal({ open, onClose, title, subtitle, children }: {
     document.addEventListener("keydown", fn)
     return () => document.removeEventListener("keydown", fn)
   }, [open, onClose])
-  useEffect(() => { document.body.classList.toggle("scroll-locked", open); return () => { document.body.classList.remove("scroll-locked") } }, [open])
+  useEffect(() => { document.documentElement.classList.toggle("scroll-locked", open); document.body.classList.toggle("scroll-locked", open); return () => { document.documentElement.classList.remove("scroll-locked"); document.body.classList.remove("scroll-locked") } }, [open])
   if (!open) return null
   return (
     <div role="dialog" aria-modal="true" aria-label={title} className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
+      <div className="absolute inset-0 overscroll-contain" onClick={onClose} aria-hidden="true" />
       <div ref={ref} className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300">
         <div className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-zinc-900/50">
           <div>
@@ -63,7 +63,7 @@ function Modal({ open, onClose, title, subtitle, children }: {
             <X size={16} weight="bold" aria-hidden="true" />
           </button>
         </div>
-        <div className="overflow-y-auto">{children}</div>
+        <div className="overflow-y-auto overscroll-contain">{children}</div>
       </div>
     </div>
   )
@@ -73,7 +73,6 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
   const router = useRouter()
   const [isTermsOpen,  setIsTermsOpen]  = useState(false)
   const [isFaqOpen,    setIsFaqOpen]    = useState(false)
-  const [isDocsOpen,   setIsDocsOpen]   = useState(false)
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null)
 
   return (
@@ -165,10 +164,6 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
           <button onClick={() => setIsTermsOpen(true)} className="text-[0.75rem] font-bold text-brand-blue hover:underline">
             Terms &amp; Policies
           </button>
-          <div className="hidden md:block w-1 h-1 rounded-full bg-zinc-200 dark:bg-zinc-800" aria-hidden="true" />
-          <button onClick={() => setIsDocsOpen(true)} className="text-[0.75rem] font-bold text-brand-blue hover:underline">
-            Project Documentation
-          </button>
         </div>
         <p className="text-[0.75rem] font-semibold text-zinc-400 flex items-center gap-2">
           Built with <Heart weight="fill" className="w-3.5 h-3.5 text-brand-orange" aria-hidden="true" /> for the Kgotsong community
@@ -221,57 +216,6 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
         </div>
       </Modal>
 
-      <Modal open={isDocsOpen} onClose={() => setIsDocsOpen(false)} title="Project Documentation" subtitle="System Audit & Architecture">
-        <div className="p-8 space-y-8">
-          <div className="p-6 rounded-[14px] border border-brand-blue/20 bg-brand-blue/5">
-            <h3 className="font-bold flex items-center gap-2 mb-3 text-sm text-brand-blue">
-              <Info weight="fill" className="w-4 h-4" /> System Overview
-            </h3>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-              This platform is a high-performance Next.js 16 application optimized for local business operations. It features advanced security hardening, dynamic SEO, and a theme-aware UI built with Radix primitives.
-            </p>
-          </div>
-          
-          <div className="space-y-4">
-            <h3 className="font-black text-sm text-zinc-900 dark:text-zinc-50 uppercase tracking-widest">Architecture Highlights</h3>
-            <ul className="space-y-4">
-              <li className="flex gap-4">
-                <div className="w-10 h-10 rounded-[14px] bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
-                  <Globe weight="fill" className="w-5 h-5 text-brand-blue" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">Next.js 16 + Turbopack</h4>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Leveraging the latest App Router and streaming capabilities for instant page loads.</p>
-                </div>
-              </li>
-              <li className="flex gap-4">
-                <div className="w-10 h-10 rounded-[14px] bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
-                  <Palette weight="fill" className="w-5 h-5 text-brand-orange" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">Tailwind CSS v4</h4>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Modern utility-first styling with native CSS variables and theme-aware components.</p>
-                </div>
-              </li>
-              <li className="flex gap-4">
-                <div className="w-10 h-10 rounded-[14px] bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
-                  <Cpu weight="fill" className="w-5 h-5 text-brand-blue" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">Security Hardened</h4>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Robust Content Security Policy (CSP), rate limiting, and input sanitization implemented.</p>
-                </div>
-              </li>
-            </ul>
-          </div>
-
-          <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
-            <p className="text-[0.65rem] font-black text-zinc-400 uppercase tracking-widest text-center">
-              Last Updated: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
-            </p>
-          </div>
-        </div>
-      </Modal>
     </div>
   )
 }
@@ -286,3 +230,4 @@ export function Footer() {
     </footer>
   )
 }
+ 
