@@ -172,8 +172,8 @@ export type NavItem = {
 export const NAV_ITEMS: NavItem[] = [
   { id: "home",     label: "Home",     path: "/" },
   { id: "services", label: "Services", path: "/services" },
-  { id: "about",    label: "About",    path: "/about" },
   { id: "gallery",  label: "Gallery",  path: "/gallery" },
+  { id: "about",    label: "About",    path: "/about" },
   { id: "contact",  label: "Contact",  path: "/contact", isCta: true },
 ] as const
 
