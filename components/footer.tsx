@@ -29,23 +29,6 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   Cpu:      <Cpu      weight="fill" className="w-4 h-4" aria-hidden="true" />,
 }
 
-function Accordion({ open, children }: { open: boolean; children: React.ReactNode }) {
-  const inner = useRef<HTMLDivElement>(null)
-  const [h, setH] = useState(0)
-  useEffect(() => {
-    if (!inner.current) return
-    const ro = new ResizeObserver(() => { if (inner.current) setH(inner.current.scrollHeight) })
-    ro.observe(inner.current)
-    setH(inner.current.scrollHeight)
-    return () => ro.disconnect()
-  }, [])
-  return (
-    <div style={{ height: open ? h : 0, opacity: open ? 1 : 0 }} className="overflow-hidden transition-[height,opacity] duration-300 ease-in-out">
-      <div ref={inner}>{children}</div>
-    </div>
-  )
-}
-
 function Modal({ open, onClose, title, subtitle, children }: {
   open: boolean; onClose: () => void; title: string; subtitle?: string; children: React.ReactNode
 }) {
@@ -90,6 +73,7 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
   const router = useRouter()
   const [isTermsOpen,  setIsTermsOpen]  = useState(false)
   const [isFaqOpen,    setIsFaqOpen]    = useState(false)
+  const [isDocsOpen,   setIsDocsOpen]   = useState(false)
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null)
 
   return (
@@ -181,6 +165,10 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
           <button onClick={() => setIsTermsOpen(true)} className="text-[0.75rem] font-bold text-brand-blue hover:underline">
             Terms &amp; Policies
           </button>
+          <div className="hidden md:block w-1 h-1 rounded-full bg-zinc-200 dark:bg-zinc-800" aria-hidden="true" />
+          <button onClick={() => setIsDocsOpen(true)} className="text-[0.75rem] font-bold text-brand-blue hover:underline">
+            Project Documentation
+          </button>
         </div>
         <p className="text-[0.75rem] font-semibold text-zinc-400 flex items-center gap-2">
           Built with <Heart weight="fill" className="w-3.5 h-3.5 text-brand-orange" aria-hidden="true" /> for the Kgotsong community
@@ -213,18 +201,75 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
                 <button onClick={() => setOpenFaqIndex(open ? null : i)} aria-expanded={open} aria-controls={`faq-${i}`}
                   className="flex items-center justify-between w-full text-left gap-4">
                   <h4 className="font-black text-sm text-zinc-900 dark:text-zinc-50 break-words">{faq.question}</h4>
-
                   <CaretDown className={cn("w-4 h-4 text-zinc-400 shrink-0 transition-transform duration-200", open && "rotate-180")} aria-hidden="true" />
                 </button>
-                <div id={`faq-${i}`} role="region" aria-label={faq.question}>
-                  <Accordion open={open}>
-                    <div className="text-sm text-zinc-500 dark:text-zinc-400 mt-3 leading-relaxed break-words whitespace-pre-wrap">{faq.answer}</div>
-
-                  </Accordion>
+                <div id={`faq-${i}`} role="region" aria-label={faq.question}
+                  className={cn(
+                    "grid transition-all duration-500 ease-in-out",
+                    open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                  )}
+                >
+                  <div className="overflow-hidden">
+                    <div className="text-sm text-zinc-500 dark:text-zinc-400 mt-3 leading-relaxed break-words whitespace-pre-wrap pb-2">
+                      {faq.answer}
+                    </div>
+                  </div>
                 </div>
               </div>
             )
           })}
+        </div>
+      </Modal>
+
+      <Modal open={isDocsOpen} onClose={() => setIsDocsOpen(false)} title="Project Documentation" subtitle="System Audit & Architecture">
+        <div className="p-8 space-y-8">
+          <div className="p-6 rounded-[14px] border border-brand-blue/20 bg-brand-blue/5">
+            <h3 className="font-bold flex items-center gap-2 mb-3 text-sm text-brand-blue">
+              <Info weight="fill" className="w-4 h-4" /> System Overview
+            </h3>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+              This platform is a high-performance Next.js 16 application optimized for local business operations. It features advanced security hardening, dynamic SEO, and a theme-aware UI built with Radix primitives.
+            </p>
+          </div>
+          
+          <div className="space-y-4">
+            <h3 className="font-black text-sm text-zinc-900 dark:text-zinc-50 uppercase tracking-widest">Architecture Highlights</h3>
+            <ul className="space-y-4">
+              <li className="flex gap-4">
+                <div className="w-10 h-10 rounded-[14px] bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
+                  <Globe weight="fill" className="w-5 h-5 text-brand-blue" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">Next.js 16 + Turbopack</h4>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Leveraging the latest App Router and streaming capabilities for instant page loads.</p>
+                </div>
+              </li>
+              <li className="flex gap-4">
+                <div className="w-10 h-10 rounded-[14px] bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
+                  <Palette weight="fill" className="w-5 h-5 text-brand-orange" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">Tailwind CSS v4</h4>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Modern utility-first styling with native CSS variables and theme-aware components.</p>
+                </div>
+              </li>
+              <li className="flex gap-4">
+                <div className="w-10 h-10 rounded-[14px] bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
+                  <Cpu weight="fill" className="w-5 h-5 text-brand-blue" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">Security Hardened</h4>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Robust Content Security Policy (CSP), rate limiting, and input sanitization implemented.</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
+            <p className="text-[0.65rem] font-black text-zinc-400 uppercase tracking-widest text-center">
+              Last Updated: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+            </p>
+          </div>
         </div>
       </Modal>
     </div>

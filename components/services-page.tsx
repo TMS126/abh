@@ -6,8 +6,6 @@ import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { BIZ, HUB_COLORS, HubKey } from "@/lib/brand"
 import { HUBS, HubId } from "@/lib/data"
-import { PRICING } from "@/lib/data"
-
 
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
@@ -44,15 +42,15 @@ function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; on
       <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-500 border border-zinc-100 dark:border-zinc-800">
         <div className="p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center" style={{ backgroundColor: `${accent}05` }}>
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-[14px] flex items-center justify-center shadow-lg" style={{ backgroundColor: accent }}>
-              <HubIcon id={hubId} size={32} color="#fff" />
+            <div className="w-14 h-14 rounded-[14px] flex items-center justify-center shadow-lg bg-zinc-100 dark:bg-zinc-800" style={{ border: `2px solid ${accent}` }}>
+              <HubIcon id={hubId} size={32} color={accent} />
             </div>
             <div>
               <h2 className="font-sans font-black text-2xl text-zinc-900 dark:text-zinc-50">{hub.title}</h2>
               <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mt-1">Available Services</p>
             </div>
           </div>
-          <button onClick={onClose} className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 transition-colors">
+          <button onClick={onClose} className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95" style={{ backgroundColor: `${accent}15`, color: accent }}>
             <X size={20} weight="bold" />
           </button>
         </div>
@@ -62,17 +60,19 @@ function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; on
             return (
               <div key={sIdx} className={cn("rounded-[14px] border transition-all duration-300", isOpen ? "bg-zinc-50 dark:bg-zinc-900/50" : "bg-white dark:bg-zinc-950")} style={{ borderColor: isOpen ? `${accent}30` : "transparent" }}>
                 <button onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)} className="w-full flex items-center justify-between p-5 text-left">
-                  <span className={cn("font-black text-sm tracking-tight", isOpen ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-500")}>{section.title}</span>
+                  <span className={cn("font-black text-lg tracking-tight", isOpen ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-500")}>{section.title}</span>
                   <CaretDown size={16} className={cn("transition-transform duration-300", isOpen ? "rotate-180" : "rotate-0")} style={{ color: isOpen ? accent : undefined }} />
                 </button>
-                <div className={cn("overflow-hidden transition-all duration-300", isOpen ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0")}>
-                  <div className="px-5 pb-5 grid grid-cols-1 gap-2">
-                    {section.items.map((item, iIdx) => (
-                      <button key={iIdx} onClick={() => onSelectService({ name: item.name, price: item.price, hubId, sectionTitle: section.title, requirements: item.requirements })} className="flex items-center justify-between p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:border-brand-blue transition-all group">
-                        <span className="text-[0.84rem] font-black text-zinc-800 dark:text-zinc-200">{item.name}</span>
-                        <span className="text-[0.84rem] font-black" style={{ color: accent }}>{item.price}</span>
-                      </button>
-                    ))}
+                <div className={cn("grid transition-all duration-500 ease-in-out", isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
+                  <div className="overflow-hidden">
+                    <div className="px-5 pb-5 grid grid-cols-1 gap-2">
+                      {section.items.map((item, iIdx) => (
+                        <button key={iIdx} onClick={() => onSelectService({ name: item.name, price: item.price, hubId, sectionTitle: section.title, requirements: item.requirements })} className="flex items-center justify-between p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:border-brand-blue transition-all group">
+                          <span className="text-[0.84rem] font-black text-zinc-800 dark:text-zinc-200">{item.name}</span>
+                          <span className="text-[0.84rem] font-black" style={{ color: accent }}>{item.price}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -84,10 +84,6 @@ function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; on
   )
 }
 
-// ─── Natural language label builder ───────────────────────────────────────────
-// Word order varies by category: "SASSA" reads naturally BEFORE the service name
-// ("SASSA Status Check"), while "Printing" reads naturally AFTER it
-// ("Black and White Printing"). This map encodes that per section.
 const SUFFIX_SECTIONS: Record<string, string> = {
   "Printing": "Printing",
   "Copying": "Copying",
@@ -143,7 +139,9 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
               <span className="text-[0.65rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>{cleanText(svc.sectionTitle)}</span>
               <h3 className="font-sans font-black text-2xl text-zinc-900 dark:text-zinc-50 leading-tight">{svc.name}</h3>
             </div>
-            <button onClick={onClose} className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 flex-shrink-0"><X size={16} weight="bold" /></button>
+            <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 flex-shrink-0" style={{ backgroundColor: `${accent}15`, color: accent }}>
+              <X size={16} weight="bold" />
+            </button>
           </div>
           <div className="flex items-baseline gap-1 mb-6"><span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span></div>
         </div>
@@ -236,6 +234,3 @@ export function ServicesPage() {
     </section>
   )
 }
- 
- 
- 
