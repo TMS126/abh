@@ -26,7 +26,7 @@ const HUBS_DATA = [
     color: HUB_COLORS.print.primary,
     services: [
       { name: "B&W Print", price: "R5" },
-      { name: "Colour Print", price: "R10" },
+      { name: "Colour Print", price: "R8" },
       { name: "B&W Copy", price: "R3" },
       { name: "Colour Copy", price: "R5" },
       { name: "Photo 4x6 Glossy", price: "R20" },
