@@ -149,7 +149,7 @@ export function GalleryPage() {
             const projects = PROJECTS.filter(p => p.hub === row.id); if (projects.length === 0) return null
             return (
               <div key={row.id} className="relative">
-                <div className="flex items-center gap-4 mb-8 px-4"><div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: getAccent(row.id) }} /><h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2><span className="text-xs font-bold uppercase tracking-widest text-zinc-400 ml-auto">{projects.length} Projects</span></div>
+                <div className="flex items-center gap-4 mb-8 px-4"><div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: getAccent(row.id) }} /><h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2><span className="text-xs font-bold uppercase tracking-widest text-zinc-400 ml-auto">{projects.length} {projects.length === 1 ? "Project" : "Projects"}</span></div>
                 <div className="md:hidden flex flex-col gap-6 px-4">
                   {projects.map(p => (
                     <div key={p.id} className="w-full" onClick={() => setSelectedProject(p)}>
