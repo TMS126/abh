@@ -38,7 +38,7 @@ function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; on
 
   return (
     <div className="fixed inset-0 z-[10100] flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md overscroll-contain" onClick={onClose} />
       <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-500 border border-zinc-100 dark:border-zinc-800">
         <div className="p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center" style={{ backgroundColor: `${accent}05` }}>
           <div className="flex items-center gap-4">
@@ -54,7 +54,7 @@ function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; on
             <X size={20} weight="bold" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-8 space-y-3">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-8 space-y-3">
           {hub.sections.map((section, sIdx) => {
             const isOpen = openSectionIdx === sIdx
             return (
@@ -131,7 +131,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
 
   return (
     <div className="fixed inset-0 z-[10200] flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm overscroll-contain" onClick={onClose} />
       <div className="relative w-full max-w-sm rounded-[14px] overflow-hidden shadow-2xl bg-white dark:bg-zinc-950 animate-in zoom-in-95 duration-300 border border-zinc-100 dark:border-zinc-800 max-h-[85vh] flex flex-col">
         <div className="p-8 pb-0 flex-shrink-0">
           <div className="flex justify-between items-start mb-6">
@@ -146,7 +146,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
           <div className="flex items-baseline gap-1 mb-6"><span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span></div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-8 min-h-0">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-8 min-h-0">
           {svc.requirements && svc.requirements.length > 0 && (
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-4">
@@ -200,8 +200,25 @@ export function ServicesPage() {
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
 
   useEffect(() => {
-    document.body.style.overflow = (activeHub || selectedService) ? "hidden" : ""
-    return () => { document.body.style.overflow = "" }
+    const isOpen = !!(activeHub || selectedService)
+    if (!isOpen) return
+    const scrollY = window.scrollY
+    const { style } = document.body
+    style.position = "fixed"
+    style.top = `-${scrollY}px`
+    style.left = "0"
+    style.right = "0"
+    style.width = "100%"
+    style.overflow = "hidden"
+    return () => {
+      style.position = ""
+      style.top = ""
+      style.left = ""
+      style.right = ""
+      style.width = ""
+      style.overflow = ""
+      window.scrollTo(0, scrollY)
+    }
   }, [activeHub, selectedService])
 
   return (
@@ -234,3 +251,4 @@ export function ServicesPage() {
     </section>
   )
 }
+ 
