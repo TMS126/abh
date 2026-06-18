@@ -340,6 +340,6 @@ export const FOOTER_NAV = [
   { label: "Home",       path: "/" },
   { label: "Services",   path: "/services" },
   { label: "Gallery",    path: "/gallery" },
-  { label: "About Us",   path: "/about" },
+  { label: "About",   path: "/about" },
   { label: "Contact",    path: "/contact" },
 ] as const
