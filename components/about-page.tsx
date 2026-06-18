@@ -37,7 +37,7 @@ export function AboutPage() {
               Your <span className="text-brand-orange">Neighbourhood</span> Digital Hub
             </h2>
             <p className="abh-body mb-6">
-              {BIZ.name} is a home-based service business in {BIZ.location}. We started with one simple goal: make technology and important services accessible to everyone in our community — no jargon, no stress.
+              {BIZ.name} is a home-based service business in Kgotson location near Bothaville, in the Free State province in South Africa. We started with one simple goal: make technology and important services accessible to everyone in our community — no jargon, no stress.
             </p>
             <p className="abh-body mb-8">
               We understand that not everyone is tech-savvy, and that's perfectly okay. That's exactly why we're here — to make things easy, friendly, and affordable.
