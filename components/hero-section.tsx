@@ -17,65 +17,111 @@ import {
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, WA, MARQUEE_ITEMS, HUB_COLORS } from "@/lib/brand"
 
-// One representative service per hub — keeps the spotlight grounded in real pricing, not abstract copy.
+// Real services per hub, pulled from the locked pricelist — used for the random-on-click spotlight price.
 const HUBS_DATA = [
   {
+    id: "print",
     name: "Print Hub",
-    short: "PrintHub",
     icon: <Printer size={32} weight="fill" aria-hidden="true" />,
     color: HUB_COLORS.print.primary,
-    example: "Colour print",
-    price: "R10",
-    blurb: "Documents, photos, copies — ready while you wait.",
+    services: [
+      { name: "B&W Print", price: "R5" },
+      { name: "Colour Print", price: "R10" },
+      { name: "B&W Copy", price: "R3" },
+      { name: "Colour Copy", price: "R5" },
+      { name: "Photo 4x6 Glossy", price: "R20" },
+      { name: "Photo A4 Glossy", price: "R40" },
+    ],
   },
   {
+    id: "doc",
     name: "Docu Hub",
-    short: "DocuHub",
     icon: <FileText size={32} weight="fill" aria-hidden="true" />,
     color: HUB_COLORS.doc.primary,
-    example: "CV from scratch",
-    price: "R30",
-    blurb: "CVs, letters, affidavits, laminating — sorted properly.",
+    services: [
+      { name: "CV from Scratch", price: "R30" },
+      { name: "CV Upgrade", price: "R40" },
+      { name: "Cover Letter", price: "R30" },
+      { name: "Affidavit / Letter", price: "R20" },
+      { name: "Scanning (per page)", price: "R5" },
+      { name: "Laminating A4", price: "R15" },
+    ],
   },
   {
+    id: "design",
     name: "Design Hub",
-    short: "DesignHub",
     icon: <PaintBrush size={32} weight="fill" aria-hidden="true" />,
     color: HUB_COLORS.design.primary,
-    example: "Flyer design",
-    price: "R150",
-    blurb: "Logos, flyers, social posts that actually look designed.",
+    services: [
+      { name: "Logo (Basic)", price: "R300" },
+      { name: "Logo (Standard)", price: "R500" },
+      { name: "Business Card", price: "R120" },
+      { name: "Flyer (Custom)", price: "R250" },
+      { name: "Social Media Post", price: "R80" },
+      { name: "Invitation (Image)", price: "R150" },
+    ],
   },
   {
+    id: "eservice",
     name: "E-Service Hub",
-    short: "E-ServiceHub",
     icon: <Globe size={32} weight="fill" aria-hidden="true" />,
     color: HUB_COLORS.eservice.primary,
-    example: "SASSA SRD application",
-    price: "R40",
-    blurb: "SASSA, SARS, PSIRA, NSFAS — we know the forms so you don't have to.",
+    services: [
+      { name: "SASSA Status Check", price: "R20" },
+      { name: "SASSA SRD Application", price: "R40" },
+      { name: "SASSA Grant Application", price: "R80" },
+      { name: "SARS New Taxpayer / eFiling", price: "R70" },
+      { name: "NSFAS Application", price: "R80" },
+      { name: "UIF Claims", price: "R200" },
+    ],
   },
   {
+    id: "tech",
     name: "Tech Hub",
-    short: "TechHub",
     icon: <Desktop size={32} weight="fill" aria-hidden="true" />,
     color: HUB_COLORS.tech.primary,
-    example: "Virus removal",
-    price: "R200",
-    blurb: "Slow laptop, new PC, broken Windows — we fix it on the spot.",
+    services: [
+      { name: "Software Install", price: "R80" },
+      { name: "PC Setup", price: "R250" },
+      { name: "Virus Removal", price: "R200" },
+      { name: "Windows Install + Activation", price: "R350" },
+      { name: "Microsoft 365 Setup", price: "R150" },
+      { name: "Troubleshooting (per hr)", price: "R150" },
+    ],
   },
 ]
+
+function pickRandomService(hubIndex: number, excludeName?: string) {
+  const list = HUBS_DATA[hubIndex].services
+  if (list.length === 1) return list[0]
+  let next = list[Math.floor(Math.random() * list.length)]
+  let attempts = 0
+  while (next.name === excludeName && attempts < 5) {
+    next = list[Math.floor(Math.random() * list.length)]
+    attempts++
+  }
+  return next
+}
 
 export function HeroSection() {
   const router = useRouter()
   const [activeHub, setActiveHub] = useState<number>(0)
-  const [hoveredCard, setHoveredCard] = useState<number | null>(null)
+  const [spotlightService, setSpotlightService] = useState(() => pickRandomService(0))
 
   const handleNavigate = (path: string) => {
     router.push(path)
   }
 
   const active = HUBS_DATA[activeHub]
+
+  const handleSelectHub = (index: number) => {
+    setActiveHub(index)
+    setSpotlightService(pickRandomService(index))
+  }
+
+  const handleReroll = () => {
+    setSpotlightService((prev) => pickRandomService(activeHub, prev.name))
+  }
 
   return (
     <section
@@ -159,7 +205,7 @@ export function HeroSection() {
           </div>
         </div>
 
-        {/* Core Hub Ecosystem — interactive spotlight */}
+        {/* Core Hub Ecosystem — icon-only spotlight */}
         <div className="abh-card w-full max-w-[840px] mx-auto p-6 sm:p-10 md:p-12 flex flex-col items-center bg-white/60 dark:bg-zinc-900/50 backdrop-blur-md">
 
           <div className="w-full flex flex-col items-center mb-8 md:mb-10">
@@ -167,7 +213,7 @@ export function HeroSection() {
             <p className="abh-body text-sm max-w-[420px]">Tap a hub to see what we actually do there.</p>
           </div>
 
-          {/* Hub selector row */}
+          {/* Hub selector row — icons only, theme-aware muted state */}
           <div
             role="tablist"
             aria-label="Service hubs"
@@ -177,38 +223,27 @@ export function HeroSection() {
               const isActive = activeHub === index
               return (
                 <button
-                  key={hub.name}
+                  key={hub.id}
                   role="tab"
                   aria-selected={isActive}
                   aria-label={hub.name}
-                  onClick={() => setActiveHub(index)}
+                  onClick={() => handleSelectHub(index)}
                   className={cn(
-                    "relative flex flex-col items-center gap-2 px-3 sm:px-4 py-4 rounded-[14px] border transition-all duration-300 flex-1 min-w-[64px] sm:min-w-[80px]",
+                    "relative flex items-center justify-center px-4 sm:px-5 py-4 rounded-[14px] border transition-all duration-300 flex-1 min-w-[56px]",
                     isActive
                       ? "border-transparent shadow-md"
                       : "border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700"
                   )}
-                  style={{
-                    backgroundColor: isActive ? `${hub.color}14` : undefined,
-                  }}
+                  style={{ backgroundColor: isActive ? `${hub.color}14` : undefined }}
                 >
                   <span
-                    className="transition-all duration-300"
+                    className="transition-all duration-300 flex"
                     style={{
-                      color: isActive ? hub.color : undefined,
-                      transform: isActive ? "translateY(-2px) scale(1.08)" : "none",
-                      display: "flex",
+                      color: isActive ? hub.color : "#9A9A9A",
+                      transform: isActive ? "translateY(-2px) scale(1.1)" : "none",
                     }}
                   >
-                    <span className={cn("transition-colors duration-300", !isActive && "text-zinc-400 dark:text-zinc-500")}>
-                      {hub.icon}
-                    </span>
-                  </span>
-                  <span
-                    className={cn("text-[0.62rem] sm:text-[0.68rem] font-black uppercase tracking-wide transition-colors duration-300 leading-tight text-center", !isActive && "text-zinc-400 dark:text-zinc-500")}
-                    style={{ color: isActive ? hub.color : undefined }}
-                  >
-                    {hub.short}
+                    {hub.icon}
                   </span>
                   {isActive && (
                     <span
@@ -222,63 +257,77 @@ export function HeroSection() {
             })}
           </div>
 
-          {/* Spotlight panel — changes with selected hub */}
-          <div
-            key={activeHub}
-            className="w-full max-w-[560px] rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-[#081428] px-5 sm:px-7 py-5 sm:py-6 mb-10 md:mb-12 text-left transition-all duration-300 animate-in fade-in slide-in-from-bottom-1"
-          >
-            <div className="flex items-start justify-between gap-4 mb-2">
-              <p className="text-sm sm:text-base font-bold text-zinc-700 dark:text-zinc-200 leading-snug max-w-[380px]">
-                {active.blurb}
-              </p>
-              <div className="shrink-0 text-right">
-                <p className="text-[0.62rem] font-black uppercase tracking-wide text-zinc-400 mb-0.5">{active.example}</p>
-                <p className="text-lg sm:text-xl font-black" style={{ color: active.color }}>{active.price}</p>
-              </div>
+          {/* Spotlight panel — service + price re-roll on click, subtitle copy stays fixed */}
+          <div className="w-full max-w-[560px] rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-[#081428] px-5 sm:px-7 py-5 sm:py-6 mb-2 text-left transition-all duration-300">
+            <p className="text-[0.7rem] font-black uppercase tracking-wide text-zinc-400 mb-3">{active.name} · pricing example</p>
+            <div className="flex items-center justify-between gap-4">
+              <button
+                key={`${activeHub}-${spotlightService.name}`}
+                onClick={handleReroll}
+                aria-label="Show another example price for this hub"
+                className="flex-1 flex items-center justify-between gap-4 rounded-[10px] px-1 py-1 -mx-1 transition-opacity hover:opacity-80 active:scale-[0.98] animate-in fade-in duration-300"
+              >
+                <span className="text-sm sm:text-base font-bold text-zinc-700 dark:text-zinc-200">{spotlightService.name}</span>
+                <span className="text-lg sm:text-xl font-black shrink-0" style={{ color: active.color }}>{spotlightService.price}</span>
+              </button>
             </div>
             <button
-              onClick={() => handleNavigate("/services")}
-              className="inline-flex items-center gap-1.5 text-[0.78rem] font-black mt-1 transition-opacity hover:opacity-70"
+              onClick={() => handleNavigate(`/services?hub=${active.id}`)}
+              className="inline-flex items-center gap-1.5 text-[0.78rem] font-black mt-4 transition-opacity hover:opacity-70"
               style={{ color: active.color }}
             >
               See all {active.name} services
               <ArrowRight weight="bold" className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
           </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 sm:gap-6 w-full max-w-[640px] mx-auto" role="list" aria-label="Key stats">
-            {[
-              { icon: <PlusCircle weight="fill" size={24} aria-hidden="true" />, color: BRAND.blue, value: BIZ.hubCount, label: "Hubs" },
-              { icon: <Gear weight="fill" size={24} aria-hidden="true" />, color: BRAND.green, value: BIZ.serviceCount, label: "Services" },
-              { icon: <Wrench weight="fill" size={24} aria-hidden="true" />, color: BRAND.orange, value: "Fast", label: "Turnaround" },
-            ].map((stat, i) => {
-              const isHov = hoveredCard === i
-              return (
-                <div
-                  key={stat.label}
-                  role="listitem"
-                  onMouseEnter={() => setHoveredCard(i)}
-                  onMouseLeave={() => setHoveredCard(null)}
-                  aria-label={`${stat.value} ${stat.label}`}
-                  className="flex flex-col items-center justify-center gap-2 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-[#081428] py-5 sm:py-6 px-3 sm:px-4 text-center transition-all duration-300 shadow-sm"
-                  style={{ borderColor: isHov ? stat.color : undefined }}
-                >
-                  <div
-                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-[14px] flex items-center justify-center border border-zinc-100 dark:border-zinc-800 mb-1 transition-colors duration-300"
-                    style={{ backgroundColor: isHov ? stat.color : "transparent", color: isHov ? BRAND.white : stat.color }}
-                  >
-                    {stat.icon}
-                  </div>
-                  <div className="font-black text-xl sm:text-2xl md:text-3xl" style={{ color: stat.color }}>
-                    {stat.value}
-                  </div>
-                  <div className="abh-label text-[0.62rem] sm:text-[0.72rem]">{stat.label}</div>
-                </div>
-              )
-            })}
-          </div>
         </div>
+      </div>
+    </section>
+  )
+}
+
+export function StatsBar() {
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null)
+
+  return (
+    <section aria-label="Key stats" className="px-4 md:px-8 py-12 md:py-16 transition-colors duration-300">
+      <div className="grid grid-cols-3 gap-4 sm:gap-6 w-full max-w-[640px] mx-auto" role="list" aria-label="Key stats">
+        {[
+          { icon: <PlusCircle weight="fill" size={24} aria-hidden="true" />, color: BRAND.blue, value: BIZ.hubCount, label: "Hubs" },
+          { icon: <Gear weight="fill" size={24} aria-hidden="true" />, color: BRAND.green, value: BIZ.serviceCount, label: "Services" },
+          { icon: <Wrench weight="fill" size={24} aria-hidden="true" />, color: BRAND.orange, value: "Fast", label: "Turnaround" },
+        ].map((stat, i) => {
+          const isHov = hoveredCard === i
+          return (
+            <div
+              key={stat.label}
+              role="listitem"
+              onMouseEnter={() => setHoveredCard(i)}
+              onMouseLeave={() => setHoveredCard(null)}
+              onClick={() => setHoveredCard(isHov ? null : i)}
+              aria-label={`${stat.value} ${stat.label}`}
+              className="flex flex-col items-center justify-center gap-2 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-[#081428] py-5 sm:py-6 px-3 sm:px-4 text-center transition-all duration-300 shadow-sm cursor-pointer"
+              style={{ borderColor: isHov ? stat.color : undefined }}
+            >
+              <div
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-[14px] flex items-center justify-center border border-zinc-100 dark:border-zinc-800 mb-1 transition-colors duration-300"
+                style={{
+                  backgroundColor: isHov ? stat.color : "transparent",
+                  color: isHov ? BRAND.white : "#9A9A9A",
+                }}
+              >
+                {stat.icon}
+              </div>
+              <div
+                className="font-black text-xl sm:text-2xl md:text-3xl transition-colors duration-300"
+                style={{ color: isHov ? stat.color : undefined }}
+              >
+                {stat.value}
+              </div>
+              <div className="abh-label text-[0.62rem] sm:text-[0.72rem]">{stat.label}</div>
+            </div>
+          )
+        })}
       </div>
     </section>
   )
@@ -322,4 +371,3 @@ export function CtaBar({
     </section>
   )
 }
- 
