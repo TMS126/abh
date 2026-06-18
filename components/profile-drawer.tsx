@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { X, WhatsappLogo, Phone } from "@phosphor-icons/react"
+import { X, WhatsappLogo } from "@phosphor-icons/react"
 import { BIZ, BRAND } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 
@@ -93,10 +93,10 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
         {/* Scrollable inner wrapper — contains the cover so it stays clipped to the panel's rounded corners */}
         <div className="flex-1 overflow-y-auto overscroll-contain">
 
-          {/* Cover banner — WhatsApp Business style */}
+          {/* Cover banner — WhatsApp Business style, blue-dominant brand gradient */}
           <div
-            className="relative h-28 md:h-32 w-full shrink-0"
-            style={{ background: `linear-gradient(135deg, ${BRAND.blue}, ${BRAND.green})` }}
+            className="relative h-40 md:h-52 w-full shrink-0"
+            style={{ background: `linear-gradient(160deg, ${BRAND.blue} 0%, ${BRAND.blue} 62%, ${BRAND.greenDark} 100%)` }}
           >
             <button
               ref={closeRef}
@@ -114,7 +114,7 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
             <div className="relative mb-4">
               <div
                 className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black text-white shrink-0 border-4 border-white dark:border-zinc-900 shadow-lg"
-                style={{ background: `linear-gradient(135deg, ${BRAND.blue}, ${BRAND.green})` }}
+                style={{ backgroundColor: BRAND.blue }}
                 aria-hidden="true"
               >
                 TM
@@ -127,28 +127,21 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
             {/* Name & role */}
             <h2 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-1">{BIZ.founder}</h2>
             <p className="text-sm font-semibold text-brand-blue dark:text-brand-light-blue mb-1">{FOUNDER_ROLE}</p>
-            <p className="abh-label text-[0.62rem] mb-6">{BIZ.address}</p>
+            <p className="abh-label text-[0.62rem] mb-6">{BIZ.address.replace(/^5878\s*/, "")}</p>
 
             {/* Bio */}
             <p className="abh-body text-sm text-center mb-8 leading-relaxed">{FOUNDER_BIO}</p>
 
             {/* Action buttons */}
-            <div className="flex flex-col gap-3 w-full">
+            <div className="flex flex-col items-center w-full">
               <a
                 href={FOUNDER_WA_LINK}
                 target="_blank" rel="noopener noreferrer"
-                className="flex items-center justify-center gap-3 py-3.5 px-6 rounded-[14px] font-extrabold text-sm text-white transition-all active:scale-95"
+                className="flex items-center justify-center gap-3 py-3 px-8 rounded-[14px] font-extrabold text-sm text-white transition-all active:scale-95"
                 style={{ backgroundColor: BRAND.whatsapp }}
               >
                 <WhatsappLogo size={18} weight="fill" aria-hidden="true" />
                 Personal WhatsApp
-              </a>
-              <a
-                href={`tel:${BIZ.phoneE164}`}
-                className="flex items-center justify-center gap-3 py-3.5 px-6 rounded-[14px] font-extrabold text-sm border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all active:scale-95"
-              >
-                <Phone size={18} weight="fill" aria-hidden="true" />
-                {BIZ.phone}
               </a>
             </div>
           </div>
