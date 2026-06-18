@@ -9,10 +9,12 @@ import { HUBS, HubId } from "@/lib/data"
 
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
+// Signature accent for this widget only — an antique gold standing in for
+// "exclusive pricing", deliberately separate from the site's brand-blue/orange
+// so the calculator reads as its own premium instrument, not another card.
+const GOLD = "#C9A227"
+
 // ─── BULK PRICING TIERS (from the in-store price flyer) ──────────────────────
-// Keyed by `${hubId}-${sectionTitle}-${itemName}`. Tiers are min-quantity
-// thresholds — the highest threshold a quantity satisfies wins automatically,
-// so overlapping ranges on the flyer (e.g. "10–99" then "50+") resolve correctly.
 const BULK_TIERS: Record<string, { min: number; rate: number }[]> = {
   "print-Copying-Black & White":        [{ min: 10, rate: 2 }, { min: 100, rate: 1 }],
   "print-Copying-Colour":               [{ min: 10, rate: 4 }, { min: 50,  rate: 3 }],
@@ -20,6 +22,21 @@ const BULK_TIERS: Record<string, { min: number; rate: number }[]> = {
   "print-Printing-Colour":              [{ min: 10, rate: 7 }, { min: 50,  rate: 5 }],
   "doc-Typing + Printing-Black & White":[{ min: 10, rate: 10 }],
   "doc-Typing + Printing-Colour":       [{ min: 10, rate: 11 }],
+}
+
+// Disambiguates items that share a name across sections ("Black & White" /
+// "Colour" exist in Printing, Copying, and Typing) into a readable label —
+// "Black & White Print", "Colour Copy", "Black & White Typing".
+const SECTION_LABEL: Record<string, string> = {
+  "Printing": "Print",
+  "Copying": "Copy",
+  "Typing + Printing": "Typing",
+}
+function getDisplayName(sectionTitle: string, name: string): string {
+  if ((name === "Black & White" || name === "Colour") && SECTION_LABEL[sectionTitle]) {
+    return `${name} ${SECTION_LABEL[sectionTitle]}`
+  }
+  return name
 }
 
 function getEffectiveRate(id: string, qty: number, fallback: number): number {
@@ -117,7 +134,7 @@ export function QuoteCalculatorWidget() {
       const effRate = getEffectiveRate(item.id, item.qty, item.unitPrice)
       const lineTotal = effRate * item.qty
       const qtyLabel = item.unit ? `${item.qty} ${item.unit}${item.qty > 1 ? "s" : ""}` : `x${item.qty}`
-      msg += `• ${item.name} — ${qtyLabel} @ R${effRate} = R${lineTotal}\n`
+      msg += `• ${getDisplayName(item.sectionTitle, item.name)} — ${qtyLabel} @ R${effRate} = R${lineTotal}\n`
     })
     msg += `\nTotal: R${total}`
     if (totalSavings > 0) msg += ` (saved R${totalSavings} with bulk pricing)`
@@ -126,23 +143,32 @@ export function QuoteCalculatorWidget() {
 
   return (
     <>
-      <button
-        onClick={() => setIsOpen(o => !o)}
-        className="fixed bottom-6 right-6 z-[9990] w-14 h-14 rounded-full bg-brand-blue text-white shadow-2xl flex items-center justify-center active:scale-95 transition-transform hover:-translate-y-0.5"
-        aria-label="Open quotation calculator"
-      >
-        <Calculator size={26} weight="fill" />
+      <div className="fixed bottom-6 right-6 z-[9990]">
         {itemCount > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 rounded-full bg-brand-orange text-white text-[0.65rem] font-black flex items-center justify-center border-2 border-white dark:border-zinc-950">
-            {itemCount}
-          </span>
+          <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: "rgba(201,162,39,0.4)" }} aria-hidden="true" />
         )}
-      </button>
+        <button
+          onClick={() => setIsOpen(o => !o)}
+          className="relative w-14 h-14 rounded-full bg-brand-blue text-white shadow-2xl flex items-center justify-center active:scale-95 transition-transform hover:-translate-y-0.5"
+          aria-label="Open quotation calculator"
+        >
+          <Calculator size={26} weight="fill" />
+          {itemCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 rounded-full text-white text-[0.65rem] font-black flex items-center justify-center border-2 border-white dark:border-zinc-950" style={{ backgroundColor: GOLD }}>
+              {itemCount}
+            </span>
+          )}
+        </button>
+      </div>
 
       {isOpen && (
-        <div className="fixed bottom-24 right-4 left-4 md:left-auto md:right-6 z-[9991] md:w-[400px] max-h-[75vh] bg-white dark:bg-zinc-950 rounded-[14px] shadow-2xl border border-zinc-100 dark:border-zinc-800 flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-300">
+        <div className="fixed bottom-24 right-4 left-4 md:left-auto md:right-6 z-[9991] md:w-[400px] max-h-[75vh] bg-white dark:bg-zinc-950 rounded-[14px] shadow-2xl border flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-300" style={{ borderColor: `${GOLD}33`, boxShadow: `0 0 40px ${GOLD}14, 0 25px 50px -12px rgba(0,0,0,0.4)` }}>
+          <div className="h-[2px] w-full shrink-0" style={{ background: `linear-gradient(to right, transparent, ${GOLD}, transparent)` }} />
           <div className="flex items-center justify-between p-5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
-            <h3 className="font-sans font-black text-lg" style={{ color: titleAccent }}>Quotation Calculator</h3>
+            <div>
+              <p className="text-[0.6rem] font-black uppercase tracking-[0.2em] mb-1" style={{ color: GOLD }}>Exclusive Pricing</p>
+              <h3 className="font-sans font-black text-lg" style={{ color: titleAccent }}>Quotation Calculator</h3>
+            </div>
             <button onClick={() => setIsOpen(false)} className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200"><X size={16} weight="bold" /></button>
           </div>
 
@@ -158,32 +184,42 @@ export function QuoteCalculatorWidget() {
                   const lineTotal = effRate * item.qty
                   const discounted = effRate < item.unitPrice
                   const hint = getBulkHint(item.id, item.qty, effRate, item.unitPrice)
+                  const displayName = getDisplayName(item.sectionTitle, item.name)
                   return (
-                    <div key={item.id} className="p-2.5 rounded-[14px] bg-zinc-50 dark:bg-zinc-900 space-y-1.5">
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{item.name}</p>
-                          <p className="text-[0.65rem] font-bold text-zinc-400">
-                            {discounted && <span className="line-through mr-1">R{item.unitPrice}</span>}
-                            R{effRate}{item.unit ? `/${item.unit}` : ""} each
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
+                    <div key={item.id} className="p-3 rounded-[14px] bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800/60 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{displayName}</p>
+                        <button onClick={() => removeItem(item.id)} className="text-zinc-400 hover:text-red-500 shrink-0"><Trash size={14} weight="bold" /></button>
+                      </div>
+
+                      <div className="flex items-baseline gap-4 font-mono">
+                        <span className="text-[0.65rem] text-zinc-400">
+                          <span className="font-sans font-bold uppercase tracking-wider text-[0.55rem] mr-1 align-middle">Orig</span>
+                          R{item.unitPrice}{item.unit ? `/${item.unit}` : ""}
+                        </span>
+                        <span className="text-[0.7rem] font-bold" style={{ color: discounted ? GOLD : undefined }}>
+                          <span className="font-sans font-bold uppercase tracking-wider text-[0.55rem] mr-1 align-middle" style={{ color: discounted ? GOLD : undefined }}>Live</span>
+                          R{effRate}{item.unit ? `/${item.unit}` : ""}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-1.5">
                           <button onClick={() => updateQty(item.id, item.qty - 1)} className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center"><Minus size={12} weight="bold" /></button>
                           <input
                             type="number"
                             min={1}
                             value={item.qty}
                             onChange={e => updateQty(item.id, Math.max(1, parseInt(e.target.value) || 1))}
-                            className="w-10 text-center text-xs font-black bg-transparent border-none outline-none"
+                            className="w-10 text-center text-xs font-mono font-black bg-transparent border-none outline-none"
                           />
                           <button onClick={() => updateQty(item.id, item.qty + 1)} className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center"><Plus size={12} weight="bold" /></button>
                         </div>
-                        <span className="text-xs font-black w-14 text-right shrink-0">R{lineTotal}</span>
-                        <button onClick={() => removeItem(item.id)} className="text-zinc-400 hover:text-red-500 shrink-0"><Trash size={14} weight="bold" /></button>
+                        <span className="text-sm font-mono font-black text-zinc-900 dark:text-zinc-50">R{lineTotal}</span>
                       </div>
+
                       {hint && (
-                        <p className={cn("text-[0.6rem] font-bold pl-0.5", discounted ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400")}>
+                        <p className="text-[0.6rem] font-bold pl-0.5" style={{ color: discounted ? GOLD : "#9CA3AF" }}>
                           {hint}
                         </p>
                       )}
@@ -216,10 +252,10 @@ export function QuoteCalculatorWidget() {
                                 return (
                                   <div key={iIdx} className="flex items-center justify-between gap-2 p-2 rounded-[10px] bg-zinc-50 dark:bg-zinc-900">
                                     <div className="min-w-0">
-                                      <p className="text-xs font-bold text-zinc-700 dark:text-zinc-300 truncate">{item.name}</p>
-                                      <p className="text-[0.65rem] font-medium text-zinc-400">
+                                      <p className="text-xs font-bold text-zinc-700 dark:text-zinc-300 truncate">{getDisplayName(section.title, item.name)}</p>
+                                      <p className="text-[0.65rem] font-medium text-zinc-400 font-mono">
                                         {item.price}
-                                        {hasBulk && <span className="font-bold ml-1" style={{ color: accent }}>· bulk pricing</span>}
+                                        {hasBulk && <span className="font-sans font-bold ml-1" style={{ color: GOLD }}>· bulk pricing</span>}
                                       </p>
                                     </div>
                                     <button onClick={() => addItem(hubId, section.title, item.name, item.price)} className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-white" style={{ backgroundColor: accent }}><Plus size={14} weight="bold" /></button>
@@ -240,14 +276,14 @@ export function QuoteCalculatorWidget() {
           {cart.length > 0 && (
             <div className="p-4 border-t border-zinc-100 dark:border-zinc-800 shrink-0 space-y-3">
               {totalSavings > 0 && (
-                <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-emerald-600 dark:text-emerald-400">
+                <div className="flex items-center gap-1.5 text-[0.7rem] font-bold font-mono" style={{ color: GOLD }}>
                   <SealPercent size={14} weight="fill" />
                   Saving R{totalSavings} with bulk pricing
                 </div>
               )}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-black text-zinc-500">Total</span>
-                <span className="text-2xl font-black text-brand-blue dark:text-brand-light-blue">R{total}</span>
+                <span className="text-2xl font-mono font-black text-brand-blue dark:text-brand-light-blue">R{total}</span>
               </div>
               <button onClick={sendQuote} className="w-full flex items-center justify-center gap-2 py-3.5 rounded-[14px] font-black text-sm text-white active:scale-95 transition-all" style={{ backgroundColor: "#25D366" }}>
                 <WhatsappLogo size={20} weight="fill" /> Send Quote via WhatsApp
@@ -259,4 +295,4 @@ export function QuoteCalculatorWidget() {
     </>
   )
 }
- 
+EOF
