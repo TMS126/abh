@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback, useEffect } from "react"
-import { X, Check, Info, CaretLeft, CaretRight } from "@phosphor-icons/react"
+import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -9,17 +9,80 @@ import { HUB_COLORS, HubKey } from "@/lib/brand"
 import { PROJECTS, ProjectData } from "@/lib/data"
 
 type HubId = "print" | "doc" | "design" | "eservice" | "tech"
+
 const ROW_ORDER: { id: HubId; label: string; short: string }[] = [
-  { id: "print",    label: "Print Hub",      short: "Print" },
-  { id: "design",   label: "Design Hub",     short: "Design" },
-  { id: "doc",      label: "Document Hub",   short: "Document" },
-  { id: "eservice", label: "E-Service Hub",  short: "E-Service" },
-  { id: "tech",     label: "Tech Hub",       short: "Tech" },
+  { id: "print",    label: "Print Hub",     short: "Print" },
+  { id: "design",   label: "Design Hub",    short: "Design" },
+  { id: "doc",      label: "Document Hub",  short: "Document" },
+  { id: "eservice", label: "E-Service Hub", short: "E-Service" },
+  { id: "tech",     label: "Tech Hub",      short: "Tech" },
 ]
 
+// ─── Image placeholder ────────────────────────────────────────────────────────
+function ImagePlaceholder({ accent, label }: { accent: string; label?: string }) {
+  return (
+    <div
+      className="absolute inset-0 flex flex-col items-center justify-center gap-3 select-none"
+      style={{
+        background: `linear-gradient(135deg, ${accent}18 0%, ${accent}08 60%, transparent 100%)`,
+      }}
+    >
+      {/* Decorative rings */}
+      <div
+        className="absolute w-48 h-48 rounded-full opacity-10"
+        style={{ border: `2px solid ${accent}`, top: "10%", right: "-10%" }}
+      />
+      <div
+        className="absolute w-28 h-28 rounded-full opacity-10"
+        style={{ border: `2px solid ${accent}`, bottom: "5%", left: "-5%" }}
+      />
+      {/* Icon */}
+      <div
+        className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner"
+        style={{ backgroundColor: `${accent}20`, border: `1.5px solid ${accent}30` }}
+      >
+        <ImageIcon size={26} weight="thin" style={{ color: accent }} />
+      </div>
+      <p className="text-xs font-bold tracking-wider uppercase opacity-60" style={{ color: accent }}>
+        {label ?? "No image"}
+      </p>
+    </div>
+  )
+}
+
+// ─── Safe image — falls back to placeholder if src is missing/fails ────────
+function SafeImage({
+  src, alt, accent, fill, sizes, className,
+}: {
+  src: string; alt: string; accent: string
+  fill?: boolean; sizes?: string; className?: string
+}) {
+  const [failed, setFailed] = useState(false)
+  const missing = !src || src === ""
+
+  if (missing || failed) {
+    return <ImagePlaceholder accent={accent} label={alt} />
+  }
+
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      fill={fill}
+      sizes={sizes}
+      className={className}
+      onError={() => setFailed(true)}
+    />
+  )
+}
+
+// ─── Project viewer modal ─────────────────────────────────────────────────────
 function ProjectViewerModal({ project, onClose }: { project: ProjectData | null; onClose: () => void }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
+  const [activeImg, setActiveImg] = useState(0)
+
+  useEffect(() => { setActiveImg(0) }, [project?.id])
 
   useEffect(() => {
     if (!project) return
@@ -33,58 +96,69 @@ function ProjectViewerModal({ project, onClose }: { project: ProjectData | null;
   const accent = isDark
     ? HUB_COLORS[project.hub as HubKey].tagTextDark
     : HUB_COLORS[project.hub as HubKey].tagText
-  const allImages = project.images.length > 0 ? project.images : [project.image]
+  const allImages = project.images?.length > 0 ? project.images : [project.image]
 
   return (
     <div className="fixed inset-0 z-[10200] flex items-end md:items-center justify-center md:p-4 animate-in fade-in duration-300">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-md overscroll-contain" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
 
-      {/* ── Modal shell ───────────────────────────────────────────────────── */}
-      {/* Mobile: bottom sheet that fills 95vh, split 40% images / 60% details  */}
-      {/* Desktop: side-by-side, images left, details right                      */}
       <div className={cn(
-        "relative w-full bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 animate-in duration-500",
-        // mobile: rounded top corners only, slides up from bottom
+        "relative w-full bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800",
         "rounded-t-[20px] md:rounded-[14px]",
-        // mobile: full width, 95vh, flex column; desktop: max-w-5xl, 85vh, flex row
         "flex flex-col md:flex-row",
         "h-[95vh] md:h-[85vh] md:max-w-5xl md:overflow-hidden",
-        "slide-in-from-bottom-4 md:zoom-in-95",
+        "animate-in slide-in-from-bottom-4 md:zoom-in-95 duration-500",
       )}>
 
-        {/* ── Image strip (mobile: 40%, desktop: flex-1) ───────────────── */}
-        <div className={cn(
-          "bg-zinc-50 dark:bg-zinc-900/50 overflow-y-auto overscroll-contain",
-          // mobile: 40% of the 95vh modal height; desktop: flexible width
-          "h-[40%] md:h-auto md:flex-1 md:p-8 p-4 space-y-3 md:space-y-6",
-          // thin scrollbar on desktop, hidden on mobile for cleanliness
-          "scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800",
-        )}>
-          {allImages.map((img, idx) => (
-            <div
-              key={idx}
-              className="relative aspect-[16/10] rounded-[12px] md:rounded-[14px] overflow-hidden shadow-lg border border-zinc-200 dark:border-zinc-800 shrink-0"
-            >
-              <Image
-                src={img}
-                alt={`${project.title} view ${idx + 1}`}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
-              />
+        {/* ── Image section (40% mobile / flex-1 desktop) ────────────── */}
+        <div className="h-[40%] md:h-auto md:flex-1 flex flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-900/60">
+          {/* Main image */}
+          <div className="relative flex-1 overflow-hidden">
+            <SafeImage
+              src={allImages[activeImg]}
+              alt={`${project.title} view ${activeImg + 1}`}
+              accent={accent}
+              fill
+              sizes="(max-width: 768px) 100vw, 55vw"
+              className="object-cover transition-opacity duration-300"
+            />
+          </div>
+
+          {/* Thumbnail strip — horizontal swipe */}
+          {allImages.length > 1 && (
+            <div className="flex gap-2 px-3 py-2.5 overflow-x-auto no-scrollbar shrink-0 border-t border-zinc-100 dark:border-zinc-800">
+              {allImages.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveImg(idx)}
+                  className={cn(
+                    "relative shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-[8px] overflow-hidden border-2 transition-all",
+                    activeImg === idx
+                      ? "border-opacity-100 scale-105"
+                      : "border-transparent opacity-50 hover:opacity-80"
+                  )}
+                  style={activeImg === idx ? { borderColor: accent } : {}}
+                >
+                  <SafeImage
+                    src={img}
+                    alt={`Thumbnail ${idx + 1}`}
+                    accent={accent}
+                    fill
+                    sizes="56px"
+                    className="object-cover"
+                  />
+                </button>
+              ))}
             </div>
-          ))}
+          )}
         </div>
 
-        {/* ── Details panel (mobile: 60%, desktop: fixed width) ────────── */}
+        {/* ── Details panel (60% mobile / fixed-width desktop) ─────────── */}
         <div className={cn(
           "flex flex-col border-zinc-100 dark:border-zinc-800 overflow-y-auto overscroll-contain",
-          // mobile: remaining 60%, top border; desktop: right side, left border
           "h-[60%] border-t md:h-auto md:border-t-0 md:border-l md:w-[380px]",
           "p-6 md:p-8",
-          "scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800",
         )}>
-          {/* Header */}
           <div className="flex justify-between items-start mb-6 shrink-0">
             <div>
               <span
@@ -105,20 +179,13 @@ function ProjectViewerModal({ project, onClose }: { project: ProjectData | null;
             </button>
           </div>
 
-          {/* Content sections */}
           <div className="space-y-6 md:space-y-8">
             <section>
-              <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>
-                The Goal
-              </h4>
-              <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">
-                {project.clientGoal}
-              </p>
+              <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>The Goal</h4>
+              <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.clientGoal}</p>
             </section>
             <section>
-              <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>
-                What we did
-              </h4>
+              <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>What we did</h4>
               <ul className="space-y-2">
                 {project.whatWeDid.map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-sm text-zinc-600 dark:text-zinc-300 font-medium">
@@ -129,12 +196,8 @@ function ProjectViewerModal({ project, onClose }: { project: ProjectData | null;
               </ul>
             </section>
             <section>
-              <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>
-                The Result
-              </h4>
-              <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">
-                {project.result}
-              </p>
+              <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>The Result</h4>
+              <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.result}</p>
             </section>
           </div>
         </div>
@@ -143,77 +206,140 @@ function ProjectViewerModal({ project, onClose }: { project: ProjectData | null;
   )
 }
 
-function Carousel({ projects, onSelect }: { projects: ProjectData[]; onSelect: (p: ProjectData) => void }) {
-  const [centerIdx, setCenterIdx] = useState(0)
-  const containerRef = useRef<HTMLDivElement>(null)
+// ─── Unified swipe carousel (mobile + desktop) ────────────────────────────────
+function ProjectCarousel({
+  projects,
+  accent,
+  onSelect,
+}: {
+  projects: ProjectData[]
+  accent: string
+  onSelect: (p: ProjectData) => void
+}) {
+  const [activeIdx, setActiveIdx] = useState(0)
+  const trackRef = useRef<HTMLDivElement>(null)
+  const isDragging = useRef(false)
+  const startX = useRef(0)
+  const scrollStart = useRef(0)
 
-  const handleScroll = useCallback(() => {
-    if (!containerRef.current) return
-    const scrollLeft = containerRef.current.scrollLeft
-    const cardWidth = 400 + 24
-    const idx = Math.round(scrollLeft / cardWidth)
-    if (idx !== centerIdx) setCenterIdx(idx)
-  }, [centerIdx])
+  // Sync dot on native scroll (touch swipe)
+  const onScroll = useCallback(() => {
+    if (!trackRef.current) return
+    const { scrollLeft, clientWidth } = trackRef.current
+    const idx = Math.round(scrollLeft / clientWidth)
+    setActiveIdx(idx)
+  }, [])
 
-  const scrollToIndex = (idx: number) => {
-    if (!containerRef.current) return
-    const cardWidth = 400 + 24
-    containerRef.current.scrollTo({ left: idx * cardWidth, behavior: "smooth" })
+  const scrollTo = useCallback((idx: number) => {
+    if (!trackRef.current) return
+    const clamped = Math.max(0, Math.min(idx, projects.length - 1))
+    trackRef.current.scrollTo({ left: clamped * trackRef.current.clientWidth, behavior: "smooth" })
+    setActiveIdx(clamped)
+  }, [projects.length])
+
+  // Mouse drag support for desktop
+  const onMouseDown = (e: React.MouseEvent) => {
+    isDragging.current = true
+    startX.current = e.pageX
+    scrollStart.current = trackRef.current?.scrollLeft ?? 0
   }
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging.current || !trackRef.current) return
+    trackRef.current.scrollLeft = scrollStart.current - (e.pageX - startX.current)
+  }
+  const onMouseUp = () => { isDragging.current = false }
 
   return (
-    <div className="relative group/carousel">
+    <div className="relative">
+      {/* Track */}
       <div
-        ref={containerRef}
-        onScroll={handleScroll}
-        className="flex gap-6 overflow-x-auto pb-12 pt-12 px-[calc(50%-200px)] snap-x snap-mandatory no-scrollbar"
+        ref={trackRef}
+        onScroll={onScroll}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseUp}
+        className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar cursor-grab active:cursor-grabbing select-none"
+        style={{ scrollSnapType: "x mandatory" }}
       >
-        {projects.map((project, idx) => {
-          const isCenter = idx === centerIdx
-          return (
+        {projects.map((project, idx) => (
+          <div
+            key={project.id}
+            className="shrink-0 w-full snap-center px-4 md:px-6"
+            style={{ scrollSnapAlign: "center" }}
+          >
             <div
-              key={project.id}
-              className={cn(
-                "snap-center shrink-0 w-[400px] transition-all duration-500 cursor-pointer",
-                isCenter ? "scale-110 z-10 opacity-100" : "scale-90 opacity-40 blur-[1px]"
-              )}
-              onClick={() => isCenter ? onSelect(project) : scrollToIndex(idx)}
+              className="rounded-[16px] overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xl cursor-pointer group transition-transform duration-300 active:scale-[0.98]"
+              onClick={() => onSelect(project)}
             >
-              <div className="rounded-[14px] overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-2xl">
-                <div className="relative aspect-[4/3]">
-                  <Image src={project.image} alt={project.title} fill className="object-cover" />
-                  {/* Desktop: plain gradient + text, NO glass pill */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                  <div className="absolute bottom-6 left-6 right-6">
-                    <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/70 mb-1.5">
-                      {project.tag}
-                    </p>
-                    <h3 className="text-white font-black text-xl leading-tight">{project.title}</h3>
-                  </div>
+              {/* Card image */}
+              <div className="relative aspect-[16/9] md:aspect-[16/8] bg-zinc-100 dark:bg-zinc-900">
+                <SafeImage
+                  src={project.image}
+                  alt={project.title}
+                  accent={accent}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 800px"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                <div className="absolute bottom-5 left-5 right-5">
+                  <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/60 mb-1">
+                    {project.tag}
+                  </p>
+                  <h3 className="text-white font-black text-xl md:text-2xl leading-tight">{project.title}</h3>
+                  <p className="text-white/70 text-xs font-medium mt-1 line-clamp-1">{project.shortDesc}</p>
                 </div>
               </div>
             </div>
-          )
-        })}
+          </div>
+        ))}
       </div>
-      <button
-        onClick={() => scrollToIndex(centerIdx - 1)}
-        disabled={centerIdx === 0}
-        className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-xl flex items-center justify-center text-zinc-800 dark:text-white disabled:opacity-0 transition-all opacity-0 group-hover/carousel:opacity-100 z-20"
-      >
-        <CaretLeft size={24} weight="bold" />
-      </button>
-      <button
-        onClick={() => scrollToIndex(centerIdx + 1)}
-        disabled={centerIdx === projects.length - 1}
-        className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-xl flex items-center justify-center text-zinc-800 dark:text-white disabled:opacity-0 transition-all opacity-0 group-hover/carousel:opacity-100 z-20"
-      >
-        <CaretRight size={24} weight="bold" />
-      </button>
+
+      {/* Prev / Next arrows — always shown on desktop, shown on mobile when >1 */}
+      {projects.length > 1 && (
+        <>
+          <button
+            onClick={() => scrollTo(activeIdx - 1)}
+            disabled={activeIdx === 0}
+            className="absolute left-1 md:left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/90 dark:bg-zinc-900/90 shadow-lg flex items-center justify-center text-zinc-700 dark:text-white disabled:opacity-0 transition-all hover:scale-105 active:scale-95"
+          >
+            <CaretLeft size={20} weight="bold" />
+          </button>
+          <button
+            onClick={() => scrollTo(activeIdx + 1)}
+            disabled={activeIdx === projects.length - 1}
+            className="absolute right-1 md:right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/90 dark:bg-zinc-900/90 shadow-lg flex items-center justify-center text-zinc-700 dark:text-white disabled:opacity-0 transition-all hover:scale-105 active:scale-95"
+          >
+            <CaretRight size={20} weight="bold" />
+          </button>
+        </>
+      )}
+
+      {/* Dot indicators */}
+      {projects.length > 1 && (
+        <div className="flex justify-center gap-2 mt-4">
+          {projects.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => scrollTo(idx)}
+              className={cn(
+                "rounded-full transition-all duration-300",
+                activeIdx === idx
+                  ? "w-5 h-2"
+                  : "w-2 h-2 opacity-30 hover:opacity-60"
+              )}
+              style={{ backgroundColor: activeIdx === idx ? accent : undefined }}
+              aria-label={`Go to slide ${idx + 1}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
+// ─── Gallery page ─────────────────────────────────────────────────────────────
 export function GalleryPage() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
@@ -224,19 +350,11 @@ export function GalleryPage() {
     if (!selectedProject) return
     const scrollY = window.scrollY
     const { style } = document.body
-    style.position = "fixed"
-    style.top = `-${scrollY}px`
-    style.left = "0"
-    style.right = "0"
-    style.width = "100%"
-    style.overflow = "hidden"
+    style.position = "fixed"; style.top = `-${scrollY}px`
+    style.left = "0"; style.right = "0"; style.width = "100%"; style.overflow = "hidden"
     return () => {
-      style.position = ""
-      style.top = ""
-      style.left = ""
-      style.right = ""
-      style.width = ""
-      style.overflow = ""
+      style.position = ""; style.top = ""; style.left = ""
+      style.right = ""; style.width = ""; style.overflow = ""
       window.scrollTo(0, scrollY)
     }
   }, [selectedProject])
@@ -250,6 +368,7 @@ export function GalleryPage() {
   return (
     <section className="min-h-screen bg-background pt-[calc(var(--nav-h)+2rem)] pb-24 overflow-x-hidden">
       <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+
         <div className="text-center mb-12">
           <h1 className="abh-page-title mb-4">Our Portfolio</h1>
           <p className="abh-tagline max-w-2xl mx-auto">
@@ -259,7 +378,7 @@ export function GalleryPage() {
         </div>
 
         {/* Filter pills */}
-        <div className="flex flex-col md:flex-row gap-2 justify-center mb-16">
+        <div className="flex flex-wrap gap-2 justify-center mb-16">
           <button
             onClick={() => setActiveFilter("all")}
             className={cn(
@@ -302,42 +421,29 @@ export function GalleryPage() {
           </p>
         </div>
 
-        {/* Rows */}
-        <div className="space-y-24">
+        {/* Hub rows */}
+        <div className="space-y-20">
           {filteredRows.map(row => {
             const projects = PROJECTS.filter(p => p.hub === row.id)
             if (projects.length === 0) return null
+            const accent = getAccent(row.id)
             return (
-              <div key={row.id} className="relative">
-                <div className="flex items-center gap-4 mb-8 px-4">
-                  <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: getAccent(row.id) }} />
+              <div key={row.id}>
+                {/* Row header */}
+                <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
+                  <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: accent }} />
                   <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
                   <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 ml-auto">
                     {projects.length} {projects.length === 1 ? "Project" : "Projects"}
                   </span>
                 </div>
 
-                {/* Mobile: stacked cards */}
-                <div className="md:hidden flex flex-col gap-6 px-4">
-                  {projects.map(p => (
-                    <div key={p.id} className="w-full" onClick={() => setSelectedProject(p)}>
-                      <div className="rounded-[14px] overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm">
-                        <div className="relative aspect-[16/10]">
-                          <Image src={p.image} alt={p.title} fill className="object-cover" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                          <div className="absolute bottom-4 left-4 right-4">
-                            <h3 className="font-black text-lg text-white leading-tight">{p.title}</h3>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Desktop: carousel */}
-                <div className="hidden md:block">
-                  <Carousel projects={projects} onSelect={setSelectedProject} />
-                </div>
+                {/* Unified swipe carousel — same on mobile and desktop */}
+                <ProjectCarousel
+                  projects={projects}
+                  accent={accent}
+                  onSelect={setSelectedProject}
+                />
               </div>
             )
           })}
@@ -348,3 +454,4 @@ export function GalleryPage() {
     </section>
   )
 }
+echo "Done"
