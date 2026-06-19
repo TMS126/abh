@@ -96,6 +96,10 @@ export function QuoteCalculatorWidget() {
   const scrollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const getAccent = (id: HubId) => { const c = HUB_COLORS[id as HubKey]; return isDark ? c.tagTextDark : c.tagText }
+  // tagTextDark is a pastel meant for text on a dark background — using it as
+  // a solid fill behind white text washes out in dark mode. tagText is
+  // saturated enough to hold contrast as a solid chip in either theme.
+  const getSolidAccent = (id: HubId) => HUB_COLORS[id as HubKey].tagText
   const titleAccent = isDark ? HUB_COLORS.design.tagTextDark : HUB_COLORS.design.tagText
 
   // Lock page scroll while the panel is open, wherever it's mounted.
@@ -286,7 +290,7 @@ export function QuoteCalculatorWidget() {
                                         {hasBulk && <span className="font-bold ml-1" style={{ color: accent }}>· bulk pricing</span>}
                                       </p>
                                     </div>
-                                    <button onClick={() => addItem(hubId, section.title, item.name, item.price)} className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-white" style={{ backgroundColor: accent }}><Plus size={14} weight="bold" /></button>
+                                    <button onClick={() => addItem(hubId, section.title, item.name, item.price)} className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-white" style={{ backgroundColor: getSolidAccent(hubId) }}><Plus size={14} weight="bold" /></button>
                                   </div>
                                 )
                               })}
@@ -323,4 +327,5 @@ export function QuoteCalculatorWidget() {
     </>
   )
 }
+ 
  
