@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { useSearchParams } from "next/navigation"
-import { X, Printer, FileText, PaintBrush, Globe, Desktop, PaperPlaneTilt, ListChecks, Megaphone } from "@phosphor-icons/react"
+import { X, Printer, FileText, PaintBrush, Globe, Desktop, PaperPlaneTilt, ListChecks, Megaphone, MagnifyingGlass } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { BIZ, HUB_COLORS, HubKey } from "@/lib/brand"
@@ -47,9 +47,9 @@ function HubModal({
   useEffect(() => { setOpenSectionIdx(0) }, [hubId])
 
   if (!hubId) return null
-  const hub         = HUBS[hubId]
-  const colors      = HUB_COLORS[hubId as HubKey]
-  const accent      = isDark ? colors.tagTextDark : colors.tagText
+  const hub       = HUBS[hubId]
+  const colors    = HUB_COLORS[hubId as HubKey]
+  const accent    = isDark ? colors.tagTextDark : colors.tagText
   const solidAccent = colors.tagText
 
   return (
@@ -79,7 +79,7 @@ function HubModal({
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto overscroll-contain p-6 md:p-8">
-          {/* Category pills */}
+          {/* Category pills — tightly wrapped to their own size */}
           <div className="inline-flex flex-wrap gap-2 mb-5">
             {hub.sections.map((section, sIdx) => {
               const isOpen = openSectionIdx === sIdx
@@ -214,7 +214,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             <span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
           </div>
 
-          {/* Tabs */}
+          {/* Tabs — pills sized to content, no icon on "What to Bring" */}
           <div className="flex gap-2">
             <button
               onClick={() => setTab("bring")}
@@ -271,8 +271,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             <div className="animate-in fade-in slide-in-from-right-2 duration-200">
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-relaxed">{desc}</p>
               <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-5 leading-relaxed">
-                Have questions? Switch to the{" "}
-                <span className="font-black" style={{ color: accent }}>What to Bring</span> tab or chat with us directly.
+                Have questions? Switch to the <span className="font-black" style={{ color: accent }}>What to Bring</span> tab or chat with us directly.
               </p>
             </div>
           )}
@@ -295,6 +294,145 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   )
 }
 
+// ─── Service Search Bar ───────────────────────────────────────────────────────
+// Flattens every service across all hubs into one searchable index, matched
+// against both name and description (so "id card" finds PSIRA ID, not just
+// items literally named "ID"). Selecting a result opens the detail modal
+// directly, skipping the hub modal entirely.
+interface SearchableService {
+  hubId: HubId
+  sectionTitle: string
+  name: string
+  price: string
+  description: string
+  requirements: string[]
+}
+
+function ServiceSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => void }) {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
+  const [query, setQuery] = useState("")
+  const [isFocused, setIsFocused] = useState(false)
+  const wrapperRef = useRef<HTMLDivElement>(null)
+
+  const index = useMemo<SearchableService[]>(() => {
+    const all: SearchableService[] = []
+    HUB_ORDER.forEach((hubId) => {
+      HUBS[hubId].sections.forEach((section) => {
+        section.items.forEach((item) => {
+          all.push({
+            hubId,
+            sectionTitle: section.title,
+            name: item.name,
+            price: item.price,
+            description: item.description,
+            requirements: item.requirements,
+          })
+        })
+      })
+    })
+    return all
+  }, [])
+
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return []
+    return index
+      .filter((s) => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q))
+      .slice(0, 8)
+  }, [query, index])
+
+  // Close the dropdown on outside click or Escape
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setIsFocused(false)
+    }
+    const handleKey = (e: KeyboardEvent) => { if (e.key === "Escape") setIsFocused(false) }
+    document.addEventListener("mousedown", handleClick)
+    document.addEventListener("keydown", handleKey)
+    return () => {
+      document.removeEventListener("mousedown", handleClick)
+      document.removeEventListener("keydown", handleKey)
+    }
+  }, [])
+
+  const pick = (s: SearchableService) => {
+    onSelect({
+      name: s.name,
+      price: s.price,
+      hubId: s.hubId,
+      sectionTitle: s.sectionTitle,
+      requirements: s.requirements,
+      desc: s.description,
+    })
+    setQuery("")
+    setIsFocused(false)
+  }
+
+  const showDropdown = isFocused && query.trim().length > 0
+
+  return (
+    <div ref={wrapperRef} className="relative max-w-xl mx-auto mb-10">
+      <div className="relative">
+        <MagnifyingGlass size={18} weight="bold" className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          placeholder="Search services... e.g. &quot;CV&quot;, &quot;laminating&quot;, &quot;id card&quot;"
+          className="w-full pl-11 pr-10 py-3.5 rounded-[14px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none focus:border-brand-blue transition-colors"
+        />
+        {query && (
+          <button
+            onClick={() => setQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+          >
+            <X size={12} weight="bold" />
+          </button>
+        )}
+      </div>
+
+      {showDropdown && (
+        <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-xl overflow-hidden z-30 animate-in fade-in zoom-in-95 duration-150">
+          {results.length > 0 ? (
+            <div className="max-h-[340px] overflow-y-auto p-2">
+              {results.map((s, idx) => {
+                const colors = HUB_COLORS[s.hubId as HubKey]
+                const accent = isDark ? colors.tagTextDark : colors.tagText
+                return (
+                  <button
+                    key={`${s.hubId}-${s.sectionTitle}-${s.name}-${idx}`}
+                    onClick={() => pick(s)}
+                    className="w-full flex items-center gap-3 p-3 rounded-[10px] hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left"
+                  >
+                    <div
+                      className="w-9 h-9 rounded-[10px] flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: `${accent}15`, color: accent }}
+                    >
+                      <HubIcon id={s.hubId} size={18} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{s.name}</p>
+                      <p className="text-[0.65rem] font-bold uppercase tracking-wider text-zinc-400 truncate">{s.sectionTitle} · {HUBS[s.hubId].title}</p>
+                    </div>
+                    <span className="text-xs font-black flex-shrink-0" style={{ color: accent }}>{s.price}</span>
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="p-5 text-center">
+              <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">No services found</p>
+              <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-1">Try a different word, or WhatsApp us and ask directly.</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Notice Banner ────────────────────────────────────────────────────────────
 function NoticeBanner() {
   return (
@@ -303,6 +441,7 @@ function NoticeBanner() {
         <Megaphone size={18} weight="fill" color="#fff" />
       </div>
       <div className="flex-1 min-w-0 pt-0.5">
+        {/* Icon only — no emoji */}
         <span className="text-[0.65rem] font-black uppercase tracking-widest text-[#0F3F66] dark:text-[#A9D6F2] block mb-1">
           Notice to Clients
         </span>
@@ -322,55 +461,11 @@ export function ServicesPage() {
   const [activeHub,       setActiveHub]       = useState<HubId | null>(null)
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
 
-  // Refs so popstate handler always has current values without stale closure
-  const activeHubRef       = useRef(activeHub)
-  const selectedServiceRef = useRef(selectedService)
-  useEffect(() => { activeHubRef.current       = activeHub       }, [activeHub])
-  useEffect(() => { selectedServiceRef.current = selectedService }, [selectedService])
-
-  // Open hub from URL param
   useEffect(() => {
     const hubParam = searchParams.get("hub")
     if (hubParam && HUB_ORDER.includes(hubParam as HubId)) setActiveHub(hubParam as HubId)
   }, [searchParams])
 
-  // Push baseline history entry on mount so back always has something to catch
-  useEffect(() => {
-    window.history.pushState({ modal: null }, "")
-  }, [])
-
-  // Push a history entry each time a modal opens
-  useEffect(() => {
-    if (selectedService) {
-      window.history.pushState({ modal: "service" }, "")
-    } else if (activeHub) {
-      window.history.pushState({ modal: "hub" }, "")
-    }
-  }, [selectedService, activeHub])
-
-  // Intercept back button — close innermost open modal first
-  useEffect(() => {
-    const onPopState = () => {
-      if (selectedServiceRef.current) {
-        // Service detail open — close it, hub modal stays open
-        setSelectedService(null)
-        // Re-push so hub modal back also works
-        window.history.pushState({ modal: "hub" }, "")
-      } else if (activeHubRef.current) {
-        // Hub modal open — close it
-        setActiveHub(null)
-        // Re-push baseline so page never navigates away
-        window.history.pushState({ modal: null }, "")
-      } else {
-        // Nothing open — re-push baseline to absorb the back tap
-        window.history.pushState({ modal: null }, "")
-      }
-    }
-    window.addEventListener("popstate", onPopState)
-    return () => window.removeEventListener("popstate", onPopState)
-  }, []) // empty deps — uses refs so never stale
-
-  // Scroll lock when any modal is open
   useEffect(() => {
     const isOpen = !!(activeHub || selectedService)
     if (!isOpen) return
@@ -394,6 +489,8 @@ export function ServicesPage() {
           </p>
           <div className="abh-divider" />
         </div>
+
+        <ServiceSearchBar onSelect={setSelectedService} />
 
         <NoticeBanner />
 
@@ -419,10 +516,7 @@ export function ServicesPage() {
                 </h3>
                 <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 line-clamp-2">{hub.tagline}</p>
                 <div className="mt-8 flex flex-col items-center gap-2">
-                  <div
-                    className="flex items-center gap-1.5 text-xs font-black lowercase tracking-widest leading-none"
-                    style={{ color: accent }}
-                  >
+                  <div className="flex items-center gap-1.5 text-xs font-black lowercase tracking-widest leading-none" style={{ color: accent }}>
                     <span>explore</span>
                     <PaperPlaneTilt size={14} weight="fill" className="relative top-[0.5px]" />
                   </div>
@@ -434,15 +528,10 @@ export function ServicesPage() {
         </div>
       </div>
 
-      <HubModal
-        hubId={activeHub}
-        onClose={() => setActiveHub(null)}
-        onSelectService={setSelectedService}
-      />
-      <ServiceDetailModal
-        svc={selectedService}
-        onClose={() => setSelectedService(null)}
-      />
+      <HubModal hubId={activeHub} onClose={() => setActiveHub(null)} onSelectService={setSelectedService} />
+      <ServiceDetailModal svc={selectedService} onClose={() => setSelectedService(null)} />
     </section>
   )
-          } 
+}
+ 
+ 
