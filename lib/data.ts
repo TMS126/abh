@@ -15,8 +15,8 @@ export const PRICING = {
     'CV Upgrade/Fix': 'R40',
     'Cover Letter': 'R30',
     'Scanning': 'R5/page',
-    'Laminating (A5)': 'R12',
-    'Laminating (A4)': 'R15',
+    'Laminating (A5)': 'R15',
+    'Laminating (A4)': 'R20',
     'Laminating (A3)': 'R30',
   },
   design: {
