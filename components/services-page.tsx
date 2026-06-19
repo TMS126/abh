@@ -28,18 +28,11 @@ function HubIcon({ id, size = 28, color }: { id: HubId; size?: number; color?: s
 }
 
 interface SelectedService {
-  name: string
-  price: string
-  hubId: HubId
-  sectionTitle: string
-  requirements: string[]
-  desc?: string
+  name: string; price: string; hubId: HubId; sectionTitle: string
+  requirements: string[]; desc?: string
 }
 
 // ─── Hub Modal ────────────────────────────────────────────────────────────────
-// Categories render as compact pills. Only one can be open at a time, and only
-// the currently-open category's item card carries a shadow — switching pills
-// closes the previous card (and its shadow) instantly.
 function HubModal({
   hubId, onClose, onSelectService,
 }: {
@@ -51,17 +44,12 @@ function HubModal({
   const isDark = resolvedTheme === "dark"
   const [openSectionIdx, setOpenSectionIdx] = useState<number | null>(0)
 
-  // Reset to the first category whenever a different hub is opened
   useEffect(() => { setOpenSectionIdx(0) }, [hubId])
 
   if (!hubId) return null
-  const hub    = HUBS[hubId]
-  const colors = HUB_COLORS[hubId as HubKey]
-  const accent = isDark ? colors.tagTextDark : colors.tagText
-  // Pastel tagTextDark is meant for text sitting on a dark background, not
-  // as a solid fill behind white text — using it that way washes out in
-  // dark mode. tagText is saturated/dark enough to hold contrast as a solid
-  // chip in either theme, so filled pills always use this instead of `accent`.
+  const hub       = HUBS[hubId]
+  const colors    = HUB_COLORS[hubId as HubKey]
+  const accent    = isDark ? colors.tagTextDark : colors.tagText
   const solidAccent = colors.tagText
 
   return (
@@ -91,8 +79,8 @@ function HubModal({
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto overscroll-contain p-6 md:p-8">
-          {/* Category pills — text minimized to stay compact even with longer titles */}
-          <div className="flex flex-wrap gap-2 mb-5">
+          {/* Category pills — tightly wrapped to their own size */}
+          <div className="inline-flex flex-wrap gap-2 mb-5">
             {hub.sections.map((section, sIdx) => {
               const isOpen = openSectionIdx === sIdx
               return (
@@ -101,9 +89,9 @@ function HubModal({
                   onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)}
                   title={section.title}
                   className={cn(
-                    "px-3.5 py-1.5 rounded-full text-[0.7rem] font-black tracking-tight whitespace-nowrap max-w-[150px] truncate transition-all duration-200",
+                    "px-3.5 py-1.5 rounded-full text-[0.7rem] font-black tracking-tight whitespace-nowrap transition-all duration-200",
                     isOpen
-                      ? "text-white"
+                      ? "text-white shadow-sm"
                       : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
                   )}
                   style={isOpen ? { backgroundColor: solidAccent } : {}}
@@ -114,7 +102,7 @@ function HubModal({
             })}
           </div>
 
-          {/* Expanded category — the only card with a shadow at any given time */}
+          {/* Expanded category */}
           {openSectionIdx !== null && hub.sections[openSectionIdx] && (
             <div
               key={openSectionIdx}
@@ -124,12 +112,9 @@ function HubModal({
                 <button
                   key={iIdx}
                   onClick={() => onSelectService({
-                    name: item.name,
-                    price: item.price,
-                    hubId,
+                    name: item.name, price: item.price, hubId,
                     sectionTitle: hub.sections[openSectionIdx!].title,
-                    requirements: item.requirements,
-                    desc: item.description,
+                    requirements: item.requirements, desc: item.description,
                   })}
                   className="flex items-center justify-between p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:border-brand-blue transition-all group"
                 >
@@ -147,22 +132,14 @@ function HubModal({
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const SUFFIX_SECTIONS: Record<string, string> = {
-  "Printing":          "Printing",
-  "Copying":           "Copying",
-  "Photo Printing":    "Photo Printing",
-  "Typing + Printing": "Typing and Printing",
-  "Laminating":        "Laminating",
-  "Business Cards":    "Business Cards",
-  "Flyers & Posters":  "Flyers and Posters",
-  "Invitations":       "Invitations",
-  "Revisions":         "Revisions",
+  "Printing": "Printing", "Copying": "Copying", "Photo Printing": "Photo Printing",
+  "Typing + Printing": "Typing and Printing", "Laminating": "Laminating",
+  "Business Cards": "Business Cards", "Flyers & Posters": "Flyers and Posters",
+  "Invitations": "Invitations", "Revisions": "Revisions",
 }
 const PREFIX_SECTIONS: Record<string, string> = {
-  "SASSA":          "SASSA",
-  "SARS":           "SARS",
-  "PSIRA":          "PSIRA",
-  "Social Media":   "Social Media",
-  "Email Services": "Email",
+  "SASSA": "SASSA", "SARS": "SARS", "PSIRA": "PSIRA",
+  "Social Media": "Social Media", "Email Services": "Email",
 }
 
 function cleanText(s: string) {
@@ -183,17 +160,11 @@ function naturalServiceLabel(name: string, sectionTitle: string) {
 // ─── Service Detail Modal ─────────────────────────────────────────────────────
 type Tab = "bring" | "about"
 
-function ServiceDetailModal({
-  svc, onClose,
-}: {
-  svc: SelectedService | null
-  onClose: () => void
-}) {
+function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onClose: () => void }) {
   const { resolvedTheme } = useTheme()
-  const isDark   = resolvedTheme === "dark"
+  const isDark = resolvedTheme === "dark"
   const [tab, setTab] = useState<Tab>("bring")
 
-  // Reset tab each time a new service opens
   useEffect(() => { setTab("bring") }, [svc?.name])
 
   if (!svc) return null
@@ -208,9 +179,6 @@ function ServiceDetailModal({
     ? svc.requirements
     : ["Just bring your file, document or USB — we'll take care of the rest."]
 
-  // Dynamic per-service description, sourced from lib/data's `description`
-  // field for that specific item — falls back only if a service is somehow
-  // missing one.
   const desc = svc.desc?.trim()
     ? svc.desc
     : `${naturalLabel} is one of our ${hubTitle} services. We handle everything professionally so you don't have to worry about a thing.`
@@ -220,7 +188,7 @@ function ServiceDetailModal({
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm overscroll-contain" onClick={onClose} />
       <div className="relative w-full max-w-sm rounded-[14px] overflow-hidden shadow-2xl bg-white dark:bg-zinc-950 animate-in zoom-in-95 duration-300 border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col">
 
-        {/* Header — always visible */}
+        {/* Header */}
         <div className="p-6 pb-0 flex-shrink-0">
           <div className="flex justify-between items-start mb-4">
             <div>
@@ -230,9 +198,7 @@ function ServiceDetailModal({
               >
                 {cleanText(svc.sectionTitle)}
               </span>
-              <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 leading-tight">
-                {svc.name}
-              </h3>
+              <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 leading-tight">{svc.name}</h3>
             </div>
             <button
               onClick={onClose}
@@ -243,27 +209,22 @@ function ServiceDetailModal({
             </button>
           </div>
 
-          {/* Price — always visible above tabs */}
+          {/* Price */}
           <div className="flex items-baseline gap-1 mb-5">
-            <span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>
-              {svc.price}
-            </span>
+            <span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
           </div>
 
-          {/* Tabs — same pill language as the hub modal's category pills, but
-              neutral: a dark/light inversion guarantees readable contrast in
-              both themes without depending on any hub accent color. */}
+          {/* Tabs — pills sized to content, no icon on "What to Bring" */}
           <div className="flex gap-2">
             <button
               onClick={() => setTab("bring")}
               className={cn(
-                "flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[0.7rem] font-black uppercase tracking-wider transition-all duration-200",
+                "px-3.5 py-1.5 rounded-full text-[0.7rem] font-black uppercase tracking-wider transition-all duration-200",
                 tab === "bring"
                   ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
                   : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
               )}
             >
-              <ListChecks size={13} weight="bold" />
               What to Bring
             </button>
             <button
@@ -280,14 +241,10 @@ function ServiceDetailModal({
           </div>
         </div>
 
-        {/* Tab content — scrollable */}
+        {/* Tab content */}
         <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 min-h-0">
-
           {tab === "bring" && (
             <div className="animate-in fade-in slide-in-from-left-2 duration-200">
-              <p className="text-[0.72rem] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-4">
-                Here's what to prepare before coming in:
-              </p>
               <ol className="space-y-3">
                 {requirements.map((req, idx) => (
                   <li key={idx} className="flex items-start gap-3">
@@ -300,9 +257,7 @@ function ServiceDetailModal({
                     >
                       {idx + 1}
                     </span>
-                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-snug pt-0.5">
-                      {req}
-                    </span>
+                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-snug pt-0.5">{req}</span>
                   </li>
                 ))}
               </ol>
@@ -314,12 +269,7 @@ function ServiceDetailModal({
 
           {tab === "about" && (
             <div className="animate-in fade-in slide-in-from-right-2 duration-200">
-              <p className="text-[0.72rem] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-4">
-                What we do for you:
-              </p>
-              <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                {desc}
-              </p>
+              <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-relaxed">{desc}</p>
               <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-5 leading-relaxed">
                 Have questions? Switch to the <span className="font-black" style={{ color: accent }}>What to Bring</span> tab or chat with us directly.
               </p>
@@ -327,7 +277,7 @@ function ServiceDetailModal({
           )}
         </div>
 
-        {/* CTA — always visible. No paper plane here; that icon belongs to the main page Explore action only. */}
+        {/* CTA */}
         <div className="px-6 pb-6 pt-3 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800">
           <a
             href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waMessage)}`}
@@ -352,8 +302,9 @@ function NoticeBanner() {
         <Megaphone size={18} weight="fill" color="#fff" />
       </div>
       <div className="flex-1 min-w-0 pt-0.5">
+        {/* Icon only — no emoji */}
         <span className="text-[0.65rem] font-black uppercase tracking-widest text-[#0F3F66] dark:text-[#A9D6F2] block mb-1">
-          📢 Notice to Clients
+          Notice to Clients
         </span>
         <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-snug">
           {NOTICE.text}<span className="font-black">{NOTICE.date}</span>{NOTICE.textAfter}
@@ -373,9 +324,7 @@ export function ServicesPage() {
 
   useEffect(() => {
     const hubParam = searchParams.get("hub")
-    if (hubParam && HUB_ORDER.includes(hubParam as HubId)) {
-      setActiveHub(hubParam as HubId)
-    }
+    if (hubParam && HUB_ORDER.includes(hubParam as HubId)) setActiveHub(hubParam as HubId)
   }, [searchParams])
 
   useEffect(() => {
@@ -383,19 +332,10 @@ export function ServicesPage() {
     if (!isOpen) return
     const scrollY = window.scrollY
     const { style } = document.body
-    style.position = "fixed"
-    style.top      = `-${scrollY}px`
-    style.left     = "0"
-    style.right    = "0"
-    style.width    = "100%"
-    style.overflow = "hidden"
+    style.position = "fixed"; style.top = `-${scrollY}px`
+    style.left = "0"; style.right = "0"; style.width = "100%"; style.overflow = "hidden"
     return () => {
-      style.position = ""
-      style.top      = ""
-      style.left     = ""
-      style.right    = ""
-      style.width    = ""
-      style.overflow = ""
+      style.position = ""; style.top = ""; style.left = ""; style.right = ""; style.width = ""; style.overflow = ""
       window.scrollTo(0, scrollY)
     }
   }, [activeHub, selectedService])
@@ -433,15 +373,9 @@ export function ServicesPage() {
                 <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-3 group-hover:text-brand-blue">
                   {hub.title}
                 </h3>
-                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 line-clamp-2">
-                  {hub.tagline}
-                </p>
-                {/* explore — lowercase label, icon baseline-aligned with the text */}
+                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 line-clamp-2">{hub.tagline}</p>
                 <div className="mt-8 flex flex-col items-center gap-2">
-                  <div
-                    className="flex items-center gap-1.5 text-xs font-black lowercase tracking-widest leading-none"
-                    style={{ color: accent }}
-                  >
+                  <div className="flex items-center gap-1.5 text-xs font-black lowercase tracking-widest leading-none" style={{ color: accent }}>
                     <span>explore</span>
                     <PaperPlaneTilt size={14} weight="fill" className="relative top-[0.5px]" />
                   </div>
@@ -453,15 +387,9 @@ export function ServicesPage() {
         </div>
       </div>
 
-      <HubModal
-        hubId={activeHub}
-        onClose={() => setActiveHub(null)}
-        onSelectService={setSelectedService}
-      />
-      <ServiceDetailModal
-        svc={selectedService}
-        onClose={() => setSelectedService(null)}
-      />
+      <HubModal hubId={activeHub} onClose={() => setActiveHub(null)} onSelectService={setSelectedService} />
+      <ServiceDetailModal svc={selectedService} onClose={() => setSelectedService(null)} />
     </section>
   )
 }
+ 
