@@ -7,7 +7,7 @@ import {
   WhatsappLogo, EnvelopeSimple,
   X, Printer, FileText, Palette,
   Globe, Cpu, Info, Heart,
-  Question, CaretDown,
+  Question, CaretDown, CurrencyDollar,
 } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, WA, FOOTER_NAV, FAQS } from "@/lib/brand"
@@ -20,6 +20,7 @@ const TERMS_SECTIONS = [
   { icon: "Palette",  title: "Design Hub – Creative Work",       points: [{ label: "Branding Design", text: "Logos and business cards built in Adobe Illustrator. No generic templates." }, { label: "Marketing & Events", text: "Flyers, posters, social media, and invitations. Two revisions included." }] },
   { icon: "Globe",    title: "E-Service Hub – External Systems", points: [{ label: "Government Services", text: `Admin help across SARS, SASSA, CSD, PSIRA, UIF, etc. ${BIZ.name} is not responsible for external portal downtime.` }, { label: "Email Services", text: "Setup, compose, send, and receive official documents." }] },
   { icon: "Cpu",      title: "Tech Hub – Hardware & Software",   points: [{ label: "System Maintenance", text: "Software installations, cleaning, and performance optimisation." }, { label: "Component Upgrades", text: "RAM and SSD installation." }, { label: "Digital Support", text: "General tech troubleshooting and device setup." }] },
+  { icon: "CurrencyDollar", title: "Payment Terms",               points: [{ label: "Standard Services", text: "Payable on execution. Clear, upfront pricing with no hidden fees." }, { label: "Custom & Bulk Orders", text: "Premium custom design work or high-volume print runs require confirmation and payment before production begins." }, { label: "Accepted Payment", text: "We accept cash and EFT." }] },
 ]
 const ICON_MAP: Record<string, React.ReactNode> = {
   Printer:  <Printer  weight="fill" className="w-4 h-4" aria-hidden="true" />,
@@ -27,6 +28,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   Palette:  <Palette  weight="fill" className="w-4 h-4" aria-hidden="true" />,
   Globe:    <Globe    weight="fill" className="w-4 h-4" aria-hidden="true" />,
   Cpu:      <Cpu      weight="fill" className="w-4 h-4" aria-hidden="true" />,
+  CurrencyDollar: <CurrencyDollar weight="fill" className="w-4 h-4" aria-hidden="true" />,
 }
 
 function Modal({ open, onClose, title, subtitle, children }: {
@@ -230,4 +232,5 @@ export function Footer() {
     </footer>
   )
 }
+ 
  
