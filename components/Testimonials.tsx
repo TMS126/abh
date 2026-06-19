@@ -1,6 +1,6 @@
 "use client"
 
-import { Star, Quote, Printer, FileText, PaintBrush, Globe, Desktop } from "@phosphor-icons/react"
+import { Star, Quotes, Printer, FileText, PaintBrush, Globe, Desktop } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { HUB_COLORS, HubKey } from "@/lib/brand"
 import { HubId } from "@/lib/data"
@@ -118,7 +118,7 @@ export function TestimonialsSection({
                 key={idx}
                 className="shrink-0 w-[280px] md:w-auto rounded-[14px] bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] p-6 flex flex-col"
               >
-                <Quote size={22} weight="fill" style={{ color: `${accent}` }} className="mb-3 opacity-50" />
+                <Quotes size={22} weight="fill" style={{ color: `${accent}` }} className="mb-3 opacity-50" />
 
                 <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-relaxed flex-1 mb-5">
                   {r.quote}
@@ -156,3 +156,4 @@ export function TestimonialsSection({
     </section>
   )
 }
+ 
