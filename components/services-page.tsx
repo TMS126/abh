@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
-import { X, Printer, FileText, PaintBrush, Globe, Desktop, CaretDown, PaperPlaneTilt, ListChecks, Info, Megaphone } from "@phosphor-icons/react"
+import { X, Printer, FileText, PaintBrush, Globe, Desktop, PaperPlaneTilt, ListChecks, Info, Megaphone } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { BIZ, HUB_COLORS, HubKey } from "@/lib/brand"
@@ -37,6 +37,9 @@ interface SelectedService {
 }
 
 // ─── Hub Modal ────────────────────────────────────────────────────────────────
+// Categories render as compact pills. Only one can be open at a time, and only
+// the currently-open category's item card carries a shadow — switching pills
+// closes the previous card (and its shadow) instantly.
 function HubModal({
   hubId, onClose, onSelectService,
 }: {
@@ -47,6 +50,9 @@ function HubModal({
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
   const [openSectionIdx, setOpenSectionIdx] = useState<number | null>(0)
+
+  // Reset to the first category whenever a different hub is opened
+  useEffect(() => { setOpenSectionIdx(0) }, [hubId])
 
   if (!hubId) return null
   const hub    = HUBS[hubId]
@@ -79,54 +85,55 @@ function HubModal({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto overscroll-contain p-8 space-y-3">
-          {hub.sections.map((section, sIdx) => {
-            const isOpen = openSectionIdx === sIdx
-            return (
-              <div
-                key={sIdx}
-                className={cn("rounded-[14px] border transition-all duration-300", isOpen ? "bg-zinc-50 dark:bg-zinc-900/50" : "bg-white dark:bg-zinc-950")}
-                style={{ borderColor: isOpen ? `${accent}30` : "transparent" }}
-              >
+        <div className="flex-1 overflow-y-auto overscroll-contain p-6 md:p-8">
+          {/* Category pills — text minimized to stay compact even with longer titles */}
+          <div className="flex flex-wrap gap-2 mb-5">
+            {hub.sections.map((section, sIdx) => {
+              const isOpen = openSectionIdx === sIdx
+              return (
                 <button
+                  key={sIdx}
                   onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)}
-                  className="w-full flex items-center justify-between p-5 text-left"
+                  title={section.title}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-full text-[0.7rem] font-black tracking-tight whitespace-nowrap max-w-[150px] truncate transition-all duration-200",
+                    isOpen
+                      ? "text-white"
+                      : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                  )}
+                  style={isOpen ? { backgroundColor: accent } : {}}
                 >
-                  <span className={cn("font-black text-lg tracking-tight", isOpen ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-500")}>
-                    {section.title}
-                  </span>
-                  <CaretDown
-                    size={16}
-                    className={cn("transition-transform duration-300", isOpen ? "rotate-180" : "rotate-0")}
-                    style={{ color: isOpen ? accent : undefined }}
-                  />
+                  {section.title}
                 </button>
-                <div className={cn("grid transition-all duration-500 ease-in-out", isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
-                  <div className="overflow-hidden">
-                    <div className="px-5 pb-5 grid grid-cols-1 gap-2">
-                      {section.items.map((item, iIdx) => (
-                        <button
-                          key={iIdx}
-                          onClick={() => onSelectService({
-                            name: item.name,
-                            price: item.price,
-                            hubId,
-                            sectionTitle: section.title,
-                            requirements: item.requirements,
-                            desc: item.desc,
-                          })}
-                          className="flex items-center justify-between p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:border-brand-blue transition-all group"
-                        >
-                          <span className="text-[0.84rem] font-black text-zinc-800 dark:text-zinc-200">{item.name}</span>
-                          <span className="text-[0.84rem] font-black" style={{ color: accent }}>{item.price}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
+
+          {/* Expanded category — the only card with a shadow at any given time */}
+          {openSectionIdx !== null && hub.sections[openSectionIdx] && (
+            <div
+              key={openSectionIdx}
+              className="rounded-[14px] bg-zinc-50 dark:bg-zinc-900/50 shadow-md p-4 grid grid-cols-1 gap-2 animate-in fade-in zoom-in-95 duration-300"
+            >
+              {hub.sections[openSectionIdx].items.map((item, iIdx) => (
+                <button
+                  key={iIdx}
+                  onClick={() => onSelectService({
+                    name: item.name,
+                    price: item.price,
+                    hubId,
+                    sectionTitle: hub.sections[openSectionIdx!].title,
+                    requirements: item.requirements,
+                    desc: item.description,
+                  })}
+                  className="flex items-center justify-between p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:border-brand-blue transition-all group"
+                >
+                  <span className="text-[0.84rem] font-black text-zinc-800 dark:text-zinc-200">{item.name}</span>
+                  <span className="text-[0.84rem] font-black" style={{ color: accent }}>{item.price}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -196,6 +203,9 @@ function ServiceDetailModal({
     ? svc.requirements
     : ["Just bring your file, document or USB — we'll take care of the rest."]
 
+  // Dynamic per-service description, sourced from lib/data's `description`
+  // field for that specific item — falls back only if a service is somehow
+  // missing one.
   const desc = svc.desc?.trim()
     ? svc.desc
     : `${naturalLabel} is one of our ${hubTitle} services. We handle everything professionally so you don't have to worry about a thing.`
@@ -316,16 +326,15 @@ function ServiceDetailModal({
           )}
         </div>
 
-        {/* CTA — always visible */}
+        {/* CTA — always visible. No paper plane here; that icon belongs to the main page Explore action only. */}
         <div className="px-6 pb-6 pt-3 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800">
           <a
             href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waMessage)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center w-full px-4 py-4 rounded-[14px] font-black text-sm leading-snug text-white text-center transition-all active:scale-95 shadow-lg gap-2 hover:-translate-y-0.5"
+            className="flex items-center justify-center w-full px-4 py-4 rounded-[14px] font-black text-sm leading-snug text-white text-center transition-all active:scale-95 shadow-lg hover:-translate-y-0.5"
             style={{ backgroundColor: "#25D366" }}
           >
-            <PaperPlaneTilt size={18} weight="fill" />
             Request {naturalLabel}
           </a>
         </div>
@@ -412,7 +421,7 @@ export function ServicesPage() {
               <button
                 key={hubId}
                 onClick={() => setActiveHub(hubId)}
-                className="group relative flex flex-col items-center p-8 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 text-center min-w-full md:min-w-0 md:flex-1"
+                className="group relative flex flex-col items-center p-8 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 text-center min-w-full md:min-w-0 md:flex-1"
               >
                 <div
                   className="w-20 h-20 rounded-[14px] flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110 shadow-lg"
@@ -426,13 +435,16 @@ export function ServicesPage() {
                 <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 line-clamp-2">
                   {hub.tagline}
                 </p>
-                {/* Explore — icon right, always aligned */}
-                <div
-                  className="mt-8 flex items-center gap-2 text-xs font-black uppercase tracking-widest"
-                  style={{ color: accent }}
-                >
-                  Explore
-                  <PaperPlaneTilt size={16} weight="fill" />
+                {/* explore — lowercase label, icon baseline-aligned with the text */}
+                <div className="mt-8 flex flex-col items-center gap-2">
+                  <div
+                    className="flex items-center gap-1.5 text-xs font-black lowercase tracking-widest leading-none"
+                    style={{ color: accent }}
+                  >
+                    <span>explore</span>
+                    <PaperPlaneTilt size={14} weight="fill" className="relative top-[0.5px]" />
+                  </div>
+                  <div className="h-px w-8 rounded-full" style={{ backgroundColor: `${accent}35` }} />
                 </div>
               </button>
             )
@@ -452,3 +464,4 @@ export function ServicesPage() {
     </section>
   )
 }
+ 
