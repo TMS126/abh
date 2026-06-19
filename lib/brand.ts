@@ -146,18 +146,18 @@ export const HUB_COLORS: Record<HubKey, {
     light:       BRAND.lightBlue,
     gradient:    `linear-gradient(135deg, #15537D 0%, ${BRAND.blueMid} 100%)`,
     tagBg:       "#EBF5FB",
-    tagText:     "#15537D",
+    tagText:     "#1565A0",
     tagBgDark:   "#1E3A52",
-    tagTextDark: BRAND.lightBlue,
+    tagTextDark: "#5FB3F0",
   },
   tech: {
     primary:     "#B8CCE0",
     light:       "#B8CCE0",
     gradient:    `linear-gradient(135deg, #333333 0%, #555555 100%)`,
     tagBg:       BRAND.neutral100,
-    tagText:     "#333333",
-    tagBgDark:   "#333333",
-    tagTextDark: "#B8CCE0",
+    tagText:     "#3D4148",
+    tagBgDark:   "#3D4148",
+    tagTextDark: "#C9CDD3",
   },
 }
 
