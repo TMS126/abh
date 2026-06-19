@@ -889,7 +889,26 @@ export const PROJECTS = [
     tools: ["System cleanup tools", "Software installation"],
     result: "Laptop became faster and ready for daily use.",
   },
+  {
+    id: "event-invitation-design",
+    hub: "design",
+    title: "Birthday Celebration Video Invitation",
+    tag: "Design Hub",
+    shortDesc: "Animated video invitation designed for a 30th birthday celebration — themed, musical, and WhatsApp-ready.",
+    image: "/gallery/design/invite-thumb.jpg",
+    images: ["/gallery/design/invite-thumb.jpg", "/gallery/design/invite-frame1.jpg", "/gallery/design/invite-frame2.jpg"],
+    clientGoal: "The client wanted a standout birthday invitation to share on WhatsApp and Instagram that matched their gold-and-black party theme and felt personal — not like a generic template.",
+    whatWeDid: [
+      "Designed a custom gold-and-black colour palette matching the event décor",
+      "Animated text reveals for name, date, time, and venue details",
+      "Added smooth transitions between invitation sections",
+      "Sourced and synced background music to the animation timing",
+      "Sized and exported for WhatsApp sharing and Instagram Stories",
+      "Delivered in MP4 format — ready to forward directly from any phone",
+    ],
+    tools: ["Motion graphics", "Custom typography", "WhatsApp + Story format export"],
+    result: "The client shared the invitation the same evening. Guests responded immediately — several asked who made it. The host used it for both WhatsApp invites and an Instagram Story countdown.",
+  },
 ] as const
 
 export type Project = typeof PROJECTS[number]
- 
