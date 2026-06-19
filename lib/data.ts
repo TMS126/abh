@@ -98,6 +98,7 @@ export interface ServiceItem {
   name: string
   price: string
   requirements: string[]
+  description?: string
 }
 
 export interface HubSection {
@@ -131,26 +132,57 @@ export const HUBS: Record<HubId, Hub> = {
       {
         title: 'Printing',
         items: [
-          { name: 'Black & White', price: 'R5/page', requirements: ['Bring your file on a USB, phone, or send it via WhatsApp/email', 'Let us know the number of pages and copies needed', 'Specify paper size if not standard A4'] },
-          { name: 'Colour', price: 'R8/page', requirements: ['Bring your file on a USB, phone, or send it via WhatsApp/email', 'Let us know the number of pages and copies needed', 'Specify paper size if not standard A4'] },
+          {
+            name: 'Black & White',
+            price: 'R5/page',
+            description: 'We print your digital file in crisp black and white on standard A4 paper. Send your file via USB, WhatsApp, or email — we handle the rest. Bulk discounts apply from 10 pages.',
+            requirements: ['Bring your file on a USB, phone, or send it via WhatsApp/email', 'Let us know the number of pages and copies needed', 'Specify paper size if not standard A4'],
+          },
+          {
+            name: 'Colour',
+            price: 'R8/page',
+            description: 'Full-colour printing for documents, presentations, flyers, and anything that needs to stand out. We print your digital file directly — just send it over and collect.',
+            requirements: ['Bring your file on a USB, phone, or send it via WhatsApp/email', 'Let us know the number of pages and copies needed', 'Specify paper size if not standard A4'],
+          },
         ],
       },
       {
         title: 'Copying',
         items: [
-          { name: 'Black & White', price: 'R3/page', requirements: ['Bring the original physical document to be copied', 'Let us know the number of copies needed'] },
-          { name: 'Colour', price: 'R5/page', requirements: ['Bring the original physical document to be copied', 'Let us know the number of copies needed'] },
+          {
+            name: 'Black & White',
+            price: 'R3/page',
+            description: 'Bring in your original physical document and we\'ll make as many black and white copies as you need — fast and at one of the most affordable rates around. Great for ID copies, forms, and school work.',
+            requirements: ['Bring the original physical document to be copied', 'Let us know the number of copies needed'],
+          },
+          {
+            name: 'Colour',
+            price: 'R5/page',
+            description: 'Need an exact colour copy of a certificate, flyer, or photo? Bring in the original and we\'ll reproduce it faithfully in full colour. Perfect for keeping originals safe while sharing copies.',
+            requirements: ['Bring the original physical document to be copied', 'Let us know the number of copies needed'],
+          },
         ],
       },
       {
         title: 'Photo Printing',
         items: [
-          { name: '4x6 Glossy', price: 'R20', requirements: ['Send the photo via USB, phone, AirDrop, or WhatsApp', 'Use a high-resolution image for the best print quality'] },
-          { name: 'A4 Glossy', price: 'R40', requirements: ['Send the photo via USB, phone, AirDrop, or WhatsApp', 'Use a high-resolution image for the best print quality'] },
+          {
+            name: '4x6 Glossy',
+            price: 'R20',
+            description: 'The classic photo size — 4x6 inches printed on glossy photo paper for sharp colour and a professional finish. Perfect for framing, albums, or sending to family.',
+            requirements: ['Send the photo via USB, phone, AirDrop, or WhatsApp', 'Use a high-resolution image for the best print quality'],
+          },
+          {
+            name: 'A4 Glossy',
+            price: 'R40',
+            description: 'Your photo printed large on glossy A4 photo paper. Great for portraits, event photos, or anything you want to display prominently. High resolution recommended for the cleanest result.',
+            requirements: ['Send the photo via USB, phone, AirDrop, or WhatsApp', 'Use a high-resolution image for the best print quality'],
+          },
         ],
       },
     ],
   },
+
   doc: {
     iconName: 'FileText',
     iconColor: '#CDEB9F',
@@ -164,40 +196,91 @@ export const HUBS: Record<HubId, Hub> = {
       {
         title: 'Typing + Printing',
         items: [
-          { name: 'Black & White', price: 'R15/page', requirements: ['Bring your handwritten notes or rough draft', 'Clearly state any formatting preferences (font, spacing, layout)', 'Let us know the number of pages and copies needed'] },
-          { name: 'Colour', price: 'R18/page', requirements: ['Bring your handwritten notes or rough draft', 'Clearly state any formatting preferences (font, spacing, layout)', 'Let us know the number of pages and copies needed'] },
+          {
+            name: 'Black & White',
+            price: 'R15/page',
+            description: 'You bring your handwritten notes or rough draft, and we type it up neatly and print it out in black and white. Ideal for letters, applications, forms, and school assignments.',
+            requirements: ['Bring your handwritten notes or rough draft', 'Clearly state any formatting preferences (font, spacing, layout)', 'Let us know the number of pages and copies needed'],
+          },
+          {
+            name: 'Colour',
+            price: 'R18/page',
+            description: 'Same as our typing service but printed in full colour — useful when your document includes colour tables, headings, charts, or needs to make a strong visual impression.',
+            requirements: ['Bring your handwritten notes or rough draft', 'Clearly state any formatting preferences (font, spacing, layout)', 'Let us know the number of pages and copies needed'],
+          },
         ],
       },
       {
         title: 'CV Services',
         items: [
-          { name: 'CV from Scratch', price: 'R30', requirements: ['Bring your ID document', 'Provide your personal details, education history, and work experience', 'Bring a recent photo if you want one included', 'Share contact details (phone number, email if available)'] },
-          { name: 'CV Upgrade/Fix', price: 'R40', requirements: ['Bring your existing CV (digital file or printed copy)', 'Let us know what changes or updates you need', 'Provide any new information to be added'] },
-          { name: 'Cover Letter', price: 'R30', requirements: ['Bring details of the job you are applying for', 'Bring your CV for reference', 'Mention key skills or experience you want highlighted'] },
+          {
+            name: 'CV from Scratch',
+            price: 'R30',
+            description: 'Never had a CV before? We build one for you from the ground up — personal details, education, skills, and work experience — all formatted neatly and ready to hand in or email to employers.',
+            requirements: ['Bring your ID document', 'Provide your personal details, education history, and work experience', 'Bring a recent photo if you want one included', 'Share contact details (phone number, email if available)'],
+          },
+          {
+            name: 'CV Upgrade/Fix',
+            price: 'R40',
+            description: 'Already have a CV but it\'s outdated, poorly formatted, or missing key information? We clean it up, restructure it, and add your latest experience so it looks professional and up to date.',
+            requirements: ['Bring your existing CV (digital file or printed copy)', 'Let us know what changes or updates you need', 'Provide any new information to be added'],
+          },
+          {
+            name: 'Cover Letter',
+            price: 'R30',
+            description: 'A strong cover letter introduces you to a potential employer before they even read your CV. We write a personalised one based on the job you\'re applying for, highlighting your key strengths.',
+            requirements: ['Bring details of the job you are applying for', 'Bring your CV for reference', 'Mention key skills or experience you want highlighted'],
+          },
         ],
       },
       {
         title: 'Other Documents',
         items: [
-          { name: 'Affidavit / Letter', price: 'R20', requirements: ['Bring your ID document', 'Provide the details/facts that need to be included', 'Some affidavits may require a visit to the police station or Commissioner of Oaths to be sworn'] },
+          {
+            name: 'Affidavit / Letter',
+            price: 'R20',
+            description: 'Need an official written statement or a formal letter typed out? We draft and type affidavits, motivation letters, consent letters, and general correspondence to the correct format.',
+            requirements: ['Bring your ID document', 'Provide the details/facts that need to be included', 'Some affidavits may require a visit to the police station or Commissioner of Oaths to be sworn'],
+          },
         ],
       },
       {
         title: 'Scanning',
         items: [
-          { name: 'Scan to Digital', price: 'R5/page', requirements: ['Bring the original physical document(s) to be scanned', 'Let us know the file format you need (PDF, JPG, etc.)', 'Bring a USB or have WhatsApp/email ready to receive the file'] },
+          {
+            name: 'Scan to Digital',
+            price: 'R5/page',
+            description: 'Turn your physical documents into digital files you can store, send, or email. We scan your paperwork and deliver it as a PDF or image directly to your phone, USB, or email.',
+            requirements: ['Bring the original physical document(s) to be scanned', 'Let us know the file format you need (PDF, JPG, etc.)', 'Bring a USB or have WhatsApp/email ready to receive the file'],
+          },
         ],
       },
       {
         title: 'Laminating',
         items: [
-          { name: 'A5', price: 'R15', requirements: ['Bring the document or card to be laminated', 'Make sure the item is clean and flat'] },
-          { name: 'A4', price: 'R20', requirements: ['Bring the document to be laminated', 'Make sure the document is clean and flat'] },
-          { name: 'A3', price: 'R30', requirements: ['Bring the document or poster to be laminated', 'Make sure the item is clean and flat'] },
+          {
+            name: 'A5',
+            price: 'R15',
+            description: 'Protect your A5-sized documents, ID copies, cards, and certificates with a clear laminate seal. Laminating keeps paper from tearing, fading, or getting wet — great for anything you carry daily.',
+            requirements: ['Bring the document or card to be laminated', 'Make sure the item is clean and flat'],
+          },
+          {
+            name: 'A4',
+            price: 'R20',
+            description: 'Seal and protect full A4 documents — certificates, results, and important letters — in a clear laminate that makes them durable, waterproof, and presentable for years to come.',
+            requirements: ['Bring the document to be laminated', 'Make sure the document is clean and flat'],
+          },
+          {
+            name: 'A3',
+            price: 'R30',
+            description: 'Laminating for large A3 documents like posters, schedules, menus, and price lists. The extra-large laminate pouch keeps them looking sharp even when displayed in busy environments.',
+            requirements: ['Bring the document or poster to be laminated', 'Make sure the item is clean and flat'],
+          },
         ],
       },
     ],
   },
+
   design: {
     iconName: 'PaintBrush',
     iconColor: '#F9D1B0',
@@ -211,49 +294,120 @@ export const HUBS: Record<HubId, Hub> = {
       {
         title: 'Logos',
         items: [
-          { name: 'Basic Logo', price: 'R300', requirements: ['Provide your business name and tagline (if any)', 'Share your preferred colours and style (modern, classic, playful, etc.)', 'Mention any reference logos you like for inspiration'] },
-          { name: 'Standard Logo', price: 'R500', requirements: ['Provide your business name and tagline (if any)', 'Share your preferred colours and style direction', 'Mention any reference logos you like for inspiration', 'Specify if you need multiple initial concepts'] },
-          { name: 'Premium Logo', price: 'R800', requirements: ['Provide your business name and tagline (if any)', 'Share your brand vision, colours, and style direction', 'Mention any reference logos you like for inspiration', 'Specify if you need a full brand style guide and multiple file formats'] },
+          {
+            name: 'Basic Logo',
+            price: 'R300',
+            description: 'A clean, simple logo built around your business name. One concept, one round of refinement, delivered in standard formats. Ideal if you\'re just starting out and need something professional fast.',
+            requirements: ['Provide your business name and tagline (if any)', 'Share your preferred colours and style (modern, classic, playful, etc.)', 'Mention any reference logos you like for inspiration'],
+          },
+          {
+            name: 'Standard Logo',
+            price: 'R500',
+            description: 'A more detailed logo with refined typography, iconography, and colour palette. Includes multiple initial concepts so you can choose the direction that best fits your brand — ideal for growing businesses.',
+            requirements: ['Provide your business name and tagline (if any)', 'Share your preferred colours and style direction', 'Mention any reference logos you like for inspiration', 'Specify if you need multiple initial concepts'],
+          },
+          {
+            name: 'Premium Logo',
+            price: 'R800',
+            description: 'A full brand identity treatment — custom icon, refined typography, complete colour system, and multiple file formats (PNG, SVG, PDF). Includes a brand style guide so you always use your logo correctly. Best for established or growing businesses serious about their brand.',
+            requirements: ['Provide your business name and tagline (if any)', 'Share your brand vision, colours, and style direction', 'Mention any reference logos you like for inspiration', 'Specify if you need a full brand style guide and multiple file formats'],
+          },
         ],
       },
       {
         title: 'Business Cards',
         items: [
-          { name: 'Single Side', price: 'R120', requirements: ['Provide your name, business name, and job title', 'Share contact details (phone, email, WhatsApp, address)', 'Provide your logo if you have one', 'Specify the quantity to be printed'] },
-          { name: 'Double Side', price: 'R180', requirements: ['Provide your name, business name, and job title', 'Share contact details (phone, email, WhatsApp, address)', 'Provide your logo if you have one', 'Let us know what content goes on the back (e.g. services, social media, map)', 'Specify the quantity to be printed'] },
+          {
+            name: 'Single Side',
+            price: 'R120',
+            description: 'A professionally designed business card printed on one side — your name, business, contact details, and logo laid out cleanly. The first impression you leave in someone\'s hand.',
+            requirements: ['Provide your name, business name, and job title', 'Share contact details (phone, email, WhatsApp, address)', 'Provide your logo if you have one', 'Specify the quantity to be printed'],
+          },
+          {
+            name: 'Double Side',
+            price: 'R180',
+            description: 'Make the most of both sides. Front carries your identity; the back can feature your services, social handles, a QR code, or a map. More information, same compact card — maximise every interaction.',
+            requirements: ['Provide your name, business name, and job title', 'Share contact details (phone, email, WhatsApp, address)', 'Provide your logo if you have one', 'Let us know what content goes on the back (e.g. services, social media, map)', 'Specify the quantity to be printed'],
+          },
         ],
       },
       {
         title: 'Flyers & Posters',
         items: [
-          { name: 'Simple', price: 'R150', requirements: ['Provide the text/content to be included (event, promo, contact details)', 'Share any photos or logos to be used', 'Mention your preferred colours or style'] },
-          { name: 'Custom', price: 'R250', requirements: ['Provide the text/content to be included', 'Share any photos or logos to be used', 'Mention your preferred colours or style direction', 'Specify size and intended use (print or digital)'] },
-          { name: 'Complex', price: 'R350', requirements: ['Provide the text/content to be included', 'Share photos, logos, and any reference designs', 'Mention your preferred colours or style direction', 'Specify size, layout complexity, and intended use'] },
+          {
+            name: 'Simple',
+            price: 'R150',
+            description: 'A clean, straightforward flyer with your key information — event details, promo, or announcement — laid out clearly without heavy customisation. Fast turnaround, print-ready.',
+            requirements: ['Provide the text/content to be included (event, promo, contact details)', 'Share any photos or logos to be used', 'Mention your preferred colours or style'],
+          },
+          {
+            name: 'Custom',
+            price: 'R250',
+            description: 'A fully designed flyer or poster built around your brand and message. Custom layout, imagery placement, colour matching, and typography — designed to grab attention and communicate clearly.',
+            requirements: ['Provide the text/content to be included', 'Share any photos or logos to be used', 'Mention your preferred colours or style direction', 'Specify size and intended use (print or digital)'],
+          },
+          {
+            name: 'Complex',
+            price: 'R350',
+            description: 'For designs that need real creative work — multi-section layouts, detailed imagery, event programmes, or anything with a lot of content that must still look polished and well-structured.',
+            requirements: ['Provide the text/content to be included', 'Share photos, logos, and any reference designs', 'Mention your preferred colours or style direction', 'Specify size, layout complexity, and intended use'],
+          },
         ],
       },
       {
         title: 'Social Media',
         items: [
-          { name: 'Post', price: 'R80', requirements: ['Provide the text/message for the post', 'Share any photos or logos to be used', 'Mention the platform (Facebook, Instagram, WhatsApp Status, etc.)'] },
-          { name: 'Post + Story', price: 'R120', requirements: ['Provide the text/message for the post and story', 'Share any photos or logos to be used', 'Mention the platform(s) the content is for'] },
+          {
+            name: 'Post',
+            price: 'R80',
+            description: 'A single branded social media post sized and designed for your platform of choice. Whether it\'s a promotion, announcement, or product highlight — we make it scroll-stopping and on-brand.',
+            requirements: ['Provide the text/message for the post', 'Share any photos or logos to be used', 'Mention the platform (Facebook, Instagram, WhatsApp Status, etc.)'],
+          },
+          {
+            name: 'Post + Story',
+            price: 'R120',
+            description: 'Your content designed in two formats at once — a standard post and a matching story. Same message, adapted for both placements so your brand looks consistent across your feed and your stories.',
+            requirements: ['Provide the text/message for the post and story', 'Share any photos or logos to be used', 'Mention the platform(s) the content is for'],
+          },
         ],
       },
       {
         title: 'Invitations',
         items: [
-          { name: 'Image/Static', price: 'R150', requirements: ['Provide event details (date, time, venue, host)', 'Share any photos or theme preferences', 'Mention your preferred colours or style'] },
-          { name: 'Video', price: 'R300', requirements: ['Provide event details (date, time, venue, host)', 'Share any photos, video clips, or theme preferences', 'Mention your preferred colours, music, or style'] },
+          {
+            name: 'Image/Static',
+            price: 'R150',
+            description: 'A beautifully designed static invitation — the kind you save, share on WhatsApp, or print out. Includes event name, date, time, venue, and your theme or aesthetic direction. Clean, elegant, shareable.',
+            requirements: ['Provide event details (date, time, venue, host)', 'Share any photos or theme preferences', 'Mention your preferred colours or style'],
+          },
+          {
+            name: 'Video',
+            price: 'R300',
+            description: 'An animated video invitation that plays like a short clip — text reveals, music, transitions, and your event details brought to life. Makes a far stronger impression when shared on WhatsApp or social media.',
+            requirements: ['Provide event details (date, time, venue, host)', 'Share any photos, video clips, or theme preferences', 'Mention your preferred colours, music, or style'],
+          },
         ],
       },
       {
         title: 'Revisions',
         items: [
-          { name: 'While Busy', price: 'R50', requirements: ['Clearly describe the changes you would like made', 'This applies only while the project is still in progress'] },
-          { name: 'After Completion', price: 'R70', requirements: ['Clearly describe the changes you would like made', 'This applies once the project has already been delivered/finalized'] },
+          {
+            name: 'While Busy',
+            price: 'R50',
+            description: 'Changed your mind mid-way? No problem. Revisions requested while the design is still actively being worked on cost less because we haven\'t finalised anything yet — it\'s easier to adjust on the fly.',
+            requirements: ['Clearly describe the changes you would like made', 'This applies only while the project is still in progress'],
+          },
+          {
+            name: 'After Completion',
+            price: 'R70',
+            description: 'Need changes after your design has already been delivered and signed off? Post-completion revisions require us to reopen the project file and rework finished elements — this is charged at a slightly higher rate to reflect that.',
+            requirements: ['Clearly describe the changes you would like made', 'This applies once the project has already been delivered/finalized'],
+          },
         ],
       },
     ],
   },
+
   eservice: {
     iconName: 'Globe',
     iconColor: '#A9D6F2',
@@ -267,78 +421,269 @@ export const HUBS: Record<HubId, Hub> = {
       {
         title: 'SASSA',
         items: [
-          { name: 'Status Check', price: 'R20', requirements: ['Bring your ID document', 'Bring your SASSA reference number or application number if you have one'] },
-          { name: 'Payment/Balance Check', price: 'R15', requirements: ['Bring your ID document', 'Bring your SASSA card or grant details'] },
-          { name: 'Update Details', price: 'R30', requirements: ['Bring your ID document', 'Bring proof of the new details (e.g. new address, new phone number)', 'Bring your SASSA reference number'] },
-          { name: 'Reapplication', price: 'R40', requirements: ['Bring your ID document', 'Bring proof of previous application or rejection letter if available', 'Bring proof of income/affidavit of unemployment if required'] },
-          { name: 'SRD Application', price: 'R40', requirements: ['Bring your ID document', 'Have your active cellphone number ready (for OTP/SMS)', 'Bring proof of bank account details if applying for bank payment'] },
-          { name: 'Appeal', price: 'R40', requirements: ['Bring your ID document', 'Bring the rejection/decline letter or SMS notification', 'Bring any supporting documents for your appeal'] },
-          { name: 'Banking Update', price: 'R40', requirements: ['Bring your ID document', 'Bring your bank account details or bank confirmation letter', 'Bring your SASSA reference number'] },
-          { name: 'Grant Application', price: 'R80', requirements: ['Bring your ID document', "Bring supporting documents (e.g. child's birth certificate, disability assessment, proof of income)", 'Have your active cellphone number ready for OTP/SMS confirmations'] },
+          {
+            name: 'Status Check',
+            price: 'R20',
+            description: 'We log into the SASSA portal or use the official channels to check the current status of your grant or application — whether it\'s approved, pending, declined, or under review. You\'ll know exactly where things stand before you leave.',
+            requirements: ['Bring your ID document', 'Bring your SASSA reference number or application number if you have one'],
+          },
+          {
+            name: 'Payment/Balance Check',
+            price: 'R15',
+            description: 'We check your SASSA grant payment status — whether your latest payment has been processed, what the amount is, and when it\'s expected. Useful if your money hasn\'t come through or you need confirmation.',
+            requirements: ['Bring your ID document', 'Bring your SASSA card or grant details'],
+          },
+          {
+            name: 'Update Details',
+            price: 'R30',
+            description: 'Changed your phone number, address, or personal details? We update your SASSA profile on the official system so your account stays current and payments or communications don\'t get disrupted.',
+            requirements: ['Bring your ID document', 'Bring proof of the new details (e.g. new address, new phone number)', 'Bring your SASSA reference number'],
+          },
+          {
+            name: 'Reapplication',
+            price: 'R40',
+            description: 'If your grant lapsed, was cancelled, or you\'ve been asked to reapply, we complete the full reapplication process on your behalf through the correct SASSA channels — correctly the first time.',
+            requirements: ['Bring your ID document', 'Bring proof of previous application or rejection letter if available', 'Bring proof of income/affidavit of unemployment if required'],
+          },
+          {
+            name: 'SRD Application',
+            price: 'R40',
+            description: 'We submit your Social Relief of Distress (R350) grant application through the official SASSA SRD portal. We fill in all required details, verify your information, and confirm submission so you have proof it went through.',
+            requirements: ['Bring your ID document', 'Have your active cellphone number ready (for OTP/SMS)', 'Bring proof of bank account details if applying for bank payment'],
+          },
+          {
+            name: 'Appeal',
+            price: 'R40',
+            description: 'Declined for a grant you believe you qualify for? We submit a formal appeal on your behalf through the correct SASSA appeal process, ensuring your reasons are clearly stated and your supporting documents are attached.',
+            requirements: ['Bring your ID document', 'Bring the rejection/decline letter or SMS notification', 'Bring any supporting documents for your appeal'],
+          },
+          {
+            name: 'Banking Update',
+            price: 'R40',
+            description: 'Need your SASSA grant paid into a different bank account? We update your banking details on the SASSA system so your next payment goes to the right place — avoiding delays or missed payments.',
+            requirements: ['Bring your ID document', 'Bring your bank account details or bank confirmation letter', 'Bring your SASSA reference number'],
+          },
+          {
+            name: 'Grant Application',
+            price: 'R80',
+            description: 'Applying for a formal SASSA grant — such as the Child Support Grant, Older Persons Grant, or Disability Grant? We complete the full application with all required supporting documents and submit it correctly. More involved than an SRD, but we handle all the steps.',
+            requirements: ['Bring your ID document', "Bring supporting documents (e.g. child's birth certificate, disability assessment, proof of income)", 'Have your active cellphone number ready for OTP/SMS confirmations'],
+          },
         ],
       },
       {
         title: 'SARS',
         items: [
-          { name: 'Enquiry / Statement / Updates', price: 'R50', requirements: ['Bring your ID document', 'Bring your tax reference number if you have one'] },
-          { name: 'New Taxpayer / eFiling', price: 'R70', requirements: ['Bring your ID document', 'Bring proof of address (utility bill, lease, or affidavit)', 'Have your active cellphone number and email ready'] },
-          { name: 'Tax Pin / Penalty', price: 'R100', requirements: ['Bring your ID document', 'Bring your tax reference number', 'Bring any SARS letters/notices relating to the penalty'] },
-          { name: 'Tax Clearance', price: 'R120', requirements: ['Bring your ID document', 'Bring your tax reference number', 'Make sure your tax returns are up to date (we can assist if not)'] },
-          { name: 'Pin Submission', price: 'R120', requirements: ['Bring your ID document', 'Bring your tax reference number', 'Bring the relevant SARS request/letter'] },
-          { name: 'Tax Return / VAT / PAYE', price: 'R200', requirements: ['Bring your ID document', 'Bring your tax reference number', 'Bring income/expense documents (payslips, invoices, IRP5, bank statements as relevant)'] },
+          {
+            name: 'Enquiry / Statement / Updates',
+            price: 'R50',
+            description: 'Need to know your tax status, get a statement of account, or update basic details on your SARS profile? We log into eFiling and handle the enquiry or update on your behalf — no queues, no confusion.',
+            requirements: ['Bring your ID document', 'Bring your tax reference number if you have one'],
+          },
+          {
+            name: 'New Taxpayer / eFiling',
+            price: 'R70',
+            description: 'Never registered with SARS before? We register you as a new taxpayer, get your tax reference number, and set up your eFiling profile — so you\'re officially in the system and ready to file returns.',
+            requirements: ['Bring your ID document', 'Bring proof of address (utility bill, lease, or affidavit)', 'Have your active cellphone number and email ready'],
+          },
+          {
+            name: 'Tax Pin / Penalty',
+            price: 'R100',
+            description: 'Got a tax penalty notice or need to retrieve your tax PIN? We handle both — whether it\'s requesting a remission of the penalty or retrieving your SARS PIN through the correct eFiling process.',
+            requirements: ['Bring your ID document', 'Bring your tax reference number', 'Bring any SARS letters/notices relating to the penalty'],
+          },
+          {
+            name: 'Tax Clearance',
+            price: 'R120',
+            description: 'A Tax Clearance Certificate (or Tax Compliance Status PIN) proves you\'re up to date with SARS. We apply for it through eFiling — commonly needed for tenders, business contracts, visa applications, and emigration.',
+            requirements: ['Bring your ID document', 'Bring your tax reference number', 'Make sure your tax returns are up to date (we can assist if not)'],
+          },
+          {
+            name: 'Pin Submission',
+            price: 'R120',
+            description: 'Some SARS processes require you to submit a specific PIN or reference. We handle the submission correctly through eFiling so the right information reaches SARS without errors that could delay your matter.',
+            requirements: ['Bring your ID document', 'Bring your tax reference number', 'Bring the relevant SARS request/letter'],
+          },
+          {
+            name: 'Tax Return / VAT / PAYE',
+            price: 'R200',
+            description: 'Your annual tax return, VAT201, or PAYE submission completed and filed on eFiling. We work through your income, expenses, and supporting documents to ensure your return is accurate, compliant, and submitted on time.',
+            requirements: ['Bring your ID document', 'Bring your tax reference number', 'Bring income/expense documents (payslips, invoices, IRP5, bank statements as relevant)'],
+          },
         ],
       },
       {
         title: 'PSIRA',
         items: [
-          { name: 'PSIRA Status Check', price: 'R30', requirements: ['Bring your ID document', 'Bring your PSIRA registration number'] },
-          { name: 'Update / Certificate', price: 'R40', requirements: ['Bring your ID document', 'Bring your PSIRA registration number', 'Bring proof of the new details to be updated'] },
-          { name: 'Lost Certificate', price: 'R50', requirements: ['Bring your ID document', 'Bring your PSIRA registration number', 'Affidavit confirming the certificate is lost may be required'] },
-          { name: 'Renewal / New Registration', price: 'R80', requirements: ['Bring your ID document', 'Bring proof of relevant training/qualification (for new registration)', 'Bring your PSIRA registration number (for renewal)', 'Have your active cellphone number ready'] },
-          { name: 'ID Application', price: 'R100', requirements: ['Bring your ID document', 'Bring your PSIRA registration number', 'Bring a recent passport-style photo if required'] },
+          {
+            name: 'PSIRA Status Check',
+            price: 'R30',
+            description: 'We check your PSIRA registration status online — whether your certificate is active, expired, or pending renewal. Important to know before starting work at any security-regulated site.',
+            requirements: ['Bring your ID document', 'Bring your PSIRA registration number'],
+          },
+          {
+            name: 'Update / Certificate',
+            price: 'R40',
+            description: 'Need to update your PSIRA profile details or request a copy of your certificate? We handle the online update or certificate request through the PSIRA portal so your records are current.',
+            requirements: ['Bring your ID document', 'Bring your PSIRA registration number', 'Bring proof of the new details to be updated'],
+          },
+          {
+            name: 'Lost Certificate',
+            price: 'R50',
+            description: 'Lost your PSIRA certificate? We apply for a replacement through the official PSIRA system. You\'ll need an affidavit confirming the loss, which we can assist with typing before submission.',
+            requirements: ['Bring your ID document', 'Bring your PSIRA registration number', 'Affidavit confirming the certificate is lost may be required'],
+          },
+          {
+            name: 'Renewal / New Registration',
+            price: 'R80',
+            description: 'Registering with PSIRA for the first time or renewing an expired registration? We complete the full online application with your training certificates and personal details — keeping your security career compliant.',
+            requirements: ['Bring your ID document', 'Bring proof of relevant training/qualification (for new registration)', 'Bring your PSIRA registration number (for renewal)', 'Have your active cellphone number ready'],
+          },
+          {
+            name: 'ID Application',
+            price: 'R100',
+            description: 'Applying for your PSIRA identity card — the physical ID required on duty. We submit the application through the PSIRA portal with the required documentation and a recent photo.',
+            requirements: ['Bring your ID document', 'Bring your PSIRA registration number', 'Bring a recent passport-style photo if required'],
+          },
         ],
       },
       {
         title: 'Online Applications',
         items: [
-          { name: 'NSFAS Status Check', price: 'R20', requirements: ['Bring your ID document', 'Bring your NSFAS reference number or login details if you have them'] },
-          { name: 'NSFAS Banking Update', price: 'R20', requirements: ['Bring your ID document', 'Bring your bank account details or confirmation letter', 'Bring your NSFAS reference number'] },
-          { name: 'Learnership Application', price: 'R30', requirements: ['Bring your ID document', 'Bring your highest qualification/certificate', 'Bring your CV if available'] },
-          { name: 'Job / DPSA Application', price: 'R40', requirements: ['Bring your ID document', 'Bring your CV and certified qualifications', 'Have details of the specific position/post number ready'] },
-          { name: 'Bursary Application', price: 'R40', requirements: ['Bring your ID document', 'Bring your academic results/qualifications', 'Bring proof of household income if required', 'Bring acceptance letter from institution if applicable'] },
-          { name: 'NSFAS Appeal', price: 'R50', requirements: ['Bring your ID document', 'Bring the NSFAS rejection/decline notification', 'Bring supporting documents (e.g. proof of income, motivation letter)'] },
-          { name: 'NSFAS Application', price: 'R80', requirements: ['Bring your ID document', 'Bring proof of household income or relevant supporting documents', 'Bring your academic results', 'Have your active cellphone number and email ready'] },
-          { name: 'University Application', price: 'R100', requirements: ['Bring your ID document', 'Bring certified academic results/matric certificate', 'Have application fee details ready if applicable', 'Have your active cellphone number and email ready'] },
+          {
+            name: 'NSFAS Status Check',
+            price: 'R20',
+            description: 'We check your NSFAS application or funding status on myNSFAS — whether you\'re approved, awaiting verification, or declined. Know your status before registration so you can plan accordingly.',
+            requirements: ['Bring your ID document', 'Bring your NSFAS reference number or login details if you have them'],
+          },
+          {
+            name: 'NSFAS Banking Update',
+            price: 'R20',
+            description: 'NSFAS requires accurate banking details to pay your allowances. If your bank details have changed or were entered incorrectly, we update them on myNSFAS so your money reaches you without delays.',
+            requirements: ['Bring your ID document', 'Bring your bank account details or confirmation letter', 'Bring your NSFAS reference number'],
+          },
+          {
+            name: 'Learnership Application',
+            price: 'R30',
+            description: 'Learnerships are government-backed training programmes that pay you while you learn a skill. We find the right opportunity and complete the online application on your behalf with your CV and supporting documents.',
+            requirements: ['Bring your ID document', 'Bring your highest qualification/certificate', 'Bring your CV if available'],
+          },
+          {
+            name: 'Job / DPSA Application',
+            price: 'R40',
+            description: 'Applying for a government or public service position? We complete your online job application on the DPSA or relevant portal — accurately filling in the Z83 form and attaching your CV and qualifications correctly.',
+            requirements: ['Bring your ID document', 'Bring your CV and certified qualifications', 'Have details of the specific position/post number ready'],
+          },
+          {
+            name: 'Bursary Application',
+            price: 'R40',
+            description: 'Bursary applications are competitive and detail-sensitive — a single mistake can disqualify you. We complete your bursary application online, ensuring all fields are correct and all required documents are attached.',
+            requirements: ['Bring your ID document', 'Bring your academic results/qualifications', 'Bring proof of household income if required', 'Bring acceptance letter from institution if applicable'],
+          },
+          {
+            name: 'NSFAS Appeal',
+            price: 'R50',
+            description: 'If NSFAS declined your application and you believe it was unfair, you have the right to appeal. We submit your appeal through myNSFAS with a clear motivation and supporting documents to give you the best chance of a reversal.',
+            requirements: ['Bring your ID document', 'Bring the NSFAS rejection/decline notification', 'Bring supporting documents (e.g. proof of income, motivation letter)'],
+          },
+          {
+            name: 'NSFAS Application',
+            price: 'R80',
+            description: 'Applying for NSFAS funding for the first time? We complete your full application on myNSFAS — personal details, household income, institution choice, and all supporting documents — submitted correctly to avoid rejections.',
+            requirements: ['Bring your ID document', 'Bring proof of household income or relevant supporting documents', 'Bring your academic results', 'Have your active cellphone number and email ready'],
+          },
+          {
+            name: 'University Application',
+            price: 'R100',
+            description: 'Applying to university through the CAO, institutional portals, or directly? We complete the full online application — programme selection, personal information, academic records, and required uploads — giving your application the best possible presentation.',
+            requirements: ['Bring your ID document', 'Bring certified academic results/matric certificate', 'Have application fee details ready if applicable', 'Have your active cellphone number and email ready'],
+          },
         ],
       },
       {
         title: 'Email Services',
         items: [
-          { name: 'Setup / Send / Receive', price: 'R15', requirements: ['Bring your ID document', 'Have an active cellphone number ready for verification', 'If sending/receiving, bring the document or details to be emailed'] },
+          {
+            name: 'Setup / Send / Receive',
+            price: 'R15',
+            description: 'Don\'t have an email address yet, or need help accessing one? We create a new Gmail or similar account for you, or help you log in and send/receive specific emails. Many government applications require an email — we\'ve got you covered.',
+            requirements: ['Bring your ID document', 'Have an active cellphone number ready for verification', 'If sending/receiving, bring the document or details to be emailed'],
+          },
         ],
       },
       {
         title: 'Business Services',
         items: [
-          { name: 'Good Standing Letter', price: 'R60', requirements: ['Bring your ID document', 'Bring your company registration number', 'Bring CIPC login details if available'] },
-          { name: 'Google Business Setup', price: 'R80', requirements: ['Bring your business name and physical address', 'Bring contact details (phone, email, website if any)', 'Bring your business logo and a few photos if available'] },
-          { name: 'UIF Monthly Declaration', price: 'R100', requirements: ['Bring your UIF reference number', 'Bring employee details and monthly earnings information', 'Bring your UIF login details if available'] },
-          { name: 'CSD Update', price: 'R120', requirements: ['Bring your company registration number', 'Bring your CSD supplier number', 'Bring proof of the details to be updated'] },
-          { name: 'UIF Registration', price: 'R100', requirements: ['Bring your ID document', 'Bring company registration documents (if registering a business)', 'Bring employee details if registering employees'] },
-          { name: 'UIF Claims', price: 'R200', requirements: ['Bring your ID document', 'Bring your UIF reference number', 'Bring termination letter/UI19 form and bank account details'] },
-          { name: 'CSD Registration', price: 'R300', requirements: ['Bring your company registration documents (CIPC)', 'Bring your tax clearance certificate', 'Bring bank confirmation letter', 'Bring BEE certificate/affidavit if applicable'] },
+          {
+            name: 'Good Standing Letter',
+            price: 'R60',
+            description: 'A CIPC Good Standing Letter (Compliance Checklist) confirms your company is registered and compliant. Commonly required for tenders and contracts. We retrieve it from the CIPC portal and hand it to you ready to use.',
+            requirements: ['Bring your ID document', 'Bring your company registration number', 'Bring CIPC login details if available'],
+          },
+          {
+            name: 'Google Business Setup',
+            price: 'R80',
+            description: 'Get your business listed on Google Maps and visible in local searches. We create and verify your Google Business Profile — business name, address, hours, photos, and contact details — so customers can find you when they search.',
+            requirements: ['Bring your business name and physical address', 'Bring contact details (phone, email, website if any)', 'Bring your business logo and a few photos if available'],
+          },
+          {
+            name: 'UIF Monthly Declaration',
+            price: 'R100',
+            description: 'Employers must declare employee details and earnings to UIF every month. We log into the UIF system and submit your monthly declaration accurately and on time — keeping your business compliant with labour law.',
+            requirements: ['Bring your UIF reference number', 'Bring employee details and monthly earnings information', 'Bring your UIF login details if available'],
+          },
+          {
+            name: 'CSD Update',
+            price: 'R120',
+            description: 'Your Central Supplier Database (CSD) profile must stay current for government procurement. If your banking details, tax status, or company info has changed, we update your CSD profile so you remain active and eligible for payments.',
+            requirements: ['Bring your company registration number', 'Bring your CSD supplier number', 'Bring proof of the details to be updated'],
+          },
+          {
+            name: 'UIF Registration',
+            price: 'R100',
+            description: 'Every employer who pays UIF-eligible staff must register with the UIF. We complete your employer or employee UIF registration on the Department of Labour portal — a legal requirement for contributing to the Unemployment Insurance Fund.',
+            requirements: ['Bring your ID document', 'Bring company registration documents (if registering a business)', 'Bring employee details if registering employees'],
+          },
+          {
+            name: 'UIF Claims',
+            price: 'R200',
+            description: 'Lost your job or went on maternity leave? You may be entitled to UIF benefits. We complete and submit your UIF claim online — UI2.1, UI19, and all required documents — giving you the best chance of a successful payout.',
+            requirements: ['Bring your ID document', 'Bring your UIF reference number', 'Bring termination letter/UI19 form and bank account details'],
+          },
+          {
+            name: 'CSD Registration',
+            price: 'R300',
+            description: 'Register your business on the Central Supplier Database to qualify for government contracts and tenders. We complete the full CSD registration — company details, tax status, banking info, and BEE level — so you\'re ready to do business with the state.',
+            requirements: ['Bring your company registration documents (CIPC)', 'Bring your tax clearance certificate', 'Bring bank confirmation letter', 'Bring BEE certificate/affidavit if applicable'],
+          },
         ],
       },
       {
         title: 'Digital Setup',
         items: [
-          { name: 'Social Media Setup', price: 'R60', requirements: ['Bring your business name and logo', 'Bring contact details and a short business description', 'Specify which platforms you want set up (Facebook, Instagram, etc.)'] },
-          { name: "Learner's Licence Booking", price: 'R60', requirements: ['Bring your ID document', 'Have your active cellphone number ready for booking confirmation', 'Know your preferred testing centre and date range'] },
-          { name: 'WhatsApp Business Setup', price: 'R80', requirements: ['Bring your business name and logo', 'Have the dedicated business phone number ready', 'Bring a short business description and catalog items/prices if available'] },
+          {
+            name: 'Social Media Setup',
+            price: 'R60',
+            description: 'Get your business on Facebook, Instagram, or any other platform with a properly set-up profile — logo, bio, contact details, and category all configured correctly from the start. First impressions online matter.',
+            requirements: ['Bring your business name and logo', 'Bring contact details and a short business description', 'Specify which platforms you want set up (Facebook, Instagram, etc.)'],
+          },
+          {
+            name: "Learner's Licence Booking",
+            price: 'R60',
+            description: 'We book your learner\'s licence test at the traffic department through the online booking system, selecting your preferred testing centre and date. Skip the walk-in queues — book it properly the first time.',
+            requirements: ['Bring your ID document', 'Have your active cellphone number ready for booking confirmation', 'Know your preferred testing centre and date range'],
+          },
+          {
+            name: 'WhatsApp Business Setup',
+            price: 'R80',
+            description: 'WhatsApp Business lets you run a professional presence on the world\'s most-used messaging app — automated replies, business hours, product catalogue, and a verified business name. We set the whole thing up on your dedicated business number.',
+            requirements: ['Bring your business name and logo', 'Have the dedicated business phone number ready', 'Bring a short business description and catalog items/prices if available'],
+          },
         ],
       },
     ],
   },
+
   tech: {
     iconName: 'Desktop',
     iconColor: '#B8CCE0',
@@ -352,34 +697,99 @@ export const HUBS: Record<HubId, Hub> = {
       {
         title: 'Software',
         items: [
-          { name: 'Software Install', price: 'R80', requirements: ['Bring the device (laptop/PC)', 'Bring the installation file or a valid license/product key if required', 'Make sure the device is charged or bring a charger'] },
-          { name: 'Driver Installation', price: 'R100', requirements: ['Bring the device (laptop/PC)', 'Know the device/hardware model (e.g. printer model, graphics card)', 'Make sure the device is charged or bring a charger'] },
-          { name: 'App / Office Updates', price: 'R80', requirements: ['Bring the device (laptop/PC)', 'Make sure the device is connected to power or fully charged', 'Have your software login/license details ready if required'] },
+          {
+            name: 'Software Install',
+            price: 'R80',
+            description: 'Need a specific program installed on your laptop or PC? We install it cleanly — whether it\'s from a file you bring or a download — and confirm it\'s running correctly before you leave. No bloatware, no guesswork.',
+            requirements: ['Bring the device (laptop/PC)', 'Bring the installation file or a valid license/product key if required', 'Make sure the device is charged or bring a charger'],
+          },
+          {
+            name: 'Driver Installation',
+            price: 'R100',
+            description: 'Drivers are the software that let your hardware talk to Windows — if something isn\'t working (sound, display, printer, USB), it\'s often a missing or outdated driver. We identify what\'s needed and install the correct version.',
+            requirements: ['Bring the device (laptop/PC)', 'Know the device/hardware model (e.g. printer model, graphics card)', 'Make sure the device is charged or bring a charger'],
+          },
+          {
+            name: 'App / Office Updates',
+            price: 'R80',
+            description: 'Running old versions of Microsoft Office, Windows apps, or other software can cause crashes, security issues, and compatibility problems. We update everything to the latest stable version and verify it\'s working correctly.',
+            requirements: ['Bring the device (laptop/PC)', 'Make sure the device is connected to power or fully charged', 'Have your software login/license details ready if required'],
+          },
         ],
       },
       {
         title: 'Hardware',
         items: [
-          { name: 'Printer Setup', price: 'R100', requirements: ['Bring the printer and its power/USB cables', 'Bring the device (laptop/PC) the printer will connect to', 'Bring ink/toner cartridges if not already installed'] },
-          { name: 'PC Setup', price: 'R250', requirements: ['Bring the PC/laptop and all its cables', 'Bring any software license keys you want installed', 'Let us know what the device will mainly be used for'] },
+          {
+            name: 'Printer Setup',
+            price: 'R100',
+            description: 'Got a printer that won\'t connect, isn\'t being detected, or won\'t print? We physically connect it, install the correct drivers, and test it until it\'s fully working — wired or wireless.',
+            requirements: ['Bring the printer and its power/USB cables', 'Bring the device (laptop/PC) the printer will connect to', 'Bring ink/toner cartridges if not already installed'],
+          },
+          {
+            name: 'PC Setup',
+            price: 'R250',
+            description: 'Brand new PC or laptop? We do the full setup — Windows configuration, account creation, privacy settings, essential software installation, and making sure everything is running optimally before it goes home with you.',
+            requirements: ['Bring the PC/laptop and all its cables', 'Bring any software license keys you want installed', 'Let us know what the device will mainly be used for'],
+          },
         ],
       },
       {
         title: 'Support',
         items: [
-          { name: 'Troubleshooting', price: 'R150/hr', requirements: ['Bring the device experiencing the issue', 'Describe the problem clearly (when it started, error messages, etc.)', 'Minimum 1-hour call-out fee applies', 'Make sure the device is charged or bring a charger'] },
-          { name: 'PC Cleanup', price: 'R150', requirements: ['Bring the device (laptop/PC)', 'Make sure the device is charged or bring a charger', 'Back up any important files beforehand if possible'] },
-          { name: 'Virus / Malware Removal', price: 'R200', requirements: ['Bring the device (laptop/PC)', 'Describe any symptoms noticed (pop-ups, slowness, strange behaviour)', 'Back up important files beforehand if possible'] },
-          { name: 'OS Update', price: 'R200', requirements: ['Bring the device (laptop/PC)', 'Make sure the device is connected to power', 'Back up important files beforehand if possible'] },
+          {
+            name: 'Troubleshooting',
+            price: 'R150/hr',
+            description: 'Something\'s wrong but you\'re not sure what? We diagnose and investigate the issue — whether it\'s crashes, error messages, slow performance, or strange behaviour — and work through it systematically. Charged per hour so you only pay for time actually spent.',
+            requirements: ['Bring the device experiencing the issue', 'Describe the problem clearly (when it started, error messages, etc.)', 'Minimum 1-hour call-out fee applies', 'Make sure the device is charged or bring a charger'],
+          },
+          {
+            name: 'PC Cleanup',
+            price: 'R150',
+            description: 'A slow laptop is usually just a cluttered one. We clear out junk files, disable unnecessary startup programs, uninstall bloatware, and give your system a thorough digital spring clean so it runs noticeably faster.',
+            requirements: ['Bring the device (laptop/PC)', 'Make sure the device is charged or bring a charger', 'Back up any important files beforehand if possible'],
+          },
+          {
+            name: 'Virus / Malware Removal',
+            price: 'R200',
+            description: 'Pop-ups everywhere, your browser going somewhere strange, or your PC doing things on its own? You likely have malware. We run a full scan, remove all threats, and secure your system so it doesn\'t happen again.',
+            requirements: ['Bring the device (laptop/PC)', 'Describe any symptoms noticed (pop-ups, slowness, strange behaviour)', 'Back up important files beforehand if possible'],
+          },
+          {
+            name: 'OS Update',
+            price: 'R200',
+            description: 'Windows updates can be slow, confusing, or broken — especially on older machines. We handle the full OS update process, resolve any errors that come up, and make sure your system is on a stable, up-to-date version of Windows.',
+            requirements: ['Bring the device (laptop/PC)', 'Make sure the device is connected to power', 'Back up important files beforehand if possible'],
+          },
         ],
       },
       {
         title: 'Windows & Office',
         items: [
-          { name: 'Windows Install (No Activation)', price: 'R300', requirements: ['Bring the device (laptop/PC)', 'Back up all important files beforehand — installation will erase the drive', 'Make sure the device is connected to power'] },
-          { name: 'Windows Install + Activation', price: 'R350', requirements: ['Bring the device (laptop/PC)', 'Bring a valid Windows product key/license', 'Back up all important files beforehand — installation will erase the drive', 'Make sure the device is connected to power'] },
-          { name: 'Activation Only', price: 'R100', requirements: ['Bring the device (laptop/PC)', 'Bring a valid Windows or Microsoft 365 product key/license'] },
-          { name: 'Microsoft 365 Setup', price: 'R150', requirements: ['Bring the device (laptop/PC)', 'Bring your Microsoft 365 account login or product key', 'Make sure the device is connected to the internet'] },
+          {
+            name: 'Windows Install (No Activation)',
+            price: 'R300',
+            description: 'A completely fresh Windows installation — wiping the drive and starting from scratch. Ideal if your current Windows is beyond repair, badly corrupted, or you\'re repurposing a device. Comes without a product key — Windows runs in trial mode until you activate it.',
+            requirements: ['Bring the device (laptop/PC)', 'Back up all important files beforehand — installation will erase the drive', 'Make sure the device is connected to power'],
+          },
+          {
+            name: 'Windows Install + Activation',
+            price: 'R350',
+            description: 'Everything in the standard Windows install, plus full activation with a genuine product key. Your Windows will be licensed, personalised, and fully functional with no watermark and no trial limitations.',
+            requirements: ['Bring the device (laptop/PC)', 'Bring a valid Windows product key/license', 'Back up all important files beforehand — installation will erase the drive', 'Make sure the device is connected to power'],
+          },
+          {
+            name: 'Activation Only',
+            price: 'R100',
+            description: 'Already have Windows installed but it\'s showing as unlicensed or unactivated? We activate it using the correct method so you get rid of the "Activate Windows" watermark and gain access to all features.',
+            requirements: ['Bring the device (laptop/PC)', 'Bring a valid Windows or Microsoft 365 product key/license'],
+          },
+          {
+            name: 'Microsoft 365 Setup',
+            price: 'R150',
+            description: 'Microsoft 365 includes Word, Excel, PowerPoint, Outlook and more. We install and configure the full suite on your device, link it to your account, and make sure everything is licensed and ready to use for work or school.',
+            requirements: ['Bring the device (laptop/PC)', 'Bring your Microsoft 365 account login or product key', 'Make sure the device is connected to the internet'],
+          },
         ],
       },
     ],
@@ -482,3 +892,4 @@ export const PROJECTS = [
 ] as const
 
 export type Project = typeof PROJECTS[number]
+ 
