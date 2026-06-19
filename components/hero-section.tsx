@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useTheme } from "next-themes"
 import {
   ArrowRight,
   WhatsappLogo,
@@ -18,12 +19,14 @@ import { cn } from "@/lib/utils"
 import { BRAND, BIZ, WA, MARQUEE_ITEMS, HUB_COLORS } from "@/lib/brand"
 
 // Real services per hub, pulled from the locked pricelist — used for the random-on-click spotlight price.
+// Colors use tagText (light mode) / tagTextDark (dark mode) — the pair already tuned per-hub for contrast in brand.ts.
 const HUBS_DATA = [
   {
     id: "print",
     name: "Print Hub",
     icon: <Printer size={32} weight="fill" aria-hidden="true" />,
-    color: HUB_COLORS.print.primary,
+    colorLight: HUB_COLORS.print.tagText,
+    colorDark: HUB_COLORS.print.tagTextDark,
     services: [
       { name: "B&W Print", price: "R5" },
       { name: "Colour Print", price: "R8" },
@@ -37,7 +40,8 @@ const HUBS_DATA = [
     id: "doc",
     name: "Docu Hub",
     icon: <FileText size={32} weight="fill" aria-hidden="true" />,
-    color: HUB_COLORS.doc.primary,
+    colorLight: HUB_COLORS.doc.tagText,
+    colorDark: HUB_COLORS.doc.tagTextDark,
     services: [
       { name: "CV from Scratch", price: "R30" },
       { name: "CV Upgrade", price: "R40" },
@@ -51,7 +55,8 @@ const HUBS_DATA = [
     id: "design",
     name: "Design Hub",
     icon: <PaintBrush size={32} weight="fill" aria-hidden="true" />,
-    color: HUB_COLORS.design.primary,
+    colorLight: HUB_COLORS.design.tagText,
+    colorDark: HUB_COLORS.design.tagTextDark,
     services: [
       { name: "Logo (Basic)", price: "R300" },
       { name: "Logo (Standard)", price: "R500" },
@@ -65,7 +70,8 @@ const HUBS_DATA = [
     id: "eservice",
     name: "E-Service Hub",
     icon: <Globe size={32} weight="fill" aria-hidden="true" />,
-    color: HUB_COLORS.eservice.primary,
+    colorLight: HUB_COLORS.eservice.tagText,
+    colorDark: HUB_COLORS.eservice.tagTextDark,
     services: [
       { name: "SASSA Status Check", price: "R20" },
       { name: "SASSA SRD Application", price: "R40" },
@@ -79,7 +85,8 @@ const HUBS_DATA = [
     id: "tech",
     name: "Tech Hub",
     icon: <Desktop size={32} weight="fill" aria-hidden="true" />,
-    color: HUB_COLORS.tech.primary,
+    colorLight: HUB_COLORS.tech.tagText,
+    colorDark: HUB_COLORS.tech.tagTextDark,
     services: [
       { name: "Software Install", price: "R80" },
       { name: "PC Setup", price: "R250" },
@@ -105,14 +112,23 @@ function pickRandomService(hubIndex: number, excludeName?: string) {
 
 export function HeroSection() {
   const router = useRouter()
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
   const [activeHub, setActiveHub] = useState<number>(0)
+  const [marqueePaused, setMarqueePaused] = useState(false)
   const [spotlightService, setSpotlightService] = useState(() => pickRandomService(0))
+
+  React.useEffect(() => { setMounted(true) }, [])
+
+  const isDark = mounted && resolvedTheme === "dark"
+  const colorFor = (hub: (typeof HUBS_DATA)[number]) => (isDark ? hub.colorDark : hub.colorLight)
 
   const handleNavigate = (path: string) => {
     router.push(path)
   }
 
   const active = HUBS_DATA[activeHub]
+  const activeColor = colorFor(active)
 
   const handleSelectHub = (index: number) => {
     setActiveHub(index)
@@ -144,7 +160,7 @@ export function HeroSection() {
         <div
           className="absolute left-1/2 top-[8%] -translate-x-1/2 w-[140vw] md:w-[90vw] max-w-[1400px] aspect-[16/10] opacity-[0.14] dark:opacity-[0.18] blur-3xl transition-colors duration-700 ease-out"
           style={{
-            backgroundColor: active.color,
+            backgroundColor: activeColor,
             animation: "abh-blob-morph 18s ease-in-out infinite",
           }}
         />
@@ -190,15 +206,29 @@ export function HeroSection() {
         </div>
 
         {/* Marquee */}
-        <div className="relative w-full py-3 overflow-hidden select-none pointer-events-none mb-12" aria-hidden="true">
-          <div className="flex whitespace-nowrap animate-marquee w-max">
+        <div
+          role="marquee"
+          aria-label="Our services"
+          onMouseEnter={() => setMarqueePaused(true)}
+          onMouseLeave={() => setMarqueePaused(false)}
+          onTouchStart={() => setMarqueePaused((p) => !p)}
+          className="relative w-full py-4 overflow-hidden select-none mb-12 group/marquee"
+        >
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-12 sm:w-24 z-10 bg-gradient-to-r from-background to-transparent" aria-hidden="true" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-12 sm:w-24 z-10 bg-gradient-to-l from-background to-transparent" aria-hidden="true" />
+          <div
+            className="flex whitespace-nowrap w-max animate-marquee"
+            style={{ animationPlayState: marqueePaused ? "paused" : "running" }}
+          >
             {[0, 1].map((copy) => (
-              <div key={copy} className="flex items-center gap-10 px-4 shrink-0">
+              <div key={copy} className="flex items-center shrink-0">
                 {MARQUEE_ITEMS.map((item, idx) => (
-                  <span key={idx} className="inline-flex items-center gap-4 text-brand-blue-dark dark:text-brand-light-blue font-black text-[0.78rem] uppercase tracking-widest">
-                    <span>{item}</span>
-                    <span className="text-brand-orange font-black text-base leading-none">•</span>
-                  </span>
+                  <React.Fragment key={idx}>
+                    <span className="inline-flex items-center px-5 text-brand-blue-dark dark:text-brand-light-blue font-black text-[0.78rem] uppercase tracking-widest transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100">
+                      {item}
+                    </span>
+                    <span className="text-brand-orange font-black text-base leading-none shrink-0" aria-hidden="true">•</span>
+                  </React.Fragment>
                 ))}
               </div>
             ))}
@@ -221,6 +251,7 @@ export function HeroSection() {
           >
             {HUBS_DATA.map((hub, index) => {
               const isActive = activeHub === index
+              const hubColor = colorFor(hub)
               return (
                 <button
                   key={hub.id}
@@ -234,12 +265,12 @@ export function HeroSection() {
                       ? "border-transparent shadow-md"
                       : "border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700"
                   )}
-                  style={{ backgroundColor: isActive ? `${hub.color}14` : undefined }}
+                  style={{ backgroundColor: isActive ? `${hubColor}14` : undefined }}
                 >
                   <span
                     className="transition-all duration-300 flex"
                     style={{
-                      color: isActive ? hub.color : "#9A9A9A",
+                      color: isActive ? hubColor : "#9A9A9A",
                       transform: isActive ? "translateY(-2px) scale(1.1)" : "none",
                     }}
                   >
@@ -248,7 +279,7 @@ export function HeroSection() {
                   {isActive && (
                     <span
                       className="absolute -bottom-[1px] left-1/2 -translate-x-1/2 w-8 h-[3px] rounded-full"
-                      style={{ backgroundColor: hub.color }}
+                      style={{ backgroundColor: hubColor }}
                       aria-hidden="true"
                     />
                   )}
@@ -268,13 +299,13 @@ export function HeroSection() {
                 className="flex-1 flex items-center justify-between gap-4 rounded-[10px] px-1 py-1 -mx-1 transition-opacity hover:opacity-80 active:scale-[0.98] animate-in fade-in duration-300"
               >
                 <span className="text-sm sm:text-base font-bold text-zinc-700 dark:text-zinc-200">{spotlightService.name}</span>
-                <span className="text-lg sm:text-xl font-black shrink-0" style={{ color: active.color }}>{spotlightService.price}</span>
+                <span className="text-lg sm:text-xl font-black shrink-0" style={{ color: activeColor }}>{spotlightService.price}</span>
               </button>
             </div>
             <button
               onClick={() => handleNavigate(`/services?hub=${active.id}`)}
               className="inline-flex items-center gap-1.5 text-[0.78rem] font-black mt-4 transition-opacity hover:opacity-70"
-              style={{ color: active.color }}
+              style={{ color: activeColor }}
             >
               See all {active.name} services
               <ArrowRight weight="bold" className="w-3.5 h-3.5" aria-hidden="true" />
