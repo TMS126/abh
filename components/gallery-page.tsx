@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback, useEffect } from "react"
-import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon } from "@phosphor-icons/react"
+import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -77,12 +77,116 @@ function SafeImage({
 }
 
 // ─── Project viewer modal ─────────────────────────────────────────────────────
+// ─── Full-screen zoom overlay with swipe navigation ──────────────────────────
+function ZoomOverlay({
+  images,
+  startIndex,
+  onClose,
+}: {
+  images: string[]
+  startIndex: number
+  onClose: () => void
+}) {
+  const [idx, setIdx] = useState(startIndex)
+  const touchStartX   = useRef(0)
+  const touchStartY   = useRef(0)
+
+  const prev = () => setIdx((i) => (i - 1 + images.length) % images.length)
+  const next = () => setIdx((i) => (i + 1) % images.length)
+
+  // Keyboard navigation
+  useEffect(() => {
+    const fn = (e: KeyboardEvent) => {
+      if (e.key === "Escape")     onClose()
+      if (e.key === "ArrowLeft")  prev()
+      if (e.key === "ArrowRight") next()
+    }
+    document.addEventListener("keydown", fn)
+    return () => document.removeEventListener("keydown", fn)
+  }, [])
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current)
+    if (Math.abs(dx) < 40 || dy > Math.abs(dx)) return
+    dx < 0 ? next() : prev()
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[10300] bg-black/97 flex items-center justify-center animate-in fade-in duration-200"
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
+      {/* Close */}
+      <button
+        onClick={onClose}
+        className="absolute top-5 right-5 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors active:scale-90"
+        aria-label="Close zoom"
+      >
+        <X size={18} weight="bold" />
+      </button>
+
+      {/* Counter */}
+      {images.length > 1 && (
+        <div className="absolute top-5 left-1/2 -translate-x-1/2 z-10 px-3 py-1 rounded-full bg-white/10 text-white text-[0.7rem] font-bold tracking-widest">
+          {idx + 1} / {images.length}
+        </div>
+      )}
+
+      {/* Image */}
+      <div className="relative w-full h-full flex items-center justify-center px-4">
+        <img
+          key={idx}
+          src={images[idx]}
+          alt={`Zoomed image ${idx + 1}`}
+          className="max-w-full max-h-[90dvh] object-contain rounded-[14px] shadow-2xl select-none animate-in zoom-in-95 duration-200"
+          draggable={false}
+          onClick={onClose}
+        />
+      </div>
+
+      {/* Prev / Next arrows */}
+      {images.length > 1 && (
+        <>
+          <button
+            onClick={prev}
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors active:scale-90"
+            aria-label="Previous image"
+          >
+            <CaretLeft size={18} weight="bold" />
+          </button>
+          <button
+            onClick={next}
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors active:scale-90"
+            aria-label="Next image"
+          >
+            <CaretRight size={18} weight="bold" />
+          </button>
+        </>
+      )}
+
+      {/* Swipe hint (shown once, fades out) */}
+      {images.length > 1 && (
+        <p className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/40 text-[0.65rem] font-bold uppercase tracking-widest whitespace-nowrap pointer-events-none">
+          Swipe or use arrow keys
+        </p>
+      )}
+    </div>
+  )
+}
+
 function ProjectViewerModal({ project, onClose }: { project: ProjectData | null; onClose: () => void }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
-  const [activeImg, setActiveImg] = useState(0)
+  const [activeImg,  setActiveImg]  = useState(0)
+  const [zoomIndex,  setZoomIndex]  = useState<number | null>(null)
 
-  useEffect(() => { setActiveImg(0) }, [project?.id])
+  useEffect(() => { setActiveImg(0); setZoomIndex(null) }, [project?.id])
 
   useEffect(() => {
     if (!project) return
@@ -112,8 +216,11 @@ function ProjectViewerModal({ project, onClose }: { project: ProjectData | null;
 
         {/* ── Image section (40% mobile / flex-1 desktop) ────────────── */}
         <div className="h-[40%] md:h-auto md:flex-1 flex flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-900/60">
-          {/* Main image */}
-          <div className="relative flex-1 overflow-hidden">
+          {/* Main image — tap to zoom */}
+          <div
+            className="relative flex-1 overflow-hidden cursor-zoom-in group/img"
+            onClick={() => setZoomIndex(activeImg)}
+          >
             <SafeImage
               src={allImages[activeImg]}
               alt={`${project.title} view ${activeImg + 1}`}
@@ -122,6 +229,12 @@ function ProjectViewerModal({ project, onClose }: { project: ProjectData | null;
               sizes="(max-width: 768px) 100vw, 55vw"
               className="object-cover transition-opacity duration-300"
             />
+            {/* Zoom hint overlay */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 pointer-events-none">
+              <div className="bg-black/40 backdrop-blur-sm rounded-full p-2.5">
+                <ArrowsOut size={18} weight="bold" className="text-white" />
+              </div>
+            </div>
           </div>
 
           {/* Thumbnail strip — horizontal swipe */}
@@ -155,10 +268,17 @@ function ProjectViewerModal({ project, onClose }: { project: ProjectData | null;
 
         {/* ── Details panel (60% mobile / fixed-width desktop) ─────────── */}
         <div className={cn(
-          "flex flex-col border-zinc-100 dark:border-zinc-800 overflow-y-auto overscroll-contain",
+          "relative flex flex-col border-zinc-100 dark:border-zinc-800 overflow-y-auto overscroll-contain",
           "h-[60%] border-t md:h-auto md:border-t-0 md:border-l md:w-[380px]",
           "p-6 md:p-8",
         )}>
+          {/* Top fade — content fades as if sliding under the image section */}
+          <div
+            className="sticky top-0 left-0 right-0 h-8 z-10 pointer-events-none shrink-0 -mt-6 md:-mt-8 -mx-6 md:-mx-8 mb-2"
+            style={{
+              background: `linear-gradient(to bottom, ${isDark ? "rgb(9,9,11)" : "rgb(255,255,255)"} 0%, transparent 100%)`,
+            }}
+          />
           <div className="flex justify-between items-start mb-6 shrink-0">
             <div>
               <span
@@ -202,6 +322,15 @@ function ProjectViewerModal({ project, onClose }: { project: ProjectData | null;
           </div>
         </div>
       </div>
+
+      {/* Fullscreen zoom */}
+      {zoomIndex !== null && (
+        <ZoomOverlay
+          images={allImages}
+          startIndex={zoomIndex}
+          onClose={() => setZoomIndex(null)}
+        />
+      )}
     </div>
   )
 }
@@ -454,4 +583,3 @@ export function GalleryPage() {
     </section>
   )
 }
- 
