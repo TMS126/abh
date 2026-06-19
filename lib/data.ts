@@ -15,8 +15,8 @@ export const PRICING = {
     'CV Upgrade/Fix': 'R40',
     'Cover Letter': 'R30',
     'Scanning': 'R5/page',
-    'Laminating (A5)': 'R15',
-    'Laminating (A4)': 'R20',
+    'Laminating (A5)': 'R12',
+    'Laminating (A4)': 'R15',
     'Laminating (A3)': 'R30',
   },
   design: {
@@ -191,8 +191,8 @@ export const HUBS: Record<HubId, Hub> = {
       {
         title: 'Laminating',
         items: [
-          { name: 'A5', price: 'R15', requirements: ['Bring the document or card to be laminated', 'Make sure the item is clean and flat'] },
-          { name: 'A4', price: 'R20', requirements: ['Bring the document to be laminated', 'Make sure the document is clean and flat'] },
+          { name: 'A5', price: 'R12', requirements: ['Bring the document or card to be laminated', 'Make sure the item is clean and flat'] },
+          { name: 'A4', price: 'R15', requirements: ['Bring the document to be laminated', 'Make sure the document is clean and flat'] },
           { name: 'A3', price: 'R30', requirements: ['Bring the document or poster to be laminated', 'Make sure the item is clean and flat'] },
         ],
       },
