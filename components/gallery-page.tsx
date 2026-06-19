@@ -185,8 +185,10 @@ function ProjectViewerModal({ project, onClose }: { project: ProjectData | null;
   const isDark = resolvedTheme === "dark"
   const [activeImg,  setActiveImg]  = useState(0)
   const [zoomIndex,  setZoomIndex]  = useState<number | null>(null)
+  const [panelScrolled, setPanelScrolled] = useState(false)
+  const detailsRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => { setActiveImg(0); setZoomIndex(null) }, [project?.id])
+  useEffect(() => { setActiveImg(0); setZoomIndex(null); setPanelScrolled(false) }, [project?.id])
 
   useEffect(() => {
     if (!project) return
@@ -194,6 +196,10 @@ function ProjectViewerModal({ project, onClose }: { project: ProjectData | null;
     document.addEventListener("keydown", fn)
     return () => document.removeEventListener("keydown", fn)
   }, [project, onClose])
+
+  const handleDetailsScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    setPanelScrolled(e.currentTarget.scrollTop > 4)
+  }
 
   if (!project) return null
 
@@ -267,15 +273,19 @@ function ProjectViewerModal({ project, onClose }: { project: ProjectData | null;
         </div>
 
         {/* ── Details panel (60% mobile / fixed-width desktop) ─────────── */}
-        <div className={cn(
-          "relative flex flex-col border-zinc-100 dark:border-zinc-800 overflow-y-auto overscroll-contain",
-          "h-[60%] border-t md:h-auto md:border-t-0 md:border-l md:w-[380px]",
-          "p-6 md:p-8",
-        )}>
-          {/* Top fade — content fades gradually as it slides under the image section */}
+        <div
+          ref={detailsRef}
+          onScroll={handleDetailsScroll}
+          className={cn(
+            "relative flex flex-col border-zinc-100 dark:border-zinc-800 overflow-y-auto overscroll-contain",
+            "h-[60%] border-t md:h-auto md:border-t-0 md:border-l md:w-[380px]",
+            "p-6 md:p-8",
+          )}>
+          {/* Top fade — invisible at rest, fades in only once the panel is actually scrolled */}
           <div
-            className="sticky top-0 left-0 right-0 h-16 md:h-20 z-10 pointer-events-none shrink-0 -mt-6 md:-mt-8 -mx-6 md:-mx-8 mb-2"
+            className="sticky top-0 left-0 right-0 h-16 md:h-20 z-10 pointer-events-none shrink-0 -mt-6 md:-mt-8 -mx-6 md:-mx-8 mb-2 transition-opacity duration-300"
             style={{
+              opacity: panelScrolled ? 1 : 0,
               background: `linear-gradient(to bottom, ${isDark ? "rgb(9,9,11)" : "rgb(255,255,255)"} 0%, ${isDark ? "rgba(9,9,11,0.85)" : "rgba(255,255,255,0.85)"} 35%, ${isDark ? "rgba(9,9,11,0.4)" : "rgba(255,255,255,0.4)"} 70%, transparent 100%)`,
             }}
           />
