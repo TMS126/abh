@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useTheme } from "next-themes"
-import { WhatsappLogo, Phone, Envelope, MapPin, Clock, ChatCircleText, CaretDown } from "@phosphor-icons/react"
+import { WhatsappLogo, Phone, Envelope, MapPin, Clock, CaretDown, DownloadSimple, AddressBook } from "@phosphor-icons/react"
 import { BRAND, BIZ, WA, FAQS, CONTACT_LINKS, HOURS } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 
@@ -15,6 +15,33 @@ const FORM_HUBS: Record<string, { light: string; dark: string }> = {
   "Not Sure — Help Me Choose": { light: "#777777", dark: "#9A9A9A" },
 }
 
+// ─── Business vCard download ───────────────────────────────────────────────────
+function downloadBusinessVCard() {
+  const vcard = [
+    "BEGIN:VCARD",
+    "VERSION:3.0",
+    `FN:Theji Meje ApexbytesHub`,
+    `N:ApexbytesHub;Theji Meje;;;`,
+    `ORG:Apexbytes Hub`,
+    `TITLE:Founder & Lead Designer`,
+    `TEL;TYPE=CELL,PREF:+27753338260`,
+    `EMAIL;TYPE=WORK:apexbytesza@gmail.com`,
+    `ADR;TYPE=WORK:;;5878 Mpumalanga Section;Kgotsong;Bothaville;9660;South Africa`,
+    `URL:https://v0-apexbytes-hub-website.vercel.app/`,
+    `NOTE:Apexbytes Hub — Print\\, Design\\, Docs\\, Tech & E-Services in Kgotsong\\, Bothaville.`,
+    "END:VCARD",
+  ].join("\r\n")
+
+  const blob = new Blob([vcard], { type: "text/vcard;charset=utf-8" })
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement("a")
+  a.href     = url
+  a.download = "Theji-Meje-ApexbytesHub.vcf"
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+// ─── FAQ Accordion ─────────────────────────────────────────────────────────────
 function FAQAccordion() {
   const [openIndex, setOpenIndex] = useState<number | null>(0)
 
@@ -26,7 +53,6 @@ function FAQAccordion() {
           <p className="abh-body">Everything you need to know about orders, processing, and timelines.</p>
           <div className="abh-divider" />
         </div>
-
         <div className="space-y-2">
           {FAQS.map((faq, index) => {
             const isOpen = openIndex === index
@@ -39,12 +65,7 @@ function FAQAccordion() {
                   <span className="leading-snug">{faq.question}</span>
                   <CaretDown weight="bold" className={cn("w-4 h-4 shrink-0 text-zinc-500 transition-transform duration-300", isOpen ? "rotate-180" : "rotate-0")} />
                 </button>
-                <div 
-                  className={cn(
-                    "grid transition-all duration-500 ease-in-out", 
-                    isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-                  )}
-                >
+                <div className={cn("grid transition-all duration-500 ease-in-out", isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
                   <div className="overflow-hidden">
                     <div className="px-5 pb-8 pt-3 border-t border-zinc-100 dark:border-zinc-800 abh-body whitespace-pre-wrap">
                       {faq.answer}
@@ -60,21 +81,24 @@ function FAQAccordion() {
   )
 }
 
+// ─── Hub Select ────────────────────────────────────────────────────────────────
 function HubSelect({ value, onChange }: { value: string; onChange: (val: string) => void }) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  const { resolvedTheme } = useTheme()
-  const isDark = mounted && resolvedTheme === "dark"
-  const options = Object.keys(FORM_HUBS)
-  const colorFor = (opt: string) => (isDark ? FORM_HUBS[opt].dark : FORM_HUBS[opt].light)
-  const activeColor = value ? colorFor(value) : undefined
+  const [isOpen,   setIsOpen]   = useState(false)
+  const [mounted,  setMounted]  = useState(false)
+  const ref                     = useRef<HTMLDivElement>(null)
+  const { resolvedTheme }       = useTheme()
+  const isDark                  = mounted && resolvedTheme === "dark"
+  const options                 = Object.keys(FORM_HUBS)
+  const colorFor                = (opt: string) => (isDark ? FORM_HUBS[opt].dark : FORM_HUBS[opt].light)
+  const activeColor             = value ? colorFor(value) : undefined
 
   useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     if (!isOpen) return
-    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false) }
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false)
+    }
     document.addEventListener("mousedown", handler)
     return () => document.removeEventListener("mousedown", handler)
   }, [isOpen])
@@ -84,10 +108,7 @@ function HubSelect({ value, onChange }: { value: string; onChange: (val: string)
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "w-full px-4 py-3 border rounded-[14px] bg-white dark:bg-background text-[0.84rem] font-semibold transition-all flex items-center justify-between gap-3",
-          value ? "border-zinc-100 dark:border-zinc-800" : "border-zinc-100 dark:border-zinc-800"
-        )}
+        className="w-full px-4 py-3 border rounded-[14px] bg-white dark:bg-background text-[0.84rem] font-semibold transition-all flex items-center justify-between gap-3 border-zinc-100 dark:border-zinc-800"
         style={{
           borderColor: value ? activeColor : (isOpen ? BRAND.blue : undefined),
           color: value ? activeColor : (isDark ? "#9A9A9A" : "#777777"),
@@ -120,14 +141,16 @@ function HubSelect({ value, onChange }: { value: string; onChange: (val: string)
   )
 }
 
+// ─── Contact Page ──────────────────────────────────────────────────────────────
 export function ContactPage() {
   const [formData, setFormData] = useState({ name: "", phone: "", service: "", message: "" })
-  const [touched, setTouched] = useState<Record<string, boolean>>({})
+  const [touched,  setTouched]  = useState<Record<string, boolean>>({})
+  const [vcardDone, setVcardDone] = useState(false)
 
-  const isNameValid = (val: string) => val.trim().length >= 2
-  const isPhoneValid = (val: string) => /^[0-9+\s-]{10,15}$/.test(val.trim())
+  const isNameValid    = (val: string) => val.trim().length >= 2
+  const isPhoneValid   = (val: string) => /^[0-9+\s-]{10,15}$/.test(val.trim())
   const isMessageValid = (val: string) => val.trim().length >= 5
-  const isFormValid = isNameValid(formData.name) && isPhoneValid(formData.phone) && isMessageValid(formData.message) && formData.service
+  const isFormValid    = isNameValid(formData.name) && isPhoneValid(formData.phone) && isMessageValid(formData.message) && formData.service
 
   const handleSubmit = () => {
     if (!isFormValid) return
@@ -138,25 +161,45 @@ export function ContactPage() {
     window.open(`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(msg)}`, "_blank")
   }
 
+  const handleVCard = () => {
+    downloadBusinessVCard()
+    setVcardDone(true)
+    setTimeout(() => setVcardDone(false), 3000)
+  }
+
   return (
     <div className="min-h-screen bg-background pt-[calc(var(--nav-h)+2rem)]">
+
+      {/* ── Hero ── */}
       <section className="abh-page-header">
         <h1 className="abh-page-title mb-3">Contact Us</h1>
-        <p className="abh-tagline max-w-xl mx-auto">We're here and ready to help — reach out any way you prefer.</p>
+        <p className="abh-tagline max-w-xl mx-auto">
+          We're here and ready to help — reach out any way you prefer.
+        </p>
         <div className="abh-divider" />
       </section>
 
+      {/* ── Main grid ── */}
       <section className="px-4 md:px-8 pb-14">
         <div className="max-w-[980px] mx-auto grid md:grid-cols-2 gap-10">
+
+          {/* Left column */}
           <div className="flex flex-col gap-8">
             <div>
               <h2 className="abh-section-heading mb-1">Get In Touch</h2>
               <p className="abh-body">WhatsApp, call, email or visit us in {BIZ.location}.</p>
             </div>
-            
+
+            {/* Contact links */}
             <div className="flex flex-col gap-3">
               {CONTACT_LINKS.map((c) => (
-                <a key={c.title} href={c.href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 p-4 abh-card hover:border-brand-blue transition-all">
+                <a
+                  key={c.title}
+                  href={c.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-4 p-4 abh-card hover:border-brand-blue transition-all"
+                >
                   <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.dot }} />
                   <div className="min-w-0">
                     <p className="text-[0.92rem] font-black text-zinc-800 dark:text-zinc-200">{c.title}</p>
@@ -166,22 +209,59 @@ export function ContactPage() {
               ))}
             </div>
 
+            {/* Save Contact / vCard */}
+            <div className="abh-card p-5 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: `${BRAND.blue}15`, color: BRAND.blue }}
+                >
+                  <AddressBook size={20} weight="fill" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[0.88rem] font-black text-zinc-800 dark:text-zinc-200">
+                    Save Our Contact
+                  </p>
+                  <p className="abh-muted">
+                    Add Apexbytes Hub to your phone
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleVCard}
+                className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-[14px] font-black text-[0.78rem] text-white transition-all active:scale-95 hover:-translate-y-0.5"
+                style={{ backgroundColor: vcardDone ? BRAND.green : BRAND.blue }}
+              >
+                <DownloadSimple size={16} weight="bold" />
+                {vcardDone ? "Saved!" : "Download"}
+              </button>
+            </div>
+
+            {/* Business hours */}
             <div className="abh-card p-5 bg-brand-blue/5 border-brand-blue/20">
               <span className="text-[0.78rem] font-black uppercase tracking-widest text-brand-blue flex items-center gap-1.5 mb-3">
                 <Clock weight="fill" size={14} /> Business Hours
               </span>
               <div className="space-y-3">
                 <div>
-                  <p className="text-[0.7rem] font-black uppercase text-zinc-500 mb-1">{HOURS.printAndDoc.label}</p>
-                  <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{HOURS.printAndDoc.hours}</p>
+                  <p className="text-[0.7rem] font-black uppercase text-zinc-500 mb-1">
+                    {HOURS.printAndDoc.label}
+                  </p>
+                  <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">
+                    {HOURS.printAndDoc.hours}
+                  </p>
                   <p className="flex items-center gap-1.5 text-xs font-medium mt-1" style={{ color: BRAND.green }}>
                     <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: BRAND.green }} />
                     Open on public holidays
                   </p>
                 </div>
                 <div>
-                  <p className="text-[0.7rem] font-black uppercase text-zinc-500 mb-1">{HOURS.techDesignEservice.label}</p>
-                  {HOURS.techDesignEservice.lines.map(l => <p key={l} className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{l}</p>)}
+                  <p className="text-[0.7rem] font-black uppercase text-zinc-500 mb-1">
+                    {HOURS.techDesignEservice.label}
+                  </p>
+                  {HOURS.techDesignEservice.lines.map((l) => (
+                    <p key={l} className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{l}</p>
+                  ))}
                   <p className="flex items-center gap-1.5 text-xs font-medium mt-1" style={{ color: BRAND.orangeDark }}>
                     <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: BRAND.orangeDark }} />
                     Sunday &amp; Public Holidays · Closed
@@ -191,12 +271,13 @@ export function ContactPage() {
             </div>
           </div>
 
+          {/* Right column — form */}
           <div className="abh-card p-8 h-fit">
             <h2 className="abh-section-heading mb-6">Send a Message</h2>
             <div className="space-y-4">
               {[
-                { label: "Your Name", type: "text", key: "name", validate: isNameValid, error: "Name too short" },
-                { label: "Phone Number", type: "tel", key: "phone", validate: isPhoneValid, error: "Invalid phone" },
+                { label: "Your Name",     type: "text", key: "name",  validate: isNameValid,  error: "Name too short" },
+                { label: "Phone Number",  type: "tel",  key: "phone", validate: isPhoneValid, error: "Invalid phone"  },
               ].map((f) => {
                 const err = touched[f.key] && !f.validate(formData[f.key as keyof typeof formData])
                 return (
@@ -204,22 +285,37 @@ export function ContactPage() {
                     <label className="abh-label block mb-1.5">{f.label}</label>
                     <input
                       type={f.type}
-                      className={cn("w-full px-4 py-3 border rounded-[14px] bg-white dark:bg-zinc-900 text-[0.84rem] font-black transition-all outline-none", err ? "border-red-500" : "border-zinc-100 dark:border-zinc-800 focus:border-brand-blue")}
+                      className={cn(
+                        "w-full px-4 py-3 border rounded-[14px] bg-white dark:bg-zinc-900 text-[0.84rem] font-black transition-all outline-none",
+                        err ? "border-red-500" : "border-zinc-100 dark:border-zinc-800 focus:border-brand-blue"
+                      )}
                       onBlur={() => setTouched({ ...touched, [f.key]: true })}
                       onChange={(e) => setFormData({ ...formData, [f.key]: e.target.value })}
                     />
-                    {err && <p className="text-[0.65rem] font-black text-red-500 mt-1 uppercase tracking-widest">{f.error}</p>}
+                    {err && (
+                      <p className="text-[0.65rem] font-black text-red-500 mt-1 uppercase tracking-widest">
+                        {f.error}
+                      </p>
+                    )}
                   </div>
                 )
               })}
               <div>
                 <label className="abh-label block mb-1.5">Service Needed</label>
-                <HubSelect value={formData.service} onChange={(val) => setFormData({ ...formData, service: val })} />
+                <HubSelect
+                  value={formData.service}
+                  onChange={(val) => setFormData({ ...formData, service: val })}
+                />
               </div>
               <div>
                 <label className="abh-label block mb-1.5">Your Message</label>
                 <textarea
-                  className={cn("w-full px-4 py-3 border rounded-[14px] bg-white dark:bg-zinc-900 text-[0.84rem] font-black transition-all outline-none resize-none", touched.message && !isMessageValid(formData.message) ? "border-red-500" : "border-zinc-100 dark:border-zinc-800 focus:border-brand-blue")}
+                  className={cn(
+                    "w-full px-4 py-3 border rounded-[14px] bg-white dark:bg-zinc-900 text-[0.84rem] font-black transition-all outline-none resize-none",
+                    touched.message && !isMessageValid(formData.message)
+                      ? "border-red-500"
+                      : "border-zinc-100 dark:border-zinc-800 focus:border-brand-blue"
+                  )}
                   rows={4}
                   onBlur={() => setTouched({ ...touched, message: true })}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
@@ -241,6 +337,4 @@ export function ContactPage() {
       <FAQAccordion />
     </div>
   )
-}
- 
- 
+              } 
