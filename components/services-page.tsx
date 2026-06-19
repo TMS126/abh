@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { X, Printer, FileText, PaintBrush, Globe, Desktop, PaperPlaneTilt, ListChecks, Megaphone } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
@@ -47,9 +47,9 @@ function HubModal({
   useEffect(() => { setOpenSectionIdx(0) }, [hubId])
 
   if (!hubId) return null
-  const hub       = HUBS[hubId]
-  const colors    = HUB_COLORS[hubId as HubKey]
-  const accent    = isDark ? colors.tagTextDark : colors.tagText
+  const hub         = HUBS[hubId]
+  const colors      = HUB_COLORS[hubId as HubKey]
+  const accent      = isDark ? colors.tagTextDark : colors.tagText
   const solidAccent = colors.tagText
 
   return (
@@ -79,7 +79,7 @@ function HubModal({
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto overscroll-contain p-6 md:p-8">
-          {/* Category pills — tightly wrapped to their own size */}
+          {/* Category pills */}
           <div className="inline-flex flex-wrap gap-2 mb-5">
             {hub.sections.map((section, sIdx) => {
               const isOpen = openSectionIdx === sIdx
@@ -214,7 +214,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             <span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
           </div>
 
-          {/* Tabs — pills sized to content, no icon on "What to Bring" */}
+          {/* Tabs */}
           <div className="flex gap-2">
             <button
               onClick={() => setTab("bring")}
@@ -271,7 +271,8 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             <div className="animate-in fade-in slide-in-from-right-2 duration-200">
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-relaxed">{desc}</p>
               <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-5 leading-relaxed">
-                Have questions? Switch to the <span className="font-black" style={{ color: accent }}>What to Bring</span> tab or chat with us directly.
+                Have questions? Switch to the{" "}
+                <span className="font-black" style={{ color: accent }}>What to Bring</span> tab or chat with us directly.
               </p>
             </div>
           )}
@@ -302,7 +303,6 @@ function NoticeBanner() {
         <Megaphone size={18} weight="fill" color="#fff" />
       </div>
       <div className="flex-1 min-w-0 pt-0.5">
-        {/* Icon only — no emoji */}
         <span className="text-[0.65rem] font-black uppercase tracking-widest text-[#0F3F66] dark:text-[#A9D6F2] block mb-1">
           Notice to Clients
         </span>
@@ -322,11 +322,55 @@ export function ServicesPage() {
   const [activeHub,       setActiveHub]       = useState<HubId | null>(null)
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
 
+  // Refs so popstate handler always has current values without stale closure
+  const activeHubRef       = useRef(activeHub)
+  const selectedServiceRef = useRef(selectedService)
+  useEffect(() => { activeHubRef.current       = activeHub       }, [activeHub])
+  useEffect(() => { selectedServiceRef.current = selectedService }, [selectedService])
+
+  // Open hub from URL param
   useEffect(() => {
     const hubParam = searchParams.get("hub")
     if (hubParam && HUB_ORDER.includes(hubParam as HubId)) setActiveHub(hubParam as HubId)
   }, [searchParams])
 
+  // Push baseline history entry on mount so back always has something to catch
+  useEffect(() => {
+    window.history.pushState({ modal: null }, "")
+  }, [])
+
+  // Push a history entry each time a modal opens
+  useEffect(() => {
+    if (selectedService) {
+      window.history.pushState({ modal: "service" }, "")
+    } else if (activeHub) {
+      window.history.pushState({ modal: "hub" }, "")
+    }
+  }, [selectedService, activeHub])
+
+  // Intercept back button — close innermost open modal first
+  useEffect(() => {
+    const onPopState = () => {
+      if (selectedServiceRef.current) {
+        // Service detail open — close it, hub modal stays open
+        setSelectedService(null)
+        // Re-push so hub modal back also works
+        window.history.pushState({ modal: "hub" }, "")
+      } else if (activeHubRef.current) {
+        // Hub modal open — close it
+        setActiveHub(null)
+        // Re-push baseline so page never navigates away
+        window.history.pushState({ modal: null }, "")
+      } else {
+        // Nothing open — re-push baseline to absorb the back tap
+        window.history.pushState({ modal: null }, "")
+      }
+    }
+    window.addEventListener("popstate", onPopState)
+    return () => window.removeEventListener("popstate", onPopState)
+  }, []) // empty deps — uses refs so never stale
+
+  // Scroll lock when any modal is open
   useEffect(() => {
     const isOpen = !!(activeHub || selectedService)
     if (!isOpen) return
@@ -375,7 +419,10 @@ export function ServicesPage() {
                 </h3>
                 <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 line-clamp-2">{hub.tagline}</p>
                 <div className="mt-8 flex flex-col items-center gap-2">
-                  <div className="flex items-center gap-1.5 text-xs font-black lowercase tracking-widest leading-none" style={{ color: accent }}>
+                  <div
+                    className="flex items-center gap-1.5 text-xs font-black lowercase tracking-widest leading-none"
+                    style={{ color: accent }}
+                  >
                     <span>explore</span>
                     <PaperPlaneTilt size={14} weight="fill" className="relative top-[0.5px]" />
                   </div>
@@ -387,9 +434,15 @@ export function ServicesPage() {
         </div>
       </div>
 
-      <HubModal hubId={activeHub} onClose={() => setActiveHub(null)} onSelectService={setSelectedService} />
-      <ServiceDetailModal svc={selectedService} onClose={() => setSelectedService(null)} />
+      <HubModal
+        hubId={activeHub}
+        onClose={() => setActiveHub(null)}
+        onSelectService={setSelectedService}
+      />
+      <ServiceDetailModal
+        svc={selectedService}
+        onClose={() => setSelectedService(null)}
+      />
     </section>
   )
-}
- 
+          } 
