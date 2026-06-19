@@ -272,13 +272,7 @@ function ProjectViewerModal({ project, onClose }: { project: ProjectData | null;
           "h-[60%] border-t md:h-auto md:border-t-0 md:border-l md:w-[380px]",
           "p-6 md:p-8",
         )}>
-          {/* Top fade — sits exactly within the panel's top padding strip (24px/32px), never overlapping real content below it */}
-          <div
-            className="sticky top-0 left-0 right-0 h-6 md:h-8 z-10 pointer-events-none shrink-0 -mt-6 md:-mt-8 -mx-6 md:-mx-8"
-            style={{
-              background: `linear-gradient(to bottom, ${isDark ? "rgb(9,9,11)" : "rgb(255,255,255)"} 0%, ${isDark ? "rgba(9,9,11,0.6)" : "rgba(255,255,255,0.6)"} 60%, transparent 100%)`,
-            }}
-          />
+          {/* Top fade removed — hard edge */}
           <div className="flex justify-between items-start mb-6 shrink-0">
             <div>
               <span
@@ -583,3 +577,4 @@ export function GalleryPage() {
     </section>
   )
 }
+ 
