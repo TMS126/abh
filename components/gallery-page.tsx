@@ -281,14 +281,16 @@ function ProjectViewerModal({ project, onClose }: { project: ProjectData | null;
             "h-[60%] border-t md:h-auto md:border-t-0 md:border-l md:w-[380px]",
             "p-6 md:p-8",
           )}>
-          {/* Top fade — invisible at rest, fades in only once the panel is actually scrolled */}
-          <div
-            className="sticky top-0 left-0 right-0 h-16 md:h-20 z-10 pointer-events-none shrink-0 -mt-6 md:-mt-8 -mx-6 md:-mx-8 mb-2 transition-opacity duration-300"
-            style={{
-              opacity: panelScrolled ? 1 : 0,
-              background: `linear-gradient(to bottom, ${isDark ? "rgb(9,9,11)" : "rgb(255,255,255)"} 0%, ${isDark ? "rgba(9,9,11,0.85)" : "rgba(255,255,255,0.85)"} 35%, ${isDark ? "rgba(9,9,11,0.4)" : "rgba(255,255,255,0.4)"} 70%, transparent 100%)`,
-            }}
-          />
+          {/* Top fade wrapper — sticky but zero-height, so it pins to the scroll edge without ever pushing content down */}
+          <div className="sticky top-0 left-0 right-0 h-0 z-10 pointer-events-none">
+            <div
+              className="absolute top-0 left-0 right-0 h-16 md:h-20 transition-opacity duration-300"
+              style={{
+                opacity: panelScrolled ? 1 : 0,
+                background: `linear-gradient(to bottom, ${isDark ? "rgb(9,9,11)" : "rgb(255,255,255)"} 0%, ${isDark ? "rgba(9,9,11,0.85)" : "rgba(255,255,255,0.85)"} 35%, ${isDark ? "rgba(9,9,11,0.4)" : "rgba(255,255,255,0.4)"} 70%, transparent 100%)`,
+              }}
+            />
+          </div>
           <div className="flex justify-between items-start mb-6 shrink-0">
             <div>
               <span
