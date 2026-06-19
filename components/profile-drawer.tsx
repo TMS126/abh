@@ -13,7 +13,6 @@ const FOUNDER_BIO  =
 
 const FOUNDER_WA_LINK = `https://wa.me/27781294939?text=${encodeURIComponent(`Hi ${BIZ.founder}! I'd like to get in touch with you directly.`)}`
 
-// ─── Personal vCard download ───────────────────────────────────────────────────
 function downloadPersonalVCard() {
   const vcard = [
     "BEGIN:VCARD",
@@ -25,7 +24,7 @@ function downloadPersonalVCard() {
     "TEL;TYPE=CELL,PREF:+27781294939",
     "TEL;TYPE=CELL:+27753338260",
     "EMAIL;TYPE=PERSONAL:teggyb.meje@gmail.com",
-    `ADR;TYPE=HOME:;;5878 Mpumalanga Section;Kgotsong;Bothaville;9660;South Africa`,
+    "ADR;TYPE=HOME:;;5878 Mpumalanga Section;Kgotsong;Bothaville;9660;South Africa",
     "URL:https://v0-apexbytes-hub-website.vercel.app/",
     "NOTE:Founder of Apexbytes Hub — contact directly for personal enquiries.",
     "END:VCARD",
@@ -78,7 +77,7 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") { onClose(); return }
       if (e.key !== "Tab" || !ref.current) return
-      const els  = ref.current.querySelectorAll<HTMLElement>('button,[href],[tabindex]:not([tabindex="-1"])')
+      const els   = ref.current.querySelectorAll<HTMLElement>('button,[href],[tabindex]:not([tabindex="-1"])')
       const first = els[0]; const last = els[els.length - 1]
       if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last?.focus() } }
       else            { if (document.activeElement === last)  { e.preventDefault(); first?.focus() } }
@@ -113,9 +112,7 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
         aria-label={`${BIZ.founder} — founder profile`}
         className={cn(
           "fixed z-[10060] bg-white dark:bg-zinc-900 shadow-2xl transition-transform duration-300 ease-out overflow-hidden flex flex-col",
-          /* Mobile — bottom sheet */
           "bottom-0 left-0 right-0 rounded-t-[14px] max-h-[85vh]",
-          /* Desktop — right side panel */
           "md:bottom-auto md:top-0 md:left-auto md:right-0 md:w-[360px] md:h-full md:max-h-full md:rounded-t-none md:rounded-l-[14px]",
           open
             ? "translate-y-0 md:translate-x-0"
@@ -124,16 +121,50 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
       >
         <div className="flex-1 overflow-y-auto overscroll-contain">
 
-          {/* Cover banner */}
+          {/* ── Cover banner — noise + brand color glows ── */}
           <div
-            className="relative h-40 md:h-52 w-full shrink-0"
-            style={{ background: `linear-gradient(160deg, ${BRAND.blue} 0%, ${BRAND.blue} 62%, ${BRAND.greenDark} 100%)` }}
+            className="relative h-40 md:h-52 w-full shrink-0 overflow-hidden"
+            style={{ backgroundColor: BRAND.blue }}
           >
+            {/* Blue base — 65% dominance via opacity layering */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `radial-gradient(ellipse at 30% 50%, ${BRAND.blue} 0%, ${BRAND.blueDark} 100%)`,
+              }}
+            />
+
+            {/* Green glow — bottom-left, 25% */}
+            <div
+              className="absolute -bottom-8 -left-8 w-48 h-48 rounded-full"
+              style={{
+                background: `radial-gradient(circle, ${BRAND.green}70 0%, transparent 70%)`,
+              }}
+            />
+
+            {/* Orange glow — top-right, 10% */}
+            <div
+              className="absolute -top-6 -right-4 w-32 h-32 rounded-full"
+              style={{
+                background: `radial-gradient(circle, ${BRAND.orange}50 0%, transparent 70%)`,
+              }}
+            />
+
+            {/* Noise texture overlay */}
+            <div
+              className="absolute inset-0 opacity-[0.055] pointer-events-none"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+                backgroundSize: "128px 128px",
+              }}
+            />
+
+            {/* Close button */}
             <button
               ref={closeRef}
               onClick={onClose}
               aria-label="Close profile"
-              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/20 hover:bg-black/30 backdrop-blur-sm flex items-center justify-center text-white transition-colors"
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 backdrop-blur-sm flex items-center justify-center text-white transition-colors z-10"
             >
               <X size={15} weight="bold" aria-hidden="true" />
             </button>
@@ -175,13 +206,15 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
             {/* Action buttons */}
             <div className="flex flex-col items-center w-full gap-3">
 
-              {/* Personal WhatsApp */}
+              {/* Personal WhatsApp — orange */}
               <a
                 href={FOUNDER_WA_LINK}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-3 py-3 px-8 rounded-[14px] font-extrabold text-sm text-white transition-all active:scale-95 hover:-translate-y-0.5"
-                style={{ backgroundColor: BRAND.whatsapp }}
+                className="w-full flex items-center justify-center gap-3 py-3 px-8 rounded-[14px] font-extrabold text-sm text-white transition-all active:scale-95 hover:-translate-y-0.5 shadow-sm"
+                style={{ backgroundColor: BRAND.orange }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = BRAND.orangeDark }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = BRAND.orange }}
               >
                 <WhatsappLogo size={18} weight="fill" aria-hidden="true" />
                 Personal WhatsApp
@@ -190,7 +223,7 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
               {/* Save personal vCard */}
               <button
                 onClick={handleVCard}
-                className="w-full flex items-center justify-center gap-3 py-3 px-8 rounded-[14px] font-extrabold text-sm text-white transition-all active:scale-95 hover:-translate-y-0.5"
+                className="w-full flex items-center justify-center gap-3 py-3 px-8 rounded-[14px] font-extrabold text-sm text-white transition-all active:scale-95 hover:-translate-y-0.5 shadow-sm"
                 style={{ backgroundColor: vcardDone ? BRAND.green : BRAND.blue }}
               >
                 {vcardDone
@@ -205,4 +238,4 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
       </div>
     </>
   )
-                } 
+}
