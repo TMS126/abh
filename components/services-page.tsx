@@ -7,6 +7,7 @@ import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { BIZ, HUB_COLORS, HubKey } from "@/lib/brand"
 import { HUBS, HubId } from "@/lib/data"
+import { TestimonialsSection } from "@/components/Testimonials"
 
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
@@ -527,6 +528,8 @@ export function ServicesPage() {
           })}
         </div>
       </div>
+
+      <TestimonialsSection />
 
       <HubModal hubId={activeHub} onClose={() => setActiveHub(null)} onSelectService={setSelectedService} />
       <ServiceDetailModal svc={selectedService} onClose={() => setSelectedService(null)} />
