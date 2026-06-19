@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
-import { X, Printer, FileText, PaintBrush, Globe, Desktop, PaperPlaneTilt, ListChecks, Info, Megaphone } from "@phosphor-icons/react"
+import { X, Printer, FileText, PaintBrush, Globe, Desktop, PaperPlaneTilt, ListChecks, Megaphone } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { BIZ, HUB_COLORS, HubKey } from "@/lib/brand"
@@ -58,6 +58,11 @@ function HubModal({
   const hub    = HUBS[hubId]
   const colors = HUB_COLORS[hubId as HubKey]
   const accent = isDark ? colors.tagTextDark : colors.tagText
+  // Pastel tagTextDark is meant for text sitting on a dark background, not
+  // as a solid fill behind white text — using it that way washes out in
+  // dark mode. tagText is saturated/dark enough to hold contrast as a solid
+  // chip in either theme, so filled pills always use this instead of `accent`.
+  const solidAccent = colors.tagText
 
   return (
     <div className="fixed inset-0 z-[10100] flex items-center justify-center p-4 animate-in fade-in duration-300">
@@ -101,7 +106,7 @@ function HubModal({
                       ? "text-white"
                       : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
                   )}
-                  style={isOpen ? { backgroundColor: accent } : {}}
+                  style={isOpen ? { backgroundColor: solidAccent } : {}}
                 >
                   {section.title}
                 </button>
@@ -245,20 +250,18 @@ function ServiceDetailModal({
             </span>
           </div>
 
-          {/* Tabs */}
-          <div
-            className="flex rounded-[10px] p-1 mb-0 gap-1"
-            style={{ backgroundColor: `${accent}10` }}
-          >
+          {/* Tabs — same pill language as the hub modal's category pills, but
+              neutral: a dark/light inversion guarantees readable contrast in
+              both themes without depending on any hub accent color. */}
+          <div className="flex gap-2">
             <button
               onClick={() => setTab("bring")}
               className={cn(
-                "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-[8px] text-[0.72rem] font-black uppercase tracking-wider transition-all duration-200",
+                "flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[0.7rem] font-black uppercase tracking-wider transition-all duration-200",
                 tab === "bring"
-                  ? "bg-white dark:bg-zinc-900 shadow-sm"
-                  : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300"
+                  ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
+                  : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
               )}
-              style={{ color: tab === "bring" ? accent : undefined }}
             >
               <ListChecks size={13} weight="bold" />
               What to Bring
@@ -266,14 +269,12 @@ function ServiceDetailModal({
             <button
               onClick={() => setTab("about")}
               className={cn(
-                "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-[8px] text-[0.72rem] font-black uppercase tracking-wider transition-all duration-200",
+                "px-3.5 py-1.5 rounded-full text-[0.7rem] font-black uppercase tracking-wider transition-all duration-200",
                 tab === "about"
-                  ? "bg-white dark:bg-zinc-900 shadow-sm"
-                  : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300"
+                  ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
+                  : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
               )}
-              style={{ color: tab === "about" ? accent : undefined }}
             >
-              <Info size={13} weight="bold" />
               What Is This
             </button>
           </div>
@@ -464,4 +465,3 @@ export function ServicesPage() {
     </section>
   )
 }
- 
