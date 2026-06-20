@@ -5,6 +5,7 @@ import { useTheme } from "next-themes"
 import { WhatsappLogo, Phone, Envelope, MapPin, Clock, CaretDown, DownloadSimple, AddressBook } from "@phosphor-icons/react"
 import { BRAND, BIZ, WA, FAQS, CONTACT_LINKS, HOURS } from "@/lib/brand"
 import { cn } from "@/lib/utils"
+import { BusinessStatusFull } from "@/components/business-status"
 
 const FORM_HUBS: Record<string, { light: string; dark: string }> = {
   "Print Hub":      { light: BRAND.blue,       dark: "#A9D6F2" },
@@ -267,6 +268,10 @@ export function ContactPage() {
                     Sunday &amp; Public Holidays · Closed
                   </p>
                 </div>
+                <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                  <p className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 mb-2">Current Status</p>
+                  <BusinessStatusFull />
+                </div>
               </div>
             </div>
           </div>
@@ -338,3 +343,4 @@ export function ContactPage() {
     </div>
   )
               } 
+ 
