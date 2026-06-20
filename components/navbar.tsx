@@ -7,6 +7,7 @@ import Image from "next/image"
 import { Sun, Moon, X } from "@phosphor-icons/react"
 import { BIZ, NAV_ITEMS } from "@/lib/brand"
 import { cn } from "@/lib/utils"
+import { BusinessStatusNavbar } from "@/components/business-status"
 
 export function Navbar() {
   const router   = useRouter()
@@ -108,6 +109,7 @@ export function Navbar() {
               {mounted && (theme === "dark" ? <Moon size={20} weight="fill" className="text-brand-light-blue" /> : <Sun size={20} weight="fill" className="text-brand-orange" />)}
             </button>
             <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700" />
+            <BusinessStatusNavbar />
 
             <button ref={menuTriggerRef} onClick={() => setMenuOpen(true)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 md:hidden", menuOpen ? "opacity-0" : "opacity-100")}>
               <div className="w-4 h-[12px] flex flex-col justify-between items-center">
@@ -193,3 +195,4 @@ export function Navbar() {
     </>
   )
 }
+ 
