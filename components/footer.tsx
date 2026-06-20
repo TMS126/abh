@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils"
 import { BRAND, BIZ, WA, FOOTER_NAV, FAQS } from "@/lib/brand"
 import { ProfileDrawer } from "@/components/profile-drawer"
 import { useInstance } from "@/hooks/use-instance-guard"
+import { BusinessStatusFull } from "@/components/business-status"
 
 const TERMS_SECTIONS = [
   { icon: "Printer",  title: "Print Hub – Everything Paper",     points: [{ label: "Printing Services", text: "B&W, Colour, and Bulk printing. For bulk discounts, submit your entire order together." }, { label: "Copying Services", text: "Fast, clear photocopying. Check pages before leaving." }, { label: "Photo Printing", text: "Glossy 4x6 and A4. Send high-resolution files via WhatsApp to avoid blurry prints." }] },
@@ -145,6 +146,9 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
               </a>
             </li>
             <li className="pt-2">
+              <BusinessStatusFull />
+            </li>
+            <li className="pt-2">
               <button onClick={() => setIsFaqOpen(true)}
                 className="flex items-center gap-4 text-sm font-black transition-colors"
                 style={{ color: BRAND.orange }}>
@@ -232,5 +236,6 @@ export function Footer() {
     </footer>
   )
 }
+ 
  
  
