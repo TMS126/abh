@@ -498,7 +498,10 @@ export function ServicesPage() {
     if (hubParam && HUB_ORDER.includes(hubParam as HubId)) setActiveHub(hubParam as HubId)
   }, [searchParams])
 
-  // Sticky detection
+  // Sticky detection — the trigger point (when it BECOMES sticky) is still
+  // anchored to roughly the navbar's height, but where it then sits once
+  // stuck is handled separately below: flush at the very top (top-0),
+  // regardless of expanded/collapsed state.
   useEffect(() => {
     const onScroll = () => {
       if (!searchWrapRef.current) return
@@ -569,13 +572,20 @@ export function ServicesPage() {
           <div className="abh-divider" />
         </div>
 
-        {/* Search bar — sticky placeholder */}
+        {/* Search bar — once stuck, it pins flush to the very top of the
+            viewport (top-0) with a fully opaque background and a stacking
+            order above the navbar. That's the actual fix: instead of
+            sitting just below the logo and colliding with it, the bar now
+            owns the top strip outright and visually covers the logo rather
+            than fighting it for space — whether it's the collapsed icon or
+            the expanded input, since only the inner content changes, not
+            this outer fixed positioning. */}
         <div ref={searchWrapRef} className="mb-8">
           {stuck && <div className="h-[52px]" />}
           <div className={cn(
             "transition-all duration-300",
             stuck
-              ? "fixed top-[74px] left-0 right-0 z-[500] flex justify-center px-4 py-2 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-100 dark:border-zinc-800 shadow-sm"
+              ? "fixed top-0 left-0 right-0 z-[900] flex justify-center px-4 pt-3 pb-2.5 bg-white dark:bg-zinc-950 border-b border-zinc-100 dark:border-zinc-800 shadow-md"
               : "relative"
           )}>
             <ServiceSearchBar
@@ -636,4 +646,5 @@ export function ServicesPage() {
       />
     </section>
   )
-} 
+}
+ 
