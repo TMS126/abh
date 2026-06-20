@@ -18,83 +18,91 @@ const ROW_ORDER: { id: HubId; label: string; short: string }[] = [
   { id: "tech",     label: "Tech Hub",      short: "Tech" },
 ]
 
+// ─── Back-button modal stack ──────────────────────────────────────────────────
+// Three layers: project modal → zoom overlay.
+// Each back gesture closes only the topmost layer.
+function useGalleryBackStack(
+  selectedProject: ProjectData | null,
+  setSelectedProject: (p: ProjectData | null) => void,
+  zoomIndex: number | null,
+  setZoomIndex: (i: number | null) => void,
+) {
+  const prevProject = useRef<ProjectData | null>(null)
+  const prevZoom    = useRef<number | null>(null)
+
+  // Push history entry when project opens
+  useEffect(() => {
+    if (selectedProject && selectedProject !== prevProject.current) {
+      window.history.pushState({ abModal: "project" }, "")
+      prevProject.current = selectedProject
+    }
+  }, [selectedProject])
+
+  // Push history entry when zoom opens
+  useEffect(() => {
+    if (zoomIndex !== null && zoomIndex !== prevZoom.current) {
+      window.history.pushState({ abModal: "zoom" }, "")
+      prevZoom.current = zoomIndex
+    }
+  }, [zoomIndex])
+
+  // popstate = back button / swipe-back gesture
+  useEffect(() => {
+    const onPop = () => {
+      // Innermost first
+      if (zoomIndex !== null) {
+        setZoomIndex(null)
+        prevZoom.current = null
+        // Re-push project entry so next back closes the project modal
+        window.history.pushState({ abModal: "project" }, "")
+        return
+      }
+      if (selectedProject) {
+        setSelectedProject(null)
+        prevProject.current = null
+        return
+      }
+    }
+    window.addEventListener("popstate", onPop)
+    return () => window.removeEventListener("popstate", onPop)
+  }, [zoomIndex, selectedProject, setZoomIndex, setSelectedProject])
+}
+
 // ─── Image placeholder ────────────────────────────────────────────────────────
 function ImagePlaceholder({ accent, label }: { accent: string; label?: string }) {
   return (
     <div
       className="absolute inset-0 flex flex-col items-center justify-center gap-3 select-none"
-      style={{
-        background: `linear-gradient(135deg, ${accent}18 0%, ${accent}08 60%, transparent 100%)`,
-      }}
+      style={{ background: `linear-gradient(135deg, ${accent}18 0%, ${accent}08 60%, transparent 100%)` }}
     >
-      {/* Decorative rings */}
-      <div
-        className="absolute w-48 h-48 rounded-full opacity-10"
-        style={{ border: `2px solid ${accent}`, top: "10%", right: "-10%" }}
-      />
-      <div
-        className="absolute w-28 h-28 rounded-full opacity-10"
-        style={{ border: `2px solid ${accent}`, bottom: "5%", left: "-5%" }}
-      />
-      {/* Icon */}
-      <div
-        className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner"
-        style={{ backgroundColor: `${accent}20`, border: `1.5px solid ${accent}30` }}
-      >
+      <div className="absolute w-48 h-48 rounded-full opacity-10" style={{ border: `2px solid ${accent}`, top: "10%", right: "-10%" }} />
+      <div className="absolute w-28 h-28 rounded-full opacity-10" style={{ border: `2px solid ${accent}`, bottom: "5%", left: "-5%" }} />
+      <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner" style={{ backgroundColor: `${accent}20`, border: `1.5px solid ${accent}30` }}>
         <ImageIcon size={26} weight="thin" style={{ color: accent }} />
       </div>
-      <p className="text-xs font-bold tracking-wider uppercase opacity-60" style={{ color: accent }}>
-        {label ?? "No image"}
-      </p>
+      <p className="text-xs font-bold tracking-wider uppercase opacity-60" style={{ color: accent }}>{label ?? "No image"}</p>
     </div>
   )
 }
 
-// ─── Safe image — falls back to placeholder if src is missing/fails ────────
-function SafeImage({
-  src, alt, accent, fill, sizes, className,
-}: {
+function SafeImage({ src, alt, accent, fill, sizes, className }: {
   src: string; alt: string; accent: string
   fill?: boolean; sizes?: string; className?: string
 }) {
   const [failed, setFailed] = useState(false)
-  const missing = !src || src === ""
-
-  if (missing || failed) {
-    return <ImagePlaceholder accent={accent} label={alt} />
-  }
-
-  return (
-    <Image
-      src={src}
-      alt={alt}
-      fill={fill}
-      sizes={sizes}
-      className={className}
-      onError={() => setFailed(true)}
-    />
-  )
+  if (!src || src === "" || failed) return <ImagePlaceholder accent={accent} label={alt} />
+  return <Image src={src} alt={alt} fill={fill} sizes={sizes} className={className} onError={() => setFailed(true)} />
 }
 
-// ─── Project viewer modal ─────────────────────────────────────────────────────
-// ─── Full-screen zoom overlay with swipe navigation ──────────────────────────
-function ZoomOverlay({
-  images,
-  startIndex,
-  onClose,
-}: {
-  images: string[]
-  startIndex: number
-  onClose: () => void
-}) {
-  const [idx, setIdx] = useState(startIndex)
-  const touchStartX   = useRef(0)
-  const touchStartY   = useRef(0)
+// ─── Full-screen zoom overlay ─────────────────────────────────────────────────
+function ZoomOverlay({ images, startIndex, onClose }: { images: string[]; startIndex: number; onClose: () => void }) {
+  const [idx, setIdx]     = useState(startIndex)
+  const touchStartX       = useRef(0)
+  const touchStartY       = useRef(0)
 
-  const prev = () => setIdx((i) => (i - 1 + images.length) % images.length)
-  const next = () => setIdx((i) => (i + 1) % images.length)
+  const prev = () => setIdx(i => (i - 1 + images.length) % images.length)
+  const next = () => setIdx(i => (i + 1) % images.length)
 
-  // Keyboard navigation
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
       if (e.key === "Escape")     onClose()
@@ -122,23 +130,14 @@ function ZoomOverlay({
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      {/* Close */}
-      <button
-        onClick={onClose}
-        className="absolute top-5 right-5 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors active:scale-90"
-        aria-label="Close zoom"
-      >
+      <button onClick={onClose} className="absolute top-5 right-5 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors active:scale-90">
         <X size={18} weight="bold" />
       </button>
-
-      {/* Counter */}
       {images.length > 1 && (
         <div className="absolute top-5 left-1/2 -translate-x-1/2 z-10 px-3 py-1 rounded-full bg-white/10 text-white text-[0.7rem] font-bold tracking-widest">
           {idx + 1} / {images.length}
         </div>
       )}
-
-      {/* Image */}
       <div className="relative w-full h-full flex items-center justify-center px-4">
         <img
           key={idx}
@@ -149,28 +148,12 @@ function ZoomOverlay({
           onClick={onClose}
         />
       </div>
-
-      {/* Prev / Next arrows */}
       {images.length > 1 && (
         <>
-          <button
-            onClick={prev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors active:scale-90"
-            aria-label="Previous image"
-          >
-            <CaretLeft size={18} weight="bold" />
-          </button>
-          <button
-            onClick={next}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors active:scale-90"
-            aria-label="Next image"
-          >
-            <CaretRight size={18} weight="bold" />
-          </button>
+          <button onClick={prev} className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors active:scale-90"><CaretLeft size={18} weight="bold" /></button>
+          <button onClick={next} className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors active:scale-90"><CaretRight size={18} weight="bold" /></button>
         </>
       )}
-
-      {/* Swipe hint (shown once, fades out) */}
       {images.length > 1 && (
         <p className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/40 text-[0.65rem] font-bold uppercase tracking-widest whitespace-nowrap pointer-events-none">
           Swipe or use arrow keys
@@ -180,26 +163,24 @@ function ZoomOverlay({
   )
 }
 
-function ProjectViewerModal({ project, onClose }: { project: ProjectData | null; onClose: () => void }) {
+// ─── Project viewer modal ─────────────────────────────────────────────────────
+function ProjectViewerModal({
+  project, onClose, zoomIndex, setZoomIndex,
+}: {
+  project: ProjectData | null
+  onClose: () => void
+  zoomIndex: number | null
+  setZoomIndex: (i: number | null) => void
+}) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
-  const [activeImg,  setActiveImg]  = useState(0)
-  const [zoomIndex,  setZoomIndex]  = useState<number | null>(null)
+  const [activeImg, setActiveImg] = useState(0)
 
   useEffect(() => { setActiveImg(0); setZoomIndex(null) }, [project?.id])
 
-  useEffect(() => {
-    if (!project) return
-    const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
-    document.addEventListener("keydown", fn)
-    return () => document.removeEventListener("keydown", fn)
-  }, [project, onClose])
-
   if (!project) return null
 
-  const accent = isDark
-    ? HUB_COLORS[project.hub as HubKey].tagTextDark
-    : HUB_COLORS[project.hub as HubKey].tagText
+  const accent    = isDark ? HUB_COLORS[project.hub as HubKey].tagTextDark : HUB_COLORS[project.hub as HubKey].tagText
   const allImages = project.images?.length > 0 ? project.images : [project.image]
 
   return (
@@ -214,85 +195,39 @@ function ProjectViewerModal({ project, onClose }: { project: ProjectData | null;
         "animate-in slide-in-from-bottom-4 md:zoom-in-95 duration-500",
       )}>
 
-        {/* ── Image section (40% mobile / flex-1 desktop) ────────────── */}
+        {/* Image section */}
         <div className="h-[40%] md:h-auto md:flex-1 flex flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-900/60">
-          {/* Main image — tap to zoom */}
-          <div
-            className="relative flex-1 overflow-hidden cursor-zoom-in group/img"
-            onClick={() => setZoomIndex(activeImg)}
-          >
-            <SafeImage
-              src={allImages[activeImg]}
-              alt={`${project.title} view ${activeImg + 1}`}
-              accent={accent}
-              fill
-              sizes="(max-width: 768px) 100vw, 55vw"
-              className="object-cover transition-opacity duration-300"
-            />
-            {/* Zoom hint overlay */}
+          <div className="relative flex-1 overflow-hidden cursor-zoom-in group/img" onClick={() => setZoomIndex(activeImg)}>
+            <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="(max-width: 768px) 100vw, 55vw" className="object-cover transition-opacity duration-300" />
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 pointer-events-none">
-              <div className="bg-black/40 backdrop-blur-sm rounded-full p-2.5">
-                <ArrowsOut size={18} weight="bold" className="text-white" />
-              </div>
+              <div className="bg-black/40 backdrop-blur-sm rounded-full p-2.5"><ArrowsOut size={18} weight="bold" className="text-white" /></div>
             </div>
           </div>
-
-          {/* Thumbnail strip — horizontal swipe */}
           {allImages.length > 1 && (
             <div className="flex gap-2 px-3 py-2.5 overflow-x-auto no-scrollbar shrink-0 border-t border-zinc-100 dark:border-zinc-800">
               {allImages.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setActiveImg(idx)}
-                  className={cn(
-                    "relative shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-[8px] overflow-hidden border-2 transition-all",
-                    activeImg === idx
-                      ? "border-opacity-100 scale-105"
-                      : "border-transparent opacity-50 hover:opacity-80"
-                  )}
+                <button key={idx} onClick={() => setActiveImg(idx)}
+                  className={cn("relative shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-[8px] overflow-hidden border-2 transition-all", activeImg === idx ? "border-opacity-100 scale-105" : "border-transparent opacity-50 hover:opacity-80")}
                   style={activeImg === idx ? { borderColor: accent } : {}}
                 >
-                  <SafeImage
-                    src={img}
-                    alt={`Thumbnail ${idx + 1}`}
-                    accent={accent}
-                    fill
-                    sizes="56px"
-                    className="object-cover"
-                  />
+                  <SafeImage src={img} alt={`Thumbnail ${idx + 1}`} accent={accent} fill sizes="56px" className="object-cover" />
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* ── Details panel (60% mobile / fixed-width desktop) ─────────── */}
-        <div className={cn(
-          "relative flex flex-col border-zinc-100 dark:border-zinc-800 overflow-y-auto overscroll-contain",
-          "h-[60%] border-t md:h-auto md:border-t-0 md:border-l md:w-[380px]",
-          "p-6 md:p-8",
-        )}>
-          {/* Top fade removed — hard edge */}
+        {/* Details panel */}
+        <div className={cn("relative flex flex-col border-zinc-100 dark:border-zinc-800 overflow-y-auto overscroll-contain", "h-[60%] border-t md:h-auto md:border-t-0 md:border-l md:w-[380px]", "p-6 md:p-8")}>
           <div className="flex justify-between items-start mb-6 shrink-0">
             <div>
-              <span
-                className="text-[0.65rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 inline-block"
-                style={{ backgroundColor: `${accent}15`, color: accent }}
-              >
-                {project.tag}
-              </span>
-              <h2 className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 leading-tight">
-                {project.title}
-              </h2>
+              <span className="text-[0.65rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>{project.tag}</span>
+              <h2 className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 leading-tight">{project.title}</h2>
             </div>
-            <button
-              onClick={onClose}
-              className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 shrink-0 ml-3 transition-colors"
-            >
+            <button onClick={onClose} className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 shrink-0 ml-3 transition-colors">
               <X size={18} weight="bold" />
             </button>
           </div>
-
           <div className="space-y-6 md:space-y-8">
             <section>
               <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>The Goal</h4>
@@ -303,8 +238,7 @@ function ProjectViewerModal({ project, onClose }: { project: ProjectData | null;
               <ul className="space-y-2">
                 {project.whatWeDid.map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-sm text-zinc-600 dark:text-zinc-300 font-medium">
-                    <Check size={14} weight="bold" className="mt-1 shrink-0" style={{ color: accent }} />
-                    {item}
+                    <Check size={14} weight="bold" className="mt-1 shrink-0" style={{ color: accent }} />{item}
                   </li>
                 ))}
               </ul>
@@ -317,40 +251,26 @@ function ProjectViewerModal({ project, onClose }: { project: ProjectData | null;
         </div>
       </div>
 
-      {/* Fullscreen zoom */}
+      {/* Zoom overlay sits on top — back button closes this first */}
       {zoomIndex !== null && (
-        <ZoomOverlay
-          images={allImages}
-          startIndex={zoomIndex}
-          onClose={() => setZoomIndex(null)}
-        />
+        <ZoomOverlay images={allImages} startIndex={zoomIndex} onClose={() => setZoomIndex(null)} />
       )}
     </div>
   )
 }
 
-// ─── Unified swipe carousel (mobile + desktop) ────────────────────────────────
-function ProjectCarousel({
-  projects,
-  accent,
-  onSelect,
-}: {
-  projects: ProjectData[]
-  accent: string
-  onSelect: (p: ProjectData) => void
-}) {
+// ─── Unified swipe carousel ───────────────────────────────────────────────────
+function ProjectCarousel({ projects, accent, onSelect }: { projects: ProjectData[]; accent: string; onSelect: (p: ProjectData) => void }) {
   const [activeIdx, setActiveIdx] = useState(0)
-  const trackRef = useRef<HTMLDivElement>(null)
+  const trackRef   = useRef<HTMLDivElement>(null)
   const isDragging = useRef(false)
-  const startX = useRef(0)
+  const startX     = useRef(0)
   const scrollStart = useRef(0)
 
-  // Sync dot on native scroll (touch swipe)
   const onScroll = useCallback(() => {
     if (!trackRef.current) return
     const { scrollLeft, clientWidth } = trackRef.current
-    const idx = Math.round(scrollLeft / clientWidth)
-    setActiveIdx(idx)
+    setActiveIdx(Math.round(scrollLeft / clientWidth))
   }, [])
 
   const scrollTo = useCallback((idx: number) => {
@@ -360,56 +280,27 @@ function ProjectCarousel({
     setActiveIdx(clamped)
   }, [projects.length])
 
-  // Mouse drag support for desktop
-  const onMouseDown = (e: React.MouseEvent) => {
-    isDragging.current = true
-    startX.current = e.pageX
-    scrollStart.current = trackRef.current?.scrollLeft ?? 0
-  }
-  const onMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging.current || !trackRef.current) return
-    trackRef.current.scrollLeft = scrollStart.current - (e.pageX - startX.current)
-  }
-  const onMouseUp = () => { isDragging.current = false }
+  const onMouseDown = (e: React.MouseEvent) => { isDragging.current = true; startX.current = e.pageX; scrollStart.current = trackRef.current?.scrollLeft ?? 0 }
+  const onMouseMove = (e: React.MouseEvent) => { if (!isDragging.current || !trackRef.current) return; trackRef.current.scrollLeft = scrollStart.current - (e.pageX - startX.current) }
+  const onMouseUp   = () => { isDragging.current = false }
 
   return (
     <div className="relative">
-      {/* Track */}
       <div
         ref={trackRef}
         onScroll={onScroll}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onMouseLeave={onMouseUp}
+        onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
         className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar cursor-grab active:cursor-grabbing select-none"
         style={{ scrollSnapType: "x mandatory" }}
       >
-        {projects.map((project, idx) => (
-          <div
-            key={project.id}
-            className="shrink-0 w-full snap-center px-4 md:px-6"
-            style={{ scrollSnapAlign: "center" }}
-          >
-            <div
-              className="rounded-[16px] overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xl cursor-pointer group transition-transform duration-300 active:scale-[0.98]"
-              onClick={() => onSelect(project)}
-            >
-              {/* Card image */}
+        {projects.map((project) => (
+          <div key={project.id} className="shrink-0 w-full snap-center px-4 md:px-6" style={{ scrollSnapAlign: "center" }}>
+            <div className="rounded-[16px] overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xl cursor-pointer group transition-transform duration-300 active:scale-[0.98]" onClick={() => onSelect(project)}>
               <div className="relative aspect-[16/9] md:aspect-[16/8] bg-zinc-100 dark:bg-zinc-900">
-                <SafeImage
-                  src={project.image}
-                  alt={project.title}
-                  accent={accent}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 800px"
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                />
+                <SafeImage src={project.image} alt={project.title} accent={accent} fill sizes="(max-width: 768px) 100vw, 800px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                 <div className="absolute bottom-5 left-5 right-5">
-                  <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/60 mb-1">
-                    {project.tag}
-                  </p>
+                  <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/60 mb-1">{project.tag}</p>
                   <h3 className="text-white font-black text-xl md:text-2xl leading-tight">{project.title}</h3>
                   <p className="text-white/70 text-xs font-medium mt-1 line-clamp-1">{project.shortDesc}</p>
                 </div>
@@ -419,41 +310,18 @@ function ProjectCarousel({
         ))}
       </div>
 
-      {/* Prev / Next arrows — always shown on desktop, shown on mobile when >1 */}
       {projects.length > 1 && (
         <>
-          <button
-            onClick={() => scrollTo(activeIdx - 1)}
-            disabled={activeIdx === 0}
-            className="absolute left-1 md:left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/90 dark:bg-zinc-900/90 shadow-lg flex items-center justify-center text-zinc-700 dark:text-white disabled:opacity-0 transition-all hover:scale-105 active:scale-95"
-          >
-            <CaretLeft size={20} weight="bold" />
-          </button>
-          <button
-            onClick={() => scrollTo(activeIdx + 1)}
-            disabled={activeIdx === projects.length - 1}
-            className="absolute right-1 md:right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/90 dark:bg-zinc-900/90 shadow-lg flex items-center justify-center text-zinc-700 dark:text-white disabled:opacity-0 transition-all hover:scale-105 active:scale-95"
-          >
-            <CaretRight size={20} weight="bold" />
-          </button>
+          <button onClick={() => scrollTo(activeIdx - 1)} disabled={activeIdx === 0} className="absolute left-1 md:left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/90 dark:bg-zinc-900/90 shadow-lg flex items-center justify-center text-zinc-700 dark:text-white disabled:opacity-0 transition-all hover:scale-105 active:scale-95"><CaretLeft size={20} weight="bold" /></button>
+          <button onClick={() => scrollTo(activeIdx + 1)} disabled={activeIdx === projects.length - 1} className="absolute right-1 md:right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/90 dark:bg-zinc-900/90 shadow-lg flex items-center justify-center text-zinc-700 dark:text-white disabled:opacity-0 transition-all hover:scale-105 active:scale-95"><CaretRight size={20} weight="bold" /></button>
         </>
       )}
-
-      {/* Dot indicators */}
       {projects.length > 1 && (
         <div className="flex justify-center gap-2 mt-4">
           {projects.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => scrollTo(idx)}
-              className={cn(
-                "rounded-full transition-all duration-300",
-                activeIdx === idx
-                  ? "w-5 h-2"
-                  : "w-2 h-2 opacity-30 hover:opacity-60"
-              )}
+            <button key={idx} onClick={() => scrollTo(idx)}
+              className={cn("rounded-full transition-all duration-300", activeIdx === idx ? "w-5 h-2" : "w-2 h-2 opacity-30 hover:opacity-60")}
               style={{ backgroundColor: activeIdx === idx ? accent : undefined }}
-              aria-label={`Go to slide ${idx + 1}`}
             />
           ))}
         </div>
@@ -466,9 +334,14 @@ function ProjectCarousel({
 export function GalleryPage() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
-  const [activeFilter, setActiveFilter] = useState<HubId | "all">("all")
+  const [activeFilter,    setActiveFilter]    = useState<HubId | "all">("all")
   const [selectedProject, setSelectedProject] = useState<ProjectData | null>(null)
+  const [zoomIndex,       setZoomIndex]       = useState<number | null>(null)
 
+  // Back button: zoom → project → page (modal by modal)
+  useGalleryBackStack(selectedProject, setSelectedProject, zoomIndex, setZoomIndex)
+
+  // Scroll lock while project modal is open
   useEffect(() => {
     if (!selectedProject) return
     const scrollY = window.scrollY
@@ -494,9 +367,7 @@ export function GalleryPage() {
 
         <div className="text-center mb-12">
           <h1 className="abh-page-title mb-4">Our Portfolio</h1>
-          <p className="abh-tagline max-w-2xl mx-auto">
-            Real results for real clients. Select a category to explore our work in depth.
-          </p>
+          <p className="abh-tagline max-w-2xl mx-auto">Real results for real clients. Select a category to explore our work in depth.</p>
           <div className="abh-divider" />
         </div>
 
@@ -504,32 +375,16 @@ export function GalleryPage() {
         <div className="flex flex-wrap gap-2 justify-center mb-16">
           <button
             onClick={() => setActiveFilter("all")}
-            className={cn(
-              "px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all",
-              activeFilter === "all"
-                ? "bg-brand-blue text-white shadow-lg"
-                : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
-            )}
-          >
-            All Hubs
-          </button>
+            className={cn("px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all", activeFilter === "all" ? "bg-brand-blue text-white shadow-lg" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800")}
+          >All Hubs</button>
           {ROW_ORDER.map(row => {
-            const accent = getAccent(row.id)
+            const accent   = getAccent(row.id)
             const isActive = activeFilter === row.id
             return (
-              <button
-                key={row.id}
-                onClick={() => setActiveFilter(row.id)}
-                className={cn(
-                  "px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all",
-                  isActive
-                    ? cn("shadow-lg", isDark ? "text-zinc-900" : "text-white")
-                    : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
-                )}
+              <button key={row.id} onClick={() => setActiveFilter(row.id)}
+                className={cn("px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all", isActive ? cn("shadow-lg", isDark ? "text-zinc-900" : "text-white") : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800")}
                 style={isActive ? { backgroundColor: accent } : {}}
-              >
-                {row.short}
-              </button>
+              >{row.short}</button>
             )
           })}
         </div>
@@ -552,7 +407,6 @@ export function GalleryPage() {
             const accent = getAccent(row.id)
             return (
               <div key={row.id}>
-                {/* Row header */}
                 <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
                   <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: accent }} />
                   <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
@@ -560,20 +414,19 @@ export function GalleryPage() {
                     {projects.length} {projects.length === 1 ? "Project" : "Projects"}
                   </span>
                 </div>
-
-                {/* Unified swipe carousel — same on mobile and desktop */}
-                <ProjectCarousel
-                  projects={projects}
-                  accent={accent}
-                  onSelect={setSelectedProject}
-                />
+                <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} />
               </div>
             )
           })}
         </div>
       </div>
 
-      <ProjectViewerModal project={selectedProject} onClose={() => setSelectedProject(null)} />
+      <ProjectViewerModal
+        project={selectedProject}
+        onClose={() => setSelectedProject(null)}
+        zoomIndex={zoomIndex}
+        setZoomIndex={setZoomIndex}
+      />
     </section>
   )
 }
