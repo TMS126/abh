@@ -6,6 +6,7 @@ import { InstanceGuardProvider } from '@/hooks/use-instance-guard'
 import { BIZ, BRAND } from '@/lib/brand'
 import { LocalBusinessJsonLd } from '@/components/ui/json-ld'
 import { QuoteCalculatorWidget } from '@/components/QuoteCalculatorWidget'
+import { WhatsAppFAB } from '@/components/whatsapp-fab'
 import './globals.css'
 
 const nunito = Nunito({ 
@@ -28,7 +29,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: `${BIZ.name} — ${BIZ.tagline}`,
-  description: `We make technology and important services accessible to everyone — no jargon, no stress. Right here in ${BIZ.location}.`,
+  description: `We make technology and important services accessible to everyone — no jargon, no stress. Right here in ${BIZ.address}.`,
   keywords: ['printing', 'CV services', 'tech support', 'government services', 'SASSA', 'SARS', 'Kgotsong', 'Bothaville'],
   authors: [{ name: BIZ.name }],
   icons: {
@@ -67,6 +68,7 @@ export default function RootLayout({
             {children}
           </InstanceGuardProvider>
           <QuoteCalculatorWidget />
+          <WhatsAppFAB />
         </ThemeProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
