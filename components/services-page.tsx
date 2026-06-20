@@ -1,13 +1,16 @@
 "use client"
 
-import { useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
-import { X, Printer, FileText, PaintBrush, Globe, Desktop, PaperPlaneTilt, ListChecks, Megaphone, MagnifyingGlass } from "@phosphor-icons/react"
+import {
+  X, Printer, FileText, PaintBrush, Globe, Desktop,
+  PaperPlaneTilt, Megaphone, MagnifyingGlass,
+} from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { BIZ, HUB_COLORS, HubKey } from "@/lib/brand"
 import { HUBS, HubId } from "@/lib/data"
-import { TestimonialsSection } from "@/components/Testimonials"
+// import { TestimonialsSection } from "@/components/Testimonials"
 
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
@@ -48,17 +51,15 @@ function HubModal({
   useEffect(() => { setOpenSectionIdx(0) }, [hubId])
 
   if (!hubId) return null
-  const hub       = HUBS[hubId]
-  const colors    = HUB_COLORS[hubId as HubKey]
-  const accent    = isDark ? colors.tagTextDark : colors.tagText
+  const hub         = HUBS[hubId]
+  const colors      = HUB_COLORS[hubId as HubKey]
+  const accent      = isDark ? colors.tagTextDark : colors.tagText
   const solidAccent = colors.tagText
 
   return (
     <div className="fixed inset-0 z-[10100] flex items-center justify-center p-4 animate-in fade-in duration-300">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md overscroll-contain" onClick={onClose} />
       <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-500 border border-zinc-100 dark:border-zinc-800">
-
-        {/* Header */}
         <div className="p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center" style={{ backgroundColor: `${accent}05` }}>
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-[14px] flex items-center justify-center shadow-lg bg-zinc-100 dark:bg-zinc-800" style={{ border: `2px solid ${accent}` }}>
@@ -78,9 +79,7 @@ function HubModal({
           </button>
         </div>
 
-        {/* Body */}
         <div className="flex-1 overflow-y-auto overscroll-contain p-6 md:p-8">
-          {/* Category pills — tightly wrapped to their own size */}
           <div className="inline-flex flex-wrap gap-2 mb-5">
             {hub.sections.map((section, sIdx) => {
               const isOpen = openSectionIdx === sIdx
@@ -88,12 +87,9 @@ function HubModal({
                 <button
                   key={sIdx}
                   onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)}
-                  title={section.title}
                   className={cn(
                     "px-3.5 py-1.5 rounded-full text-[0.7rem] font-black tracking-tight whitespace-nowrap transition-all duration-200",
-                    isOpen
-                      ? "text-white shadow-sm"
-                      : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                    isOpen ? "text-white shadow-sm" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
                   )}
                   style={isOpen ? { backgroundColor: solidAccent } : {}}
                 >
@@ -103,7 +99,6 @@ function HubModal({
             })}
           </div>
 
-          {/* Expanded category */}
           {openSectionIdx !== null && hub.sections[openSectionIdx] && (
             <div
               key={openSectionIdx}
@@ -117,7 +112,7 @@ function HubModal({
                     sectionTitle: hub.sections[openSectionIdx!].title,
                     requirements: item.requirements, desc: item.description,
                   })}
-                  className="flex items-center justify-between p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:border-brand-blue transition-all group"
+                  className="flex items-center justify-between p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:border-brand-blue transition-all"
                 >
                   <span className="text-[0.84rem] font-black text-zinc-800 dark:text-zinc-200">{item.name}</span>
                   <span className="text-[0.84rem] font-black" style={{ color: accent }}>{item.price}</span>
@@ -188,8 +183,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     <div className="fixed inset-0 z-[10200] flex items-center justify-center p-4 animate-in fade-in duration-300">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm overscroll-contain" onClick={onClose} />
       <div className="relative w-full max-w-sm rounded-[14px] overflow-hidden shadow-2xl bg-white dark:bg-zinc-950 animate-in zoom-in-95 duration-300 border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col">
-
-        {/* Header */}
         <div className="p-6 pb-0 flex-shrink-0">
           <div className="flex justify-between items-start mb-4">
             <div>
@@ -210,39 +203,28 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </button>
           </div>
 
-          {/* Price */}
           <div className="flex items-baseline gap-1 mb-5">
             <span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
           </div>
 
-          {/* Tabs — pills sized to content, no icon on "What to Bring" */}
           <div className="flex gap-2">
-            <button
-              onClick={() => setTab("bring")}
-              className={cn(
-                "px-3.5 py-1.5 rounded-full text-[0.7rem] font-black uppercase tracking-wider transition-all duration-200",
-                tab === "bring"
-                  ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
-                  : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
-              )}
-            >
-              What to Bring
-            </button>
-            <button
-              onClick={() => setTab("about")}
-              className={cn(
-                "px-3.5 py-1.5 rounded-full text-[0.7rem] font-black uppercase tracking-wider transition-all duration-200",
-                tab === "about"
-                  ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
-                  : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
-              )}
-            >
-              What Is This
-            </button>
+            {(["bring", "about"] as Tab[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={cn(
+                  "px-3.5 py-1.5 rounded-full text-[0.7rem] font-black uppercase tracking-wider transition-all duration-200",
+                  tab === t
+                    ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
+                    : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                )}
+              >
+                {t === "bring" ? "What to Bring" : "What Is This"}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Tab content */}
         <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 min-h-0">
           {tab === "bring" && (
             <div className="animate-in fade-in slide-in-from-left-2 duration-200">
@@ -250,10 +232,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                 {requirements.map((req, idx) => (
                   <li key={idx} className="flex items-start gap-3">
                     <span
-                      className={cn(
-                        "flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[0.7rem] font-black mt-0.5",
-                        isDark ? "text-zinc-900" : "text-white"
-                      )}
+                      className={cn("flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[0.7rem] font-black mt-0.5", isDark ? "text-zinc-900" : "text-white")}
                       style={{ backgroundColor: accent }}
                     >
                       {idx + 1}
@@ -267,24 +246,23 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
               </p>
             </div>
           )}
-
           {tab === "about" && (
             <div className="animate-in fade-in slide-in-from-right-2 duration-200">
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-relaxed">{desc}</p>
               <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-5 leading-relaxed">
-                Have questions? Switch to the <span className="font-black" style={{ color: accent }}>What to Bring</span> tab or chat with us directly.
+                Have questions? Switch to the{" "}
+                <span className="font-black" style={{ color: accent }}>What to Bring</span> tab or chat with us directly.
               </p>
             </div>
           )}
         </div>
 
-        {/* CTA */}
         <div className="px-6 pb-6 pt-3 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800">
           <a
             href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waMessage)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center w-full px-4 py-4 rounded-[14px] font-black text-sm leading-snug text-white text-center transition-all active:scale-95 shadow-lg hover:-translate-y-0.5"
+            className="flex items-center justify-center w-full px-4 py-4 rounded-[14px] font-black text-sm text-white text-center transition-all active:scale-95 shadow-lg hover:-translate-y-0.5"
             style={{ backgroundColor: "#25D366" }}
           >
             Request {naturalLabel}
@@ -295,40 +273,103 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   )
 }
 
-// ─── Service Search Bar ───────────────────────────────────────────────────────
-// Flattens every service across all hubs into one searchable index, matched
-// against both name and description (so "id card" finds PSIRA ID, not just
-// items literally named "ID"). Selecting a result opens the detail modal
-// directly, skipping the hub modal entirely.
+// ─── Search Bar ───────────────────────────────────────────────────────────────
 interface SearchableService {
-  hubId: HubId
-  sectionTitle: string
-  name: string
-  price: string
-  description: string
-  requirements: string[]
+  hubId: HubId; sectionTitle: string; name: string
+  price: string; description: string; requirements: string[]
 }
 
-function ServiceSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => void }) {
+// Animated gradient SVG icon — cycles blue→green→orange when stuck
+function GradientSearchIcon({ stuck }: { stuck: boolean }) {
+  return (
+    <svg
+      width="18" height="18" viewBox="0 0 18 18" fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      {stuck && (
+        <defs>
+          <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%"   stopColor="#1E6FA8">
+              <animate attributeName="stop-color"
+                values="#1E6FA8;#6FBF1A;#F4A261;#1E6FA8"
+                dur="3s" repeatCount="indefinite" />
+            </stop>
+            <stop offset="50%"  stopColor="#6FBF1A">
+              <animate attributeName="stop-color"
+                values="#6FBF1A;#F4A261;#1E6FA8;#6FBF1A"
+                dur="3s" repeatCount="indefinite" />
+            </stop>
+            <stop offset="100%" stopColor="#F4A261">
+              <animate attributeName="stop-color"
+                values="#F4A261;#1E6FA8;#6FBF1A;#F4A261"
+                dur="3s" repeatCount="indefinite" />
+            </stop>
+          </linearGradient>
+        </defs>
+      )}
+      <circle
+        cx="7.5" cy="7.5" r="5"
+        stroke={stuck ? "url(#sg)" : "currentColor"}
+        strokeWidth="2" strokeLinecap="round"
+      />
+      <line
+        x1="11.5" y1="11.5" x2="16" y2="16"
+        stroke={stuck ? "url(#sg)" : "currentColor"}
+        strokeWidth="2" strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+function ServiceSearchBar({
+  onSelect,
+  stuck,
+  collapsed,
+  onExpandRequest,
+}: {
+  onSelect: (svc: SelectedService) => void
+  stuck: boolean
+  collapsed: boolean
+  onExpandRequest: () => void
+}) {
   const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === "dark"
-  const [query, setQuery] = useState("")
-  const [isFocused, setIsFocused] = useState(false)
+  const isDark     = resolvedTheme === "dark"
+  const [query,    setQuery]     = useState("")
+  const [focused,  setFocused]   = useState(false)
+  const [expanded, setExpanded]  = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
+  const inputRef   = useRef<HTMLInputElement>(null)
+
+  // When stuck + collapsed and user taps icon → expand
+  const handleIconClick = () => {
+    setExpanded(true)
+    onExpandRequest()
+    setTimeout(() => inputRef.current?.focus(), 50)
+  }
+
+  // Close dropdown on outside click / Escape
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setFocused(false)
+        if (stuck) setExpanded(false)
+      }
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { setFocused(false); if (stuck) setExpanded(false) }
+    }
+    document.addEventListener("mousedown", onDown)
+    document.addEventListener("keydown", onKey)
+    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey) }
+  }, [stuck])
 
   const index = useMemo<SearchableService[]>(() => {
     const all: SearchableService[] = []
     HUB_ORDER.forEach((hubId) => {
       HUBS[hubId].sections.forEach((section) => {
         section.items.forEach((item) => {
-          all.push({
-            hubId,
-            sectionTitle: section.title,
-            name: item.name,
-            price: item.price,
-            description: item.description,
-            requirements: item.requirements,
-          })
+          all.push({ hubId, sectionTitle: section.title, name: item.name, price: item.price, description: item.description, requirements: item.requirements })
         })
       })
     })
@@ -338,79 +379,94 @@ function ServiceSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => vo
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return []
-    return index
-      .filter((s) => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q))
-      .slice(0, 8)
+    return index.filter((s) => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)).slice(0, 8)
   }, [query, index])
 
-  // Close the dropdown on outside click or Escape
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setIsFocused(false)
-    }
-    const handleKey = (e: KeyboardEvent) => { if (e.key === "Escape") setIsFocused(false) }
-    document.addEventListener("mousedown", handleClick)
-    document.addEventListener("keydown", handleKey)
-    return () => {
-      document.removeEventListener("mousedown", handleClick)
-      document.removeEventListener("keydown", handleKey)
-    }
-  }, [])
-
   const pick = (s: SearchableService) => {
-    onSelect({
-      name: s.name,
-      price: s.price,
-      hubId: s.hubId,
-      sectionTitle: s.sectionTitle,
-      requirements: s.requirements,
-      desc: s.description,
-    })
+    onSelect({ name: s.name, price: s.price, hubId: s.hubId, sectionTitle: s.sectionTitle, requirements: s.requirements, desc: s.description })
     setQuery("")
-    setIsFocused(false)
+    setFocused(false)
+    setExpanded(false)
   }
 
-  const showDropdown = isFocused && query.trim().length > 0
+  const showDropdown = focused && query.trim().length > 0
+
+  // Collapsed icon-only mode — only when stuck on mobile
+  if (stuck && collapsed && !expanded) {
+    return (
+      <div className="flex justify-center">
+        <button
+          onClick={handleIconClick}
+          className="w-10 h-10 rounded-full flex items-center justify-center bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-md transition-all active:scale-95 hover:scale-105"
+          aria-label="Search services"
+        >
+          <GradientSearchIcon stuck={true} />
+        </button>
+      </div>
+    )
+  }
 
   return (
-    <div ref={wrapperRef} className="relative max-w-xl mx-auto mb-10">
-      <div className="relative">
-        <MagnifyingGlass size={18} weight="bold" className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
+    <div ref={wrapperRef} className="relative flex justify-center w-full">
+      <div
+        className={cn(
+          "relative transition-all duration-300",
+          // Inline (not stuck): half width on desktop, slightly narrower on mobile
+          !stuck && "w-[85%] md:w-1/2",
+          // Stuck: same proportions but can expand when focused
+          stuck && !expanded && "w-[85%] md:w-1/2",
+          stuck && expanded && "w-full md:w-1/2",
+        )}
+      >
+        <GradientSearchIcon stuck={stuck} />
+        {/* Icon sits inside input */}
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none z-10">
+          <GradientSearchIcon stuck={stuck} />
+        </div>
+
         <input
+          ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => setIsFocused(true)}
-          placeholder="Search services... e.g. &quot;CV&quot;, &quot;laminating&quot;, &quot;id card&quot;"
-          className="w-full pl-11 pr-10 py-3.5 rounded-[14px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none focus:border-brand-blue transition-colors"
+          onFocus={() => setFocused(true)}
+          placeholder="Search service"
+          className={cn(
+            "w-full pl-11 pr-9 py-3 rounded-[14px] text-sm font-medium outline-none transition-all duration-300",
+            "bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400",
+            stuck
+              ? "border border-zinc-200 dark:border-zinc-700 shadow-lg focus:border-brand-blue"
+              : "border border-zinc-200 dark:border-zinc-800 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] focus:border-brand-blue"
+          )}
         />
+
         {query && (
           <button
             onClick={() => setQuery("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600"
           >
-            <X size={12} weight="bold" />
+            <X size={11} weight="bold" />
           </button>
         )}
       </div>
 
+      {/* Dropdown */}
       {showDropdown && (
-        <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-xl overflow-hidden z-30 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute top-full mt-2 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-xl overflow-hidden z-30 animate-in fade-in zoom-in-95 duration-150"
+          style={{ width: "min(100%, 480px)", left: "50%", transform: "translateX(-50%)" }}
+        >
           {results.length > 0 ? (
-            <div className="max-h-[340px] overflow-y-auto p-2">
+            <div className="max-h-[320px] overflow-y-auto p-2">
               {results.map((s, idx) => {
                 const colors = HUB_COLORS[s.hubId as HubKey]
                 const accent = isDark ? colors.tagTextDark : colors.tagText
                 return (
                   <button
-                    key={`${s.hubId}-${s.sectionTitle}-${s.name}-${idx}`}
+                    key={`${s.hubId}-${s.name}-${idx}`}
                     onClick={() => pick(s)}
                     className="w-full flex items-center gap-3 p-3 rounded-[10px] hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left"
                   >
-                    <div
-                      className="w-9 h-9 rounded-[10px] flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: `${accent}15`, color: accent }}
-                    >
+                    <div className="w-9 h-9 rounded-[10px] flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${accent}15`, color: accent }}>
                       <HubIcon id={s.hubId} size={18} />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -425,7 +481,7 @@ function ServiceSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => vo
           ) : (
             <div className="p-5 text-center">
               <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">No services found</p>
-              <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-1">Try a different word, or WhatsApp us and ask directly.</p>
+              <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-1">Try a different word or WhatsApp us directly.</p>
             </div>
           )}
         </div>
@@ -442,7 +498,6 @@ function NoticeBanner() {
         <Megaphone size={18} weight="fill" color="#fff" />
       </div>
       <div className="flex-1 min-w-0 pt-0.5">
-        {/* Icon only — no emoji */}
         <span className="text-[0.65rem] font-black uppercase tracking-widest text-[#0F3F66] dark:text-[#A9D6F2] block mb-1">
           Notice to Clients
         </span>
@@ -457,16 +512,77 @@ function NoticeBanner() {
 // ─── Services Page ────────────────────────────────────────────────────────────
 export function ServicesPage() {
   const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === "dark"
+  const isDark       = resolvedTheme === "dark"
   const searchParams = useSearchParams()
+
   const [activeHub,       setActiveHub]       = useState<HubId | null>(null)
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
 
+  // Search bar sticky state
+  const searchWrapRef  = useRef<HTMLDivElement>(null)   // the placeholder div in flow
+  const [stuck,        setStuck]        = useState(false)
+  const [collapsed,    setCollapsed]    = useState(false) // icon-only on mobile when stuck
+
+  // Refs for popstate (stale-closure safe)
+  const activeHubRef       = useRef(activeHub)
+  const selectedServiceRef = useRef(selectedService)
+  useEffect(() => { activeHubRef.current       = activeHub       }, [activeHub])
+  useEffect(() => { selectedServiceRef.current = selectedService }, [selectedService])
+
+  // Open hub from URL param
   useEffect(() => {
     const hubParam = searchParams.get("hub")
     if (hubParam && HUB_ORDER.includes(hubParam as HubId)) setActiveHub(hubParam as HubId)
   }, [searchParams])
 
+  // ── Sticky detection ──────────────────────────────────────────────────────
+  useEffect(() => {
+    const onScroll = () => {
+      if (!searchWrapRef.current) return
+      const rect    = searchWrapRef.current.getBoundingClientRect()
+      const navH    = 74 // your navbar height
+      const isStuck = rect.top <= navH
+      setStuck(isStuck)
+      // Collapse to icon on mobile (< 768px) when stuck
+      setCollapsed(isStuck && window.innerWidth < 768)
+    }
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
+  // ── Back button fix ───────────────────────────────────────────────────────
+  // Push baseline on mount
+  useEffect(() => {
+    window.history.pushState({ modal: null }, "")
+  }, [])
+
+  // Push entry on each modal open
+  useEffect(() => {
+    if (selectedService) {
+      window.history.pushState({ modal: "service" }, "")
+    } else if (activeHub) {
+      window.history.pushState({ modal: "hub" }, "")
+    }
+  }, [selectedService, activeHub])
+
+  // Intercept popstate — close innermost first
+  useEffect(() => {
+    const onPopState = () => {
+      if (selectedServiceRef.current) {
+        setSelectedService(null)
+        window.history.pushState({ modal: "hub" }, "")
+      } else if (activeHubRef.current) {
+        setActiveHub(null)
+        window.history.pushState({ modal: null }, "")
+      } else {
+        window.history.pushState({ modal: null }, "")
+      }
+    }
+    window.addEventListener("popstate", onPopState)
+    return () => window.removeEventListener("popstate", onPopState)
+  }, [])
+
+  // ── Scroll lock when modal open ───────────────────────────────────────────
   useEffect(() => {
     const isOpen = !!(activeHub || selectedService)
     if (!isOpen) return
@@ -483,7 +599,9 @@ export function ServicesPage() {
   return (
     <section className="min-h-screen bg-background pt-[calc(var(--nav-h)+2rem)] pb-24 px-4 md:px-8">
       <div className="max-w-[1300px] mx-auto">
-        <div className="text-center mb-16">
+
+        {/* Hero text */}
+        <div className="text-center mb-10">
           <h1 className="abh-page-title mb-4">Our Service Hubs</h1>
           <p className="abh-tagline max-w-2xl mx-auto">
             Explore our ecosystem. Tap a hub to view all available services and instant pricing.
@@ -491,10 +609,32 @@ export function ServicesPage() {
           <div className="abh-divider" />
         </div>
 
-        <ServiceSearchBar onSelect={setSelectedService} />
+        {/* ── Search bar placeholder — marks where bar lives in flow ── */}
+        <div ref={searchWrapRef} className="mb-8">
+          {/* Invisible spacer when stuck so page doesn't jump */}
+          {stuck && <div className="h-[52px]" />}
+
+          {/* The actual bar — fixed when stuck, normal when not */}
+          <div
+            className={cn(
+              "transition-all duration-300",
+              stuck
+                ? "fixed top-[74px] left-0 right-0 z-[500] flex justify-center px-4 py-2 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-100 dark:border-zinc-800 shadow-sm"
+                : "relative"
+            )}
+          >
+            <ServiceSearchBar
+              onSelect={setSelectedService}
+              stuck={stuck}
+              collapsed={collapsed}
+              onExpandRequest={() => setCollapsed(false)}
+            />
+          </div>
+        </div>
 
         <NoticeBanner />
 
+        {/* Hub cards */}
         <div className="flex flex-col md:flex-row gap-6 pb-8 overflow-x-auto md:overflow-visible no-scrollbar">
           {HUB_ORDER.map((hubId) => {
             const hub    = HUBS[hubId]
@@ -529,12 +669,17 @@ export function ServicesPage() {
         </div>
       </div>
 
-      <TestimonialsSection />
+      {/* <TestimonialsSection /> */}
 
-      <HubModal hubId={activeHub} onClose={() => setActiveHub(null)} onSelectService={setSelectedService} />
-      <ServiceDetailModal svc={selectedService} onClose={() => setSelectedService(null)} />
+      <HubModal
+        hubId={activeHub}
+        onClose={() => setActiveHub(null)}
+        onSelectService={setSelectedService}
+      />
+      <ServiceDetailModal
+        svc={selectedService}
+        onClose={() => setSelectedService(null)}
+      />
     </section>
   )
-}
- 
- 
+      } 
