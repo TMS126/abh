@@ -42,7 +42,7 @@ export function GradientSearchIcon({ stuck, size = 18 }: { stuck: boolean; size?
   )
 }
 
-function ServiceSearchBar({
+export function ServiceSearchBar({
   onSelect,
   stuck,
   collapsed,
