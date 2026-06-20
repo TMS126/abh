@@ -300,12 +300,14 @@ function GradientSearchIcon({ stuck, size = 18 }: { stuck: boolean; size?: numbe
 }
 
 function ServiceSearchBar({
-  onSelect, stuck, collapsed, onExpandRequest,
+  onSelect, stuck, collapsed, onExpandRequest, onFocusRequest, onReleaseRequest,
 }: {
   onSelect: (svc: SelectedService) => void
   stuck: boolean
   collapsed: boolean
   onExpandRequest: () => void
+  onFocusRequest: () => void
+  onReleaseRequest: () => void
 }) {
   const { resolvedTheme } = useTheme()
   const isDark     = resolvedTheme === "dark"
@@ -315,28 +317,43 @@ function ServiceSearchBar({
   const wrapperRef = useRef<HTMLDivElement>(null)
   const inputRef   = useRef<HTMLInputElement>(null)
 
+  const isOpen = focused || expanded
+
+  const closeSearch = () => {
+    setFocused(false)
+    if (stuck) setExpanded(false)
+    onReleaseRequest()
+  }
+
   const handleIconClick = () => {
     setExpanded(true)
+    setFocused(true)
     onExpandRequest()
+    onFocusRequest()
     setTimeout(() => inputRef.current?.focus(), 50)
   }
 
+  const handleInputFocus = () => {
+    setFocused(true)
+    onFocusRequest()
+  }
+
+  // Capturing overlay click — fires before anything underneath it, so the
+  // tap that closes the search is fully consumed here and never reaches a
+  // hub card or any other element behind it. The first outside tap only
+  // ever closes the search; nothing else responds to it.
+  const handleOverlayPointerDown = (e: React.PointerEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    closeSearch()
+  }
+
   useEffect(() => {
-    const onDown = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setFocused(false)
-        if (stuck) setExpanded(false)
-      }
-    }
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { setFocused(false); if (stuck) setExpanded(false) }
+      if (e.key === "Escape") closeSearch()
     }
-    document.addEventListener("mousedown", onDown)
     document.addEventListener("keydown", onKey)
-    return () => {
-      document.removeEventListener("mousedown", onDown)
-      document.removeEventListener("keydown", onKey)
-    }
+    return () => document.removeEventListener("keydown", onKey)
   }, [stuck])
 
   const index = useMemo<SearchableService[]>(() => {
@@ -382,8 +399,16 @@ function ServiceSearchBar({
 
   return (
     <div ref={wrapperRef} className="relative flex justify-center w-full">
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-[890]"
+          style={{ touchAction: "none" }}
+          onPointerDown={handleOverlayPointerDown}
+          aria-hidden="true"
+        />
+      )}
       <div className={cn(
-        "relative transition-all duration-300",
+        "relative transition-all duration-300 z-[900]",
         !stuck && "w-[85%] md:w-1/2",
         stuck && !expanded && "w-[85%] md:w-1/2",
         stuck && expanded && "w-full md:w-1/2",
@@ -396,7 +421,7 @@ function ServiceSearchBar({
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => setFocused(true)}
+          onFocus={handleInputFocus}
           placeholder="Search service"
           className={cn(
             "w-full pl-11 pr-9 py-3 rounded-[14px] text-sm font-medium outline-none transition-all duration-300",
@@ -418,7 +443,7 @@ function ServiceSearchBar({
 
       {showDropdown && (
         <div
-          className="absolute top-full mt-2 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-xl overflow-hidden z-30 animate-in fade-in zoom-in-95 duration-150"
+          className="absolute top-full mt-2 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-xl overflow-hidden z-[895] animate-in fade-in zoom-in-95 duration-150"
           style={{ width: "min(100%, 480px)", left: "50%", transform: "translateX(-50%)" }}
         >
           {results.length > 0 ? (
@@ -487,6 +512,21 @@ export function ServicesPage() {
   const searchWrapRef = useRef<HTMLDivElement>(null)
   const [stuck,       setStuck]     = useState(false)
   const [collapsed,   setCollapsed] = useState(false)
+  const forcedStuckRef = useRef(false)
+
+  const forceStuck = () => {
+    forcedStuckRef.current = true
+    setStuck(true)
+  }
+  const releaseForcedStuck = () => {
+    forcedStuckRef.current = false
+    if (searchWrapRef.current) {
+      const rect = searchWrapRef.current.getBoundingClientRect()
+      const isStuck = rect.top <= 74
+      setStuck(isStuck)
+      setCollapsed(isStuck && window.innerWidth < 768)
+    }
+  }
 
   const activeHubRef       = useRef(activeHub)
   const selectedServiceRef = useRef(selectedService)
@@ -501,15 +541,17 @@ export function ServicesPage() {
   // Sticky detection — the trigger point (when it BECOMES sticky) is still
   // anchored to roughly the navbar's height, but where it then sits once
   // stuck is handled separately below: flush at the very top (top-0),
-  // regardless of expanded/collapsed state.
+  // regardless of expanded/collapsed state. Tapping/focusing the bar also
+  // forces it sticky immediately, regardless of scroll position, so it
+  // never gets left behind mid-page once the keyboard opens.
   useEffect(() => {
     const onScroll = () => {
       if (!searchWrapRef.current) return
       const rect    = searchWrapRef.current.getBoundingClientRect()
       const navH    = 74
       const isStuck = rect.top <= navH
-      setStuck(isStuck)
-      setCollapsed(isStuck && window.innerWidth < 768)
+      setStuck((prev) => (forcedStuckRef.current ? true : isStuck))
+      setCollapsed((prev) => (forcedStuckRef.current ? prev : isStuck && window.innerWidth < 768))
     }
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)
@@ -585,7 +627,7 @@ export function ServicesPage() {
           <div className={cn(
             "transition-all duration-300",
             stuck
-              ? "fixed top-0 left-0 right-0 z-[900] flex justify-center px-4 pt-3 pb-2.5 bg-white dark:bg-zinc-950 border-b border-zinc-100 dark:border-zinc-800 shadow-md"
+              ? "fixed top-0 left-0 right-0 z-[900] flex justify-center px-4 pt-3 pb-2.5"
               : "relative"
           )}>
             <ServiceSearchBar
@@ -593,6 +635,8 @@ export function ServicesPage() {
               stuck={stuck}
               collapsed={collapsed}
               onExpandRequest={() => setCollapsed(false)}
+              onFocusRequest={forceStuck}
+              onReleaseRequest={releaseForcedStuck}
             />
           </div>
         </div>
@@ -647,4 +691,5 @@ export function ServicesPage() {
     </section>
   )
 }
+ 
  
