@@ -1,5 +1,5 @@
 // Animated gradient SVG icon
-export function GradientSearchIcon({ stuck, size = 18 }: { stuck: boolean; size?: number }) {
+function GradientSearchIcon({ stuck, size = 18 }: { stuck: boolean; size?: number }) {
   return (
     <svg
       width={size} height={size}
