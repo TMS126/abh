@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback, useEffect } from "react"
-import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut } from "@phosphor-icons/react"
+import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut, ArrowsLeftRight } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -17,6 +17,9 @@ const ROW_ORDER: { id: HubId; label: string; short: string }[] = [
   { id: "eservice", label: "E-Service Hub", short: "E-Service" },
   { id: "tech",     label: "Tech Hub",      short: "Tech" },
 ]
+
+// Hubs that support before/after
+const BA_HUBS: HubId[] = ["design", "tech"]
 
 // ─── Back-button modal stack ──────────────────────────────────────────────────
 // Three layers: project modal → zoom overlay.
@@ -95,6 +98,91 @@ function SafeImage({ src, alt, accent, fill, sizes, className }: {
 }
 
 // ─── Full-screen zoom overlay ─────────────────────────────────────────────────
+// ─── Before / After drag-reveal slider ───────────────────────────────────────
+function BeforeAfterSlider({ before, after, accent }: { before: string; after: string; accent: string }) {
+  const [pos, setPos]             = useState(50)
+  const containerRef              = useRef<HTMLDivElement>(null)
+  const dragging                  = useRef(false)
+  const [revealed, setRevealed]   = useState(false)
+
+  // Sweep hint on mount
+  useEffect(() => {
+    if (revealed) return
+    let raf: number
+    let start: number | null = null
+    const duration = 900
+    const sweep = (ts: number) => {
+      if (!start) start = ts
+      const p = Math.min((ts - start) / duration, 1)
+      const eased = p < 0.5 ? 2 * p * p : -1 + (4 - 2 * p) * p
+      setPos(50 - Math.sin(eased * Math.PI) * 25)
+      if (p < 1) { raf = requestAnimationFrame(sweep) }
+      else { setPos(50); setRevealed(true) }
+    }
+    const timer = setTimeout(() => { raf = requestAnimationFrame(sweep) }, 600)
+    return () => { clearTimeout(timer); cancelAnimationFrame(raf) }
+  }, [])
+
+  const calcPos = (clientX: number) => {
+    if (!containerRef.current) return
+    const { left, width } = containerRef.current.getBoundingClientRect()
+    setPos(Math.max(2, Math.min(98, ((clientX - left) / width) * 100)))
+  }
+
+  const onMouseDown = (e: React.MouseEvent) => { e.preventDefault(); dragging.current = true }
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => { if (dragging.current) calcPos(e.clientX) }
+    const onUp   = () => { dragging.current = false }
+    window.addEventListener("mousemove", onMove)
+    window.addEventListener("mouseup",   onUp)
+    return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp) }
+  }, [])
+
+  const onTouchStart = (e: React.TouchEvent) => { dragging.current = true; calcPos(e.touches[0].clientX) }
+  const onTouchMove  = (e: React.TouchEvent) => { if (dragging.current) { e.stopPropagation(); calcPos(e.touches[0].clientX) } }
+  const onTouchEnd   = () => { dragging.current = false }
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-full h-full overflow-hidden select-none cursor-col-resize touch-none"
+      onMouseDown={onMouseDown}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
+      {/* AFTER — full base */}
+      <div className="absolute inset-0">
+        <SafeImage src={after} alt="After" accent={accent} fill sizes="55vw" className="object-cover" />
+        <span className="absolute bottom-3 right-3 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full text-white shadow" style={{ backgroundColor: `${accent}cc` }}>After</span>
+      </div>
+
+      {/* BEFORE — clipped left */}
+      <div className="absolute inset-0 overflow-hidden" style={{ width: `${pos}%` }}>
+        <div className="absolute inset-0" style={{ width: `${10000 / pos}%` }}>
+          <SafeImage src={before} alt="Before" accent={accent} fill sizes="55vw" className="object-cover" />
+        </div>
+        <span className="absolute bottom-3 left-3 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-black/50 text-white shadow">Before</span>
+      </div>
+
+      {/* Divider line */}
+      <div className="absolute top-0 bottom-0 w-px pointer-events-none" style={{ left: `${pos}%`, backgroundColor: "rgba(255,255,255,0.9)", boxShadow: "0 0 8px rgba(0,0,0,0.4)" }} />
+
+      {/* Handle */}
+      <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 pointer-events-none" style={{ left: `${pos}%` }}>
+        <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-xl border-2 border-white/80" style={{ backgroundColor: accent }}>
+          <ArrowsLeftRight size={18} weight="bold" className="text-white" />
+        </div>
+        {!revealed && <div className="absolute inset-0 rounded-full animate-ping opacity-40" style={{ backgroundColor: accent }} />}
+      </div>
+
+      <p className="absolute bottom-3 left-1/2 -translate-x-1/2 text-[0.6rem] font-bold text-white/50 uppercase tracking-widest whitespace-nowrap pointer-events-none mt-6">
+        Drag to compare
+      </p>
+    </div>
+  )
+}
+
 function ZoomOverlay({ images, startIndex, onClose }: { images: string[]; startIndex: number; onClose: () => void }) {
   const [idx, setIdx]     = useState(startIndex)
   const touchStartX       = useRef(0)
@@ -174,14 +262,18 @@ function ProjectViewerModal({
 }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
-  const [activeImg, setActiveImg] = useState(0)
+  const [activeImg,  setActiveImg]  = useState(0)
+  const [comparing,  setComparing]  = useState(false)
 
-  useEffect(() => { setActiveImg(0); setZoomIndex(null) }, [project?.id])
+  useEffect(() => { setActiveImg(0); setZoomIndex(null); setComparing(false) }, [project?.id])
 
   if (!project) return null
 
   const accent    = isDark ? HUB_COLORS[project.hub as HubKey].tagTextDark : HUB_COLORS[project.hub as HubKey].tagText
   const allImages = project.images?.length > 0 ? project.images : [project.image]
+  const hasBA     = BA_HUBS.includes(project.hub as HubId) && !!(project as any).beforeImage && !!(project as any).afterImage
+  const beforeImg = (project as any).beforeImage as string | undefined
+  const afterImg  = (project as any).afterImage  as string | undefined
 
   return (
     <div className="fixed inset-0 z-[10200] flex items-end md:items-center justify-center md:p-4 animate-in fade-in duration-300">
@@ -195,24 +287,56 @@ function ProjectViewerModal({
         "animate-in slide-in-from-bottom-4 md:zoom-in-95 duration-500",
       )}>
 
-        {/* Image section */}
-        <div className="h-[40%] md:h-auto md:flex-1 flex flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-900/60">
-          <div className="relative flex-1 overflow-hidden cursor-zoom-in group/img" onClick={() => setZoomIndex(activeImg)}>
-            <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="(max-width: 768px) 100vw, 55vw" className="object-cover transition-opacity duration-300" />
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 pointer-events-none">
-              <div className="bg-black/40 backdrop-blur-sm rounded-full p-2.5"><ArrowsOut size={18} weight="bold" className="text-white" /></div>
+        {/* Image / Compare section */}
+        <div className="h-[40%] md:h-auto md:flex-1 flex flex-col overflow-hidden bg-zinc-900">
+
+          {comparing && hasBA ? (
+            /* ── Before / After slider ── */
+            <div className="relative flex-1">
+              <BeforeAfterSlider before={beforeImg!} after={afterImg!} accent={accent} />
             </div>
-          </div>
-          {allImages.length > 1 && (
-            <div className="flex gap-2 px-3 py-2.5 overflow-x-auto no-scrollbar shrink-0 border-t border-zinc-100 dark:border-zinc-800">
-              {allImages.map((img, idx) => (
-                <button key={idx} onClick={() => setActiveImg(idx)}
-                  className={cn("relative shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-[8px] overflow-hidden border-2 transition-all", activeImg === idx ? "border-opacity-100 scale-105" : "border-transparent opacity-50 hover:opacity-80")}
-                  style={activeImg === idx ? { borderColor: accent } : {}}
-                >
-                  <SafeImage src={img} alt={`Thumbnail ${idx + 1}`} accent={accent} fill sizes="56px" className="object-cover" />
-                </button>
-              ))}
+          ) : (
+            /* ── Normal image viewer ── */
+            <>
+              <div className="relative flex-1 overflow-hidden cursor-zoom-in group/img" onClick={() => setZoomIndex(activeImg)}>
+                <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="(max-width: 768px) 100vw, 55vw" className="object-cover transition-opacity duration-300" />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 pointer-events-none">
+                  <div className="bg-black/40 backdrop-blur-sm rounded-full p-2.5"><ArrowsOut size={18} weight="bold" className="text-white" /></div>
+                </div>
+              </div>
+              {allImages.length > 1 && (
+                <div className="flex gap-2 px-3 py-2.5 overflow-x-auto no-scrollbar shrink-0 border-t border-white/10">
+                  {allImages.map((img, idx) => (
+                    <button key={idx} onClick={() => setActiveImg(idx)}
+                      className={cn("relative shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-[8px] overflow-hidden border-2 transition-all", activeImg === idx ? "scale-105" : "border-transparent opacity-50 hover:opacity-80")}
+                      style={activeImg === idx ? { borderColor: accent } : {}}
+                    >
+                      <SafeImage src={img} alt={`Thumb ${idx + 1}`} accent={accent} fill sizes="56px" className="object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Toggle bar — only for B/A projects */}
+          {hasBA && (
+            <div className="shrink-0 flex border-t border-white/10 bg-zinc-950">
+              <button
+                onClick={() => setComparing(false)}
+                className={cn("flex-1 py-2.5 text-[0.65rem] font-black uppercase tracking-widest transition-all duration-200", !comparing ? "text-white" : "text-white/30 hover:text-white/60")}
+                style={!comparing ? { borderBottom: `2px solid ${accent}` } : {}}
+              >
+                Gallery
+              </button>
+              <button
+                onClick={() => setComparing(true)}
+                className={cn("flex-1 py-2.5 text-[0.65rem] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all duration-200", comparing ? "text-white" : "text-white/30 hover:text-white/60")}
+                style={comparing ? { borderBottom: `2px solid ${accent}` } : {}}
+              >
+                <ArrowsLeftRight size={13} weight="bold" />
+                Before / After
+              </button>
             </div>
           )}
         </div>
@@ -222,7 +346,10 @@ function ProjectViewerModal({
           <div className="flex justify-between items-start mb-6 shrink-0">
             <div>
               <span className="text-[0.65rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>{project.tag}</span>
-              <h2 className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 leading-tight">{project.title}</h2>
+              {hasBA && (
+                <span className="ml-2 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ backgroundColor: `${accent}20`, color: accent }}>Before &amp; After</span>
+              )}
+              <h2 className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 leading-tight mt-1">{project.title}</h2>
             </div>
             <button onClick={onClose} className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 shrink-0 ml-3 transition-colors">
               <X size={18} weight="bold" />
@@ -252,7 +379,7 @@ function ProjectViewerModal({
       </div>
 
       {/* Zoom overlay sits on top — back button closes this first */}
-      {zoomIndex !== null && (
+      {zoomIndex !== null && !comparing && (
         <ZoomOverlay images={allImages} startIndex={zoomIndex} onClose={() => setZoomIndex(null)} />
       )}
     </div>
@@ -299,6 +426,13 @@ function ProjectCarousel({ projects, accent, onSelect }: { projects: ProjectData
               <div className="relative aspect-[16/9] md:aspect-[16/8] bg-zinc-100 dark:bg-zinc-900">
                 <SafeImage src={project.image} alt={project.title} accent={accent} fill sizes="(max-width: 768px) 100vw, 800px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                {/* B/A badge */}
+                {BA_HUBS.includes(project.hub as HubId) && !!(project as any).beforeImage && !!(project as any).afterImage && (
+                  <div className="absolute top-4 right-4 flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.6rem] font-black uppercase tracking-wider text-white shadow-lg" style={{ backgroundColor: `${accent}dd`, backdropFilter: "blur(6px)" }}>
+                    <ArrowsLeftRight size={11} weight="bold" />
+                    Before &amp; After
+                  </div>
+                )}
                 <div className="absolute bottom-5 left-5 right-5">
                   <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/60 mb-1">{project.tag}</p>
                   <h3 className="text-white font-black text-xl md:text-2xl leading-tight">{project.title}</h3>
@@ -430,4 +564,5 @@ export function GalleryPage() {
     </section>
   )
 }
+ 
  
