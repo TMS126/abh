@@ -1016,8 +1016,8 @@ export const PROJECTS = [
     shortDesc: "Side-by-side transformation of a flat, dated logo into a clean modern brand mark.",
     image: "/gallery/design/rebrand-after.jpg",
     images: ["/gallery/design/rebrand-after.jpg", "/gallery/design/rebrand-before.jpg"],
-    beforeImage: "/gallery/design/rebrand-before.jpg",
-    afterImage: "/gallery/design/rebrand-after.jpg",
+    beforeImage: "/Vspsktch.jpeg",
+    afterImage: "/vsp1.jpg",
     clientType: "client" as const,
     clientGoal: "The client had a logo they made years ago in PowerPoint — blocky text, clashing colours, no clear identity. They needed something they could actually be proud to put on a business card and social media.",
     whatWeDid: [
