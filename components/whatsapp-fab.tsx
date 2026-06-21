@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { X, WhatsappLogo, PaperPlaneTilt, CaretDown } from "@phosphor-icons/react"
+import { X, WhatsappLogo, PaperPlaneTilt } from "@phosphor-icons/react"
 import { BIZ, BRAND } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 
@@ -23,9 +23,7 @@ export function WhatsAppFAB() {
   const [hub,     setHub]     = useState("")
   const [note,    setNote]    = useState("")
   const [step,    setStep]    = useState<"form" | "sent">("form")
-  const [hubOpen, setHubOpen] = useState(false)
   const nameRef               = useRef<HTMLInputElement>(null)
-  const hubRef                = useRef<HTMLDivElement>(null)
 
   // Mount delay
   useEffect(() => {
@@ -37,16 +35,6 @@ export function WhatsAppFAB() {
   useEffect(() => {
     if (open && step === "form") setTimeout(() => nameRef.current?.focus(), 200)
   }, [open, step])
-
-  // Close hub dropdown on outside click
-  useEffect(() => {
-    if (!hubOpen) return
-    const fn = (e: MouseEvent) => {
-      if (hubRef.current && !hubRef.current.contains(e.target as Node)) setHubOpen(false)
-    }
-    document.addEventListener("mousedown", fn)
-    return () => document.removeEventListener("mousedown", fn)
-  }, [hubOpen])
 
   // Close on Escape
   useEffect(() => {
@@ -151,7 +139,7 @@ export function WhatsAppFAB() {
 
           {/* Body */}
           {step === "form" ? (
-            <div className="px-5 py-6 flex flex-col gap-4">
+            <div className="px-5 py-6 flex flex-col gap-4 overflow-y-auto overscroll-contain max-h-[70dvh]">
 
               {/* Greeting bubble */}
               <div
@@ -180,44 +168,48 @@ export function WhatsAppFAB() {
                 />
               </div>
 
-              {/* Hub selector */}
+              {/* Hub selector — inline, no floating dropdown */}
               <div>
                 <label className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 block mb-1.5">
                   What do you need help with?
                 </label>
-                <div ref={hubRef} className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setHubOpen((o) => !o)}
-                    className="w-full px-4 py-3 rounded-[14px] border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-[0.84rem] font-semibold text-left flex items-center justify-between gap-2 focus:outline-none focus:border-[#25D366] transition-colors"
-                    style={{ color: selectedHub ? "#25D366" : undefined }}
-                  >
-                    <span className={selectedHub ? "text-zinc-800 dark:text-zinc-200" : "text-zinc-400"}>
-                      {selectedHub ? selectedHub.label : "Select a hub…"}
-                    </span>
-                    <CaretDown
-                      size={14}
-                      weight="bold"
-                      className="text-zinc-400 transition-transform duration-200 shrink-0"
-                      style={{ transform: hubOpen ? "rotate(180deg)" : "none" }}
-                    />
-                  </button>
-
-                  {hubOpen && (
-                    <div className="absolute z-10 mt-1.5 w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-[14px] shadow-xl overflow-hidden">
-                      {HUBS.map((h) => (
-                        <button
-                          key={h.id}
-                          type="button"
-                          onClick={() => { setHub(h.id); setHubOpen(false) }}
-                          className="w-full px-4 py-3 text-left flex flex-col hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors border-b border-zinc-100 dark:border-zinc-700 last:border-0"
+                <div className="flex flex-col gap-2">
+                  {HUBS.map((h) => {
+                    const isSelected = hub === h.id
+                    return (
+                      <button
+                        key={h.id}
+                        type="button"
+                        onClick={() => setHub(h.id)}
+                        className="w-full px-4 py-3 rounded-[14px] border text-left flex items-center gap-3 transition-all duration-150 active:scale-[0.98]"
+                        style={{
+                          borderColor:     isSelected ? "#25D366" : undefined,
+                          backgroundColor: isSelected ? "#25D36610" : undefined,
+                        }}
+                      >
+                        <span
+                          className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors duration-150"
+                          style={{
+                            borderColor:     isSelected ? "#25D366" : "#d1d5db",
+                            backgroundColor: isSelected ? "#25D366" : "transparent",
+                          }}
                         >
-                          <span className="text-[0.82rem] font-black text-zinc-800 dark:text-zinc-200">{h.label}</span>
+                          {isSelected && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-white block" />
+                          )}
+                        </span>
+                        <span className="flex flex-col min-w-0">
+                          <span className={cn(
+                            "text-[0.82rem] font-black leading-tight",
+                            isSelected ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-700 dark:text-zinc-300"
+                          )}>
+                            {h.label}
+                          </span>
                           <span className="text-[0.68rem] font-semibold text-zinc-400 mt-0.5">{h.hint}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                        </span>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
