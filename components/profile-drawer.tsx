@@ -115,16 +115,14 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
         aria-hidden="true"
       />
 
-      {/* Centered card — same language as the rest of the site's modals
-          (HubModal / ServiceDetailModal): a fixed-position flex wrapper that
-          centers a max-width card, leaving visible margin on every side
-          instead of pinning a full-height panel to one edge. The wrapper
-          itself is pointer-events-none so clicks on the empty margin fall
-          through to the backdrop above and close it; only the card itself
+      {/* Bottom sheet — anchored to the bottom edge and sliding up into
+          place, rather than a centered popup. The wrapper itself is
+          pointer-events-none so taps on the empty space above the sheet
+          fall through to the backdrop and close it; only the sheet itself
           is interactive. */}
       <div
         className={cn(
-          "fixed inset-0 z-[10060] flex items-center justify-center p-4 transition-opacity duration-300 pointer-events-none",
+          "fixed inset-0 z-[10060] flex items-end justify-center transition-opacity duration-300 pointer-events-none",
           open ? "opacity-100" : "opacity-0"
         )}
       >
@@ -135,8 +133,8 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
           aria-label={`${BIZ.founder} — founder profile`}
           onClick={(e) => e.stopPropagation()}
           className={cn(
-            "relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-[14px] shadow-2xl overflow-hidden flex flex-col max-h-[88vh] transition-all duration-300 ease-out",
-            open ? "scale-100 pointer-events-auto" : "scale-95 pointer-events-none"
+            "relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-t-[20px] shadow-2xl overflow-hidden flex flex-col max-h-[88vh] transition-transform duration-300 ease-out",
+            open ? "translate-y-0 pointer-events-auto" : "translate-y-full pointer-events-none"
           )}
         >
           <div className="flex-1 overflow-y-auto overscroll-contain">
@@ -179,19 +177,7 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
             </div>
 
             {/* Content */}
-            <div className="px-8 pb-10 flex flex-col items-center text-center -mt-10">
-
-              {/* Identity mark — flat, monochrome initials badge. No emoji,
-                  no photo placeholder; a quiet, professional anchor instead
-                  of a playful face. */}
-              <div
-                className="w-20 h-20 rounded-full flex items-center justify-center shrink-0 border-4 border-white dark:border-zinc-900 shadow-lg overflow-hidden mb-4 bg-zinc-900 dark:bg-zinc-100"
-                aria-hidden="true"
-              >
-                <span className="font-sans font-black text-2xl tracking-tight text-white dark:text-zinc-900 select-none">
-                  {BIZ.founder.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
-                </span>
-              </div>
+            <div className="px-8 pb-10 pt-7 flex flex-col items-center text-center">
 
               {/* Name & role */}
               <h2 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-1">
@@ -257,5 +243,4 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
     </>
   )
 }
- 
  
