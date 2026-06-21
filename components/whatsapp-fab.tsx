@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useRef } from "react"
@@ -31,7 +32,7 @@ const HUBS = [
 export function WhatsAppFAB() {
   const { resolvedTheme }           = useTheme()
   const isDark                       = resolvedTheme === "dark"
-  const [isOpen,  setIsOpen]         = useExclusiveWidget("whatsapp")
+  const [isOpen,  setIsOpen, isOtherOpen] = useExclusiveWidget("whatsapp")
   const [visible, setVisible]        = useState(false)
   const [scrolled, setScrolled]      = useState(false)
   const [name,    setName]           = useState("")
@@ -314,8 +315,8 @@ export function WhatsAppFAB() {
           "flex items-center justify-center",
           "transition-all duration-300 active:scale-95 hover:-translate-y-0.5",
           visible ? "translate-y-0" : "opacity-0 translate-y-4 pointer-events-none",
-          // Fully hide while scrolling — never visible mid-scroll
-          scrolled && !isOpen
+          // Fully hide while scrolling, or while the other widget is open
+          (scrolled && !isOpen) || isOtherOpen
             ? "opacity-0 pointer-events-none"
             : isOpen
               ? "opacity-100"
