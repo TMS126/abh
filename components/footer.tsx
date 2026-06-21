@@ -148,9 +148,14 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
           </p>
           <p className="text-[0.65rem] font-bold text-zinc-400 uppercase tracking-widest">
             Founded by{" "}
+            {/* Same font/weight/size/case as the surrounding text — it
+                inherits all of that from this <p> by not overriding it.
+                Only the color changes, to signal it's a link, plus a
+                detached underline (underline-offset-4) that sits a bit
+                below the text rather than hugging it. */}
             <button
               onClick={onOpenProfile}
-              className="underline underline-offset-2 decoration-dotted font-black text-brand-blue dark:text-brand-light-blue hover:text-brand-blue-dark transition-colors"
+              className="underline underline-offset-4 decoration-dotted text-brand-blue dark:text-brand-light-blue hover:text-brand-blue-dark transition-colors"
             >
               {BIZ.founder}
             </button>
@@ -206,17 +211,22 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
               <BusinessStatusFull />
             </li>
             <li className="pt-2">
+              {/* Text matches the copyright size, as requested — and now the
+                  icon box is scaled down to match the text rather than
+                  staying at the WhatsApp/Email rows' larger size, so the row
+                  reads as one proportioned unit instead of a tiny label
+                  next to an oversized icon. */}
               <button
                 onClick={() => setIsFaqOpen(true)}
-                className="flex items-center gap-4 text-sm font-black transition-colors"
+                className="flex items-center gap-3 text-[0.65rem] font-black transition-colors"
                 style={{ color: BRAND.orange }}
               >
                 <div
-                  className="w-10 h-10 rounded-[14px] flex items-center justify-center border shadow-sm"
+                  className="w-7 h-7 rounded-[10px] flex items-center justify-center border shadow-sm shrink-0"
                   style={{ borderColor: `${BRAND.orange}33`, backgroundColor: `${BRAND.orange}0D` }}
                   aria-hidden="true"
                 >
-                  <Question weight="bold" className="w-5 h-5" />
+                  <Question weight="bold" className="w-3.5 h-3.5" />
                 </div>
                 Help Center (FAQ)
               </button>
@@ -225,7 +235,8 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
         </div>
       </div>
 
-      {/* ── Legal bar ── */}
+      {/* ── Legal bar — copyright, Terms & Policies, and the "Built with"
+          line all already share the same text-[0.65rem] size. ── */}
       <div className="max-w-[1200px] mx-auto border-t border-zinc-100 dark:border-zinc-800 pt-8 px-6 md:px-8 flex flex-col md:flex-row justify-between items-center gap-3">
         <div className="flex flex-col md:flex-row items-center gap-2 md:gap-6">
           <p className="text-[0.65rem] font-medium text-zinc-400">
@@ -363,4 +374,4 @@ export function Footer() {
       <ProfileDrawer open={profile.isActive} onClose={() => profile.close()} />
     </footer>
   )
-} 
+}
