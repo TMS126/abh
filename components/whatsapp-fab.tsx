@@ -1,10 +1,12 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import Image from "next/image"
 import { X, WhatsappLogo, PaperPlaneTilt, Check } from "@phosphor-icons/react"
 import { BIZ, BRAND } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 import { useTheme } from "next-themes"
+import { useExclusiveWidget } from "@/hooks/use-exclusive-widget"
 
 const WA_NUMBER  = "27753338260"
 const GREETING   = "Hi there 👋 Tell us what you need and we'll get back to you right away!"
@@ -29,7 +31,7 @@ const HUBS = [
 export function WhatsAppFAB() {
   const { resolvedTheme }           = useTheme()
   const isDark                       = resolvedTheme === "dark"
-  const [isOpen,  setIsOpen]         = useState(false)
+  const [isOpen,  setIsOpen]         = useExclusiveWidget("whatsapp")
   const [visible, setVisible]        = useState(false)
   const [scrolled, setScrolled]      = useState(false)
   const [name,    setName]           = useState("")
@@ -141,10 +143,10 @@ export function WhatsAppFAB() {
           >
             {/* Avatar */}
             <div
-              className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-black text-white shrink-0"
+              className="relative w-9 h-9 rounded-full overflow-hidden shrink-0 flex items-center justify-center"
               style={{ backgroundColor: BRAND.blue }}
             >
-              TM
+              <Image src="/logo.png" alt="" fill sizes="36px" className="object-contain p-1.5" />
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-sans font-black text-lg leading-tight" style={{ color: accentColor }}>
@@ -308,12 +310,16 @@ export function WhatsAppFAB() {
         onClick={() => setIsOpen(o => !o)}
         aria-label={isOpen ? "Close WhatsApp chat" : `Chat with ${BIZ.name} on WhatsApp`}
         className={cn(
-          "fixed bottom-6 right-6 z-[9992] w-14 h-14 rounded-full text-white shadow-xl",
+          "group fixed bottom-6 right-6 z-[9992] w-14 h-14 rounded-full text-white shadow-xl",
           "flex items-center justify-center",
           "transition-all duration-300 active:scale-95 hover:-translate-y-0.5",
-          visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none",
-          // Fully hide while scrolling — same as calculator FAB
-          scrolled && !isOpen ? "opacity-0 pointer-events-none" : ""
+          visible ? "translate-y-0" : "opacity-0 translate-y-4 pointer-events-none",
+          // Fully hide while scrolling — never visible mid-scroll
+          scrolled && !isOpen
+            ? "opacity-0 pointer-events-none"
+            : isOpen
+              ? "opacity-100"
+              : "opacity-60 hover:opacity-100"
         )}
         style={{ backgroundColor: "#25D366", bottom: "5.5rem" }}
       >
