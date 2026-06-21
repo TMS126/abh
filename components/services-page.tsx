@@ -1,39 +1,17 @@
 "use client"
 
-import { useState, useEffect, useMemo, useRef, type ChangeEvent } from "react"
+import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
 import {
   X, Printer, FileText, PaintBrush, Globe, Desktop,
-  PaperPlaneTilt, Megaphone, Paperclip, CheckCircle, SpinnerGap, WarningCircle,
+  PaperPlaneTilt, Megaphone, MagnifyingGlass,
 } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { BIZ, HUB_COLORS, HubKey } from "@/lib/brand"
 import { HUBS, HubId } from "@/lib/data"
-// import { TestimonialsSection } from "@/components/Testimonials"
 
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
-
-// ─── Client file upload (Cloudinary unsigned upload) ───────────────────────
-// These two values are NOT secret — Cloudinary's unsigned upload preset is
-// designed to be used directly from public, client-side code. Replace the
-// placeholders below with your actual Cloud name and unsigned preset name
-// from your Cloudinary dashboard (Settings → Upload → Upload presets).
-const CLOUDINARY_CLOUD_NAME = "YOUR_CLOUD_NAME"
-const CLOUDINARY_UPLOAD_PRESET = "YOUR_UNSIGNED_PRESET_NAME"
-const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`
-
-// What file types make sense per hub — keeps the picker relevant instead of
-// accepting literally anything everywhere.
-const ACCEPTED_FILE_TYPES: Record<HubId, string> = {
-  print:    ".pdf,.jpg,.jpeg,.png,.doc,.docx",
-  doc:      ".pdf,.jpg,.jpeg,.png,.doc,.docx",
-  design:   ".pdf,.jpg,.jpeg,.png,.ai,.psd,.svg",
-  eservice: ".pdf,.jpg,.jpeg,.png,.doc,.docx",
-  tech:     ".pdf,.jpg,.jpeg,.png,.zip,.doc,.docx",
-}
-
-const MAX_FILE_SIZE_MB = 10
 
 const NOTICE = {
   text: "Add-on services will be available from ",
@@ -55,6 +33,56 @@ function HubIcon({ id, size = 28, color }: { id: HubId; size?: number; color?: s
 interface SelectedService {
   name: string; price: string; hubId: HubId; sectionTitle: string
   requirements: string[]; desc?: string
+}
+
+// ─── Back-button modal stack ──────────────────────────────────────────────────
+// We maintain a simple history stack so the Android/iOS back gesture closes
+// modals one at a time instead of navigating away from the page.
+// Layer order: hub → service.  Pressing back always pops the topmost layer.
+function useModalBackStack(
+  activeHub: HubId | null, setActiveHub: (h: HubId | null) => void,
+  selectedService: SelectedService | null, setSelectedService: (s: SelectedService | null) => void,
+) {
+  // Track what was previously pushed so we don't double-push
+  const prevHub     = useRef<HubId | null>(null)
+  const prevService = useRef<SelectedService | null>(null)
+
+  // Push a history entry whenever a new modal opens
+  useEffect(() => {
+    if (activeHub && activeHub !== prevHub.current) {
+      window.history.pushState({ abModal: "hub" }, "")
+      prevHub.current = activeHub
+    }
+  }, [activeHub])
+
+  useEffect(() => {
+    if (selectedService && selectedService !== prevService.current) {
+      window.history.pushState({ abModal: "service" }, "")
+      prevService.current = selectedService
+    }
+  }, [selectedService])
+
+  // popstate = back button / back gesture
+  useEffect(() => {
+    const onPop = (e: PopStateEvent) => {
+      // Innermost modal closes first
+      if (selectedService) {
+        setSelectedService(null)
+        prevService.current = null
+        // Keep hub entry alive in history so the next back closes the hub
+        window.history.pushState({ abModal: "hub" }, "")
+        return
+      }
+      if (activeHub) {
+        setActiveHub(null)
+        prevHub.current = null
+        return
+      }
+      // Nothing open — let the browser navigate normally
+    }
+    window.addEventListener("popstate", onPop)
+    return () => window.removeEventListener("popstate", onPop)
+  }, [activeHub, selectedService, setActiveHub, setSelectedService])
 }
 
 // ─── Hub Modal ────────────────────────────────────────────────────────────────
@@ -134,7 +162,7 @@ function HubModal({
                     sectionTitle: hub.sections[openSectionIdx!].title,
                     requirements: item.requirements, desc: item.description,
                   })}
-                  className="flex items-center justify-between p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:border-brand-blue transition-all"
+                  className="flex items-center justify-between p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:border-brand-blue transition-all group"
                 >
                   <span className="text-[0.84rem] font-black text-zinc-800 dark:text-zinc-200">{item.name}</span>
                   <span className="text-[0.84rem] font-black" style={{ color: accent }}>{item.price}</span>
@@ -183,62 +211,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   const isDark = resolvedTheme === "dark"
   const [tab, setTab] = useState<Tab>("bring")
 
-  const [file, setFile] = useState<File | null>(null)
-  const [uploadState, setUploadState] = useState<"idle" | "uploading" | "done" | "error">("idle")
-  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null)
-  const [uploadError, setUploadError] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    setTab("bring")
-    setFile(null)
-    setUploadState("idle")
-    setUploadedUrl(null)
-    setUploadError(null)
-  }, [svc?.name])
-
-  const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files?.[0]
-    if (!selected) return
-
-    if (selected.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-      setUploadError(`File is too large — please keep it under ${MAX_FILE_SIZE_MB}MB.`)
-      setUploadState("error")
-      return
-    }
-
-    setFile(selected)
-    setUploadError(null)
-    void uploadFile(selected)
-  }
-
-  const uploadFile = async (selected: File) => {
-    setUploadState("uploading")
-    try {
-      const formData = new FormData()
-      formData.append("file", selected)
-      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET)
-
-      const res = await fetch(CLOUDINARY_UPLOAD_URL, { method: "POST", body: formData })
-      if (!res.ok) throw new Error("Upload failed")
-      const data = await res.json()
-      if (!data.secure_url) throw new Error("No URL returned")
-
-      setUploadedUrl(data.secure_url)
-      setUploadState("done")
-    } catch (err) {
-      setUploadError("Upload failed — please check your connection and try again, or just send the file directly on WhatsApp.")
-      setUploadState("error")
-    }
-  }
-
-  const clearFile = () => {
-    setFile(null)
-    setUploadedUrl(null)
-    setUploadState("idle")
-    setUploadError(null)
-    if (fileInputRef.current) fileInputRef.current.value = ""
-  }
+  useEffect(() => { setTab("bring") }, [svc?.name])
 
   if (!svc) return null
 
@@ -246,9 +219,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   const accent       = isDark ? colors.tagTextDark : colors.tagText
   const hubTitle     = HUBS[svc.hubId]?.title || svc.sectionTitle
   const naturalLabel = naturalServiceLabel(svc.name, svc.sectionTitle)
-  const waMessage    = uploadedUrl
-    ? `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). The price shown is ${svc.price}. Here's my file: ${uploadedUrl}`
-    : `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). The price shown is ${svc.price}. Can you assist?`
+  const waMessage    = `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). The price shown is ${svc.price}. Can you assist?`
 
   const requirements = svc.requirements?.length
     ? svc.requirements
@@ -330,83 +301,18 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             <div className="animate-in fade-in slide-in-from-right-2 duration-200">
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-relaxed">{desc}</p>
               <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-5 leading-relaxed">
-                Have questions? Switch to the{" "}
-                <span className="font-black" style={{ color: accent }}>What to Bring</span> tab or chat with us directly.
+                Have questions? Switch to the <span className="font-black" style={{ color: accent }}>What to Bring</span> tab or chat with us directly.
               </p>
             </div>
           )}
         </div>
 
         <div className="px-6 pb-6 pt-3 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800">
-
-          {/* File upload — optional. Attach a file relevant to this hub
-              (e.g. a document to print, a photo for design work). Once
-              uploaded, a link to it is included automatically in the
-              WhatsApp message below. */}
-          <div className="mb-3">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept={ACCEPTED_FILE_TYPES[svc.hubId]}
-              onChange={handleFileSelect}
-              className="hidden"
-              id={`file-upload-${svc.hubId}-${svc.name}`}
-            />
-
-            {uploadState === "idle" && !file && (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-[14px] font-bold text-sm border-2 border-dashed transition-all active:scale-95"
-                style={{ borderColor: `${accent}40`, color: accent }}
-              >
-                <Paperclip size={18} weight="bold" />
-                Attach a file (optional)
-              </button>
-            )}
-
-            {uploadState === "uploading" && (
-              <div className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-[14px] font-bold text-sm bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400">
-                <SpinnerGap size={18} weight="bold" className="animate-spin" />
-                Uploading {file?.name}…
-              </div>
-            )}
-
-            {uploadState === "done" && file && (
-              <div className="flex items-center justify-between gap-2 w-full px-4 py-3 rounded-[14px] font-bold text-sm bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400">
-                <span className="flex items-center gap-2 min-w-0">
-                  <CheckCircle size={18} weight="fill" className="shrink-0" />
-                  <span className="truncate">{file.name}</span>
-                </span>
-                <button type="button" onClick={clearFile} aria-label="Remove file" className="shrink-0 opacity-70 hover:opacity-100">
-                  <X size={16} weight="bold" />
-                </button>
-              </div>
-            )}
-
-            {uploadState === "error" && (
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2 w-full px-4 py-3 rounded-[14px] font-bold text-sm bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400">
-                  <WarningCircle size={18} weight="fill" className="shrink-0" />
-                  <span className="leading-snug">{uploadError}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="text-xs font-black underline self-start"
-                  style={{ color: accent }}
-                >
-                  Try a different file
-                </button>
-              </div>
-            )}
-          </div>
-
           <a
             href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waMessage)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center w-full px-4 py-4 rounded-[14px] font-black text-sm text-white text-center transition-all active:scale-95 shadow-lg hover:-translate-y-0.5"
+            className="flex items-center justify-center w-full px-4 py-4 rounded-[14px] font-black text-sm leading-snug text-white text-center transition-all active:scale-95 shadow-lg hover:-translate-y-0.5"
             style={{ backgroundColor: "#25D366" }}
           >
             Request {naturalLabel}
@@ -417,86 +323,28 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   )
 }
 
-// ─── Search ───────────────────────────────────────────────────────────────────
+// ─── Floating Pill Search ─────────────────────────────────────────────────────
 interface SearchableService {
   hubId: HubId; sectionTitle: string; name: string
   price: string; description: string; requirements: string[]
 }
 
-function GradientSearchIcon({ stuck, size = 18 }: { stuck: boolean; size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      {stuck && (
-        <defs>
-          <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%"   stopColor="#1E6FA8"><animate attributeName="stop-color" values="#1E6FA8;#6FBF1A;#F4A261;#1E6FA8" dur="3s" repeatCount="indefinite" /></stop>
-            <stop offset="50%"  stopColor="#6FBF1A"><animate attributeName="stop-color" values="#6FBF1A;#F4A261;#1E6FA8;#6FBF1A" dur="3s" repeatCount="indefinite" /></stop>
-            <stop offset="100%" stopColor="#F4A261"><animate attributeName="stop-color" values="#F4A261;#1E6FA8;#6FBF1A;#F4A261" dur="3s" repeatCount="indefinite" /></stop>
-          </linearGradient>
-        </defs>
-      )}
-      <circle cx="7.5" cy="7.5" r="5" stroke={stuck ? "url(#sg)" : "currentColor"} strokeWidth="2" strokeLinecap="round" />
-      <line x1="11.5" y1="11.5" x2="16" y2="16" stroke={stuck ? "url(#sg)" : "currentColor"} strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function ServiceSearchBar({
-  onSelect, stuck, collapsed, onExpandRequest, onFocusRequest, onReleaseRequest,
+function FloatingSearchPill({
+  onSelect,
+  visible,
 }: {
   onSelect: (svc: SelectedService) => void
-  stuck: boolean
-  collapsed: boolean
-  onExpandRequest: () => void
-  onFocusRequest: () => void
-  onReleaseRequest: () => void
+  visible: boolean
 }) {
   const { resolvedTheme } = useTheme()
-  const isDark     = resolvedTheme === "dark"
-  const [query,    setQuery]    = useState("")
-  const [focused,  setFocused]  = useState(false)
-  const [expanded, setExpanded] = useState(false)
-  const wrapperRef = useRef<HTMLDivElement>(null)
-  const inputRef   = useRef<HTMLInputElement>(null)
+  const isDark    = resolvedTheme === "dark"
+  const [open,    setOpen]    = useState(false)
+  const [query,   setQuery]   = useState("")
+  const inputRef  = useRef<HTMLInputElement>(null)
+  const pillRef   = useRef<HTMLDivElement>(null)
 
-  const isOpen = focused || expanded
-
-  const closeSearch = () => {
-    setFocused(false)
-    if (stuck) setExpanded(false)
-    onReleaseRequest()
-  }
-
-  const handleIconClick = () => {
-    setExpanded(true)
-    setFocused(true)
-    onExpandRequest()
-    onFocusRequest()
-    setTimeout(() => inputRef.current?.focus(), 50)
-  }
-
-  const handleInputFocus = () => {
-    setFocused(true)
-    onFocusRequest()
-  }
-
-  // Capturing overlay click — fires before anything underneath it, so the
-  // tap that closes the search is fully consumed here and never reaches a
-  // hub card or any other element behind it. The first outside tap only
-  // ever closes the search; nothing else responds to it.
-  const handleOverlayPointerDown = (e: React.PointerEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    closeSearch()
-  }
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeSearch()
-    }
-    document.addEventListener("keydown", onKey)
-    return () => document.removeEventListener("keydown", onKey)
-  }, [stuck])
+  // Hub accent colours for the animated ring
+  const ringColors = ["#1E6FA8", "#3E6B0E", "#B86F34", "#1E6FA8", "#2C3E50"]
 
   const index = useMemo<SearchableService[]>(() => {
     const all: SearchableService[] = []
@@ -513,81 +361,122 @@ function ServiceSearchBar({
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return []
-    return index.filter((s) => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)).slice(0, 8)
+    return index.filter(s => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)).slice(0, 8)
   }, [query, index])
+
+  const openSearch = () => {
+    setOpen(true)
+    setTimeout(() => inputRef.current?.focus(), 60)
+  }
+
+  const closeSearch = useCallback(() => {
+    setOpen(false)
+    setQuery("")
+  }, [])
 
   const pick = (s: SearchableService) => {
     onSelect({ name: s.name, price: s.price, hubId: s.hubId, sectionTitle: s.sectionTitle, requirements: s.requirements, desc: s.description })
-    setQuery("")
-    setFocused(false)
-    setExpanded(false)
+    closeSearch()
   }
 
-  const showDropdown = focused && query.trim().length > 0
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (pillRef.current && !pillRef.current.contains(e.target as Node)) closeSearch()
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [open, closeSearch])
 
-  if (stuck && collapsed && !expanded) {
-    return (
-      <div className="flex justify-center">
-        <button
-          onClick={handleIconClick}
-          className="w-11 h-11 rounded-full flex items-center justify-center bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-md transition-all active:scale-95 hover:scale-105"
-          aria-label="Search services"
-        >
-          <GradientSearchIcon stuck={true} size={22} />
-        </button>
-      </div>
-    )
-  }
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") closeSearch() }
+    document.addEventListener("keydown", handler)
+    return () => document.removeEventListener("keydown", handler)
+  }, [closeSearch])
+
+  const showResults = open && query.trim().length > 0
 
   return (
-    <div ref={wrapperRef} className="relative flex justify-center w-full">
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-[890]"
-          style={{ touchAction: "none" }}
-          onPointerDown={handleOverlayPointerDown}
-          aria-hidden="true"
-        />
+    <div
+      className={cn(
+        "fixed top-4 left-1/2 -translate-x-1/2 z-[950] transition-all duration-500",
+        visible ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 -translate-y-3 pointer-events-none"
       )}
-      <div className={cn(
-        "relative transition-all duration-300 z-[900]",
-        !stuck && "w-[85%] md:w-1/2",
-        stuck && !expanded && "w-[85%] md:w-1/2",
-        stuck && expanded && "w-full md:w-1/2",
-      )}>
-        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none z-10 text-zinc-400 dark:text-zinc-500">
-          <GradientSearchIcon stuck={stuck} size={22} />
-        </div>
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onFocus={handleInputFocus}
-          placeholder="Search service"
+      ref={pillRef}
+    >
+      {/* Animated glow ring — cheap CSS animation, no canvas */}
+      <div
+        className="absolute inset-0 rounded-full opacity-40 blur-md transition-opacity duration-300"
+        style={{
+          background: `conic-gradient(${ringColors.join(", ")}, ${ringColors[0]})`,
+          animation: open ? "spin 4s linear infinite" : "none",
+          opacity: open ? 0.35 : 0,
+        }}
+      />
+
+      <div
+        className={cn(
+          "relative flex items-center gap-2 transition-all duration-300 ease-out",
+          "bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl",
+          "border border-white/60 dark:border-white/10",
+          "shadow-[0_8px_32px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,0.4)]",
+          open
+            ? "rounded-[18px] px-4 py-2.5 w-[min(92vw,420px)]"
+            : "rounded-full px-5 py-2.5 w-auto cursor-pointer hover:scale-105 active:scale-95"
+        )}
+        onClick={!open ? openSearch : undefined}
+      >
+        {/* Icon */}
+        <MagnifyingGlass
+          size={open ? 18 : 16}
+          weight="bold"
           className={cn(
-            "w-full pl-11 pr-9 py-3 rounded-[14px] text-sm font-medium outline-none transition-all duration-300",
-            "bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400",
-            stuck
-              ? "border border-zinc-200 dark:border-zinc-700 shadow-lg focus:border-brand-blue"
-              : "border border-zinc-200 dark:border-zinc-800 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] focus:border-brand-blue"
+            "shrink-0 transition-colors duration-200",
+            open ? "text-zinc-400" : "text-zinc-500 dark:text-zinc-400"
           )}
         />
-        {query && (
-          <button
-            onClick={() => setQuery("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600"
-          >
-            <X size={11} weight="bold" />
-          </button>
+
+        {/* Collapsed label */}
+        {!open && (
+          <span className="text-xs font-black text-zinc-600 dark:text-zinc-300 tracking-wide whitespace-nowrap">
+            Search services
+          </span>
+        )}
+
+        {/* Expanded input */}
+        {open && (
+          <>
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="e.g. CV, laminating, SASSA..."
+              className="flex-1 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none min-w-0"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                className="w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 shrink-0"
+              >
+                <X size={11} weight="bold" />
+              </button>
+            )}
+            <button
+              onClick={closeSearch}
+              className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 shrink-0 ml-0.5 transition-colors"
+            >
+              <X size={14} weight="bold" />
+            </button>
+          </>
         )}
       </div>
 
-      {showDropdown && (
-        <div
-          className="absolute top-full mt-2 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-xl overflow-hidden z-[895] animate-in fade-in zoom-in-95 duration-150"
-          style={{ width: "min(100%, 480px)", left: "50%", transform: "translateX(-50%)" }}
-        >
+      {/* Dropdown results */}
+      {showResults && (
+        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-[min(92vw,420px)] bg-white dark:bg-zinc-950 rounded-[16px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
           {results.length > 0 ? (
             <div className="max-h-[320px] overflow-y-auto p-2">
               {results.map((s, idx) => {
@@ -614,11 +503,15 @@ function ServiceSearchBar({
           ) : (
             <div className="p-5 text-center">
               <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">No services found</p>
-              <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-1">Try a different word or WhatsApp us directly.</p>
+              <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-1">Try a different word, or WhatsApp us and ask directly.</p>
             </div>
           )}
         </div>
       )}
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   )
 }
@@ -651,86 +544,31 @@ export function ServicesPage() {
   const [activeHub,       setActiveHub]       = useState<HubId | null>(null)
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
 
-  const searchWrapRef = useRef<HTMLDivElement>(null)
-  const [stuck,       setStuck]     = useState(false)
-  const [collapsed,   setCollapsed] = useState(false)
-  const forcedStuckRef = useRef(false)
+  // Floating pill appears after user scrolls past the inline search bar
+  const inlineSearchRef  = useRef<HTMLDivElement>(null)
+  const [pillVisible, setPillVisible] = useState(false)
 
-  const forceStuck = () => {
-    forcedStuckRef.current = true
-    setStuck(true)
-  }
-  const releaseForcedStuck = () => {
-    forcedStuckRef.current = false
-    if (searchWrapRef.current) {
-      const rect = searchWrapRef.current.getBoundingClientRect()
-      const isStuck = rect.top <= 74
-      setStuck(isStuck)
-      setCollapsed(isStuck && window.innerWidth < 768)
-    }
-  }
-
-  const activeHubRef       = useRef(activeHub)
-  const selectedServiceRef = useRef(selectedService)
-  useEffect(() => { activeHubRef.current       = activeHub       }, [activeHub])
-  useEffect(() => { selectedServiceRef.current = selectedService }, [selectedService])
-
-  useEffect(() => {
-    const hubParam = searchParams.get("hub")
-    if (hubParam && HUB_ORDER.includes(hubParam as HubId)) setActiveHub(hubParam as HubId)
-  }, [searchParams])
-
-  // Sticky detection — the trigger point (when it BECOMES sticky) is still
-  // anchored to roughly the navbar's height, but where it then sits once
-  // stuck is handled separately below: flush at the very top (top-0),
-  // regardless of expanded/collapsed state. Tapping/focusing the bar also
-  // forces it sticky immediately, regardless of scroll position, so it
-  // never gets left behind mid-page once the keyboard opens.
   useEffect(() => {
     const onScroll = () => {
-      if (!searchWrapRef.current) return
-      const rect    = searchWrapRef.current.getBoundingClientRect()
-      const navH    = 74
-      const isStuck = rect.top <= navH
-      setStuck((prev) => (forcedStuckRef.current ? true : isStuck))
-      setCollapsed((prev) => (forcedStuckRef.current ? prev : isStuck && window.innerWidth < 768))
+      if (!inlineSearchRef.current) return
+      const rect = inlineSearchRef.current.getBoundingClientRect()
+      // Show pill once the inline search has scrolled out of view (top < 0)
+      setPillVisible(rect.bottom < 0)
     }
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
-  // Back button — push baseline on mount
+  // Deep-link via ?hub=
   useEffect(() => {
-    window.history.pushState({ modal: null }, "")
-  }, [])
+    const hubParam = searchParams.get("hub")
+    if (hubParam && HUB_ORDER.includes(hubParam as HubId)) setActiveHub(hubParam as HubId)
+  }, [searchParams])
 
-  // Push history entry on modal open
-  useEffect(() => {
-    if (selectedService) {
-      window.history.pushState({ modal: "service" }, "")
-    } else if (activeHub) {
-      window.history.pushState({ modal: "hub" }, "")
-    }
-  }, [selectedService, activeHub])
+  // Back button closes modals one at a time
+  useModalBackStack(activeHub, setActiveHub, selectedService, setSelectedService)
 
-  // Intercept back — close innermost first
-  useEffect(() => {
-    const onPopState = () => {
-      if (selectedServiceRef.current) {
-        setSelectedService(null)
-        window.history.pushState({ modal: "hub" }, "")
-      } else if (activeHubRef.current) {
-        setActiveHub(null)
-        window.history.pushState({ modal: null }, "")
-      } else {
-        window.history.pushState({ modal: null }, "")
-      }
-    }
-    window.addEventListener("popstate", onPopState)
-    return () => window.removeEventListener("popstate", onPopState)
-  }, [])
-
-  // Scroll lock
+  // Scroll lock while any modal is open
   useEffect(() => {
     const isOpen = !!(activeHub || selectedService)
     if (!isOpen) return
@@ -746,8 +584,10 @@ export function ServicesPage() {
 
   return (
     <section className="min-h-screen bg-background pt-[calc(var(--nav-h)+2rem)] pb-24 px-4 md:px-8">
-      <div className="max-w-[1300px] mx-auto">
+      {/* Floating search pill — slides in once inline search leaves viewport */}
+      <FloatingSearchPill onSelect={setSelectedService} visible={pillVisible} />
 
+      <div className="max-w-[1300px] mx-auto">
         <div className="text-center mb-10">
           <h1 className="abh-page-title mb-4">Our Service Hubs</h1>
           <p className="abh-tagline max-w-2xl mx-auto">
@@ -756,31 +596,9 @@ export function ServicesPage() {
           <div className="abh-divider" />
         </div>
 
-        {/* Search bar — once stuck, it pins flush to the very top of the
-            viewport (top-0) with a fully opaque background and a stacking
-            order above the navbar. That's the actual fix: instead of
-            sitting just below the logo and colliding with it, the bar now
-            owns the top strip outright and visually covers the logo rather
-            than fighting it for space — whether it's the collapsed icon or
-            the expanded input, since only the inner content changes, not
-            this outer fixed positioning. */}
-        <div ref={searchWrapRef} className="mb-8">
-          {stuck && <div className="h-[52px]" />}
-          <div className={cn(
-            "transition-all duration-300",
-            stuck
-              ? "fixed top-0 left-0 right-0 z-[900] flex justify-center px-4 pt-3 pb-2.5"
-              : "relative"
-          )}>
-            <ServiceSearchBar
-              onSelect={setSelectedService}
-              stuck={stuck}
-              collapsed={collapsed}
-              onExpandRequest={() => setCollapsed(false)}
-              onFocusRequest={forceStuck}
-              onReleaseRequest={releaseForcedStuck}
-            />
-          </div>
+        {/* Inline search — standard position, becomes the trigger point for the pill */}
+        <div ref={inlineSearchRef} className="max-w-xl mx-auto mb-10">
+          <InlineSearchBar onSelect={setSelectedService} />
         </div>
 
         <NoticeBanner />
@@ -819,19 +637,97 @@ export function ServicesPage() {
         </div>
       </div>
 
-      {/* <TestimonialsSection /> */}
-
-      <HubModal
-        hubId={activeHub}
-        onClose={() => setActiveHub(null)}
-        onSelectService={setSelectedService}
-      />
-      <ServiceDetailModal
-        svc={selectedService}
-        onClose={() => setSelectedService(null)}
-      />
+      <HubModal hubId={activeHub} onClose={() => setActiveHub(null)} onSelectService={setSelectedService} />
+      <ServiceDetailModal svc={selectedService} onClose={() => setSelectedService(null)} />
     </section>
   )
 }
- 
+
+// ─── Inline search bar (top of page, standard position) ──────────────────────
+function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => void }) {
+  const { resolvedTheme } = useTheme()
+  const isDark    = resolvedTheme === "dark"
+  const [query,   setQuery]   = useState("")
+  const [focused, setFocused] = useState(false)
+  const wrapRef   = useRef<HTMLDivElement>(null)
+
+  const index = useMemo<SearchableService[]>(() => {
+    const all: SearchableService[] = []
+    HUB_ORDER.forEach((hubId) => {
+      HUBS[hubId].sections.forEach((section) => {
+        section.items.forEach((item) => {
+          all.push({ hubId, sectionTitle: section.title, name: item.name, price: item.price, description: item.description, requirements: item.requirements })
+        })
+      })
+    })
+    return all
+  }, [])
+
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return []
+    return index.filter(s => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)).slice(0, 8)
+  }, [query, index])
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setFocused(false)
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [])
+
+  const pick = (s: SearchableService) => {
+    onSelect({ name: s.name, price: s.price, hubId: s.hubId, sectionTitle: s.sectionTitle, requirements: s.requirements, desc: s.description })
+    setQuery(""); setFocused(false)
+  }
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <MagnifyingGlass size={18} weight="bold" className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+      <input
+        type="text"
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+        onFocus={() => setFocused(true)}
+        placeholder='Search services — e.g. "CV", "laminating", "SASSA"'
+        className="w-full pl-11 pr-10 py-3.5 rounded-[14px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none focus:border-brand-blue transition-colors"
+      />
+      {query && (
+        <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600">
+          <X size={12} weight="bold" />
+        </button>
+      )}
+      {focused && query.trim().length > 0 && (
+        <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-xl overflow-hidden z-30 animate-in fade-in zoom-in-95 duration-150">
+          {results.length > 0 ? (
+            <div className="max-h-[320px] overflow-y-auto p-2">
+              {results.map((s, idx) => {
+                const colors = HUB_COLORS[s.hubId as HubKey]
+                const accent = isDark ? colors.tagTextDark : colors.tagText
+                return (
+                  <button key={`${s.hubId}-${s.name}-${idx}`} onClick={() => pick(s)} className="w-full flex items-center gap-3 p-3 rounded-[10px] hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left">
+                    <div className="w-9 h-9 rounded-[10px] flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${accent}15`, color: accent }}>
+                      <HubIcon id={s.hubId} size={18} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{s.name}</p>
+                      <p className="text-[0.65rem] font-bold uppercase tracking-wider text-zinc-400 truncate">{s.sectionTitle} · {HUBS[s.hubId].title}</p>
+                    </div>
+                    <span className="text-xs font-black flex-shrink-0" style={{ color: accent }}>{s.price}</span>
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="p-5 text-center">
+              <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">No services found</p>
+              <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-1">Try a different word, or WhatsApp us and ask directly.</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
  
