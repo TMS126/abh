@@ -805,7 +805,7 @@ export const PROJECTS = [
     tag: "Design Hub",
     shortDesc: "Branding package for a local shuttle service — flyer, logo, and business card.",
     image: "/Sol.jpg",
-    images: ["/Sol.jpg", "/gallery/design/logo.jpg", "/gallery/design/business-card.jpg"],
+    images: ["/Sol.jpg", "/Sol2.jpg"],
     clientGoal: "Sol needed a complete brand package for his shuttle service — a flyer to share rates, a logo for brand identity, and business cards for customers.",
     whatWeDid: [
       "Designed full pricing layout (Day vs Evening rates)",
@@ -844,10 +844,10 @@ export const PROJECTS = [
     tag: "Print Hub",
     shortDesc: "High-quality A4 colour flyers printed and prepared for local business distribution.",
     image: "/gallery/print/flyers.jpg",
-    images: ["/gallery/print/flyers.jpg", "/gallery/print/printer.jpg", "/gallery/print/laminated.jpg"],
+    images: [ "/gallery/print/printer.jpg", "/gallery/print/laminated.jpg"],
     clientGoal: "Client needed high-quality printed flyers to promote their business.",
     whatWeDid: [
-      "Printed A4 colour flyers",
+    
       "Adjusted layout for proper print output",
       "Ensured alignment and clean margins",
     ],
@@ -889,26 +889,6 @@ export const PROJECTS = [
     tools: ["System cleanup tools", "Software installation"],
     result: "Laptop became faster and ready for daily use.",
   },
-  {
-    id: "event-invitation-design",
-    hub: "design",
-    title: "Birthday Celebration Video Invitation",
-    tag: "Design Hub",
-    shortDesc: "Animated video invitation designed for a 30th birthday celebration — themed, musical, and WhatsApp-ready.",
-    image: "/gallery/design/invite-thumb.jpg",
-    images: ["/gallery/design/invite-thumb.jpg", "/gallery/design/invite-frame1.jpg", "/gallery/design/invite-frame2.jpg"],
-    clientGoal: "The client wanted a standout birthday invitation to share on WhatsApp and Instagram that matched their gold-and-black party theme and felt personal — not like a generic template.",
-    whatWeDid: [
-      "Designed a custom gold-and-black colour palette matching the event décor",
-      "Animated text reveals for name, date, time, and venue details",
-      "Added smooth transitions between invitation sections",
-      "Sourced and synced background music to the animation timing",
-      "Sized and exported for WhatsApp sharing and Instagram Stories",
-      "Delivered in MP4 format — ready to forward directly from any phone",
-    ],
-    tools: ["Motion graphics", "Custom typography", "WhatsApp + Story format export"],
-    result: "The client shared the invitation the same evening. Guests responded immediately — several asked who made it. The host used it for both WhatsApp invites and an Instagram Story countdown.",
-  },
   // ─── VASEP ──────────────────────────────────────────────────────────────────
   {
     id: "vasep-branding",
@@ -917,7 +897,7 @@ export const PROJECTS = [
     tag: "Design Hub",
     shortDesc: "Full logo and brand identity for a local arts empowerment organisation.",
     image: "/vsp1.jpg",
-    images: ["/vsp1.jpg", "/Vspm.jpg", "/Vspsktch.jpeg"],
+    images: ["/Vspsktch.jpeg", "/vsp1.jpg", "/Vspm.jpg" ],
     clientType: "client" as const,
     clientGoal: "VASEP needed a logo that shows what they do — arts, skills, and community. Something colourful, meaningful, and strong enough to put on merch.",
     whatWeDid: [
@@ -929,7 +909,7 @@ export const PROJECTS = [
       "Mocked up the logo on a t-shirt to show how it looks on merch",
     ],
     tools: ["Adobe Illustrator", "Vector logo design", "T-shirt mockup"],
-    result: "The client had a full logo ready for print, digital, and clothing. Colourful, clean, and instantly recognisable as an arts organisation.",
+    result: "The client had a full logo ready for print, digital. Colourful, clean, and instantly recognisable as an arts organisation.",
   },
 
   // ─── Pure African Herbs ───────────────────────────────────────────────────────
@@ -940,7 +920,7 @@ export const PROJECTS = [
     tag: "Design Hub",
     shortDesc: "Health services flyer and A-board poster for a local herbal specialist in Bothaville.",
     image: "/Aphp2.png",
-    images: ["/Aphp2.png", "/Aphp1.png"],
+    images: ["/Aphp1.png","/Aphp2.jpg", "/Ahm.png" ],
     clientType: "client" as const,
     clientGoal: "The client needed a professional flyer for their herbal health practice — something that lists conditions they treat, contact details, pricing, and hours. It also needed to work as a big A-board outside the shop.",
     whatWeDid: [
@@ -1006,7 +986,7 @@ export const PROJECTS = [
     tag: "Design Hub",
     shortDesc: "Full corporate brand identity concept for a drone tech company. Portfolio practice project.",
     image: "/Itp.jpg",
-    images: ["/Itp.jpg", "/Itw.jpg", "/Itm2.jpg", "/Itpc.jpg"],
+    images: ["/Itpc.jpg", "/Itp.jpg", "/Itw.jpg", "/Itm2.jpg"],
     clientType: "practice" as const,
     clientGoal: "Explore what a premium tech brand identity looks like — logo design, mockups on buildings and office spaces, business card design, and a brand showcase layout.",
     whatWeDid: [
