@@ -925,7 +925,7 @@ export const PROJECTS = [
     tag: "Design Hub",
     shortDesc: "Health services flyer and A-board poster for a local herbal specialist in Bothaville.",
     image: "/Ahm.jpg",
-    images: ["/Aphp1.png","/Aphp2.jpg", "/Ahm.jpg" ],
+    images: ["/Aphp1.png","/Aphp2.png", "/Ahm.jpg" ],
     clientType: "client" as const,
     clientGoal: "The client needed a professional flyer for their herbal health practice — something that lists conditions they treat, contact details, pricing, and hours. It also needed to work as a big A-board outside the shop.",
     whatWeDid: [
