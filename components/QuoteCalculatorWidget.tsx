@@ -6,6 +6,7 @@ import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey, BIZ, waLink } from "@/lib/brand"
 import { HUBS, HubId } from "@/lib/data"
+import { useExclusiveWidget } from "@/hooks/use-exclusive-widget"
 
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
@@ -92,7 +93,7 @@ const GLASS = {
 
 export function QuoteCalculatorWidget() {
   const { resolvedTheme } = useTheme(); const isDark = resolvedTheme === "dark"
-  const [isOpen, setIsOpen]     = useState(false)
+  const [isOpen, setIsOpen]     = useExclusiveWidget("calculator")
   const [openHub, setOpenHub]   = useState<HubId | null>(null)
   const [openSections, setOpenSections] = useState<Record<HubId, number | null>>({} as Record<HubId, number | null>)
   const [cart, setCart]         = useState<CartItem[]>([])
@@ -194,12 +195,16 @@ export function QuoteCalculatorWidget() {
         onClick={() => setIsOpen(o => !o)}
         className={cn(
           "fixed bottom-6 right-6 z-[9992] w-14 h-14 rounded-full bg-brand-blue text-white shadow-xl flex items-center justify-center active:scale-95 transition-all duration-300 hover:-translate-y-0.5",
-          scrolled && !isOpen ? "opacity-40" : "opacity-100"
+          scrolled && !isOpen
+            ? "opacity-0 pointer-events-none"
+            : isOpen
+              ? "opacity-100"
+              : "opacity-60 hover:opacity-100"
         )}
-        aria-label="Open quotation calculator"
+        aria-label={isOpen ? "Close quotation calculator" : "Open quotation calculator"}
       >
-        <Calculator size={26} weight="fill" />
-        {itemCount > 0 && (
+        {isOpen ? <X size={22} weight="bold" /> : <Calculator size={26} weight="fill" />}
+        {!isOpen && itemCount > 0 && (
           <span className="absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 rounded-full bg-brand-orange text-white text-[0.65rem] font-black flex items-center justify-center border-2 border-white dark:border-zinc-950">
             {itemCount}
           </span>
