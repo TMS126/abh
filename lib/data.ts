@@ -909,6 +909,118 @@ export const PROJECTS = [
     tools: ["Motion graphics", "Custom typography", "WhatsApp + Story format export"],
     result: "The client shared the invitation the same evening. Guests responded immediately — several asked who made it. The host used it for both WhatsApp invites and an Instagram Story countdown.",
   },
+  // ─── VASEP ──────────────────────────────────────────────────────────────────
+  {
+    id: "vasep-branding",
+    hub: "design",
+    title: "VASEP — Visual Arts Skills Empowerment Projects",
+    tag: "Design Hub",
+    shortDesc: "Full logo and brand identity for a local arts empowerment organisation.",
+    image: "/vsp1.jpg",
+    images: ["/vsp1.jpg", "/Vspm.jpg", "/Vspsktch.jpeg"],
+    clientType: "client" as const,
+    clientGoal: "VASEP needed a logo that shows what they do — arts, skills, and community. Something colourful, meaningful, and strong enough to put on merch.",
+    whatWeDid: [
+      "Designed a custom logo using a paint palette as the base symbol",
+      "Used multiple colours to represent different art disciplines and people",
+      "Added paint brushes crossing the palette for that creative feel",
+      "Placed a paint bottle on top as the hero element",
+      "Set VASEP in bold uppercase with full name underneath",
+      "Mocked up the logo on a t-shirt to show how it looks on merch",
+    ],
+    tools: ["Adobe Illustrator", "Vector logo design", "T-shirt mockup"],
+    result: "The client had a full logo ready for print, digital, and clothing. Colourful, clean, and instantly recognisable as an arts organisation.",
+  },
+
+  // ─── Pure African Herbs ───────────────────────────────────────────────────────
+  {
+    id: "pure-african-herbs",
+    hub: "design",
+    title: "Pure African Herbs — Flyer & A-Board Design",
+    tag: "Design Hub",
+    shortDesc: "Health services flyer and A-board poster for a local herbal specialist in Bothaville.",
+    image: "/Aphp2.png",
+    images: ["/Aphp2.png", "/Aphp1.png"],
+    clientType: "client" as const,
+    clientGoal: "The client needed a professional flyer for their herbal health practice — something that lists conditions they treat, contact details, pricing, and hours. It also needed to work as a big A-board outside the shop.",
+    whatWeDid: [
+      "Designed a green health-themed layout matching the herbal brand",
+      "Organised conditions treated into a clean bullet list",
+      "Added pricing, specialist name, and contact numbers clearly",
+      "Included shop address and trading hours at the bottom",
+      "Created an A-board version for outdoor display",
+      "Added organic and no-side-effects trust badges",
+    ],
+    tools: ["Adobe Illustrator", "Print-ready A4 and A-board format"],
+    result: "Client had a professional flyer and A-board ready to attract walk-ins and answer common questions before clients even step inside.",
+  },
+
+  // ─── Apexbytes Business Card ──────────────────────────────────────────────────
+  {
+    id: "apexbytes-business-card",
+    hub: "design",
+    title: "Apexbytes Business Card Design",
+    tag: "Design Hub",
+    shortDesc: "Double-sided business card for the Apexbytes brand — clean, minimal, and professional.",
+    image: "/abbc.jpg",
+    images: ["/abbc.jpg"],
+    clientType: "client" as const,
+    clientGoal: "Design a business card that looks clean and professional — something that represents the Apexbytes brand without being too busy.",
+    whatWeDid: [
+      "Designed front with brand logo, founder name, and role",
+      "Back features the brand icon large on a dark navy background in orange",
+      "Kept everything minimal — no clutter, just the essentials",
+      "Double-sided layout with strong contrast between front and back",
+    ],
+    tools: ["Adobe Illustrator", "Double-sided business card format"],
+    result: "A sharp, professional card that stands out and represents the brand well.",
+  },
+
+  // ─── Wedding Party Programme ──────────────────────────────────────────────────
+  {
+    id: "wedding-party-programme",
+    hub: "design",
+    title: "Wedding Party Programme",
+    tag: "Design Hub",
+    shortDesc: "Printed wedding party programme with roles, names, and a celebratory layout.",
+    image: "/Wp.png",
+    images: ["/Wp.png"],
+    clientType: "client" as const,
+    clientGoal: "The client needed a clean printed programme listing everyone's role at the wedding reception — from MC to cake cutting.",
+    whatWeDid: [
+      "Designed a blue and white wedding layout with decorative elements",
+      "Listed all roles on the left with matching names on the right",
+      "Added floral and ribbon decorations to keep the celebratory feel",
+      "Used a dividing gold line between roles and names for readability",
+      "Made it print-ready at A4 size",
+    ],
+    tools: ["Adobe Illustrator", "Print-ready A4 layout"],
+    result: "The client received a beautiful, easy-to-read programme that felt personal and matched the wedding's colours.",
+  },
+
+  // ─── Illusion Technologies ────────────────────────────────────────────────────
+  {
+    id: "illusion-technologies",
+    hub: "design",
+    title: "Illusion Technologies — Brand Identity",
+    tag: "Design Hub",
+    shortDesc: "Full corporate brand identity concept for a drone tech company. Portfolio practice project.",
+    image: "/Itp.jpg",
+    images: ["/Itp.jpg", "/Itw.jpg", "/Itm2.jpg", "/Itpc.jpg"],
+    clientType: "practice" as const,
+    clientGoal: "Explore what a premium tech brand identity looks like — logo design, mockups on buildings and office spaces, business card design, and a brand showcase layout.",
+    whatWeDid: [
+      "Designed the Illusion Technologies wordmark with a custom S-letter detail",
+      "Added a small blue accent on the S to break the dark monotone",
+      "Created logo variants on white and dark backgrounds",
+      "Mocked up the logo on a glass office building exterior",
+      "Mocked up the brand in an office interior setting",
+      "Designed matching business cards on dark textured stock",
+      "Built a full brand showcase poster layout",
+    ],
+    tools: ["Adobe Illustrator", "Photoshop mockups", "Brand presentation layout"],
+    result: "A complete brand identity concept showing how Illusion Technologies would look across digital and physical touchpoints. Done as a portfolio piece to demonstrate premium corporate branding skills.",
+  },
 ] as const
 
 export type Project = typeof PROJECTS[number]
