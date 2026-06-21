@@ -115,16 +115,10 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
         aria-hidden="true"
       />
 
-      {/* Centered card — same language as the rest of the site's modals
-          (HubModal / ServiceDetailModal): a fixed-position flex wrapper that
-          centers a max-width card, leaving visible margin on every side
-          instead of pinning a full-height panel to one edge. The wrapper
-          itself is pointer-events-none so clicks on the empty margin fall
-          through to the backdrop above and close it; only the card itself
-          is interactive. */}
+      {/* Bottom-sheet card — slides up from bottom, stays attached */}
       <div
         className={cn(
-          "fixed inset-0 z-[10060] flex items-center justify-center p-4 transition-opacity duration-300 pointer-events-none",
+          "fixed inset-x-0 bottom-0 z-[10060] flex justify-center pointer-events-none transition-all duration-300",
           open ? "opacity-100" : "opacity-0"
         )}
       >
@@ -135,30 +129,21 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
           aria-label={`${BIZ.founder} — founder profile`}
           onClick={(e) => e.stopPropagation()}
           className={cn(
-            "relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-[14px] shadow-2xl overflow-hidden flex flex-col max-h-[88vh] transition-all duration-300 ease-out",
-            open ? "scale-100 pointer-events-auto" : "scale-95 pointer-events-none"
+            "relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-t-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[88vh] transition-all duration-400 ease-out",
+            open ? "translate-y-0 pointer-events-auto" : "translate-y-full pointer-events-none"
           )}
         >
           <div className="flex-1 overflow-y-auto overscroll-contain">
 
-            {/* ── Cover banner — calm, single-hue gradient for a more
-                professional, less "busy" feel than the previous three-color
-                blob mix. ── */}
+            {/* Cover banner */}
             <div
               className="relative h-36 md:h-40 w-full shrink-0 overflow-hidden"
-              style={{
-                background: `linear-gradient(135deg, ${BRAND.blue} 0%, ${BRAND.blueDark} 100%)`,
-              }}
+              style={{ background: `linear-gradient(135deg, ${BRAND.blue} 0%, ${BRAND.blueDark} 100%)` }}
             >
-              {/* One soft highlight, top-right — restrained, not competing */}
               <div
                 className="absolute -top-10 -right-10 w-56 h-56 rounded-full"
-                style={{
-                  background: `radial-gradient(circle, rgba(255,255,255,0.10) 0%, transparent 70%)`,
-                }}
+                style={{ background: `radial-gradient(circle, rgba(255,255,255,0.10) 0%, transparent 70%)` }}
               />
-
-              {/* Fine noise texture for a subtle premium grain, kept light */}
               <div
                 className="absolute inset-0 opacity-[0.04] pointer-events-none"
                 style={{
@@ -166,8 +151,7 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
                   backgroundSize: "128px 128px",
                 }}
               />
-
-              {/* Close button */}
+              {/* Close */}
               <button
                 ref={closeRef}
                 onClick={onClose}
@@ -176,21 +160,19 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
               >
                 <X size={15} weight="bold" aria-hidden="true" />
               </button>
-            </div>
 
-            {/* Content */}
-            <div className="px-8 pb-10 flex flex-col items-center text-center -mt-10">
-
-              {/* Avatar — a single smiley filling the whole circle, no
-                  separate corner badge (the old small badge was redundant
-                  once the main avatar itself became a face). */}
+              {/* Avatar — positioned in the cover so it sits IN FRONT of the banner */}
               <div
-                className="w-20 h-20 rounded-full flex items-center justify-center shrink-0 border-4 border-white dark:border-zinc-900 shadow-lg overflow-hidden mb-4"
+                className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full flex items-center justify-center shrink-0 border-4 border-white dark:border-zinc-900 shadow-lg overflow-hidden z-20"
                 style={{ backgroundColor: BRAND.blue }}
                 aria-hidden="true"
               >
                 <span className="text-5xl leading-none select-none">😊</span>
               </div>
+            </div>
+
+            {/* Content */}
+            <div className="px-8 pb-10 flex flex-col items-center text-center pt-14">
 
               {/* Name & role */}
               <h2 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-1">
@@ -208,34 +190,46 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
                 {FOUNDER_BIO}
               </p>
 
-              {/* Action buttons — narrower than before, centered with
-                  visible side gaps rather than spanning full width. */}
-              <div className="flex flex-col items-center w-full gap-3">
+              {/* Buttons — same width, same shape, icon above text */}
+              <div className="flex gap-3 w-full justify-center">
 
-                {/* Personal WhatsApp — orange */}
+                {/* Personal WhatsApp — green */}
                 <a
                   href={FOUNDER_WA_LINK}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-[78%] flex items-center justify-center gap-3 py-3 px-6 rounded-[14px] font-extrabold text-sm text-white transition-all active:scale-95 hover:-translate-y-0.5 shadow-sm"
-                  style={{ backgroundColor: BRAND.orange }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = BRAND.orangeDark }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = BRAND.orange }}
+                  className="flex-1 max-w-[44%] flex flex-col items-center justify-center gap-1.5 py-3.5 px-3 rounded-[14px] font-black text-xs text-white transition-all active:scale-95 hover:-translate-y-0.5"
+                  style={{
+                    backgroundColor: "#25D366",
+                    boxShadow: "0 4px 14px rgba(37,211,102,0.35)",
+                  }}
                 >
-                  <WhatsappLogo size={18} weight="fill" aria-hidden="true" />
-                  Personal WhatsApp
+                  <WhatsappLogo size={20} weight="fill" aria-hidden="true" />
+                  <span className="leading-tight text-center">Personal WhatsApp</span>
                 </a>
 
-                {/* Save personal vCard */}
+                {/* Save Contact — orange */}
                 <button
                   onClick={handleVCard}
-                  className="w-[78%] flex items-center justify-center gap-3 py-3 px-6 rounded-[14px] font-extrabold text-sm text-white transition-all active:scale-95 hover:-translate-y-0.5 shadow-sm"
-                  style={{ backgroundColor: vcardDone ? BRAND.green : BRAND.blue }}
+                  className="flex-1 max-w-[44%] flex flex-col items-center justify-center gap-1.5 py-3.5 px-3 rounded-[14px] font-black text-xs text-white transition-all active:scale-95 hover:-translate-y-0.5"
+                  style={{
+                    backgroundColor: vcardDone ? BRAND.green : BRAND.orangeDark,
+                    boxShadow: vcardDone
+                      ? "0 4px 14px rgba(111,191,26,0.35)"
+                      : `0 4px 14px rgba(217,137,75,0.35)`,
+                  }}
                 >
-                  {vcardDone
-                    ? <><AddressBook size={18} weight="fill" /> Saved to Contacts!</>
-                    : <><DownloadSimple size={18} weight="bold" /> Save My Contact</>
-                  }
+                  {vcardDone ? (
+                    <>
+                      <AddressBook size={20} weight="fill" />
+                      <span className="leading-tight text-center">Saved!</span>
+                    </>
+                  ) : (
+                    <>
+                      <DownloadSimple size={20} weight="bold" />
+                      <span className="leading-tight text-center">Save Contact</span>
+                    </>
+                  )}
                 </button>
 
               </div>
