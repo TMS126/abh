@@ -829,6 +829,7 @@ export const PROJECTS = [
     shortDesc: "Branding package for a local shuttle service — flyer, logo, and business card.",
     image: "/Sol.jpg",
     images: ["/Sol2.jpg", "/Sol.jpg"],
+    clientType: "client" as const,
     clientGoal: "A client needed a complete brand package for his shuttle service — a flyer to share rates, a logo for brand identity, and business cards for customers.",
     whatWeDid: [
       "Designed full pricing layout (Day vs Evening rates)",
@@ -849,6 +850,7 @@ export const PROJECTS = [
     shortDesc: "Built a complete professional CV from scratch for a first-time job applicant.",
     image: "/gallery/docu/cv-2.jpg",
     images: ["/gallery/docu/cv-1.jpg", "/gallery/docu/cv-2.jpg", "/gallery/docu/cv-3.jpg"],
+    clientType: "sample" as const,
     clientGoal: "Client had no CV and needed a professional document to apply for jobs.",
     whatWeDid: [
       "Created CV from scratch",
@@ -868,9 +870,10 @@ export const PROJECTS = [
     shortDesc: "High-quality A4 colour flyers printed and prepared for local business distribution.",
     image: "/gallery/print/printer.jpg",
     images: [ "/gallery/print/printer.jpg", "/gallery/print/laminated.jpg"],
+    clientType: "sample" as const,
     clientGoal: "Client needed high-quality printed flyers to promote their business.",
     whatWeDid: [
-    
+      "Printed A4 colour flyers",
       "Adjusted layout for proper print output",
       "Ensured alignment and clean margins",
     ],
@@ -885,6 +888,7 @@ export const PROJECTS = [
     shortDesc: "Assisted client with correctly completing and submitting their SRD grant application.",
     image: "/gallery/eservice/laptop-1.jpg",
     images: ["/gallery/eservice/laptop-1.jpg", "/gallery/eservice/laptop-2.jpg", "/gallery/eservice/laptop-3.jpg"],
+    clientType: "sample" as const,
     clientGoal: "Client needed help applying for SRD grant correctly.",
     whatWeDid: [
       "Completed SRD application",
@@ -902,6 +906,7 @@ export const PROJECTS = [
     shortDesc: "Removed viruses, cleaned system files and installed essential software on a slow laptop.",
     image: "/gallery/tech/cleaning.jpg",
     images: ["/gallery/tech/cleaning.jpg", "/gallery/tech/software.jpg", "/gallery/tech/setup.jpg"],
+    clientType: "sample" as const,
     clientGoal: "Client's laptop was slow and needed essential software installed.",
     whatWeDid: [
       "Removed viruses",
@@ -1011,7 +1016,7 @@ export type ProjectData = {
   shortDesc: string
   image: string
   images: string[]
-  clientType?: "client" | "practice"
+  clientType?: "client" | "practice" | "sample"
   clientGoal: string
   whatWeDid: string[]
   tools: string[]
