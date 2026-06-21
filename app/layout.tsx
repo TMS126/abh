@@ -9,53 +9,58 @@ import { QuoteCalculatorWidget } from '@/components/QuoteCalculatorWidget'
 import { WhatsAppFAB } from '@/components/whatsapp-fab'
 import './globals.css'
 
-const nunito = Nunito({ 
-  subsets: ['latin'],
+// ─── Fonts ────────────────────────────────────────────────────────────────────
+const nunito = Nunito({
+  subsets:  ['latin'],
   variable: '--font-nunito',
-  display: 'swap',
+  display:  'swap',
 })
 
-const dmSans = DM_Sans({ 
-  subsets: ['latin'],
+const dmSans = DM_Sans({
+  subsets:  ['latin'],
   variable: '--font-dm-sans',
-  display: 'swap',
+  display:  'swap',
 })
 
 const geistMono = Geist_Mono({
-  subsets: ['latin'],
+  subsets:  ['latin'],
   variable: '--font-mono',
-  display: 'swap',
+  display:  'swap',
 })
 
+// ─── Metadata ─────────────────────────────────────────────────────────────────
 export const metadata: Metadata = {
-  title: `${BIZ.name} — ${BIZ.tagline}`,
+  title:       `${BIZ.name} — ${BIZ.tagline}`,
   description: `We make technology and important services accessible to everyone — no jargon, no stress. Right here in ${BIZ.address}.`,
-  keywords: ['printing', 'CV services', 'tech support', 'government services', 'SASSA', 'SARS', 'Kgotsong', 'Bothaville'],
-  authors: [{ name: BIZ.name }],
+  keywords:    ['printing', 'CV services', 'tech support', 'government services', 'SASSA', 'SARS', 'Kgotsong', 'Bothaville'],
+  authors:     [{ name: BIZ.name }],
   icons: {
-    icon: [
-      { url: '/icon-light-32x32.png', media: '(prefers-color-scheme: light)' },
-      { url: '/icon-dark-32x32.png', media: '(prefers-color-scheme: dark)' },
-    ],
+    icon:     [{ url: '/favicon.ico' }, { url: '/192x192.png', type: 'image/png' }],
+    apple:    [{ url: '/apple-touch.png' }],
+    shortcut: [{ url: '/favicon.ico' }],
   },
 }
 
+// ─── Viewport ─────────────────────────────────────────────────────────────────
 export const viewport: Viewport = {
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: BRAND.blue },
-    { media: '(prefers-color-scheme: dark)', color: '#09090b' },
+    { media: '(prefers-color-scheme: dark)',  color: '#09090b'  },
   ],
-  width: 'device-width',
+  width:        'device-width',
   initialScale: 1,
 }
 
+// ─── Root Layout ──────────────────────────────────────────────────────────────
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${nunito.variable} ${dmSans.variable} ${geistMono.variable}`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${nunito.variable} ${dmSans.variable} ${geistMono.variable}`}
+    >
       <body className="font-sans antialiased min-h-screen bg-white dark:bg-background text-zinc-900 dark:text-zinc-100 transition-colors duration-300">
         <ThemeProvider
           attribute="class"
@@ -74,5 +79,4 @@ export default function RootLayout({
       </body>
     </html>
   )
-}
- 
+} 
