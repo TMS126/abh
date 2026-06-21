@@ -1,3 +1,4 @@
+
 export const PRICING = {
   print: {
     'B&W Print': 'R5/page',
@@ -1002,4 +1003,18 @@ export const PROJECTS = [
   },
 ] as const
 
+export type ProjectData = {
+  id: string
+  hub: string
+  title: string
+  tag: string
+  shortDesc: string
+  image: string
+  images: string[]
+  clientType?: "client" | "practice"
+  clientGoal: string
+  whatWeDid: string[]
+  tools: string[]
+  result: string
+}
 export type Project = typeof PROJECTS[number]
