@@ -986,7 +986,7 @@ export const PROJECTS = [
     tag: "Design Hub",
     shortDesc: "Full corporate brand identity concept for a drone tech company. Portfolio practice project.",
     image: "/Itw.jpg",
-    images: ["/Itpc.jpg", "/Itp.jpg", "/Itw.jpg", "/Itm2.jpg"],
+    images: ["/20230527_194537.jpg", "/Itp.jpg", "/Itw.jpg", "/Itm2.jpg"],
     clientType: "practice" as const,
     clientGoal: "Explore what a premium tech brand identity looks like — logo design, mockups on buildings and office spaces, business card design, and a brand showcase layout.",
     whatWeDid: [
