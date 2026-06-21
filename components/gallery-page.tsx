@@ -350,6 +350,21 @@ function ProjectViewerModal({
                 <span className="ml-2 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ backgroundColor: `${accent}20`, color: accent }}>Before &amp; After</span>
               )}
               <h2 className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 leading-tight mt-1">{project.title}</h2>
+              {project.clientType === "practice" && (
+                <p className="text-[0.72rem] italic text-zinc-400 dark:text-zinc-500 mt-1">
+                  Practice design — portfolio project, not a real client
+                </p>
+              )}
+              {project.clientType === "client" && (
+                <p className="text-[0.72rem] italic text-zinc-400 dark:text-zinc-500 mt-1">
+                  Real client work
+                </p>
+              )}
+              {project.clientType === "sample" && (
+                <p className="text-[0.72rem] italic text-brand-orange mt-1">
+                  Representative example — reflects our work, not an actual client project
+                </p>
+              )}
             </div>
             <button onClick={onClose} className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 shrink-0 ml-3 transition-colors">
               <X size={18} weight="bold" />
@@ -524,8 +539,8 @@ export function GalleryPage() {
         </div>
 
         {/* Notice */}
-        <div className="max-w-2xl mx-auto mb-16 p-6 rounded-[14px] border border-brand-blue/20 bg-brand-blue/5 dark:bg-brand-blue/10 flex items-center gap-6">
-          <div className="w-12 h-12 shrink-0 rounded-[14px] bg-brand-blue/10 flex items-center justify-center text-brand-blue">
+        <div className="max-w-2xl mx-auto mb-16 p-6 rounded-[14px] border border-brand-orange/20 bg-brand-orange/5 dark:bg-brand-orange/10 flex items-center gap-6">
+          <div className="w-12 h-12 shrink-0 rounded-[14px] bg-brand-orange/10 flex items-center justify-center text-brand-orange">
             <Info size={28} weight="fill" />
           </div>
           <p className="text-sm font-bold text-zinc-600 dark:text-zinc-300 leading-relaxed">
@@ -564,5 +579,6 @@ export function GalleryPage() {
     </section>
   )
 }
+ 
  
  
