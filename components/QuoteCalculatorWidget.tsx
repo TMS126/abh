@@ -93,7 +93,7 @@ const GLASS = {
 
 export function QuoteCalculatorWidget() {
   const { resolvedTheme } = useTheme(); const isDark = resolvedTheme === "dark"
-  const [isOpen, setIsOpen]     = useExclusiveWidget("calculator")
+  const [isOpen, setIsOpen, isOtherOpen]     = useExclusiveWidget("calculator")
   const [openHub, setOpenHub]   = useState<HubId | null>(null)
   const [openSections, setOpenSections] = useState<Record<HubId, number | null>>({} as Record<HubId, number | null>)
   const [cart, setCart]         = useState<CartItem[]>([])
@@ -195,7 +195,7 @@ export function QuoteCalculatorWidget() {
         onClick={() => setIsOpen(o => !o)}
         className={cn(
           "fixed bottom-6 right-6 z-[9992] w-14 h-14 rounded-full bg-brand-blue text-white shadow-xl flex items-center justify-center active:scale-95 transition-all duration-300 hover:-translate-y-0.5",
-          scrolled && !isOpen
+          (scrolled && !isOpen) || isOtherOpen
             ? "opacity-0 pointer-events-none"
             : isOpen
               ? "opacity-100"
