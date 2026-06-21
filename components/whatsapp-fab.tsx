@@ -1,31 +1,31 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { X, WhatsappLogo, PaperPlaneTilt } from "@phosphor-icons/react"
+import { X, WhatsappLogo, PaperPlaneTilt, CaretDown } from "@phosphor-icons/react"
 import { BIZ, BRAND } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 
 const WA_NUMBER = "27753338260"
-const GREETING  = `Hi there 👋 How can we help you today?`
-const REPLY_TIME = "Typically replies within 30 minutes"
 
-function useIsMobile() {
-  const [mobile, setMobile] = useState(false)
-  useEffect(() => {
-    const check = () => setMobile(window.innerWidth < 768)
-    check()
-    window.addEventListener("resize", check)
-    return () => window.removeEventListener("resize", check)
-  }, [])
-  return mobile
-}
+const HUBS = [
+  { id: "print",    label: "Print Hub",      hint: "Printing, copying, photos" },
+  { id: "doc",      label: "Docu Hub",       hint: "CVs, typing, laminating" },
+  { id: "design",   label: "Design Hub",     hint: "Logos, flyers, branding" },
+  { id: "eservice", label: "E-Service Hub",  hint: "SASSA, SARS, NSFAS, PSIRA" },
+  { id: "tech",     label: "Tech Hub",       hint: "PC repairs, software, setup" },
+  { id: "other",    label: "Not sure yet",   hint: "We'll help you figure it out" },
+]
 
 export function WhatsAppFAB() {
   const [open,    setOpen]    = useState(false)
-  const [message, setMessage] = useState("")
   const [visible, setVisible] = useState(false)
-  const inputRef              = useRef<HTMLTextAreaElement>(null)
-  const isMobile              = useIsMobile()
+  const [name,    setName]    = useState("")
+  const [hub,     setHub]     = useState("")
+  const [note,    setNote]    = useState("")
+  const [step,    setStep]    = useState<"form" | "sent">("form")
+  const [hubOpen, setHubOpen] = useState(false)
+  const nameRef               = useRef<HTMLInputElement>(null)
+  const hubRef                = useRef<HTMLDivElement>(null)
 
   // Mount delay
   useEffect(() => {
@@ -33,159 +33,253 @@ export function WhatsAppFAB() {
     return () => clearTimeout(t)
   }, [])
 
-  // Focus input when popup opens
+  // Focus name input on open
   useEffect(() => {
-    if (open && !isMobile) setTimeout(() => inputRef.current?.focus(), 150)
-  }, [open, isMobile])
+    if (open && step === "form") setTimeout(() => nameRef.current?.focus(), 200)
+  }, [open, step])
+
+  // Close hub dropdown on outside click
+  useEffect(() => {
+    if (!hubOpen) return
+    const fn = (e: MouseEvent) => {
+      if (hubRef.current && !hubRef.current.contains(e.target as Node)) setHubOpen(false)
+    }
+    document.addEventListener("mousedown", fn)
+    return () => document.removeEventListener("mousedown", fn)
+  }, [hubOpen])
 
   // Close on Escape
   useEffect(() => {
     if (!open) return
-    const fn = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false) }
+    const fn = (e: KeyboardEvent) => { if (e.key === "Escape") handleClose() }
     document.addEventListener("keydown", fn)
     return () => document.removeEventListener("keydown", fn)
   }, [open])
 
-  const handleFabClick = () => {
-    if (isMobile) {
-      // On mobile — go straight to WhatsApp
-      window.open(
-        `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(`Hi ${BIZ.name}! I'd like to get in touch.`)}`,
-        "_blank"
-      )
-    } else {
-      setOpen((o) => !o)
+  // Body scroll lock
+  useEffect(() => {
+    if (!open) return
+    const scrollY = window.scrollY
+    const { style } = document.body
+    style.position = "fixed"
+    style.top = `-${scrollY}px`
+    style.left = "0"; style.right = "0"; style.width = "100%"; style.overflow = "hidden"
+    return () => {
+      style.position = ""; style.top = ""; style.left = ""
+      style.right = ""; style.width = ""; style.overflow = ""
+      window.scrollTo(0, scrollY)
     }
+  }, [open])
+
+  const handleClose = () => {
+    setOpen(false)
+    setTimeout(() => { setStep("form"); setName(""); setHub(""); setNote("") }, 400)
   }
+
+  const selectedHub = HUBS.find(h => h.id === hub)
+  const isValid     = name.trim().length > 1 && hub !== ""
 
   const handleSend = () => {
-    const text = message.trim() || `Hi ${BIZ.name}! I'd like to get in touch.`
-    window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`, "_blank")
-    setMessage("")
-    setOpen(false)
-  }
+    if (!isValid) return
+    const hubLabel = selectedHub?.label ?? hub
+    const message  = [
+      `Hi ${BIZ.name}! 👋`,
+      `My name is ${name.trim()}.`,
+      `I need help with: *${hubLabel}*`,
+      note.trim() ? `More details: ${note.trim()}` : "",
+    ].filter(Boolean).join("\n")
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend() }
+    window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message)}`, "_blank")
+    setStep("sent")
   }
 
   return (
     <>
-      {/* ── Chat popup (desktop only) ───────────────────────── */}
+      {/* ── Overlay ──────────────────────────────────────────── */}
       <div
         className={cn(
-          "fixed bottom-[5.5rem] right-6 z-[9990] w-[320px] rounded-[14px] overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-700",
-          "transition-all duration-300 origin-bottom-right",
-          open
-            ? "opacity-100 scale-100 pointer-events-auto"
-            : "opacity-0 scale-95 pointer-events-none",
-          "hidden md:flex flex-col"
+          "fixed inset-0 z-[10100] flex items-end md:items-center justify-center",
+          "transition-all duration-300",
+          open ? "pointer-events-auto" : "pointer-events-none"
         )}
       >
-        {/* Header */}
+        {/* Backdrop */}
         <div
-          className="flex items-center gap-3 px-4 py-3"
-          style={{ backgroundColor: "#075E54" }}
-        >
-          {/* Avatar */}
-          <div
-            className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black text-white shrink-0"
-            style={{ backgroundColor: BRAND.blue }}
-          >
-            TM
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white font-black text-sm leading-tight truncate">{BIZ.name}</p>
-            <p className="text-white/70 text-[0.65rem] font-semibold leading-tight">{REPLY_TIME}</p>
-          </div>
-          <button
-            onClick={() => setOpen(false)}
-            className="w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-white/80 hover:text-white transition-colors shrink-0"
-            aria-label="Close chat"
-          >
-            <X size={14} weight="bold" />
-          </button>
-        </div>
+          onClick={handleClose}
+          className={cn(
+            "absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300",
+            open ? "opacity-100" : "opacity-0"
+          )}
+        />
 
-        {/* Chat body */}
+        {/* Panel */}
         <div
-          className="flex-1 px-4 py-4 min-h-[140px]"
-          style={{
-            backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
-            backgroundColor: "#ECE5DD",
-          }}
+          className={cn(
+            "relative w-full md:w-[400px] bg-white dark:bg-zinc-900 rounded-t-[24px] md:rounded-[14px]",
+            "shadow-2xl overflow-hidden transition-all duration-300",
+            open
+              ? "translate-y-0 opacity-100"
+              : "translate-y-full md:translate-y-8 opacity-0"
+          )}
         >
-          {/* Greeting bubble */}
-          <div className="flex items-end gap-2 mb-3">
+          {/* WhatsApp-style header */}
+          <div
+            className="px-5 py-4 flex items-center gap-3"
+            style={{ backgroundColor: "#075E54" }}
+          >
             <div
-              className="w-6 h-6 rounded-full flex items-center justify-center text-[0.55rem] font-black text-white shrink-0 mb-0.5"
+              className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black text-white shrink-0"
               style={{ backgroundColor: BRAND.blue }}
             >
               TM
             </div>
-            <div
-              className="relative max-w-[220px] px-3 py-2 rounded-[8px] rounded-tl-none text-[0.78rem] text-zinc-800 leading-relaxed shadow-sm"
-              style={{ backgroundColor: "#ffffff" }}
-            >
-              {GREETING}
-              {/* Tail */}
-              <span
-                className="absolute -left-[6px] top-0 w-0 h-0"
-                style={{
-                  borderTop: "8px solid #ffffff",
-                  borderLeft: "7px solid transparent",
-                }}
-              />
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-black text-sm leading-tight">{BIZ.name}</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                <p className="text-white/70 text-[0.62rem] font-semibold">Online · replies in ~30 min</p>
+              </div>
             </div>
+            <button
+              onClick={handleClose}
+              className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center text-white/80 hover:text-white transition-colors"
+              aria-label="Close"
+            >
+              <X size={16} weight="bold" />
+            </button>
           </div>
-        </div>
 
-        {/* Input area */}
-        <div
-          className="flex items-end gap-2 px-3 py-2.5 border-t"
-          style={{ backgroundColor: "#F0F0F0", borderColor: "#D9D9D9" }}
-        >
-          <textarea
-            ref={inputRef}
-            rows={1}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a message…"
-            className="flex-1 resize-none rounded-full px-4 py-2 text-[0.82rem] text-zinc-800 bg-white focus:outline-none leading-snug max-h-[80px] overflow-y-auto"
-            style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.1)" }}
-          />
-          <button
-            onClick={handleSend}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-white shrink-0 transition-all active:scale-90 hover:brightness-110"
-            style={{ backgroundColor: "#25D366" }}
-            aria-label="Send message"
-          >
-            <PaperPlaneTilt size={16} weight="fill" />
-          </button>
-        </div>
+          {/* Body */}
+          {step === "form" ? (
+            <div className="px-5 py-6 flex flex-col gap-4">
 
-        {/* Footer note */}
-        <div
-          className="px-4 py-1.5 flex items-center justify-center gap-1.5"
-          style={{ backgroundColor: "#F0F0F0" }}
-        >
-          <WhatsappLogo size={11} weight="fill" style={{ color: "#25D366" }} />
-          <p className="text-[0.58rem] font-bold text-zinc-400 tracking-wide">
-            Powered by WhatsApp
-          </p>
+              {/* Greeting bubble */}
+              <div
+                className="self-start relative max-w-[85%] px-4 py-3 rounded-[12px] rounded-tl-none text-[0.82rem] text-zinc-800 leading-relaxed shadow-sm"
+                style={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb" }}
+              >
+                Hi there 👋 Tell us a bit about what you need and we'll get back to you right away!
+                <span
+                  className="absolute -left-[6px] top-0 w-0 h-0"
+                  style={{ borderTop: "8px solid #e5e7eb", borderLeft: "7px solid transparent" }}
+                />
+              </div>
+
+              {/* Name */}
+              <div>
+                <label className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 block mb-1.5">
+                  Your Name
+                </label>
+                <input
+                  ref={nameRef}
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Thembi"
+                  className="w-full px-4 py-3 rounded-[14px] border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-[0.84rem] font-semibold text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-[#25D366] transition-colors"
+                />
+              </div>
+
+              {/* Hub selector */}
+              <div>
+                <label className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 block mb-1.5">
+                  What do you need help with?
+                </label>
+                <div ref={hubRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setHubOpen((o) => !o)}
+                    className="w-full px-4 py-3 rounded-[14px] border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-[0.84rem] font-semibold text-left flex items-center justify-between gap-2 focus:outline-none focus:border-[#25D366] transition-colors"
+                    style={{ color: selectedHub ? "#25D366" : undefined }}
+                  >
+                    <span className={selectedHub ? "text-zinc-800 dark:text-zinc-200" : "text-zinc-400"}>
+                      {selectedHub ? selectedHub.label : "Select a hub…"}
+                    </span>
+                    <CaretDown
+                      size={14}
+                      weight="bold"
+                      className="text-zinc-400 transition-transform duration-200 shrink-0"
+                      style={{ transform: hubOpen ? "rotate(180deg)" : "none" }}
+                    />
+                  </button>
+
+                  {hubOpen && (
+                    <div className="absolute z-10 mt-1.5 w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-[14px] shadow-xl overflow-hidden">
+                      {HUBS.map((h) => (
+                        <button
+                          key={h.id}
+                          type="button"
+                          onClick={() => { setHub(h.id); setHubOpen(false) }}
+                          className="w-full px-4 py-3 text-left flex flex-col hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors border-b border-zinc-100 dark:border-zinc-700 last:border-0"
+                        >
+                          <span className="text-[0.82rem] font-black text-zinc-800 dark:text-zinc-200">{h.label}</span>
+                          <span className="text-[0.68rem] font-semibold text-zinc-400 mt-0.5">{h.hint}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Optional note */}
+              <div>
+                <label className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 block mb-1.5">
+                  Anything else? <span className="normal-case font-semibold">(optional)</span>
+                </label>
+                <textarea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="e.g. I need a CV from scratch and want it today…"
+                  rows={2}
+                  className="w-full px-4 py-3 rounded-[14px] border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-[0.84rem] font-semibold text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-[#25D366] transition-colors resize-none"
+                />
+              </div>
+
+              {/* Send button */}
+              <button
+                onClick={handleSend}
+                disabled={!isValid}
+                className="flex items-center justify-center gap-2.5 w-full py-4 rounded-[14px] font-black text-sm text-white transition-all active:scale-95 disabled:opacity-40 disabled:active:scale-100 mt-1"
+                style={{ backgroundColor: "#25D366" }}
+              >
+                <PaperPlaneTilt size={16} weight="fill" />
+                Open WhatsApp to Send
+              </button>
+            </div>
+          ) : (
+            /* Sent state */
+            <div className="px-5 py-10 flex flex-col items-center text-center gap-4">
+              <div
+                className="w-16 h-16 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: "#25D36620" }}
+              >
+                <WhatsappLogo size={32} weight="fill" style={{ color: "#25D366" }} />
+              </div>
+              <div>
+                <p className="font-black text-lg text-zinc-900 dark:text-zinc-50 mb-1">WhatsApp opened!</p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                  Your message is pre-filled. Just hit <strong>Send</strong> in WhatsApp and we'll get back to you shortly.
+                </p>
+              </div>
+              <button
+                onClick={handleClose}
+                className="mt-2 px-6 py-2.5 rounded-[14px] border border-zinc-200 dark:border-zinc-700 text-sm font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* ── FAB button ───────────────────────────────────────── */}
       <button
-        onClick={handleFabClick}
-        aria-label={open ? "Close WhatsApp chat" : `Chat with ${BIZ.name} on WhatsApp`}
+        onClick={() => setOpen((o) => !o)}
+        aria-label={open ? "Close chat" : `Chat with ${BIZ.name} on WhatsApp`}
         className={cn(
           "fixed bottom-[5.5rem] right-6 z-[9990]",
           "w-14 h-14 rounded-full flex items-center justify-center",
-          "text-white shadow-xl",
-          "transition-all duration-300 active:scale-95 hover:-translate-y-0.5",
+          "text-white shadow-xl transition-all duration-300 active:scale-95 hover:-translate-y-0.5",
           visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
         )}
         style={{ backgroundColor: "#25D366" }}
