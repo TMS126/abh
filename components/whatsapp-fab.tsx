@@ -129,7 +129,7 @@ export function WhatsAppFAB() {
           className={cn(
             "fixed bottom-24 right-4 left-4 md:left-auto md:right-6 z-[9991] md:w-[400px] max-h-[75vh]",
             "rounded-[20px] shadow-2xl flex flex-col overflow-hidden",
-            "animate-in slide-in-from-bottom-4 fade-in duration-300",
+            "animate-in slide-in-from-right-4 fade-in duration-300",
             GLASS.panel
           )}
           style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.3)" }}
@@ -306,33 +306,45 @@ export function WhatsAppFAB() {
         </div>
       )}
 
-      {/* ── FAB ───────────────────────────────────────────────────── */}
-      <button
-        onClick={() => setIsOpen(o => !o)}
-        aria-label={isOpen ? "Close WhatsApp chat" : `Chat with ${BIZ.name} on WhatsApp`}
+      {/* ── FAB — edge peek ───────────────────────────────────────────────── */}
+      {/* Sits partially behind the right wall. Hover/open slides it fully out. */}
+      <div
         className={cn(
-          "group fixed bottom-6 right-6 z-[9992] w-14 h-14 rounded-full text-white shadow-xl",
-          "flex items-center justify-center",
-          "transition-all duration-300 active:scale-95 hover:-translate-y-0.5",
-          visible ? "translate-y-0" : "opacity-0 translate-y-4 pointer-events-none",
-          // Fully hide while scrolling, or while the other widget is open
+          "fixed z-[9992] right-0 group/fab",
+          "transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
+          // vertical position — bottom slot
+          "bottom-6",
+          // mount delay
+          visible ? "" : "opacity-0 pointer-events-none",
+          // hide while scrolling (unless open) or while other widget is open
           (scrolled && !isOpen) || isOtherOpen
             ? "opacity-0 pointer-events-none"
-            : isOpen
-              ? "opacity-100"
-              : "opacity-60 hover:opacity-100"
+            : "opacity-100",
+          // peek: show ~20px sliver; slide fully out on hover or when open
+          isOpen
+            ? "translate-x-0"
+            : "translate-x-[calc(100%-22px)] hover:translate-x-0"
         )}
-        style={{ backgroundColor: "#25D366", bottom: "5.5rem" }}
       >
-        {/* Pulse ring — only when closed */}
-        {!isOpen && (
-          <span className="absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-20 pointer-events-none" />
-        )}
-        {isOpen
-          ? <X size={22} weight="bold" />
-          : <WhatsappLogo size={28} weight="fill" />
-        }
-      </button>
+        {/* Tab tongue on the left edge */}
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full w-3 h-10 rounded-l-[8px] opacity-80 group-hover/fab:opacity-0 transition-opacity duration-300 pointer-events-none" style={{ backgroundColor: "#25D366" }} />
+
+        <button
+          onClick={() => setIsOpen(o => !o)}
+          aria-label={isOpen ? "Close WhatsApp chat" : `Chat with ${BIZ.name} on WhatsApp`}
+          className="relative w-14 h-14 rounded-full text-white shadow-xl flex items-center justify-center active:scale-95 transition-transform duration-150 mr-4"
+          style={{ backgroundColor: "#25D366" }}
+        >
+          {/* Pulse ring — only when closed */}
+          {!isOpen && (
+            <span className="absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-20 pointer-events-none" />
+          )}
+          {isOpen
+            ? <X size={22} weight="bold" />
+            : <WhatsappLogo size={28} weight="fill" />
+          }
+        </button>
+      </div>
     </>
   )
 }
