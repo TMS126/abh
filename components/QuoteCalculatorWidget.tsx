@@ -190,32 +190,46 @@ export function QuoteCalculatorWidget() {
         />
       )}
 
-      {/* ── FAB ──────────────────────────────────────────────────────────── */}
-      <button
-        onClick={() => setIsOpen(o => !o)}
+      {/* ── FAB — edge peek ──────────────────────────────────────────────── */}
+      {/* Sits partially behind the right wall. Hover/open slides it fully out. */}
+      <div
         className={cn(
-          "fixed bottom-6 right-6 z-[9992] w-14 h-14 rounded-full bg-brand-blue text-white shadow-xl flex items-center justify-center active:scale-95 transition-all duration-300 hover:-translate-y-0.5",
+          "fixed z-[9992] right-0 group/fab",
+          "transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
+          // vertical position — above the WA fab
+          "bottom-[5.5rem]",
+          // hide while scrolling (unless open) or while other widget is open
           (scrolled && !isOpen) || isOtherOpen
             ? "opacity-0 pointer-events-none"
-            : isOpen
-              ? "opacity-100"
-              : "opacity-60 hover:opacity-100"
+            : "opacity-100",
+          // peek: show ~20px sliver; slide fully out on hover or when open
+          isOpen
+            ? "translate-x-0"
+            : "translate-x-[calc(100%-22px)] hover:translate-x-0"
         )}
-        aria-label={isOpen ? "Close quotation calculator" : "Open quotation calculator"}
       >
-        {isOpen ? <X size={22} weight="bold" /> : <Calculator size={26} weight="fill" />}
-        {!isOpen && itemCount > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 rounded-full bg-brand-orange text-white text-[0.65rem] font-black flex items-center justify-center border-2 border-white dark:border-zinc-950">
-            {itemCount}
-          </span>
-        )}
-      </button>
+        {/* Tab tongue on the left edge — visible when peeking */}
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full w-3 h-10 bg-brand-blue rounded-l-[8px] opacity-80 group-hover/fab:opacity-0 transition-opacity duration-300 pointer-events-none" />
+
+        <button
+          onClick={() => setIsOpen(o => !o)}
+          className="relative w-14 h-14 rounded-full bg-brand-blue text-white shadow-xl flex items-center justify-center active:scale-95 transition-transform duration-150 mr-4"
+          aria-label={isOpen ? "Close quotation calculator" : "Open quotation calculator"}
+        >
+          {isOpen ? <X size={22} weight="bold" /> : <Calculator size={26} weight="fill" />}
+          {!isOpen && itemCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 rounded-full bg-brand-orange text-white text-[0.65rem] font-black flex items-center justify-center border-2 border-white dark:border-zinc-950">
+              {itemCount}
+            </span>
+          )}
+        </button>
+      </div>
 
       {/* ── Calculator panel ─────────────────────────────────────────────── */}
       {isOpen && (
         <div
           className={cn(
-            "fixed bottom-24 right-4 left-4 md:left-auto md:right-6 z-[9991] md:w-[400px] max-h-[75vh] rounded-[20px] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-300",
+            "fixed bottom-24 right-4 left-4 md:left-auto md:right-6 z-[9991] md:w-[400px] max-h-[75vh] rounded-[20px] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right-4 fade-in duration-300",
             GLASS.panel
           )}
           style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.3)" }}
