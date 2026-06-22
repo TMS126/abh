@@ -5,9 +5,8 @@ import { useTheme } from "next-themes"
 import { useRouter, usePathname } from "next/navigation"
 import Image from "next/image"
 import { Sun, Moon, X } from "@phosphor-icons/react"
-import { BIZ, NAV_ITEMS } from "@/lib/brand"
+import { NAV_ITEMS } from "@/lib/brand"
 import { cn } from "@/lib/utils"
-import { BusinessStatusNavbar } from "@/components/business-status"
 
 export function Navbar() {
   const router   = useRouter()
@@ -68,9 +67,9 @@ export function Navbar() {
       <header className="fixed left-0 right-0 top-0 z-[9999] flex justify-center px-4 md:px-8 pt-5 h-[--nav-h] items-center pointer-events-none">
         <div className="relative flex items-center justify-between w-full max-w-[1200px]">
 
-          {/* Logo — always visible */}
+          {/* Logo — hides when menu is open */}
           <div
-            className={cn(pillClass, "flex items-center cursor-pointer select-none pointer-events-auto group transition-all duration-300", isTextExpanded ? "pl-3 pr-4 gap-2.5" : "px-2.5 gap-0")}
+            className={cn(pillClass, "flex items-center cursor-pointer select-none pointer-events-auto group transition-all duration-300", isTextExpanded ? "pl-3 pr-4 gap-2.5" : "px-2.5 gap-0", menuOpen ? "opacity-0 pointer-events-none" : "opacity-100")}
             onMouseEnter={handleLogoMouseEnter}
             onMouseLeave={handleLogoMouseLeave}
             onClick={() => navigate("/")}
@@ -107,8 +106,6 @@ export function Navbar() {
             <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="flex items-center justify-center w-7 h-7 active:scale-90 transition-transform">
               {mounted && (theme === "dark" ? <Moon size={20} weight="fill" className="text-brand-light-blue" /> : <Sun size={20} weight="fill" className="text-brand-orange" />)}
             </button>
-            <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700" />
-            <BusinessStatusNavbar />
 
             <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 md:hidden" />
 
@@ -170,31 +167,27 @@ export function Navbar() {
           </div>
         </nav>
 
-        {/* Logo at bottom of menu — plain, adapts to light/dark */}
+        {/* Icon-only watermark at bottom of menu */}
         <div
           className={cn(
-            "absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 select-none transition-all duration-500 z-10",
-            menuOpen ? "opacity-40" : "opacity-0"
+            "absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center select-none transition-all duration-500 z-10",
+            menuOpen ? "opacity-30" : "opacity-0"
           )}
           aria-hidden="true"
         >
           <div
-            className="relative w-7 h-7 shrink-0"
+            className="relative w-8 h-8 shrink-0"
             style={
               mounted && theme === "dark"
-                ? { filter: "brightness(0) invert(1)" }      // white in dark mode
-                : { filter: "brightness(0)" }                  // black in light mode
+                ? { filter: "brightness(0) invert(1)" }
+                : { filter: "brightness(0)" }
             }
           >
-            <Image src="/logo.png" alt="" fill sizes="28px" className="object-contain" />
+            <Image src="/logo.png" alt="" fill sizes="32px" className="object-contain" />
           </div>
-          <span className="font-sans font-black text-sm tracking-tight text-zinc-900 dark:text-white">
-            ApexbytesHub
-          </span>
         </div>
       </div>
     </>
   )
 }
- 
  
