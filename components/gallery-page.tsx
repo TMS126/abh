@@ -479,7 +479,80 @@ function ProjectCarousel({ projects, accent, onSelect }: { projects: ProjectData
   )
 }
 
-// ─── Gallery page ─────────────────────────────────────────────────────────────
+// ─── Projects count popover ───────────────────────────────────────────────────
+function ProjectsPopover({
+  projects, accent, onSelect,
+}: {
+  projects: ProjectData[]
+  accent: string
+  onSelect: (p: ProjectData) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative ml-auto">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={cn(
+          "text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full transition-all duration-200",
+          open
+            ? "text-white"
+            : "text-zinc-400 hover:text-white hover:scale-105"
+        )}
+        style={open ? { backgroundColor: accent } : {}}
+      >
+        {projects.length} {projects.length === 1 ? "Project" : "Projects"}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-2 z-50 w-64 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800">
+            <p className="text-[0.65rem] font-black uppercase tracking-widest" style={{ color: accent }}>
+              {projects.length} {projects.length === 1 ? "Project" : "Projects"}
+            </p>
+          </div>
+          <div className="p-2">
+            {projects.map(p => (
+              <button
+                key={p.id}
+                onClick={() => { onSelect(p); setOpen(false) }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left group/item"
+              >
+                <div
+                  className="w-8 h-8 rounded-[8px] shrink-0 overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900"
+                >
+                  {p.image ? (
+                    <img src={p.image} alt={p.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full" style={{ backgroundColor: `${accent}20` }} />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate group-hover/item:underline" style={{ textDecorationColor: accent }}>
+                    {p.title}
+                  </p>
+                  <p className="text-[0.6rem] font-medium text-zinc-400 truncate">{p.shortDesc}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+
 export function GalleryPage() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
@@ -538,14 +611,16 @@ export function GalleryPage() {
           })}
         </div>
 
-        {/* Notice */}
-        <div className="max-w-2xl mx-auto mb-16 p-6 rounded-[14px] border border-brand-orange/20 bg-brand-orange/5 dark:bg-brand-orange/10 flex items-center gap-6">
+        {/* Notice — consistent with Services page */}
+        <div className="max-w-2xl mx-auto mb-16 rounded-[14px] border border-brand-orange/20 bg-brand-orange/5 dark:bg-brand-orange/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
           <div className="w-12 h-12 shrink-0 rounded-[14px] bg-brand-orange/10 flex items-center justify-center text-brand-orange">
             <Info size={28} weight="fill" />
           </div>
-          <p className="text-sm font-bold text-zinc-600 dark:text-zinc-300 leading-relaxed">
-            Note: We use high-quality sample photos to represent our services, ensuring the professional standard shown is exactly what you receive.
-          </p>
+          <div className="flex-1 min-w-0 pt-0.5">
+            <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-snug">
+              We use high-quality sample photos to represent our services, ensuring the professional standard shown is exactly what you receive.
+            </p>
+          </div>
         </div>
 
         {/* Hub rows */}
@@ -559,9 +634,7 @@ export function GalleryPage() {
                 <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
                   <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: accent }} />
                   <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
-                  <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 ml-auto">
-                    {projects.length} {projects.length === 1 ? "Project" : "Projects"}
-                  </span>
+                  <ProjectsPopover projects={projects} accent={accent} onSelect={setSelectedProject} />
                 </div>
                 <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} />
               </div>
@@ -579,6 +652,7 @@ export function GalleryPage() {
     </section>
   )
 }
+ 
  
  
  
