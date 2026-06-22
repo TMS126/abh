@@ -11,8 +11,6 @@ import {
 } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, WA, FOOTER_NAV, FAQS } from "@/lib/brand"
-import { ProfileDrawer } from "@/components/profile-drawer"
-import { useInstance } from "@/hooks/use-instance-guard"
 import { BusinessStatusFull } from "@/components/business-status"
 
 const TERMS_SECTIONS = [
@@ -122,7 +120,7 @@ function Modal({ open, onClose, title, subtitle, children }: {
 }
 
 // ─── Footer content ────────────────────────────────────────────────────────────
-function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
+function FooterContent() {
   const router = useRouter()
   const [isTermsOpen,  setIsTermsOpen]  = useState(false)
   const [isFaqOpen,    setIsFaqOpen]    = useState(false)
@@ -145,15 +143,6 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
           </div>
           <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400 max-w-xs">
             Your local tech and print partner in Kgotsong. {BIZ.hubCount} hubs, {BIZ.serviceCount} services — all in one friendly place.
-          </p>
-          <p className="text-[0.65rem] font-bold text-zinc-400 uppercase tracking-widest">
-            Founded by{" "}
-            <button
-              onClick={onOpenProfile}
-              className="underline underline-offset-2 decoration-dotted font-black text-brand-blue dark:text-brand-light-blue hover:text-brand-blue-dark transition-colors"
-            >
-              {BIZ.founder}
-            </button>
           </p>
         </div>
 
@@ -355,12 +344,10 @@ function FooterContent({ onOpenProfile }: { onOpenProfile: () => void }) {
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
 export function Footer() {
-  const profile = useInstance("profile")
-
   return (
     <footer className="bg-white dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900">
-      <FooterContent onOpenProfile={() => profile.open()} />
-      <ProfileDrawer open={profile.isActive} onClose={() => profile.close()} />
+      <FooterContent />
     </footer>
   )
 } 
+ 
