@@ -19,8 +19,15 @@ const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 // to be used in client-side code. API Secret must NEVER appear here.
 const CLD_CLOUD  = "dk30vh3ft"
 const CLD_PRESET = "apexbyteshub"
-const CLD_URL    = `https://api.cloudinary.com/v1_1/${CLD_CLOUD}/auto/upload`
 const CLD_MAX_MB = 10
+
+// Cloudinary unsigned presets only accept one resource type per request.
+// Images go to /image/upload, everything else (PDF, DOC, ZIP etc) to /raw/upload.
+function getCldUrl(file: File) {
+  const isImage = file.type.startsWith("image/")
+  const type = isImage ? "image" : "raw"
+  return `https://api.cloudinary.com/v1_1/${CLD_CLOUD}/${type}/upload`
+}
 
 const HUB_ACCEPT: Record<HubId, string> = {
   print:    ".pdf,.jpg,.jpeg,.png,.doc,.docx",
@@ -251,7 +258,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
       const fd = new FormData()
       fd.append("file", f)
       fd.append("upload_preset", CLD_PRESET)
-      const res  = await fetch(CLD_URL, { method: "POST", body: fd })
+      const res  = await fetch(getCldUrl(f), { method: "POST", body: fd })
       if (!res.ok) throw new Error("Upload failed")
       const data = await res.json()
       if (!data.secure_url) throw new Error("No URL returned")
