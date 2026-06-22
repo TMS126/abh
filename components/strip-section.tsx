@@ -1,6 +1,5 @@
 "use client"
 
-import React from "react"
 import { Rocket, CurrencyDollar, HandHeart, MapPin, WhatsappLogo } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 import { WA, STRIP_ITEMS } from "@/lib/brand"
@@ -25,24 +24,15 @@ function StripCard({ item }: { item: any }) {
         "abh-card p-6 transition-all duration-300 group",
         "hover:-translate-y-1 hover:shadow-lg"
       )}
-      style={{ "--hub-color": color } as React.CSSProperties}
     >
       <div
-        className={cn(
-          "w-12 h-12 rounded-[14px] flex items-center justify-center shrink-0 border transition-all duration-300 mb-5",
-          "bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800",
-          "group-hover:text-white group-hover:border-transparent"
-        )}
-        style={{
-          color,
-        }}
+        className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 mb-5"
+        style={{ backgroundColor: `${color}15`, color }}
       >
-        <span className="group-hover:[background-color:var(--hub-color)] w-full h-full rounded-[14px] flex items-center justify-center transition-colors duration-300" style={{ color }}>
-          {item.iconName === "Rocket"          && <Rocket          weight="fill" className="w-6 h-6 group-hover:text-white transition-colors" aria-hidden="true" />}
-          {item.iconName === "CurrencyDollar"  && <CurrencyDollar  weight="fill" className="w-6 h-6 group-hover:text-white transition-colors" aria-hidden="true" />}
-          {item.iconName === "HandHeart"       && <HandHeart       weight="fill" className="w-6 h-6 group-hover:text-white transition-colors" aria-hidden="true" />}
-          {item.iconName === "MapPin"          && <MapPin          weight="fill" className="w-6 h-6 group-hover:text-white transition-colors" aria-hidden="true" />}
-        </span>
+        {item.iconName === "Rocket"          && <Rocket          weight="fill" className="w-5 h-5" aria-hidden="true" />}
+        {item.iconName === "CurrencyDollar"  && <CurrencyDollar  weight="fill" className="w-5 h-5" aria-hidden="true" />}
+        {item.iconName === "HandHeart"       && <HandHeart       weight="fill" className="w-5 h-5" aria-hidden="true" />}
+        {item.iconName === "MapPin"          && <MapPin          weight="fill" className="w-5 h-5" aria-hidden="true" />}
       </div>
       <div>
         <h3 className="abh-card-heading text-base mb-2">{item.title}</h3>
@@ -90,3 +80,4 @@ export function CtaBar({
     </section>
   )
 }
+ 
