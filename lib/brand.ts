@@ -232,7 +232,7 @@ export const GALLERY_CATEGORIES = [
 
 // ─── ALERT NOTICE (Gallery) ──────────────────────────────────────────────────
 export const GALLERY_ALERT =
-  "We are currently curating our gallery to feature our latest local business success stories. The current imagery demonstrates the visual aesthetic and service style of Apexbytes Hub. Check back often for fresh project work!"
+  "We are currently curating our gallery to feature our latest local business success stories. The current imagery demonstrates the visual aesthetic and service style of ApexbytesHub. Check back often for fresh project work!"
 
 // ─── FAQ ──────────────────────────────────────────────────────────────────────
 export const FAQS = [
@@ -294,12 +294,6 @@ export const ABOUT_STANDARDS = [
     description: "Equipped with the high-yield Canon Pixma G3420 continuous ink system, we provide rich, vibrant color layouts and documents at a fraction of the price of massive commercial retailers.",
   },
   {
-    id:          3,
-    iconName:    "Scissors",
-    title:       "Hand-Crafted Sealing & Care",
-    description: "We take genuine pride in manual precision. Using our Bell laminating machine, professional scissors, and Bostik adhesives, every single card, document pack, and flyer is individually crafted.",
-  },
-  {
     id:          4,
     iconName:    "DeviceMobile",
     title:       "Direct WhatsApp Pipeline",
@@ -343,3 +337,4 @@ export const FOOTER_NAV = [
   { label: "About",   path: "/about" },
   { label: "Contact",    path: "/contact" },
 ] as const
+ 
