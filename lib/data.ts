@@ -1030,31 +1030,6 @@ export const PROJECTS = [
     tools: ["Adobe Illustrator", "Vector logo design", "Brand colour system"],
     result: "The client immediately updated their WhatsApp, Facebook, and business cards. The new logo looks the same whether it's on a phone screen or a printed banner.",
   },
-
-  // ─── Before & After: PC Cleanup ──────────────────────────────────────────────
-  {
-    id: "pc-cleanup-ba",
-    hub: "tech",
-    title: "PC Cleanup — Before & After",
-    tag: "Tech Hub",
-    shortDesc: "A laptop that took 4 minutes to open Chrome — cleaned, optimised, and restored to speed.",
-    image: "/gallery/tech/cleanup-after.jpg",
-    images: ["/gallery/tech/cleanup-after.jpg", "/gallery/tech/cleanup-before.jpg"],
-    beforeImage: "/gallery/tech/cleanup-before.jpg",
-    afterImage: "/gallery/tech/cleanup-after.jpg",
-    clientType: "client" as const,
-    clientGoal: "Client brought in a laptop that was almost unusable — constant spinning, apps freezing, and a taskbar full of things they never installed. They just wanted it to work normally again.",
-    whatWeDid: [
-      "Ran a full malware and adware scan — removed 47 threats",
-      "Cleared 14GB of junk files, temp folders, and browser cache",
-      "Disabled 23 unnecessary startup programs",
-      "Uninstalled bloatware and bundled software the client never wanted",
-      "Updated Windows and all drivers to current stable versions",
-      "Verified boot time went from 3m 40s down to under 30 seconds",
-    ],
-    tools: ["Malware removal tools", "System optimisation", "Windows update & driver management"],
-    result: "The client picked it up the same day. Boot time dropped from nearly 4 minutes to 28 seconds. No more freezing, no more pop-ups.",
-  },
 ] as const
 
 export type ProjectData = {
@@ -1074,4 +1049,5 @@ export type ProjectData = {
   afterImage?: string
 }
 export type Project = typeof PROJECTS[number]
+ 
  
