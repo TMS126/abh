@@ -259,13 +259,17 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
       fd.append("file", f)
       fd.append("upload_preset", CLD_PRESET)
       const res  = await fetch(getCldUrl(f), { method: "POST", body: fd })
-      if (!res.ok) throw new Error("Upload failed")
       const data = await res.json()
+      if (!res.ok) {
+        const errMsg = data?.error?.message || `HTTP ${res.status}`
+        throw new Error(errMsg)
+      }
       if (!data.secure_url) throw new Error("No URL returned")
       setFileUrl(data.secure_url)
       setUploadPhase("done")
-    } catch {
-      setUploadErr("Upload failed — check your connection and try again, or just send your file directly on WhatsApp.")
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error"
+      setUploadErr(`Upload failed: ${msg}`)
       setUploadPhase("error")
     }
   }
