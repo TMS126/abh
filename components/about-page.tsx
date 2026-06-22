@@ -55,13 +55,12 @@ export function AboutPage() {
 
           <h1
             id="about-title"
-            className="font-sans font-black text-4xl md:text-6xl lg:text-7xl leading-[1.05] tracking-tight text-zinc-900 dark:text-zinc-50 mb-6"
+            className="font-sans font-black text-3xl md:text-4xl lg:text-5xl leading-[1.1] tracking-tight text-zinc-900 dark:text-zinc-50 mb-6"
           >
-            Built right here,{" "}
-            <span style={{ color: BRAND.orange }}>for right here.</span>
+            Built right here, for right here.
           </h1>
 
-          <p className="abh-tagline max-w-2xl mx-auto text-lg md:text-xl">
+          <p className="abh-tagline max-w-2xl mx-auto">
             {BIZ.name} is your neighbourhood's one-stop hub — printing, design, IT, and government services, handled personally by someone who actually lives in your community.
           </p>
 
@@ -70,12 +69,12 @@ export function AboutPage() {
           {/* Quick stats strip */}
           <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10 mt-2">
             {[
-              { value: BIZ.hubCount,       label: "Service Hubs",    color: BRAND.blue },
-              { value: BIZ.serviceCount,   label: "Services",        color: BRAND.green },
-              { value: "Since 2026",       label: "Est. Kgotsong",   color: BRAND.orange },
+              { value: BIZ.hubCount,       label: "Service Hubs" },
+              { value: BIZ.serviceCount,   label: "Services" },
+              { value: "Since 2026",       label: "Est. Kgotsong" },
             ].map((s, i) => (
               <div key={i} className="text-center">
-                <p className="font-sans font-black text-3xl md:text-4xl leading-none" style={{ color: s.color }}>{s.value}</p>
+                <p className="font-sans font-black text-2xl md:text-3xl leading-none text-zinc-900 dark:text-zinc-50">{s.value}</p>
                 <p className="text-[0.65rem] font-bold uppercase tracking-widest text-zinc-400 mt-1">{s.label}</p>
               </div>
             ))}
@@ -90,10 +89,9 @@ export function AboutPage() {
           {/* Pull quote — the thing people remember */}
           <div className="mb-16 md:mb-20 text-center md:text-left max-w-[800px]">
             <p
-              className="font-sans font-black text-2xl md:text-3xl lg:text-4xl leading-tight text-zinc-900 dark:text-zinc-50"
+              className="font-sans font-black text-xl md:text-2xl leading-tight text-zinc-900 dark:text-zinc-50"
             >
-              "Not everyone is tech-savvy —{" "}
-              <span style={{ color: BRAND.orange }}>and that's exactly why we're here.</span>"
+              "Not everyone is tech-savvy — and that's exactly why we're here."
             </p>
             <p className="abh-body mt-5 text-base max-w-xl">
               We started with one goal: make technology, design, and important government services accessible to everyone in Kgotsong — no jargon, no stress, no overcharging.
@@ -109,7 +107,7 @@ export function AboutPage() {
                 <li key={index} className="flex gap-5 items-start group">
                   <div
                     className="w-12 h-12 rounded-[14px] flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-110"
-                    style={{ backgroundColor: `${BRAND.green}15`, color: BRAND.green }}
+                    style={{ backgroundColor: `${BRAND.blue}10`, color: BRAND.blue }}
                     aria-hidden="true"
                   >
                     {renderIcon(item.iconName, "w-6 h-6")}
@@ -121,19 +119,7 @@ export function AboutPage() {
                 </li>
               ))}
               {/* Extra human touch — what the data doesn't say */}
-              <li className="flex gap-5 items-start group">
-                <div
-                  className="w-12 h-12 rounded-[14px] flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-110"
-                  style={{ backgroundColor: `${BRAND.green}15`, color: BRAND.green }}
-                  aria-hidden="true"
-                >
-                  <Handshake weight="fill" className="w-6 h-6" />
-                </div>
-                <div className="pt-0.5">
-                  <h3 className="font-sans font-black text-base text-zinc-900 dark:text-zinc-50 mb-1">You Deal With The Founder</h3>
-                  <p className="abh-body text-sm">No middlemen, no call centres. When you contact us, you're speaking directly to Theji — the person who does the work.</p>
-                </div>
-              </li>
+
             </ul>
 
             {/* Stat card — refined, not a 2x2 grid */}
@@ -261,13 +247,12 @@ export function AboutPage() {
 
           <h2
             id="mission-title"
-            className="font-sans font-black text-3xl md:text-5xl leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 mb-6"
+            className="font-sans font-black text-2xl md:text-3xl leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 mb-6"
           >
-            Bridging the digital gap —{" "}
-            <span style={{ color: BRAND.orange }}>one person at a time.</span>
+            Bridging the digital gap — one person at a time.
           </h2>
 
-          <p className="abh-body text-base md:text-lg max-w-xl mx-auto mb-10">
+          <p className="abh-body max-w-xl mx-auto mb-10">
             {BIZ.name} is that bridge — printing, design, IT support, and government services brought to people who need them most, in a community that deserves better access.
           </p>
 
@@ -285,4 +270,5 @@ export function AboutPage() {
     </div>
   )
 }
+ 
  
