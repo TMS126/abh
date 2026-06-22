@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Target, Heart, Lightning, WhatsappLogo, ShieldCheck, Desktop, Printer, Scissors, DeviceMobile, ArrowRight, MapPin, UsersThree, Handshake } from "@phosphor-icons/react"
+import { Target, Heart, Lightning, WhatsappLogo, ShieldCheck, Desktop, Printer, DeviceMobile, ArrowRight, MapPin, UsersThree, Handshake } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, ABOUT_VALUES, ABOUT_STANDARDS } from "@/lib/brand"
@@ -13,7 +13,6 @@ function renderIcon(iconName: string, className: string) {
     case "Lightning":    return <Lightning    weight="fill" className={className} aria-hidden="true" />
     case "Desktop":      return <Desktop      weight="fill" className={className} aria-hidden="true" />
     case "Printer":      return <Printer      weight="fill" className={className} aria-hidden="true" />
-    case "Scissors":     return <Scissors     weight="fill" className={className} aria-hidden="true" />
     case "DeviceMobile": return <DeviceMobile weight="fill" className={className} aria-hidden="true" />
     default:             return <Target       weight="fill" className={className} aria-hidden="true" />
   }
@@ -189,7 +188,7 @@ export function AboutPage() {
         className="py-20 px-4 bg-zinc-50/60 dark:bg-zinc-900/20"
         aria-labelledby="standards-title"
       >
-        <div className="max-w-[860px] mx-auto">
+        <div className="max-w-[680px] mx-auto">
           <div className="text-center mb-14">
             <h2 id="standards-title" className="abh-section-heading mb-4">Our Everyday Toolkit</h2>
             <p className="abh-tagline max-w-xl mx-auto">
@@ -202,7 +201,7 @@ export function AboutPage() {
               max-w-[860px] on the container means the row is never wider
               than the content needs, so it doesn't spread and look sparse. */}
           <ul
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5"
+            className="grid grid-cols-1 sm:grid-cols-3 gap-5"
             aria-label="Standards"
           >
             {ABOUT_STANDARDS.map((item) => {
