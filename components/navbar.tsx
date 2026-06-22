@@ -82,8 +82,7 @@ export function Navbar() {
               <Image src="/logo.png" alt="" fill priority sizes="36px" className="object-contain" />
             </div>
             <div className="font-sans font-black text-[1.1rem] leading-none tracking-tight transition-all duration-500 overflow-hidden flex items-center" style={{ maxWidth: isTextExpanded ? "180px" : "0px", opacity: isTextExpanded ? 1 : 0 }}>
-              <span className="text-brand-blue dark:text-brand-light-blue whitespace-nowrap">Apexbytes</span>
-              <span className="text-brand-green dark:text-brand-light-green whitespace-nowrap ml-1">Hub</span>
+              <span className="text-brand-blue dark:text-brand-light-blue whitespace-nowrap">Apexbytes</span><span className="text-brand-green dark:text-brand-light-green whitespace-nowrap">Hub</span>
             </div>
           </div>
 
@@ -110,6 +109,8 @@ export function Navbar() {
             </button>
             <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700" />
             <BusinessStatusNavbar />
+
+            <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 md:hidden" />
 
             <button ref={menuTriggerRef} onClick={() => setMenuOpen(true)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 md:hidden", menuOpen ? "opacity-0" : "opacity-100")}>
               <div className="w-4 h-[12px] flex flex-col justify-between items-center">
@@ -188,11 +189,12 @@ export function Navbar() {
             <Image src="/logo.png" alt="" fill sizes="28px" className="object-contain" />
           </div>
           <span className="font-sans font-black text-sm tracking-tight text-zinc-900 dark:text-white">
-            {BIZ.name}
+            ApexbytesHub
           </span>
         </div>
       </div>
     </>
   )
 }
+ 
  
