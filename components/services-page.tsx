@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useEffect, useMemo, useRef, useCallback } from "react"
+import { useState, useEffect, useMemo, useRef, useCallback, type ChangeEvent } from "react"
 import { useSearchParams } from "next/navigation"
 import {
   X, Printer, FileText, PaintBrush, Globe, Desktop,
   PaperPlaneTilt, Megaphone, MagnifyingGlass,
+  Paperclip, CheckCircle, SpinnerGap, WarningCircle,
 } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
@@ -12,6 +13,22 @@ import { BIZ, HUB_COLORS, HubKey } from "@/lib/brand"
 import { HUBS, HubId } from "@/lib/data"
 
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
+
+// ─── Cloudinary unsigned upload ───────────────────────────────────────────────
+// Cloud name and unsigned preset are intentionally public — they're designed
+// to be used in client-side code. API Secret must NEVER appear here.
+const CLD_CLOUD  = "dk30vh3ft"
+const CLD_PRESET = "apexbyteshub"
+const CLD_URL    = `https://api.cloudinary.com/v1_1/${CLD_CLOUD}/auto/upload`
+const CLD_MAX_MB = 10
+
+const HUB_ACCEPT: Record<HubId, string> = {
+  print:    ".pdf,.jpg,.jpeg,.png,.doc,.docx",
+  doc:      ".pdf,.jpg,.jpeg,.png,.doc,.docx",
+  design:   ".pdf,.jpg,.jpeg,.png,.ai,.psd,.svg",
+  eservice: ".pdf,.jpg,.jpeg,.png,.doc,.docx",
+  tech:     ".pdf,.jpg,.jpeg,.png,.zip,.doc,.docx",
+}
 
 const NOTICE = {
   text: "Add-on services will be available from ",
@@ -211,7 +228,59 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   const isDark = resolvedTheme === "dark"
   const [tab, setTab] = useState<Tab>("bring")
 
-  useEffect(() => { setTab("bring") }, [svc?.name])
+  // Upload state
+  const [file,        setFile]        = useState<File | null>(null)
+  const [uploadPhase, setUploadPhase] = useState<"idle" | "uploading" | "done" | "error">("idle")
+  const [fileUrl,     setFileUrl]     = useState<string | null>(null)
+  const [uploadErr,   setUploadErr]   = useState<string | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  // Reset everything when the modal switches to a different service
+  useEffect(() => {
+    setTab("bring")
+    setFile(null)
+    setUploadPhase("idle")
+    setFileUrl(null)
+    setUploadErr(null)
+    if (fileRef.current) fileRef.current.value = ""
+  }, [svc?.name])
+
+  const doUpload = async (f: File) => {
+    setUploadPhase("uploading")
+    try {
+      const fd = new FormData()
+      fd.append("file", f)
+      fd.append("upload_preset", CLD_PRESET)
+      const res  = await fetch(CLD_URL, { method: "POST", body: fd })
+      if (!res.ok) throw new Error("Upload failed")
+      const data = await res.json()
+      if (!data.secure_url) throw new Error("No URL returned")
+      setFileUrl(data.secure_url)
+      setUploadPhase("done")
+    } catch {
+      setUploadErr("Upload failed — check your connection and try again, or just send your file directly on WhatsApp.")
+      setUploadPhase("error")
+    }
+  }
+
+  const handleFilePick = (e: ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    if (f.size > CLD_MAX_MB * 1024 * 1024) {
+      setUploadErr(`File is too large — please keep it under ${CLD_MAX_MB}MB.`)
+      setUploadPhase("error")
+      return
+    }
+    setFile(f)
+    setUploadErr(null)
+    void doUpload(f)
+  }
+
+  const clearFile = () => {
+    setFile(null); setFileUrl(null)
+    setUploadPhase("idle"); setUploadErr(null)
+    if (fileRef.current) fileRef.current.value = ""
+  }
 
   if (!svc) return null
 
@@ -219,7 +288,11 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   const accent       = isDark ? colors.tagTextDark : colors.tagText
   const hubTitle     = HUBS[svc.hubId]?.title || svc.sectionTitle
   const naturalLabel = naturalServiceLabel(svc.name, svc.sectionTitle)
-  const waMessage    = `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). The price shown is ${svc.price}. Can you assist?`
+
+  // WhatsApp message — include the uploaded file URL when present
+  const waMessage = fileUrl
+    ? `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). The price shown is ${svc.price}. Here's my file: ${fileUrl}`
+    : `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). The price shown is ${svc.price}. Can you assist?`
 
   const requirements = svc.requirements?.length
     ? svc.requirements
@@ -307,7 +380,71 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
           )}
         </div>
 
-        <div className="px-6 pb-6 pt-3 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800">
+        {/* Footer — file upload + WhatsApp button */}
+        <div className="px-6 pb-6 pt-3 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
+
+          {/* Hidden file input */}
+          <input
+            ref={fileRef}
+            type="file"
+            accept={HUB_ACCEPT[svc.hubId]}
+            onChange={handleFilePick}
+            className="hidden"
+          />
+
+          {/* Upload trigger — idle state */}
+          {uploadPhase === "idle" && (
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-[14px] font-bold text-sm border-2 border-dashed transition-all active:scale-95"
+              style={{ borderColor: `${accent}40`, color: accent }}
+            >
+              <Paperclip size={17} weight="bold" />
+              Attach a file (optional)
+            </button>
+          )}
+
+          {/* Uploading */}
+          {uploadPhase === "uploading" && (
+            <div className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-zinc-100 dark:bg-zinc-900 text-zinc-500">
+              <SpinnerGap size={17} weight="bold" className="animate-spin shrink-0" />
+              <span className="truncate">Uploading {file?.name}…</span>
+            </div>
+          )}
+
+          {/* Done */}
+          {uploadPhase === "done" && file && (
+            <div className="flex items-center justify-between gap-2 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400">
+              <span className="flex items-center gap-2 min-w-0">
+                <CheckCircle size={17} weight="fill" className="shrink-0" />
+                <span className="truncate">{file.name}</span>
+              </span>
+              <button type="button" onClick={clearFile} aria-label="Remove file" className="shrink-0 opacity-60 hover:opacity-100 transition-opacity">
+                <X size={15} weight="bold" />
+              </button>
+            </div>
+          )}
+
+          {/* Error */}
+          {uploadPhase === "error" && (
+            <div className="space-y-2">
+              <div className="flex items-start gap-2 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400">
+                <WarningCircle size={17} weight="fill" className="shrink-0 mt-0.5" />
+                <span className="leading-snug">{uploadErr}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setUploadPhase("idle"); setUploadErr(null); fileRef.current?.click() }}
+                className="text-xs font-black underline"
+                style={{ color: accent }}
+              >
+                Try a different file
+              </button>
+            </div>
+          )}
+
+          {/* WhatsApp CTA */}
           <a
             href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waMessage)}`}
             target="_blank"
@@ -730,5 +867,6 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
     </div>
   )
 }
+ 
  
  
