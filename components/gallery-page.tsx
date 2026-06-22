@@ -507,7 +507,7 @@ function ProjectsPopover({
           "text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full transition-all duration-200",
           open
             ? "text-white"
-            : "text-zinc-400 hover:text-white hover:scale-105"
+            : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:scale-105"
         )}
         style={open ? { backgroundColor: accent } : {}}
       >
