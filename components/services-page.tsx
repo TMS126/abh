@@ -519,12 +519,12 @@ function FloatingSearchPill({
 // ─── Notice Banner ────────────────────────────────────────────────────────────
 function NoticeBanner() {
   return (
-    <div className="relative mb-10 rounded-[14px] border border-[#1E6FA8]/20 bg-[#EBF5FB] dark:bg-[#1E3A52]/40 dark:border-[#1E6FA8]/30 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
-      <div className="w-9 h-9 rounded-[10px] bg-[#1E6FA8] flex items-center justify-center flex-shrink-0">
+    <div className="relative mb-10 rounded-[14px] border border-brand-orange/20 bg-brand-orange/5 dark:bg-brand-orange/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+      <div className="w-9 h-9 rounded-[10px] bg-brand-orange flex items-center justify-center flex-shrink-0">
         <Megaphone size={18} weight="fill" color="#fff" />
       </div>
       <div className="flex-1 min-w-0 pt-0.5">
-        <span className="text-[0.65rem] font-black uppercase tracking-widest text-[#0F3F66] dark:text-[#A9D6F2] block mb-1">
+        <span className="text-[0.65rem] font-black uppercase tracking-widest text-brand-orange block mb-1">
           Notice to Clients
         </span>
         <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-snug">
@@ -730,4 +730,5 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
     </div>
   )
 }
+ 
  
