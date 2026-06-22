@@ -294,7 +294,7 @@ export const ABOUT_STANDARDS = [
     description: "Equipped with the high-yield Canon Pixma G3420 continuous ink system, we provide rich, vibrant color layouts and documents at a fraction of the price of massive commercial retailers.",
   },
   {
-    id:          4,
+    id:          3,
     iconName:    "DeviceMobile",
     title:       "Direct WhatsApp Pipeline",
     description: "No long automated queues or unreturned emails. Our business runs directly via a secure WhatsApp pipeline, ensuring your orders, updates, and tracking stay fast and personal.",
@@ -337,4 +337,5 @@ export const FOOTER_NAV = [
   { label: "About",   path: "/about" },
   { label: "Contact",    path: "/contact" },
 ] as const
+ 
  
