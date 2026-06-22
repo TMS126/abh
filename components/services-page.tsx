@@ -624,7 +624,11 @@ export function ServicesPage() {
                   {hub.title}
                 </h3>
                 <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 line-clamp-2">{hub.tagline}</p>
-                <div className="mt-8 flex flex-col items-center gap-2">
+                {/* Available services count */}
+                <p className="mt-3 text-[0.65rem] font-black uppercase tracking-widest" style={{ color: accent }}>
+                  {hub.sections.reduce((sum, s) => sum + s.items.length, 0)} Available Services
+                </p>
+                <div className="mt-6 flex flex-col items-center gap-2">
                   <div className="flex items-center gap-1.5 text-xs font-black lowercase tracking-widest leading-none" style={{ color: accent }}>
                     <span>explore</span>
                     <PaperPlaneTilt size={14} weight="fill" className="relative top-[0.5px]" />
@@ -730,5 +734,6 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
     </div>
   )
 }
+ 
  
  
