@@ -481,10 +481,11 @@ function ProjectCarousel({ projects, accent, onSelect }: { projects: ProjectData
 
 // ─── Projects count popover ───────────────────────────────────────────────────
 function ProjectsPopover({
-  projects, accent, onSelect,
+  projects, accent, isDark, onSelect,
 }: {
   projects: ProjectData[]
   accent: string
+  isDark: boolean
   onSelect: (p: ProjectData) => void
 }) {
   const [open, setOpen] = useState(false)
@@ -506,7 +507,7 @@ function ProjectsPopover({
         className={cn(
           "text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full transition-all duration-200",
           open
-            ? "text-zinc-900"
+            ? isDark ? "text-zinc-900" : "text-white"
             : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:scale-105"
         )}
         style={open ? { backgroundColor: accent } : {}}
@@ -634,7 +635,7 @@ export function GalleryPage() {
                 <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
                   <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: accent }} />
                   <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
-                  <ProjectsPopover projects={projects} accent={accent} onSelect={setSelectedProject} />
+                  <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
                 </div>
                 <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} />
               </div>
