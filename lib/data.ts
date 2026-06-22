@@ -1014,7 +1014,7 @@ export const PROJECTS = [
     title: "Logo Rebrand — Before & After",
     tag: "Design Hub",
     shortDesc: "Side-by-side transformation of a flat, dated logo into a clean modern brand mark.",
-    image: "/gallery/design/rebrand-after.jpg",
+    image: "/vsp1.jpg",
     images: ["/gallery/design/rebrand-after.jpg", "/gallery/design/rebrand-before.jpg"],
     beforeImage: "/Vspsktch.jpeg",
     afterImage: "/vsp1.jpg",
