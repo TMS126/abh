@@ -512,7 +512,7 @@ function ProjectsPopover({
         )}
         style={open ? { backgroundColor: accent } : {}}
       >
-        {projects.length} {projects.length === 1 ? "Project" : "Projects"}
+        {open ? "Projects" : `${projects.length} ${projects.length === 1 ? "Project" : "Projects"}`}
       </button>
 
       {open && (
