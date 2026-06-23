@@ -9,19 +9,18 @@ import { NAV_ITEMS } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 
 export function Navbar() {
-  const router   = useRouter()
+  const router = useRouter()
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
 
-  const [mounted,        setMounted]        = useState(false)
-  const [menuOpen,       setMenuOpen]       = useState(false)
-  const [navVisible,     setNavVisible]     = useState(true)
+  const [mounted, setMounted] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [navVisible, setNavVisible] = useState(true)
   const [isTextExpanded, setIsTextExpanded] = useState(true)
 
-  const lastScrollY    = useRef(0)
+  const lastScrollY = useRef(0)
   const logoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const menuRef        = useRef<HTMLDivElement>(null)
-  const menuTriggerRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -83,10 +82,11 @@ export function Navbar() {
               className="relative w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-[14px] overflow-hidden transition-all duration-300"
               style={mounted && theme === "dark" ? { filter: "invert(1) sepia(1) saturate(2.5) hue-rotate(150deg) brightness(0.85)" } : undefined}
             >
-              <Image src="/logo.png" alt="" fill priority sizes="36px" className="object-contain" />
+              <Image src="/logo.png" alt="ApexBytes Hub" fill priority sizes="36px" className="object-contain" />
             </div>
             <div className="font-sans font-black text-[1.1rem] leading-none tracking-tight transition-all duration-500 overflow-hidden flex items-center" style={{ maxWidth: isTextExpanded ? "180px" : "0px", opacity: isTextExpanded ? 1 : 0 }}>
-              <span className="text-brand-blue dark:text-brand-light-blue whitespace-nowrap">Apexbytes</span><span className="text-brand-green dark:text-brand-light-green whitespace-nowrap">Hub</span>
+              <span className="text-brand-blue dark:text-brand-light-blue whitespace-nowrap">Apexbytes</span>
+              <span className="text-brand-green dark:text-brand-light-green whitespace-nowrap">Hub</span>
             </div>
           </div>
 
@@ -97,8 +97,10 @@ export function Navbar() {
                 key={item.id}
                 onClick={() => navigate(item.path)}
                 className={cn(
-                  "px-4 py-2 rounded-[14px] text-[0.84rem] font-black transition-all duration-300", 
-                  isActive(item.path) ? "bg-brand-blue/20 text-brand-blue dark:bg-brand-light-blue/20 dark:text-brand-light-blue" : "text-zinc-500 dark:text-zinc-400 hover:text-brand-blue"
+                  "px-4 py-2 rounded-[14px] text-[0.84rem] font-bold transition-all duration-300", 
+                  isActive(item.path) 
+                    ? "bg-brand-blue/25 text-brand-blue dark:bg-brand-light-blue/25 dark:text-brand-light-blue" 
+                    : "text-zinc-700 dark:text-zinc-300 hover:text-brand-blue dark:hover:text-brand-light-blue"
                 )}
               >
                 {item.label}
@@ -112,7 +114,7 @@ export function Navbar() {
               {mounted && (theme === "dark" ? <Moon size={20} weight="fill" className="text-brand-light-blue" /> : <Sun size={20} weight="fill" className="text-brand-orange" />)}
             </button>
             <div className="w-px h-4 bg-white/20 dark:bg-white/10 md:hidden" />
-            <button ref={menuTriggerRef} onClick={() => setMenuOpen(true)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 md:hidden", menuOpen ? "opacity-0" : "opacity-100")}>
+            <button onClick={() => setMenuOpen(true)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 md:hidden", menuOpen ? "opacity-0" : "opacity-100")}>
               <div className="w-4 h-[12px] flex flex-col justify-between items-center">
                 <span className="w-full h-[2.5px] bg-brand-orange dark:bg-brand-light-blue rounded-full" />
                 <span className="w-full h-[2.5px] bg-brand-orange dark:bg-brand-light-blue rounded-full" />
@@ -141,7 +143,7 @@ export function Navbar() {
                 onClick={() => navigate(item.path)}
                 style={{ transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms" }}
                 className={cn(
-                  "py-3 px-8 rounded-[14px] font-sans font-extrabold text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
+                  "py-3 px-8 rounded-[14px] font-sans font-bold text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
                   isActive(item.path)
                     ? "bg-brand-blue/20 text-brand-blue dark:bg-brand-light-blue/20 dark:text-brand-light-blue"
                     : "text-zinc-700 dark:text-zinc-200",
