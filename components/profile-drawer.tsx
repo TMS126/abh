@@ -106,7 +106,7 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
         aria-hidden="true"
       />
 
-      {/* Bottom sheet wrapper */}
+      {/* Bottom sheet */}
       <div
         className={cn(
           "fixed inset-0 z-[10060] flex items-end justify-center transition-opacity duration-300 pointer-events-none",
@@ -120,29 +120,23 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
           aria-label={`${BIZ.founder} — founder profile`}
           onClick={(e) => e.stopPropagation()}
           className={cn(
-            // Wider card — max-w-md instead of max-w-sm
             "relative w-full max-w-md bg-white dark:bg-zinc-900 rounded-t-[20px] shadow-2xl overflow-hidden flex flex-col max-h-[88vh] transition-transform duration-300 ease-out",
             open ? "translate-y-0 pointer-events-auto" : "translate-y-full pointer-events-none"
           )}
         >
           <div className="flex-1 overflow-y-auto overscroll-contain">
 
-            {/* ── Cover banner — name displayed on it ── */}
+            {/* ── Cover banner — blue only, noise + subtle depth ── */}
             <div
               className="relative h-36 md:h-44 w-full shrink-0 overflow-hidden flex items-end"
-              style={{
-                background: `linear-gradient(135deg, ${BRAND.blue} 0%, ${BRAND.blueDark} 100%)`,
-              }}
+              style={{ background: `linear-gradient(150deg, ${BRAND.blue} 0%, ${BRAND.blueDark} 100%)` }}
             >
-              {/* Green glow — bottom-left */}
+              {/* Subtle inner highlight */}
               <div
-                className="absolute -bottom-8 -left-8 w-48 h-48 rounded-full pointer-events-none"
-                style={{ background: `radial-gradient(circle, ${BRAND.green}55 0%, transparent 70%)` }}
-              />
-              {/* Orange glow — top-right */}
-              <div
-                className="absolute -top-6 -right-4 w-32 h-32 rounded-full pointer-events-none"
-                style={{ background: `radial-gradient(circle, ${BRAND.orange}40 0%, transparent 70%)` }}
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: `radial-gradient(ellipse at 20% 40%, rgba(255,255,255,0.08) 0%, transparent 60%)`,
+                }}
               />
               {/* Noise texture */}
               <div
@@ -155,15 +149,15 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
 
               {/* Name on banner */}
               <div className="relative z-10 px-7 pb-5">
-                <p className="font-sans font-black text-xl text-white tracking-tight leading-tight drop-shadow-sm">
+                <p className="text-xl font-black text-white tracking-tight leading-tight drop-shadow-sm">
                   Theji Meje
                 </p>
-                <p className="text-[0.72rem] font-bold text-white/70 uppercase tracking-widest mt-0.5">
+                <p className="text-[0.65rem] font-black text-white/70 uppercase tracking-widest mt-0.5">
                   {FOUNDER_ROLE}
                 </p>
               </div>
 
-              {/* Close button */}
+              {/* Close */}
               <button
                 ref={closeRef}
                 onClick={onClose}
@@ -174,65 +168,59 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
               </button>
             </div>
 
-            {/* Content */}
-            <div className="px-8 pb-10 pt-6 flex flex-col items-center text-center">
+            {/* ── Content ── */}
+            <div className="px-7 pb-8 pt-6 flex flex-col items-center text-center">
 
               {/* Location */}
-              <p className="abh-label text-[0.62rem] mb-6">
+              <p className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-5">
                 {BIZ.address.replace(/^5878\s*/, "")}
               </p>
 
               {/* Bio */}
-              <p className="abh-body text-sm text-center mb-8 leading-relaxed">
+              <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400 leading-relaxed mb-8 text-center">
                 {FOUNDER_BIO}
               </p>
 
-              {/* Action buttons — same size, weight, font, layout */}
-              <div className="flex flex-col items-center w-full gap-3">
+              {/* ── Side-by-side action buttons ── */}
+              <div className="grid grid-cols-2 gap-3 w-full">
 
-                {/* Personal WhatsApp — green */}
+                {/* Personal WhatsApp */}
                 <a
                   href={FOUNDER_WA_LINK}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-[82%] h-[86px] flex flex-col items-center justify-center gap-1.5 rounded-[14px] font-black text-sm text-white transition-all active:scale-95 hover:-translate-y-0.5"
+                  className="flex items-center justify-center gap-2.5 py-3.5 px-4 rounded-[14px] font-black text-sm text-white transition-all duration-200 active:scale-95 hover:-translate-y-0.5"
                   style={{
                     backgroundColor: BRAND.whatsapp,
-                    boxShadow: `0 6px 20px rgba(37,211,102,0.35)`,
+                    boxShadow: `0 4px 14px rgba(37,211,102,0.3)`,
                   }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = BRAND.whatsappDark }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = BRAND.whatsapp }}
                 >
-                  <WhatsappLogo size={22} weight="fill" aria-hidden="true" />
-                  <span className="leading-tight text-center text-sm font-black">
-                    Personal<br />WhatsApp
-                  </span>
+                  <WhatsappLogo size={18} weight="fill" aria-hidden="true" />
+                  <span className="text-sm font-black leading-tight">WhatsApp</span>
                 </a>
 
-                {/* Save contact — brand blue */}
+                {/* Save contact */}
                 <button
                   onClick={handleVCard}
-                  className="w-[82%] h-[86px] flex flex-col items-center justify-center gap-1.5 rounded-[14px] font-black text-sm text-white transition-all active:scale-95 hover:-translate-y-0.5"
+                  className="flex items-center justify-center gap-2.5 py-3.5 px-4 rounded-[14px] font-black text-sm text-white transition-all duration-200 active:scale-95 hover:-translate-y-0.5"
                   style={{
                     backgroundColor: vcardDone ? BRAND.green : BRAND.blue,
                     boxShadow: vcardDone
-                      ? `0 6px 20px rgba(111,191,26,0.35)`
-                      : `0 6px 20px rgba(30,111,168,0.35)`,
+                      ? `0 4px 14px rgba(111,191,26,0.3)`
+                      : `0 4px 14px rgba(30,111,168,0.3)`,
                   }}
                 >
                   {vcardDone ? (
                     <>
-                      <AddressBook size={22} weight="fill" aria-hidden="true" />
-                      <span className="leading-tight text-center text-sm font-black">
-                        Saved to<br />Contacts!
-                      </span>
+                      <AddressBook size={18} weight="fill" aria-hidden="true" />
+                      <span className="text-sm font-black leading-tight">Saved!</span>
                     </>
                   ) : (
                     <>
-                      <DownloadSimple size={22} weight="bold" aria-hidden="true" />
-                      <span className="leading-tight text-center text-sm font-black">
-                        Save<br />Contact
-                      </span>
+                      <DownloadSimple size={18} weight="fill" aria-hidden="true" />
+                      <span className="text-sm font-black leading-tight">Save Contact</span>
                     </>
                   )}
                 </button>
@@ -244,4 +232,4 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
       </div>
     </>
   )
-                  } 
+            } 
