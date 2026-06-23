@@ -47,9 +47,9 @@ function FAQAccordion() {
   const [openIndex, setOpenIndex] = useState<number | null>(0)
 
   return (
-    <section className="px-4 md:px-8 py-14 md:py-16">
+    <section className="px-4 md:px-8 py-16 md:py-20">
       <div className="max-w-[750px] mx-auto">
-        <div className="text-center mb-10">
+        <div className="text-center mb-8">
           <h2 className="abh-section-heading mb-3">Frequently Asked Questions</h2>
           <p className="abh-body">Everything you need to know about orders, processing, and timelines.</p>
           <div className="abh-divider" />
@@ -181,7 +181,7 @@ export function ContactPage() {
       </section>
 
       {/* ── Main grid ── */}
-      <section className="px-4 md:px-8 pb-14">
+      <section className="px-4 md:px-8 pb-16">
         <div className="max-w-[980px] mx-auto grid md:grid-cols-2 gap-10">
 
           {/* Left column */}
@@ -203,7 +203,7 @@ export function ContactPage() {
                 >
                   <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.dot }} />
                   <div className="min-w-0">
-                    <p className="text-[0.92rem] font-black text-zinc-800 dark:text-zinc-200">{c.title}</p>
+                    <p className="text-sm font-black text-zinc-800 dark:text-zinc-200">{c.title}</p>
                     <p className="abh-muted break-words">{c.value}</p>
                   </div>
                 </a>
@@ -214,13 +214,13 @@ export function ContactPage() {
             <div className="abh-card p-5 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
                 <div
-                  className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
+                  className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
                   style={{ backgroundColor: `${BRAND.blue}15`, color: BRAND.blue }}
                 >
                   <AddressBook size={20} weight="fill" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[0.88rem] font-black text-zinc-800 dark:text-zinc-200">
+                  <p className="text-sm font-black text-zinc-800 dark:text-zinc-200">
                     Save Our Contact
                   </p>
                   <p className="abh-muted">
@@ -230,7 +230,7 @@ export function ContactPage() {
               </div>
               <button
                 onClick={handleVCard}
-                className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-[14px] font-black text-[0.78rem] text-white transition-all active:scale-95 hover:-translate-y-0.5"
+                className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-[14px] font-black text-sm text-white transition-all active:scale-95 hover:-translate-y-0.5"
                 style={{ backgroundColor: vcardDone ? BRAND.green : BRAND.blue }}
               >
                 <DownloadSimple size={16} weight="bold" />
@@ -239,16 +239,16 @@ export function ContactPage() {
             </div>
 
             {/* Business hours */}
-            <div className="abh-card p-5 bg-brand-blue/5 border-brand-blue/20">
-              <span className="text-[0.78rem] font-black uppercase tracking-widest text-brand-blue flex items-center gap-1.5 mb-3">
+            <div className="abh-card p-5">
+              <span className="text-[0.65rem] font-black uppercase tracking-widest text-brand-blue flex items-center gap-1.5 mb-3">
                 <Clock weight="fill" size={14} /> Business Hours
               </span>
               <div className="space-y-3">
                 <div>
-                  <p className="text-[0.7rem] font-black uppercase text-zinc-500 mb-1">
+                  <p className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-500 mb-1">
                     {HOURS.printAndDoc.label}
                   </p>
-                  <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">
+                  <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                     {HOURS.printAndDoc.hours}
                   </p>
                   <p className="flex items-center gap-1.5 text-xs font-medium mt-1" style={{ color: BRAND.green }}>
@@ -257,11 +257,11 @@ export function ContactPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-[0.7rem] font-black uppercase text-zinc-500 mb-1">
+                  <p className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-500 mb-1">
                     {HOURS.techDesignEservice.label}
                   </p>
                   {HOURS.techDesignEservice.lines.map((l) => (
-                    <p key={l} className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{l}</p>
+                    <p key={l} className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{l}</p>
                   ))}
                   <p className="flex items-center gap-1.5 text-xs font-medium mt-1" style={{ color: BRAND.orangeDark }}>
                     <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: BRAND.orangeDark }} />
@@ -291,7 +291,7 @@ export function ContactPage() {
                     <input
                       type={f.type}
                       className={cn(
-                        "w-full px-4 py-3 border rounded-[14px] bg-white dark:bg-zinc-900 text-[0.84rem] font-black transition-all outline-none",
+                        "w-full px-4 py-3 border rounded-[14px] bg-white dark:bg-zinc-900 text-sm font-medium text-zinc-800 dark:text-zinc-200 transition-all outline-none",
                         err ? "border-red-500" : "border-zinc-100 dark:border-zinc-800 focus:border-brand-blue"
                       )}
                       onBlur={() => setTouched({ ...touched, [f.key]: true })}
@@ -316,7 +316,7 @@ export function ContactPage() {
                 <label className="abh-label block mb-1.5">Your Message</label>
                 <textarea
                   className={cn(
-                    "w-full px-4 py-3 border rounded-[14px] bg-white dark:bg-zinc-900 text-[0.84rem] font-black transition-all outline-none resize-none",
+                    "w-full px-4 py-3 border rounded-[14px] bg-white dark:bg-zinc-900 text-sm font-medium text-zinc-800 dark:text-zinc-200 transition-all outline-none resize-none",
                     touched.message && !isMessageValid(formData.message)
                       ? "border-red-500"
                       : "border-zinc-100 dark:border-zinc-800 focus:border-brand-blue"
@@ -343,4 +343,5 @@ export function ContactPage() {
     </div>
   )
               } 
+ 
  
