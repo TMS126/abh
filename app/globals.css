@@ -48,6 +48,18 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --brand-whatsapp:       #25D366;
   --brand-whatsapp-dark:  #1ebe5a;
 
+  /* ── TEXT-SAFE VARIANTS (light mode only)
+     These are darker versions of brand colors that pass WCAG AA (4.5:1)
+     on white backgrounds. Use these for any colored TEXT in light mode.
+     Never use the bright brand colors above as text on white.
+     Fills, buttons, icons and borders still use the bright versions. ── */
+  --brand-blue-text:      #16325f;   /* 12.68:1 on white — AAA */
+  --brand-orange-text:    #b85c17;   /* 4.58:1  on white — AA  */
+  --brand-green-text:     #4d6f2f;   /* 5.78:1  on white — AA  */
+
+  /* ── WhatsApp button text — dark on green passes AAA (9:1) ── */
+  --brand-whatsapp-text:  #0f172a;
+
   /* ── RADIUS SYSTEM ── */
   --radius:               14px;
 
@@ -70,7 +82,7 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --secondary:            #F4F4F4;
   --secondary-foreground: #333333;
   --muted:                #EDEDED;
-  --muted-foreground:     #777777;
+  --muted-foreground:     #525252;
   --accent:               #6FBF1A;
   --accent-foreground:    #FFFFFF;
   --destructive:          #ef4444;
@@ -153,6 +165,12 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --color-brand-white:          var(--brand-white);
   --color-brand-whatsapp:       var(--brand-whatsapp);
   --color-brand-whatsapp-dark:  var(--brand-whatsapp-dark);
+  --color-brand-whatsapp-text:  var(--brand-whatsapp-text);
+
+  /* Text-safe variants — use these for colored TEXT in light mode */
+  --color-brand-blue-text:      var(--brand-blue-text);
+  --color-brand-orange-text:    var(--brand-orange-text);
+  --color-brand-green-text:     var(--brand-green-text);
 
   --radius-sm:  calc(var(--radius) - 4px);
   --radius-md:  calc(var(--radius) - 2px);
@@ -304,8 +322,20 @@ button, a, [role="button"] {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   GLOBAL TYPOGRAPHY SYSTEM
+   WCAG 2.1 COLOUR USAGE RULES
+   ─────────────────────────────────────────────────────────────────────────────
+   Brand fills (buttons, icons, borders, backgrounds) — use bright brand tokens:
+     --brand-blue, --brand-green, --brand-orange, --brand-whatsapp etc.
+
+   Colored TEXT on white backgrounds — ALWAYS use text-safe variants:
+     text on white → --brand-blue-text   (#16325f  12.68:1 AAA)
+     text on white → --brand-orange-text (#b85c17  4.58:1  AA)
+     text on white → --brand-green-text  (#4d6f2f  5.78:1  AA)
+
+   Labels/metadata small text — minimum zinc-600 (#4B5563, 7.56:1 AAA) in light
+   WhatsApp button text — --brand-whatsapp-text (#0f172a, 9:1 AAA on #25D366)
 ───────────────────────────────────────────────────────────────────────────── */
+
 @layer components {
   .abh-page-title {
     @apply font-sans font-black text-4xl md:text-5xl
@@ -324,8 +354,11 @@ button, a, [role="button"] {
   }
   .abh-eyebrow {
     @apply font-sans font-black text-[0.65rem]
-           uppercase tracking-widest
-           text-brand-blue dark:text-brand-light-blue;
+           uppercase tracking-widest;
+    color: var(--brand-blue-text);
+  }
+  .dark .abh-eyebrow {
+    color: var(--brand-light-blue);
   }
   .abh-body {
     @apply font-sans font-normal text-sm md:text-base
@@ -340,7 +373,7 @@ button, a, [role="button"] {
   .abh-label {
     @apply font-sans font-bold text-[0.65rem]
            uppercase tracking-widest
-           text-zinc-500 dark:text-zinc-400;
+           text-zinc-600 dark:text-zinc-400;
   }
   .abh-tagline {
     @apply font-sans font-normal text-sm md:text-base
@@ -365,11 +398,12 @@ button, a, [role="button"] {
   }
   .abh-wa-btn {
     @apply flex items-center justify-center gap-2
-           font-black text-sm text-white
+           font-black text-sm
            rounded-[14px] px-6 py-3
            transition-all duration-200 active:scale-95
            hover:-translate-y-0.5;
     background-color: var(--brand-whatsapp);
+    color: var(--brand-whatsapp-text);
   }
   .abh-wa-btn:hover { background-color: var(--brand-whatsapp-dark); }
   .abh-btn-primary {
@@ -388,4 +422,5 @@ button, a, [role="button"] {
     background-color: var(--brand-orange);
   }
   .abh-btn-cta:hover { background-color: var(--brand-orange-dark); }
-   }
+}
+ 
