@@ -8,18 +8,6 @@ import { Sun, Moon, X } from "@phosphor-icons/react"
 import { NAV_ITEMS } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 
-/**
- * Helper to map paths to hub-specific branding colors.
- */
-const getHubColor = (path: string) => {
-  if (path.includes("/print")) return "#6FBF1A"      // Example: Green
-  if (path.includes("/doc")) return "#F4A261"        // Example: Orange
-  if (path.includes("/design")) return "#1E6FA8"     // Example: Blue
-  if (path.includes("/eservice")) return "#808080"   // Example: Grey
-  if (path.includes("/tech")) return "#1E6FA8"       // Example: Blue
-  return "#1E6FA8"                                   // Default: Brand Blue
-}
-
 export function Navbar() {
   const router   = useRouter()
   const pathname = usePathname()
@@ -63,7 +51,14 @@ export function Navbar() {
     router.push(path); setMenuOpen(false); window.scrollTo({ top: 0, behavior: "smooth" })
   }, [router])
 
-  const isActive = (path: string) => pathname === path || (path !== "/" && pathname.startsWith(path))
+  const handleLogoMouseEnter = () => {
+    if (logoTimeoutRef.current) clearTimeout(logoTimeoutRef.current)
+    setIsTextExpanded(true)
+  }
+  const handleLogoMouseLeave = () => {
+    if (logoTimeoutRef.current) clearTimeout(logoTimeoutRef.current)
+    logoTimeoutRef.current = setTimeout(() => setIsTextExpanded(false), 1200)
+  }
 
   const pillClass = "bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md py-2 rounded-[14px] border border-gray-200 dark:border-zinc-800 shadow-sm"
 
@@ -72,8 +67,11 @@ export function Navbar() {
       <header className="fixed left-0 right-0 top-0 z-[9999] flex justify-center px-4 md:px-8 pt-5 h-[--nav-h] items-center pointer-events-none">
         <div className="relative flex items-center justify-between w-full max-w-[1200px]">
 
+          {/* Logo pill hidden on mobile using hidden md:flex */}
           <div
-            className={cn(pillClass, "flex items-center cursor-pointer select-none pointer-events-auto group transition-all duration-300", isTextExpanded ? "pl-3 pr-4 gap-2.5" : "px-2.5 gap-0", menuOpen ? "opacity-0 pointer-events-none" : "opacity-100")}
+            className={cn(pillClass, "hidden md:flex items-center cursor-pointer select-none pointer-events-auto group transition-all duration-300", isTextExpanded ? "pl-3 pr-4 gap-2.5" : "px-2.5 gap-0", menuOpen ? "opacity-0 pointer-events-none" : "opacity-100")}
+            onMouseEnter={handleLogoMouseEnter}
+            onMouseLeave={handleLogoMouseLeave}
             onClick={() => navigate("/")}
           >
             <div
@@ -89,18 +87,15 @@ export function Navbar() {
 
           <div className={cn(pillClass, "hidden md:flex items-center gap-1 px-1 pointer-events-auto absolute left-1/2 -translate-x-1/2 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
             {NAV_ITEMS.map((item) => {
-              const active = isActive(item.path)
-              const color = getHubColor(item.path)
+              const isActive = pathname === item.path
               return (
                 <button
                   key={item.id}
                   onClick={() => navigate(item.path)}
-                  style={{
-                    backgroundColor: active ? `${color}20` : undefined,
-                    color: active ? color : undefined,
-                    boxShadow: active ? `0 0 0 2px ${color}` : undefined
-                  }}
-                  className="px-4 py-2 rounded-[14px] text-[0.84rem] font-black transition-all duration-300"
+                  className={cn(
+                    "px-4 py-2 rounded-[14px] text-[0.84rem] font-black transition-all duration-300", 
+                    isActive ? "bg-brand-blue text-white dark:bg-brand-light-blue dark:text-brand-blue-dark" : "text-zinc-500 dark:text-zinc-400 hover:text-brand-blue"
+                  )}
                 >
                   {item.label}
                 </button>
@@ -108,7 +103,8 @@ export function Navbar() {
             })}
           </div>
 
-          <div className={cn(pillClass, "flex items-center gap-3 pl-3 pr-3 pointer-events-auto ml-4 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
+          {/* Controls pill now takes full width on mobile due to logo removal */}
+          <div className={cn(pillClass, "flex items-center gap-3 pl-3 pr-3 pointer-events-auto ml-auto md:ml-4 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
             <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="flex items-center justify-center w-7 h-7 active:scale-90 transition-transform">
               {mounted && (theme === "dark" ? <Moon size={20} weight="fill" className="text-brand-light-blue" /> : <Sun size={20} weight="fill" className="text-brand-orange" />)}
             </button>
@@ -120,6 +116,9 @@ export function Navbar() {
                 <span className="w-full h-[2.5px] bg-brand-orange dark:bg-brand-light-blue rounded-full" />
               </div>
             </button>
+            <button onClick={() => setMenuOpen(false)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 absolute right-3", menuOpen ? "opacity-100" : "opacity-0 pointer-events-none")}>
+              <X size={20} weight="bold" className="text-brand-orange" />
+            </button>
           </div>
         </div>
       </header>
@@ -128,21 +127,28 @@ export function Navbar() {
         ref={menuRef}
         className={cn("fixed inset-0 z-[9998] flex flex-col items-center justify-center transition-opacity duration-300 overflow-hidden", menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none")}
       >
+        <div
+          className={cn("absolute -inset-[50%] transition-opacity duration-700", menuOpen ? "opacity-100 animate-[spin_16s_linear_infinite]" : "opacity-0")}
+          style={{ background: "conic-gradient(from 0deg, rgba(30,111,168,0.18), rgba(111,191,26,0.16), rgba(244,162,97,0.16), rgba(30,111,168,0.18))" }}
+        />
         <div className="absolute inset-0 bg-white/70 dark:bg-zinc-950/80 backdrop-blur-xl" onClick={() => setMenuOpen(false)} />
+
         <nav className="relative z-10 w-full max-w-[320px] px-6 flex flex-col items-center gap-6">
           <div className={cn("flex flex-col items-center gap-2.5 w-full transition-all duration-300", menuOpen ? "scale-100 translate-y-0 opacity-100" : "scale-90 translate-y-4 opacity-0")}>
             {NAV_ITEMS.map((item, idx) => {
-              const active = isActive(item.path)
-              const color = getHubColor(item.path)
+              const isActive = pathname === item.path
               return (
                 <button
                   key={item.id}
                   onClick={() => navigate(item.path)}
-                  style={{ 
-                    transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms",
-                    color: active ? color : undefined
-                  }}
-                  className="py-3 px-8 rounded-[14px] font-sans font-extrabold text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm"
+                  style={{ transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms" }}
+                  className={cn(
+                    "py-3 px-8 rounded-[14px] font-sans font-extrabold text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
+                    isActive
+                      ? "bg-brand-blue text-white dark:bg-brand-light-blue dark:text-brand-blue-dark"
+                      : "text-zinc-700 dark:text-zinc-200",
+                    menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+                  )}
                 >
                   {item.label}
                 </button>
