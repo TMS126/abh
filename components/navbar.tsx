@@ -62,6 +62,9 @@ export function Navbar() {
 
   const pillClass = "bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md py-2 rounded-[14px] border border-gray-200 dark:border-zinc-800 shadow-sm"
 
+  // Shared active styling for "Neon" glow effect
+  const activeNeonStyle = "bg-brand-orange/10 text-brand-orange ring-2 ring-brand-orange ring-offset-2 dark:ring-offset-zinc-950 dark:bg-brand-orange/20 dark:text-brand-orange"
+
   return (
     <>
       <header className="fixed left-0 right-0 top-0 z-[9999] flex justify-center px-4 md:px-8 pt-5 h-[--nav-h] items-center pointer-events-none">
@@ -93,7 +96,7 @@ export function Navbar() {
                   onClick={() => navigate(item.path)}
                   className={cn(
                     "px-4 py-2 rounded-[14px] text-[0.84rem] font-black transition-all duration-300", 
-                    isActive ? "bg-brand-blue text-white dark:bg-brand-light-blue dark:text-brand-blue-dark" : "text-zinc-500 dark:text-zinc-400 hover:text-brand-blue"
+                    isActive ? activeNeonStyle : "text-zinc-500 dark:text-zinc-400 hover:text-brand-blue dark:hover:text-brand-light-blue"
                   )}
                 >
                   {item.label}
@@ -142,9 +145,7 @@ export function Navbar() {
                   style={{ transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms" }}
                   className={cn(
                     "py-3 px-8 rounded-[14px] font-sans font-extrabold text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
-                    isActive
-                      ? "bg-brand-blue text-white dark:bg-brand-light-blue dark:text-brand-blue-dark"
-                      : "text-zinc-700 dark:text-zinc-200",
+                    isActive ? activeNeonStyle : "text-zinc-700 dark:text-zinc-200",
                     menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
                   )}
                 >
