@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Target, Heart, Lightning, WhatsappLogo, ShieldCheck, Desktop, Printer, DeviceMobile, ArrowRight, MapPin, UsersThree, Handshake } from "@phosphor-icons/react"
+import { Target, Heart, Lightning, WhatsappLogo, ShieldCheck, Desktop, Printer, DeviceMobile, ArrowRight, UsersThree } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, ABOUT_VALUES, ABOUT_STANDARDS } from "@/lib/brand"
@@ -26,59 +26,31 @@ export function AboutPage() {
   return (
     <div className="min-h-screen bg-background transition-colors duration-300 pt-[var(--nav-h)]">
 
-      {/* ── Hero — full-bleed with diagonal accent ───────────────────────────── */}
-      <section
-        className="relative overflow-hidden px-4 md:px-8 py-16 md:py-20"
-        aria-labelledby="about-title"
-      >
-        {/* Ambient gradient blobs — personality without noise */}
-        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-          <div
-            className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full opacity-[0.07] dark:opacity-[0.10]"
-            style={{ background: `radial-gradient(circle, ${BRAND.blue} 0%, transparent 70%)` }}
-          />
-          <div
-            className="absolute -bottom-40 -right-20 w-[500px] h-[500px] rounded-full opacity-[0.06] dark:opacity-[0.09]"
-            style={{ background: `radial-gradient(circle, ${BRAND.orange} 0%, transparent 70%)` }}
-          />
-        </div>
+      {/* ── Header — standard style matching services page ── */}
+      <section className="abh-page-header" aria-labelledby="about-title">
+        <h1
+          id="about-title"
+          className="font-sans font-black text-2xl md:text-3xl leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 mb-3"
+        >
+          About Us
+        </h1>
+        <p className="abh-tagline max-w-xl mx-auto">
+          A local business built on community, trust, and real help.
+        </p>
+        <div className="abh-divider" aria-hidden="true" />
 
-        <div className="relative max-w-[900px] mx-auto text-center">
-          {/* Eyebrow */}
-          <span
-            className="inline-flex items-center gap-2 text-[0.65rem] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-6"
-            style={{ backgroundColor: `${BRAND.blue}12`, color: BRAND.blue }}
-          >
-            <MapPin size={12} weight="fill" />
-            Kgotsong, Bothaville · Free State
-          </span>
-
-          <h1
-            id="about-title"
-            className="font-sans font-black text-2xl md:text-3xl leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 mb-6"
-          >
-            Built right here, for right here.
-          </h1>
-
-          <p className="abh-tagline max-w-2xl mx-auto">
-            {BIZ.name} is your neighbourhood's one-stop hub — printing, design, IT, and government services, handled personally by someone who actually lives in your community.
-          </p>
-
-          <div className="abh-divider" aria-hidden="true" />
-
-          {/* Quick stats strip */}
-          <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10 mt-2">
-            {[
-              { value: BIZ.hubCount,       label: "Service Hubs" },
-              { value: BIZ.serviceCount,   label: "Services" },
-              { value: "Since 2026",       label: "Est. Kgotsong" },
-            ].map((s, i) => (
-              <div key={i} className="text-center">
-                <p className="font-sans font-black text-2xl md:text-3xl leading-none text-zinc-900 dark:text-zinc-50">{s.value}</p>
-                <p className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 mt-1">{s.label}</p>
-              </div>
-            ))}
-          </div>
+        {/* Stats strip — lighter weight, not competing with h1 */}
+        <div className="flex flex-wrap items-center justify-center gap-8 md:gap-14 mt-8">
+          {[
+            { value: BIZ.hubCount,   label: "Service Hubs" },
+            { value: BIZ.serviceCount, label: "Services" },
+            { value: "Since 2023",   label: "Est. Kgotsong" },
+          ].map((s, i) => (
+            <div key={i} className="text-center">
+              <p className="font-sans font-bold text-xl leading-none text-zinc-700 dark:text-zinc-300">{s.value}</p>
+              <p className="text-[0.65rem] font-medium uppercase tracking-widest text-zinc-400 mt-1">{s.label}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -86,14 +58,12 @@ export function AboutPage() {
       <section className="px-4 md:px-8 py-16 md:py-20" aria-label="Our story">
         <div className="max-w-[1100px] mx-auto">
 
-          {/* Pull quote — the thing people remember */}
+          {/* Pull quote */}
           <div className="mb-8 text-center md:text-left max-w-[800px]">
-            <p
-              className="font-sans font-black text-xl md:text-2xl leading-tight text-zinc-900 dark:text-zinc-50"
-            >
+            <p className="font-sans font-semibold text-lg md:text-xl leading-snug text-zinc-700 dark:text-zinc-300 italic">
               "Not everyone is tech-savvy — and that's exactly why we're here."
             </p>
-            <p className="abh-body mt-5 text-base max-w-xl">
+            <p className="abh-body mt-4 text-sm max-w-xl">
               We started with one goal: make technology, design, and important government services accessible to everyone in Kgotsong — no jargon, no stress, no overcharging.
             </p>
           </div>
@@ -113,7 +83,7 @@ export function AboutPage() {
                     {renderIcon(item.iconName, "w-5 h-5")}
                   </div>
                   <div className="pt-0.5">
-                    <h3 className="font-sans font-black text-base text-zinc-900 dark:text-zinc-50 mb-1">{item.title}</h3>
+                    <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200 mb-1">{item.title}</h3>
                     <p className="abh-body text-sm">{item.desc}</p>
                   </div>
                 </li>
@@ -135,8 +105,8 @@ export function AboutPage() {
                   <UsersThree size={20} weight="fill" />
                 </div>
                 <div>
-                  <p className="font-sans font-black text-sm text-zinc-900 dark:text-zinc-50 leading-none">{BIZ.name}</p>
-                  <p className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 mt-0.5">Serving Kgotsong &amp; surrounds</p>
+                  <p className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200 leading-none">{BIZ.name}</p>
+                  <p className="text-[0.65rem] font-medium uppercase tracking-widest text-zinc-400 mt-0.5">Serving Kgotsong &amp; surrounds</p>
                 </div>
               </div>
 
@@ -151,10 +121,10 @@ export function AboutPage() {
                     key={index}
                     className="rounded-[14px] p-5 text-center flex flex-col justify-center items-center min-h-[96px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50"
                   >
-                    <div className="font-black text-2xl mb-1 flex items-center justify-center text-zinc-900 dark:text-zinc-50">
+                    <div className="font-semibold text-xl mb-1 flex items-center justify-center text-zinc-700 dark:text-zinc-300">
                       {stat.value}
                     </div>
-                    <p className="text-[0.6rem] font-black uppercase tracking-widest text-zinc-400">{stat.label}</p>
+                    <p className="text-[0.6rem] font-medium uppercase tracking-widest text-zinc-400">{stat.label}</p>
                   </div>
                 ))}
               </div>
@@ -216,7 +186,7 @@ export function AboutPage() {
                   >
                     {renderIcon(item.iconName, "w-5 h-5")}
                   </div>
-                  <h3 className="font-sans font-black text-sm leading-tight mb-2 text-zinc-900 dark:text-zinc-50">{item.title}</h3>
+                  <h3 className="font-sans font-semibold text-sm leading-tight mb-2 text-zinc-800 dark:text-zinc-200">{item.title}</h3>
                   <p className="abh-body text-xs leading-relaxed grow">{item.description}</p>
                 </li>
               )
@@ -247,13 +217,13 @@ export function AboutPage() {
 
           <h2
             id="mission-title"
-            className="font-sans font-black text-2xl md:text-3xl leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 mb-6"
+            className="font-sans font-black text-xl md:text-2xl leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 mb-4"
           >
             Bridging the digital gap — one person at a time.
           </h2>
 
           <p className="abh-body max-w-xl mx-auto mb-10">
-            {BIZ.name} is that bridge — printing, design, IT support, and government services brought to people who need them most, in a community that deserves better access.
+            ApexbytesHub is that bridge — printing, design, IT support, and government services brought to people who need them most, in a community that deserves better access.
           </p>
 
           <a
@@ -270,6 +240,7 @@ export function AboutPage() {
     </div>
   )
 }
+ 
  
  
  
