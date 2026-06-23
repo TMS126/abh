@@ -15,6 +15,15 @@ import { HUBS, HubId } from "@/lib/data"
 // ─── Constants ────────────────────────────────────────────────────────────────
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
+// Three natural-language service hints shown on each hub card
+const HUB_PREVIEWS: Record<HubId, [string, string, string]> = {
+  print:    ["Print Documents", "Copy Pages", "Photo Prints"],
+  doc:      ["Build CVs", "Laminate Docs", "Type Letters"],
+  design:   ["Design Logos", "Make Flyers", "Social Posts"],
+  eservice: ["SASSA Help", "SARS eFiling", "UIF Claims"],
+  tech:     ["Install Windows", "Remove Viruses", "Fix Laptops"],
+}
+
 const CLD_CLOUD  = "dk30vh3ft"
 const CLD_PRESET = "apexbyteshub"
 const CLD_MAX_MB = 10
@@ -277,9 +286,18 @@ function FloatingSearchPill({
   const isDark   = resolvedTheme === "dark"
   const [open,   setOpen]  = useState(false)
   const [query,  setQuery] = useState("")
+  const [colorIdx, setColorIdx] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const pillRef  = useRef<HTMLDivElement>(null)
   const index    = useMemo(buildSearchIndex, [])
+
+  // Cycle through brand colors while pill is visible and not open
+  const CYCLE_COLORS = ["#1E6FA8", "#3E6B0E", "#B86F34"]
+  useEffect(() => {
+    if (!visible || open) return
+    const id = setInterval(() => setColorIdx(i => (i + 1) % 3), 1800)
+    return () => clearInterval(id)
+  }, [visible, open])
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -319,70 +337,59 @@ function FloatingSearchPill({
     return () => document.removeEventListener("keydown", handler)
   }, [closeSearch])
 
+  // Sits at the vertical mid-point of the navbar (nav height ÷ 2, minus half the button height)
   return (
     <div
       ref={pillRef}
       className={cn(
-        "fixed top-4 left-1/2 -translate-x-1/2 z-[950] transition-all duration-500",
-        visible ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 -translate-y-3 pointer-events-none"
+        "fixed left-1/2 -translate-x-1/2 z-[10000] transition-all duration-300",
+        "top-[calc(var(--nav-h,74px)/2-22px)]",
+        visible ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 -translate-y-2 pointer-events-none"
       )}
     >
-      {/* Animated glow ring */}
-      <div
-        className="absolute inset-0 rounded-full blur-md pointer-events-none"
-        style={{
-          background: "conic-gradient(#1E6FA8, #3E6B0E, #B86F34, #2C3E50, #1E6FA8)",
-          animation: open ? "spin 4s linear infinite" : "none",
-          opacity: open ? 0.35 : 0,
-          transition: "opacity 0.3s ease",
-        }}
-      />
+      {/* Icon-only button — no text, just the cycling-color magnifier */}
+      {!open && (
+        <button
+          onClick={openSearch}
+          aria-label="Search services"
+          className="w-11 h-11 rounded-full flex items-center justify-center bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.14)] transition-all duration-300 hover:scale-110 active:scale-95"
+        >
+          <MagnifyingGlass
+            size={18}
+            weight="bold"
+            style={{ color: CYCLE_COLORS[colorIdx], transition: "color 0.6s ease" }}
+          />
+        </button>
+      )}
 
-      <div
-        className={cn(
-          "relative flex items-center gap-2 transition-all duration-300 ease-out",
-          "bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl",
+      {/* Expanded search input */}
+      {open && (
+        <div className={cn(
+          "flex items-center gap-2 transition-all duration-300 ease-out",
+          "bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl",
           "border border-white/60 dark:border-white/10",
-          "shadow-[0_8px_32px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,0.4)]",
-          open
-            ? "rounded-[18px] px-4 py-2.5 w-[min(92vw,420px)]"
-            : "rounded-full px-5 py-2.5 cursor-pointer hover:scale-105 active:scale-95"
-        )}
-        onClick={!open ? openSearch : undefined}
-      >
-        <MagnifyingGlass
-          size={open ? 18 : 16}
-          weight="bold"
-          className={cn("shrink-0 transition-colors duration-200", open ? "text-zinc-400" : "text-zinc-500 dark:text-zinc-400")}
-        />
-
-        {!open && (
-          <span className="text-xs font-black text-zinc-600 dark:text-zinc-300 tracking-wide whitespace-nowrap">
-            Search services
-          </span>
-        )}
-
-        {open && (
-          <>
-            <input
-              ref={inputRef}
-              type="text"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder="CV, laminating, SASSA..."
-              className="flex-1 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none min-w-0"
-            />
-            {query && (
-              <button onClick={() => setQuery("")} className="w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 shrink-0">
-                <X size={11} weight="bold" />
-              </button>
-            )}
-            <button onClick={closeSearch} className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 shrink-0 ml-0.5 transition-colors">
-              <X size={14} weight="bold" />
+          "shadow-[0_8px_32px_rgba(0,0,0,0.18)]",
+          "rounded-[18px] px-4 py-2.5 w-[min(92vw,420px)]",
+        )}>
+          <MagnifyingGlass size={16} weight="bold" className="shrink-0 text-zinc-400" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="CV, laminating, SASSA..."
+            className="flex-1 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none min-w-0"
+          />
+          {query && (
+            <button onClick={() => setQuery("")} className="w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 shrink-0">
+              <X size={11} weight="bold" />
             </button>
-          </>
-        )}
-      </div>
+          )}
+          <button onClick={closeSearch} className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 shrink-0 ml-0.5 transition-colors">
+            <X size={14} weight="bold" />
+          </button>
+        </div>
+      )}
 
       {open && query.trim().length > 0 && (
         <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-[min(92vw,420px)] bg-white dark:bg-zinc-950 rounded-[16px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
@@ -412,17 +419,39 @@ function FloatingSearchPill({
           ) : (
             <div className="p-5 text-center">
               <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">No services found</p>
-              <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-1">Try a different word, or WhatsApp us directly.</p>
+              <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-1">Try a different word or WhatsApp us directly.</p>
             </div>
           )}
         </div>
       )}
-
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }
 
+  const pick = (s: SearchableService) => {
+    onSelect({ name: s.name, price: s.price, hubId: s.hubId, sectionTitle: s.sectionTitle, requirements: s.requirements, desc: s.description })
+    closeSearch()
+  }
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (pillRef.current && !pillRef.current.contains(e.target as Node)) closeSearch()
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [open, closeSearch])
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") closeSearch() }
+    document.addEventListener("keydown", handler)
+    return () => document.removeEventListener("keydown", handler)
+  }, [closeSearch])
+
+  return (
+    <div
+      ref={pillRef}
+      className={cn(
 // ─── Hub Modal ────────────────────────────────────────────────────────────────
 function HubModal({
   hubId, onClose, onSelectService,
@@ -880,7 +909,15 @@ export function ServicesPage() {
                 <h3 className="font-sans font-black text-lg md:text-xl text-zinc-900 dark:text-zinc-50 mb-2 group-hover:text-[#1E6FA8] dark:group-hover:text-[#A9D6F2] transition-colors">
                   {hub.title}
                 </h3>
-                <p className="abh-body text-[0.82rem] line-clamp-2 mb-6">{hub.tagline}</p>
+                <p className="abh-body text-[0.82rem] line-clamp-2 mb-5">{hub.tagline}</p>
+                {/* 3 service previews — natural language, muted */}
+                <div className="flex flex-col items-center gap-1 mb-5">
+                  {HUB_PREVIEWS[hubId].map((hint, i) => (
+                    <span key={i} className="text-[0.62rem] font-medium text-zinc-400 dark:text-zinc-500 tracking-wide">
+                      {hint}
+                    </span>
+                  ))}
+                </div>
                 <div className="mt-auto flex flex-col items-center gap-1.5">
                   <div className="flex items-center gap-1.5 text-[0.72rem] font-black lowercase tracking-widest" style={{ color: accent }}>
                     <span>explore</span>
@@ -906,3 +943,4 @@ export function ServicesPage() {
     </section>
   )
               } 
+ 
