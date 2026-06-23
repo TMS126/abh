@@ -26,25 +26,22 @@ export function AboutPage() {
   return (
     <div className="min-h-screen bg-background transition-colors duration-300 pt-[var(--nav-h)]">
 
-      {/* ── Header — standard style matching services page ── */}
-      <section className="abh-page-header" aria-labelledby="about-title">
-        <h1
-          id="about-title"
-          className="font-sans font-black text-2xl md:text-3xl leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 mb-3"
-        >
-          About Us
-        </h1>
-        <p className="abh-tagline max-w-xl mx-auto">
-          A local business built on community, trust, and real help.
-        </p>
-        <div className="abh-divider" aria-hidden="true" />
+      {/* ── Header — matches services page exactly ── */}
+      <section className="abh-page-header">
+        <div className="text-center mb-10">
+          <h1 className="abh-page-title mb-4">About Us</h1>
+          <p className="abh-tagline max-w-2xl mx-auto">
+            A local business built on community, trust, and real help — right here in Kgotsong.
+          </p>
+          <div className="abh-divider" />
+        </div>
 
-        {/* Stats strip — lighter weight, not competing with h1 */}
-        <div className="flex flex-wrap items-center justify-center gap-8 md:gap-14 mt-8">
+        {/* Stats strip */}
+        <div className="flex flex-wrap items-center justify-center gap-8 md:gap-14">
           {[
-            { value: BIZ.hubCount,   label: "Service Hubs" },
+            { value: BIZ.hubCount,     label: "Service Hubs" },
             { value: BIZ.serviceCount, label: "Services" },
-            { value: "Since 2023",   label: "Est. Kgotsong" },
+            { value: "Since 2023",     label: "Est. Kgotsong" },
           ].map((s, i) => (
             <div key={i} className="text-center">
               <p className="font-sans font-bold text-xl leading-none text-zinc-700 dark:text-zinc-300">{s.value}</p>
