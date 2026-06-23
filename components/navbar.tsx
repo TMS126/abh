@@ -51,7 +51,6 @@ export function Navbar() {
     router.push(path); setMenuOpen(false); window.scrollTo({ top: 0, behavior: "smooth" })
   }, [router])
 
-  // Surgical fix: Updated active state to support sub-paths
   const isActive = (path: string) => pathname === path || (path !== "/" && pathname.startsWith(path))
 
   const handleLogoMouseEnter = () => {
@@ -63,17 +62,18 @@ export function Navbar() {
     logoTimeoutRef.current = setTimeout(() => setIsTextExpanded(false), 1200)
   }
 
-  const pillClass = "bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md py-2 rounded-[14px] border border-gray-200 dark:border-zinc-800 shadow-sm"
+  // Consistent Glass Acrylic Styling
+  const glassStyles = "bg-white/10 dark:bg-zinc-900/10 backdrop-blur-lg border border-white/20 dark:border-white/10 shadow-sm"
 
   return (
     <>
       <header className="fixed left-0 right-0 top-0 z-[9999] flex justify-center px-4 md:px-8 pt-5 h-[--nav-h] items-center pointer-events-none">
         <div className="relative flex items-center justify-between w-full max-w-[1200px]">
 
-          {/* Glass Acrylic Logo Container */}
+          {/* Logo Container */}
           <div
-            className={cn("flex items-center cursor-pointer select-none pointer-events-auto group transition-all duration-300", 
-              "bg-white/10 dark:bg-zinc-900/10 backdrop-blur-lg border border-white/20 dark:border-white/10 rounded-[14px] shadow-sm",
+            className={cn("flex items-center cursor-pointer select-none pointer-events-auto group transition-all duration-300 rounded-[14px]", 
+              glassStyles,
               isTextExpanded ? "pl-3 pr-4 gap-2.5 py-2" : "p-2 gap-0", menuOpen ? "opacity-0 pointer-events-none" : "opacity-100")}
             onMouseEnter={handleLogoMouseEnter}
             onMouseLeave={handleLogoMouseLeave}
@@ -90,14 +90,15 @@ export function Navbar() {
             </div>
           </div>
 
-          <div className={cn(pillClass, "hidden md:flex items-center gap-1 px-1 pointer-events-auto absolute left-1/2 -translate-x-1/2 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
+          {/* Desktop Nav */}
+          <div className={cn(glassStyles, "hidden md:flex items-center gap-1 px-1 pointer-events-auto absolute left-1/2 -translate-x-1/2 rounded-[14px] transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
             {NAV_ITEMS.map((item) => (
               <button
                 key={item.id}
                 onClick={() => navigate(item.path)}
                 className={cn(
                   "px-4 py-2 rounded-[14px] text-[0.84rem] font-black transition-all duration-300", 
-                  isActive(item.path) ? "bg-brand-blue text-white dark:bg-brand-light-blue dark:text-brand-blue-dark" : "text-zinc-500 dark:text-zinc-400 hover:text-brand-blue"
+                  isActive(item.path) ? "bg-brand-blue/20 text-brand-blue dark:bg-brand-light-blue/20 dark:text-brand-light-blue" : "text-zinc-500 dark:text-zinc-400 hover:text-brand-blue"
                 )}
               >
                 {item.label}
@@ -105,11 +106,12 @@ export function Navbar() {
             ))}
           </div>
 
-          <div className={cn(pillClass, "flex items-center gap-3 pl-3 pr-3 pointer-events-auto ml-4 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
+          {/* Controls */}
+          <div className={cn(glassStyles, "flex items-center gap-3 pl-3 pr-3 rounded-[14px] pointer-events-auto ml-4 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
             <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="flex items-center justify-center w-7 h-7 active:scale-90 transition-transform">
               {mounted && (theme === "dark" ? <Moon size={20} weight="fill" className="text-brand-light-blue" /> : <Sun size={20} weight="fill" className="text-brand-orange" />)}
             </button>
-            <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 md:hidden" />
+            <div className="w-px h-4 bg-white/20 dark:bg-white/10 md:hidden" />
             <button ref={menuTriggerRef} onClick={() => setMenuOpen(true)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 md:hidden", menuOpen ? "opacity-0" : "opacity-100")}>
               <div className="w-4 h-[12px] flex flex-col justify-between items-center">
                 <span className="w-full h-[2.5px] bg-brand-orange dark:bg-brand-light-blue rounded-full" />
@@ -124,15 +126,12 @@ export function Navbar() {
         </div>
       </header>
 
+      {/* Mobile Menu */}
       <div
         ref={menuRef}
         className={cn("fixed inset-0 z-[9998] flex flex-col items-center justify-center transition-opacity duration-300 overflow-hidden", menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none")}
       >
-        <div
-          className={cn("absolute -inset-[50%] transition-opacity duration-700", menuOpen ? "opacity-100 animate-[spin_16s_linear_infinite]" : "opacity-0")}
-          style={{ background: "conic-gradient(from 0deg, rgba(30,111,168,0.18), rgba(111,191,26,0.16), rgba(244,162,97,0.16), rgba(30,111,168,0.18))" }}
-        />
-        <div className="absolute inset-0 bg-white/70 dark:bg-zinc-950/80 backdrop-blur-xl" onClick={() => setMenuOpen(false)} />
+        <div className={cn("absolute inset-0 transition-opacity duration-300", glassStyles)} onClick={() => setMenuOpen(false)} />
 
         <nav className="relative z-10 w-full max-w-[320px] px-6 flex flex-col items-center gap-6">
           <div className={cn("flex flex-col items-center gap-2.5 w-full transition-all duration-300", menuOpen ? "scale-100 translate-y-0 opacity-100" : "scale-90 translate-y-4 opacity-0")}>
@@ -144,7 +143,7 @@ export function Navbar() {
                 className={cn(
                   "py-3 px-8 rounded-[14px] font-sans font-extrabold text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
                   isActive(item.path)
-                    ? "bg-brand-blue text-white dark:bg-brand-light-blue dark:text-brand-blue-dark"
+                    ? "bg-brand-blue/20 text-brand-blue dark:bg-brand-light-blue/20 dark:text-brand-light-blue"
                     : "text-zinc-700 dark:text-zinc-200",
                   menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
                 )}
