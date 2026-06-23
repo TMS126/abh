@@ -207,7 +207,7 @@ export function HeroSection() {
       <div className="max-w-[1240px] mx-auto flex flex-col items-center text-center relative z-10 w-full mb-8">
 
         {/* H1 — left at large size per decision */}
-        <h1 className="font-sans font-black text-4.5xl md:text-6xl lg:text-[4.2rem] tracking-tight text-brand-blue-dark dark:text-brand-light-blue leading-[1.1] mb-6 text-balance transition-all duration-300">
+        <h1 className="font-sans font-black text-4xl md:text-6xl lg:text-[4.2rem] tracking-tight text-brand-blue-dark dark:text-brand-light-blue leading-[1.1] mb-6 text-balance transition-all duration-300">
           {BIZ.tagline}
         </h1>
 
@@ -258,7 +258,7 @@ export function HeroSection() {
               <div key={copy} className="flex items-center shrink-0">
                 {MARQUEE_ITEMS.map((item, idx) => (
                   <React.Fragment key={idx}>
-                    <span className="inline-flex items-center px-5 text-brand-blue-dark dark:text-brand-light-blue font-medium text-[0.78rem] uppercase tracking-widest transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100">
+                    <span className="inline-flex items-center px-5 text-brand-blue-dark dark:text-brand-light-blue font-black text-[0.78rem] uppercase tracking-widest transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100">
                       {item}
                     </span>
                     {/* Orange dot — intentional accent, approved exception */}
@@ -334,8 +334,8 @@ export function HeroSection() {
 
           {/* Spotlight panel */}
           <div className="w-full max-w-[560px] rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-5 sm:px-7 py-5 sm:py-6 mb-2 text-left transition-all duration-300">
-            <p className="text-[0.65rem] font-medium uppercase tracking-widest text-zinc-400 mb-3">
-              {active.name}
+            <p className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 mb-3">
+              {active.name} · pricing example
             </p>
             <button
               key={`${activeHub}-${spotlightService.name}`}
@@ -355,7 +355,7 @@ export function HeroSection() {
             </button>
             <button
               onClick={() => handleNavigate(`/services?hub=${active.id}`)}
-              className="inline-flex items-center gap-1.5 text-[0.65rem] font-semibold uppercase tracking-widest mt-4 transition-opacity hover:opacity-70"
+              className="inline-flex items-center gap-1.5 text-[0.65rem] font-black uppercase tracking-widest mt-4 transition-opacity hover:opacity-70"
               style={{ color: activeColor }}
             >
               See all {active.name} services
@@ -408,19 +408,19 @@ export function StatsBar() {
                 }}
               >
                 <Icon
-                  size={24}
+                  size={20}
                   weight={isHov ? "fill" : "regular"}
                   aria-hidden="true"
                 />
               </div>
 
               {/* Value — neutral, no per-stat color */}
-              <div className="text-xl font-bold text-zinc-700 dark:text-zinc-300">
+              <div className="text-2xl font-black text-zinc-900 dark:text-zinc-50">
                 {stat.value}
               </div>
 
               {/* Label */}
-              <div className="text-[0.78rem] font-medium uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+              <div className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
                 {stat.label}
               </div>
             </div>
@@ -429,4 +429,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-            } 
+    }
