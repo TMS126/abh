@@ -207,7 +207,7 @@ export function HeroSection() {
       <div className="max-w-[1240px] mx-auto flex flex-col items-center text-center relative z-10 w-full mb-8">
 
         {/* H1 — left at large size per decision */}
-        <h1 className="font-sans font-black text-4xl md:text-6xl lg:text-[4.2rem] tracking-tight text-brand-blue-dark dark:text-brand-light-blue leading-[1.1] mb-6 text-balance transition-all duration-300">
+        <h1 className="font-sans font-black text-4.5xl md:text-6xl lg:text-[4.2rem] tracking-tight text-brand-blue-dark dark:text-brand-light-blue leading-[1.1] mb-6 text-balance transition-all duration-300">
           {BIZ.tagline}
         </h1>
 
@@ -335,7 +335,7 @@ export function HeroSection() {
           {/* Spotlight panel */}
           <div className="w-full max-w-[560px] rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-5 sm:px-7 py-5 sm:py-6 mb-2 text-left transition-all duration-300">
             <p className="text-[0.65rem] font-medium uppercase tracking-widest text-zinc-400 mb-3">
-              {active.name} · pricing example
+              {active.name}
             </p>
             <button
               key={`${activeHub}-${spotlightService.name}`}
@@ -408,7 +408,7 @@ export function StatsBar() {
                 }}
               >
                 <Icon
-                  size={20}
+                  size={24}
                   weight={isHov ? "fill" : "regular"}
                   aria-hidden="true"
                 />
@@ -420,7 +420,7 @@ export function StatsBar() {
               </div>
 
               {/* Label */}
-              <div className="text-[0.65rem] font-medium uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+              <div className="text-[0.78rem] font-medium uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
                 {stat.label}
               </div>
             </div>
