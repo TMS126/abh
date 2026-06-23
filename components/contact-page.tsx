@@ -203,7 +203,7 @@ export function ContactPage() {
                 >
                   <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.dot }} />
                   <div className="min-w-0">
-                    <p className="text-sm font-black text-zinc-800 dark:text-zinc-200">{c.title}</p>
+                    <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{c.title}</p>
                     <p className="abh-muted break-words">{c.value}</p>
                   </div>
                 </a>
@@ -220,7 +220,7 @@ export function ContactPage() {
                   <AddressBook size={20} weight="fill" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-black text-zinc-800 dark:text-zinc-200">
+                  <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
                     Save Our Contact
                   </p>
                   <p className="abh-muted">
@@ -230,7 +230,7 @@ export function ContactPage() {
               </div>
               <button
                 onClick={handleVCard}
-                className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-[14px] font-black text-sm text-white transition-all active:scale-95 hover:-translate-y-0.5"
+                className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-[14px] font-medium text-sm text-white transition-all active:scale-95 hover:-translate-y-0.5"
                 style={{ backgroundColor: vcardDone ? BRAND.green : BRAND.blue }}
               >
                 <DownloadSimple size={16} weight="bold" />
@@ -282,7 +282,7 @@ export function ContactPage() {
             <div className="space-y-4">
               {[
                 { label: "Your Name",     type: "text", key: "name",  validate: isNameValid,  error: "Name too short" },
-                { label: "Phone Number",  type: "tel",  key: "phone", validate: isPhoneValid, error: "Invalid phone"  },
+                { label: "Phone Number",  type: "tel",  key: "phone", validate: isPhoneValid, error: "Invalid phone number"  },
               ].map((f) => {
                 const err = touched[f.key] && !f.validate(formData[f.key as keyof typeof formData])
                 return (
