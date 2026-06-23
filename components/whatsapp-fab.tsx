@@ -29,8 +29,6 @@ const HUBS = [
 ]
 
 export function WhatsAppFAB() {
-  const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === "dark"
   const [isOpen, setIsOpen, isOtherOpen] = useExclusiveWidget("whatsapp")
   const [visible, setVisible] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -198,7 +196,7 @@ export function WhatsAppFAB() {
 
           <button
             onClick={() => setIsOpen(o => !o)}
-            aria-label={isOpen ? "Close WhatsApp chat" : "Chat with ApexBytes Hub on WhatsApp"}
+            aria-label={isOpen ? "Close WhatsApp chat" : `Chat with ${BIZ.name} on WhatsApp`}
             className={cn(
               "relative w-14 h-14 rounded-full flex items-center justify-center",
               "active:scale-95 hover:scale-105 transition-transform duration-200",
