@@ -70,11 +70,11 @@ export function Navbar() {
       <header className="fixed left-0 right-0 top-0 z-[9999] flex justify-center px-4 md:px-8 pt-5 h-[--nav-h] items-center pointer-events-none">
         <div className="relative flex items-center justify-between w-full max-w-[1200px]">
 
-          {/* Surgical fix: Mobile logo pill background removed via conditional tailwind classes */}
+          {/* Glass Acrylic Logo Container */}
           <div
             className={cn("flex items-center cursor-pointer select-none pointer-events-auto group transition-all duration-300", 
-              "md:bg-white/80 md:dark:bg-zinc-900/80 md:backdrop-blur-md md:rounded-[14px] md:border md:border-gray-200 md:dark:border-zinc-800 md:shadow-sm",
-              isTextExpanded ? "pl-3 pr-4 gap-2.5" : "px-2.5 gap-0", menuOpen ? "opacity-0 pointer-events-none" : "opacity-100")}
+              "bg-white/10 dark:bg-zinc-900/10 backdrop-blur-lg border border-white/20 dark:border-white/10 rounded-[14px] shadow-sm",
+              isTextExpanded ? "pl-3 pr-4 gap-2.5 py-2" : "p-2 gap-0", menuOpen ? "opacity-0 pointer-events-none" : "opacity-100")}
             onMouseEnter={handleLogoMouseEnter}
             onMouseLeave={handleLogoMouseLeave}
             onClick={() => navigate("/")}
