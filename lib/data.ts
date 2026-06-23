@@ -962,7 +962,7 @@ export const PROJECTS = [
   },
 
   // ─── Wedding Party Programme ──────────────────────────────────────────────────
- // {
+ {
    // id: "wedding-party-programme",//
    // hub: "design",
  //   title: "Wedding Party Programme",
@@ -981,7 +981,7 @@ export const PROJECTS = [
     //],
    // tools: ["Adobe Illustrator", "Print-ready A4 layout"],
   //  result: "The client received a beautiful, easy-to-read programme that felt personal and matched the wedding's colours.",
-  }, //
+  },
 
   // ─── Illusion Technologies ────────────────────────────────────────────────────
   {
