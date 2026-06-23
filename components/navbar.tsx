@@ -67,7 +67,6 @@ export function Navbar() {
       <header className="fixed left-0 right-0 top-0 z-[9999] flex justify-center px-4 md:px-8 pt-5 h-[--nav-h] items-center pointer-events-none">
         <div className="relative flex items-center justify-between w-full max-w-[1200px]">
 
-          {/* Logo — hides when menu is open */}
           <div
             className={cn(pillClass, "flex items-center cursor-pointer select-none pointer-events-auto group transition-all duration-300", isTextExpanded ? "pl-3 pr-4 gap-2.5" : "px-2.5 gap-0", menuOpen ? "opacity-0 pointer-events-none" : "opacity-100")}
             onMouseEnter={handleLogoMouseEnter}
@@ -85,7 +84,6 @@ export function Navbar() {
             </div>
           </div>
 
-          {/* Desktop Nav */}
           <div className={cn(pillClass, "hidden md:flex items-center gap-1 px-1 pointer-events-auto absolute left-1/2 -translate-x-1/2 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
             {NAV_ITEMS.map((item) => {
               const isActive = pathname === item.path
@@ -93,7 +91,10 @@ export function Navbar() {
                 <button
                   key={item.id}
                   onClick={() => navigate(item.path)}
-                  className={cn("px-4 py-2 rounded-[14px] text-[0.84rem] font-black transition-all duration-300", isActive ? "bg-brand-blue text-white" : "text-zinc-500 dark:text-zinc-400 hover:text-brand-blue")}
+                  className={cn(
+                    "px-4 py-2 rounded-[14px] text-[0.84rem] font-black transition-all duration-300", 
+                    isActive ? "bg-brand-blue text-white dark:bg-brand-light-blue dark:text-brand-blue-dark" : "text-zinc-500 dark:text-zinc-400 hover:text-brand-blue"
+                  )}
                 >
                   {item.label}
                 </button>
@@ -101,14 +102,11 @@ export function Navbar() {
             })}
           </div>
 
-          {/* Controls */}
           <div className={cn(pillClass, "flex items-center gap-3 pl-3 pr-3 pointer-events-auto ml-4 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
             <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="flex items-center justify-center w-7 h-7 active:scale-90 transition-transform">
               {mounted && (theme === "dark" ? <Moon size={20} weight="fill" className="text-brand-light-blue" /> : <Sun size={20} weight="fill" className="text-brand-orange" />)}
             </button>
-
             <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 md:hidden" />
-
             <button ref={menuTriggerRef} onClick={() => setMenuOpen(true)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 md:hidden", menuOpen ? "opacity-0" : "opacity-100")}>
               <div className="w-4 h-[12px] flex flex-col justify-between items-center">
                 <span className="w-full h-[2.5px] bg-brand-orange dark:bg-brand-light-blue rounded-full" />
@@ -116,7 +114,6 @@ export function Navbar() {
                 <span className="w-full h-[2.5px] bg-brand-orange dark:bg-brand-light-blue rounded-full" />
               </div>
             </button>
-
             <button onClick={() => setMenuOpen(false)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 absolute right-3", menuOpen ? "opacity-100" : "opacity-0 pointer-events-none")}>
               <X size={20} weight="bold" className="text-brand-orange" />
             </button>
@@ -124,19 +121,16 @@ export function Navbar() {
         </div>
       </header>
 
-      {/* Fullscreen Menu */}
       <div
         ref={menuRef}
         className={cn("fixed inset-0 z-[9998] flex flex-col items-center justify-center transition-opacity duration-300 overflow-hidden", menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none")}
       >
-        {/* Rotational fade background */}
         <div
           className={cn("absolute -inset-[50%] transition-opacity duration-700", menuOpen ? "opacity-100 animate-[spin_16s_linear_infinite]" : "opacity-0")}
           style={{ background: "conic-gradient(from 0deg, rgba(30,111,168,0.18), rgba(111,191,26,0.16), rgba(244,162,97,0.16), rgba(30,111,168,0.18))" }}
         />
         <div className="absolute inset-0 bg-white/70 dark:bg-zinc-950/80 backdrop-blur-xl" onClick={() => setMenuOpen(false)} />
 
-        {/* Nav links — centered */}
         <nav className="relative z-10 w-full max-w-[320px] px-6 flex flex-col items-center gap-6">
           <div className={cn("flex flex-col items-center gap-2.5 w-full transition-all duration-300", menuOpen ? "scale-100 translate-y-0 opacity-100" : "scale-90 translate-y-4 opacity-0")}>
             {NAV_ITEMS.map((item, idx) => {
@@ -149,45 +143,18 @@ export function Navbar() {
                   className={cn(
                     "py-3 px-8 rounded-[14px] font-sans font-extrabold text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
                     isActive
-                      ? "text-brand-blue dark:text-brand-light-blue"
-                      : "text-zinc-700 dark:text-zinc-200 hover:text-brand-blue",
+                      ? "bg-brand-blue text-white dark:bg-brand-light-blue dark:text-brand-blue-dark"
+                      : "text-zinc-700 dark:text-zinc-200",
                     menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
                   )}
                 >
-                  {/* Active indicator */}
-                  <span className="flex items-center justify-center gap-2">
-                    {isActive && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-brand-blue dark:bg-brand-light-blue shrink-0" />
-                    )}
-                    {item.label}
-                  </span>
+                  {item.label}
                 </button>
               )
             })}
           </div>
         </nav>
-
-        {/* Icon-only watermark at bottom of menu */}
-        <div
-          className={cn(
-            "absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center select-none transition-all duration-500 z-10",
-            menuOpen ? "opacity-30" : "opacity-0"
-          )}
-          aria-hidden="true"
-        >
-          <div
-            className="relative w-8 h-8 shrink-0"
-            style={
-              mounted && theme === "dark"
-                ? { filter: "brightness(0) invert(1)" }
-                : { filter: "brightness(0)" }
-            }
-          >
-            <Image src="/logo.png" alt="" fill sizes="32px" className="object-contain" />
-          </div>
-        </div>
       </div>
     </>
   )
 }
- 
