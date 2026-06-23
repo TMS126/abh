@@ -8,19 +8,6 @@ import { Sun, Moon, X } from "@phosphor-icons/react"
 import { NAV_ITEMS } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 
-// Mapping of paths to specific Hub colors[span_1](start_span)[span_1](end_span)
-const getHubColor = (path: string) => {
-  switch (path) {
-    case "/": return "brand-blue"        // Home / General
-    case "/print": return "brand-blue"   // PrintHub
-    case "/docs": return "brand-blue-mid" // DocuHub
-    case "/design": return "brand-orange" // DesignHub
-    case "/services": return "brand-blue-dark" // E-ServiceHub
-    case "/tech": return "brand-dark-100" // TechHub
-    default: return "brand-blue"
-  }
-}
-
 export function Navbar() {
   const router   = useRouter()
   const pathname = usePathname()
@@ -100,14 +87,13 @@ export function Navbar() {
           <div className={cn(pillClass, "hidden md:flex items-center gap-1 px-1 pointer-events-auto absolute left-1/2 -translate-x-1/2 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
             {NAV_ITEMS.map((item) => {
               const isActive = pathname === item.path
-              const color = getHubColor(item.path)
               return (
                 <button
                   key={item.id}
                   onClick={() => navigate(item.path)}
                   className={cn(
                     "px-4 py-2 rounded-[14px] text-[0.84rem] font-black transition-all duration-300", 
-                    isActive ? `bg-${color}/10 text-${color} ring-2 ring-${color} ring-offset-2 dark:ring-offset-zinc-950` : "text-zinc-500 dark:text-zinc-400 hover:text-brand-blue"
+                    isActive ? "bg-brand-blue text-white dark:bg-brand-light-blue dark:text-brand-blue-dark" : "text-zinc-500 dark:text-zinc-400 hover:text-brand-blue"
                   )}
                 >
                   {item.label}
@@ -149,7 +135,6 @@ export function Navbar() {
           <div className={cn("flex flex-col items-center gap-2.5 w-full transition-all duration-300", menuOpen ? "scale-100 translate-y-0 opacity-100" : "scale-90 translate-y-4 opacity-0")}>
             {NAV_ITEMS.map((item, idx) => {
               const isActive = pathname === item.path
-              const color = getHubColor(item.path)
               return (
                 <button
                   key={item.id}
@@ -157,7 +142,9 @@ export function Navbar() {
                   style={{ transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms" }}
                   className={cn(
                     "py-3 px-8 rounded-[14px] font-sans font-extrabold text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
-                    isActive ? `bg-${color}/10 text-${color} ring-2 ring-${color} ring-offset-2 dark:ring-offset-zinc-950` : "text-zinc-700 dark:text-zinc-200",
+                    isActive
+                      ? "bg-brand-blue text-white dark:bg-brand-light-blue dark:text-brand-blue-dark"
+                      : "text-zinc-700 dark:text-zinc-200",
                     menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
                   )}
                 >
@@ -170,4 +157,5 @@ export function Navbar() {
       </div>
     </>
   )
+
 }
