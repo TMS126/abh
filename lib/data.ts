@@ -916,7 +916,7 @@ export const PROJECTS = [
     ],
     tools: ["System cleanup tools", "Software installation"],
     result: "Laptop became faster and ready for daily use.",
-  },
+  }, 
   // ─── Pure African Herbs ───────────────────────────────────────────────────────
   {
     id: "pure-african-herbs",
@@ -938,7 +938,7 @@ export const PROJECTS = [
     ],
     tools: ["Adobe Illustrator", "Print-ready A4 and A-board format"],
     result: "Client had a professional flyer and A-board ready to attract walk-ins and answer common questions before clients even step inside.",
-  },
+  }, 
 
   // ─── Apexbytes Business Card ──────────────────────────────────────────────────
   {
@@ -962,26 +962,26 @@ export const PROJECTS = [
   },
 
   // ─── Wedding Party Programme ──────────────────────────────────────────────────
-  {
-    id: "wedding-party-programme",
-    hub: "design",
-    title: "Wedding Party Programme",
-    tag: "Design Hub",
-    shortDesc: "Printed wedding party programme with roles, names, and a celebratory layout.",
-    image: "/Wp.png",
-    images: ["/Wp.png"],
-    clientType: "client" as const,
-    clientGoal: "The client needed a clean printed programme listing everyone's role at the wedding reception — from MC to cake cutting.",
-    whatWeDid: [
-      "Designed a blue and white wedding layout with decorative elements",
-      "Listed all roles on the left with matching names on the right",
-      "Added floral and ribbon decorations to keep the celebratory feel",
-      "Used a dividing gold line between roles and names for readability",
-      "Made it print-ready at A4 size",
-    ],
-    tools: ["Adobe Illustrator", "Print-ready A4 layout"],
-    result: "The client received a beautiful, easy-to-read programme that felt personal and matched the wedding's colours.",
-  },
+ // {
+   // id: "wedding-party-programme",//
+   // hub: "design",
+ //   title: "Wedding Party Programme",
+ //   tag: "Design Hub",
+  //  shortDesc: "Printed wedding party programme with roles, names, and a celebratory layout.",
+  //  image: "/Wp.png",
+  //  images: ["/Wp.png"],
+   // clientType: "client" as const,
+    //clientGoal: "The client needed a clean printed programme listing everyone's role at the wedding reception — from MC to cake cutting.",
+   // whatWeDid: [
+   //   "Designed a blue and white wedding layout with decorative elements",
+    //  "Listed all roles on the left with matching names on the right",
+     // "Added floral and ribbon decorations to keep the celebratory feel",
+    //  "Used a dividing gold line between roles and names for readability",
+   //   "Made it print-ready at A4 size",
+    //],
+   // tools: ["Adobe Illustrator", "Print-ready A4 layout"],
+  //  result: "The client received a beautiful, easy-to-read programme that felt personal and matched the wedding's colours.",
+  }, //
 
   // ─── Illusion Technologies ────────────────────────────────────────────────────
   {
