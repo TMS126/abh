@@ -429,4 +429,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-    }
+       }
