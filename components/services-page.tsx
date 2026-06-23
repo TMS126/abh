@@ -283,15 +283,15 @@ function FloatingSearchPill({
   visible: boolean
 }) {
   const { resolvedTheme } = useTheme()
-  const isDark   = resolvedTheme === "dark"
-  const [open,   setOpen]  = useState(false)
-  const [query,  setQuery] = useState("")
+  const isDark     = resolvedTheme === "dark"
+  const [open,     setOpen]    = useState(false)
+  const [query,    setQuery]   = useState("")
   const [colorIdx, setColorIdx] = useState(0)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const pillRef  = useRef<HTMLDivElement>(null)
-  const index    = useMemo(buildSearchIndex, [])
+  const inputRef   = useRef<HTMLInputElement>(null)
+  const pillRef    = useRef<HTMLDivElement>(null)
+  const index      = useMemo(buildSearchIndex, [])
 
-  // Cycle through brand colors while pill is visible and not open
+  // Cycle through brand colours every 1.8 s when visible and closed
   const CYCLE_COLORS = ["#1E6FA8", "#3E6B0E", "#B86F34"]
   useEffect(() => {
     if (!visible || open) return
@@ -337,17 +337,18 @@ function FloatingSearchPill({
     return () => document.removeEventListener("keydown", handler)
   }, [closeSearch])
 
-  // Sits at the vertical mid-point of the navbar (nav height ÷ 2, minus half the button height)
+  // Vertically centred inside the navbar, just slightly below midpoint so it
+  // clears the logo and nav pills. top-[74px] places it just below the nav.
   return (
     <div
       ref={pillRef}
       className={cn(
         "fixed left-1/2 -translate-x-1/2 z-[10000] transition-all duration-300",
-        "top-[calc(var(--nav-h,74px)/2-22px)]",
+        "top-[calc(var(--nav-h,74px)+10px)]",
         visible ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 -translate-y-2 pointer-events-none"
       )}
     >
-      {/* Icon-only button — no text, just the cycling-color magnifier */}
+      {/* ── Closed: icon-only button with cycling colour ── */}
       {!open && (
         <button
           onClick={openSearch}
@@ -355,22 +356,16 @@ function FloatingSearchPill({
           className="w-11 h-11 rounded-full flex items-center justify-center bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.14)] transition-all duration-300 hover:scale-110 active:scale-95"
         >
           <MagnifyingGlass
-            size={18}
+            size={22}
             weight="bold"
-            style={{ color: CYCLE_COLORS[colorIdx], transition: "color 0.6s ease" }}
+            style={{ color: CYCLE_COLORS[colorIdx], transition: "color 0.7s ease" }}
           />
         </button>
       )}
 
-      {/* Expanded search input */}
+      {/* ── Open: expanded search input ── */}
       {open && (
-        <div className={cn(
-          "flex items-center gap-2 transition-all duration-300 ease-out",
-          "bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl",
-          "border border-white/60 dark:border-white/10",
-          "shadow-[0_8px_32px_rgba(0,0,0,0.18)]",
-          "rounded-[18px] px-4 py-2.5 w-[min(92vw,420px)]",
-        )}>
+        <div className="flex items-center gap-2 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.18)] rounded-[18px] px-4 py-2.5 w-[min(92vw,420px)]">
           <MagnifyingGlass size={16} weight="bold" className="shrink-0 text-zinc-400" />
           <input
             ref={inputRef}
@@ -385,12 +380,13 @@ function FloatingSearchPill({
               <X size={11} weight="bold" />
             </button>
           )}
-          <button onClick={closeSearch} className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 shrink-0 ml-0.5 transition-colors">
+          <button onClick={closeSearch} className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 shrink-0 transition-colors">
             <X size={14} weight="bold" />
           </button>
         </div>
       )}
 
+      {/* ── Results dropdown ── */}
       {open && query.trim().length > 0 && (
         <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-[min(92vw,420px)] bg-white dark:bg-zinc-950 rounded-[16px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
           {results.length > 0 ? (
@@ -428,31 +424,7 @@ function FloatingSearchPill({
   )
 }
 
-  const pick = (s: SearchableService) => {
-    onSelect({ name: s.name, price: s.price, hubId: s.hubId, sectionTitle: s.sectionTitle, requirements: s.requirements, desc: s.description })
-    closeSearch()
-  }
 
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: MouseEvent) => {
-      if (pillRef.current && !pillRef.current.contains(e.target as Node)) closeSearch()
-    }
-    document.addEventListener("mousedown", handler)
-    return () => document.removeEventListener("mousedown", handler)
-  }, [open, closeSearch])
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") closeSearch() }
-    document.addEventListener("keydown", handler)
-    return () => document.removeEventListener("keydown", handler)
-  }, [closeSearch])
-
-  return (
-    <div
-      ref={pillRef}
-      className={cn(
-// ─── Hub Modal ────────────────────────────────────────────────────────────────
 function HubModal({
   hubId, onClose, onSelectService,
 }: {
@@ -943,4 +915,5 @@ export function ServicesPage() {
     </section>
   )
               } 
+ 
  
