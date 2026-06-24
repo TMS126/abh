@@ -61,7 +61,7 @@ export function CtaBar({
         <div className="abh-card px-10 py-14 text-center bg-brand-blue/5 border-brand-blue/20 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand-blue rounded-full blur-[100px] opacity-10 -mr-32 -mt-32" aria-hidden="true" />
           <span className="abh-label text-brand-blue bg-brand-blue/10 px-4 py-1.5 rounded-full mb-6 inline-block">Get In Touch</span>
-          <h2 className="abh-section-heading text-3xl mb-4 relative z-10">{title}</h2>
+          <h2 className="abh-section-heading text-2xl mb-4 relative z-10">{title}</h2>
           <p className="abh-body text-lg max-w-[500px] mx-auto mb-10 relative z-10">{description}</p>
           <div className="flex justify-center relative z-10">
             <a
