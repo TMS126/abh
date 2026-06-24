@@ -19,7 +19,7 @@ const ROW_ORDER: { id: HubId; label: string; short: string }[] = [
 ]
 
 // Hubs that support before/after
-const BA_HUBS: HubId[] = ["design"]
+const BA_HUBS: HubId[] = ["design", "tech"]
 
 // ─── Back-button modal stack ──────────────────────────────────────────────────
 // Three layers: project modal → zoom overlay.
@@ -284,7 +284,7 @@ function ProjectViewerModal({
         "rounded-t-[20px] md:rounded-[14px]",
         "flex flex-col md:flex-row",
         "h-[95vh] md:h-[85vh] md:max-w-5xl md:overflow-hidden",
-        "animate-in slide-in-from-bottom-4 md:zoom-in-95 duration-300",
+        "animate-in slide-in-from-bottom-4 md:zoom-in-95 duration-500",
       )}>
 
         {/* Image / Compare section */}
@@ -345,7 +345,7 @@ function ProjectViewerModal({
         <div className={cn("relative flex flex-col border-zinc-100 dark:border-zinc-800 overflow-y-auto overscroll-contain", "h-[60%] border-t md:h-auto md:border-t-0 md:border-l md:w-[380px]", "p-6 md:p-8")}>
           <div className="flex justify-between items-start mb-6 shrink-0">
             <div>
-              <span className="text-[0.65rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>{project.tag}</span>
+              <span className="text-[0.65rem] font-bold px-2.5 py-1 rounded-[14px] mb-3 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>{project.tag}</span>
               {hasBA && (
                 <span className="ml-2 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ backgroundColor: `${accent}20`, color: accent }}>Before &amp; After</span>
               )}
@@ -588,7 +588,7 @@ export function GalleryPage() {
     <section className="min-h-screen bg-background pt-[calc(var(--nav-h)+2rem)] pb-24 overflow-x-hidden">
       <div className="max-w-[1400px] mx-auto px-4 md:px-8">
 
-        <div className="text-center mb-8">
+        <div className="text-center mb-12">
           <h1 className="abh-page-title mb-4">Our Portfolio</h1>
           <p className="abh-tagline max-w-2xl mx-auto">Real results for real clients. Select a category to explore our work in depth.</p>
           <div className="abh-divider" />
@@ -598,27 +598,26 @@ export function GalleryPage() {
         <div className="flex flex-wrap gap-2 justify-center mb-10">
           <button
             onClick={() => setActiveFilter("all")}
-            className={cn("px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all", activeFilter === "all" ? "bg-brand-blue text-white shadow-lg" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800")}
-          >All Hubs</button>
+            className={cn("px-5 py-2 rounded-[14px] text-[0.72rem] font-bold transition-all", activeFilter === "all" ? "bg-brand-blue text-white shadow-md" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800")}
+          >All hubs</button>
           {ROW_ORDER.map(row => {
             const accent   = getAccent(row.id)
             const isActive = activeFilter === row.id
             return (
               <button key={row.id} onClick={() => setActiveFilter(row.id)}
-                className={cn("px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all", isActive ? cn("shadow-lg", isDark ? "text-zinc-900" : "text-white") : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800")}
+                className={cn("px-5 py-2 rounded-[14px] text-[0.72rem] font-bold transition-all", isActive ? cn("shadow-md", isDark ? "text-zinc-900" : "text-white") : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800")}
                 style={isActive ? { backgroundColor: accent } : {}}
               >{row.short}</button>
             )
           })}
         </div>
 
-        {/* Notice */}
-        <div className="max-w-2xl mx-auto mb-10 rounded-[14px] border border-brand-orange/20 bg-brand-orange/5 dark:bg-brand-orange/10 px-5 py-4 flex items-start gap-3 animate-in fade-in duration-300">
-          <div className="w-9 h-9 shrink-0 rounded-[10px] bg-brand-orange/10 flex items-center justify-center text-brand-orange">
-            <Info size={18} weight="fill" />
+        {/* Notice — consistent with Services page */}
+        <div className="max-w-2xl mx-auto mb-16 rounded-[14px] border border-brand-orange/20 bg-brand-orange/5 dark:bg-brand-orange/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+          <div className="w-12 h-12 shrink-0 rounded-[14px] bg-brand-orange/10 flex items-center justify-center text-brand-orange">
+            <Info size={28} weight="fill" />
           </div>
           <div className="flex-1 min-w-0 pt-0.5">
-            <span className="text-[0.65rem] font-black uppercase tracking-widest text-brand-orange block mb-1">Note</span>
             <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-snug">
               We use high-quality sample photos to represent our services, ensuring the professional standard shown is exactly what you receive.
             </p>
@@ -626,7 +625,7 @@ export function GalleryPage() {
         </div>
 
         {/* Hub rows */}
-        <div className="space-y-14">
+        <div className="space-y-20">
           {filteredRows.map(row => {
             const projects = PROJECTS.filter(p => p.hub === row.id)
             if (projects.length === 0) return null
@@ -654,7 +653,6 @@ export function GalleryPage() {
     </section>
   )
 }
- 
  
  
  
