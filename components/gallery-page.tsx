@@ -756,7 +756,7 @@ export function GalleryPage() {
 
         <div className="text-center mb-12">
           <h1 className="abh-page-title mb-4">Our Portfolio</h1>
-          <p className="abh-tagline max-w-2xl mx-auto">Real results for real clients. Select a category to explore our work in depth.</p>
+          <p className="abh-tagline max-w-2xl mx-auto">Real results for real clients. Select a category to explore our work in depth. <span className="hidden sm:inline">Swipe to browse.</span></p>
           <div className="abh-divider" />
         </div>
 
@@ -816,8 +816,3 @@ export function GalleryPage() {
     </section>
   )
 }
- 
- 
- 
- 
-   
