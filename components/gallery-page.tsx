@@ -5,7 +5,6 @@ import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut, A
 import { useTheme } from "next-themes"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
-import { useInView } from "framer-motion"
 import { HUB_COLORS, HubKey } from "@/lib/brand"
 import { PROJECTS, ProjectData } from "@/lib/data"
 
@@ -21,19 +20,6 @@ const ROW_ORDER: { id: HubId; label: string; short: string }[] = [
 
 // Hubs that support before/after
 const BA_HUBS: HubId[] = ["design", "tech"]
-
-
-// ─── Simple in-view hook for virtualization ───────────────────────────────────
-function useIsVisible(ref: React.RefObject<Element>, rootMargin = "400px") {
-  const [isVisible, setIsVisible] = useState(false)
-  useEffect(() => {
-    if (!ref.current) return
-    const obs = new IntersectionObserver(([e]) => setIsVisible(e.isIntersecting), { rootMargin })
-    obs.observe(ref.current)
-    return () => obs.disconnect()
-  }, [ref, rootMargin])
-  return isVisible
-}
 
 // ─── Back-button modal stack ──────────────────────────────────────────────────
 // Three layers: project modal → zoom overlay.
@@ -751,12 +737,12 @@ export function GalleryPage() {
   const filteredRows = activeFilter === "all" ? ROW_ORDER : ROW_ORDER.filter(r => r.id === activeFilter)
 
   return (
-    <section ref={rowRef} className="min-h-screen bg-background pt-[calc(var(--nav-h)+2rem)] pb-24 overflow-x-hidden">
+    <section className="min-h-screen bg-background pt-[calc(var(--nav-h)+2rem)] pb-24 overflow-x-hidden">
       <div className="max-w-[1400px] mx-auto px-4 md:px-8">
 
         <div className="text-center mb-12">
           <h1 className="abh-page-title mb-4">Our Portfolio</h1>
-          <p className="abh-tagline max-w-2xl mx-auto">Real results for real clients. Select a category to explore our work in depth. <span className="hidden sm:inline">Swipe to browse.</span></p>
+          <p className="abh-tagline max-w-2xl mx-auto">Real results for real clients. Select a category to explore our work in depth.</p>
           <div className="abh-divider" />
         </div>
 
