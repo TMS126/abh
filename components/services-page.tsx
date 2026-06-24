@@ -466,6 +466,65 @@ function FloatingSearchPill({
         </div>
       )}
 
+      ref={pillRef}
+      className={cn(
+        "fixed left-1/2 -translate-x-1/2 z-[10000] transition-all duration-300",
+        navbarY,
+        visible ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 -translate-y-2 pointer-events-none"
+      )}
+    >
+      {/* Icon-only collapsed button — glass acrylic */}
+      {!open && (
+        <button
+          onClick={openSearch}
+          aria-label="Search services"
+          className={cn(
+            "w-11 h-11 rounded-full flex items-center justify-center",
+            "bg-white/10 dark:bg-zinc-900/10 backdrop-blur-lg",
+            "border border-white/20 dark:border-white/10",
+            "shadow-[0_4px_16px_rgba(0,0,0,0.12)]",
+            "transition-all duration-300 hover:scale-110 active:scale-95 hover:bg-white/20 dark:hover:bg-zinc-900/30"
+          )}
+        >
+          <MagnifyingGlass
+            size={19}
+            weight="bold"
+            style={{ color: CYCLE[colorIdx], transition: "color 0.7s ease" }}
+          />
+        </button>
+      )}
+
+      {/* Expanded search — glass acrylic, narrower */}
+      {open && (
+        <div className={cn(
+          "flex items-center gap-2",
+          "bg-white/10 dark:bg-zinc-900/10 backdrop-blur-lg",
+          "border border-white/20 dark:border-white/10",
+          "shadow-[0_4px_24px_rgba(0,0,0,0.14)]",
+          "rounded-[14px] px-4 py-2.5",
+          "w-[min(80vw,340px)]",
+          "transition-all duration-300"
+        )}>
+          <MagnifyingGlass size={17} weight="bold" className="shrink-0 text-zinc-400" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Search for a service"
+            className="flex-1 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-400/70 dark:placeholder:text-zinc-500 outline-none min-w-0"
+          />
+          {query && (
+            <button onClick={() => setQuery("")} className="w-5 h-5 rounded-full bg-white/20 dark:bg-white/10 flex items-center justify-center text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 shrink-0 transition-colors">
+              <X size={11} weight="bold" />
+            </button>
+          )}
+          <button onClick={closeSearch} className="w-7 h-7 rounded-full bg-white/20 dark:bg-white/10 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 shrink-0 ml-0.5 transition-colors">
+            <X size={13} weight="bold" />
+          </button>
+        </div>
+      )}
+
       {/* Results dropdown */}
       {showResults && (
         <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-[min(92vw,380px)] bg-white dark:bg-zinc-950 rounded-[16px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
@@ -502,7 +561,7 @@ function FloatingSearchPill({
       )}
     </div>
   )
-}
+  }
 // ─── Notice Banner ────────────────────────────────────────────────────────────
 function NoticeBanner() {
   return (
