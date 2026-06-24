@@ -1,4 +1,3 @@
-// @cache-bust
 
 export const PRICING = {
   print: {
@@ -830,7 +829,6 @@ export const PROJECTS = [
     shortDesc: "Branding package for a local shuttle service — flyer, logo, and business card.",
     image: "/Sol.jpg",
     images: ["/Sol2.jpg", "/Sol.jpg"],
-    clientType: "client" as const,
     clientGoal: "A client needed a complete brand package for his shuttle service — a flyer to share rates, a logo for brand identity, and business cards for customers.",
     whatWeDid: [
       "Designed full pricing layout (Day vs Evening rates)",
@@ -851,7 +849,6 @@ export const PROJECTS = [
     shortDesc: "Built a complete professional CV from scratch for a first-time job applicant.",
     image: "/gallery/docu/cv-2.jpg",
     images: ["/gallery/docu/cv-1.jpg", "/gallery/docu/cv-2.jpg", "/gallery/docu/cv-3.jpg"],
-    clientType: "sample" as const,
     clientGoal: "Client had no CV and needed a professional document to apply for jobs.",
     whatWeDid: [
       "Created CV from scratch",
@@ -864,22 +861,23 @@ export const PROJECTS = [
     result: "Client received a complete, professional CV ready for job applications.",
   },
   {
-    id: "flyer-printing",
+    id: "rekaofela-bulk-print",
     hub: "print",
-    title: "Colour Flyer Printing for Local Business",
+    title: "Rekaofela Society — Stokvel Rules Print",
     tag: "Print Hub",
-    shortDesc: "High-quality A4 colour flyers printed and prepared for local business distribution.",
+    shortDesc: "Typed and printed 100+ copies of a kasi stokvel group's official rules document.",
     image: "/gallery/print/printer.jpg",
-    images: [ "/gallery/print/printer.jpg", "/gallery/print/laminated.jpg"],
-    clientType: "sample" as const,
-    clientGoal: "Client needed high-quality printed flyers to promote their business.",
+    images: ["/gallery/print/printer.jpg"],
+    clientType: "client" as const,
+    clientGoal: "Rekaofela Society, a local stokvel group in Kgotsong, needed their official rules typed up and printed in bulk so every member could have a personal copy.",
     whatWeDid: [
-      "Printed A4 colour flyers",
-      "Adjusted layout for proper print output",
-      "Ensured alignment and clean margins",
+      "Typed the full stokvel rules from handwritten notes",
+      "Formatted the document clearly for easy reading",
+      "Printed 100+ copies in black and white",
+      "Ensured consistent print quality across the entire batch",
     ],
-    tools: ["High-quality print settings", "Paper and colour optimization"],
-    result: "Client received clean, vibrant flyers ready for distribution.",
+    tools: ["Microsoft Word", "Canon Megatank — bulk B&W printing"],
+    result: "Every Rekaofela Society member received a clean, printed copy of the group's rules — professionally done and ready for their first meeting.",
   },
   {
     id: "sassa-srd",
@@ -889,7 +887,6 @@ export const PROJECTS = [
     shortDesc: "Assisted client with correctly completing and submitting their SRD grant application.",
     image: "/gallery/eservice/laptop-1.jpg",
     images: ["/gallery/eservice/laptop-1.jpg", "/gallery/eservice/laptop-2.jpg", "/gallery/eservice/laptop-3.jpg"],
-    clientType: "sample" as const,
     clientGoal: "Client needed help applying for SRD grant correctly.",
     whatWeDid: [
       "Completed SRD application",
@@ -907,7 +904,6 @@ export const PROJECTS = [
     shortDesc: "Removed viruses, cleaned system files and installed essential software on a slow laptop.",
     image: "/gallery/tech/cleaning.jpg",
     images: ["/gallery/tech/cleaning.jpg", "/gallery/tech/software.jpg", "/gallery/tech/setup.jpg"],
-    clientType: "sample" as const,
     clientGoal: "Client's laptop was slow and needed essential software installed.",
     whatWeDid: [
       "Removed viruses",
@@ -917,7 +913,7 @@ export const PROJECTS = [
     ],
     tools: ["System cleanup tools", "Software installation"],
     result: "Laptop became faster and ready for daily use.",
-  }, 
+  },
   // ─── Pure African Herbs ───────────────────────────────────────────────────────
   {
     id: "pure-african-herbs",
@@ -926,7 +922,7 @@ export const PROJECTS = [
     tag: "Design Hub",
     shortDesc: "Health services flyer and A-board poster for a local herbal specialist in Bothaville.",
     image: "/Ahm.jpg",
-    images: ["/Aphp1.png","/Aphp2.png", "/Ahm.jpg" ],
+    images: ["/Aphp1.png","/Aphp2.jpg", "/Ahm.jpg" ],
     clientType: "client" as const,
     clientGoal: "The client needed a professional flyer for their herbal health practice — something that lists conditions they treat, contact details, pricing, and hours. It also needed to work as a big A-board outside the shop.",
     whatWeDid: [
@@ -939,7 +935,7 @@ export const PROJECTS = [
     ],
     tools: ["Adobe Illustrator", "Print-ready A4 and A-board format"],
     result: "Client had a professional flyer and A-board ready to attract walk-ins and answer common questions before clients even step inside.",
-  }, 
+  },
 
   // ─── Apexbytes Business Card ──────────────────────────────────────────────────
   {
@@ -963,25 +959,25 @@ export const PROJECTS = [
   },
 
   // ─── Wedding Party Programme ──────────────────────────────────────────────────
- {
-   // id: "wedding-party-programme",//
-   // hub: "design",
- //   title: "Wedding Party Programme",
- //   tag: "Design Hub",
-  //  shortDesc: "Printed wedding party programme with roles, names, and a celebratory layout.",
-  //  image: "/Wp.png",
-  //  images: ["/Wp.png"],
-   // clientType: "client" as const,
-    //clientGoal: "The client needed a clean printed programme listing everyone's role at the wedding reception — from MC to cake cutting.",
-   // whatWeDid: [
-   //   "Designed a blue and white wedding layout with decorative elements",
-    //  "Listed all roles on the left with matching names on the right",
-     // "Added floral and ribbon decorations to keep the celebratory feel",
-    //  "Used a dividing gold line between roles and names for readability",
-   //   "Made it print-ready at A4 size",
-    //],
-   // tools: ["Adobe Illustrator", "Print-ready A4 layout"],
-  //  result: "The client received a beautiful, easy-to-read programme that felt personal and matched the wedding's colours.",
+  {
+    id: "wedding-party-programme",
+    hub: "design",
+    title: "Wedding Party Programme",
+    tag: "Design Hub",
+    shortDesc: "Printed wedding party programme with roles, names, and a celebratory layout.",
+    image: "/Wp.png",
+    images: ["/Wp.png"],
+    clientType: "client" as const,
+    clientGoal: "The client needed a clean printed programme listing everyone's role at the wedding reception — from MC to cake cutting.",
+    whatWeDid: [
+      "Designed a blue and white wedding layout with decorative elements",
+      "Listed all roles on the left with matching names on the right",
+      "Added floral and ribbon decorations to keep the celebratory feel",
+      "Used a dividing gold line between roles and names for readability",
+      "Made it print-ready at A4 size",
+    ],
+    tools: ["Adobe Illustrator", "Print-ready A4 layout"],
+    result: "The client received a beautiful, easy-to-read programme that felt personal and matched the wedding's colours.",
   },
 
   // ─── Illusion Technologies ────────────────────────────────────────────────────
@@ -1007,30 +1003,6 @@ export const PROJECTS = [
     tools: ["Adobe Illustrator", "Photoshop mockups", "Brand presentation layout"],
     result: "A complete brand identity concept showing how Illusion Technologies would look across digital and physical touchpoints. Done as a portfolio piece to demonstrate premium corporate branding skills.",
   },
-
-  // ─── Before & After: Logo Rebrand ────────────────────────────────────────────
-  {
-    id: "logo-rebrand-ba",
-    hub: "design",
-    title: "Logo Rebrand — Before & After",
-    tag: "Design Hub",
-    shortDesc: "Side-by-side transformation of a flat, dated logo into a clean modern brand mark.",
-    image: "/vsp1.jpg",
-    images: ["/gallery/design/rebrand-after.jpg", "/gallery/design/rebrand-before.jpg"],
-    beforeImage: "/Vspsktch.jpeg",
-    afterImage: "/vsp1.jpg",
-    clientType: "client" as const,
-    clientGoal: "The client had a logo they made years ago in PowerPoint — blocky text, clashing colours, no clear identity. They needed something they could actually be proud to put on a business card and social media.",
-    whatWeDid: [
-      "Audited the existing logo and identified what was hurting the brand",
-      "Rebuilt the wordmark with a professional typeface and custom weight",
-      "Replaced the colour palette with a single, intentional accent colour",
-      "Redesigned the icon mark to be clean and scalable at any size",
-      "Delivered in PNG, SVG, and PDF — white and dark background variants",
-    ],
-    tools: ["Adobe Illustrator", "Vector logo design", "Brand colour system"],
-    result: "The client immediately updated their WhatsApp, Facebook, and business cards. The new logo looks the same whether it's on a phone screen or a printed banner.",
-  },
 ] as const
 
 export type ProjectData = {
@@ -1041,14 +1013,10 @@ export type ProjectData = {
   shortDesc: string
   image: string
   images: string[]
-  clientType?: "client" | "practice" | "sample"
+  clientType?: "client" | "practice"
   clientGoal: string
   whatWeDid: string[]
   tools: string[]
   result: string
-  beforeImage?: string
-  afterImage?: string
 }
 export type Project = typeof PROJECTS[number]
- 
- 
