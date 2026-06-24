@@ -24,7 +24,7 @@ export function AboutPage() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
 
   return (
-    <div className="min-h-screen bg-background transition-colors duration-300 pt-[var(--nav-h)]">
+    <div className="min-h-screen bg-background transition-colors duration-300 pt-[calc(var(--nav-h)+2rem)]">
 
       {/* ── Header — matches services page exactly ── */}
       <section className="abh-page-header">
