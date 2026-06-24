@@ -338,7 +338,7 @@ button, a, [role="button"] {
 
 @layer components {
   .abh-page-title {
-    @apply font-sans font-black text-4xl md:text-5xl
+    @apply font-sans font-black text-2xl md:text-3xl
            text-brand-blue-dark dark:text-brand-light-blue
            tracking-tight leading-tight;
   }
