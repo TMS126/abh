@@ -585,7 +585,7 @@ export function GalleryPage() {
   const filteredRows = activeFilter === "all" ? ROW_ORDER : ROW_ORDER.filter(r => r.id === activeFilter)
 
   return (
-    <section className="min-h-screen bg-background pt-[calc(var(--nav-h)+4rem)] pb-24 overflow-x-hidden">
+    <section className="min-h-screen bg-background pt-[calc(var(--nav-h)+2rem)] pb-24 overflow-x-hidden">
       <div className="max-w-[1400px] mx-auto px-4 md:px-8">
 
         <div className="text-center mb-8">
