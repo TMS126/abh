@@ -88,96 +88,116 @@ function ImagePlaceholder({ accent, label }: { accent: string; label?: string })
   )
 }
 
-function SafeImage({ src, alt, accent, fill, sizes, className }: {
+function SafeImage({ src, alt, accent, fill, sizes, className, priority = false }: {
   src: string; alt: string; accent: string
-  fill?: boolean; sizes?: string; className?: string
+  fill?: boolean; sizes?: string; className?: string; priority?: boolean
 }) {
   const [failed, setFailed] = useState(false)
+  const [loaded, setLoaded] = useState(false)
   if (!src || src === "" || failed) return <ImagePlaceholder accent={accent} label={alt} />
-  return <Image src={src} alt={alt} fill={fill} sizes={sizes} className={className} onError={() => setFailed(true)} />
+  return (
+    <>
+      {!loaded && <ImagePlaceholder accent={accent} label={alt} />}
+      <Image 
+        src={src} 
+        alt={alt} 
+        fill={fill} 
+        sizes={sizes} 
+        className={cn(className, "transition-opacity duration-500", loaded ? "opacity-100" : "opacity-0")} 
+        loading={priority ? undefined : "lazy"}
+        placeholder="blur"
+        blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZjNmNGY2Ii8+PC9zdmc+"
+        priority={priority}
+        onError={() => setFailed(true)} 
+        onLoad={() => setLoaded(true)}
+      />
+    </>
+  )
 }
 
 // ─── Full-screen zoom overlay ─────────────────────────────────────────────────
 // ─── Before / After drag-reveal slider ───────────────────────────────────────
 function BeforeAfterSlider({ before, after, accent }: { before: string; after: string; accent: string }) {
-  const [pos, setPos]             = useState(50)
-  const containerRef              = useRef<HTMLDivElement>(null)
-  const dragging                  = useRef(false)
-  const [revealed, setRevealed]   = useState(false)
+  const [pos, setPos] = useState(50)
+  const targetRef = useRef(50)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const rafRef = useRef<number>()
+  const [revealed, setRevealed] = useState(false)
 
-  // Sweep hint on mount
+  // Spring animation
+  useEffect(() => {
+    const animate = () => {
+      setPos(p => {
+        const diff = targetRef.current - p
+        return Math.abs(diff) < 0.1 ? targetRef.current : p + diff * 0.2
+      })
+      rafRef.current = requestAnimationFrame(animate)
+    }
+    rafRef.current = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(rafRef.current!)
+  }, [])
+
+  // Initial sweep hint
   useEffect(() => {
     if (revealed) return
-    let raf: number
-    let start: number | null = null
-    const duration = 900
-    const sweep = (ts: number) => {
-      if (!start) start = ts
-      const p = Math.min((ts - start) / duration, 1)
-      const eased = p < 0.5 ? 2 * p * p : -1 + (4 - 2 * p) * p
-      setPos(50 - Math.sin(eased * Math.PI) * 25)
-      if (p < 1) { raf = requestAnimationFrame(sweep) }
-      else { setPos(50); setRevealed(true) }
-    }
-    const timer = setTimeout(() => { raf = requestAnimationFrame(sweep) }, 600)
-    return () => { clearTimeout(timer); cancelAnimationFrame(raf) }
-  }, [])
+    const timer = setTimeout(() => {
+      targetRef.current = 25
+      setTimeout(() => { targetRef.current = 75; setTimeout(() => { targetRef.current = 50; setRevealed(true) }, 400) }, 400)
+    }, 600)
+    return () => clearTimeout(timer)
+  }, [revealed])
 
-  const calcPos = (clientX: number) => {
+  const updatePos = (clientX: number) => {
     if (!containerRef.current) return
     const { left, width } = containerRef.current.getBoundingClientRect()
-    setPos(Math.max(2, Math.min(98, ((clientX - left) / width) * 100)))
+    targetRef.current = Math.max(2, Math.min(98, ((clientX - left) / width) * 100))
+    if ('vibrate' in navigator) navigator.vibrate(1)
   }
 
-  const onMouseDown = (e: React.MouseEvent) => { e.preventDefault(); dragging.current = true }
-  useEffect(() => {
-    const onMove = (e: MouseEvent) => { if (dragging.current) calcPos(e.clientX) }
-    const onUp   = () => { dragging.current = false }
-    window.addEventListener("mousemove", onMove)
-    window.addEventListener("mouseup",   onUp)
-    return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp) }
-  }, [])
-
-  const onTouchStart = (e: React.TouchEvent) => { dragging.current = true; calcPos(e.touches[0].clientX) }
-  const onTouchMove  = (e: React.TouchEvent) => { if (dragging.current) { e.stopPropagation(); calcPos(e.touches[0].clientX) } }
-  const onTouchEnd   = () => { dragging.current = false }
+  const onPointerDown = (e: React.PointerEvent) => {
+    (e.target as Element).setPointerCapture(e.pointerId)
+    updatePos(e.clientX)
+  }
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (e.buttons) updatePos(e.clientX)
+  }
+  const onDoubleClick = () => { targetRef.current = 50 }
 
   return (
     <div
       ref={containerRef}
       className="relative w-full h-full overflow-hidden select-none cursor-col-resize touch-none"
-      onMouseDown={onMouseDown}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onDoubleClick={onDoubleClick}
     >
       {/* AFTER — full base */}
       <div className="absolute inset-0">
-        <SafeImage src={after} alt="After" accent={accent} fill sizes="55vw" className="object-cover" />
+        <SafeImage src={after} alt="After" accent={accent} fill sizes="55vw" className="object-cover" priority />
         <span className="absolute bottom-3 right-3 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full text-white shadow" style={{ backgroundColor: `${accent}cc` }}>After</span>
       </div>
 
       {/* BEFORE — clipped left */}
       <div className="absolute inset-0 overflow-hidden" style={{ width: `${pos}%` }}>
         <div className="absolute inset-0" style={{ width: `${10000 / pos}%` }}>
-          <SafeImage src={before} alt="Before" accent={accent} fill sizes="55vw" className="object-cover" />
+          <SafeImage src={before} alt="Before" accent={accent} fill sizes="55vw" className="object-cover" priority />
         </div>
         <span className="absolute bottom-3 left-3 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-black/50 text-white shadow">Before</span>
       </div>
 
       {/* Divider line */}
-      <div className="absolute top-0 bottom-0 w-px pointer-events-none" style={{ left: `${pos}%`, backgroundColor: "rgba(255,255,255,0.9)", boxShadow: "0 0 8px rgba(0,0,0,0.4)" }} />
+      <div className="absolute top-0 bottom-0 w-0.5 pointer-events-none" style={{ left: `${pos}%`, backgroundColor: "rgba(255,255,255,0.9)", boxShadow: "0 0 8px rgba(0,0,0,0.4)", transform: "translateX(-0.5px)" }} />
 
       {/* Handle */}
       <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 pointer-events-none" style={{ left: `${pos}%` }}>
-        <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-xl border-2 border-white/80" style={{ backgroundColor: accent }}>
+        <div className="w-11 h-11 rounded-full flex items-center justify-center shadow-xl border-2 border-white/90 backdrop-blur-sm transition-transform hover:scale-110" style={{ backgroundColor: accent }}>
           <ArrowsLeftRight size={18} weight="bold" className="text-white" />
         </div>
         {!revealed && <div className="absolute inset-0 rounded-full animate-ping opacity-40" style={{ backgroundColor: accent }} />}
       </div>
 
-      <p className="absolute bottom-3 left-1/2 -translate-x-1/2 text-[0.6rem] font-bold text-white/50 uppercase tracking-widest whitespace-nowrap pointer-events-none mt-6">
-        Drag to compare
+      <p className="absolute bottom-3 left-1/2 -translate-x-1/2 text-[0.6rem] font-bold text-white/60 uppercase tracking-widest whitespace-nowrap pointer-events-none">
+        Drag • Double-tap to reset
       </p>
     </div>
   )
@@ -247,6 +267,98 @@ function ZoomOverlay({ images, startIndex, onClose }: { images: string[]; startI
           Swipe or use arrow keys
         </p>
       )}
+    </div>
+  )
+}
+
+
+// ─── Project Viewer Components ───────────────────────────────────────────────
+function ProjectHeader({ project, accent, hasBA, onClose }: {
+  project: ProjectData; accent: string; hasBA: boolean; onClose: () => void
+}) {
+  return (
+    <div className="flex justify-between items-start mb-6 shrink-0">
+      <div>
+        <span className="text-[0.65rem] font-bold px-2.5 py-1 rounded-[14px] mb-3 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>{project.tag}</span>
+        {hasBA && (
+          <span className="ml-2 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ backgroundColor: `${accent}20`, color: accent }}>Before & After</span>
+        )}
+        <h2 className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 leading-tight mt-1">{project.title}</h2>
+        {project.clientType && (
+          <p className={cn("text-[0.72rem] italic mt-1", project.clientType === "sample" ? "text-brand-orange" : "text-zinc-400 dark:text-zinc-500")}>
+            {project.clientType === "practice" && "Practice design — portfolio project, not a real client"}
+            {project.clientType === "client" && "Real client work"}
+            {project.clientType === "sample" && "Representative example — reflects our work, not an actual client project"}
+          </p>
+        )}
+      </div>
+      <button onClick={onClose} className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 shrink-0 ml-3 transition-colors">
+        <X size={18} weight="bold" />
+      </button>
+    </div>
+  )
+}
+
+function ProjectImageSection({ project, accent, activeImg, setActiveImg, comparing, setComparing, setZoomIndex, hasBA, beforeImg, afterImg, allImages }: any) {
+  return (
+    <div className="h-[40%] md:h-auto md:flex-1 flex flex-col overflow-hidden bg-zinc-900">
+      {comparing && hasBA ? (
+        <div className="relative flex-1">
+          <BeforeAfterSlider before={beforeImg!} after={afterImg!} accent={accent} />
+        </div>
+      ) : (
+        <>
+          <div className="relative flex-1 overflow-hidden cursor-zoom-in group/img" onClick={() => setZoomIndex(activeImg)}>
+            <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="(max-width: 768px) 100vw, 55vw" className="object-cover transition-opacity duration-300" priority={activeImg === 0} />
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 pointer-events-none">
+              <div className="bg-black/40 backdrop-blur-sm rounded-full p-2.5"><ArrowsOut size={18} weight="bold" className="text-white" /></div>
+            </div>
+          </div>
+          {allImages.length > 1 && (
+            <div className="flex gap-2 px-3 py-2.5 overflow-x-auto no-scrollbar shrink-0 border-t border-white/10">
+              {allImages.map((img: string, idx: number) => (
+                <button key={idx} onClick={() => setActiveImg(idx)}
+                  className={cn("relative shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-[8px] overflow-hidden border-2 transition-all", activeImg === idx ? "scale-105" : "border-transparent opacity-50 hover:opacity-80")}
+                  style={activeImg === idx ? { borderColor: accent } : {}}
+                >
+                  <SafeImage src={img} alt={`Thumb ${idx + 1}`} accent={accent} fill sizes="56px" className="object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+      {hasBA && (
+        <div className="shrink-0 flex border-t border-white/10 bg-zinc-950">
+          <button onClick={() => setComparing(false)} className={cn("flex-1 py-2.5 text-[0.65rem] font-black uppercase tracking-widest transition-all duration-200", !comparing ? "text-white" : "text-white/30 hover:text-white/60")} style={!comparing ? { borderBottom: `2px solid ${accent}` } : {}} >Gallery</button>
+          <button onClick={() => setComparing(true)} className={cn("flex-1 py-2.5 text-[0.65rem] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all duration-200", comparing ? "text-white" : "text-white/30 hover:text-white/60")} style={comparing ? { borderBottom: `2px solid ${accent}` } : {}}><ArrowsLeftRight size={13} weight="bold" />Before / After</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ProjectDetailsPanel({ project, accent }: { project: ProjectData; accent: string }) {
+  return (
+    <div className="space-y-6 md:space-y-8">
+      <section>
+        <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>The Goal</h4>
+        <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.clientGoal}</p>
+      </section>
+      <section>
+        <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>What we did</h4>
+        <ul className="space-y-2">
+          {project.whatWeDid.map((item, i) => (
+            <li key={i} className="flex items-start gap-2.5 text-sm text-zinc-600 dark:text-zinc-300 font-medium">
+              <Check size={14} weight="bold" className="mt-1 shrink-0" style={{ color: accent }} />{item}
+            </li>
+          ))}
+        </ul>
+      </section>
+      <section>
+        <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>The Result</h4>
+        <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.result}</p>
+      </section>
     </div>
   )
 }
@@ -500,32 +612,47 @@ function ProjectsPopover({
     return () => document.removeEventListener("mousedown", handler)
   }, [open])
 
+  // Fix 1st-click issue: only use hover on devices that support it
+  const canHover = typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches
+
+  // Mobile back button closes popover first
+  useEffect(() => {
+    if (!open) return
+    const state = { projectsPopover: true }
+    window.history.pushState(state, "")
+    const onPop = (e: PopStateEvent) => {
+      setOpen(false)
+    }
+    window.addEventListener("popstate", onPop)
+    return () => window.removeEventListener("popstate", onPop)
+  }, [open])
+
   return (
     <div 
       ref={ref} 
       className="relative ml-auto"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
+      onMouseEnter={() => canHover && setOpen(true)}
+      onMouseLeave={() => canHover && setOpen(false)}
     >
-      {/* Spacer pill - keeps original position */}
+      {/* Spacer pill - keeps position, never shifts layout */}
       <button
         onClick={() => setOpen(o => !o)}
         className={cn(
           "text-xs font-bold px-3 py-1 rounded-full transition-opacity duration-200",
-          "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300",
+          "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:scale-105",
           open && "opacity-0 pointer-events-none"
         )}
+        aria-expanded={open}
       >
         {projects.length} {projects.length === 1 ? "project" : "projects"}
       </button>
 
-      {/* Unified card - overlays on top, doesn't push layout */}
       {open && (
         <div className="absolute right-0 top-0 z-50 w-64 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
           <div className="px-4 py-3 cursor-pointer" onClick={() => setOpen(false)}>
-            <p className="text-[0.65rem] font-black" style={{ color: accent }}>
+            <span className="text-[0.65rem] font-black" style={{ color: accent }}>
               {projects.length} {projects.length === 1 ? "project" : "projects"}
-            </p>
+            </span>
           </div>
           <div className="p-2 border-t border-zinc-100 dark:border-zinc-800">
             {projects.map(p => (
@@ -534,9 +661,7 @@ function ProjectsPopover({
                 onClick={() => { onSelect(p); setOpen(false) }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left group/item"
               >
-                <div
-                  className="w-8 h-8 rounded-[8px] shrink-0 overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900"
-                >
+                <div className="w-8 h-8 rounded-[8px] shrink-0 overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900">
                   {p.image ? (
                     <img src={p.image} alt={p.title} className="w-full h-full object-cover" />
                   ) : (
@@ -558,6 +683,27 @@ function ProjectsPopover({
   )
 }
 
+
+
+// ─── Hub filter pill ─────────────────────────────────────────────────────────
+function HubFilter({ label, active, accent, isDark, onClick }: {
+  label: string; active: boolean; accent?: string; isDark: boolean; onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "px-5 py-2 rounded-[14px] text-[0.72rem] font-bold transition-all",
+        active
+          ? cn("shadow-md", isDark ? "text-zinc-900" : "text-white")
+          : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+      )}
+      style={active && accent ? { backgroundColor: accent } : {}}
+    >
+      {label}
+    </button>
+  )
+}
 
 export function GalleryPage() {
   const { resolvedTheme } = useTheme()
@@ -601,20 +747,17 @@ export function GalleryPage() {
 
         {/* Filter pills */}
         <div className="flex flex-wrap gap-2 justify-center mb-10">
-          <button
-            onClick={() => setActiveFilter("all")}
-            className={cn("px-5 py-2 rounded-[14px] text-[0.72rem] font-bold transition-all", activeFilter === "all" ? "bg-brand-blue text-white shadow-md" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800")}
-          >All hubs</button>
-          {ROW_ORDER.map(row => {
-            const accent   = getAccent(row.id)
-            const isActive = activeFilter === row.id
-            return (
-              <button key={row.id} onClick={() => setActiveFilter(row.id)}
-                className={cn("px-5 py-2 rounded-[14px] text-[0.72rem] font-bold transition-all", isActive ? cn("shadow-md", isDark ? "text-zinc-900" : "text-white") : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800")}
-                style={isActive ? { backgroundColor: accent } : {}}
-              >{row.short}</button>
-            )
-          })}
+          <HubFilter label="All hubs" active={activeFilter === "all"} isDark={isDark} onClick={() => setActiveFilter("all")} />
+          {ROW_ORDER.map(row => (
+            <HubFilter
+              key={row.id}
+              label={row.short}
+              active={activeFilter === row.id}
+              accent={getAccent(row.id)}
+              isDark={isDark}
+              onClick={() => setActiveFilter(row.id)}
+            />
+          ))}
         </div>
 
         {/* Notice — consistent with Services page */}
@@ -663,4 +806,4 @@ export function GalleryPage() {
  
  
 
- 
+  
