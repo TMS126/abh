@@ -403,7 +403,7 @@ function FloatingSearchPill({
   const showResults = open && query.trim().length > 0
 
   // Vertically centred in the navbar strip
-  const navbarY = "top-[calc(var(--nav-h,74px)/2-22px)]"
+  const navbarY = "top-[calc(var(--nav-h,68px)/2-22px)]"
 
   return (
     <div
@@ -428,7 +428,7 @@ function FloatingSearchPill({
           )}
         >
           <MagnifyingGlass
-            size={17}
+            size={19}
             weight="bold"
             style={{ color: CYCLE[colorIdx], transition: "color 0.7s ease" }}
           />
@@ -442,11 +442,11 @@ function FloatingSearchPill({
           "bg-white/10 dark:bg-zinc-900/10 backdrop-blur-lg",
           "border border-white/20 dark:border-white/10",
           "shadow-[0_4px_24px_rgba(0,0,0,0.14)]",
-          "rounded-[18px] px-4 py-2.5",
+          "rounded-[14px] px-4 py-2.5",
           "w-[min(80vw,340px)]",
           "transition-all duration-300"
         )}>
-          <MagnifyingGlass size={15} weight="bold" className="shrink-0 text-zinc-400" />
+          <MagnifyingGlass size={17} weight="bold" className="shrink-0 text-zinc-400" />
           <input
             ref={inputRef}
             type="text"
