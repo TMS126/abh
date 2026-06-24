@@ -35,7 +35,7 @@ function StripCard({ item }: { item: any }) {
         {item.iconName === "MapPin"          && <MapPin          weight="fill" className="w-5 h-5" aria-hidden="true" />}
       </div>
       <div>
-        <h3 className="abh-card-heading text-base mb-2">{item.title}</h3>
+        <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200 mb-1">{item.title}</h3>
         <p className="abh-body text-sm leading-relaxed">{item.desc}</p>
       </div>
     </div>
