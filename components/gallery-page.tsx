@@ -737,17 +737,17 @@ export function GalleryPage() {
   const filteredRows = activeFilter === "all" ? ROW_ORDER : ROW_ORDER.filter(r => r.id === activeFilter)
 
   return (
-    <section className="min-h-screen bg-background pt-[calc(var(--nav-h)+2rem)] pb-24 overflow-x-hidden">
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+    <section className="min-h-screen bg-background pb-24 overflow-x-hidden">
+      <div className="max-w-[980px] mx-auto px-4 md:px-8">
 
-        <div className="text-center mb-12">
-          <h1 className="abh-page-title mb-4">Our Portfolio</h1>
-          <p className="abh-tagline max-w-2xl mx-auto">Real results for real clients. Select a category to explore our work in depth.</p>
+        <div className="pt-[calc(var(--nav-h)+2rem)] pb-8">
+          <h1 className="abh-page-title mb-3">Our Portfolio</h1>
+          <p className="abh-tagline max-w-xl">Real results for real clients. Select a category to explore our work in depth.</p>
           <div className="abh-divider" />
         </div>
 
         {/* Filter pills */}
-        <div className="flex flex-wrap gap-2 justify-center mb-10">
+        <div className="flex flex-wrap gap-2 mb-10">
           <HubFilter label="All hubs" active={activeFilter === "all"} isDark={isDark} onClick={() => setActiveFilter("all")} />
           {ROW_ORDER.map(row => (
             <HubFilter
@@ -762,7 +762,7 @@ export function GalleryPage() {
         </div>
 
         {/* Notice — consistent with Services page */}
-        <div className="max-w-2xl mx-auto mb-16 rounded-[14px] border border-brand-orange/20 bg-brand-orange/5 dark:bg-brand-orange/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+        <div className="mb-16 rounded-[14px] border border-brand-orange/20 bg-brand-orange/5 dark:bg-brand-orange/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
           <div className="w-12 h-12 shrink-0 rounded-[14px] bg-brand-orange/10 flex items-center justify-center text-brand-orange">
             <Info size={28} weight="fill" />
           </div>
@@ -806,5 +806,6 @@ export function GalleryPage() {
  
  
  
+
 
   
