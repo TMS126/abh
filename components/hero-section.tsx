@@ -248,8 +248,8 @@ export function HeroSection() {
           onTouchStart={() => setMarqueePaused(p => !p)}
           className="relative w-full py-4 overflow-hidden select-none mb-12 group/marquee"
         >
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-12 sm:w-24 z-10 bg-gradient-to-r from-background to-transparent" aria-hidden="true" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-12 sm:w-24 z-10 bg-gradient-to-l from-background to-transparent" aria-hidden="true" />
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-20 sm:w-32 z-10 bg-gradient-to-r from-background via-background/80 to-transparent" aria-hidden="true" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-20 sm:w-32 z-10 bg-gradient-to-l from-background via-background/80 to-transparent" aria-hidden="true" />
           <div
             className="flex whitespace-nowrap w-max animate-marquee"
             style={{ animationPlayState: marqueePaused ? "paused" : "running" }}
@@ -258,7 +258,7 @@ export function HeroSection() {
               <div key={copy} className="flex items-center shrink-0">
                 {MARQUEE_ITEMS.map((item, idx) => (
                   <React.Fragment key={idx}>
-                    <span className="inline-flex items-center px-5 text-brand-blue-dark dark:text-brand-light-blue font-black text-[0.78rem] uppercase tracking-widest transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100">
+                    <span className="inline-flex items-center px-5 text-brand-blue-dark dark:text-brand-light-blue font-semibold text-sm transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100">
                       {item}
                     </span>
                     {/* Orange dot — intentional accent, approved exception */}
