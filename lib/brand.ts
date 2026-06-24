@@ -41,9 +41,28 @@ export const BRAND = {
   // Special
   whatsapp:     "#25D366",
   whatsappDark: "#1ebe5a",
+
+  // ── TEXT-SAFE VARIANTS (light mode only) ──────────────────────────────────
+  // These are darker versions of brand colors verified to pass WCAG AA (4.5:1)
+  // on white backgrounds. Use ONLY for colored text in light mode.
+  // Fills, buttons, icons, borders → still use the bright values above.
+  blueText:        "#16325f",   // 12.68:1 on white — AAA ✅
+  orangeText:      "#b85c17",   // 4.58:1  on white — AA  ✅
+  greenText:       "#4d6f2f",   // 5.78:1  on white — AA  ✅
+  whatsappText:    "#0f172a",   // 9.00:1  on #25D366 — AAA ✅ (dark text on green btn)
 } as const
 
-// ─── BUSINESS CONSTANTS ──────────────────────────────────────────────────────
+// ─── WCAG-SAFE TEXT COLORS ────────────────────────────────────────────────────
+// Import this wherever you need colored text on white/light backgrounds.
+// Never use BRAND.green, BRAND.orange, BRAND.lightBlue as text on white — they fail.
+// These are verified to pass WCAG AA minimum (4.5:1) in light mode.
+// In dark mode the original BRAND values are already safe — no substitution needed.
+export const WCAG_TEXT = {
+  blue:      BRAND.blueText,      // #16325f — 12.68:1 AAA
+  orange:    BRAND.orangeText,    // #b85c17 — 4.58:1  AA
+  green:     BRAND.greenText,     // #4d6f2f — 5.78:1  AA
+  whatsapp:  BRAND.whatsappText,  // #0f172a — 9.00:1  AAA on green btn
+} as const
 export const BIZ = {
   name:         "ApexbytesHub",
   nameShort:    "ApexbytesHub",
@@ -57,6 +76,7 @@ export const BIZ = {
   mapsUrl:      "https://maps.app.goo.gl/v25Le9SfmCBfTh616?g_st=ac",
   founder:      "Theji Meje",
   year:         "2026",
+  yearFounded:  "2023",
   hubCount:     5,
   serviceCount: "70+",
 } as const
@@ -261,22 +281,25 @@ export const FAQS = [
 // ─── ABOUT PAGE CONTENT ──────────────────────────────────────────────────────
 export const ABOUT_VALUES = [
   {
-    iconName: "Target",
-    color:    BRAND.green,
-    title:    "We Keep It Simple",
-    desc:     "No confusing jargon. We explain everything in plain language.",
+    iconName:  "Target",
+    color:     BRAND.blue,       // icon fill — passes on white bg as fill ✅
+    textColor: BRAND.blueText,   // use this if rendering as text in light mode
+    title:     "We Keep It Simple",
+    desc:      "No confusing jargon. We explain everything in plain language.",
   },
   {
-    iconName: "Heart",
-    color:    BRAND.green,
-    title:    "Community First",
-    desc:     "We serve our neighbourhood with pride and genuine care.",
+    iconName:  "Heart",
+    color:     BRAND.blue,
+    textColor: BRAND.blueText,
+    title:     "Community First",
+    desc:      "We serve our neighbourhood with pride and genuine care.",
   },
   {
-    iconName: "Lightning",
-    color:    BRAND.green,
-    title:    "Fast & Reliable",
-    desc:     "We respect your time and always deliver with consistency.",
+    iconName:  "Lightning",
+    color:     BRAND.blue,
+    textColor: BRAND.blueText,
+    title:     "Fast & Reliable",
+    desc:      "We respect your time and always deliver with consistency.",
   },
 ] as const
 
