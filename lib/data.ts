@@ -1,6 +1,6 @@
-import { BRAND, WCAG_TEXT } from "@/lib/brand"
+// @cache-bust
 
-
+export const PRICING = {
   print: {
     'B&W Print': 'R5/page',
     'Colour Print': 'R8/page',
@@ -123,12 +123,12 @@ export interface Hub {
 export const HUBS: Record<HubId, Hub> = {
   print: {
     iconName: 'Printer',
-    iconColor: BRAND.lightBlue,
+    iconColor: '#A9D6F2',
     title: 'Print Hub',
-    grad: `linear-gradient(135deg, ${BRAND.blue} 0%, ${BRAND.blueDark} 100%)`,
+    grad: 'linear-gradient(135deg, #1E6FA8 0%, #0F3F66 100%)',
     desc: 'Fast, clear and affordable printing for every need — from a single page to bulk jobs.',
-    tagStyle: { bg: '#EBF5FB', color: WCAG_TEXT.blue },
-    tagStyleDark: { bg: '#1E3A52', color: BRAND.lightBlue },
+    tagStyle: { bg: '#EBF5FB', color: '#0F3F66' },
+    tagStyleDark: { bg: '#1E3A52', color: '#A9D6F2' },
     previews: ['B&W Printing', 'Colour Printing', 'Photo Prints'],
     sections: [
       {
@@ -187,12 +187,12 @@ export const HUBS: Record<HubId, Hub> = {
 
   doc: {
     iconName: 'FileText',
-    iconColor: BRAND.lightGreen,
+    iconColor: '#CDEB9F',
     title: 'Docu Hub',
-    grad: `linear-gradient(135deg, ${BRAND.greenDeep} 0%, ${BRAND.green} 100%)`,
+    grad: 'linear-gradient(135deg, #3E6B0E 0%, #6FBF1A 100%)',
     desc: 'From typing and printing to professional CVs and laminating — we handle your paperwork.',
-    tagStyle: { bg: '#EAFAF1', color: WCAG_TEXT.green },
-    tagStyleDark: { bg: '#1A3010', color: BRAND.lightGreen },
+    tagStyle: { bg: '#EAFAF1', color: '#3E6B0E' },
+    tagStyleDark: { bg: '#1A3010', color: '#CDEB9F' },
     previews: ['CV Services', 'Typing & Documents', 'Laminating'],
     sections: [
       {
@@ -285,12 +285,12 @@ export const HUBS: Record<HubId, Hub> = {
 
   design: {
     iconName: 'PaintBrush',
-    iconColor: BRAND.lightOrange,
+    iconColor: '#F9D1B0',
     title: 'Design Hub',
-    grad: `linear-gradient(135deg, ${BRAND.orangeBrown} 0%, ${BRAND.orange} 100%)`,
+    grad: 'linear-gradient(135deg, #B86F34 0%, #F4A261 100%)',
     desc: 'Professional designs for your brand, events and marketing — eye-catching and print-ready.',
-    tagStyle: { bg: '#FEF3C7', color: WCAG_TEXT.orange },
-    tagStyleDark: { bg: '#3A2010', color: BRAND.lightOrange },
+    tagStyle: { bg: '#FEF3C7', color: '#B86F34' },
+    tagStyleDark: { bg: '#3A2010', color: '#F9D1B0' },
     previews: ['Logo Design', 'Flyers & Posters', 'Invitations'],
     sections: [
       {
@@ -412,12 +412,12 @@ export const HUBS: Record<HubId, Hub> = {
 
   eservice: {
     iconName: 'Globe',
-    iconColor: BRAND.lightBlue,
+    iconColor: '#A9D6F2',
     title: 'E-Service Hub',
-    grad: `linear-gradient(135deg, ${BRAND.blueDark} 0%, ${BRAND.blueMid} 100%)`,
+    grad: 'linear-gradient(135deg, #0F3F66 0%, #15537D 100%)',
     desc: "Government platforms made easy. We handle registrations, applications and updates so you don't have to stress.",
-    tagStyle: { bg: '#EBF5FB', color: WCAG_TEXT.blue },
-    tagStyleDark: { bg: '#1E3A52', color: BRAND.lightBlue },
+    tagStyle: { bg: '#EBF5FB', color: '#0F3F66' },
+    tagStyleDark: { bg: '#1E3A52', color: '#A9D6F2' },
     previews: ['SASSA', 'SARS eFiling', 'UIF & CSD'],
     sections: [
       {
@@ -688,11 +688,11 @@ export const HUBS: Record<HubId, Hub> = {
 
   tech: {
     iconName: 'Desktop',
-    iconColor: '#B8CCE0',  // no BRAND token — tech uses a custom neutral
+    iconColor: '#B8CCE0',
     title: 'Tech Hub',
-    grad: 'linear-gradient(135deg, #2C3E50 0%, #4A6785 100%)',  // tech custom
+    grad: 'linear-gradient(135deg, #2C3E50 0%, #4A6785 100%)',
     desc: 'From slow laptops to fresh Windows installs — everyday tech problems solved quickly and affordably.',
-    tagStyle: { bg: '#F0F3F6', color: '#2C3E50' },  // #2C3E50 is 11.3:1 on white — passes AAA
+    tagStyle: { bg: '#F0F3F6', color: '#2C3E50' },
     tagStyleDark: { bg: '#1E2A38', color: '#B8CCE0' },
     previews: ['Windows Install', 'Virus Removal', 'PC Setup'],
     sections: [
