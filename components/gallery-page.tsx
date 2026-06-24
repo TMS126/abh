@@ -689,16 +689,17 @@ function ProjectsPopover({
 function HubFilter({ label, active, accent, isDark, onClick }: {
   label: string; active: boolean; accent?: string; isDark: boolean; onClick: () => void
 }) {
+  const isAll = label.toLowerCase().includes('all')
   return (
     <button
       onClick={onClick}
       className={cn(
         "px-5 py-2 rounded-[14px] text-[0.72rem] font-bold transition-all",
         active
-          ? cn("shadow-md", isDark ? "text-zinc-900" : "text-white")
+          ? cn("shadow-md", isAll ? "bg-brand-blue text-white" : (isDark ? "text-zinc-900" : "text-white"))
           : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
       )}
-      style={active && accent ? { backgroundColor: accent } : {}}
+      style={active && accent && !isAll ? { backgroundColor: accent } : {}}
     >
       {label}
     </button>
@@ -805,5 +806,4 @@ export function GalleryPage() {
  
  
  
-
-  
+   
