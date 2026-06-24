@@ -507,31 +507,27 @@ function ProjectsPopover({
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
     >
-      <div className={cn(
-        "transition-all duration-300",
-        open 
-          ? "w-64 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden" 
-          : ""
-      )}>
-        <button
-          onClick={() => setOpen(o => !o)}
-          className={cn(
-            "w-full text-left transition-all duration-200",
-            open
-              ? "px-4 py-3"
-              : "text-xs font-bold px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:scale-105"
-          )}
-        >
-          <span 
-            className={cn(open ? "text-[0.65rem] font-black" : "")}
-            style={open ? { color: accent } : {}}
-          >
-            {projects.length} {projects.length === 1 ? "project" : "projects"}
-          </span>
-        </button>
+      {/* Spacer pill - keeps original position */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={cn(
+          "text-xs font-bold px-3 py-1 rounded-full transition-opacity duration-200",
+          "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300",
+          open && "opacity-0 pointer-events-none"
+        )}
+      >
+        {projects.length} {projects.length === 1 ? "project" : "projects"}
+      </button>
 
-        {open && (
-          <div className="p-2 border-t border-zinc-100 dark:border-zinc-800 animate-in fade-in zoom-in-95 duration-150">
+      {/* Unified card - overlays on top, doesn't push layout */}
+      {open && (
+        <div className="absolute right-0 top-0 z-50 w-64 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <div className="px-4 py-3 cursor-pointer" onClick={() => setOpen(false)}>
+            <p className="text-[0.65rem] font-black" style={{ color: accent }}>
+              {projects.length} {projects.length === 1 ? "project" : "projects"}
+            </p>
+          </div>
+          <div className="p-2 border-t border-zinc-100 dark:border-zinc-800">
             {projects.map(p => (
               <button
                 key={p.id}
@@ -556,8 +552,8 @@ function ProjectsPopover({
               </button>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
