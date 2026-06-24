@@ -5,6 +5,7 @@ import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut, A
 import { useTheme } from "next-themes"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
+import { useInView } from "framer-motion"
 import { HUB_COLORS, HubKey } from "@/lib/brand"
 import { PROJECTS, ProjectData } from "@/lib/data"
 
@@ -20,6 +21,19 @@ const ROW_ORDER: { id: HubId; label: string; short: string }[] = [
 
 // Hubs that support before/after
 const BA_HUBS: HubId[] = ["design", "tech"]
+
+
+// ─── Simple in-view hook for virtualization ───────────────────────────────────
+function useIsVisible(ref: React.RefObject<Element>, rootMargin = "400px") {
+  const [isVisible, setIsVisible] = useState(false)
+  useEffect(() => {
+    if (!ref.current) return
+    const obs = new IntersectionObserver(([e]) => setIsVisible(e.isIntersecting), { rootMargin })
+    obs.observe(ref.current)
+    return () => obs.disconnect()
+  }, [ref, rootMargin])
+  return isVisible
+}
 
 // ─── Back-button modal stack ──────────────────────────────────────────────────
 // Three layers: project modal → zoom overlay.
@@ -547,7 +561,7 @@ function ProjectCarousel({ projects, accent, onSelect }: { projects: ProjectData
         className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar cursor-grab active:cursor-grabbing select-none"
         style={{ scrollSnapType: "x mandatory" }}
       >
-        {projects.map((project) => (
+        {projects.map((project, i) => (
           <div key={project.id} className="shrink-0 w-full snap-center px-4 md:px-6" style={{ scrollSnapAlign: "center" }}>
             <div className="rounded-[16px] overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xl cursor-pointer group transition-transform duration-300 active:scale-[0.98]" onClick={() => onSelect(project)}>
               <div className="relative aspect-[16/9] md:aspect-[16/8] bg-zinc-100 dark:bg-zinc-900">
@@ -737,7 +751,7 @@ export function GalleryPage() {
   const filteredRows = activeFilter === "all" ? ROW_ORDER : ROW_ORDER.filter(r => r.id === activeFilter)
 
   return (
-    <section className="min-h-screen bg-background pt-[calc(var(--nav-h)+2rem)] pb-24 overflow-x-hidden">
+    <section ref={rowRef} className="min-h-screen bg-background pt-[calc(var(--nav-h)+2rem)] pb-24 overflow-x-hidden">
       <div className="max-w-[1400px] mx-auto px-4 md:px-8">
 
         <div className="text-center mb-12">
