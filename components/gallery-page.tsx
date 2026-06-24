@@ -500,47 +500,32 @@ function ProjectsPopover({
     return () => document.removeEventListener("mousedown", handler)
   }, [open])
 
-  // Fix 1st-click issue: only use hover on devices that support it
-  const canHover = typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches
-
-  // Mobile back button closes popover first
-  useEffect(() => {
-    if (!open) return
-    const state = { projectsPopover: true }
-    window.history.pushState(state, "")
-    const onPop = (e: PopStateEvent) => {
-      setOpen(false)
-    }
-    window.addEventListener("popstate", onPop)
-    return () => window.removeEventListener("popstate", onPop)
-  }, [open])
-
   return (
     <div 
       ref={ref} 
       className="relative ml-auto"
-      onMouseEnter={() => canHover && setOpen(true)}
-      onMouseLeave={() => canHover && setOpen(false)}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
     >
-      {/* Spacer pill - keeps position, never shifts layout */}
+      {/* Spacer pill - keeps original position */}
       <button
         onClick={() => setOpen(o => !o)}
         className={cn(
           "text-xs font-bold px-3 py-1 rounded-full transition-opacity duration-200",
-          "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:scale-105",
+          "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300",
           open && "opacity-0 pointer-events-none"
         )}
-        aria-expanded={open}
       >
         {projects.length} {projects.length === 1 ? "project" : "projects"}
       </button>
 
+      {/* Unified card - overlays on top, doesn't push layout */}
       {open && (
         <div className="absolute right-0 top-0 z-50 w-64 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
           <div className="px-4 py-3 cursor-pointer" onClick={() => setOpen(false)}>
-            <span className="text-[0.65rem] font-black" style={{ color: accent }}>
+            <p className="text-[0.65rem] font-black" style={{ color: accent }}>
               {projects.length} {projects.length === 1 ? "project" : "projects"}
-            </span>
+            </p>
           </div>
           <div className="p-2 border-t border-zinc-100 dark:border-zinc-800">
             {projects.map(p => (
@@ -549,7 +534,9 @@ function ProjectsPopover({
                 onClick={() => { onSelect(p); setOpen(false) }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left group/item"
               >
-                <div className="w-8 h-8 rounded-[8px] shrink-0 overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900">
+                <div
+                  className="w-8 h-8 rounded-[8px] shrink-0 overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900"
+                >
                   {p.image ? (
                     <img src={p.image} alt={p.title} className="w-full h-full object-cover" />
                   ) : (
@@ -675,4 +662,5 @@ export function GalleryPage() {
  
  
  
-  
+
+ 
