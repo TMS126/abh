@@ -837,24 +837,24 @@ export function ServicesPage() {
   }, [activeHub, selectedService])
 
   return (
-    <section className="min-h-screen bg-white dark:bg-[#081428] transition-colors duration-300 pt-[calc(var(--nav-h,74px)+4rem)] pb-24 px-4 md:px-8">
+    <section className="min-h-screen bg-white dark:bg-[#081428] transition-colors duration-300 pb-24">
 
       {/* Floating search pill */}
       <FloatingSearchPill onSelect={setSelectedService} visible={pillVisible} />
 
-      <div className="max-w-[1300px] mx-auto">
+      <div className="max-w-[980px] mx-auto px-4 md:px-8">
 
         {/* Hero */}
-        <div className="text-center mb-10">
-          <h1 className="abh-page-title mb-4">Our Service Hubs</h1>
-          <p className="abh-tagline max-w-2xl mx-auto">
+        <div className="pt-[calc(var(--nav-h,74px)+2rem)] pb-8">
+          <h1 className="abh-page-title mb-3">Our Service Hubs</h1>
+          <p className="abh-tagline max-w-xl">
             Explore our ecosystem. Tap a hub to view all available services and instant pricing.
           </p>
           <div className="abh-divider" />
         </div>
 
         {/* Inline search */}
-        <div ref={inlineSearchRef} className="max-w-xl mx-auto mb-10">
+        <div ref={inlineSearchRef} className="max-w-xl mb-10">
           <InlineSearchBar onSelect={setSelectedService} />
         </div>
 
@@ -915,5 +915,3 @@ export function ServicesPage() {
     </section>
   )
               } 
- 
- 
