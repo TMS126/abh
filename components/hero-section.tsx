@@ -247,10 +247,7 @@ export function HeroSection() {
           onMouseLeave={() => setMarqueePaused(false)}
           onTouchStart={() => setMarqueePaused(p => !p)}
           className="relative w-full py-4 overflow-hidden select-none mb-12 group/marquee"
-          style={{ background: "none" }}
         >
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-16 sm:w-28 z-10 bg-gradient-to-r from-background to-transparent" aria-hidden="true" style={{ opacity: 0.85 }} />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-16 sm:w-28 z-10 bg-gradient-to-l from-background to-transparent" aria-hidden="true" style={{ opacity: 0.85 }} />
           <div
             className="flex whitespace-nowrap w-max animate-marquee"
             style={{ animationPlayState: marqueePaused ? "paused" : "running" }}
