@@ -837,7 +837,7 @@ export function ServicesPage() {
   }, [activeHub, selectedService])
 
   return (
-    <section className="min-h-screen bg-white dark:bg-[#081428] transition-colors duration-300 pt-[calc(var(--nav-h,74px)+2rem)] pb-24 px-4 md:px-8">
+    <section className="min-h-screen bg-white dark:bg-[#081428] transition-colors duration-300 pt-[calc(var(--nav-h,74px)+4rem)] pb-24 px-4 md:px-8">
 
       {/* Floating search pill */}
       <FloatingSearchPill onSelect={setSelectedService} visible={pillVisible} />
