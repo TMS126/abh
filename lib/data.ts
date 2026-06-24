@@ -966,7 +966,7 @@ export const PROJECTS = [
     tag: "Design Hub",
     shortDesc: "Printed wedding party programme with roles, names, and a celebratory layout.",
     image: "/Wp.png",
-    images: ["/Wp.png"],
+    images: ["/wedding_party_blurred.jpg"],
     clientType: "client" as const,
     clientGoal: "The client needed a clean printed programme listing everyone's role at the wedding reception — from MC to cake cutting.",
     whatWeDid: [
