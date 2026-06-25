@@ -1,4 +1,3 @@
-
 export const PRICING = {
   print: {
     'B&W Print': 'R5/page',
@@ -829,6 +828,7 @@ export const PROJECTS = [
     shortDesc: "Branding package for a local shuttle service — flyer, logo, and business card.",
     image: "/Sol.jpg",
     images: ["/Sol2.jpg", "/Sol.jpg"],
+    clientType: "client" as const,
     clientGoal: "A client needed a complete brand package for his shuttle service — a flyer to share rates, a logo for brand identity, and business cards for customers.",
     whatWeDid: [
       "Designed full pricing layout (Day vs Evening rates)",
@@ -849,6 +849,7 @@ export const PROJECTS = [
     shortDesc: "Built a complete professional CV from scratch for a first-time job applicant.",
     image: "/gallery/docu/cv-2.jpg",
     images: ["/gallery/docu/cv-1.jpg", "/gallery/docu/cv-2.jpg", "/gallery/docu/cv-3.jpg"],
+    clientType: "client" as const,
     clientGoal: "Client had no CV and needed a professional document to apply for jobs.",
     whatWeDid: [
       "Created CV from scratch",
@@ -887,6 +888,7 @@ export const PROJECTS = [
     shortDesc: "Assisted client with correctly completing and submitting their SRD grant application.",
     image: "/gallery/eservice/laptop-1.jpg",
     images: ["/gallery/eservice/laptop-1.jpg", "/gallery/eservice/laptop-2.jpg", "/gallery/eservice/laptop-3.jpg"],
+    clientType: "client" as const,
     clientGoal: "Client needed help applying for SRD grant correctly.",
     whatWeDid: [
       "Completed SRD application",
@@ -904,6 +906,7 @@ export const PROJECTS = [
     shortDesc: "Removed viruses, cleaned system files and installed essential software on a slow laptop.",
     image: "/gallery/tech/cleaning.jpg",
     images: ["/gallery/tech/cleaning.jpg", "/gallery/tech/software.jpg", "/gallery/tech/setup.jpg"],
+    clientType: "client" as const,
     clientGoal: "Client's laptop was slow and needed essential software installed.",
     whatWeDid: [
       "Removed viruses",
@@ -914,7 +917,6 @@ export const PROJECTS = [
     tools: ["System cleanup tools", "Software installation"],
     result: "Laptop became faster and ready for daily use.",
   },
-  // ─── Pure African Herbs ───────────────────────────────────────────────────────
   {
     id: "pure-african-herbs",
     hub: "design",
@@ -936,8 +938,6 @@ export const PROJECTS = [
     tools: ["Adobe Illustrator", "Print-ready A4 and A-board format"],
     result: "Client had a professional flyer and A-board ready to attract walk-ins and answer common questions before clients even step inside.",
   },
-
-  // ─── Apexbytes Business Card ──────────────────────────────────────────────────
   {
     id: "apexbytes-business-card",
     hub: "design",
@@ -957,8 +957,6 @@ export const PROJECTS = [
     tools: ["Adobe Illustrator", "Double-sided business card format"],
     result: "A sharp, professional card that stands out and represents the brand well.",
   },
-
-  // ─── Wedding Party Programme ──────────────────────────────────────────────────
   {
     id: "wedding-party-programme",
     hub: "design",
@@ -968,6 +966,7 @@ export const PROJECTS = [
     image: "/Wp.png",
     images: ["/wedding_party_blurred.jpg"],
     clientType: "client" as const,
+    sensitive: true,
     clientGoal: "The client needed a clean printed programme listing everyone's role at the wedding reception — from MC to cake cutting.",
     whatWeDid: [
       "Designed a blue and white wedding layout with decorative elements",
@@ -979,8 +978,6 @@ export const PROJECTS = [
     tools: ["Adobe Illustrator", "Print-ready A4 layout"],
     result: "The client received a beautiful, easy-to-read programme that felt personal and matched the wedding's colours.",
   },
-
-  // ─── Illusion Technologies ────────────────────────────────────────────────────
   {
     id: "illusion-technologies",
     hub: "design",
@@ -1018,5 +1015,7 @@ export type ProjectData = {
   whatWeDid: string[]
   tools: string[]
   result: string
+  sensitive?: boolean
 }
+
 export type Project = typeof PROJECTS[number]
