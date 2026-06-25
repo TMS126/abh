@@ -547,7 +547,7 @@ function ProjectCarousel({ projects, accent, onSelect }: { projects: ProjectData
         className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar cursor-grab active:cursor-grabbing select-none"
         style={{ scrollSnapType: "x mandatory" }}
       >
-        {projects.map((project, i) => (
+        {projects.map((project) => (
           <div key={project.id} className="shrink-0 w-full snap-center px-4 md:px-6" style={{ scrollSnapAlign: "center" }}>
             <div className="rounded-[16px] overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xl cursor-pointer group transition-transform duration-300 active:scale-[0.98]" onClick={() => onSelect(project)}>
               <div className="relative aspect-[16/9] md:aspect-[16/8] bg-zinc-100 dark:bg-zinc-900">
@@ -689,17 +689,16 @@ function ProjectsPopover({
 function HubFilter({ label, active, accent, isDark, onClick }: {
   label: string; active: boolean; accent?: string; isDark: boolean; onClick: () => void
 }) {
-  const isAll = label.toLowerCase().includes('all')
   return (
     <button
       onClick={onClick}
       className={cn(
         "px-5 py-2 rounded-[14px] text-[0.72rem] font-bold transition-all",
         active
-          ? cn("shadow-md", isAll ? "bg-brand-blue text-white" : (isDark ? "text-zinc-900" : "text-white"))
+          ? cn("shadow-md", isDark ? "text-zinc-900" : "text-white")
           : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
       )}
-      style={active && accent && !isAll ? { backgroundColor: accent } : {}}
+      style={active && accent ? { backgroundColor: accent } : {}}
     >
       {label}
     </button>
@@ -737,17 +736,17 @@ export function GalleryPage() {
   const filteredRows = activeFilter === "all" ? ROW_ORDER : ROW_ORDER.filter(r => r.id === activeFilter)
 
   return (
-    <section className="min-h-screen bg-background pb-24 overflow-x-hidden">
-      <div className="max-w-[980px] mx-auto px-4 md:px-8">
+    <section className="min-h-screen bg-background pt-[calc(var(--nav-h)+2rem)] pb-24 overflow-x-hidden">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8">
 
-        <div className="pt-[calc(var(--nav-h)+2rem)] pb-8">
-          <h1 className="abh-page-title mb-3">Our Portfolio</h1>
-          <p className="abh-tagline max-w-xl">Real results for real clients. Select a category to explore our work in depth.</p>
+        <div className="text-center mb-12">
+          <h1 className="abh-page-title mb-4">Our Portfolio</h1>
+          <p className="abh-tagline max-w-2xl mx-auto">Real results for real clients. Select a category to explore our work in depth.</p>
           <div className="abh-divider" />
         </div>
 
         {/* Filter pills */}
-        <div className="flex flex-wrap gap-2 mb-10">
+        <div className="flex flex-wrap gap-2 justify-center mb-10">
           <HubFilter label="All hubs" active={activeFilter === "all"} isDark={isDark} onClick={() => setActiveFilter("all")} />
           {ROW_ORDER.map(row => (
             <HubFilter
@@ -762,7 +761,7 @@ export function GalleryPage() {
         </div>
 
         {/* Notice — consistent with Services page */}
-        <div className="mb-16 rounded-[14px] border border-brand-orange/20 bg-brand-orange/5 dark:bg-brand-orange/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+        <div className="max-w-2xl mx-auto mb-16 rounded-[14px] border border-brand-orange/20 bg-brand-orange/5 dark:bg-brand-orange/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
           <div className="w-12 h-12 shrink-0 rounded-[14px] bg-brand-orange/10 flex items-center justify-center text-brand-orange">
             <Info size={28} weight="fill" />
           </div>
@@ -806,6 +805,5 @@ export function GalleryPage() {
  
  
  
-
 
   
