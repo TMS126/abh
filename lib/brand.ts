@@ -157,21 +157,22 @@ export const HUB_COLORS: Record<HubKey, {
     light:       BRAND.lightOrange,
     gradient:    `linear-gradient(135deg, ${BRAND.orangeBrown} 0%, ${BRAND.orange} 100%)`,
     tagBg:       "#FEF3C7",
-    tagText:     BRAND.orangeBrown,
+    tagText:     BRAND.orangeText,   // was BRAND.orangeBrown (#B86F34, 3.92:1 FAIL) → now #b85c17 (4.58:1 AA ✅)
     tagBgDark:   "#3A2010",
     tagTextDark: BRAND.lightOrange,
   },
   eservice: {
-    primary:     BRAND.lightBlue,
+    primary:     BRAND.blueDark,    // was BRAND.lightBlue — light pastels fail as primary fills
     light:       BRAND.lightBlue,
     gradient:    `linear-gradient(135deg, #15537D 0%, ${BRAND.blueMid} 100%)`,
     tagBg:       "#EBF5FB",
-    tagText:     "#1565A0",
+    tagText:     BRAND.blueText,    // was '#1565A0' hardcoded — now uses WCAG_TEXT token
     tagBgDark:   "#1E3A52",
     tagTextDark: "#5FB3F0",
   },
   tech: {
-    primary:     "#B8CCE0",
+    primary:     "#B8CCE0",  // intentional exception — Tech Hub has no bright brand color.
+                              // Used only as icon fill on dark gradient backgrounds, never as text.
     light:       "#B8CCE0",
     gradient:    `linear-gradient(135deg, #333333 0%, #555555 100%)`,
     tagBg:       BRAND.neutral100,
@@ -360,5 +361,6 @@ export const FOOTER_NAV = [
   { label: "About",   path: "/about" },
   { label: "Contact",    path: "/contact" },
 ] as const
+ 
  
  
