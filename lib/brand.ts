@@ -65,7 +65,6 @@ export const WCAG_TEXT = {
 } as const
 export const BIZ = {
   name:         "ApexbytesHub",
-  nameShort:    "ApexbytesHub",
   tagline:      "Your local tech & print partner.",
   location:     "Kgotsong, Bothaville",
   phone:        "075 333 8260",
@@ -223,13 +222,13 @@ export const STRIP_ITEMS = [
   },
   {
     iconName: "CurrencyDollar",
-    color:    BRAND.green,
+    color:    BRAND.blue,
     title:    "Affordable Rates",
     desc:     "Fair pricing for everyone",
   },
   {
     iconName: "HandHeart",
-    color:    BRAND.orange,
+    color:    BRAND.blue,
     title:    "Friendly Help",
     desc:     "We explain, never judge",
   },
@@ -328,7 +327,7 @@ export const ABOUT_STANDARDS = [
 // ─── CONTACT PAGE CONTENT ────────────────────────────────────────────────────
 export const CONTACT_LINKS = [
   {
-    dot:   BRAND.whatsapp,
+    dot:   BRAND.whatsapp,   // WhatsApp green — intentional brand exception
     title: "WhatsApp Us",
     value: BIZ.phone,
     href:  WA.contact,
@@ -340,13 +339,13 @@ export const CONTACT_LINKS = [
     href:  `tel:${BIZ.phoneE164}`,
   },
   {
-    dot:   BRAND.orangeDark,
+    dot:   BRAND.blue,
     title: "Email Us",
     value: BIZ.email,
     href:  `mailto:${BIZ.email}`,
   },
   {
-    dot:   BRAND.blueDark,
+    dot:   BRAND.blue,
     title: "Visit Us",
     value: BIZ.addressFull,
     href:  BIZ.mapsUrl,
@@ -361,6 +360,7 @@ export const FOOTER_NAV = [
   { label: "About",   path: "/about" },
   { label: "Contact",    path: "/contact" },
 ] as const
+ 
  
  
  
