@@ -10,6 +10,96 @@
  */
 
 // ─── BUSINESS INFO ───────────────────────────────────────────────────────────
+export const BRAND = {
+  green: "#6FBF1A",
+  orange: "#F4A261",
+  lightBlue: "#A9D6F2",
+  lightGreen: "#CDEB9F",
+  lightOrange: "#F9D1B0",
+
+  blue: "#1E6FA8",
+  blueMid: "#15537D",
+  blueDark: "#0F3F66",
+
+  greenDark: "#548F14",
+  greenDeep: "#3E6B0E",
+
+  orangeDark: "#D9894B",
+  orangeBrown: "#B86F34",
+
+  neutral100: "#EDEDED",
+  neutral200: "#F4F4F4",
+  neutral300: "#D6D6D6",
+  neutral400: "#9A9A9A",
+  neutral500: "#777777",
+
+  dark100: "#333333",
+  dark200: "#555555",
+
+  white: "#FFFFFF",
+
+  whatsapp: "#25D366",
+  whatsappDark: "#1ebe5a",
+
+  // text-safe variants
+  blueText: "#16325f",
+  orangeText: "#b85c17",
+  greenText: "#4d6f2f",
+  whatsappText: "#0f172a",
+} as const
+  
+export const HUB_COLORS = {
+  print: {
+    primary: BRAND.blue,
+    light: BRAND.lightBlue,
+    gradient: `linear-gradient(135deg, ${BRAND.blue} 0%, ${BRAND.blueMid} 100%)`,
+    tagBg: "#EBF5FB",
+    tagText: BRAND.blueDark,
+    tagBgDark: "#1E3A52",
+    tagTextDark: BRAND.lightBlue,
+  },
+
+  doc: {
+    primary: BRAND.green,
+    light: BRAND.lightGreen,
+    gradient: `linear-gradient(135deg, ${BRAND.greenDeep} 0%, ${BRAND.green} 100%)`,
+    tagBg: "#EAFAF1",
+    tagText: BRAND.greenDeep,
+    tagBgDark: "#1A3010",
+    tagTextDark: BRAND.lightGreen,
+  },
+
+  design: {
+    primary: BRAND.orangeDark,
+    light: BRAND.lightOrange,
+    gradient: `linear-gradient(135deg, ${BRAND.orangeBrown} 0%, ${BRAND.orange} 100%)`,
+    tagBg: "#FEF3C7",
+    tagText: "#b85c17",
+    tagBgDark: "#3A2010",
+    tagTextDark: BRAND.lightOrange,
+  },
+
+  eservice: {
+    primary: BRAND.blueDark,
+    light: BRAND.lightBlue,
+    gradient: `linear-gradient(135deg, #15537D 0%, ${BRAND.blueMid} 100%)`,
+    tagBg: "#EBF5FB",
+    tagText: BRAND.blueText,
+    tagBgDark: "#1E3A52",
+    tagTextDark: "#5FB3F0",
+  },
+
+  tech: {
+    primary: "#B8CCE0",
+    light: "#B8CCE0",
+    gradient: `linear-gradient(135deg, #333333 0%, #555555 100%)`,
+    tagBg: "#EDEDED",
+    tagText: "#3D4148",
+    tagBgDark: "#3D4148",
+    tagTextDark: "#C9CDD3",
+  },
+} as const
+  
 export const BIZ = {
   name: "ApexbytesHub",
   tagline: "Your local tech & print partner.",
