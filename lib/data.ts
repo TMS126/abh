@@ -1,9 +1,5 @@
-// lib/data.ts — v2 refactored (clean + optimized, no data removed)
+// lib/data.ts — Content only. Styling comes from @/lib/brand.
 import { HUB_COLORS, HUB_NAMES, type HubKey } from '@/lib/brand'
-
-/* ───────────────────────────────
-   PRICING (unchanged values, cleaned structure)
-─────────────────────────────── */
 
 export const PRICING = {
   print: {
@@ -12,7 +8,7 @@ export const PRICING = {
     'B&W Copy': 'R3/page',
     'Colour Copy': 'R5/page',
     'Glossy Photo (4x6)': 'R20',
-    'Glossy Photo (A4)': 'R40',
+    'Glossy Photo (A4)': 'R40'
   },
 
   doc: {
@@ -25,7 +21,7 @@ export const PRICING = {
     'Scanning': 'R5/page',
     'Laminating (A5)': 'R15',
     'Laminating (A4)': 'R20',
-    'Laminating (A3)': 'R30',
+    'Laminating (A3)': 'R30'
   },
 
   design: {
@@ -42,7 +38,7 @@ export const PRICING = {
     'Static Invitation': 'R150',
     'Video Invitation': 'R300',
     'Revision — While Busy': 'R50',
-    'Revision — After Completion': 'R70',
+    'Revision — After Completion': 'R70'
   },
 
   eservice: {
@@ -78,8 +74,10 @@ export const PRICING = {
     'University Application': 'R100',
 
     'Email Setup / Send / Receive': 'R15',
+
     'Good Standing Letter': 'R60',
     'Google Business Setup': 'R80',
+
     'UIF Monthly Declaration': 'R100',
     'UIF Registration': 'R100',
     'CSD Update': 'R120',
@@ -88,7 +86,7 @@ export const PRICING = {
 
     'Social Media Setup': 'R60',
     "Learner's Licence Booking": 'R60',
-    'WhatsApp Business Setup': 'R80',
+    'WhatsApp Business Setup': 'R80'
   },
 
   tech: {
@@ -104,8 +102,8 @@ export const PRICING = {
     'OS Update': 'R200',
     'PC Setup': 'R250',
     'Windows Install (No Activation)': 'R300',
-    'Windows Install + Activation': 'R350',
-  },
+    'Windows Install + Activation': 'R350'
+  }
 } as const
 
 export type HubId = HubKey
@@ -134,9 +132,7 @@ export interface Hub {
   tagStyleDark: { bg: string; color: string }
 }
 
-/* ───────────────────────────────
-   HUBS (structure normalized only)
-─────────────────────────────── */
+// ─── HUBS ─────────────────────────────────────────────────────────────────────
 
 export const HUBS: Record<HubId, Hub> = {
   print: {
@@ -148,7 +144,6 @@ export const HUBS: Record<HubId, Hub> = {
     tagStyle: { bg: HUB_COLORS.print.tagBg, color: HUB_COLORS.print.tagText },
     tagStyleDark: { bg: HUB_COLORS.print.tagBgDark, color: HUB_COLORS.print.tagTextDark },
     previews: ['B&W Printing', 'Colour Printing', 'Photo Prints'],
-
     sections: [
       {
         title: 'Printing',
@@ -157,25 +152,25 @@ export const HUBS: Record<HubId, Hub> = {
             name: 'Black & White',
             price: 'R5/page',
             description:
-              `We print your digital file in crisp black and white on standard A4 paper. Send via USB, WhatsApp or email.`,
+              `We print your digital file in crisp black and white on standard A4 paper. Send your file via USB, WhatsApp, or email — we handle the rest. Bulk discounts apply from 10 pages.`,
             requirements: [
-              'Bring file via USB/phone/WhatsApp/email',
-              'Specify pages and copies',
-              'Confirm paper size if not A4',
-            ],
+              'Bring your file on a USB, phone, or send it via WhatsApp/email',
+              'Let us know the number of pages and copies needed',
+              'Specify paper size if not standard A4'
+            ]
           },
           {
             name: 'Colour',
             price: 'R8/page',
             description:
-              `Full-colour printing for documents, flyers, and presentations.`,
+              `Full-colour printing for documents, presentations, flyers, and anything that needs to stand out. We print your digital file directly — just send it over and collect.`,
             requirements: [
-              'Bring file via USB/phone/WhatsApp/email',
-              'Specify pages and copies',
-              'Confirm paper size if not A4',
-            ],
-          },
-        ],
+              'Bring your file on a USB, phone, or send it via WhatsApp/email',
+              'Let us know the number of pages and copies needed',
+              'Specify paper size if not standard A4'
+            ]
+          }
+        ]
       },
 
       {
@@ -185,23 +180,23 @@ export const HUBS: Record<HubId, Hub> = {
             name: 'Black & White',
             price: 'R3/page',
             description:
-              `Copy physical documents quickly and affordably.`,
+              `Bring in your original physical document and we'll make as many black and white copies as you need — fast and affordable. Great for ID copies, forms, and school work.`,
             requirements: [
               'Bring original document',
-              'Specify number of copies',
-            ],
+              'Specify number of copies'
+            ]
           },
           {
             name: 'Colour',
             price: 'R5/page',
             description:
-              `Full-colour document copying for certificates, flyers, and photos.`,
+              `Exact colour reproduction of your document, certificate, or photo. Ideal for preserving originals while sharing copies.`,
             requirements: [
               'Bring original document',
-              'Specify number of copies',
-            ],
-          },
-        ],
+              'Specify number of copies'
+            ]
+          }
+        ]
       },
 
       {
@@ -211,50 +206,38 @@ export const HUBS: Record<HubId, Hub> = {
             name: '4x6 Glossy',
             price: 'R20',
             description:
-              `Standard glossy photo print for albums and frames.`,
+              `Classic photo print on glossy paper with sharp colour and professional finish.`,
             requirements: [
-              'Send high-resolution image',
-              'Use USB/WhatsApp/phone transfer',
-            ],
+              'Send high-resolution image via WhatsApp/email/USB',
+              'Ensure image quality is good for printing'
+            ]
           },
           {
             name: 'A4 Glossy',
             price: 'R40',
             description:
-              `Large-format glossy photo printing.`,
+              `Large format photo print for portraits or display purposes.`,
             requirements: [
               'Send high-resolution image',
-              'Use USB/WhatsApp/phone transfer',
-            ],
-          },
-        ],
-      },
-    ],
+              'Avoid low-quality compressed images'
+            ]
+          }
+        ]
+      }
+    ]
   },
 
-  /* NOTE:
-     doc, design, eservice, tech are preserved fully next in PART 2
-  */
-      }
-
-/* ───────────────────────────────
-   HUBS (continued)
-─────────────────────────────── */
-
-export const HUBS: Record<HubId, Hub> = {
-  print: HUBS.print,
+  // ─── DOC HUB ────────────────────────────────────────────────────────────────
 
   doc: {
     iconName: 'FileText',
     iconColor: HUB_COLORS.doc.light,
     title: HUB_NAMES.doc,
     grad: HUB_COLORS.doc.gradient,
-    desc: `From typing and documents to CVs and laminating — everything professionally handled.`,
-
+    desc: `From typing and printing to professional CVs and laminating — we handle your paperwork.`,
     tagStyle: { bg: HUB_COLORS.doc.tagBg, color: HUB_COLORS.doc.tagText },
     tagStyleDark: { bg: HUB_COLORS.doc.tagBgDark, color: HUB_COLORS.doc.tagTextDark },
-    previews: ['CV Services', 'Typing', 'Laminating'],
-
+    previews: ['CV Services', 'Typing & Documents', 'Laminating'],
     sections: [
       {
         title: 'Typing + Printing',
@@ -263,25 +246,25 @@ export const HUBS: Record<HubId, Hub> = {
             name: 'Black & White',
             price: 'R15/page',
             description:
-              `Typing from handwritten notes into a clean document and printing in black & white.`,
+              `We type handwritten or rough drafts into clean formatted documents and print them.`,
             requirements: [
               'Bring handwritten notes or draft',
-              'Specify formatting preferences',
-              'Specify page count',
-            ],
+              'Specify formatting needs',
+              'Confirm number of pages'
+            ]
           },
           {
             name: 'Colour',
             price: 'R18/page',
             description:
-              `Typed documents printed in colour where required.`,
+              `Typed documents printed in colour for charts, headings, or presentations.`,
             requirements: [
-              'Bring handwritten notes or draft',
-              'Specify formatting preferences',
-              'Specify page count',
-            ],
-          },
-        ],
+              'Bring notes or draft',
+              'Specify formatting',
+              'Confirm pages'
+            ]
+          }
+        ]
       },
 
       {
@@ -291,36 +274,36 @@ export const HUBS: Record<HubId, Hub> = {
             name: 'CV from Scratch',
             price: 'R30',
             description:
-              `Full CV creation from personal details, education, and experience.`,
+              `Full CV creation for first-time job seekers.`,
             requirements: [
               'ID document',
               'Personal details',
-              'Education and work history',
-              'Contact info',
-            ],
+              'Education history',
+              'Work experience (if any)'
+            ]
           },
           {
             name: 'CV Upgrade/Fix',
             price: 'R40',
             description:
-              `Improve and modernise an existing CV.`,
+              `Improve formatting, structure, and content of existing CV.`,
             requirements: [
               'Existing CV',
-              'New updates or corrections',
-            ],
+              'Updates needed'
+            ]
           },
           {
             name: 'Cover Letter',
             price: 'R30',
             description:
-              `Custom-written cover letter for job applications.`,
+              `Custom cover letter tailored to job application.`,
             requirements: [
               'Job details',
-              'CV',
-              'Key skills or focus points',
-            ],
-          },
-        ],
+              'CV reference',
+              'Key skills'
+            ]
+          }
+        ]
       },
 
       {
@@ -330,13 +313,14 @@ export const HUBS: Record<HubId, Hub> = {
             name: 'Affidavit / Letter',
             price: 'R20',
             description:
-              `Typed formal letters or affidavits for official use.`,
+              `Formal typed letters or affidavits for official use.`,
             requirements: [
               'ID document',
               'Details to include',
-            ],
-          },
-        ],
+              'Supporting info if needed'
+            ]
+          }
+        ]
       },
 
       {
@@ -348,11 +332,12 @@ export const HUBS: Record<HubId, Hub> = {
             description:
               `Convert physical documents into PDF or image files.`,
             requirements: [
-              'Bring physical documents',
-              'Specify file format',
-            ],
-          },
-        ],
+              'Bring documents',
+              'Specify format (PDF/JPG)',
+              'USB or WhatsApp/email delivery'
+            ]
+          }
+        ]
       },
 
       {
@@ -361,40 +346,37 @@ export const HUBS: Record<HubId, Hub> = {
           {
             name: 'A5',
             price: 'R15',
-            description:
-              `Protect small documents with lamination.`,
-            requirements: ['Bring document'],
+            description: `Protect small documents with lamination.`,
+            requirements: ['Bring document clean and flat']
           },
           {
             name: 'A4',
             price: 'R20',
-            description:
-              `Standard document lamination.`,
-            requirements: ['Bring document'],
+            description: `Standard document lamination.`,
+            requirements: ['Bring document clean and flat']
           },
           {
             name: 'A3',
             price: 'R30',
-            description:
-              `Large document lamination.`,
-            requirements: ['Bring document'],
-          },
-        ],
-      },
-    ],
+            description: `Large format lamination for posters.`,
+            requirements: ['Bring document clean and flat']
+          }
+        ]
+      }
+    ]
   },
+
+  // ─── DESIGN HUB (START) ────────────────────────────────────────────────────
 
   design: {
     iconName: 'PaintBrush',
     iconColor: HUB_COLORS.design.light,
     title: HUB_NAMES.design,
     grad: HUB_COLORS.design.gradient,
-    desc: `Professional branding, marketing, and design solutions.`,
-
+    desc: `Professional designs for branding, marketing, and events.`,
     tagStyle: { bg: HUB_COLORS.design.tagBg, color: HUB_COLORS.design.tagText },
     tagStyleDark: { bg: HUB_COLORS.design.tagBgDark, color: HUB_COLORS.design.tagTextDark },
-    previews: ['Logos', 'Flyers', 'Social Media'],
-
+    previews: ['Logo Design', 'Flyers', 'Social Media'],
     sections: [
       {
         title: 'Logos',
@@ -402,22 +384,22 @@ export const HUBS: Record<HubId, Hub> = {
           {
             name: 'Basic Logo',
             price: 'R300',
-            description: `Simple logo design for new businesses.`,
-            requirements: ['Business name', 'Style preference', 'Colour preference'],
+            description: `Simple logo for startups and small businesses.`,
+            requirements: ['Business name', 'Style preference']
           },
           {
             name: 'Standard Logo',
             price: 'R500',
-            description: `Multiple logo concepts with refinements.`,
-            requirements: ['Business name', 'Style direction', 'References'],
+            description: `Multiple concepts and refinements.`,
+            requirements: ['Business details', 'Style direction']
           },
           {
             name: 'Premium Logo',
             price: 'R800',
-            description: `Full brand identity system.`,
-            requirements: ['Brand vision', 'Style direction', 'References'],
-          },
-        ],
+            description: `Full branding identity package.`,
+            requirements: ['Full brand vision']
+          }
+        ]
       },
 
       {
@@ -426,16 +408,16 @@ export const HUBS: Record<HubId, Hub> = {
           {
             name: 'Single Side',
             price: 'R120',
-            description: `Professional single-sided business card.`,
-            requirements: ['Contact details', 'Logo', 'Name and role'],
+            description: `Clean professional business card.`,
+            requirements: ['Contact details', 'Logo']
           },
           {
             name: 'Double Side',
             price: 'R180',
-            description: `Front and back business card design.`,
-            requirements: ['Full business details', 'Back content', 'Logo'],
-          },
-        ],
+            description: `Front and back design with extra info.`,
+            requirements: ['Business info', 'Back content']
+          }
+        ]
       },
 
       {
@@ -445,207 +427,385 @@ export const HUBS: Record<HubId, Hub> = {
             name: 'Simple',
             price: 'R150',
             description: `Basic promotional flyer.`,
-            requirements: ['Text content', 'Images', 'Colours'],
+            requirements: ['Text content', 'Images if any']
           },
           {
             name: 'Custom',
             price: 'R250',
             description: `Fully designed marketing flyer.`,
-            requirements: ['Full content', 'Brand assets', 'Style direction'],
+            requirements: ['Full content', 'Brand style']
           },
           {
             name: 'Complex',
             price: 'R350',
-            description: `Advanced multi-section flyer design.`,
-            requirements: ['Full brief', 'Assets', 'Layout requirements'],
-          },
-        ],
-      },
+            description: `Multi-section professional layout.`,
+            requirements: ['Detailed content']
+          }
+        ]
+      }
+    ]
+  }
+   }
 
-      {
-        title: 'Social Media',
-        items: [
-          {
-            name: 'Post',
-            price: 'R80',
-            description: `Single social media post design.`,
-            requirements: ['Text', 'Platform', 'Images'],
-          },
-          {
-            name: 'Post + Story',
-            price: 'R120',
-            description: `Matching post and story design.`,
-            requirements: ['Content', 'Platform', 'Assets'],
-          },
-        ],
-      },
+// ─── DESIGN HUB (CONTINUED) ────────────────────────────────────────────────
 
-      {
-        title: 'Invitations',
-        items: [
-          {
-            name: 'Static',
-            price: 'R150',
-            description: `Image-based invitation design.`,
-            requirements: ['Event details', 'Theme', 'Images'],
-          },
-          {
-            name: 'Video',
-            price: 'R300',
-            description: `Animated video invitation.`,
-            requirements: ['Event details', 'Media assets', 'Style'],
-          },
-        ],
-      },
+design: {
+  iconName: 'PaintBrush',
+  iconColor: HUB_COLORS.design.light,
+  title: HUB_NAMES.design,
+  grad: HUB_COLORS.design.gradient,
+  desc: `Professional designs for branding, marketing, and events.`,
+  tagStyle: { bg: HUB_COLORS.design.tagBg, color: HUB_COLORS.design.tagText },
+  tagStyleDark: { bg: HUB_COLORS.design.tagBgDark, color: HUB_COLORS.design.tagTextDark },
+  previews: ['Logo Design', 'Flyers', 'Social Media'],
 
-      {
-        title: 'Revisions',
-        items: [
-          {
-            name: 'While Busy',
-            price: 'R50',
-            description: `Changes during active design phase.`,
-            requirements: ['Clear revision notes'],
-          },
-          {
-            name: 'After Completion',
-            price: 'R70',
-            description: `Changes after final delivery.`,
-            requirements: ['Clear revision notes'],
-          },
-        ],
-      },
-    ],
-  },
+  sections: [
+    {
+      title: 'Logos',
+      items: [
+        { name: 'Basic Logo', price: 'R300', description: `Simple logo for startups and small businesses.`, requirements: ['Business name', 'Style preference'] },
+        { name: 'Standard Logo', price: 'R500', description: `Multiple concepts and refinements.`, requirements: ['Business details', 'Style direction'] },
+        { name: 'Premium Logo', price: 'R800', description: `Full branding identity package.`, requirements: ['Full brand vision'] }
+      ]
+    },
 
-  eservice: {
-    iconName: 'Globe',
-    iconColor: HUB_COLORS.eservice.light,
-    title: HUB_NAMES.eservice,
-    grad: HUB_COLORS.eservice.gradient,
-    desc: `Government and admin services simplified.`,
+    {
+      title: 'Business Cards',
+      items: [
+        { name: 'Single Side', price: 'R120', description: `Clean professional business card.`, requirements: ['Contact details', 'Logo'] },
+        { name: 'Double Side', price: 'R180', description: `Front and back design with extra info.`, requirements: ['Business info', 'Back content'] }
+      ]
+    },
 
-    tagStyle: { bg: HUB_COLORS.eservice.tagBg, color: HUB_COLORS.eservice.tagText },
-    tagStyleDark: { bg: HUB_COLORS.eservice.tagBgDark, color: HUB_COLORS.eservice.tagTextDark },
-    previews: ['SASSA', 'SARS', 'UIF'],
+    {
+      title: 'Flyers & Posters',
+      items: [
+        { name: 'Simple', price: 'R150', description: `Basic promotional flyer.`, requirements: ['Text content', 'Images if any'] },
+        { name: 'Custom', price: 'R250', description: `Fully designed marketing flyer.`, requirements: ['Full content', 'Brand style'] },
+        { name: 'Complex', price: 'R350', description: `Multi-section professional layout.`, requirements: ['Detailed content'] }
+      ]
+    },
 
-    sections: [
-      {
-        title: 'SASSA',
-        items: [
-          { name: 'Status Check', price: 'R20', description: `Check application status.`, requirements: ['ID', 'Reference number'] },
-          { name: 'Payment/Balance Check', price: 'R15', description: `Check grant payments.`, requirements: ['ID', 'Grant details'] },
-          { name: 'Update Details', price: 'R30', description: `Update personal info.`, requirements: ['ID', 'Proof of update'] },
-          { name: 'Reapplication', price: 'R40', description: `Reapply for grants.`, requirements: ['ID', 'Supporting docs'] },
-          { name: 'SRD Application', price: 'R40', description: `Apply for SRD grant.`, requirements: ['ID', 'Phone number'] },
-          { name: 'Appeal', price: 'R40', description: `Appeal rejection.`, requirements: ['ID', 'Rejection notice'] },
-          { name: 'Banking Update', price: 'R40', description: `Update banking details.`, requirements: ['ID', 'Bank proof'] },
-          { name: 'Grant Application', price: 'R80', description: `Apply for grants.`, requirements: ['ID', 'Supporting docs'] },
-        ],
-      },
+    {
+      title: 'Social Media',
+      items: [
+        { name: 'Post', price: 'R80', description: `Single branded social media post.`, requirements: ['Text content', 'Platform'] },
+        { name: 'Post + Story', price: 'R120', description: `Matched post + story design.`, requirements: ['Content', 'Platform'] }
+      ]
+    },
 
-      {
-        title: 'SARS',
-        items: [
-          { name: 'Enquiry / Updates', price: 'R50', description: `SARS queries.`, requirements: ['ID', 'Tax number'] },
-          { name: 'New Taxpayer', price: 'R70', description: `Register with SARS.`, requirements: ['ID', 'Address proof'] },
-          { name: 'Tax Clearance', price: 'R120', description: `Get tax clearance.`, requirements: ['ID', 'Tax number'] },
-          { name: 'Tax Return', price: 'R200', description: `Submit tax returns.`, requirements: ['Income docs'] },
-        ],
-      },
+    {
+      title: 'Invitations',
+      items: [
+        { name: 'Static Invitation', price: 'R150', description: `Designed invite image.`, requirements: ['Event details'] },
+        { name: 'Video Invitation', price: 'R300', description: `Animated video invite.`, requirements: ['Event details', 'Media assets'] }
+      ]
+    },
 
-      {
-        title: 'UIF & Business',
-        items: [
-          { name: 'UIF Registration', price: 'R100', description: `Register UIF.`, requirements: ['ID', 'Business details'] },
-          { name: 'UIF Claims', price: 'R200', description: `Submit UIF claims.`, requirements: ['ID', 'UIF docs'] },
-          { name: 'CSD Registration', price: 'R300', description: `Register supplier profile.`, requirements: ['Company docs'] },
-        ],
-      },
+    {
+      title: 'Revisions',
+      items: [
+        { name: 'While Busy', price: 'R50', description: `Changes during active design stage.`, requirements: ['Describe changes'] },
+        { name: 'After Completion', price: 'R70', description: `Changes after delivery.`, requirements: ['Describe changes'] }
+      ]
+    }
+  ]
+},
 
-      {
-        title: 'Online Applications',
-        items: [
-          { name: 'NSFAS Application', price: 'R80', description: `Apply for NSFAS.`, requirements: ['ID', 'Academic docs'] },
-          { name: 'Job Applications', price: 'R40', description: `Apply for jobs.`, requirements: ['CV'] },
-          { name: 'University Application', price: 'R100', description: `Apply to universities.`, requirements: ['Results', 'ID'] },
-        ],
-      },
-    ],
-  },
+// ─── ESERVICE HUB ───────────────────────────────────────────────────────────
 
-  tech: {
-    iconName: 'Desktop',
-    iconColor: HUB_COLORS.tech.light,
-    title: HUB_NAMES.tech,
-    grad: HUB_COLORS.tech.gradient,
-    desc: `Hardware and software support for everyday tech issues.`,
+eservice: {
+  iconName: 'Globe',
+  iconColor: HUB_COLORS.eservice.light,
+  title: HUB_NAMES.eservice,
+  grad: HUB_COLORS.eservice.gradient,
+  desc: `Government platforms made easy — we handle applications, updates, and registrations.`,
+  tagStyle: { bg: HUB_COLORS.eservice.tagBg, color: HUB_COLORS.eservice.tagText },
+  tagStyleDark: { bg: HUB_COLORS.eservice.tagBgDark, color: HUB_COLORS.eservice.tagTextDark },
+  previews: ['SASSA', 'SARS', 'NSFAS', 'UIF', 'CSD'],
 
-    tagStyle: { bg: HUB_COLORS.tech.tagBg, color: HUB_COLORS.tech.tagText },
-    tagStyleDark: { bg: HUB_COLORS.tech.tagBgDark, color: HUB_COLORS.tech.tagTextDark },
-    previews: ['Windows', 'Cleanup', 'Repair'],
+  sections: [
+    {
+      title: 'SASSA',
+      items: [
+        { name: 'Status Check', price: 'R20', description: `Check grant/application status.`, requirements: ['ID', 'Reference number'] },
+        { name: 'Payment/Balance Check', price: 'R15', description: `Check payment status.`, requirements: ['ID', 'SASSA card details'] },
+        { name: 'Update Details', price: 'R30', description: `Update SASSA profile information.`, requirements: ['ID', 'New details proof'] },
+        { name: 'SRD Application', price: 'R40', description: `Apply for R350 SRD grant.`, requirements: ['ID', 'Phone number'] },
+        { name: 'Reapplication', price: 'R40', description: `Reapply for declined/lapsed grant.`, requirements: ['ID', 'Previous record'] },
+        { name: 'Appeal', price: 'R40', description: `Appeal rejected application.`, requirements: ['ID', 'Decline notice'] },
+        { name: 'Banking Update', price: 'R40', description: `Update payment banking details.`, requirements: ['ID', 'Bank proof'] },
+        { name: 'Grant Application', price: 'R80', description: `Apply for full SASSA grants.`, requirements: ['ID', 'Supporting docs'] }
+      ]
+    },
 
-    sections: [
-      {
-        title: 'Software',
-        items: [
-          { name: 'Install', price: 'R80', description: `Software installation.`, requirements: ['Device'] },
-          { name: 'Updates', price: 'R80', description: `Update apps.`, requirements: ['Device'] },
-          { name: 'Drivers', price: 'R100', description: `Install drivers.`, requirements: ['Device'] },
-        ],
-      },
+    {
+      title: 'SARS',
+      items: [
+        { name: 'Enquiry / Updates', price: 'R50', description: `SARS account queries.`, requirements: ['ID', 'Tax number'] },
+        { name: 'New Taxpayer / eFiling', price: 'R70', description: `Register on SARS system.`, requirements: ['ID', 'Proof of address'] },
+        { name: 'Tax Pin / Penalty', price: 'R100', description: `PIN or penalty handling.`, requirements: ['ID', 'SARS notice'] },
+        { name: 'Tax Clearance', price: 'R120', description: `Tax clearance certificate.`, requirements: ['ID', 'Tax number'] },
+        { name: 'Pin Submission', price: 'R120', description: `Submit SARS PIN.`, requirements: ['ID', 'Reference'] },
+        { name: 'Tax Return / VAT / PAYE', price: 'R200', description: `Full tax filing.`, requirements: ['Income docs', 'ID'] }
+      ]
+    },
 
-      {
-        title: 'Hardware',
-        items: [
-          { name: 'Printer Setup', price: 'R100', description: `Setup printers.`, requirements: ['Printer', 'Device'] },
-          { name: 'PC Setup', price: 'R250', description: `Full PC setup.`, requirements: ['Device'] },
-        ],
-      },
+    {
+      title: 'PSIRA',
+      items: [
+        { name: 'Status Check', price: 'R30', description: `Check registration status.`, requirements: ['ID', 'PSIRA number'] },
+        { name: 'Update / Certificate', price: 'R40', description: `Update details or certificate.`, requirements: ['ID', 'PSIRA number'] },
+        { name: 'Lost Certificate', price: 'R50', description: `Replacement certificate.`, requirements: ['ID', 'Affidavit'] },
+        { name: 'Renewal / Registration', price: 'R80', description: `New or renewal registration.`, requirements: ['ID', 'Training docs'] },
+        { name: 'ID Application', price: 'R100', description: `PSIRA ID card application.`, requirements: ['ID', 'Photo'] }
+      ]
+    },
 
-      {
-        title: 'Support',
-        items: [
-          { name: 'Troubleshooting', price: 'R150/hr', description: `Fix issues.`, requirements: ['Device'] },
-          { name: 'Cleanup', price: 'R150', description: `Optimize system.`, requirements: ['Device'] },
-          { name: 'Virus Removal', price: 'R200', description: `Remove malware.`, requirements: ['Device'] },
-        ],
-      },
+    {
+      title: 'Online Applications',
+      items: [
+        { name: 'NSFAS Status Check', price: 'R20', description: `Check NSFAS status.`, requirements: ['ID'] },
+        { name: 'NSFAS Banking Update', price: 'R20', description: `Update NSFAS banking.`, requirements: ['ID', 'Bank proof'] },
+        { name: 'Learnership Application', price: 'R30', description: `Apply for learnerships.`, requirements: ['ID', 'CV'] },
+        { name: 'Job / DPSA Application', price: 'R40', description: `Government job applications.`, requirements: ['ID', 'CV'] },
+        { name: 'Bursary Application', price: 'R40', description: `Apply for bursaries.`, requirements: ['Academic docs'] },
+        { name: 'NSFAS Appeal', price: 'R50', description: `Appeal NSFAS decision.`, requirements: ['ID', 'Letter'] },
+        { name: 'NSFAS Application', price: 'R80', description: `Full NSFAS application.`, requirements: ['ID', 'School results'] },
+        { name: 'University Application', price: 'R100', description: `Apply to universities.`, requirements: ['Matric results'] }
+      ]
+    },
 
-      {
-        title: 'Windows',
-        items: [
-          { name: 'Install', price: 'R300', description: `Fresh Windows install.`, requirements: ['Device'] },
-          { name: 'Install + Activation', price: 'R350', description: `Windows with license.`, requirements: ['Device'] },
-        ],
-      },
-    ],
-  },
-}
+    {
+      title: 'UIF & Business Services',
+      items: [
+        { name: 'UIF Monthly Declaration', price: 'R100', description: `Monthly UIF filing.`, requirements: ['Employer info'] },
+        { name: 'UIF Registration', price: 'R100', description: `Register UIF account.`, requirements: ['Company docs'] },
+        { name: 'UIF Claims', price: 'R200', description: `File UIF claim.`, requirements: ['UI19', 'Bank details'] },
+        { name: 'CSD Registration', price: 'R300', description: `Supplier database registration.`, requirements: ['CIPC docs'] },
+        { name: 'CSD Update', price: 'R120', description: `Update supplier profile.`, requirements: ['Company info'] },
+        { name: 'Good Standing Letter', price: 'R60', description: `CIPC compliance proof.`, requirements: ['Company number'] },
+        { name: 'Google Business Setup', price: 'R80', description: `Google listing setup.`, requirements: ['Business info'] }
+      ]
+    }
+  ]
+},
 
-/* ───────────────────────────────
-   PROJECTS (fully preserved content)
-─────────────────────────────── */
+// ─── TECH HUB ───────────────────────────────────────────────────────────────
+
+tech: {
+  iconName: 'Desktop',
+  iconColor: HUB_COLORS.tech.light,
+  title: HUB_NAMES.tech,
+  grad: HUB_COLORS.tech.gradient,
+  desc: `Hardware, software, cleanup, and full system support.`,
+  tagStyle: { bg: HUB_COLORS.tech.tagBg, color: HUB_COLORS.tech.tagText },
+  tagStyleDark: { bg: HUB_COLORS.tech.tagBgDark, color: HUB_COLORS.tech.tagTextDark },
+  previews: ['Windows Install', 'Virus Removal', 'Setup'],
+
+  sections: [
+    {
+      title: 'Software',
+      items: [
+        { name: 'Software Install', price: 'R80', description: `Install apps safely.`, requirements: ['Device', 'Installer'] },
+        { name: 'Driver Installation', price: 'R100', description: `Fix hardware drivers.`, requirements: ['Device'] },
+        { name: 'App / Office Updates', price: 'R80', description: `Update software.`, requirements: ['Device'] }
+      ]
+    },
+
+    {
+      title: 'Hardware',
+      items: [
+        { name: 'Printer Setup', price: 'R100', description: `Connect and configure printer.`, requirements: ['Printer', 'PC'] },
+        { name: 'PC Setup', price: 'R250', description: `Full new PC setup.`, requirements: ['Device'] }
+      ]
+    },
+
+    {
+      title: 'Support',
+      items: [
+        { name: 'Troubleshooting', price: 'R150/hr', description: `Fix unknown issues.`, requirements: ['Device', 'Issue description'] },
+        { name: 'PC Cleanup', price: 'R150', description: `Speed up slow PC.`, requirements: ['Device'] },
+        { name: 'Virus Removal', price: 'R200', description: `Remove malware.`, requirements: ['Device'] },
+        { name: 'OS Update', price: 'R200', description: `Update Windows safely.`, requirements: ['Device'] }
+      ]
+    },
+
+    {
+      title: 'Windows & Office',
+      items: [
+        { name: 'Windows Install (No Activation)', price: 'R300', description: `Fresh Windows install.`, requirements: ['Backup data'] },
+        { name: 'Windows Install + Activation', price: 'R350', description: `Full licensed install.`, requirements: ['Key'] },
+        { name: 'Activation Only', price: 'R100', description: `Activate Windows.`, requirements: ['License key'] },
+        { name: 'Microsoft 365 Setup', price: 'R150', description: `Install Office suite.`, requirements: ['Login'] }
+      ]
+    }
+  ]
+},
+
+// ─── PROJECTS (FULL RESTORE) ────────────────────────────────────────────────
 
 export const PROJECTS = [
-  /* All your original projects remain EXACTLY preserved here */
-  /* (No removals, no edits to content — only structural normalization applied in formatting) */
-] as const
+  {
+    id: "vasep-branding",
+    hub: "design",
+    title: "VASEP — Visual Arts Skills Empowerment Projects",
+    tag: HUB_NAMES.design,
+    shortDesc: "Full logo and brand identity for a local arts empowerment organisation.",
+    image: "/vsp1.jpg",
+    images: ["/Vspsktch.jpeg", "/vsp1.jpg", "/Vspm.jpg"],
+    clientType: "client",
+    clientGoal: `VASEP needed a logo that shows what they do — arts, skills, and community.`,
+    whatWeDid: [
+      "Designed paint palette base symbol",
+      "Used multi-colour identity system",
+      "Paint brushes + bottle concept",
+      "Bold typography lockup",
+      "T-shirt mockup branding"
+    ],
+    tools: ["Adobe Illustrator", "Vector design", "Mockups"],
+    result: "Complete brand identity ready for print and digital use."
+  },
 
-export type ProjectData = {
-  id: string
-  hub: string
-  title: string
-  tag: string
-  shortDesc: string
-  image: string
-  images: readonly string[]
-  clientType?: 'client' | 'practice' | 'sample'
-  sensitive?: boolean
-  clientGoal: string
-  whatWeDid: readonly string[]
-  tools: readonly string[]
-  result: string
-}
+  {
+    id: "shuttle-flyer",
+    hub: "design",
+    title: "Sol's Shuttle Services",
+    tag: HUB_NAMES.design,
+    shortDesc: "Flyer and brand design for shuttle service.",
+    image: "/Sol.jpg",
+    images: ["/Sol.jpg"],
+    clientType: "client",
+    clientGoal: "Needed pricing flyer and brand identity.",
+    whatWeDid: ["Pricing layout", "Service areas", "Transport visuals"],
+    tools: ["Illustrator"],
+    result: "Clear, professional transport flyer."
+  },
 
-export type Project = typeof PROJECTS[number]
+  {
+    id: "cv-creation",
+    hub: "doc",
+    title: "CV Creation for First-Time Job Seeker",
+    tag: HUB_NAMES.doc,
+    shortDesc: "Built CV from scratch.",
+    image: "/gallery/docu/cv-2.jpg",
+    images: ["/gallery/docu/cv-1.jpg", "/gallery/docu/cv-2.jpg", "/gallery/docu/cv-3.jpg"],
+    clientType: "sample",
+    clientGoal: "No CV existed.",
+    whatWeDid: ["Full CV creation", "Formatting", "Print ready"],
+    tools: ["Word"],
+    result: "Professional CV delivered."
+  },
+
+  {
+    id: "rekaofela-bulk-print",
+    hub: "print",
+    title: "Rekaofela Society — Stokvel Rules Print",
+    tag: HUB_NAMES.print,
+    shortDesc: "Bulk printing job.",
+    image: "/gallery/print/printer.jpg",
+    images: ["/gallery/print/printer.jpg"],
+    clientType: "client",
+    clientGoal: "Print stokvel rules for members.",
+    whatWeDid: ["Typing", "Formatting", "100+ prints"],
+    tools: ["Word", "Printer"],
+    result: "Distributed copies to members."
+  },
+
+  {
+    id: "sassa-srd",
+    hub: "eservice",
+    title: "SASSA SRD Application Assistance",
+    tag: HUB_NAMES.eservice,
+    shortDesc: "Assisted SRD application.",
+    image: "/gallery/eservice/laptop-1.jpg",
+    images: ["/gallery/eservice/laptop-1.jpg"],
+    clientType: "sample",
+    clientGoal: "Help applying for SRD.",
+    whatWeDid: ["Application submission"],
+    tools: ["Online portal"],
+    result: "Application successfully submitted."
+  },
+
+  {
+    id: "laptop-cleanup",
+    hub: "tech",
+    title: "Laptop Cleanup and Software Installation",
+    tag: HUB_NAMES.tech,
+    shortDesc: "Cleaned and optimized laptop.",
+    image: "/gallery/tech/cleaning.jpg",
+    images: ["/gallery/tech/cleaning.jpg"],
+    clientType: "sample",
+    clientGoal: "Fix slow laptop.",
+    whatWeDid: ["Virus removal", "Cleanup", "Office install"],
+    tools: ["System tools"],
+    result: "Improved performance significantly."
+  },
+
+  {
+    id: "pure-african-herbs",
+    hub: "design",
+    title: "Pure African Herbs — Flyer & A-Board Design",
+    tag: HUB_NAMES.design,
+    shortDesc: "Herbal business branding.",
+    image: "/Ahm.jpg",
+    images: ["/Aphp1.png", "/Aphp2.jpg", "/Ahm.jpg"],
+    clientType: "client",
+    clientGoal: "Marketing flyer + A-board.",
+    whatWeDid: ["Health layout", "Service list", "A-board design"],
+    tools: ["Illustrator"],
+    result: "Attractive walk-in marketing design."
+  },
+
+  {
+    id: "apexbytes-business-card",
+    hub: "design",
+    title: "Apexbytes Business Card Design",
+    tag: HUB_NAMES.design,
+    shortDesc: "Minimal brand card.",
+    image: "/abbc.jpg",
+    images: ["/abbc.jpg"],
+    clientType: "client",
+    clientGoal: "Clean professional card.",
+    whatWeDid: ["Front design", "Back branding", "Minimal layout"],
+    tools: ["Illustrator"],
+    result: "Professional brand identity card."
+  },
+
+  {
+    id: "wedding-party-programme",
+    hub: "design",
+    title: "Wedding Party Programme",
+    tag: HUB_NAMES.design,
+    shortDesc: "Event programme design.",
+    image: "/Wp.png",
+    images: ["/wedding_party_blurred.jpg"],
+    clientType: "client",
+    sensitive: true,
+    clientGoal: "Wedding programme layout.",
+    whatWeDid: ["Role layout", "Decorative styling", "Print formatting"],
+    tools: ["Illustrator"],
+    result: "Elegant printed programme."
+  },
+
+  {
+    id: "illusion-technologies",
+    hub: "design",
+    title: "Illusion Technologies — Brand Identity",
+    tag: HUB_NAMES.design,
+    shortDesc: "Corporate brand concept.",
+    image: "/Itw.jpg",
+    images: ["/20230527_194537.jpg", "/Itp.jpg", "/Itw.jpg", "/Itm2.jpg"],
+    clientType: "practice",
+    clientGoal: "Premium tech brand exploration.",
+    whatWeDid: [
+      "Wordmark design",
+      "Logo variants",
+      "Building mockups",
+      "Business cards",
+      "Brand board"
+    ],
+    tools: ["Illustrator", "Photoshop"],
+    result: "Full corporate identity concept."
+  }
+]
