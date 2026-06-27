@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useTheme } from "next-themes"
-import { CaretDown, DownloadSimple, AddressBook, Clock } from "@phosphor-icons/react"
-import { BRAND, BIZ, FAQS, CONTACT_LINKS, HOURS } from "@/lib/brand"
+import { WhatsappLogo, Phone, Envelope, MapPin, Clock, CaretDown, DownloadSimple, AddressBook } from "@phosphor-icons/react"
+import { BRAND, BIZ, WA, FAQS, CONTACT_LINKS, HOURS } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 import { BusinessStatusFull } from "@/components/business-status"
 
@@ -47,26 +47,24 @@ function FAQAccordion() {
   return (
     <section className="px-4 md:px-8 py-16 md:py-20 w-full flex flex-col items-center">
       <div className="max-w-[980px] w-full">
-        {/* Centered FAQ Header Layout */}
-        <div className="mb-10 text-center flex flex-col items-center">
+        <div className="mb-8 text-center flex flex-col items-center">
           <h2 className="abh-section-heading mb-3">Frequently Asked Questions</h2>
           <p className="abh-body max-w-xl">Everything you need to know about orders, processing, and timelines.</p>
           <div className="abh-divider" />
         </div>
-        
-        <div className="space-y-3 max-w-3xl mx-auto">
+        <div className="space-y-2 max-w-3xl mx-auto">
           {FAQS.map((faq, index) => {
             const isOpen = openIndex === index
             return (
               <div key={index} className="abh-card overflow-hidden">
                 <button
-                  onClick={() => setOpenIndex(isOpen ? null : index)}
+                  onClick={() => setOpenIndex(isOpen? null : index)}
                   className="w-full px-5 py-4 text-left flex items-center justify-between gap-4 text-[0.84rem] font-semibold text-zinc-800 dark:text-zinc-200 hover:text-brand-blue transition-colors"
                 >
                   <span className="leading-snug">{faq.question}</span>
-                  <CaretDown weight="bold" className={cn("w-4 h-4 shrink-0 text-zinc-500 transition-transform duration-300", isOpen ? "rotate-180" : "rotate-0")} />
+                  <CaretDown weight="bold" className={cn("w-4 h-4 shrink-0 text-zinc-500 transition-transform duration-300", isOpen? "rotate-180" : "rotate-0")} />
                 </button>
-                <div className={cn("grid transition-all duration-500 ease-in-out", isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
+                <div className={cn("grid transition-all duration-500 ease-in-out", isOpen? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
                   <div className="overflow-hidden">
                     <div className="px-5 pb-8 pt-3 border-t border-zinc-100 dark:border-zinc-800 abh-body whitespace-pre-wrap">
                       {faq.answer}
@@ -89,15 +87,15 @@ function HubSelect({ value, onChange }: { value: string; onChange: (val: string)
   const { resolvedTheme } = useTheme()
   const isDark = mounted && resolvedTheme === "dark"
   const options = Object.keys(FORM_HUBS)
-  const colorFor = (opt: string) => (isDark ? FORM_HUBS[opt].dark : FORM_HUBS[opt].light)
-  const activeColor = value ? colorFor(value) : undefined
+  const colorFor = (opt: string) => (isDark? FORM_HUBS[opt].dark : FORM_HUBS[opt].light)
+  const activeColor = value? colorFor(value) : undefined
 
   useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     if (!isOpen) return
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false)
+      if (ref.current &&!ref.current.contains(e.target as Node)) setIsOpen(false)
     }
     document.addEventListener("mousedown", handler)
     return () => document.removeEventListener("mousedown", handler)
@@ -110,12 +108,12 @@ function HubSelect({ value, onChange }: { value: string; onChange: (val: string)
         onClick={() => setIsOpen(!isOpen)}
         className="w-full px-4 py-3 border rounded-[14px] bg-white dark:bg-background text-[0.84rem] font-semibold transition-all flex items-center justify-between gap-3 border-zinc-100 dark:border-zinc-800"
         style={{
-          borderColor: value ? activeColor : (isOpen ? BRAND.blue : undefined),
-          color: value ? activeColor : (isDark ? "#9A9A9A" : "#777777"),
+          borderColor: value? activeColor : (isOpen? BRAND.blue : undefined),
+          color: value? activeColor : (isDark? "#9A9A9A" : "#777777"),
         }}
       >
         <span>{value || "Select a hub"}</span>
-        <CaretDown weight="bold" className={cn("w-4 h-4 shrink-0 transition-transform duration-300", isOpen ? "rotate-180" : "rotate-0")} />
+        <CaretDown weight="bold" className={cn("w-4 h-4 shrink-0 transition-transform duration-300", isOpen? "rotate-180" : "rotate-0")} />
       </button>
       {isOpen && (
         <div className="absolute z-50 mt-1.5 w-full bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-[14px] shadow-xl overflow-hidden">
@@ -154,7 +152,7 @@ export function ContactPage() {
   const handleSubmit = () => {
     if (!isFormValid) return
     const serviceLine = formData.service.startsWith("Not Sure")
-      ? "I'm not sure which service I need yet — could you help me figure it out?"
+     ? "I'm not sure which service I need yet — could you help me figure it out?"
       : `I'm interested in your ${formData.service}.`
     const msg = `Hi ${BIZ.name}! My name is ${formData.name.trim()}. ${serviceLine} \n\nMessage: ${formData.message.trim()}`
     window.open(`https://wa.me{BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(msg)}`, "_blank")
@@ -169,28 +167,26 @@ export function ContactPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center">
 
-      {/* ── Hero - Clean Centered Layout ── */}
+      {/* ── Hero - aligned ── */}
       <section className="px-4 md:px-8 pt-[calc(var(--nav-h)+2rem)] pb-8 w-full text-center flex flex-col items-center">
         <div className="max-w-[980px] w-full flex flex-col items-center">
-          <span className="abh-eyebrow mb-2">Get In Touch</span>
           <h1 className="abh-page-title mb-3">Contact Us</h1>
           <p className="abh-tagline max-w-xl mx-auto">
-            We're here and ready to help — reach out any way you prefer or drop us a message below.
+            We're here and ready to help — reach out any way you prefer.
           </p>
           <div className="abh-divider" />
         </div>
       </section>
 
-      {/* ── Main content structural grid ── */}
+      {/* ── Main grid ── */}
       <section className="px-4 md:px-8 pb-16 w-full flex flex-col items-center">
-        {/* items-center and justify-items-center aligns layout columns evenly */}
         <div className="max-w-[980px] w-full grid md:grid-cols-2 gap-10 items-start justify-items-center">
 
-          {/* Left column - Content details card wrapper */}
-          <div className="flex flex-col gap-6 w-full max-w-md">
+          {/* Left column */}
+          <div className="flex flex-col gap-8 w-full max-w-md">
             <div className="text-center md:text-left">
-              <h2 className="abh-section-heading mb-1">Direct Channels</h2>
-              <p className="abh-body">WhatsApp, call, email or visit us directly in {BIZ.location}.</p>
+              <h2 className="abh-section-heading mb-1">Get In Touch</h2>
+              <p className="abh-body">WhatsApp, call, email or visit us in {BIZ.location}.</p>
             </div>
 
             <div className="flex flex-col gap-3">
@@ -205,9 +201,13 @@ export function ContactPage() {
               ))}
             </div>
 
-            {/* Business Card Download Section */}
             <div className="abh-card p-5 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${BRAND.blue}15`, color: BRAND.blue }}>
                   <AddressBook size={20} weight="fill" />
                 </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Save Our Contact</p>
+                  <p className="abh-muted">Add Apexbytes Hub to your phone</p>
+                </div>
+              </div>
