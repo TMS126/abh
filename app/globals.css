@@ -338,7 +338,7 @@ button, a, [role="button"] {
 
 @layer components {
   .abh-page-title {
-    @apply font-sans font-black text-3xl md:text-4xl
+    @apply font-sans font-black text-2xl md:text-3xl
            text-brand-blue-dark dark:text-brand-light-blue
            tracking-tight leading-tight;
   }
@@ -371,7 +371,7 @@ button, a, [role="button"] {
            leading-relaxed;
   }
   .abh-label {
-    @apply font-sans font-bold text-[0.65rem]
+    @apply font-sans font-black text-[0.65rem]
            uppercase tracking-widest
            text-zinc-600 dark:text-zinc-400;
   }
