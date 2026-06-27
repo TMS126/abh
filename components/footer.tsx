@@ -138,7 +138,7 @@ function FooterContent() {
             </div>
             <h2 className="font-sans font-black text-2xl tracking-tighter">
               <span className="text-zinc-900 dark:text-white">Apexbytes</span>
-              <span style={{ color: BRAND.orange }}>Hub</span>
+              <span className="dark:text-brand-light-orange" style={{ color: "var(--brand-orange-text)" }}>Hub</span>
             </h2>
           </div>
           <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400 max-w-xs">
@@ -198,7 +198,8 @@ function FooterContent() {
               <button
                 onClick={() => setIsFaqOpen(true)}
                 className="flex items-center gap-4 text-[0.65rem] font-medium transition-colors"
-                style={{ color: BRAND.orange }}
+                className="dark:text-brand-light-orange"
+                style={{ color: "var(--brand-orange-text)" }}
               >
                 <div
                   className="w-10 h-10 rounded-[14px] flex items-center justify-center border shadow-sm"
@@ -218,7 +219,7 @@ function FooterContent() {
       <div className="max-w-[1200px] mx-auto border-t border-zinc-100 dark:border-zinc-800 pt-8 px-6 md:px-8 flex flex-col md:flex-row justify-between items-center gap-3">
         <div className="flex flex-col md:flex-row items-center gap-2 md:gap-6">
           <p className="text-[0.65rem] font-medium text-zinc-400">
-            © {new Date().getFullYear()} {BIZ.nameShort}. All rights reserved.
+            © {new Date().getFullYear()} {BIZ.name}. All rights reserved.
           </p>
           <span className="hidden md:inline text-zinc-200 dark:text-zinc-800 text-[0.65rem]" aria-hidden="true">·</span>
           <button
@@ -242,7 +243,7 @@ function FooterContent() {
       >
         <div className="px-8 py-8 space-y-8">
           <div className="p-5 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
-            <h3 className="font-bold flex items-center gap-2 mb-2 text-[0.82rem] text-brand-orange">
+            <h3 className="font-bold flex items-center gap-2 mb-2 text-[0.82rem] dark:text-brand-light-orange" style={{ color: "var(--brand-orange-text)" }}>
               <Info weight="fill" className="w-4 h-4" aria-hidden="true" /> Operational Rule
             </h3>
             <p className="text-[0.82rem] text-zinc-600 dark:text-zinc-400 leading-relaxed">
@@ -308,7 +309,7 @@ function FooterContent() {
                   role="region"
                   aria-label={faq.question}
                   className={cn(
-                    "grid transition-all duration-400 ease-in-out",
+                    "grid transition-all duration-300 ease-in-out",
                     isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
                   )}
                 >
