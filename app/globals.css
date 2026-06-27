@@ -337,65 +337,90 @@ button, a, [role="button"] {
 ───────────────────────────────────────────────────────────────────────────── */
 
 @layer components {
+  /* Page h1 — centered, capped at 3xl/4xl, WCAG 1.4.4 */
   .abh-page-title {
-    @apply font-sans font-black text-2xl md:text-3xl
+    @apply font-sans font-black text-3xl md:text-4xl
            text-brand-blue-dark dark:text-brand-light-blue
-           tracking-tight leading-tight;
+           tracking-tight leading-tight text-center;
   }
+
+  /* Section h2 */
   .abh-section-heading {
     @apply font-sans font-black text-xl md:text-2xl
            text-zinc-900 dark:text-zinc-50
            tracking-tight leading-snug;
   }
+
+  /* Card h3 */
   .abh-card-heading {
     @apply font-sans font-black text-sm
            text-zinc-900 dark:text-zinc-100
            tracking-tight leading-snug;
   }
+
+  /* Eyebrow label */
   .abh-eyebrow {
     @apply font-sans font-black text-[0.65rem]
            uppercase tracking-widest;
     color: var(--brand-blue-text);
   }
-  .dark .abh-eyebrow {
-    color: var(--brand-light-blue);
-  }
+  .dark .abh-eyebrow { color: var(--brand-light-blue); }
+
+  /* Body text — WCAG 1.4.8 line-height 1.5+ */
   .abh-body {
     @apply font-sans font-medium text-sm md:text-base
-           text-zinc-500 dark:text-zinc-400
+           text-zinc-600 dark:text-zinc-400
            leading-relaxed;
   }
+
+  /* Muted / caption */
   .abh-muted {
     @apply font-sans font-medium text-xs md:text-sm
            text-zinc-400 dark:text-zinc-500
            leading-relaxed;
   }
+
+  /* Labels — font-black per consistency rule */
   .abh-label {
     @apply font-sans font-black text-[0.65rem]
            uppercase tracking-widest
            text-zinc-600 dark:text-zinc-400;
   }
+
+  /* Tagline */
   .abh-tagline {
     @apply font-sans font-medium text-sm md:text-base
            text-zinc-500 dark:text-zinc-400;
   }
+
+  /* Price */
   .abh-price {
     @apply font-sans font-black text-[1.1rem] leading-none;
   }
+
+  /* Button label */
   .abh-btn-label {
-    @apply font-sans font-bold text-sm tracking-wide;
+    @apply font-sans font-black text-sm tracking-wide;
   }
+
+  /* Standard page header block */
   .abh-page-header {
     @apply px-4 md:px-8 py-8 md:py-12 text-center;
   }
+
+  /* Standard card — bg-white not bg-zinc-50 */
   .abh-card {
     @apply rounded-[14px] border border-zinc-100 dark:border-zinc-800
            bg-white dark:bg-zinc-950
            transition-all duration-300 shadow-sm;
   }
+
+  /* Divider */
   .abh-divider {
     @apply mt-6 h-px bg-zinc-100 dark:bg-zinc-800 max-w-[160px] mx-auto;
   }
+
+  /* WhatsApp button */
   .abh-wa-btn {
     @apply flex items-center justify-center gap-2
            font-black text-sm
@@ -406,6 +431,8 @@ button, a, [role="button"] {
     color: var(--brand-whatsapp-text);
   }
   .abh-wa-btn:hover { background-color: var(--brand-whatsapp-dark); }
+
+  /* Primary CTA */
   .abh-btn-primary {
     @apply inline-flex items-center justify-center gap-2
            font-black text-sm text-white
@@ -414,6 +441,8 @@ button, a, [role="button"] {
            hover:-translate-y-0.5 shadow-sm;
     background-color: var(--brand-blue);
   }
+
+  /* Orange CTA */
   .abh-btn-cta {
     @apply inline-flex items-center justify-center gap-3
            font-black text-sm text-white
@@ -422,5 +451,5 @@ button, a, [role="button"] {
     background-color: var(--brand-orange);
   }
   .abh-btn-cta:hover { background-color: var(--brand-orange-dark); }
-}
+   }
  
