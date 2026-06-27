@@ -217,7 +217,7 @@ export const PROJECTS = [
   {
     id: "cv-creation", hub: "doc" as HubId, title: "CV Creation for First-Time Job Seeker", tag: HUB_NAMES.doc,
     shortDesc: "Built a complete professional CV from scratch for a first-time job applicant.",
-    image: "/gallery/docu/cv-2.jpg", images: ["/gallery/docu/cv-1.jpg", "/gallery/docu/cv-2.jpg", "/gallery/docu/cv-3.jpg"], clientType: "client" as const,
+    image: "/gallery/docu/cv-2.jpg", images: ["/gallery/docu/cv-1.jpg", "/gallery/docu/cv-2.jpg", "/gallery/docu/cv-3.jpg"], clientType: "sample" as const,
     clientGoal: "Client had no CV and needed a professional document to apply for jobs.",
     whatWeDid: ["Created CV from scratch","Structured personal information clearly","Added skills and experience sections","Formatted document professionally","Printed final CV"],
     tools: ["Microsoft Word", "Clean, structured formatting"],
@@ -235,7 +235,7 @@ export const PROJECTS = [
   {
     id: "sassa-srd", hub: "eservice" as HubId, title: "SASSA SRD Application Assistance", tag: HUB_NAMES.eservice,
     shortDesc: "Assisted client with correctly completing and submitting their SRD grant application.",
-    image: "/gallery/eservice/laptop-1.jpg", images: ["/gallery/eservice/laptop-1.jpg", "/gallery/eservice/laptop-2.jpg", "/gallery/eservice/laptop-3.jpg"], clientType: "client" as const,
+    image: "/gallery/eservice/laptop-1.jpg", images: ["/gallery/eservice/laptop-1.jpg", "/gallery/eservice/laptop-2.jpg", "/gallery/eservice/laptop-3.jpg"], clientType: "sample" as const,
     clientGoal: "Client needed help applying for SRD grant correctly.",
     whatWeDid: ["Completed SRD application","Verified personal details","Submitted application successfully"],
     tools: ["Online government portal"],
@@ -244,7 +244,7 @@ export const PROJECTS = [
   {
     id: "laptop-cleanup", hub: "tech" as HubId, title: "Laptop Cleanup and Software Installation", tag: HUB_NAMES.tech,
     shortDesc: "Removed viruses, cleaned system files and installed essential software on a slow laptop.",
-    image: "/gallery/tech/cleaning.jpg", images: ["/gallery/tech/cleaning.jpg", "/gallery/tech/software.jpg", "/gallery/tech/setup.jpg"], clientType: "client" as const,
+    image: "/gallery/tech/cleaning.jpg", images: ["/gallery/tech/cleaning.jpg", "/gallery/tech/software.jpg", "/gallery/tech/setup.jpg"], clientType: "sample" as const,
     clientGoal: "Client's laptop was slow and needed essential software installed.",
     whatWeDid: ["Removed viruses","Cleaned system files","Installed Microsoft Office","Updated operating system"],
     tools: ["System cleanup tools", "Software installation"],
@@ -290,8 +290,9 @@ export const PROJECTS = [
 
 export type ProjectData = {
   id: string; hub: string; title: string; tag: string; shortDesc: string
-  image: string; images: readonly string[]; clientType?: "client" | "practice"
+  image: string; images: readonly string[]; clientType?: "client" | "practice" | "sample"
   sensitive?: boolean; clientGoal: string; whatWeDid: readonly string[]
   tools: readonly string[]; result: string
 }
 export type Project = typeof PROJECTS[number]
+ 
