@@ -21,8 +21,10 @@ function StripCard({ item }: { item: any }) {
   return (
     <div
       className={cn(
-        "abh-card p-6 transition-all duration-300 group",
-        "hover:-translate-y-1 hover:shadow-lg"
+        "rounded-[14px] border p-6 transition-all duration-300 group",
+        "bg-white dark:bg-zinc-900",
+        "border-zinc-100 dark:border-zinc-800",
+        "shadow-sm hover:-translate-y-1 hover:shadow-lg"
       )}
     >
       <div
