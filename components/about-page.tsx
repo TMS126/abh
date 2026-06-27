@@ -150,8 +150,8 @@ export function AboutPage() {
                   <div className={cn("w-11 h-11 rounded-[12px] flex items-center justify-center mb-5 transition-all duration-300 border shrink-0", isHovered? "bg-brand-blue text-white border-transparent scale-110" : "bg-white dark:bg-zinc-900 text-brand-blue border-zinc-100 dark:border-zinc-800")} aria-hidden="true">
                     {renderIcon(item.iconName, "w-5 h-5")}
                   </div>
-                  <h3 className="font-sans font-semibold text-sm leading-tight mb-2 text-zinc-800 dark:text-zinc-200">{item.title}</h3>
-                  <p className="abh-body text-xs leading-relaxed grow">{item.description}</p>
+                  <h3 className="font-sans font-black text-sm leading-tight mb-2 text-zinc-800 dark:text-zinc-200">{item.title}</h3>
+                  <p className="abh-body leading-relaxed grow">{item.description}</p>
                 </li>
               )
             })}
