@@ -28,15 +28,15 @@ export function AboutPage() {
 
       {/* ── Header — now aligned to 980px grid ── */}
       <section className="px-4 md:px-8 pt-[calc(var(--nav-h)+2rem)] pb-10">
-        <div className="max-w-[980px] mx-auto">
+        <div className="max-w-[980px] mx-auto text-center md:text-left">
           <h1 className="abh-page-title mb-3">About Us</h1>
-          <p className="abh-tagline max-w-xl">
+          <p className="abh-tagline max-w-xl mx-auto md:mx-0">
             A local business built on community, trust, and real help — right here in Kgotsong.
           </p>
-          <div className="abh-divider" />
+          <div className="abh-divider mx-auto md:ml-0" />
 
-          {/* Stats strip - left aligned */}
-          <div className="flex flex-wrap items-center gap-8 md:gap-12 mt-8">
+          {/* Stats strip - centred on mobile, left on desktop */}
+          <div className="flex flex-wrap justify-center md:justify-start items-center gap-8 md:gap-12 mt-8">
             {[
               { value: BIZ.hubCount, label: "Service Hubs" },
               { value: BIZ.serviceCount, label: "Services" },
