@@ -1,5 +1,5 @@
 import { HUB_COLORS, HUB_NAMES, type HubKey } from '@/lib/brand'
-import { PRICING } from '@/lib/data'
+import { PRICING } from '@/lib/pricing'
 import type { Hub } from '@/lib/types'
 
 export type HubId = HubKey
