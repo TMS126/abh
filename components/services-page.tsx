@@ -15,7 +15,7 @@ import {
   HUB_COLORS,
   HubKey,
   HubId
-} from "@/lib"
+} from "@/lib/index.ts"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
