@@ -4,7 +4,7 @@
  * lib/brand.ts
  *
  * PURPOSE:
- * This file now contains ONLY business logic, content, and UI structure.
+ * This file contains business logic, content, and UI structure.
  * All visual styling is handled by CSS variables (single source of truth).
  * ────────────────────────────────────────────────────────────────────────────
  */
@@ -49,7 +49,6 @@ export const BRAND = {
 } as const
   
 export const HUB_COLORS = {
-export const HUB_COLORS = {
   print: {
     primary: BRAND.blue,
     light: BRAND.lightBlue,
@@ -66,8 +65,8 @@ export const HUB_COLORS = {
     gradient: `linear-gradient(135deg, ${BRAND.greenDeep} 0%, ${BRAND.green} 100%)`,
     tagBg: '#1f2937',
     tagText: '#e5e7eb',
-    tagBgDark: '#14532d', // green-900 - dark green not lime
-    tagTextDark: '#dcfce7', // green-100
+    tagBgDark: '#14532d', // green-900 active - dark green not lime
+    tagTextDark: '#dcfce7', // green-100 active
   },
 
   design: {
@@ -76,8 +75,8 @@ export const HUB_COLORS = {
     gradient: `linear-gradient(135deg, ${BRAND.orangeBrown} 0%, ${BRAND.orange} 100%)`,
     tagBg: '#1f2937',
     tagText: '#e5e7eb',
-    tagBgDark: '#7c2d12', // orange-900
-    tagTextDark: '#ffedd5', // orange-100
+    tagBgDark: '#7c2d12', // orange-900 active
+    tagTextDark: '#ffedd5', // orange-100 active
   },
 
   eservice: {
@@ -86,8 +85,8 @@ export const HUB_COLORS = {
     gradient: `linear-gradient(135deg, #15537D 0%, ${BRAND.blueMid} 100%)`,
     tagBg: '#1f2937',
     tagText: '#e5e7eb',
-    tagBgDark: '#1e3a8a', // blue-900
-    tagTextDark: '#dbeafe', // blue-100
+    tagBgDark: '#1e3a8a', // blue-900 active
+    tagTextDark: '#dbeafe', // blue-100 active
   },
 
   tech: {
@@ -96,11 +95,11 @@ export const HUB_COLORS = {
     gradient: `linear-gradient(135deg, #333333 0%, #555555 100%)`,
     tagBg: '#1f2937',
     tagText: '#e5e7eb',
-    tagBgDark: '#111827', // gray-900
-    tagTextDark: '#f9fafb', // gray-50
+    tagBgDark: '#111827', // gray-900 active
+    tagTextDark: '#f9fafb', // gray-50 active
   },
 } as const
-
+  
 export const BIZ = {
   name: "ApexbytesHub",
   tagline: "Your local tech & print partner.",
@@ -332,4 +331,4 @@ export const FOOTER_NAV = [
   { label: "Gallery", path: "/gallery" },
   { label: "About", path: "/about" },
   { label: "Contact", path: "/contact" },
-] as const
+] as const 
