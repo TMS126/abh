@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useRef, useCallback, useEffect } from "react"
-import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut, ArrowsLeftRight, Eye } from "@phosphor-icons/react"
+import { useState, useRef, useEffect } from "react"
+import { X, Check, Eye, ArrowsLeftRight } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
-import { HUB_COLORS, HubKey, BRAND, GALLERY_CATEGORIES, HUB_NAMES } from "@/lib/brand"
+import { HUB_COLORS, HubKey, BRAND, HUB_NAMES } from "@/lib/brand"
 import { PROJECTS, ProjectData } from "@/lib/data"
 
 type HubId = HubKey
@@ -48,7 +48,7 @@ function useGalleryBackStack(selectedProject: ProjectData | null, setSelectedPro
   }, [zoomIndex, selectedProject, setZoomIndex, setSelectedProject])
 }
 
-function SafeImage({ src, alt, accent, fill, sizes, className, priority = false, sensitive = false, revealed = true }: any) {
+function SafeImage({ src, alt, fill, sizes, className, priority = false, sensitive = false, revealed = true }: any) {
   const [failed, setFailed] = useState(false)
   const [loaded, setLoaded] = useState(false)
   if (!src || failed) return <div className="absolute inset-0 bg-zinc-200 dark:bg-zinc-800" />
@@ -75,8 +75,8 @@ function BeforeAfterSlider({ before, after, accent }: { before: string; after: s
   return (
     <div ref={ref} className="relative w-full h-full overflow-hidden select-none touch-none cursor-col-resize"
       onPointerDown={e => update(e.clientX)} onPointerMove={e => e.buttons && update(e.clientX)}>
-      <div className="absolute inset-0"><SafeImage src={after} alt="After" accent={accent} fill className="object-cover" /><span className="absolute bottom-2 right-2 text-xs px-2 py-0.5 rounded-full bg-black/70 text-white">After</span></div>
-      <div className="absolute inset-0 overflow-hidden" style={{ width: `${pos}%` }}><div className="absolute inset-0" style={{ width: `${10000/pos}%` }}><SafeImage src={before} alt="Before" accent={accent} fill className="object-cover" /></div><span className="absolute bottom-2 left-2 text-xs px-2 py-0.5 rounded-full bg-black/70 text-white">Before</span></div>
+      <div className="absolute inset-0"><SafeImage src={after} alt="After" fill className="object-cover" /><span className="absolute bottom-2 right-2 text-xs px-2 py-0.5 rounded-full bg-black/70 text-white">After</span></div>
+      <div className="absolute inset-0 overflow-hidden" style={{ width: `${pos}%` }}><div className="absolute inset-0" style={{ width: `${10000/pos}%` }}><SafeImage src={before} alt="Before" fill className="object-cover" /></div><span className="absolute bottom-2 left-2 text-xs px-2 py-0.5 rounded-full bg-black/70 text-white">Before</span></div>
       <div className="absolute top-0 bottom-0 w-0.5 bg-white" style={{ left: `${pos}%` }} />
       <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2" style={{ left: `${pos}%` }}><div className="w-10 h-10 rounded-full flex items-center justify-center shadow-lg" style={{ backgroundColor: accent }}><ArrowsLeftRight size={16} className="text-white" /></div></div>
     </div>
@@ -106,7 +106,7 @@ function ProjectViewerModal({ project, onClose, zoomIndex, setZoomIndex }: any) 
             <BeforeAfterSlider before={project.beforeAfter.before} after={project.beforeAfter.after} accent={accent} />
           ) : (
             <div className="w-full h-full relative cursor-zoom-in" onClick={() => project.sensitive &&!revealed? setRevealed(true) : setZoomIndex(activeImg)}>
-              <SafeImage src={images[activeImg]} alt={project.title} accent={accent} fill className="object-contain" sensitive={project.sensitive} revealed={revealed} />
+              <SafeImage src={images[activeImg]} alt={project.title} fill className="object-contain" sensitive={project.sensitive} revealed={revealed} />
               {project.sensitive &&!revealed && (
                 <div className="absolute inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center">
                   <button className="px-4 py-2 bg-white/20 rounded-full text-white font-bold flex items-center gap-2"><Eye size={18} />Tap to reveal</button>
@@ -176,7 +176,6 @@ function HubFilter({ label, active, onClick }: { label: string; active: boolean;
   )
 }
 
-// CRITICAL: Changed from "export function" to "export default function"
 export default function GalleryPage() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
@@ -217,7 +216,7 @@ export default function GalleryPage() {
                   {items.map(p => (
                     <div key={p.id} onClick={() => setProject(p)} className="group cursor-pointer rounded-xl overflow-hidden border bg-white dark:bg-zinc-900 hover:shadow-xl transition-all">
                       <div className="aspect-video relative bg-zinc-900">
-                        <SafeImage src={p.image} alt={p.title} accent={accent} fill className="object-cover group-hover:scale-105 transition-transform" sensitive={p.sensitive} revealed={false} />
+                        <SafeImage src={p.image} alt={p.title} fill className="object-cover group-hover:scale-105 transition-transform" sensitive={p.sensitive} revealed={false} />
                         {p.sensitive && <div className="absolute inset-0 bg-black/50 backdrop-blur-2xl flex items-center justify-center"><span className="text-white text-xs font-bold px-3 py-1.5 bg-white/20 rounded-full">Sensitive</span></div>}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                         <div className="absolute bottom-3 left-3 right-3 text-white">
@@ -236,4 +235,4 @@ export default function GalleryPage() {
       <ProjectViewerModal project={project} onClose={() => setProject(null)} zoomIndex={zoom} setZoomIndex={setZoom} />
     </section>
   )
-    } 
+                                                                                       } 
