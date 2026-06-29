@@ -49,54 +49,55 @@ export const BRAND = {
 } as const
   
 export const HUB_COLORS = {
+export const HUB_COLORS = {
   print: {
     primary: BRAND.blue,
     light: BRAND.lightBlue,
     gradient: `linear-gradient(135deg, ${BRAND.blue} 0%, ${BRAND.blueMid} 100%)`,
-    tagBg: '#1f2937', // gray-800 inactive
-    tagText: '#e5e7eb', // gray-200 inactive
-    tagBgDark: '#1e3a8a', // blue-900 active
-    tagTextDark: '#dbeafe', // blue-100 active
+    tagBg: 'transparent', // not used anymore but keep for consistency
+    tagText: '#374151',
+    tagBgDark: '#1e40af', // blue-800 - 5.4:1 with white
+    tagTextDark: '#ffffff',
   },
 
   doc: {
     primary: BRAND.green,
     light: BRAND.lightGreen,
     gradient: `linear-gradient(135deg, ${BRAND.greenDeep} 0%, ${BRAND.green} 100%)`,
-    tagBg: '#1f2937',
-    tagText: '#e5e7eb',
-    tagBgDark: '#14532d', // green-900 active - dark green not lime
-    tagTextDark: '#dcfce7', // green-100 active
+    tagBg: 'transparent',
+    tagText: '#374151',
+    tagBgDark: '#166534', // green-800 - 4.6:1 with white
+    tagTextDark: '#ffffff',
   },
 
   design: {
     primary: BRAND.orangeDark,
     light: BRAND.lightOrange,
     gradient: `linear-gradient(135deg, ${BRAND.orangeBrown} 0%, ${BRAND.orange} 100%)`,
-    tagBg: '#1f2937',
-    tagText: '#e5e7eb',
-    tagBgDark: '#7c2d12', // orange-900 active
-    tagTextDark: '#ffedd5', // orange-100 active
+    tagBg: 'transparent',
+    tagText: '#374151',
+    tagBgDark: '#9a3412', // orange-800 - 5.9:1 with white
+    tagTextDark: '#ffffff',
   },
 
   eservice: {
     primary: BRAND.blueDark,
     light: BRAND.lightBlue,
     gradient: `linear-gradient(135deg, #15537D 0%, ${BRAND.blueMid} 100%)`,
-    tagBg: '#1f2937',
-    tagText: '#e5e7eb',
-    tagBgDark: '#1e3a8a', // blue-900 active
-    tagTextDark: '#dbeafe', // blue-100 active
+    tagBg: 'transparent',
+    tagText: '#374151',
+    tagBgDark: '#0F3F66', // blueDark - 7.8:1 with white
+    tagTextDark: '#ffffff',
   },
 
   tech: {
     primary: "#B8CCE0",
     light: "#B8CCE0",
     gradient: `linear-gradient(135deg, #333333 0%, #555555 100%)`,
-    tagBg: '#1f2937',
-    tagText: '#e5e7eb',
-    tagBgDark: '#111827', // gray-900 active
-    tagTextDark: '#f9fafb', // gray-50 active
+    tagBg: 'transparent',
+    tagText: '#374151',
+    tagBgDark: '#1f2937', // gray-800 - 12.6:1 with white
+    tagTextDark: '#ffffff',
   },
 } as const
   
