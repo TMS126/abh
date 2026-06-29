@@ -620,3 +620,4 @@ export const PROJECTS = [
     result: "Full corporate identity concept."
   }
 ] 
+export type ProjectData = (typeof PROJECTS)[number]
