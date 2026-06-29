@@ -101,8 +101,8 @@ function ProjectViewerModal({ project, onClose, zoomIndex, setZoomIndex }: any) 
         </div>
       )}
     </div>
-      )
-    }
+  )
+      }
 function BeforeAfterSlider({ before, after, accent }: { before: string; after: string; accent: string }) {
   const [pos, setPos] = useState(50)
   const ref = useRef<HTMLDivElement>(null)
