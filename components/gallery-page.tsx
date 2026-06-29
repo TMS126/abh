@@ -141,21 +141,37 @@ function ProjectViewerModal({ project, onClose, zoomIndex, setZoomIndex }: any) 
 }
 
 function HubFilter({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
   const isAll = label.toLowerCase().includes('all')
+
   const hubId = isAll? null : (label.toLowerCase().replace(' hub', '').replace('-', '') as HubId)
   const colors = hubId? HUB_COLORS[hubId] : null
+
+  // Inactive: transparent bg, theme-aware text + border - WCAG AAA
+  const inactiveText = isDark? '#e5e7eb' : '#374151' // gray-200 : gray-700
+  const inactiveBorder = isDark? '#374151' : '#d1d5db' // gray-700 : gray-300
+  const hoverBg = isDark? '#1f2937' : '#f3f4f6' // gray-800 : gray-100
+
+  // Active: All hubs = brand blue, others = hub-specific dark color - WCAG AA
+  const activeBg = isAll? '#0F3F66' : colors?.tagBgDark
+  const activeText = '#ffffff'
 
   return (
     <button
       onClick={onClick}
-      className="px-4 py-2.5 rounded-full text-sm font-bold transition-all hover:scale-105 active:scale-95"
+      className="px-4 py-2.5 rounded-full text-sm font-bold transition-all duration-200 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
       style={{
-        backgroundColor: active
-        ? (isAll? '#0F3F66' : colors?.tagBgDark)
-          : (isAll? '#374151' : colors?.tagBg),
-        color: active
-        ? (isAll? '#ffffff' : colors?.tagTextDark)
-          : (isAll? '#d1d5db' : colors?.tagText),
+        backgroundColor: active? activeBg : 'transparent',
+        color: active? activeText : inactiveText,
+        border: active? 'none' : `1px solid ${inactiveBorder}`,
+        ringColor: active? activeBg : undefined,
+      }}
+      onMouseEnter={(e) => {
+        if (!active) e.currentTarget.style.backgroundColor = hoverBg
+      }}
+      onMouseLeave={(e) => {
+        if (!active) e.currentTarget.style.backgroundColor = 'transparent'
       }}
     >
       {label}
@@ -163,7 +179,7 @@ function HubFilter({ label, active, onClick }: { label: string; active: boolean;
   )
 }
 
-export function GalleryPage() {
+export default function GalleryPage() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
   const [filter, setFilter] = useState<HubId | "all">("all")
@@ -173,6 +189,8 @@ export function GalleryPage() {
   useGalleryBackStack(project, setProject, zoom, setZoom)
 
   const getAccent = (id: HubId) => isDark? HUB_COLORS[id].tagTextDark : HUB_COLORS[id].tagText
+
+  // Shows all hubs including doc when filter === "all"
   const rows = filter === "all"? ROW_ORDER : ROW_ORDER.filter(r => r.id === filter)
 
   return (
@@ -184,7 +202,7 @@ export function GalleryPage() {
         <div className="flex flex-wrap gap-2 mb-10">
           <HubFilter label="All hubs" active={filter === "all"} onClick={() => setFilter("all")} />
           {ROW_ORDER.map(r => (
-            <HubFilter key={r.id} label={r.short} active={filter === r.id} accent={getAccent(r.id)} onClick={() => setFilter(r.id)} />
+            <HubFilter key={r.id} label={r.short} active={filter === r.id} onClick={() => setFilter(r.id)} />
           ))}
         </div>
 
