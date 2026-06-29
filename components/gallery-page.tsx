@@ -140,12 +140,24 @@ function ProjectViewerModal({ project, onClose, zoomIndex, setZoomIndex }: any) 
   )
 }
 
-function HubFilter({ label, active, accent, onClick }: { label: string; active: boolean; accent?: string; onClick: () => void }) {
+function HubFilter({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   const isAll = label.toLowerCase().includes('all')
+  const hubId = isAll? null : (label.toLowerCase().replace(' hub', '').replace('-', '') as HubId)
+  const colors = hubId? HUB_COLORS[hubId] : null
+
   return (
-    <button onClick={onClick}
-      className={cn("px-4 py-2 rounded-full text-sm font-bold transition-all", active? "text-white shadow-md" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600")}
-      style={{ backgroundColor: active? (isAll? BRAND.blueDark : accent) : undefined }}>
+    <button
+      onClick={onClick}
+      className="px-4 py-2.5 rounded-full text-sm font-bold transition-all hover:scale-105 active:scale-95"
+      style={{
+        backgroundColor: active
+        ? (isAll? '#0F3F66' : colors?.tagBgDark)
+          : (isAll? '#374151' : colors?.tagBg),
+        color: active
+        ? (isAll? '#ffffff' : colors?.tagTextDark)
+          : (isAll? '#d1d5db' : colors?.tagText),
+      }}
+    >
       {label}
     </button>
   )
