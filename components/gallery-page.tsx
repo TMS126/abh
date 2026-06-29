@@ -148,12 +148,10 @@ function HubFilter({ label, active, onClick }: { label: string; active: boolean;
   const hubId = isAll? null : (label.toLowerCase().replace(' hub', '').replace('-', '') as HubId)
   const colors = hubId? HUB_COLORS[hubId] : null
 
-  // Inactive: transparent bg, theme-aware text + border - WCAG AAA
-  const inactiveText = isDark? '#e5e7eb' : '#374151' // gray-200 : gray-700
-  const inactiveBorder = isDark? '#374151' : '#d1d5db' // gray-700 : gray-300
-  const hoverBg = isDark? '#1f2937' : '#f3f4f6' // gray-800 : gray-100
+  const inactiveText = isDark? '#e5e7eb' : '#374151'
+  const inactiveBorder = isDark? '#374151' : '#d1d5db'
+  const hoverBg = isDark? '#1f2937' : '#f3f4f6'
 
-  // Active: All hubs = brand blue, others = hub-specific dark color - WCAG AA
   const activeBg = isAll? '#0F3F66' : colors?.tagBgDark
   const activeText = '#ffffff'
 
@@ -165,7 +163,6 @@ function HubFilter({ label, active, onClick }: { label: string; active: boolean;
         backgroundColor: active? activeBg : 'transparent',
         color: active? activeText : inactiveText,
         border: active? 'none' : `1px solid ${inactiveBorder}`,
-        ringColor: active? activeBg : undefined,
       }}
       onMouseEnter={(e) => {
         if (!active) e.currentTarget.style.backgroundColor = hoverBg
@@ -179,6 +176,7 @@ function HubFilter({ label, active, onClick }: { label: string; active: boolean;
   )
 }
 
+// CRITICAL: Changed from "export function" to "export default function"
 export default function GalleryPage() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
@@ -189,8 +187,6 @@ export default function GalleryPage() {
   useGalleryBackStack(project, setProject, zoom, setZoom)
 
   const getAccent = (id: HubId) => isDark? HUB_COLORS[id].tagTextDark : HUB_COLORS[id].tagText
-
-  // Shows all hubs including doc when filter === "all"
   const rows = filter === "all"? ROW_ORDER : ROW_ORDER.filter(r => r.id === filter)
 
   return (
@@ -240,4 +236,4 @@ export default function GalleryPage() {
       <ProjectViewerModal project={project} onClose={() => setProject(null)} zoomIndex={zoom} setZoomIndex={setZoom} />
     </section>
   )
-              } 
+    } 
