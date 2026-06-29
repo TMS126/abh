@@ -49,14 +49,15 @@ export const BRAND = {
 } as const
   
 export const HUB_COLORS = {
+export const HUB_COLORS = {
   print: {
     primary: BRAND.blue,
     light: BRAND.lightBlue,
     gradient: `linear-gradient(135deg, ${BRAND.blue} 0%, ${BRAND.blueMid} 100%)`,
-    tagBg: '#1f2937', // gray-800 inactive pill
-    tagText: '#e5e7eb', // gray-200 inactive text
-    tagBgDark: '#1e3a8a', // blue-900 active pill
-    tagTextDark: '#dbeafe', // blue-100 active text
+    tagBg: '#1f2937', // gray-800 inactive
+    tagText: '#e5e7eb', // gray-200 inactive
+    tagBgDark: '#1e3a8a', // blue-900 active
+    tagTextDark: '#dbeafe', // blue-100 active
   },
 
   doc: {
@@ -65,7 +66,7 @@ export const HUB_COLORS = {
     gradient: `linear-gradient(135deg, ${BRAND.greenDeep} 0%, ${BRAND.green} 100%)`,
     tagBg: '#1f2937',
     tagText: '#e5e7eb',
-    tagBgDark: '#14532d', // green-900 - NOT lime
+    tagBgDark: '#14532d', // green-900 - dark green not lime
     tagTextDark: '#dcfce7', // green-100
   },
 
