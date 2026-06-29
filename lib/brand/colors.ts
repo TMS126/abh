@@ -1,36 +1,53 @@
-export const BRAND = {
-  green: "#6FBF1A",
-  orange: "#F4A261",
-  lightBlue: "#A9D6F2",
-  lightGreen: "#CDEB9F",
-  lightOrange: "#F9D1B0",
+export const HUB_COLORS = {
+  print: {
+    primary: BRAND.blue,
+    light: BRAND.lightBlue,
+    gradient: `linear-gradient(135deg, ${BRAND.blue} 0%, ${BRAND.blueMid} 100%)`,
+    // INACTIVE = dark bg, light text
+    tagBg: '#374151',        // gray-700 
+    tagText: '#f3f4f6',      // gray-100
+    // ACTIVE = darker bg, light text  
+    tagBgDark: '#111827',    // gray-900
+    tagTextDark: '#ffffff',  // white
+  },
 
-  blue: "#1E6FA8",
-  blueMid: "#15537D",
-  blueDark: "#0F3F66",
+  doc: {
+    primary: BRAND.green,
+    light: BRAND.lightGreen,
+    gradient: `linear-gradient(135deg, ${BRAND.greenDeep} 0%, ${BRAND.green} 100%)`,
+    tagBg: '#374151',        // gray-700
+    tagText: '#f3f4f6',      // gray-100  
+    tagBgDark: '#14532d',    // green-900
+    tagTextDark: '#dcfce7',  // green-100
+  },
 
-  greenDark: "#548F14",
-  greenDeep: "#3E6B0E",
+  design: {
+    primary: BRAND.orangeDark,
+    light: BRAND.lightOrange,
+    gradient: `linear-gradient(135deg, ${BRAND.orangeBrown} 0%, ${BRAND.orange} 100%)`,
+    tagBg: '#374151',        // gray-700
+    tagText: '#f3f4f6',      // gray-100
+    tagBgDark: '#7c2d12',    // orange-900
+    tagTextDark: '#ffedd5',  // orange-100
+  },
 
-  orangeDark: "#D9894B",
-  orangeBrown: "#B86F34",
+  eservice: {
+    primary: BRAND.blueDark,
+    light: BRAND.lightBlue,
+    gradient: `linear-gradient(135deg, #15537D 0%, ${BRAND.blueMid} 100%)`,
+    tagBg: '#374151',        // gray-700
+    tagText: '#f3f4f6',      // gray-100
+    tagBgDark: '#1e3a8a',    // blue-900
+    tagTextDark: '#dbeafe',  // blue-100
+  },
 
-  neutral100: "#EDEDED",
-  neutral200: "#F4F4F4",
-  neutral300: "#D6D6D6",
-  neutral400: "#9A9A9A",
-  neutral500: "#777777",
-
-  dark100: "#333333",
-  dark200: "#555555",
-
-  white: "#FFFFFF",
-
-  whatsapp: "#25D366",
-  whatsappDark: "#1ebe5a",
-
-  blueText: "#16325f",
-  orangeText: "#b85c17",
-  greenText: "#4d6f2f",
-  whatsappText: "#0f172a",
+  tech: {
+    primary: "#B8CCE0",
+    light: "#B8CCE0",
+    gradient: `linear-gradient(135deg, #333333 0%, #555555 100%)`,
+    tagBg: '#374151',        // gray-700
+    tagText: '#f3f4f6',      // gray-100
+    tagBgDark: '#111827',    // gray-900
+    tagTextDark: '#f9fafb',  // gray-50
+  },
 } as const
