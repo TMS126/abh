@@ -53,19 +53,19 @@ export const HUB_COLORS = {
     primary: BRAND.blue,
     light: BRAND.lightBlue,
     gradient: `linear-gradient(135deg, ${BRAND.blue} 0%, ${BRAND.blueMid} 100%)`,
-    tagBg: '#1f2937', // gray-800
-    tagText: '#e5e7eb', // gray-200
-    tagBgDark: '#1e3a8a', // blue-900
-    tagTextDark: '#dbeafe', // blue-100
+    tagBg: '#1f2937', // gray-800 inactive pill
+    tagText: '#e5e7eb', // gray-200 inactive text
+    tagBgDark: '#1e3a8a', // blue-900 active pill
+    tagTextDark: '#dbeafe', // blue-100 active text
   },
 
   doc: {
     primary: BRAND.green,
     light: BRAND.lightGreen,
     gradient: `linear-gradient(135deg, ${BRAND.greenDeep} 0%, ${BRAND.green} 100%)`,
-    tagBg: '#1f2937', // gray-800
-    tagText: '#e5e7eb', // gray-200
-    tagBgDark: '#14532d', // green-900 <- this was lime before
+    tagBg: '#1f2937',
+    tagText: '#e5e7eb',
+    tagBgDark: '#14532d', // green-900 - NOT lime
     tagTextDark: '#dcfce7', // green-100
   },
 
