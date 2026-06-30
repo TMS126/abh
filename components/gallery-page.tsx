@@ -10,6 +10,19 @@ import { PROJECTS, ProjectData } from "@/lib/data"
 
 type HubId = HubKey
 
+// SafeImage component for handling sensitive project images
+function SafeImage({ src, alt, fill, className, sensitive, revealed, ...props }: any) {
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      fill={fill}
+      className={className}
+      {...props}
+    />
+  )
+}
+
 const ROW_ORDER: { id: HubId; label: string; short: string }[] = [
   { id: "print", label: HUB_NAMES.print, short: "Print" },
   { id: "design", label: HUB_NAMES.design, short: "Design" },
@@ -177,7 +190,7 @@ export default function GalleryPage() {
   return (
     <section className="min-h-screen pb-24">
       <div className="max-w-5xl mx-auto px-4 pt-24">
-        <h1 className="text-3xl font-black mb-2">Our Portfolio</h1>
+        <h1 className="abh-page-title mb-3">Our Portfolio</h1>
         <p className="text-zinc-600 dark:text-zinc-400 mb-8">Real work for real clients in {BRAND.location || "Kgotsong"}.</p>
 
         <div className="flex flex-wrap gap-2 mb-10">
@@ -221,4 +234,4 @@ export default function GalleryPage() {
       <ProjectViewerModal project={project} onClose={() => setProject(null)} zoomIndex={zoom} setZoomIndex={setZoom} />
     </section>
   )
-                                                                                       } 
+}

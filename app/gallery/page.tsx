@@ -1,4 +1,4 @@
-import { GalleryPage } from "@/components/gallery-page"
+import GalleryPage from "@/components/gallery-page"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 

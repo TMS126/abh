@@ -134,7 +134,7 @@ function FooterContent() {
         <div className="flex flex-col gap-6">
           <div className="flex items-center gap-2.5 select-none">
             <div className="relative w-9 h-9 overflow-hidden rounded-[14px]" aria-hidden="true">
-              <Image src="/logo.png" alt="" fill className="object-contain dark:invert" />
+              <Image src="/logo.png" alt="" fill sizes="36px" className="object-contain dark:invert" />
             </div>
             <h2 className="font-sans font-black text-2xl tracking-tighter">
               <span className="text-zinc-900 dark:text-white">Apexbytes</span>

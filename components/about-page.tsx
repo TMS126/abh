@@ -169,7 +169,7 @@ export function AboutPage() {
           <span className="inline-block text-[0.65rem] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-6" style={{ backgroundColor: `${BRAND.blue}12`, color: BRAND.blue }}>
             Our Mission
           </span>
-          <h2 id="mission-title" className="font-sans font-black text-xl md:text-2xl leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 mb-4">
+          <h2 id="mission-title" className="abh-section-heading mb-4">
             Bridging the digital gap — one person at a time.
           </h2>
           <p className="abh-body max-w-xl mb-10">

@@ -103,7 +103,7 @@ export function TestimonialsSection({
     <section className="py-16 px-4 md:px-8">
       <div className="max-w-[1300px] mx-auto">
         <div className="text-center mb-12">
-          <h2 className="font-sans font-black text-2xl md:text-3xl text-zinc-900 dark:text-zinc-50 mb-3">{title}</h2>
+          <h2 className="font-sans font-black text-2xl md:text-3xl text-zinc-900 dark:text-zinc-50 mb-3 text-center">{title}</h2>
           <p className="text-sm md:text-base font-medium text-zinc-500 dark:text-zinc-400 max-w-xl mx-auto">{subtitle}</p>
         </div>
 

@@ -216,7 +216,7 @@ button, a, [role="button"] {
   .dark .abh-page-title { color: var(--brand-light-blue); }
 
   .abh-section-heading {
-    @apply font-sans font-black text-xl md:text-2xl tracking-tight leading-snug;
+    @apply font-sans font-black text-xl md:text-2xl tracking-tight leading-snug text-center;
     color: var(--foreground);
   }
 
