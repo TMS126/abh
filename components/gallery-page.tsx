@@ -48,61 +48,6 @@ function useGalleryBackStack(selectedProject: ProjectData | null, setSelectedPro
   }, [zoomIndex, selectedProject, setZoomIndex, setSelectedProject])
 }
 
-function ProjectViewerModal({ project, onClose, zoomIndex, setZoomIndex }: any) {
-  const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === "dark"
-  const [activeImg, setActiveImg] = useState(0)
-  const [comparing, setComparing] = useState(false)
-  const [revealed, setRevealed] = useState(!project?.sensitive)
-
-  useEffect(() => { setActiveImg(0); setComparing(false); setRevealed(!project?.sensitive) }, [project?.id])
-
-  if (!project) return null
-  const accent = isDark? HUB_COLORS[project.hub as HubKey].tagTextDark : HUB_COLORS[project.hub as HubKey].tagText
-  const images = project.images?.length? project.images : [project.image]
-  const hasBA = BA_HUBS.includes(project.hub) && project.beforeAfter
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
-      <div className="absolute inset-0 bg-black/80" onClick={onClose} />
-      <div className="relative w-full h- md:h- md:max-w-5xl bg-white dark:bg-zinc-950 rounded-t-2xl md:rounded-2xl flex flex-col md:flex-row overflow-hidden">
-        <div className="flex-1 bg-black relative">
-          {comparing && hasBA? (
-            <BeforeAfterSlider before={project.beforeAfter.before} after={project.beforeAfter.after} accent={accent} />
-          ) : (
-            <div className="w-full h-full relative cursor-zoom-in" onClick={() => project.sensitive &&!revealed? setRevealed(true) : setZoomIndex(activeImg)}>
-              <SafeImage src={images[activeImg]} alt={project.title} fill className="object-contain" sensitive={project.sensitive} revealed={revealed} />
-              {project.sensitive &&!revealed && (
-                <div className="absolute inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center">
-                  <button className="px-4 py-2 bg-white/20 rounded-full text-white font-bold flex items-center gap-2"><Eye size={18} />Tap to reveal</button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-        <div className="w-full md:w-96 p-6 overflow-y-auto">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: `${accent}20`, color: accent }}>{project.tag}</span>
-              <h2 className="text-xl font-black mt-2">{project.title}</h2>
-            </div>
-            <button onClick={onClose} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full"><X size={20} /></button>
-          </div>
-          <div className="space-y-4 text-sm">
-            <div><h4 className="font-bold mb-1" style={{ color: accent }}>Goal</h4><p className="text-zinc-600 dark:text-zinc-400">{project.clientGoal}</p></div>
-            <div><h4 className="font-bold mb-1" style={{ color: accent }}>What we did</h4><ul className="space-y-1">{project.whatWeDid.map((t: string, i: number) => <li key={i} className="flex gap-2"><Check size={14} style={{ color: accent }} className="mt-0.5 shrink-0" />{t}</li>)}</ul></div>
-            <div><h4 className="font-bold mb-1" style={{ color: accent }}>Result</h4><p className="text-zinc-600 dark:text-zinc-400">{project.result}</p></div>
-          </div>
-        </div>
-      {zoomIndex!== null && (
-        <div className="fixed inset-0 z-[60] bg-black flex items-center justify-center" onClick={() => setZoomIndex(null)}>
-          <img src={images[zoomIndex]} className="max-w-full max-h-full object-contain" alt="" />
-          <button className="absolute top-4 right-4 text-white p-2"><X size={24} /></button>
-        </div>
-      )}
-    </div>
-  )
-      }
 function BeforeAfterSlider({ before, after, accent }: { before: string; after: string; accent: string }) {
   const [pos, setPos] = useState(50)
   const ref = useRef<HTMLDivElement>(null)
