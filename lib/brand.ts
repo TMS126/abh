@@ -307,21 +307,25 @@ export const CONTACT_LINKS = [
     title: "WhatsApp Us",
     value: BIZ.phone,
     href: WA.contact,
+    dot: "#3E6B0E",
   },
   {
     title: "Call Us",
     value: BIZ.phone,
     href: `tel:${BIZ.phoneE164}`,
+    dot: "#1E6FA8",
   },
   {
     title: "Email Us",
     value: BIZ.email,
     href: `mailto:${BIZ.email}`,
+    dot: "#F4A261",
   },
   {
     title: "Visit Us",
     value: BIZ.addressFull,
     href: BIZ.mapsUrl,
+    dot: "#B86F34",
   },
 ] as const
 
