@@ -301,27 +301,31 @@ export const ABOUT_STANDARDS = [
   },
 ] as const
 
-// ─── CONTACT ────────────────────────────────────────────────────────────────
+  // ─── CONTACT ────────────────────────────────────────────────────────────────
 export const CONTACT_LINKS = [
   {
     title: "WhatsApp Us",
     value: BIZ.phone,
     href: WA.contact,
+    dot: BRAND.whatsapp,
   },
   {
     title: "Call Us",
     value: BIZ.phone,
     href: `tel:${BIZ.phoneE164}`,
+    dot: BRAND.blue,
   },
   {
     title: "Email Us",
     value: BIZ.email,
     href: `mailto:${BIZ.email}`,
+    dot: BRAND.orange,
   },
   {
     title: "Visit Us",
     value: BIZ.addressFull,
     href: BIZ.mapsUrl,
+    dot: BRAND.blueDark,
   },
 ] as const
 
@@ -332,4 +336,4 @@ export const FOOTER_NAV = [
   { label: "Gallery", path: "/gallery" },
   { label: "About", path: "/about" },
   { label: "Contact", path: "/contact" },
-] as const 
+] as const  
