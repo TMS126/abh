@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
+import { useTheme } from "next-themes"
 import Image from "next/image"
 import {
   WhatsappLogo, EnvelopeSimple,
@@ -14,12 +15,12 @@ import { BRAND, BIZ, WA, FOOTER_NAV, FAQS } from "@/lib/brand"
 import { BusinessStatusFull } from "@/components/business-status"
 
 const TERMS_SECTIONS = [
-  { icon: "Printer",  title: "Print Hub – Everything Paper",     points: [{ label: "Printing Services", text: "B&W, Colour, and Bulk printing. For bulk discounts, submit your entire order together." }, { label: "Copying Services", text: "Fast, clear photocopying. Check pages before leaving." }, { label: "Photo Printing", text: "Glossy 4x6 and A4. Send high-resolution files via WhatsApp to avoid blurry prints." }] },
-  { icon: "FileText", title: "Document Hub – All Document Work", points: [{ label: "Document Assistance", text: "Full CV creation, typing, editing, and formatting. You are responsible for accuracy of provided info." }, { label: "Scanning Services", text: "Papers converted to digital files sent to your device." }, { label: "Laminating Services", text: "A5, A4, and A3 hot laminating. Records held 30 days then deleted." }] },
-  { icon: "Palette",  title: "Design Hub – Creative Work",       points: [{ label: "Branding Design", text: "Logos and business cards built in Adobe Illustrator. No generic templates." }, { label: "Marketing & Events", text: "Flyers, posters, social media, and invitations. Two revisions included." }] },
-  { icon: "Globe",    title: "E-Service Hub – External Systems", points: [{ label: "Government Services", text: `Admin help across SARS, SASSA, CSD, PSIRA, UIF, etc. ${BIZ.name} is not responsible for external portal downtime.` }, { label: "Email Services", text: "Setup, compose, send, and receive official documents." }] },
-  { icon: "Cpu",      title: "Tech Hub – Hardware & Software",   points: [{ label: "System Maintenance", text: "Software installations, cleaning, and performance optimisation." }, { label: "Component Upgrades", text: "RAM and SSD installation." }, { label: "Digital Support", text: "General tech troubleshooting and device setup." }] },
-  { icon: "CurrencyDollar", title: "Payment Terms",              points: [{ label: "Standard Services", text: "Payable on execution. Clear, upfront pricing with no hidden fees." }, { label: "Custom & Bulk Orders", text: "Premium custom design work or high-volume print runs require confirmation and payment before production begins." }, { label: "Accepted Payment", text: "We accept cash and EFT." }] },
+  { icon: "Printer",  title: "Print Hub – Everything Paper",     points: [{ label: "Printing Services", text: "B&W, Colour, and Bulk printing. For bulk discounts, submit your entire order together." }, { label: "Paper Types", text: "A3, A4, A5, A6 paper in various gsm. Add lamination, spiral binding, or stapling." }, { label: "Turnaround", text: "Same-day printing on most jobs under 100 pages." }] },
+  { icon: "FileText", title: "Document Hub – All Document Work", points: [{ label: "Document Assistance", text: "Full CV creation, typing, editing, and formatting. You are responsible for accuracy of all content." }, { label: "Official Papers", text: "Affidavits, letters, and application documents typed to standard." }, { label: "Turnaround", text: "Most CVs completed same-day. Complex documents 24 hours." }] },
+  { icon: "Palette",  title: "Design Hub – Creative Work",       points: [{ label: "Branding Design", text: "Logos and business cards built in Adobe Illustrator. No generic templates." }, { label: "Marketing Designs", text: "Flyers, posters, banners, and social media templates custom-created." }, { label: "Turnaround", text: "Simple designs 24–48 hours. Complex work by quote." }] },
+  { icon: "Globe",    title: "E-Service Hub – External Systems", points: [{ label: "Government Services", text: `Admin help across SARS, SASSA, CSD, PSIRA, UIF, etc. ${BIZ.name} is not responsible for government processing delays.` }, { label: "Disclaimer", text: "We guide and submit on your behalf, but all personal information and consent is your responsibility." }, { label: "Turnaround", text: "Applications submitted same-day. Approval depends on government processing." }] },
+  { icon: "Cpu",      title: "Tech Hub – Hardware & Software",   points: [{ label: "System Maintenance", text: "Software installations, cleaning, and performance optimisation." }, { label: "Component Repairs", text: "GPU, motherboard, and power supply diagnostics and repairs." }, { label: "Turnaround", text: "Hardware diagnostics same-day. Repairs vary by component." }] },
+  { icon: "CurrencyDollar", title: "Payment Terms",              points: [{ label: "Standard Services", text: "Payable on execution. Clear, upfront pricing with no hidden fees." }, { label: "Custom & Complex Work", text: "50% deposit to confirm order, balance on completion." }, { label: "Walk-ins", text: "Cash preferred. Card and mobile money accepted." }] },
 ]
 
 const ICON_MAP: Record<string, React.ReactNode> = {
@@ -119,12 +120,16 @@ function Modal({ open, onClose, title, subtitle, children }: {
   )
 }
 
-// ─── Footer content ────────────────────────────────────────────────────────────
+// ─── Footer content ─────────────────────────────────────────────────────────
 function FooterContent() {
   const router = useRouter()
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
   const [isTermsOpen,  setIsTermsOpen]  = useState(false)
   const [isFaqOpen,    setIsFaqOpen]    = useState(false)
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null)
+
+  useEffect(() => { setMounted(true) }, [])
 
   return (
     <div className="pt-16 pb-12">
@@ -133,12 +138,15 @@ function FooterContent() {
         {/* Brand */}
         <div className="flex flex-col gap-6">
           <div className="flex items-center gap-2.5 select-none">
-            <div className="relative w-9 h-9 overflow-hidden rounded-[14px]" aria-hidden="true">
-              <Image src="/logo.png" alt="" fill className="object-contain dark:invert" />
+            <div 
+              className="relative w-9 h-9 overflow-hidden rounded-[14px]" 
+              aria-hidden="true"
+              style={mounted && theme === "dark" ? { filter: "brightness(0) invert(1)" } : undefined}
+            >
+              <Image src="/logo.png" alt="" fill className="object-contain" />
             </div>
-            <h2 className="font-sans font-black text-2xl tracking-tighter">
-              <span className="text-zinc-900 dark:text-white">Apexbytes</span>
-              <span className="dark:text-brand-light-orange" style={{ color: "var(--brand-orange-text)" }}>Hub</span>
+            <h2 className="font-sans font-black text-2xl tracking-tighter text-zinc-900 dark:text-white">
+              ApexbytesHub
             </h2>
           </div>
           <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400 max-w-xs">
@@ -197,13 +205,10 @@ function FooterContent() {
             <li className="pt-2">
               <button
                 onClick={() => setIsFaqOpen(true)}
-                className="flex items-center gap-4 text-[0.65rem] font-medium transition-colors"
-                className="dark:text-brand-light-orange"
-                style={{ color: "var(--brand-orange-text)" }}
+                className="flex items-center gap-4 text-[0.65rem] font-medium text-zinc-600 dark:text-zinc-300 hover:text-brand-blue transition-colors"
               >
                 <div
-                  className="w-10 h-10 rounded-[14px] flex items-center justify-center border shadow-sm"
-                  style={{ borderColor: `${BRAND.orange}33`, backgroundColor: `${BRAND.orange}0D` }}
+                  className="w-10 h-10 rounded-[14px] flex items-center justify-center border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm"
                   aria-hidden="true"
                 >
                   <Question weight="bold" className="w-5 h-5" />
@@ -216,7 +221,7 @@ function FooterContent() {
       </div>
 
       {/* ── Legal bar ── */}
-      <div className="max-w-[1200px] mx-auto border-t border-zinc-100 dark:border-zinc-800 pt-8 px-6 md:px-8 flex flex-col md:flex-row justify-between items-center gap-3">
+      <div className="max-w-[1200px] mx-auto border-t border-zinc-100 dark:border-zinc-800 pt-8 px-6 md:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex flex-col md:flex-row items-center gap-2 md:gap-6">
           <p className="text-[0.65rem] font-medium text-zinc-400">
             © {new Date().getFullYear()} {BIZ.name}. All rights reserved.
@@ -243,7 +248,7 @@ function FooterContent() {
       >
         <div className="px-8 py-8 space-y-8">
           <div className="p-5 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
-            <h3 className="font-bold flex items-center gap-2 mb-2 text-[0.82rem] dark:text-brand-light-orange" style={{ color: "var(--brand-orange-text)" }}>
+            <h3 className="font-bold flex items-center gap-2 mb-2 text-[0.82rem] text-zinc-900 dark:text-zinc-50">
               <Info weight="fill" className="w-4 h-4" aria-hidden="true" /> Operational Rule
             </h3>
             <p className="text-[0.82rem] text-zinc-600 dark:text-zinc-400 leading-relaxed">
@@ -343,12 +348,11 @@ function FooterContent() {
   )
 }
 
-// ─── Footer ───────────────────────────────────────────────────────────────────
+// ─── Footer ────────────────────────────────────────────────────────────
 export function Footer() {
   return (
     <footer className="bg-white dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900">
       <FooterContent />
     </footer>
   )
-} 
- 
+}
