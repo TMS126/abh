@@ -227,7 +227,7 @@ function FooterContent() {
           {/* Terms — same size as "built with ❤️" */}
           <button
             onClick={() => setIsTermsOpen(true)}
-            className="text-[0.65rem] font-medium text-zinc-400 hover:text-brand-blue transition-colors"
+            className="text-[0.45rem] font-medium text-zinc-400 hover:text-brand-blue transition-colors"
           >
             Terms &amp; Policies
           </button>
