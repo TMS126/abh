@@ -16,10 +16,7 @@ import { BusinessStatusFull } from "@/components/business-status"
 const TERMS_SECTIONS = [
   { icon: "Printer",  title: "Print Hub – Everything Paper",     points: [{ label: "Printing Services", text: "B&W, Colour, and Bulk printing. For bulk discounts, submit your entire order together." }, { label: "Copying Services", text: "Fast, clear photocopying. Check pages before leaving." }, { label: "Photo Printing", text: "Glossy 4x6 and A4. Send high-resolution files via WhatsApp to avoid blurry prints." }] },
   { icon: "FileText", title: "Document Hub – All Document Work", points: [{ label: "Document Assistance", text: "Full CV creation, typing, editing, and formatting. You are responsible for accuracy of provided info." }, { label: "Scanning Services", text: "Papers converted to digital files sent to your device." }, { label: "Laminating Services", text: "A5, A4, and A3 hot laminating. Records held 30 days then deleted." }] },
-  { icon: "Palette",  title: "Design Hub – Creative Work",       points: [{ label: "Branding Design", text: "Logos and business cards built in Adobe Illustrator. No generic templates." }, { label: "Marketing & Events", text: "Flyers, posters, social media, and invitations. Two revisions included." }] },
-  { icon: "Globe",    title: "E-Service Hub – External Systems", points: [{ label: "Government Services", text: `Admin help across SARS, SASSA, CSD, PSIRA, UIF, etc. ${BIZ.name} is not responsible for external portal downtime.` }, { label: "Email Services", text: "Setup, compose, send, and receive official documents." }] },
-  { icon: "Cpu",      title: "Tech Hub – Hardware & Software",   points: [{ label: "System Maintenance", text: "Software installations, cleaning, and performance optimisation." }, { label: "Component Upgrades", text: "RAM and SSD installation." }, { label: "Digital Support", text: "General tech troubleshooting and device setup." }] },
-  { icon: "CurrencyDollar", title: "Payment Terms",              points: [{ label: "Standard Services", text: "Payable on execution. Clear, upfront pricing with no hidden fees." }, { label: "Custom & Bulk Orders", text: "Premium custom design work or high-volume print runs require confirmation and payment before production begins." }, { label: "Accepted Payment", text: "We accept cash and EFT." }] },
+  { icon: "Palette",  title: "Design Hub – Creative Work",       points: [{ label: "Branding Design", text: "Logos and business cards built in Adobe Illustrator. No generic templates." }, { labe[...], text: "" }] },
 ]
 
 const ICON_MAP: Record<string, React.ReactNode> = {
@@ -119,7 +116,7 @@ function Modal({ open, onClose, title, subtitle, children }: {
   )
 }
 
-// ─── Footer content ────────────────────────────────────────────────────────────
+// ─── Footer content ────────────────────────────────────────────────────────
 function FooterContent() {
   const router = useRouter()
   const [isTermsOpen,  setIsTermsOpen]  = useState(false)
@@ -136,10 +133,7 @@ function FooterContent() {
             <div className="relative w-9 h-9 overflow-hidden rounded-[14px]" aria-hidden="true">
               <Image src="/logo.png" alt="" fill className="object-contain dark:invert" />
             </div>
-            <h2 className="font-sans font-black text-2xl tracking-tighter">
-              <span className="text-zinc-900 dark:text-white">Apexbytes</span>
-              <span className="dark:text-brand-light-orange" style={{ color: "var(--brand-orange-text)" }}>Hub</span>
-            </h2>
+            <h2 className="font-sans font-black text-2xl tracking-tighter text-zinc-900 dark:text-white">ApexbytesHub</h2>
           </div>
           <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400 max-w-xs">
             Your local tech and print partner in Kgotsong. {BIZ.hubCount} hubs, {BIZ.serviceCount} services — all in one friendly place.
@@ -197,8 +191,7 @@ function FooterContent() {
             <li className="pt-2">
               <button
                 onClick={() => setIsFaqOpen(true)}
-                className="flex items-center gap-4 text-[0.65rem] font-medium transition-colors"
-                className="dark:text-brand-light-orange"
+                className="flex items-center gap-4 text-[0.65rem] font-medium"
                 style={{ color: "var(--brand-orange-text)" }}
               >
                 <div
@@ -343,12 +336,11 @@ function FooterContent() {
   )
 }
 
-// ─── Footer ───────────────────────────────────────────────────────────────────
+// ─── Footer ──────────────────────────────────────────────────────────
 export function Footer() {
   return (
     <footer className="bg-white dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900">
       <FooterContent />
     </footer>
   )
-} 
- 
+}

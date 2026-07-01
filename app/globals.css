@@ -10,9 +10,9 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
 
 @custom-variant dark (&:is(.dark *));
 
-/* ─────────────────────────────────────────────────────────────────────────────
+/* ────────────────────────────────────────────────────────────────
    BRAND TOKEN SYSTEM
-───────────────────────────────────────────────────────────────────────────── */
+──────────────────────────────────────────────────────────────── */
 :root {
   --brand-green: #6FBF1A;
   --brand-orange: #F4A261;
@@ -100,6 +100,13 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --footer-bg: #091524;
   --shadow: 0 4px 28px rgba(0, 0, 0, 0.3);
   --card-border: #243648;
+}
+
+/* Scroll lock class used by modals */
+.scroll-locked {
+  overflow: hidden !important;
+  height: 100vh !important;
+  touch-action: none !important;
 }
 
 /* ── Tailwind theme mapping ── */
@@ -206,7 +213,12 @@ button, a, [role="button"] {
 @keyframes page-in { from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)} }
 @keyframes marquee-track { 0%{transform:translate3d(0,0,0)}100%{transform:translate3d(-50%,0,0)} }
 
-.animate-marquee { animation: marquee-track 35s linear infinite; }
+/* Ensure marquee works across browsers and hint the change */
+.animate-marquee {
+  animation: marquee-track 35s linear infinite;
+  -webkit-animation: marquee-track 35s linear infinite;
+  will-change: transform;
+}
 /* ── Component system FIXED (NO ZINC) ── */
 @layer components {
 
@@ -294,4 +306,4 @@ button, a, [role="button"] {
   .abh-btn-cta:hover { background: var(--brand-orange-dark); }
 }
 
-/* ── Remaining sections unchanged (animations, logo, etc.) stay exactly as-is ── */ 
+/* ── Remaining sections unchanged (animations, logo, etc.) stay exactly as-is ── */

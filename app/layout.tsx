@@ -51,7 +51,7 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
-// ─── Root Layout ──────────────────────────────────────────────────────────────
+// ─── Root Layout ─────────────────────────────────────────────────────────────
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -61,6 +61,17 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${nunito.variable} ${dmSans.variable} ${geistMono.variable}`}
     >
+      <head>
+        {/* Theme-aware favicons (SVG) */}
+        <link rel="icon" href="/favicon-light.svg" media="(prefers-color-scheme: light)" />
+        <link rel="icon" href="/favicon-dark.svg"  media="(prefers-color-scheme: dark)" />
+
+        <link rel="apple-touch-icon" href="/apple-touch-light.svg" media="(prefers-color-scheme: light)" />
+        <link rel="apple-touch-icon" href="/apple-touch-dark.svg"  media="(prefers-color-scheme: dark)" />
+
+        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+        <meta name="theme-color" media="(prefers-color-scheme: dark)"  content="#0D1B2A" />
+      </head>
       <body className="font-sans antialiased min-h-screen bg-white dark:bg-background text-zinc-900 dark:text-zinc-100 transition-colors duration-300">
         <ThemeProvider
           attribute="class"
@@ -79,4 +90,4 @@ export default function RootLayout({
       </body>
     </html>
   )
-} 
+}

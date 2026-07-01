@@ -54,6 +54,16 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  // lock scroll while dialog is mounted
+  React.useEffect(() => {
+    document.documentElement.classList.add('scroll-locked')
+    document.body.classList.add('scroll-locked')
+    return () => {
+      document.documentElement.classList.remove('scroll-locked')
+      document.body.classList.remove('scroll-locked')
+    }
+  }, [])
+
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
@@ -84,7 +94,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn('flex flex-col gap-2 text-center sm:text-left', className)}
+      className={cn('flex flex-col gap-2 text-center', className)}
       {...props}
     />
   )
