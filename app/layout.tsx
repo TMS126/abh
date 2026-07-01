@@ -9,7 +9,7 @@ import { QuoteCalculatorWidget } from '@/components/QuoteCalculatorWidget'
 import { WhatsAppFAB } from '@/components/whatsapp-fab'
 import './globals.css'
 
-// ─── Fonts ────────────────────────────────────────────────────────────────────
+// ─── Fonts ───────────────────────────────────────────────────────────
 const nunito = Nunito({
   subsets:  ['latin'],
   variable: '--font-nunito',
@@ -28,20 +28,47 @@ const geistMono = Geist_Mono({
   display:  'swap',
 })
 
-// ─── Metadata ─────────────────────────────────────────────────────────────────
+// ─── Metadata ──────────────────────────────────────────────────────────
 export const metadata: Metadata = {
   title:       `${BIZ.name} — ${BIZ.tagline}`,
   description: `We make technology and important services accessible to everyone — no jargon, no stress. Right here in ${BIZ.address}.`,
   keywords:    ['printing', 'CV services', 'tech support', 'government services', 'SASSA', 'SARS', 'Kgotsong', 'Bothaville'],
   authors:     [{ name: BIZ.name }],
   icons: {
-    icon:     [{ url: '/favicon.ico' }, { url: '/192x192.png', type: 'image/png' }],
-    apple:    [{ url: '/apple-touch.png' }],
+    icon: [
+      {
+        url: '/icon-light-32x32.png',
+        sizes: '32x32',
+        type: 'image/png',
+        media: '(prefers-color-scheme: light)',
+      },
+      {
+        url: '/icon-dark-32x32.png',
+        sizes: '32x32',
+        type: 'image/png',
+        media: '(prefers-color-scheme: dark)',
+      },
+      {
+        url: '/favicon.ico',
+      },
+    ],
+    apple: [
+      {
+        url: '/apple-touch.png',
+        sizes: '180x180',
+        type: 'image/png',
+      },
+      {
+        url: '/apple-icon.png',
+        sizes: '192x192',
+        type: 'image/png',
+      },
+    ],
     shortcut: [{ url: '/favicon.ico' }],
   },
 }
 
-// ─── Viewport ─────────────────────────────────────────────────────────────────
+// ─── Viewport ──────────────────────────────────────────────────────────
 export const viewport: Viewport = {
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: BRAND.blue },
@@ -51,7 +78,7 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
-// ─── Root Layout ──────────────────────────────────────────────────────────────
+// ─── Root Layout ─────────────────────────────────────────────────────────
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -79,4 +106,4 @@ export default function RootLayout({
       </body>
     </html>
   )
-} 
+}
