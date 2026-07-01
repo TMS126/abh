@@ -5,7 +5,7 @@ import { useTheme } from "next-themes"
 import { useRouter, usePathname } from "next/navigation"
 import Image from "next/image"
 import { Sun, Moon, X } from "@phosphor-icons/react"
-import { NAV_ITEMS } from "@/lib/brand"
+import { NAV_ITEMS, BRAND } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 
 export function Navbar() {
@@ -81,7 +81,23 @@ export function Navbar() {
               <Image src="/logo.png" alt="" fill priority sizes="36px" className="object-contain" />
             </div>
             <div className="font-sans font-black text-[1.1rem] leading-none tracking-tight transition-all duration-500 overflow-hidden flex items-center" style={{ maxWidth: isTextExpanded ? "180px" : "0px" }}>
-              <span className="dark:text-brand-light-blue whitespace-nowrap" style={{ color: "var(--brand-blue-text)" }}>Apexbytes</span><span className="dark:text-brand-light-green whitespace-nowrap" style={{ marginLeft: "2px", color: "var(--brand-green-text)" }}>Hub</span>
+              <span 
+                className="whitespace-nowrap transition-colors duration-300"
+                style={{ 
+                  color: mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue
+                }}
+              >
+                Apexbytes
+              </span>
+              <span 
+                className="whitespace-nowrap transition-colors duration-300"
+                style={{ 
+                  marginLeft: "2px",
+                  color: mounted && theme === "dark" ? BRAND.lightGreen : BRAND.green
+                }}
+              >
+                Hub
+              </span>
             </div>
           </div>
 
