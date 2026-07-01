@@ -38,28 +38,34 @@ export function AboutPage() {
     <div className="min-h-screen bg-background transition-colors duration-300">
 
       {/* ── Header ── */}
-      <section className="px-4 md:px-8 pt-[calc(var(--nav-h)+2rem)] pb-12 text-center">
-        <div className="max-w-[980px] mx-auto flex flex-col items-center">
+      <section className="px-4 md:px-8 pt-[calc(var(--nav-h,74px)+2rem)] pb-8 text-center">
+        <div className="max-w-[1248px] mx-auto flex flex-col items-center">
 
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 text-[#333333] dark:text-white">
-            About Us
-          </h1>
+          <h1 className="abh-page-title mb-3">About Us</h1>
 
-          <p className="abh-tagline max-w-xl text-center mx-auto">
+          <p className="abh-tagline max-w-xl mx-auto">
             A local business built on community, trust, and real help — right here in Kgotsong.
           </p>
 
-          <div className="mt-6 h-px bg-zinc-100 dark:bg-zinc-800 max-w-[160px] mx-auto" />
+          <div className="abh-divider mx-auto" />
 
           {/* Stats strip — bordered card grid */}
           <div className="mt-10 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x divide-zinc-200 dark:divide-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-[14px] overflow-hidden bg-white dark:bg-zinc-950 shadow-sm">
             {[
-              { value: BIZ.hubCount,      label: "Service Hubs" },
-              { value: BIZ.serviceCount,  label: "Services"     },
-              { value: "Since 2023",      label: "Est. Kgotsong" },
+              { value: BIZ.hubCount,     label: "Service Hubs",  hoverColor: "#1E6FA8" },
+              { value: BIZ.serviceCount, label: "Services",      hoverColor: "#6FBF1A" },
+              { value: "Since 2023",     label: "Est. Kgotsong", hoverColor: "#F4A261" },
             ].map((s, i) => (
-              <div key={i} className="flex flex-col items-center justify-center py-5 px-3">
-                <p className="font-sans font-black text-xl leading-none text-zinc-800 dark:text-zinc-100">
+              <div
+                key={i}
+                className="group flex flex-col items-center justify-center py-5 px-3 transition-colors duration-200 cursor-default hover:bg-zinc-50 dark:hover:bg-zinc-900/60"
+              >
+                <p
+                  className="font-sans font-black text-xl leading-none text-zinc-800 dark:text-zinc-100 transition-colors duration-200"
+                  style={{ color: undefined }}
+                  onMouseEnter={e => (e.currentTarget.style.color = s.hoverColor)}
+                  onMouseLeave={e => (e.currentTarget.style.color = "")}
+                >
                   {s.value}
                 </p>
                 <p className="text-[0.62rem] font-medium uppercase tracking-widest text-zinc-400 mt-1.5 text-center">
