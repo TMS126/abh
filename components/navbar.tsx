@@ -87,16 +87,15 @@ export function Navbar() {
                   color: mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue
                 }}
               >
-                Apexbytes
+                Apex
               </span>
               <span 
                 className="whitespace-nowrap transition-colors duration-300"
                 style={{ 
-                  marginLeft: "2px",
                   color: mounted && theme === "dark" ? BRAND.lightGreen : BRAND.green
                 }}
               >
-                Hub
+                bytesHub
               </span>
             </div>
           </div>
@@ -109,7 +108,11 @@ export function Navbar() {
                 <button
                   key={item.id}
                   onClick={() => navigate(item.path)}
-                  className={cn("px-4 py-2 rounded-[14px] text-[0.84rem] font-black transition-all duration-300", isActive ? "bg-brand-blue text-white" : "text-zinc-500 dark:text-zinc-400 hover:text-brand-blue dark:hover:text-brand-light-blue")}
+                  className={cn(
+                    "px-4 py-2 rounded-[14px] text-[0.84rem] font-black transition-all duration-300",
+                    isActive ? "bg-brand-blue text-white" : "text-zinc-500 dark:text-zinc-400 hover:text-brand-blue dark:hover:text-brand-light-blue",
+                    item.isCta && !isActive && "border-2 border-brand-orange text-brand-orange dark:text-brand-orange hover:bg-brand-orange/10"
+                  )}
                 >
                   {item.label}
                 </button>
@@ -118,14 +121,14 @@ export function Navbar() {
           </div>
 
           {/* Controls */}
-          <div className={cn(pillClass, "flex items-center gap-3 pl-3 pr-3 pointer-events-auto ml-4 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
+          <div className={cn(pillClass, "flex items-center gap-3 pl-3 pr-3 pointer-events-auto ml-4 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100", menuOpen && "md:flex hidden")}>
             <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="flex items-center justify-center w-7 h-7 active:scale-90 transition-transform">
               {mounted && (theme === "dark" ? <Moon size={20} weight="fill" className="text-brand-light-blue" /> : <Sun size={20} weight="fill" className="text-brand-orange" />)}
             </button>
 
             <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 md:hidden" />
 
-            <button ref={menuTriggerRef} onClick={() => setMenuOpen(true)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 md:hidden", menuOpen ? "opacity-0" : "opacity-100")}>
+            <button ref={menuTriggerRef} onClick={() => setMenuOpen(true)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 md:hidden", menuOpen ? "opacity-0 pointer-events-none" : "opacity-100")}>
               <div className="w-4 h-[12px] flex flex-col justify-between items-center">
                 <span className="w-full h-[2.5px] bg-brand-orange dark:bg-brand-light-blue rounded-full" />
                 <span className="w-full h-[2.5px] bg-brand-orange dark:bg-brand-light-blue rounded-full" />
@@ -133,7 +136,7 @@ export function Navbar() {
               </div>
             </button>
 
-            <button onClick={() => setMenuOpen(false)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 absolute right-3", menuOpen ? "opacity-100" : "opacity-0 pointer-events-none")}>
+            <button onClick={() => setMenuOpen(false)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 absolute right-3 md:hidden", menuOpen ? "opacity-100" : "opacity-0 pointer-events-none")}>
               <X size={20} weight="bold" className="text-brand-orange" />
             </button>
           </div>
@@ -143,7 +146,7 @@ export function Navbar() {
       {/* Fullscreen Menu */}
       <div
         ref={menuRef}
-        className={cn("fixed inset-0 z-[9998] flex flex-col items-center justify-center transition-opacity duration-300 overflow-hidden", menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none")}
+        className={cn("fixed inset-0 z-[9998] flex flex-col items-center justify-center transition-opacity duration-300 overflow-hidden pointer-events-none", menuOpen && "pointer-events-auto")}
       >
         {/* Rotational fade background */}
         <div
@@ -165,21 +168,26 @@ export function Navbar() {
                   className={cn(
                     "py-3 px-8 rounded-[14px] font-sans font-extrabold text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
                     isActive
-                      ? "text-brand-blue dark:text-brand-light-blue"
-                      : "text-zinc-700 dark:text-zinc-200 hover:text-brand-blue",
+                      ? "text-brand-blue dark:text-brand-light-blue font-black bg-zinc-100 dark:bg-zinc-800"
+                      : "text-zinc-700 dark:text-zinc-200 hover:text-brand-blue font-bold",
+                    item.isCta && "border-2 border-brand-orange text-brand-orange hover:bg-brand-orange/10",
                     menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
                   )}
                 >
-                  {/* Active indicator */}
-                  <span className="flex items-center justify-center gap-2">
-                    {isActive && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-brand-blue dark:bg-brand-light-blue shrink-0" />
-                    )}
-                    {item.label}
-                  </span>
+                  {item.label}
                 </button>
               )
             })}
+          </div>
+
+          {/* Theme toggle in menu */}
+          <div className={cn("flex items-center gap-3 px-3 py-2 rounded-[14px] bg-white/80 dark:bg-zinc-900/80 border border-gray-200 dark:border-zinc-800 transition-all duration-300", menuOpen ? "scale-100 translate-y-0 opacity-100" : "scale-90 translate-y-4 opacity-0")} style={{ transitionDelay: menuOpen ? `${NAV_ITEMS.length * 60}ms` : "0ms" }}>
+            <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="flex items-center justify-center w-7 h-7 active:scale-90 transition-transform">
+              {mounted && (theme === "dark" ? <Moon size={20} weight="fill" className="text-brand-light-blue" /> : <Sun size={20} weight="fill" className="text-brand-orange" />)}
+            </button>
+            <span className="text-[0.75rem] font-medium text-zinc-600 dark:text-zinc-400">
+              {mounted && (theme === "dark" ? "Dark" : "Light")}
+            </span>
           </div>
         </nav>
 
