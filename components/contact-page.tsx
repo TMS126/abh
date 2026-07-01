@@ -171,7 +171,7 @@ export function ContactPage() {
       <section className="px-4 md:px-8 pt-[calc(var(--nav-h)+2rem)] pb-8">
         <div className="max-w-[980px] mx-auto">
           <h1 className="abh-page-title mb-3">Contact Us</h1>
-          <p className="abh-tagline max-w-xl">
+          <p className="abh-tagline max-w-xl mx-auto text-center">
             We're here and ready to help — reach out any way you prefer.
           </p>
           <div className="abh-divider" />
