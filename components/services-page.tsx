@@ -651,7 +651,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                     : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
                 )}
               >
-                {t === "bring" ? "What to Bring" : "What Is This"}
+                {t === "bring" ? "Bring" : "Description"}
               </button>
             ))}
           </div>
@@ -679,7 +679,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
               </p>
             </div>
           )}
-          {tab === "about" && (
+          {tab === "about" && description && (
             <div className="animate-in fade-in slide-in-from-right-2 duration-200">
               <p className="abh-body text-[0.84rem]">{desc}</p>
               <p className="abh-muted mt-5">

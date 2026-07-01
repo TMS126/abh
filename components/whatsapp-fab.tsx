@@ -336,9 +336,6 @@ export function WhatsAppFAB() {
             className="relative w-14 h-14 rounded-full text-white shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-200"
             style={{ backgroundColor: "#25D366" }}
           >
-            {!isOpen && (
-              <span className="absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-20 pointer-events-none" />
-            )}
             {isOpen ? <X size={22} weight="bold" /> : <WhatsappLogo size={28} weight="fill" />}
           </button>
         </div>

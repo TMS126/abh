@@ -34,10 +34,10 @@ export const metadata: Metadata = {
   description: `We make technology and important services accessible to everyone — no jargon, no stress. Right here in ${BIZ.address}.`,
   keywords:    ['printing', 'CV services', 'tech support', 'government services', 'SASSA', 'SARS', 'Kgotsong', 'Bothaville'],
   authors:     [{ name: BIZ.name }],
-  icons: {
-    icon:     [{ url: '/favicon.ico' }, { url: '/192x192.png', type: 'image/png' }],
-    apple:    [{ url: '/apple-touch.png' }],
-    shortcut: [{ url: '/favicon.ico' }],
+    icons: {
+      icon:     [{ url: '/favicon.png', type: 'image/png' }, { url: '/192x192.png', type: 'image/png' }],
+      apple:    [{ url: '/apple-touch.png' }],
+      shortcut: [{ url: '/favicon.png' }],
   },
 }
 

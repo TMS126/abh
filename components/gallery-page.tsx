@@ -157,18 +157,10 @@ function HubFilter({ label, active, onClick }: { label: string; active: boolean;
   
   const activeText = mounted && isDark ? (isAll ? BRAND.lightBlue : colors?.primary) : 'white'
 
-  // Inactive state: outline with hub color
-  const inactiveBorder = mounted && isDark
-    ? (isAll ? BRAND.lightBlue : colors?.light)
-    : (isAll ? BRAND.blue : colors?.primary)
-  
+  // Inactive state: text only, no background or border
   const inactiveText = mounted && isDark
     ? (isAll ? BRAND.lightBlue : colors?.light)
     : (isAll ? BRAND.blue : colors?.primary)
-
-  const inactiveHoverBg = mounted && isDark
-    ? (isAll ? `${BRAND.lightBlue}10` : `${colors?.light}10`)
-    : (isAll ? `${BRAND.blue}10` : `${colors?.primary}10`)
 
   return (
     <button
@@ -177,13 +169,7 @@ function HubFilter({ label, active, onClick }: { label: string; active: boolean;
       style={{
         backgroundColor: active ? activeBg : 'transparent',
         color: active ? activeText : inactiveText,
-        border: active ? 'none' : `2px solid ${inactiveBorder}`,
-      }}
-      onMouseEnter={(e) => {
-        if (!active) e.currentTarget.style.backgroundColor = inactiveHoverBg
-      }}
-      onMouseLeave={(e) => {
-        if (!active) e.currentTarget.style.backgroundColor = 'transparent'
+        border: 'none',
       }}
     >
       {label}
@@ -304,10 +290,6 @@ export default function GalleryPage() {
             const items = PROJECTS.filter(p => p.hub === row.id)
             if (!items.length) return null
             const accent = getAccent(row.id)
-            const hasMany = items.length > 4
-            const carouselItems = hasMany ? items.slice(0, 4) : items
-            const gridItems = hasMany ? items.slice(4) : []
-
             return (
               <div key={row.id}>
                 <h2 className="text-xl font-black mb-6 flex items-center gap-3">
@@ -315,29 +297,10 @@ export default function GalleryPage() {
                   {row.label}
                 </h2>
 
-                {/* Carousel for featured projects */}
-                {carouselItems.length > 0 && (
-                  <div className="mb-8">
-                    <ProjectCarousel projects={carouselItems} onProjectClick={setProject} />
-                  </div>
-                )}
-
-                {/* Grid for remaining projects */}
-                {gridItems.length > 0 && (
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {gridItems.map(p => (
-                      <div key={p.id} onClick={() => setProject(p)} className="group cursor-pointer rounded-xl overflow-hidden border bg-white dark:bg-zinc-900 hover:shadow-xl transition-all">
-                        <div className="aspect-video relative bg-zinc-900">
-                          <SafeImage src={p.image} alt={p.title} fill className="object-cover group-hover:scale-105 transition-transform" sensitive={p.sensitive} revealed={false} />
-                          {p.sensitive && <div className="absolute inset-0 bg-black/50 backdrop-blur-2xl flex items-center justify-center"><span className="text-white text-xs font-bold px-3 py-1.5 bg-white/20 rounded-full">Sensitive</span></div>}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                          <div className="absolute bottom-3 left-3 right-3 text-white">
-                            <p className="text-xs opacity-70">{p.tag}</p>
-                            <h3 className="font-bold">{p.title}</h3>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                {/* Carousel for all projects */}
+                {items.length > 0 && (
+                  <div className="mb-4">
+                    <ProjectCarousel projects={items} onProjectClick={setProject} />
                   </div>
                 )}
               </div>

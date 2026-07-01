@@ -74,16 +74,11 @@ export function Navbar() {
             onMouseLeave={handleLogoMouseLeave}
             onClick={() => navigate("/")}
           >
-            <div
-              className="relative w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-[14px] overflow-hidden transition-all duration-300 flex items-center justify-center"
-              style={{
-                backgroundColor: mounted && theme === "dark" ? BRAND.lightOrange : BRAND.orange,
-              }}
-            >
-              <Image src="/logo.png" alt="" fill priority sizes="36px" className="object-contain p-1" />
+            <div className="relative w-8 h-8 md:w-9 md:h-9 shrink-0 flex items-center justify-center">
+              <Image src="/logo.png" alt="" width={36} height={36} priority className="object-contain" style={{ color: mounted && theme === "dark" ? BRAND.lightOrange : BRAND.orange, filter: `invert(${mounted && theme === "dark" ? "0%" : "0%"})` }} />
             </div>
             <div className="font-sans font-black text-[1.1rem] leading-none tracking-tight transition-all duration-500 overflow-hidden flex items-center" style={{ maxWidth: isTextExpanded ? "180px" : "0px", opacity: isTextExpanded ? 1 : 0 }}>
-              <span className="whitespace-nowrap" style={{ color: mounted && theme === "dark" ? BRAND.lightGreen : BRAND.green }}>Apexbytes</span><span className="whitespace-nowrap" style={{ color: mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue }}>Hub</span>
+              <span className="whitespace-nowrap" style={{ color: mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue }}>Apexbytes</span><span className="whitespace-nowrap" style={{ color: mounted && theme === "dark" ? BRAND.lightGreen : BRAND.green }}>Hub</span>
             </div>
           </div>
 
