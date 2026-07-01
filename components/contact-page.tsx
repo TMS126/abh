@@ -20,10 +20,10 @@ function downloadBusinessVCard() {
   const vcard = [
     "BEGIN:VCARD",
     "VERSION:3.0",
-    `FN:${BIZ.name}`,
-    `N:${BIZ.name};;;;`,
-    `ORG:${BIZ.name}`,
-    `TITLE:Local Tech & Print Services`,
+    `FN:Theji Meje ApexbytesHub`,
+    `N:ApexbytesHub;Theji Meje;;;`,
+    `ORG:Apexbytes Hub`,
+    `TITLE:Founder & Lead Designer`,
     `TEL;TYPE=CELL,PREF:+27753338260`,
     `EMAIL;TYPE=WORK:apexbytesza@gmail.com`,
     `ADR;TYPE=WORK:;;5878 Mpumalanga Section;Kgotsong;Bothaville;9660;South Africa`,
@@ -36,7 +36,7 @@ function downloadBusinessVCard() {
   const url = URL.createObjectURL(blob)
   const a = document.createElement("a")
   a.href = url
-  a.download = "ApexbytesHub.vcf"
+  a.download = "Theji-Meje-ApexbytesHub.vcf"
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -48,8 +48,8 @@ function FAQAccordion() {
     <section className="px-4 md:px-8 py-16 md:py-20">
       <div className="max-w-[980px] mx-auto">
         <div className="mb-8">
-          <h2 className="abh-section-heading mb-3">Frequently Asked Questions</h2>
-          <p className="abh-body">Everything you need to know about orders, processing, and timelines.</p>
+          <h2 className="abh-section-heading mb-3 text-center">Frequently Asked Questions</h2>
+          <p className="abh-body text-center max-w-xl mx-auto">Everything you need to know about orders, processing, and timelines.</p>
           <div className="abh-divider" />
         </div>
         <div className="space-y-2">
@@ -64,7 +64,7 @@ function FAQAccordion() {
                   <span className="leading-snug">{faq.question}</span>
                   <CaretDown weight="bold" className={cn("w-4 h-4 shrink-0 text-zinc-500 transition-transform duration-300", isOpen? "rotate-180" : "rotate-0")} />
                 </button>
-                <div className={cn("grid transition-all duration-300 ease-in-out", isOpen? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
+                <div className={cn("grid transition-all duration-500 ease-in-out", isOpen? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
                   <div className="overflow-hidden">
                     <div className="px-5 pb-8 pt-3 border-t border-zinc-100 dark:border-zinc-800 abh-body whitespace-pre-wrap">
                       {faq.answer}
@@ -169,12 +169,12 @@ export function ContactPage() {
 
       {/* ── Hero - aligned ── */}
       <section className="px-4 md:px-8 pt-[calc(var(--nav-h)+2rem)] pb-8">
-        <div className="max-w-[980px] mx-auto text-center md:text-left">
+        <div className="max-w-[980px] mx-auto">
           <h1 className="abh-page-title mb-3">Contact Us</h1>
-          <p className="abh-tagline max-w-xl mx-auto md:mx-0">
+          <p className="abh-tagline max-w-xl">
             We're here and ready to help — reach out any way you prefer.
           </p>
-          <div className="abh-divider mx-auto md:ml-0" />
+          <div className="abh-divider" />
         </div>
       </section>
 
@@ -225,7 +225,7 @@ export function ContactPage() {
                 <div>
                   <p className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-500 mb-1">{HOURS.printAndDoc.label}</p>
                   <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{HOURS.printAndDoc.hours}</p>
-                  <p className="flex items-center gap-1.5 text-xs font-medium mt-1 dark:text-brand-light-green" style={{ color: "var(--brand-green-text)" }}>
+                  <p className="flex items-center gap-1.5 text-xs font-medium mt-1" style={{ color: BRAND.green }}>
                     <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: BRAND.green }} />
                     Open on public holidays
                   </p>
@@ -235,7 +235,7 @@ export function ContactPage() {
                   {HOURS.techDesignEservice.lines.map((l) => (
                     <p key={l} className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{l}</p>
                   ))}
-                  <p className="flex items-center gap-1.5 text-xs font-medium mt-1 dark:text-brand-light-orange" style={{ color: "var(--brand-orange-text)" }}>
+                  <p className="flex items-center gap-1.5 text-xs font-medium mt-1" style={{ color: BRAND.orangeDark }}>
                     <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: BRAND.orangeDark }} />
                     Sunday &amp; Public Holidays · Closed
                   </p>
@@ -289,4 +289,5 @@ export function ContactPage() {
       <FAQAccordion />
     </div>
   )
-          } 
+    }
+ 
