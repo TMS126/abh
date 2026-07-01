@@ -372,185 +372,6 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
   )
 }
 
-// ─── Floating pill search ─────────────────────────────────────────────────────
-function FloatingSearchPill({
-  onSelect, visible,
-}: {
-  onSelect: (svc: SelectedService) => void
-  visible: boolean
-}) {
-  const { resolvedTheme } = useTheme()
-  const isDark     = resolvedTheme === "dark"
-  const [open,     setOpen]    = useState(false)
-  const [query,    setQuery]   = useState("")
-  const [colorIdx, setColorIdx] = useState(0)
-  const inputRef   = useRef<HTMLInputElement>(null)
-  const pillRef    = useRef<HTMLDivElement>(null)
-  const index      = useMemo(buildSearchIndex, [])
-
-  // Tracks whether we've pushed a dedicated history entry for the open
-  // search box, so back-button / outside-click can close it in isolation
-  // without touching any other navigation or modal state on the page.
-  const pushedRef  = useRef(false)
-
-  // Cycle through brand colours every 1.8 s when visible and closed
-  const CYCLE_COLORS = ["#1E6FA8", "#3E6B0E", "#B86F34"]
-  useEffect(() => {
-    if (!visible || open) return
-    const id = setInterval(() => setColorIdx(i => (i + 1) % 3), 1800)
-    return () => clearInterval(id)
-  }, [visible, open])
-
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return []
-    return index
-      .filter(s => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q))
-      .slice(0, 8)
-  }, [query, index])
-
-  const openSearch = () => {
-    setOpen(true)
-    if (!pushedRef.current) {
-      window.history.pushState({ abhSearch: true }, "")
-      pushedRef.current = true
-    }
-    setTimeout(() => inputRef.current?.focus(), 60)
-  }
-
-  // Closes the search box only. If it closed via a manual action (outside
-  // click, X button, Escape) rather than the back button, we also collapse
-  // the history entry we pushed on open — this keeps back-navigation
-  // behaving normally afterwards, and never triggers anything else.
-  const closeSearch = useCallback(() => {
-    setOpen(false)
-    setQuery("")
-    if (pushedRef.current) {
-      pushedRef.current = false
-      window.history.back()
-    }
-  }, [])
-
-  const pick = (s: SearchableService) => {
-    onSelect({ name: s.name, price: s.price, hubId: s.hubId, sectionTitle: s.sectionTitle, requirements: s.requirements, desc: s.description })
-    closeSearch()
-  }
-
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: MouseEvent) => {
-      if (pillRef.current && !pillRef.current.contains(e.target as Node)) closeSearch()
-    }
-    document.addEventListener("mousedown", handler)
-    return () => document.removeEventListener("mousedown", handler)
-  }, [open, closeSearch])
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") closeSearch() }
-    document.addEventListener("keydown", handler)
-    return () => document.removeEventListener("keydown", handler)
-  }, [closeSearch])
-
-  // Dedicated back-button handling for the search box only. This consumes
-  // the single history entry pushed on open and simply closes the search —
-  // it does not open, close, or otherwise react to anything else on the page.
-  useEffect(() => {
-    const onPop = () => {
-      if (!pushedRef.current) return
-      pushedRef.current = false
-      setOpen(false)
-      setQuery("")
-    }
-    window.addEventListener("popstate", onPop)
-    return () => window.removeEventListener("popstate", onPop)
-  }, [])
-
-  // Vertically centred within the navbar itself (not below it).
-  return (
-    <div
-      ref={pillRef}
-      className={cn(
-        "fixed left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10000] transition-all duration-300",
-        "top-[calc(var(--nav-h,74px)/2)]",
-        visible ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-90 pointer-events-none"
-      )}
-    >
-      {/* ── Closed: acrylic icon-only button with cycling colour ── */}
-      {!open && (
-        <button
-          onClick={openSearch}
-          aria-label="Search services"
-          className="w-11 h-11 rounded-full flex items-center justify-center bg-white/55 dark:bg-zinc-950/50 backdrop-blur-2xl backdrop-saturate-150 border border-white/50 dark:border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.12)] transition-all duration-300 hover:scale-110 active:scale-95"
-        >
-          <MagnifyingGlass
-            size={22}
-            weight="bold"
-            style={{ color: CYCLE_COLORS[colorIdx], transition: "color 0.7s ease" }}
-          />
-        </button>
-      )}
-
-      {/* ── Open: expanded search input, always 14px radius ── */}
-      {open && (
-        <div className="flex items-center gap-2 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.18)] rounded-[14px] px-4 py-2.5 w-[min(90vw,380px)]">
-          <MagnifyingGlass size={16} weight="bold" className="shrink-0 text-zinc-400" />
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Search"
-            className="flex-1 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none min-w-0 text-center focus:text-left"
-          />
-          {query && (
-            <button onClick={() => setQuery("")} className="w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 shrink-0">
-              <X size={11} weight="bold" />
-            </button>
-          )}
-          <button onClick={closeSearch} className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 shrink-0 transition-colors">
-            <X size={14} weight="bold" />
-          </button>
-        </div>
-      )}
-
-      {/* ── Results dropdown, always 14px radius ── */}
-      {open && query.trim().length > 0 && (
-        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-[min(90vw,380px)] bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-          {results.length > 0 ? (
-            <div className="max-h-[320px] overflow-y-auto p-2">
-              {results.map((s, idx) => {
-                const colors = HUB_COLORS[s.hubId as HubKey]
-                const accent = isDark ? colors.tagTextDark : colors.tagText
-                return (
-                  <button
-                    key={`${s.hubId}-${s.name}-${idx}`}
-                    onClick={() => pick(s)}
-                    className="w-full flex items-center gap-3 p-3 rounded-[10px] hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left"
-                  >
-                    <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${accent}15`, color: accent }}>
-                      <HubIcon id={s.hubId} size={18} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{s.name}</p>
-                      <p className="text-[0.65rem] font-bold uppercase tracking-wider text-zinc-400 truncate">{s.sectionTitle} · {HUBS[s.hubId].title}</p>
-                    </div>
-                    <span className="text-xs font-black shrink-0" style={{ color: accent }}>{s.price}</span>
-                  </button>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="p-5 text-center">
-              <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">No services found</p>
-              <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-1">Try a different word or WhatsApp us directly.</p>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
 
 function HubModal({
   hubId, onClose, onSelectService,
@@ -940,17 +761,18 @@ export function ServicesPage() {
   const [activeHub,       setActiveHub]       = useState<HubId | null>(null)
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
 
-  const inlineSearchRef = useRef<HTMLDivElement>(null)
-  const [pillVisible,   setPillVisible] = useState(false)
-
-  // Show floating pill once inline search scrolls out of view
+  // The floating search is now a global root-layout widget (see
+  // components/floating-search-widget.tsx) so it can sit in the same FAB
+  // stack as the Quote Calculator and WhatsApp widgets. It has no direct
+  // access to this page's state, so it dispatches a window event when a
+  // result is tapped, and we open the existing ServiceDetailModal here.
   useEffect(() => {
-    const onScroll = () => {
-      if (!inlineSearchRef.current) return
-      setPillVisible(inlineSearchRef.current.getBoundingClientRect().bottom < 0)
+    const handler = (e: Event) => {
+      const svc = (e as CustomEvent<SelectedService>).detail
+      if (svc) setSelectedService(svc)
     }
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
+    window.addEventListener("abh:selectService", handler)
+    return () => window.removeEventListener("abh:selectService", handler)
   }, [])
 
   // Deep-link via ?hub=
@@ -979,9 +801,6 @@ export function ServicesPage() {
   return (
     <section className="min-h-screen bg-white dark:bg-[#081428] transition-colors duration-300 pb-24">
 
-      {/* Floating search pill — centered on navbar */}
-      <FloatingSearchPill onSelect={setSelectedService} visible={pillVisible} />
-
       <div className="max-w-[1248px] mx-auto px-4 md:px-8 flex flex-col items-center">
 
         {/* Hero */}
@@ -993,8 +812,9 @@ export function ServicesPage() {
           <div className="abh-divider mx-auto" />
         </div>
 
-        {/* Inline search — deliberately narrower than the hub cards row below */}
-        <div ref={inlineSearchRef} className="w-full mb-10 flex justify-center">
+        {/* Inline search — id is used by the FloatingSearchWidget (root layout)
+            to know when this bar has scrolled out of view */}
+        <div id="abh-inline-search" className="w-full mb-10 flex justify-center">
           <InlineSearchBar onSelect={setSelectedService} />
         </div>
 
@@ -1064,4 +884,3 @@ export function ServicesPage() {
     </section>
   )
 }
- 
