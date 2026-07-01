@@ -69,19 +69,19 @@ export function Navbar() {
 
           {/* Logo — hides when menu is open */}
           <div
-            className={cn(pillClass, "flex items-center cursor-pointer select-none pointer-events-auto group transition-all duration-300", isTextExpanded ? "pl-3 pr-4 gap-2.5" : "px-2.5 gap-0", menuOpen ? "opacity-0 pointer-events-none" : "opacity-100")}
+            className={cn(pillClass, "flex items-center cursor-pointer select-none pointer-events-auto group transition-all duration-300", isTextExpanded ? "pl-3 pr-4 gap-2.5" : "px-2.5 gap-0", menuOpen ? "opacity-0" : "opacity-100")}
             onMouseEnter={handleLogoMouseEnter}
             onMouseLeave={handleLogoMouseLeave}
             onClick={() => navigate("/")}
           >
             <div
               className="relative w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-[14px] overflow-hidden transition-all duration-300"
-              style={mounted && theme === "dark" ? { filter: "invert(1) sepia(1) saturate(2.5) hue-rotate(150deg) brightness(0.85)" } : undefined}
+              style={mounted && theme === "dark" ? { filter: "brightness(0) invert(1) sepia(0.8) saturate(1.2) hue-rotate(200deg)" } : undefined}
             >
               <Image src="/logo.png" alt="" fill priority sizes="36px" className="object-contain" />
             </div>
-            <div className="font-sans font-black text-[1.1rem] leading-none tracking-tight transition-all duration-500 overflow-hidden flex items-center" style={{ maxWidth: isTextExpanded ? "180px" : "0px", opacity: isTextExpanded ? 1 : 0 }}>
-              <span className="dark:text-brand-light-blue whitespace-nowrap" style={{ color: "var(--brand-blue-text)" }}>Apexbytes</span><span className="dark:text-brand-light-green whitespace-nowrap" style={{ color: "var(--brand-green-text)" }}>Hub</span>
+            <div className="font-sans font-black text-[1.1rem] leading-none tracking-tight transition-all duration-500 overflow-hidden flex items-center" style={{ maxWidth: isTextExpanded ? "180px" : "0px" }}>
+              <span className="dark:text-brand-light-blue whitespace-nowrap" style={{ color: "var(--brand-blue-text)" }}>Apexbytes</span><span className="dark:text-brand-light-green whitespace-nowrap" style={{ marginLeft: "2px", color: "var(--brand-green-text)" }}>Hub</span>
             </div>
           </div>
 
@@ -93,7 +93,7 @@ export function Navbar() {
                 <button
                   key={item.id}
                   onClick={() => navigate(item.path)}
-                  className={cn("px-4 py-2 rounded-[14px] text-[0.84rem] font-black transition-all duration-300", isActive ? "bg-brand-blue text-white" : "text-zinc-500 dark:text-zinc-400 hover:text-brand-blue")}
+                  className={cn("px-4 py-2 rounded-[14px] text-[0.84rem] font-black transition-all duration-300", isActive ? "bg-brand-blue text-white" : "text-zinc-500 dark:text-zinc-400 hover:text-brand-blue dark:hover:text-brand-light-blue")}
                 >
                   {item.label}
                 </button>
@@ -179,7 +179,7 @@ export function Navbar() {
             className="relative w-8 h-8 shrink-0"
             style={
               mounted && theme === "dark"
-                ? { filter: "brightness(0) invert(1)" }
+                ? { filter: "brightness(0) invert(1) sepia(0.6) saturate(1) hue-rotate(200deg)" }
                 : { filter: "brightness(0)" }
             }
           >
@@ -190,4 +190,3 @@ export function Navbar() {
     </>
   )
 }
- 
