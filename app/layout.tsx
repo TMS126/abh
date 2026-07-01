@@ -35,36 +35,9 @@ export const metadata: Metadata = {
   keywords:    ['printing', 'CV services', 'tech support', 'government services', 'SASSA', 'SARS', 'Kgotsong', 'Bothaville'],
   authors:     [{ name: BIZ.name }],
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        sizes: '32x32',
-        type: 'image/png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        sizes: '32x32',
-        type: 'image/png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/favicon.ico',
-      },
-    ],
-    apple: [
-      {
-        url: '/apple-touch.png',
-        sizes: '180x180',
-        type: 'image/png',
-      },
-      {
-        url: '/apple-icon.png',
-        sizes: '192x192',
-        type: 'image/png',
-      },
-    ],
-    shortcut: [{ url: '/favicon.ico' }],
+    icon:     [{ url: '/logo.png', type: 'image/png' }],
+    apple:    [{ url: '/logo.png', type: 'image/png' }],
+    shortcut: [{ url: '/logo.png', type: 'image/png' }],
   },
 }
 
