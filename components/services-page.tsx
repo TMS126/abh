@@ -679,7 +679,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
               </p>
             </div>
           )}
-          {tab === "about" && description && (
+          {tab === "about" && (
             <div className="animate-in fade-in slide-in-from-right-2 duration-200">
               <p className="abh-body text-[0.84rem]">{desc}</p>
               <p className="abh-muted mt-5">
