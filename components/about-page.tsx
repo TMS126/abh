@@ -28,15 +28,15 @@ export function AboutPage() {
 
       {/* ── Header — now aligned to 980px grid ── */}
       <section className="px-4 md:px-8 pt-[calc(var(--nav-h)+2rem)] pb-10">
-        <div className="max-w-[980px] mx-auto text-center md:text-left">
+        <div className="max-w-[980px] mx-auto">
           <h1 className="abh-page-title mb-3">About Us</h1>
-          <p className="abh-tagline max-w-xl mx-auto md:mx-0">
+          <p className="abh-tagline max-w-xl">
             A local business built on community, trust, and real help — right here in Kgotsong.
           </p>
-          <div className="abh-divider mx-auto md:ml-0" />
+          <div className="abh-divider" />
 
-          {/* Stats strip - centred on mobile, left on desktop */}
-          <div className="flex flex-wrap justify-center md:justify-start items-center gap-8 md:gap-12 mt-8">
+          {/* Stats strip - left aligned */}
+          <div className="flex flex-wrap items-center gap-8 md:gap-12 mt-8">
             {[
               { value: BIZ.hubCount, label: "Service Hubs" },
               { value: BIZ.serviceCount, label: "Services" },
@@ -56,11 +56,11 @@ export function AboutPage() {
         <div className="max-w-[980px] mx-auto">
 
           {/* Pull quote */}
-          <div className="mb-8 max-w-[800px]">
+          <div className="mb-8 max-w-[800px] mx-auto text-center">
             <p className="font-sans font-semibold text-lg md:text-xl leading-snug text-zinc-700 dark:text-zinc-300 italic">
               "Not everyone is tech-savvy — and that's exactly why we're here."
             </p>
-            <p className="abh-body mt-4 text-sm max-w-xl">
+            <p className="abh-body mt-4 text-sm max-w-xl mx-auto">
               We started with one goal: make technology, design, and important government services accessible to everyone in Kgotsong — no jargon, no stress, no overcharging.
             </p>
           </div>
@@ -122,10 +122,10 @@ export function AboutPage() {
 
       {/* ── Standards ── */}
       <section className="py-16 md:py-20 px-4 bg-zinc-50/60 dark:bg-zinc-900/20" aria-labelledby="standards-title">
-        <div className="max-w-[980px] mx-auto px-4 md:px-8">
+        <div className="max-w-[980px] mx-auto">
           <div className="mb-8">
-            <h2 id="standards-title" className="abh-section-heading mb-4">Our Everyday Toolkit</h2>
-            <p className="abh-tagline max-w-xl">
+            <h2 id="standards-title" className="abh-section-heading mb-4 text-center">Our Everyday Toolkit</h2>
+            <p className="abh-tagline max-w-xl mx-auto text-center">
               Professional accuracy, hand-finished local care — how we actually do the work.
             </p>
             <div className="abh-divider" aria-hidden="true" />
@@ -150,8 +150,8 @@ export function AboutPage() {
                   <div className={cn("w-11 h-11 rounded-[12px] flex items-center justify-center mb-5 transition-all duration-300 border shrink-0", isHovered? "bg-brand-blue text-white border-transparent scale-110" : "bg-white dark:bg-zinc-900 text-brand-blue border-zinc-100 dark:border-zinc-800")} aria-hidden="true">
                     {renderIcon(item.iconName, "w-5 h-5")}
                   </div>
-                  <h3 className="font-sans font-black text-sm leading-tight mb-2 text-zinc-800 dark:text-zinc-200">{item.title}</h3>
-                  <p className="abh-body leading-relaxed grow">{item.description}</p>
+                  <h3 className="font-sans font-semibold text-sm leading-tight mb-2 text-zinc-800 dark:text-zinc-200">{item.title}</h3>
+                  <p className="abh-body text-xs leading-relaxed grow">{item.description}</p>
                 </li>
               )
             })}
@@ -169,10 +169,10 @@ export function AboutPage() {
           <span className="inline-block text-[0.65rem] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-6" style={{ backgroundColor: `${BRAND.blue}12`, color: BRAND.blue }}>
             Our Mission
           </span>
-          <h2 id="mission-title" className="font-sans font-black text-xl md:text-2xl leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 mb-4">
+          <h2 id="mission-title" className="font-sans font-black text-xl md:text-2xl leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 mb-4 text-center">
             Bridging the digital gap — one person at a time.
           </h2>
-          <p className="abh-body max-w-xl mb-10">
+          <p className="abh-body max-w-xl mx-auto mb-10 text-center">
             ApexbytesHub is that bridge — printing, design, IT support, and government services brought to people who need them most, in a community that deserves better access.
           </p>
           <a href="/services" className="inline-flex items-center gap-2.5 px-8 py-4 rounded-[14px] font-black text-sm text-white transition-all duration-300 active:scale-95 hover:-translate-y-0.5 shadow-lg" style={{ backgroundColor: BRAND.blue }}>
@@ -185,3 +185,4 @@ export function AboutPage() {
     </div>
   )
 }
+ 
