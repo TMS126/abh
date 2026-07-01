@@ -773,7 +773,7 @@ export function ServicesPage() {
     }
     window.addEventListener("abh:selectService", handler)
     return () => window.removeEventListener("abh:selectService", handler)
-  }, [])
+  }, [setSelectedService])
 
   // Deep-link via ?hub=
   useEffect(() => {
