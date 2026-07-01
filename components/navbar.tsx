@@ -5,7 +5,7 @@ import { useTheme } from "next-themes"
 import { useRouter, usePathname } from "next/navigation"
 import Image from "next/image"
 import { Sun, Moon, X } from "@phosphor-icons/react"
-import { NAV_ITEMS } from "@/lib/brand"
+import { NAV_ITEMS, BRAND } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 
 export function Navbar() {
@@ -75,13 +75,15 @@ export function Navbar() {
             onClick={() => navigate("/")}
           >
             <div
-              className="relative w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-[14px] overflow-hidden transition-all duration-300"
-              style={mounted && theme === "dark" ? { filter: "invert(1) sepia(1) saturate(2.5) hue-rotate(150deg) brightness(0.85)" } : undefined}
+              className="relative w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-[14px] overflow-hidden transition-all duration-300 flex items-center justify-center"
+              style={{
+                backgroundColor: mounted && theme === "dark" ? BRAND.lightOrange : BRAND.orange,
+              }}
             >
-              <Image src="/logo.png" alt="" fill priority sizes="36px" className="object-contain" />
+              <Image src="/logo.png" alt="" fill priority sizes="36px" className="object-contain p-1" />
             </div>
             <div className="font-sans font-black text-[1.1rem] leading-none tracking-tight transition-all duration-500 overflow-hidden flex items-center" style={{ maxWidth: isTextExpanded ? "180px" : "0px", opacity: isTextExpanded ? 1 : 0 }}>
-              <span className="dark:text-brand-light-blue whitespace-nowrap" style={{ color: "var(--brand-blue-text)" }}>Apexbytes</span><span className="dark:text-brand-light-green whitespace-nowrap" style={{ color: "var(--brand-green-text)" }}>Hub</span>
+              <span className="whitespace-nowrap" style={{ color: mounted && theme === "dark" ? BRAND.lightGreen : BRAND.green }}>Apexbytes</span><span className="whitespace-nowrap" style={{ color: mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue }}>Hub</span>
             </div>
           </div>
 
@@ -93,7 +95,11 @@ export function Navbar() {
                 <button
                   key={item.id}
                   onClick={() => navigate(item.path)}
-                  className={cn("px-4 py-2 rounded-[14px] text-[0.84rem] font-black transition-all duration-300", isActive ? "bg-brand-blue text-white" : "text-zinc-500 dark:text-zinc-400 hover:text-brand-blue")}
+                  className="px-4 py-2 rounded-[14px] text-[0.84rem] font-black transition-all duration-300"
+                  style={{
+                    backgroundColor: isActive ? (mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue) : "transparent",
+                    color: isActive ? (mounted && theme === "dark" ? BRAND.blueDark : "white") : (mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue),
+                  }}
                 >
                   {item.label}
                 </button>
@@ -104,21 +110,21 @@ export function Navbar() {
           {/* Controls */}
           <div className={cn(pillClass, "flex items-center gap-3 pl-3 pr-3 pointer-events-auto ml-4 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
             <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="flex items-center justify-center w-7 h-7 active:scale-90 transition-transform">
-              {mounted && (theme === "dark" ? <Moon size={20} weight="fill" className="text-brand-light-blue" /> : <Sun size={20} weight="fill" className="text-brand-orange" />)}
+              {mounted && (theme === "dark" ? <Moon size={20} weight="fill" style={{ color: BRAND.lightBlue }} /> : <Sun size={20} weight="fill" style={{ color: BRAND.orange }} />)}
             </button>
 
             <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 md:hidden" />
 
             <button ref={menuTriggerRef} onClick={() => setMenuOpen(true)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 md:hidden", menuOpen ? "opacity-0" : "opacity-100")}>
               <div className="w-4 h-[12px] flex flex-col justify-between items-center">
-                <span className="w-full h-[2.5px] bg-brand-orange dark:bg-brand-light-blue rounded-full" />
-                <span className="w-full h-[2.5px] bg-brand-orange dark:bg-brand-light-blue rounded-full" />
-                <span className="w-full h-[2.5px] bg-brand-orange dark:bg-brand-light-blue rounded-full" />
+                <span className="w-full h-[2.5px] rounded-full" style={{ backgroundColor: mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue }} />
+                <span className="w-full h-[2.5px] rounded-full" style={{ backgroundColor: mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue }} />
+                <span className="w-full h-[2.5px] rounded-full" style={{ backgroundColor: mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue }} />
               </div>
             </button>
 
             <button onClick={() => setMenuOpen(false)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 absolute right-3", menuOpen ? "opacity-100" : "opacity-0 pointer-events-none")}>
-              <X size={20} weight="bold" className="text-brand-orange" />
+              <X size={20} weight="bold" style={{ color: mounted && theme === "dark" ? BRAND.lightOrange : BRAND.orange }} />
             </button>
           </div>
         </div>
@@ -145,19 +151,19 @@ export function Navbar() {
                 <button
                   key={item.id}
                   onClick={() => navigate(item.path)}
-                  style={{ transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms" }}
+                  style={{
+                    transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms",
+                    color: isActive ? (mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue) : (mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue),
+                  }}
                   className={cn(
                     "py-3 px-8 rounded-[14px] font-sans font-extrabold text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
-                    isActive
-                      ? "text-brand-blue dark:text-brand-light-blue"
-                      : "text-zinc-700 dark:text-zinc-200 hover:text-brand-blue",
                     menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
                   )}
                 >
                   {/* Active indicator */}
                   <span className="flex items-center justify-center gap-2">
                     {isActive && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-brand-blue dark:bg-brand-light-blue shrink-0" />
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue }} />
                     )}
                     {item.label}
                   </span>
@@ -176,14 +182,12 @@ export function Navbar() {
           aria-hidden="true"
         >
           <div
-            className="relative w-8 h-8 shrink-0"
-            style={
-              mounted && theme === "dark"
-                ? { filter: "brightness(0) invert(1)" }
-                : { filter: "brightness(0)" }
-            }
+            className="relative w-8 h-8 shrink-0 rounded-[14px] flex items-center justify-center"
+            style={{
+              backgroundColor: mounted && theme === "dark" ? BRAND.lightOrange : BRAND.orange,
+            }}
           >
-            <Image src="/logo.png" alt="" fill sizes="32px" className="object-contain" />
+            <Image src="/logo.png" alt="" fill sizes="32px" className="object-contain p-1" />
           </div>
         </div>
       </div>

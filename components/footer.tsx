@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
+import { useTheme } from "next-themes"
 import Image from "next/image"
 import {
   WhatsappLogo, EnvelopeSimple,
@@ -122,9 +123,13 @@ function Modal({ open, onClose, title, subtitle, children }: {
 // ─── Footer content ────────────────────────────────────────────────────────────
 function FooterContent() {
   const router = useRouter()
+  const { theme } = useTheme()
+  const [mounted, setMounted] = useState(false)
   const [isTermsOpen,  setIsTermsOpen]  = useState(false)
   const [isFaqOpen,    setIsFaqOpen]    = useState(false)
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null)
+
+  useEffect(() => { setMounted(true) }, [])
 
   return (
     <div className="pt-16 pb-12">
@@ -133,12 +138,12 @@ function FooterContent() {
         {/* Brand */}
         <div className="flex flex-col gap-6">
           <div className="flex items-center gap-2.5 select-none">
-            <div className="relative w-9 h-9 overflow-hidden rounded-[14px]" aria-hidden="true">
-              <Image src="/logo.png" alt="" fill sizes="36px" className="object-contain dark:invert" />
+            <div className="relative w-9 h-9 overflow-hidden rounded-[14px] flex items-center justify-center" style={{ backgroundColor: mounted && theme === "dark" ? BRAND.lightOrange : BRAND.orange }} aria-hidden="true">
+              <Image src="/logo.png" alt="" fill sizes="36px" className="object-contain p-1" />
             </div>
             <h2 className="font-sans font-black text-2xl tracking-tighter">
-              <span className="text-zinc-900 dark:text-white">Apexbytes</span>
-              <span className="dark:text-brand-light-orange" style={{ color: "var(--brand-orange-text)" }}>Hub</span>
+              <span style={{ color: mounted && theme === "dark" ? BRAND.lightGreen : BRAND.green }}>Apexbytes</span>
+              <span style={{ color: mounted && theme === "dark" ? BRAND.lightOrange : BRAND.orange }}>Hub</span>
             </h2>
           </div>
           <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400 max-w-xs">

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { X, Check, Eye, ArrowsLeftRight } from "@phosphor-icons/react"
+import { X, Check, Eye, ArrowsLeftRight, CaretLeft, CaretRight } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -142,29 +142,45 @@ function ProjectViewerModal({ project, onClose, zoomIndex, setZoomIndex }: any) 
 function HubFilter({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
+
   const isAll = label.toLowerCase().includes('all')
+  const hubId = isAll ? null : (label.toLowerCase().replace(' hub', '').replace('-', '') as HubId)
+  const colors = hubId ? HUB_COLORS[hubId] : null
 
-  const hubId = isAll? null : (label.toLowerCase().replace(' hub', '').replace('-', '') as HubId)
-  const colors = hubId? HUB_COLORS[hubId] : null
+  // Active state: use hub's primary color with contrast
+  const activeBg = mounted && isDark 
+    ? (isAll ? BRAND.blue : colors?.light)
+    : (isAll ? BRAND.blue : colors?.primary)
+  
+  const activeText = mounted && isDark ? (isAll ? BRAND.lightBlue : colors?.primary) : 'white'
 
-  const inactiveText = isDark? '#e5e7eb' : '#374151'
-  const inactiveBorder = isDark? '#374151' : '#d1d5db'
-  const hoverBg = isDark? '#1f2937' : '#f3f4f6'
+  // Inactive state: outline with hub color
+  const inactiveBorder = mounted && isDark
+    ? (isAll ? BRAND.lightBlue : colors?.light)
+    : (isAll ? BRAND.blue : colors?.primary)
+  
+  const inactiveText = mounted && isDark
+    ? (isAll ? BRAND.lightBlue : colors?.light)
+    : (isAll ? BRAND.blue : colors?.primary)
 
-  const activeBg = isAll? '#0F3F66' : colors?.tagBgDark
-  const activeText = '#ffffff'
+  const inactiveHoverBg = mounted && isDark
+    ? (isAll ? `${BRAND.lightBlue}10` : `${colors?.light}10`)
+    : (isAll ? `${BRAND.blue}10` : `${colors?.primary}10`)
 
   return (
     <button
       onClick={onClick}
       className="px-4 py-2.5 rounded-full text-sm font-bold transition-all duration-200 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
       style={{
-        backgroundColor: active? activeBg : 'transparent',
-        color: active? activeText : inactiveText,
-        border: active? 'none' : `1px solid ${inactiveBorder}`,
+        backgroundColor: active ? activeBg : 'transparent',
+        color: active ? activeText : inactiveText,
+        border: active ? 'none' : `2px solid ${inactiveBorder}`,
       }}
       onMouseEnter={(e) => {
-        if (!active) e.currentTarget.style.backgroundColor = hoverBg
+        if (!active) e.currentTarget.style.backgroundColor = inactiveHoverBg
       }}
       onMouseLeave={(e) => {
         if (!active) e.currentTarget.style.backgroundColor = 'transparent'
@@ -172,6 +188,89 @@ function HubFilter({ label, active, onClick }: { label: string; active: boolean;
     >
       {label}
     </button>
+  )
+}
+
+// Carousel component with swipe support
+function ProjectCarousel({ projects, onProjectClick }: { projects: ProjectData[]; onProjectClick: (p: ProjectData) => void }) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [showArrows, setShowArrows] = useState({ left: false, right: true })
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
+
+  useEffect(() => {
+    const checkScroll = () => {
+      if (scrollRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
+        setShowArrows({
+          left: scrollLeft > 10,
+          right: scrollLeft < scrollWidth - clientWidth - 10,
+        })
+      }
+    }
+    checkScroll()
+    const el = scrollRef.current
+    el?.addEventListener("scroll", checkScroll)
+    return () => el?.removeEventListener("scroll", checkScroll)
+  }, [])
+
+  const scroll = (direction: "left" | "right") => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({
+        left: direction === "left" ? -320 : 320,
+        behavior: "smooth",
+      })
+    }
+  }
+
+  return (
+    <div className="relative -mx-4 md:mx-0">
+      <div
+        ref={scrollRef}
+        className="flex gap-4 overflow-x-auto pb-3 scroll-smooth snap-x snap-mandatory"
+        style={{ scrollBehavior: "smooth", WebkitOverflowScrolling: "touch" }}
+      >
+        <div className="w-4 shrink-0" />
+        {projects.map((p) => (
+          <div
+            key={p.id}
+            onClick={() => onProjectClick(p)}
+            className="flex-shrink-0 w-64 h-80 rounded-xl overflow-hidden cursor-pointer group snap-center transition-transform hover:scale-105"
+          >
+            <div className="relative w-full h-full bg-zinc-200 dark:bg-zinc-800">
+              <SafeImage src={p.image} alt={p.title} fill className="object-cover group-hover:scale-110 transition-transform" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col items-end justify-end p-4">
+                <div className="text-right w-full">
+                  <p className="text-xs text-white/70 mb-1">{p.tag}</p>
+                  <h3 className="font-bold text-white text-sm line-clamp-2">{p.title}</h3>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+        <div className="w-4 shrink-0" />
+      </div>
+
+      {mounted && showArrows.left && (
+        <button
+          onClick={() => scroll("left")}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white dark:bg-zinc-900 shadow-lg hover:scale-110 transition-transform"
+          aria-label="Scroll left"
+        >
+          <CaretLeft size={20} weight="fill" />
+        </button>
+      )}
+      {mounted && showArrows.right && (
+        <button
+          onClick={() => scroll("right")}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white dark:bg-zinc-900 shadow-lg hover:scale-110 transition-transform"
+          aria-label="Scroll right"
+        >
+          <CaretRight size={20} weight="fill" />
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -205,27 +304,42 @@ export default function GalleryPage() {
             const items = PROJECTS.filter(p => p.hub === row.id)
             if (!items.length) return null
             const accent = getAccent(row.id)
+            const hasMany = items.length > 4
+            const carouselItems = hasMany ? items.slice(0, 4) : items
+            const gridItems = hasMany ? items.slice(4) : []
+
             return (
               <div key={row.id}>
-                <h2 className="text-xl font-black mb-4 flex items-center gap-3">
+                <h2 className="text-xl font-black mb-6 flex items-center gap-3">
                   <span className="w-1 h-6 rounded-full" style={{ backgroundColor: accent }} />
                   {row.label}
                 </h2>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {items.map(p => (
-                    <div key={p.id} onClick={() => setProject(p)} className="group cursor-pointer rounded-xl overflow-hidden border bg-white dark:bg-zinc-900 hover:shadow-xl transition-all">
-                      <div className="aspect-video relative bg-zinc-900">
-                        <SafeImage src={p.image} alt={p.title} fill className="object-cover group-hover:scale-105 transition-transform" sensitive={p.sensitive} revealed={false} />
-                        {p.sensitive && <div className="absolute inset-0 bg-black/50 backdrop-blur-2xl flex items-center justify-center"><span className="text-white text-xs font-bold px-3 py-1.5 bg-white/20 rounded-full">Sensitive</span></div>}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                        <div className="absolute bottom-3 left-3 right-3 text-white">
-                          <p className="text-xs opacity-70">{p.tag}</p>
-                          <h3 className="font-bold">{p.title}</h3>
+
+                {/* Carousel for featured projects */}
+                {carouselItems.length > 0 && (
+                  <div className="mb-8">
+                    <ProjectCarousel projects={carouselItems} onProjectClick={setProject} />
+                  </div>
+                )}
+
+                {/* Grid for remaining projects */}
+                {gridItems.length > 0 && (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {gridItems.map(p => (
+                      <div key={p.id} onClick={() => setProject(p)} className="group cursor-pointer rounded-xl overflow-hidden border bg-white dark:bg-zinc-900 hover:shadow-xl transition-all">
+                        <div className="aspect-video relative bg-zinc-900">
+                          <SafeImage src={p.image} alt={p.title} fill className="object-cover group-hover:scale-105 transition-transform" sensitive={p.sensitive} revealed={false} />
+                          {p.sensitive && <div className="absolute inset-0 bg-black/50 backdrop-blur-2xl flex items-center justify-center"><span className="text-white text-xs font-bold px-3 py-1.5 bg-white/20 rounded-full">Sensitive</span></div>}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                          <div className="absolute bottom-3 left-3 right-3 text-white">
+                            <p className="text-xs opacity-70">{p.tag}</p>
+                            <h3 className="font-bold">{p.title}</h3>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )
           })}
