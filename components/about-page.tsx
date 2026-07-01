@@ -92,11 +92,11 @@ export function AboutPage() {
             </p>
           </div>
 
-          {/* Two-column — values + overview card */}
-          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-start">
+          {/* Two-column — values + overview card, stretched to equal height */}
+          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-stretch">
 
             {/* Values list */}
-            <ul className="flex flex-col gap-6" aria-label="Our values">
+            <ul className="flex flex-col justify-between gap-0" aria-label="Our values">
               {ABOUT_VALUES.map((item, index) => (
                 <li key={index} className="flex gap-4 items-start group">
                   <div
@@ -116,9 +116,9 @@ export function AboutPage() {
               ))}
             </ul>
 
-            {/* Business overview card */}
+            {/* Business overview card — full height to match values column */}
             <div
-              className="rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-7 shadow-sm"
+              className="rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-7 shadow-sm flex flex-col"
               aria-label="Business overview"
             >
               {/* Card header */}
@@ -139,8 +139,8 @@ export function AboutPage() {
                 </div>
               </div>
 
-              {/* 2×2 stat grid — equal sizing */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* 2×2 stat grid — equal sizing, grows to fill card */}
+              <div className="grid grid-cols-2 gap-3 flex-1">
                 {[
                   { value: BIZ.hubCount,      label: "Hubs"              },
                   { value: BIZ.serviceCount,  label: "Services"          },
@@ -149,7 +149,7 @@ export function AboutPage() {
                 ].map((stat, index) => (
                   <div
                     key={index}
-                    className="rounded-[12px] p-5 flex flex-col justify-center items-center min-h-[90px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50"
+                    className="rounded-[12px] p-5 flex flex-col justify-center items-center border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50"
                   >
                     <div className="font-black text-xl mb-1 flex items-center justify-center text-zinc-700 dark:text-zinc-300">
                       {stat.value}
@@ -193,7 +193,7 @@ export function AboutPage() {
 
           {/* 4-card grid — equal height, equal padding */}
           <ul
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5"
+            className="grid grid-cols-1 sm:grid-cols-3 gap-5"
             aria-label="Standards"
           >
             {ABOUT_STANDARDS.map((item) => {
@@ -286,4 +286,3 @@ export function AboutPage() {
     </div>
   )
 }
- 
