@@ -60,6 +60,10 @@ export function Navbar() {
     logoTimeoutRef.current = setTimeout(() => setIsTextExpanded(false), 1200)
   }
 
+  const handleThemeToggle = () => {
+    setTheme(theme === "dark" ? "light" : "dark")
+  }
+
   const pillClass = "bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md py-2 rounded-[14px] border border-gray-200 dark:border-zinc-800 shadow-sm"
 
   return (
@@ -87,7 +91,7 @@ export function Navbar() {
                   color: mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue
                 }}
               >
-                Apex
+                Apexbytes
               </span>
               <span 
                 className="whitespace-nowrap transition-colors duration-300"
@@ -95,7 +99,7 @@ export function Navbar() {
                   color: mounted && theme === "dark" ? BRAND.lightGreen : BRAND.green
                 }}
               >
-                bytesHub
+                Hub
               </span>
             </div>
           </div>
@@ -109,9 +113,9 @@ export function Navbar() {
                   key={item.id}
                   onClick={() => navigate(item.path)}
                   className={cn(
-                    "px-4 py-2 rounded-[14px] text-[0.84rem] font-black transition-all duration-300",
-                    isActive ? "bg-brand-blue text-white" : "text-zinc-500 dark:text-zinc-400 hover:text-brand-blue dark:hover:text-brand-light-blue",
-                    item.isCta && !isActive && "border-2 border-brand-orange text-brand-orange dark:text-brand-orange hover:bg-brand-orange/10"
+                    "px-4 py-2 rounded-[14px] text-[0.84rem] transition-all duration-300",
+                    isActive ? "font-black bg-brand-blue text-white" : "font-medium text-zinc-500 dark:text-zinc-400 hover:text-brand-blue dark:hover:text-brand-light-blue",
+                    item.isCta && "border-2 border-brand-orange text-brand-orange hover:bg-brand-orange/10"
                   )}
                 >
                   {item.label}
@@ -121,8 +125,8 @@ export function Navbar() {
           </div>
 
           {/* Controls */}
-          <div className={cn(pillClass, "flex items-center gap-3 pl-3 pr-3 pointer-events-auto ml-4 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100", menuOpen && "md:flex hidden")}>
-            <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="flex items-center justify-center w-7 h-7 active:scale-90 transition-transform">
+          <div className={cn(pillClass, "flex items-center gap-3 pl-3 pr-3 pointer-events-auto ml-4 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100", menuOpen && "hidden md:flex")}>
+            <button onClick={handleThemeToggle} className="flex items-center justify-center w-7 h-7 active:scale-90 transition-transform" aria-label="Toggle theme">
               {mounted && (theme === "dark" ? <Moon size={20} weight="fill" className="text-brand-light-blue" /> : <Sun size={20} weight="fill" className="text-brand-orange" />)}
             </button>
 
@@ -136,17 +140,17 @@ export function Navbar() {
               </div>
             </button>
 
-            <button onClick={() => setMenuOpen(false)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 absolute right-3 md:hidden", menuOpen ? "opacity-100" : "opacity-0 pointer-events-none")}>
+            <button onClick={() => setMenuOpen(false)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 absolute right-3 md:hidden", menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none")}>
               <X size={20} weight="bold" className="text-brand-orange" />
             </button>
           </div>
         </div>
       </header>
 
-      {/* Fullscreen Menu */}
+      {/* Mobile Menu */}
       <div
         ref={menuRef}
-        className={cn("fixed inset-0 z-[9998] flex flex-col items-center justify-center transition-opacity duration-300 overflow-hidden pointer-events-none", menuOpen && "pointer-events-auto")}
+        className={cn("fixed inset-0 z-[9998] md:hidden transition-opacity duration-300", menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none")}
       >
         {/* Rotational fade background */}
         <div
@@ -156,8 +160,8 @@ export function Navbar() {
         <div className="absolute inset-0 bg-white/70 dark:bg-zinc-950/80 backdrop-blur-xl" onClick={() => setMenuOpen(false)} />
 
         {/* Nav links — centered */}
-        <nav className="relative z-10 w-full max-w-[320px] px-6 flex flex-col items-center gap-6">
-          <div className={cn("flex flex-col items-center gap-2.5 w-full transition-all duration-300", menuOpen ? "scale-100 translate-y-0 opacity-100" : "scale-90 translate-y-4 opacity-0")}>
+        <div className="relative z-10 w-full h-full flex flex-col items-center justify-center px-6">
+          <nav className="w-full max-w-[320px] flex flex-col items-center gap-2.5">
             {NAV_ITEMS.map((item, idx) => {
               const isActive = pathname === item.path
               return (
@@ -166,10 +170,10 @@ export function Navbar() {
                   onClick={() => navigate(item.path)}
                   style={{ transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms" }}
                   className={cn(
-                    "py-3 px-8 rounded-[14px] font-sans font-extrabold text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
+                    "py-3 px-8 rounded-[14px] font-sans text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
                     isActive
-                      ? "text-brand-blue dark:text-brand-light-blue font-black bg-zinc-100 dark:bg-zinc-800"
-                      : "text-zinc-700 dark:text-zinc-200 hover:text-brand-blue font-bold",
+                      ? "font-black text-brand-blue dark:text-brand-light-blue bg-zinc-100 dark:bg-zinc-800"
+                      : "font-bold text-zinc-700 dark:text-zinc-200 hover:text-brand-blue",
                     item.isCta && "border-2 border-brand-orange text-brand-orange hover:bg-brand-orange/10",
                     menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
                   )}
@@ -178,18 +182,21 @@ export function Navbar() {
                 </button>
               )
             })}
-          </div>
+          </nav>
 
           {/* Theme toggle in menu */}
-          <div className={cn("flex items-center gap-3 px-3 py-2 rounded-[14px] bg-white/80 dark:bg-zinc-900/80 border border-gray-200 dark:border-zinc-800 transition-all duration-300", menuOpen ? "scale-100 translate-y-0 opacity-100" : "scale-90 translate-y-4 opacity-0")} style={{ transitionDelay: menuOpen ? `${NAV_ITEMS.length * 60}ms` : "0ms" }}>
-            <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="flex items-center justify-center w-7 h-7 active:scale-90 transition-transform">
+          <div 
+            className={cn("flex items-center gap-3 px-4 py-3 mt-8 rounded-[14px] bg-white/80 dark:bg-zinc-900/80 border border-gray-200 dark:border-zinc-800 transition-all duration-300", menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2")} 
+            style={{ transitionDelay: menuOpen ? `${NAV_ITEMS.length * 60}ms` : "0ms" }}
+          >
+            <button onClick={handleThemeToggle} className="flex items-center justify-center w-7 h-7 active:scale-90 transition-transform" aria-label="Toggle theme">
               {mounted && (theme === "dark" ? <Moon size={20} weight="fill" className="text-brand-light-blue" /> : <Sun size={20} weight="fill" className="text-brand-orange" />)}
             </button>
             <span className="text-[0.75rem] font-medium text-zinc-600 dark:text-zinc-400">
               {mounted && (theme === "dark" ? "Dark" : "Light")}
             </span>
           </div>
-        </nav>
+        </div>
 
         {/* Icon-only watermark at bottom of menu */}
         <div
