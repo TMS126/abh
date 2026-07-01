@@ -124,8 +124,8 @@ export function Navbar() {
             })}
           </div>
 
-          {/* Controls */}
-          <div className={cn(pillClass, "flex items-center gap-3 pl-3 pr-3 pointer-events-auto ml-4 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100", menuOpen && "hidden md:flex")}>
+          {/* Controls — Always visible on desktop, hidden on mobile when menu is open */}
+          <div className={cn(pillClass, "flex items-center gap-3 pl-3 pr-3 pointer-events-auto ml-4 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
             <button onClick={handleThemeToggle} className="flex items-center justify-center w-7 h-7 active:scale-90 transition-transform" aria-label="Toggle theme">
               {mounted && (theme === "dark" ? <Moon size={20} weight="fill" className="text-brand-light-blue" /> : <Sun size={20} weight="fill" className="text-brand-orange" />)}
             </button>
@@ -172,8 +172,8 @@ export function Navbar() {
                   className={cn(
                     "py-3 px-8 rounded-[14px] font-sans text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
                     isActive
-                      ? "font-black text-brand-blue dark:text-brand-light-blue bg-zinc-100 dark:bg-zinc-800"
-                      : "font-bold text-zinc-700 dark:text-zinc-200 hover:text-brand-blue",
+                      ? "font-semibold text-brand-blue dark:text-brand-light-blue bg-zinc-100 dark:bg-zinc-800"
+                      : "font-medium text-zinc-700 dark:text-zinc-200 hover:text-brand-blue",
                     item.isCta && "border-2 border-brand-orange text-brand-orange hover:bg-brand-orange/10",
                     menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
                   )}
@@ -183,19 +183,6 @@ export function Navbar() {
               )
             })}
           </nav>
-
-          {/* Theme toggle in menu */}
-          <div 
-            className={cn("flex items-center gap-3 px-4 py-3 mt-8 rounded-[14px] bg-white/80 dark:bg-zinc-900/80 border border-gray-200 dark:border-zinc-800 transition-all duration-300", menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2")} 
-            style={{ transitionDelay: menuOpen ? `${NAV_ITEMS.length * 60}ms` : "0ms" }}
-          >
-            <button onClick={handleThemeToggle} className="flex items-center justify-center w-7 h-7 active:scale-90 transition-transform" aria-label="Toggle theme">
-              {mounted && (theme === "dark" ? <Moon size={20} weight="fill" className="text-brand-light-blue" /> : <Sun size={20} weight="fill" className="text-brand-orange" />)}
-            </button>
-            <span className="text-[0.75rem] font-medium text-zinc-600 dark:text-zinc-400">
-              {mounted && (theme === "dark" ? "Dark" : "Light")}
-            </span>
-          </div>
         </div>
 
         {/* Icon-only watermark at bottom of menu */}
