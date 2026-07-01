@@ -651,7 +651,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                     : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
                 )}
               >
-                {t === "bring" ? "What to Bring" : "What Is This"}
+                {t === "bring" ? "Bring" : "Description"}
               </button>
             ))}
           </div>
@@ -679,7 +679,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
               </p>
             </div>
           )}
-          {tab === "about" && (
+          {tab === "about" && description && (
             <div className="animate-in fade-in slide-in-from-right-2 duration-200">
               <p className="abh-body text-[0.84rem]">{desc}</p>
               <p className="abh-muted mt-5">
@@ -850,23 +850,23 @@ export function ServicesPage() {
       <div className="max-w-[980px] mx-auto px-4 md:px-8">
 
         {/* Hero */}
-        <div className="pt-[calc(var(--nav-h,74px)+2rem)] pb-8">
+        <div className="pt-[calc(var(--nav-h,74px)+2rem)] pb-8 text-center">
           <h1 className="abh-page-title mb-3">Our Service Hubs</h1>
-          <p className="abh-tagline max-w-xl">
+          <p className="abh-tagline max-w-xl mx-auto">
             Explore our ecosystem. Tap a hub to view all available services and instant pricing.
           </p>
-          <div className="abh-divider" />
+          <div className="abh-divider mx-auto" />
         </div>
 
         {/* Inline search */}
-        <div ref={inlineSearchRef} className="max-w-xl mb-10">
+        <div ref={inlineSearchRef} className="max-w-xl mx-auto mb-10">
           <InlineSearchBar onSelect={setSelectedService} />
         </div>
 
         <NoticeBanner />
 
-        {/* Hub cards */}
-        <div className="flex flex-col md:flex-row gap-5 md:gap-6 pb-8">
+        {/* Hub cards — horizontal stack on desktop */}
+        <div className="flex flex-col md:grid md:grid-cols-5 gap-5 md:gap-4 pb-8">
           {HUB_ORDER.map((hubId) => {
             const hub    = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
@@ -875,15 +875,15 @@ export function ServicesPage() {
               <button
                 key={hubId}
                 onClick={() => setActiveHub(hubId)}
-                className="group flex flex-col items-center p-6 md:p-8 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 text-center md:flex-1 w-full"
+                className="group flex flex-col items-center p-6 md:p-6 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 text-center w-full h-full"
               >
                 <div
-                  className="w-16 h-16 md:w-20 md:h-20 rounded-[14px] flex items-center justify-center mb-5 transition-all duration-300 group-hover:scale-110 shadow-md"
+                  className="w-14 h-14 md:w-16 md:h-16 rounded-[14px] flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110 shadow-md"
                   style={{ backgroundColor: `${accent}12`, color: accent }}
                 >
-                  <HubIcon id={hubId} size={36} />
+                  <HubIcon id={hubId} size={32} />
                 </div>
-                <h3 className="font-sans font-black text-lg md:text-xl text-zinc-900 dark:text-zinc-50 mb-2 group-hover:text-[#1E6FA8] dark:group-hover:text-[#A9D6F2] transition-colors">
+                <h3 className="font-sans font-black text-base md:text-lg text-zinc-900 dark:text-zinc-50 mb-2 group-hover:text-[#1E6FA8] dark:group-hover:text-[#A9D6F2] transition-colors">
                   {hub.title}
                 </h3>
                 <p className="abh-body text-[0.82rem] line-clamp-2 mb-5">{hub.tagline}</p>
@@ -919,4 +919,4 @@ export function ServicesPage() {
       />
     </section>
   )
-          } 
+          }  
