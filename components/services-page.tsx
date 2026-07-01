@@ -97,6 +97,98 @@ function naturalServiceLabel(name: string, sectionTitle: string) {
   return cleanName
 }
 
+// ─── WCAG contrast helpers ──────────────────────────────────────────────────
+// Used to guarantee the "explore" label on hub cards always meets at least
+// AA contrast (4.5:1) against the card background, regardless of the raw
+// brand hex value supplied per-hub in HUB_COLORS.
+function hexToRgb(hex: string) {
+  const clean = hex.replace("#", "")
+  const full = clean.length === 3 ? clean.split("").map(c => c + c).join("") : clean
+  const bigint = parseInt(full, 16)
+  return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 }
+}
+
+function relativeLuminance({ r, g, b }: { r: number; g: number; b: number }) {
+  const [rs, gs, bs] = [r, g, b].map(c => {
+    const s = c / 255
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+  })
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs
+}
+
+function contrastRatio(hexA: string, hexB: string) {
+  const lA = relativeLuminance(hexToRgb(hexA))
+  const lB = relativeLuminance(hexToRgb(hexB))
+  const [lighter, darker] = lA > lB ? [lA, lB] : [lB, lA]
+  return (lighter + 0.05) / (darker + 0.05)
+}
+
+function rgbToHex({ r, g, b }: { r: number; g: number; b: number }) {
+  return "#" + [r, g, b]
+    .map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0"))
+    .join("")
+}
+
+function rgbToHsl({ r, g, b }: { r: number; g: number; b: number }) {
+  const rn = r / 255, gn = g / 255, bn = b / 255
+  const max = Math.max(rn, gn, bn), min = Math.min(rn, gn, bn)
+  let h = 0
+  const l = (max + min) / 2
+  let s = 0
+  if (max !== min) {
+    const d = max - min
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+    switch (max) {
+      case rn: h = (gn - bn) / d + (gn < bn ? 6 : 0); break
+      case gn: h = (bn - rn) / d + 2; break
+      case bn: h = (rn - gn) / d + 4; break
+    }
+    h /= 6
+  }
+  return { h: h * 360, s: s * 100, l: l * 100 }
+}
+
+function hslToRgb(h: number, s: number, l: number) {
+  const hn = h / 360, sn = s / 100, ln = l / 100
+  let r: number, g: number, b: number
+  if (sn === 0) {
+    r = g = b = ln
+  } else {
+    const hue2rgb = (p: number, q: number, t: number) => {
+      let tt = t
+      if (tt < 0) tt += 1
+      if (tt > 1) tt -= 1
+      if (tt < 1 / 6) return p + (q - p) * 6 * tt
+      if (tt < 1 / 2) return q
+      if (tt < 2 / 3) return p + (q - p) * (2 / 3 - tt) * 6
+      return p
+    }
+    const q = ln < 0.5 ? ln * (1 + sn) : ln + sn - ln * sn
+    const p = 2 * ln - q
+    r = hue2rgb(p, q, hn + 1 / 3)
+    g = hue2rgb(p, q, hn)
+    b = hue2rgb(p, q, hn - 1 / 3)
+  }
+  return { r: r * 255, g: g * 255, b: b * 255 }
+}
+
+/** Nudges `hex` darker/lighter (preserving hue) until it hits `minRatio` contrast against `bgHex`. */
+function ensureAccessible(hex: string, bgHex: string, minRatio = 4.5) {
+  if (contrastRatio(hex, bgHex) >= minRatio) return hex
+  const hsl = rgbToHsl(hexToRgb(hex))
+  const bgLum = relativeLuminance(hexToRgb(bgHex))
+  const goingDarker = bgLum > 0.5
+  let l = hsl.l
+  for (let i = 0; i < 45; i++) {
+    l += goingDarker ? -2 : 2
+    l = Math.max(0, Math.min(100, l))
+    const candidate = rgbToHex(hslToRgb(hsl.h, hsl.s, l))
+    if (contrastRatio(candidate, bgHex) >= minRatio) return candidate
+    if (l <= 0 || l >= 100) break
+  }
+  return goingDarker ? "#1a1a1a" : "#fafafa"
+}
+
 // ─── Brand spinner ────────────────────────────────────────────────────────────
 function BrandSpinner({ size = 18 }: { size?: number }) {
   return (
@@ -225,15 +317,15 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
   }
 
   return (
-    <div ref={wrapRef} className="relative">
+    <div ref={wrapRef} className="relative mx-auto w-full max-w-md">
       <MagnifyingGlass size={18} weight="bold" className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
       <input
         type="text"
         value={query}
         onChange={e => setQuery(e.target.value)}
         onFocus={() => setFocused(true)}
-        placeholder="Search services — e.g. CV, laminating, SASSA"
-        className="w-full pl-11 pr-10 py-3.5 rounded-[14px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none focus:border-[#1E6FA8] transition-colors"
+        placeholder="Search"
+        className="w-full pl-11 pr-10 py-3.5 rounded-[14px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none focus:border-[#1E6FA8] transition-colors text-center focus:text-left"
       />
       {query && (
         <button
@@ -296,6 +388,11 @@ function FloatingSearchPill({
   const pillRef    = useRef<HTMLDivElement>(null)
   const index      = useMemo(buildSearchIndex, [])
 
+  // Tracks whether we've pushed a dedicated history entry for the open
+  // search box, so back-button / outside-click can close it in isolation
+  // without touching any other navigation or modal state on the page.
+  const pushedRef  = useRef(false)
+
   // Cycle through brand colours every 1.8 s when visible and closed
   const CYCLE_COLORS = ["#1E6FA8", "#3E6B0E", "#B86F34"]
   useEffect(() => {
@@ -314,12 +411,24 @@ function FloatingSearchPill({
 
   const openSearch = () => {
     setOpen(true)
+    if (!pushedRef.current) {
+      window.history.pushState({ abhSearch: true }, "")
+      pushedRef.current = true
+    }
     setTimeout(() => inputRef.current?.focus(), 60)
   }
 
+  // Closes the search box only. If it closed via a manual action (outside
+  // click, X button, Escape) rather than the back button, we also collapse
+  // the history entry we pushed on open — this keeps back-navigation
+  // behaving normally afterwards, and never triggers anything else.
   const closeSearch = useCallback(() => {
     setOpen(false)
     setQuery("")
+    if (pushedRef.current) {
+      pushedRef.current = false
+      window.history.back()
+    }
   }, [])
 
   const pick = (s: SearchableService) => {
@@ -342,23 +451,36 @@ function FloatingSearchPill({
     return () => document.removeEventListener("keydown", handler)
   }, [closeSearch])
 
-  // Vertically centred inside the navbar, just slightly below midpoint so it
-  // clears the logo and nav pills. top-[74px] places it just below the nav.
+  // Dedicated back-button handling for the search box only. This consumes
+  // the single history entry pushed on open and simply closes the search —
+  // it does not open, close, or otherwise react to anything else on the page.
+  useEffect(() => {
+    const onPop = () => {
+      if (!pushedRef.current) return
+      pushedRef.current = false
+      setOpen(false)
+      setQuery("")
+    }
+    window.addEventListener("popstate", onPop)
+    return () => window.removeEventListener("popstate", onPop)
+  }, [])
+
+  // Vertically centred within the navbar itself (not below it).
   return (
     <div
       ref={pillRef}
       className={cn(
-        "fixed left-1/2 -translate-x-1/2 z-[10000] transition-all duration-300",
-        "top-[calc(var(--nav-h,74px)+10px)]",
-        visible ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 -translate-y-2 pointer-events-none"
+        "fixed left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10000] transition-all duration-300",
+        "top-[calc(var(--nav-h,74px)/2)]",
+        visible ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-90 pointer-events-none"
       )}
     >
-      {/* ── Closed: icon-only button with cycling colour ── */}
+      {/* ── Closed: acrylic icon-only button with cycling colour ── */}
       {!open && (
         <button
           onClick={openSearch}
           aria-label="Search services"
-          className="w-11 h-11 rounded-full flex items-center justify-center bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.14)] transition-all duration-300 hover:scale-110 active:scale-95"
+          className="w-11 h-11 rounded-full flex items-center justify-center bg-white/55 dark:bg-zinc-950/50 backdrop-blur-2xl backdrop-saturate-150 border border-white/50 dark:border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.12)] transition-all duration-300 hover:scale-110 active:scale-95"
         >
           <MagnifyingGlass
             size={22}
@@ -368,17 +490,17 @@ function FloatingSearchPill({
         </button>
       )}
 
-      {/* ── Open: expanded search input ── */}
+      {/* ── Open: expanded search input, always 14px radius ── */}
       {open && (
-        <div className="flex items-center gap-2 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.18)] rounded-[18px] px-4 py-2.5 w-[min(92vw,420px)]">
+        <div className="flex items-center gap-2 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.18)] rounded-[14px] px-4 py-2.5 w-[min(90vw,380px)]">
           <MagnifyingGlass size={16} weight="bold" className="shrink-0 text-zinc-400" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="CV, laminating, SASSA..."
-            className="flex-1 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none min-w-0"
+            placeholder="Search"
+            className="flex-1 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none min-w-0 text-center focus:text-left"
           />
           {query && (
             <button onClick={() => setQuery("")} className="w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 shrink-0">
@@ -391,9 +513,9 @@ function FloatingSearchPill({
         </div>
       )}
 
-      {/* ── Results dropdown ── */}
+      {/* ── Results dropdown, always 14px radius ── */}
       {open && query.trim().length > 0 && (
-        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-[min(92vw,420px)] bg-white dark:bg-zinc-950 rounded-[16px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-[min(90vw,380px)] bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
           {results.length > 0 ? (
             <div className="max-h-[320px] overflow-y-auto p-2">
               {results.map((s, idx) => {
@@ -796,6 +918,19 @@ function NoticeBanner() {
   )
 }
 
+// ─── Closing tagline ──────────────────────────────────────────────────────────
+function ClosingTagline() {
+  return (
+    <div className="relative mt-2 mb-4 overflow-hidden rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-gradient-to-br from-[#1E6FA8]/5 via-white to-[#6FBF1A]/5 dark:from-[#1E6FA8]/10 dark:via-zinc-950 dark:to-[#6FBF1A]/10 px-6 py-10 md:py-12 text-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#1E6FA8] via-[#6FBF1A] to-[#F4A261]" />
+      <p className="abh-eyebrow text-zinc-400 dark:text-zinc-500 mb-3">Why Apexbytes Hub</p>
+      <p className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 leading-snug max-w-2xl mx-auto">
+        From your first CV to your next big idea — one hub does it all, right here in Bothaville.
+      </p>
+    </div>
+  )
+}
+
 // ─── Services Page ────────────────────────────────────────────────────────────
 export function ServicesPage() {
   const { resolvedTheme } = useTheme()
@@ -844,13 +979,13 @@ export function ServicesPage() {
   return (
     <section className="min-h-screen bg-white dark:bg-[#081428] transition-colors duration-300 pb-24">
 
-      {/* Floating search pill */}
+      {/* Floating search pill — centered on navbar */}
       <FloatingSearchPill onSelect={setSelectedService} visible={pillVisible} />
 
-      <div className="max-w-[980px] mx-auto px-4 md:px-8">
+      <div className="max-w-[1248px] mx-auto px-4 md:px-8 flex flex-col items-center">
 
         {/* Hero */}
-        <div className="pt-[calc(var(--nav-h,74px)+2rem)] pb-8 text-center">
+        <div className="pt-[calc(var(--nav-h,74px)+2rem)] pb-8 text-center w-full">
           <h1 className="abh-page-title mb-3">Our Service Hubs</h1>
           <p className="abh-tagline max-w-xl mx-auto">
             Explore our ecosystem. Tap a hub to view all available services and instant pricing.
@@ -858,24 +993,28 @@ export function ServicesPage() {
           <div className="abh-divider mx-auto" />
         </div>
 
-        {/* Inline search */}
-        <div ref={inlineSearchRef} className="max-w-xl mx-auto mb-10">
+        {/* Inline search — deliberately narrower than the hub cards row below */}
+        <div ref={inlineSearchRef} className="w-full mb-10 flex justify-center">
           <InlineSearchBar onSelect={setSelectedService} />
         </div>
 
-        <NoticeBanner />
+        <div className="w-full">
+          <NoticeBanner />
+        </div>
 
-        {/* Hub cards — horizontal stack on desktop */}
-        <div className="flex flex-col md:grid md:grid-cols-5 gap-5 md:gap-4 pb-8">
+        {/* Hub cards — horizontal stack on desktop, wide on desktop (max 1248px) */}
+        <div className="flex flex-col md:grid md:grid-cols-5 gap-5 md:gap-4 pb-2 w-full">
           {HUB_ORDER.map((hubId) => {
             const hub    = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
             const accent = isDark ? colors.tagTextDark : colors.tagText
+            const cardBg = isDark ? "#09090b" : "#ffffff"
+            const exploreColor = ensureAccessible(accent, cardBg, 4.5)
             return (
               <button
                 key={hubId}
                 onClick={() => setActiveHub(hubId)}
-                className="group flex flex-col items-center p-6 md:p-6 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 text-center w-full h-full"
+                className="group flex flex-col items-center p-6 md:p-7 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 text-center w-full h-full"
               >
                 <div
                   className="w-14 h-14 md:w-16 md:h-16 rounded-[14px] flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110 shadow-md"
@@ -883,28 +1022,33 @@ export function ServicesPage() {
                 >
                   <HubIcon id={hubId} size={32} />
                 </div>
-                <h3 className="font-sans font-black text-base md:text-lg text-zinc-900 dark:text-zinc-50 mb-2 group-hover:text-[#1E6FA8] dark:group-hover:text-[#A9D6F2] transition-colors">
+                <h3 className="font-sans font-black text-lg md:text-xl text-zinc-900 dark:text-zinc-50 mb-2 group-hover:text-[#1E6FA8] dark:group-hover:text-[#A9D6F2] transition-colors">
                   {hub.title}
                 </h3>
                 <p className="abh-body text-[0.82rem] line-clamp-2 mb-5">{hub.tagline}</p>
-                {/* 3 service previews — natural language, muted */}
+                {/* 3 service previews — natural language, subtle, slightly larger than before but never bold */}
                 <div className="flex flex-col items-center gap-1 mb-5">
                   {HUB_PREVIEWS[hubId].map((hint, i) => (
-                    <span key={i} className="text-[0.62rem] font-medium text-zinc-400 dark:text-zinc-500 tracking-wide">
+                    <span key={i} className="text-[0.72rem] font-medium text-zinc-400 dark:text-zinc-500 tracking-wide">
                       {hint}
                     </span>
                   ))}
                 </div>
                 <div className="mt-auto flex flex-col items-center gap-1.5">
-                  <div className="flex items-center gap-1.5 text-[0.72rem] font-black lowercase tracking-widest" style={{ color: accent }}>
-                    <span>explore</span>
-                    <PaperPlaneTilt size={13} weight="fill" />
+                  <div className="flex items-center gap-1.5 text-[0.72rem] font-black lowercase tracking-widest">
+                    <span style={{ color: exploreColor }}>explore</span>
+                    <PaperPlaneTilt size={13} weight="fill" style={{ color: exploreColor }} />
                   </div>
                   <div className="h-px w-6 rounded-full" style={{ backgroundColor: `${accent}30` }} />
                 </div>
               </button>
             )
           })}
+        </div>
+
+        {/* Catchy closing line, right below the hub cards grid */}
+        <div className="w-full">
+          <ClosingTagline />
         </div>
       </div>
 
@@ -919,4 +1063,5 @@ export function ServicesPage() {
       />
     </section>
   )
-          }  
+}
+ 
