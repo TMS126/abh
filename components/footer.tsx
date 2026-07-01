@@ -24,15 +24,15 @@ const TERMS_SECTIONS = [
 ]
 
 const ICON_MAP: Record<string, React.ReactNode> = {
-  Printer:       <Printer       weight="fill" className="w-4 h-4" aria-hidden="true" />,
-  FileText:      <FileText      weight="fill" className="w-4 h-4" aria-hidden="true" />,
-  Palette:       <Palette       weight="fill" className="w-4 h-4" aria-hidden="true" />,
-  Globe:         <Globe         weight="fill" className="w-4 h-4" aria-hidden="true" />,
-  Cpu:           <Cpu           weight="fill" className="w-4 h-4" aria-hidden="true" />,
-  CurrencyDollar:<CurrencyDollar weight="fill" className="w-4 h-4" aria-hidden="true" />,
+  Printer:        <Printer        weight="fill" className="w-4 h-4" aria-hidden="true" />,
+  FileText:       <FileText       weight="fill" className="w-4 h-4" aria-hidden="true" />,
+  Palette:        <Palette        weight="fill" className="w-4 h-4" aria-hidden="true" />,
+  Globe:          <Globe          weight="fill" className="w-4 h-4" aria-hidden="true" />,
+  Cpu:            <Cpu            weight="fill" className="w-4 h-4" aria-hidden="true" />,
+  CurrencyDollar: <CurrencyDollar weight="fill" className="w-4 h-4" aria-hidden="true" />,
 }
 
-// ─── Modal with back-button intercept ────────────────────────────────────────
+// ─── Modal ────────────────────────────────────────────────────────────────────
 function Modal({ open, onClose, title, subtitle, children }: {
   open: boolean; onClose: () => void; title: string; subtitle?: string; children: React.ReactNode
 }) {
@@ -41,7 +41,6 @@ function Modal({ open, onClose, title, subtitle, children }: {
 
   useEffect(() => { if (open) closeRef.current?.focus() }, [open])
 
-  // Keyboard trap
   useEffect(() => {
     if (!open) return
     const fn = (e: KeyboardEvent) => {
@@ -56,7 +55,6 @@ function Modal({ open, onClose, title, subtitle, children }: {
     return () => document.removeEventListener("keydown", fn)
   }, [open, onClose])
 
-  // Scroll lock
   useEffect(() => {
     document.documentElement.classList.toggle("scroll-locked", open)
     document.body.classList.toggle("scroll-locked", open)
@@ -66,14 +64,11 @@ function Modal({ open, onClose, title, subtitle, children }: {
     }
   }, [open])
 
-  // ── Back button intercept ─────────────────────────────────────────────────
   useEffect(() => {
     if (!open) return
-    // Push entry so back has something to pop
     window.history.pushState({ modal: title }, "")
     const onPop = () => {
       onClose()
-      // Re-push baseline so page doesn't navigate away
       window.history.pushState({ modal: null }, "")
     }
     window.addEventListener("popstate", onPop)
@@ -94,7 +89,6 @@ function Modal({ open, onClose, title, subtitle, children }: {
         ref={ref}
         className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300"
       >
-        {/* Header */}
         <div className="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-zinc-900/50 shrink-0">
           <div>
             <h2 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50">{title}</h2>
@@ -111,7 +105,6 @@ function Modal({ open, onClose, title, subtitle, children }: {
             <X size={16} weight="bold" aria-hidden="true" />
           </button>
         </div>
-
         <div className="overflow-y-auto overscroll-contain flex-1">
           {children}
         </div>
@@ -120,14 +113,14 @@ function Modal({ open, onClose, title, subtitle, children }: {
   )
 }
 
-// ─── Footer content ─────────────────────────────────────────────────────────
+// ─── Footer content ───────────────────────────────────────────────────────────
 function FooterContent() {
   const router = useRouter()
   const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-  const [isTermsOpen,  setIsTermsOpen]  = useState(false)
-  const [isFaqOpen,    setIsFaqOpen]    = useState(false)
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null)
+  const [mounted,       setMounted]       = useState(false)
+  const [isTermsOpen,   setIsTermsOpen]   = useState(false)
+  const [isFaqOpen,     setIsFaqOpen]     = useState(false)
+  const [openFaqIndex,  setOpenFaqIndex]  = useState<number | null>(null)
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -135,17 +128,19 @@ function FooterContent() {
     <div className="pt-16 pb-12">
       <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16 mb-16 px-6 md:px-8">
 
-        {/* Brand */}
+        {/* Brand — logo + name reduced, tagline unchanged */}
         <div className="flex flex-col gap-6">
-          <div className="flex items-center gap-2.5 select-none">
-            <div 
-              className="relative w-9 h-9 overflow-hidden rounded-[14px]" 
+          <div className="flex items-center gap-2 select-none">
+            {/* Logo: reduced from w-9 h-9 to w-6 h-6 */}
+            <div
+              className="relative w-6 h-6 overflow-hidden rounded-[10px] shrink-0"
               aria-hidden="true"
               style={mounted && theme === "dark" ? { filter: "brightness(0) invert(1)" } : undefined}
             >
               <Image src="/logo.png" alt="" fill className="object-contain" />
             </div>
-            <h2 className="font-sans font-black text-2xl tracking-tighter text-zinc-900 dark:text-white">
+            {/* Name: reduced from text-2xl to text-base */}
+            <h2 className="font-sans font-black text-base tracking-tight text-zinc-900 dark:text-white">
               ApexbytesHub
             </h2>
           </div>
@@ -154,7 +149,7 @@ function FooterContent() {
           </p>
         </div>
 
-        {/* Quick links */}
+        {/* Quick links — unchanged */}
         <nav aria-label="Footer navigation">
           <h3 className="text-[0.7rem] font-black uppercase tracking-widest mb-8 text-zinc-400">Quick Links</h3>
           <ul className="flex flex-col gap-4">
@@ -202,16 +197,17 @@ function FooterContent() {
             <li className="pt-2">
               <BusinessStatusFull />
             </li>
+            {/* Help Center — reduced to match legal bar size */}
             <li className="pt-2">
               <button
                 onClick={() => setIsFaqOpen(true)}
-                className="flex items-center gap-4 text-[0.65rem] font-medium text-zinc-600 dark:text-zinc-300 hover:text-brand-blue transition-colors"
+                className="flex items-center gap-3 text-[0.65rem] font-medium text-zinc-400 hover:text-brand-blue transition-colors"
               >
                 <div
-                  className="w-10 h-10 rounded-[14px] flex items-center justify-center border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm"
+                  className="w-7 h-7 rounded-[10px] flex items-center justify-center border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm shrink-0"
                   aria-hidden="true"
                 >
-                  <Question weight="bold" className="w-5 h-5" />
+                  <Question weight="bold" className="w-3.5 h-3.5" />
                 </div>
                 Help Center (FAQ)
               </button>
@@ -220,13 +216,15 @@ function FooterContent() {
         </div>
       </div>
 
-      {/* ── Legal bar ── */}
-      <div className="max-w-[1200px] mx-auto border-t border-zinc-100 dark:border-zinc-800 pt-8 px-6 md:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
-        <div className="flex flex-col md:flex-row items-center gap-2 md:gap-6">
+      {/* ── Legal bar — all text at [0.65rem], same as "built with ❤️" ── */}
+      <div className="max-w-[1200px] mx-auto border-t border-zinc-100 dark:border-zinc-800 pt-8 px-6 md:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
+          {/* © line — same size as "built with ❤️" */}
           <p className="text-[0.65rem] font-medium text-zinc-400">
             © {new Date().getFullYear()} {BIZ.name}. All rights reserved.
           </p>
           <span className="hidden md:inline text-zinc-200 dark:text-zinc-800 text-[0.65rem]" aria-hidden="true">·</span>
+          {/* Terms — same size as "built with ❤️" */}
           <button
             onClick={() => setIsTermsOpen(true)}
             className="text-[0.65rem] font-medium text-zinc-400 hover:text-brand-blue transition-colors"
@@ -234,12 +232,13 @@ function FooterContent() {
             Terms &amp; Policies
           </button>
         </div>
+        {/* "Built with ❤️" — reference size, unchanged */}
         <p className="text-[0.65rem] font-medium text-zinc-400 flex items-center gap-1.5">
           Built with <Heart weight="fill" className="w-3 h-3 text-brand-orange" aria-hidden="true" /> for the Kgotsong community
         </p>
       </div>
 
-      {/* ── Terms modal ── */}
+      {/* ── Terms modal — unchanged ── */}
       <Modal
         open={isTermsOpen}
         onClose={() => setIsTermsOpen(false)}
@@ -272,7 +271,7 @@ function FooterContent() {
         </div>
       </Modal>
 
-      {/* ── FAQ modal — spacious, clean, smaller text ── */}
+      {/* ── FAQ modal — unchanged ── */}
       <Modal
         open={isFaqOpen}
         onClose={() => setIsFaqOpen(false)}
@@ -327,8 +326,6 @@ function FooterContent() {
               </div>
             )
           })}
-
-          {/* Bottom spacer */}
           <div className="pt-4 pb-2 text-center">
             <p className="text-[0.72rem] font-medium text-zinc-400 dark:text-zinc-600">
               Still need help?{" "}
@@ -348,7 +345,7 @@ function FooterContent() {
   )
 }
 
-// ─── Footer ────────────────────────────────────────────────────────────
+// ─── Footer ───────────────────────────────────────────────────────────────────
 export function Footer() {
   return (
     <footer className="bg-white dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900">
