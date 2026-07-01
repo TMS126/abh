@@ -139,7 +139,7 @@ function ProjectViewerModal({ project, onClose, zoomIndex, setZoomIndex }: any) 
   )
 }
 
-function HubFilter({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function HubFilter({ label, active, onClick, showLogo }: { label: string; active: boolean; onClick: () => void; showLogo?: boolean }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
   const [mounted, setMounted] = useState(false)
@@ -165,13 +165,27 @@ function HubFilter({ label, active, onClick }: { label: string; active: boolean;
   return (
     <button
       onClick={onClick}
-      className="px-4 py-2.5 rounded-full text-sm font-bold transition-all duration-200 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+      className="px-4 py-2.5 rounded-full text-sm font-bold transition-all duration-200 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 flex items-center gap-2"
       style={{
         backgroundColor: active ? activeBg : 'transparent',
         color: active ? activeText : inactiveText,
         border: 'none',
       }}
     >
+      {showLogo && mounted && (
+        <Image 
+          src="/logo.png" 
+          alt="" 
+          width={16}
+          height={16}
+          className="object-contain"
+          style={{
+            filter: active 
+              ? isDark ? "brightness(0) saturate(100%) invert(100%)" : "brightness(0) saturate(100%) invert(100%)"
+              : isDark ? "brightness(0) saturate(100%) invert(63%) sepia(85%) saturate(350%) hue-rotate(350deg)" : "brightness(0) saturate(100%) invert(58%) sepia(70%) saturate(1400%) hue-rotate(2deg)"
+          }}
+        />
+      )}
       {label}
     </button>
   )
@@ -272,14 +286,17 @@ export default function GalleryPage() {
   const getAccent = (id: HubId) => isDark? HUB_COLORS[id].tagTextDark : HUB_COLORS[id].tagText
   const rows = filter === "all"? ROW_ORDER : ROW_ORDER.filter(r => r.id === filter)
 
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+
   return (
     <section className="min-h-screen pb-24">
       <div className="max-w-5xl mx-auto px-4 pt-24">
-        <h1 className="abh-page-title mb-3">Our Portfolio</h1>
-        <p className="text-zinc-600 dark:text-zinc-400 mb-8">Real work for real clients in {BRAND.location || "Kgotsong"}.</p>
+        <h1 className="abh-page-title mb-3 text-center">Our Portfolio</h1>
+        <p className="text-zinc-600 dark:text-zinc-400 mb-8 text-center">Real work for real clients in {BRAND.location || "Kgotsong"}.</p>
 
-        <div className="flex flex-wrap gap-2 mb-10">
-          <HubFilter label="All hubs" active={filter === "all"} onClick={() => setFilter("all")} />
+        <div className="flex flex-wrap gap-2 mb-10 justify-center">
+          <HubFilter label="All hubs" active={filter === "all"} onClick={() => setFilter("all")} showLogo={true} />
           {ROW_ORDER.map(r => (
             <HubFilter key={r.id} label={r.short} active={filter === r.id} onClick={() => setFilter(r.id)} />
           ))}

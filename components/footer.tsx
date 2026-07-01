@@ -138,8 +138,19 @@ function FooterContent() {
         {/* Brand */}
         <div className="flex flex-col gap-6">
           <div className="flex items-center gap-2.5 select-none">
-            <div className="relative w-9 h-9 overflow-hidden rounded-[14px] flex items-center justify-center" style={{ backgroundColor: mounted && theme === "dark" ? BRAND.lightOrange : BRAND.orange }} aria-hidden="true">
-              <Image src="/logo.png" alt="" fill sizes="36px" className="object-contain p-1" />
+            <div className="relative w-9 h-9 overflow-hidden rounded-[14px] flex items-center justify-center" aria-hidden="true">
+              <Image 
+                src="/logo.png" 
+                alt="" 
+                width={36}
+                height={36}
+                className="object-contain"
+                style={{
+                  filter: mounted && theme === "dark" 
+                    ? "brightness(0) saturate(100%) invert(63%) sepia(85%) saturate(350%) hue-rotate(350deg)" 
+                    : "brightness(0) saturate(100%) invert(58%) sepia(70%) saturate(1400%) hue-rotate(2deg)"
+                }}
+              />
             </div>
             <h2 className="font-sans font-black text-2xl tracking-tighter">
               <span style={{ color: mounted && theme === "dark" ? BRAND.lightGreen : BRAND.green }}>Apexbytes</span>

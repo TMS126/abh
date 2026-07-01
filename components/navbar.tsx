@@ -75,7 +75,19 @@ export function Navbar() {
             onClick={() => navigate("/")}
           >
             <div className="relative w-8 h-8 md:w-9 md:h-9 shrink-0 flex items-center justify-center">
-              <Image src="/logo.png" alt="" width={36} height={36} priority className="object-contain" style={{ color: mounted && theme === "dark" ? BRAND.lightOrange : BRAND.orange, filter: `invert(${mounted && theme === "dark" ? "0%" : "0%"})` }} />
+              <Image 
+                src="/logo.png" 
+                alt="" 
+                width={36} 
+                height={36} 
+                priority 
+                className="object-contain"
+                style={{
+                  filter: mounted && theme === "dark" 
+                    ? "brightness(0) saturate(100%) invert(63%) sepia(85%) saturate(350%) hue-rotate(350deg)" 
+                    : "brightness(0) saturate(100%) invert(58%) sepia(70%) saturate(1400%) hue-rotate(2deg)"
+                }}
+              />
             </div>
             <div className="font-sans font-black text-[1.1rem] leading-none tracking-tight transition-all duration-500 overflow-hidden flex items-center" style={{ maxWidth: isTextExpanded ? "180px" : "0px", opacity: isTextExpanded ? 1 : 0 }}>
               <span className="whitespace-nowrap" style={{ color: mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue }}>Apexbytes</span><span className="whitespace-nowrap" style={{ color: mounted && theme === "dark" ? BRAND.lightGreen : BRAND.green }}>Hub</span>
