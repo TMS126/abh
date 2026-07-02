@@ -3,8 +3,8 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 
 export const metadata = {
-  title: "Portfolio — Apexbytes Hub",
-  description: "Real projects from real clients across all five hubs.",
+  title: "Portfolio — ApexbytesHub",
+  description: "Real clients', sample and practice projects from ApexbytesHub and real clients across all five hubs.",
 }
 
 export default function GalleryRoute() {
