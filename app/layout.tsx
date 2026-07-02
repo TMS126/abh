@@ -5,7 +5,6 @@ import { Analytics } from '@vercel/analytics/next'
 import { InstanceGuardProvider } from '@/hooks/use-instance-guard'
 import { BIZ, BRAND } from '@/lib/brand'
 import { LocalBusinessJsonLd } from '@/components/ui/json-ld'
-import { FloatingSearchWidget } from '@/components/floating-search-widget'
 import { QuoteCalculatorWidget } from '@/components/QuoteCalculatorWidget'
 import { WhatsAppFAB } from '@/components/whatsapp-fab'
 import './globals.css'
@@ -73,10 +72,6 @@ export default function RootLayout({
           <InstanceGuardProvider>
             {children}
           </InstanceGuardProvider>
-          {/* Services-only widget — renders null everywhere except the
-              Services main page, and only becomes visible once the inline
-              search bar on that page scrolls out of view. */}
-          <FloatingSearchWidget />
           <QuoteCalculatorWidget />
           <WhatsAppFAB />
         </ThemeProvider>
@@ -84,4 +79,4 @@ export default function RootLayout({
       </body>
     </html>
   )
-}
+} 
