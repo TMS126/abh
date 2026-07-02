@@ -144,10 +144,13 @@ export function FloatingSearchWidget() {
         pushedRef.current = true
       }
       setTimeout(() => inputRef.current?.focus(), 200)
-    } else if (pushedRef.current) {
-      pushedRef.current = false
-      window.history.back()
     }
+    // NOTE: no `else` branch here anymore. Cleanup of the pushed history
+    // entry now happens explicitly at each close site instead (see
+    // handleClose / pick below) — calling history.back() unconditionally
+    // here raced with ServicesPage's own modal history stack: picking a
+    // result pushes a NEW entry for the modal, and this effect would then
+    // pop THAT entry instead of ours, instantly closing the modal.
   }, [isOpen])
 
   useEffect(() => {
@@ -160,12 +163,24 @@ export function FloatingSearchWidget() {
     return () => window.removeEventListener("popstate", onPop)
   }, [setIsOpen])
 
+  // Manual close (backdrop click / X button / Escape). Nothing else has
+  // been pushed to history since we opened, so it's safe to pop our own
+  // entry here.
+  const handleClose = useCallback(() => {
+    setIsOpen(false)
+    setTimeout(() => setQuery(""), 300)
+    if (pushedRef.current) {
+      pushedRef.current = false
+      window.history.back()
+    }
+  }, [setIsOpen])
+
   useEffect(() => {
     if (!isOpen) return
-    const fn = (e: KeyboardEvent) => { if (e.key === "Escape") setIsOpen(false) }
+    const fn = (e: KeyboardEvent) => { if (e.key === "Escape") handleClose() }
     document.addEventListener("keydown", fn)
     return () => document.removeEventListener("keydown", fn)
-  }, [isOpen, setIsOpen])
+  }, [isOpen, handleClose])
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -175,17 +190,20 @@ export function FloatingSearchWidget() {
       .slice(0, 8)
   }, [query, index])
 
-  const handleClose = useCallback(() => {
-    setIsOpen(false)
-    setTimeout(() => setQuery(""), 300)
-  }, [setIsOpen])
-
+  // Picking a result opens ServiceDetailModal on the page, which pushes
+  // its own history entry on top of ours. We deliberately do NOT call
+  // history.back() here — that would pop the modal's entry instead of
+  // ours. We just drop our claim on the entry; the next real back-button
+  // press absorbs it harmlessly (our popstate listener checks pushedRef
+  // first and no-ops once it's already false).
   const pick = (s: SearchableService) => {
     dispatchSelectService({
       name: s.name, price: s.price, hubId: s.hubId,
       sectionTitle: s.sectionTitle, requirements: s.requirements, desc: s.description,
     })
-    handleClose()
+    setIsOpen(false)
+    setQuery("")
+    pushedRef.current = false
   }
 
   if (!onServicesPage) return null
