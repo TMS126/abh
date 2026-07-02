@@ -5,7 +5,7 @@ import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut, A
 import { useTheme } from "next-themes"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
-import { HUB_COLORS, HubKey } from "@/lib/brand"
+import { HUB_COLORS, HubKey, BIZ} from "@/lib/brand"
 import { PROJECTS, ProjectData } from "@/lib/data"
 
 type HubId = "print" | "doc" | "design" | "eservice" | "tech"
