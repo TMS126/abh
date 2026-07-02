@@ -81,17 +81,19 @@ export function FloatingSearchWidget() {
   const [isOpen, setIsOpen, isOtherOpen] = useExclusiveWidget("search")
   const [query, setQuery]         = useState("")
   const [pastTrigger, setPastTrigger] = useState(false)
-  const [scrolled, setScrolled]   = useState(false)
 
   const inputRef     = useRef<HTMLInputElement>(null)
-  const scrollTimer  = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pushedRef    = useRef(false)
   const index        = useMemo(buildSearchIndex, [])
 
   const onServicesPage = pathname === SERVICES_PATH
 
   // Base visibility mirrors the inline search bar's scroll position on the
-  // Services page — that bar carries id="abh-inline-search".
+  // Services page — that bar carries id="abh-inline-search". Unlike the
+  // Quote Calculator and WhatsApp FABs, this widget does NOT flicker while
+  // actively scrolling — it stays visible continuously once past the
+  // trigger point, and only hides again if the inline search bar scrolls
+  // back into view (or another widget opens, via useExclusiveWidget).
   useEffect(() => {
     if (!onServicesPage) { setPastTrigger(false); return }
     const check = () => {
@@ -107,21 +109,6 @@ export function FloatingSearchWidget() {
       window.removeEventListener("resize", check)
     }
   }, [onServicesPage])
-
-  // Quick fade of the FAB while actively scrolling — same pattern as the
-  // Quote Calculator and WhatsApp widgets.
-  useEffect(() => {
-    const onScroll = () => {
-      setScrolled(true)
-      if (scrollTimer.current) clearTimeout(scrollTimer.current)
-      scrollTimer.current = setTimeout(() => setScrolled(false), 200)
-    }
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => {
-      window.removeEventListener("scroll", onScroll)
-      if (scrollTimer.current) clearTimeout(scrollTimer.current)
-    }
-  }, [])
 
   // Force-close if the route changes away from Services (no back-nav side effect)
   useEffect(() => {
@@ -220,7 +207,7 @@ export function FloatingSearchWidget() {
           "fixed z-[9992] right-4 bottom-[9.5rem] group/search",
           "transition-all duration-300",
           !pastTrigger && "opacity-0 pointer-events-none",
-          (scrolled && !isOpen) || isOtherOpen
+          isOtherOpen
             ? "opacity-0 pointer-events-none scale-90"
             : "opacity-100 scale-100"
         )}
@@ -255,7 +242,7 @@ export function FloatingSearchWidget() {
       {isOpen && (
         <div
           className={cn(
-            "fixed bottom-24 right-4 left-4 md:left-auto md:right-6 z-[9991] md:w-[400px] max-h-[75vh] rounded-[20px] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-300",
+            "fixed bottom-24 right-4 left-4 md:left-auto md:right-6 z-[9991] md:w-[400px] max-h-[75vh] rounded-[14px] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-300",
             GLASS.panel
           )}
           style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.3)" }}
@@ -312,7 +299,7 @@ export function FloatingSearchWidget() {
                     <button
                       key={`${s.hubId}-${s.name}-${idx}`}
                       onClick={() => pick(s)}
-                      className={cn("w-full flex items-center gap-3 p-2.5 rounded-[10px] shadow-sm transition-colors text-left hover:bg-white/40 dark:hover:bg-white/10", GLASS.item)}
+                      className={cn("w-full flex items-center gap-3 p-2.5 rounded-[14px] shadow-sm transition-colors text-left hover:bg-white/40 dark:hover:bg-white/10", GLASS.item)}
                     >
                       <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${accent}20`, color: accent }}>
                         <HubIcon id={s.hubId} size={18} />
