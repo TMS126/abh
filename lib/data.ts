@@ -1,4 +1,34 @@
 // @cache-bust
+// lib/data.ts — Content only. Styling comes from @/lib/brand.
+import { HUB_COLORS, HUB_NAMES, type HubKey } from '@/lib/brand'
+
+// ─── TYPES ──────────────────────────────────────────────────────────────────
+
+export type HubId = HubKey
+
+export interface ServiceItem {
+  name: string
+  price: string
+  requirements: string[]
+  description?: string
+}
+
+export interface HubSection {
+  title: string
+  items: ServiceItem[]
+}
+
+export interface Hub {
+  iconName: string
+  iconColor: string
+  title: string
+  grad: string
+  desc: string
+  sections: HubSection[]
+  previews: string[]
+  tagStyle: { bg: string; color: string }
+  tagStyleDark: { bg: string; color: string }
+}
 
 export const PRICING = {
   print: {
