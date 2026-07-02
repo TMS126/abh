@@ -9,7 +9,7 @@ import {
 } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
-import { HUB_COLORS, HubKey } from "@/lib/brand"
+import { HUB_COLORS, HubKey, BIZ} from "@/lib/brand"
 import { HUBS, HubId } from "@/lib/data"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
