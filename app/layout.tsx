@@ -35,8 +35,8 @@ export const metadata: Metadata = {
   keywords:    ['printing', 'CV services', 'tech support', 'government services', 'SASSA', 'SARS', 'Kgotsong', 'Bothaville'],
   authors:     [{ name: BIZ.name }],
   icons: {
-    icon:     [{ url: '/logo.png', type: 'image/png' }],
-    apple:    [{ url: '/logo.png', type: 'image/png' }],
+    icon:     [{ url: '/favicon.ico', type: 'image/ico' }],
+    apple:    [{ url: '/apple-icon.png', type: 'image/png' }],
     shortcut: [{ url: '/logo.png', type: 'image/png' }],
   },
 }
