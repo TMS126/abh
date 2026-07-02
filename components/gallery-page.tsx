@@ -5,7 +5,7 @@ import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut, A
 import { useTheme } from "next-themes"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
-import { HUB_COLORS, HubKey, BIZ } from "@/lib/brand"
+import { HUB_COLORS, HubKey } from "@/lib/brand"
 import { PROJECTS, ProjectData } from "@/lib/data"
 
 type HubId = "print" | "doc" | "design" | "eservice" | "tech"
@@ -501,18 +501,6 @@ function ProjectViewerModal({
               <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>The Result</h4>
               <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.result}</p>
             </section>
-
-            {/* CTA */}
-            <a
-              href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(`Hi ${BIZ.name}! I saw "${project.title}" in your gallery and I'd like something similar.`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={onClose}
-              className="flex items-center justify-center gap-2 w-full py-3.5 rounded-[14px] text-sm font-bold text-white shadow-lg transition-transform active:scale-[0.98]"
-              style={{ backgroundColor: "#25D366" }}
-            >
-              Get a project like this
-            </a>
           </div>
         </div>
       </div>
@@ -818,4 +806,4 @@ export function GalleryPage() {
  
  
  
-    
+   
