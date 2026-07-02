@@ -6,6 +6,7 @@ import {
   X, Printer, FileText, PaintBrush, Globe, Desktop,
   PaperPlaneTilt, Megaphone, MagnifyingGlass,
   Paperclip, CheckCircle, WarningCircle, ShieldCheck,
+  ShareNetwork, ArrowUp,
 } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
@@ -518,6 +519,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   const [fileUrl,     setFileUrl]     = useState<string | null>(null)
   const [uploadErr,   setUploadErr]   = useState<string | null>(null)
   const [previewUrl,  setPreviewUrl]  = useState<string | null>(null)
+  const [shareCopied, setShareCopied] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -627,6 +629,26 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   const naturalLabel = naturalServiceLabel(svc.name, svc.sectionTitle)
   const acceptHint   = formatAcceptHint(HUB_ACCEPT[svc.hubId])
 
+  const handleShare = async () => {
+    const shareText = `${naturalLabel} — ${svc.price} at ${BIZ.name}`
+    const shareUrl   = typeof window !== "undefined" ? window.location.href : ""
+
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: `${naturalLabel} — ${BIZ.name}`, text: shareText, url: shareUrl })
+      } catch {
+        // Person cancelled the native share sheet — no action needed.
+      }
+      return
+    }
+
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`)
+      setShareCopied(true)
+      setTimeout(() => setShareCopied(false), 2000)
+    }
+  }
+
   const waMessage = fileUrl
     ? `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). Price shown: ${svc.price}. My file: ${fileUrl}`
     : `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). Price shown: ${svc.price}. Can you assist?`
@@ -656,13 +678,29 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
               </span>
               <h3 className="abh-card-heading text-[1.1rem] leading-tight">{svc.name}</h3>
             </div>
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
-              style={{ backgroundColor: `${accent}15`, color: accent }}
-            >
-              <X size={16} weight="bold" />
-            </button>
+            <div className="flex items-center gap-2 shrink-0 relative">
+              <button
+                type="button"
+                onClick={handleShare}
+                aria-label="Share this service"
+                className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                style={{ backgroundColor: `${accent}15`, color: accent }}
+              >
+                <ShareNetwork size={16} weight="bold" />
+              </button>
+              {shareCopied && (
+                <span className="absolute -bottom-8 right-0 whitespace-nowrap text-[0.62rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full shadow-lg animate-in fade-in zoom-in-95 duration-200">
+                  Copied!
+                </span>
+              )}
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
+                style={{ backgroundColor: `${accent}15`, color: accent }}
+              >
+                <X size={16} weight="bold" />
+              </button>
+            </div>
           </div>
 
           {/* Price */}
@@ -861,6 +899,15 @@ export function ServicesPage() {
 
   const [activeHub,       setActiveHub]       = useState<HubId | null>(null)
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
+  const [showBackToTop,   setShowBackToTop]   = useState(false)
+
+  // Reveal the Back to Top button once the person has scrolled well past
+  // the inline search bar near the top of the page.
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 600)
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
 
   // The floating search is now a global root-layout widget (see
   // components/floating-search-widget.tsx) so it can sit in the same FAB
@@ -982,6 +1029,19 @@ export function ServicesPage() {
         svc={selectedService}
         onClose={() => setSelectedService(null)}
       />
+
+      {/* Back to Top — left side, so it never collides with the WhatsApp /
+          Quote Calculator / Search FAB stack anchored on the right. */}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        aria-label="Back to top"
+        className={cn(
+          "fixed bottom-6 left-4 z-[9990] w-12 h-12 rounded-full bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-lg flex items-center justify-center transition-all duration-300 active:scale-95 hover:scale-105",
+          showBackToTop ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-4 pointer-events-none"
+        )}
+      >
+        <ArrowUp size={20} weight="bold" className="text-brand-blue dark:text-brand-light-blue" />
+      </button>
     </section>
   )
     } 
