@@ -55,6 +55,16 @@ function getCldUrl(file: File) {
   return `https://api.cloudinary.com/v1_1/${CLD_CLOUD}/${file.type.startsWith("image/") ? "image" : "raw"}/upload`
 }
 
+// Turns ".pdf,.jpg,.jpeg,.png,.doc,.docx" into "PDF, JPG, JPEG, PNG, DOC, DOCX"
+// for a friendly hint under the attach button.
+function formatAcceptHint(accept: string) {
+  return accept
+    .split(",")
+    .map(ext => ext.trim().replace(/^\./, "").toUpperCase())
+    .filter(Boolean)
+    .join(", ")
+}
+
 function HubIcon({ id, size = 28, color }: { id: HubId; size?: number; color?: string }) {
   const p = { size, weight: "fill" as const, color: color ?? "currentColor", "aria-hidden": true }
   switch (id) {
@@ -381,6 +391,14 @@ function HubModal({
 
   useEffect(() => { setOpenSectionIdx(0) }, [hubId])
 
+  // Escape key closes the modal, mirroring the gallery page's overlay behavior.
+  useEffect(() => {
+    if (!hubId) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [hubId, onClose])
+
   if (!hubId) return null
   const hub         = HUBS[hubId]
   const colors      = HUB_COLORS[hubId as HubKey]
@@ -471,14 +489,30 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   const [uploadPhase, setUploadPhase] = useState<"idle" | "uploading" | "done" | "error">("idle")
   const [fileUrl,     setFileUrl]     = useState<string | null>(null)
   const [uploadErr,   setUploadErr]   = useState<string | null>(null)
+  const [previewUrl,  setPreviewUrl]  = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     setTab("bring")
     setFile(null); setFileUrl(null)
     setUploadPhase("idle"); setUploadErr(null)
+    setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null })
     if (fileRef.current) fileRef.current.value = ""
   }, [svc?.name])
+
+  // Revoke any outstanding object URL when the modal unmounts, so we don't
+  // leak memory if the person navigates away mid-preview.
+  useEffect(() => {
+    return () => { if (previewUrl) URL.revokeObjectURL(previewUrl) }
+  }, [previewUrl])
+
+  // Escape key closes the modal, mirroring the gallery page's overlay behavior.
+  useEffect(() => {
+    if (!svc) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [svc, onClose])
 
   const doUpload = async (f: File) => {
     setUploadPhase("uploading")
@@ -517,12 +551,21 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
 
     setFile(f)
     setUploadErr(null)
+
+    // Local thumbnail preview for images only — separate from the Cloudinary
+    // upload, so it appears instantly rather than waiting on the network.
+    setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null })
+    if (f.type.startsWith("image/")) {
+      setPreviewUrl(URL.createObjectURL(f))
+    }
+
     void doUpload(f)
   }
 
   const clearFile = () => {
     setFile(null); setFileUrl(null)
     setUploadPhase("idle"); setUploadErr(null)
+    setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null })
     if (fileRef.current) fileRef.current.value = ""
   }
 
@@ -532,6 +575,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   const accent       = isDark ? colors.tagTextDark : colors.tagText
   const hubTitle     = HUBS[svc.hubId]?.title || svc.sectionTitle
   const naturalLabel = naturalServiceLabel(svc.name, svc.sectionTitle)
+  const acceptHint   = formatAcceptHint(HUB_ACCEPT[svc.hubId])
 
   const waMessage = fileUrl
     ? `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). Price shown: ${svc.price}. My file: ${fileUrl}`
@@ -639,7 +683,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             className="hidden"
           />
 
-          {/* Idle — attach button + privacy note */}
+          {/* Idle — attach button + accepted formats + privacy note */}
           {uploadPhase === "idle" && (
             <div className="space-y-2">
               <button
@@ -651,6 +695,9 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                 <Paperclip size={17} weight="bold" />
                 Attach a file (optional)
               </button>
+              <p className="text-[0.65rem] font-medium text-zinc-400 dark:text-zinc-500 text-center px-1">
+                Accepts: {acceptHint}
+              </p>
               <div className="flex items-start gap-2 px-1">
                 <ShieldCheck size={13} weight="fill" className="text-[#6FBF1A] shrink-0 mt-0.5" />
                 <p className="abh-muted text-[0.67rem] leading-relaxed">
@@ -668,11 +715,19 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </div>
           )}
 
-          {/* Done */}
+          {/* Done — thumbnail (images only) + filename */}
           {uploadPhase === "done" && file && (
             <div className="flex items-center justify-between gap-2 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200/50 dark:border-green-800/30">
-              <span className="flex items-center gap-2 min-w-0">
-                <CheckCircle size={17} weight="fill" className="shrink-0" />
+              <span className="flex items-center gap-2.5 min-w-0">
+                {previewUrl ? (
+                  <img
+                    src={previewUrl}
+                    alt=""
+                    className="w-8 h-8 rounded-[8px] object-cover shrink-0 border border-green-200/60 dark:border-green-800/40"
+                  />
+                ) : (
+                  <CheckCircle size={17} weight="fill" className="shrink-0" />
+                )}
                 <span className="truncate">{file.name}</span>
               </span>
               <button type="button" onClick={clearFile} aria-label="Remove file" className="shrink-0 opacity-60 hover:opacity-100 transition-opacity">
@@ -878,4 +933,4 @@ export function ServicesPage() {
       />
     </section>
   )
-}
+      } 
