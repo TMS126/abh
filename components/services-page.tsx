@@ -9,13 +9,8 @@ import {
 } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
-import {
-  BIZ,
-  HUBS,
-  HUB_COLORS,
-  HubKey,
-  HubId
-} from "@/lib"
+import { HUB_COLORS, HubKey } from "@/lib/brand"
+import { HUBS, HubId } from "@/lib/data"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
