@@ -197,6 +197,15 @@ export const HUBS: Record<HubId, Hub> = {
 // ─── PROJECTS (Portfolio) ─────────────────────────────────────────────────────
 export const PROJECTS = [
   {
+    id: "apexbytes-business-card", hub: "design" as HubId, title: "Apexbytes Business Card Design", tag: HUB_NAMES.design,
+    shortDesc: "Double-sided business card for the Apexbytes brand — clean, minimal, and professional.",
+    image: "/abbc.jpg", images: ["/abbc.jpg"], clientType: "practice" as const,
+    clientGoal: "Design a business card that looks clean and professional — something that represents the Apexbytes brand without being too busy.",
+    whatWeDid: ["Designed front with brand logo, founder name, and role","Back features the brand icon large on a dark navy background in orange","Kept everything minimal — no clutter, just the essentials","Double-sided layout with strong contrast between front and back"],
+    tools: ["Adobe Illustrator", "Double-sided business card format"],
+    result: "A sharp, professional card that stands out and represents the brand well.",
+  },
+  {
     id: "vasep-branding", hub: "design" as HubId, title: "VASEP — Visual Arts Skills Empowerment Projects", tag: HUB_NAMES.design,
     shortDesc: "Full logo for a local arts empowerment organisation, in Kgotsong.",
     image: "/vsp1.jpg", images: ["/Vspsktch.jpeg", "/vsp1.jpg", "/Vspm.jpg"], clientType: "client" as const,
@@ -259,15 +268,7 @@ export const PROJECTS = [
     tools: ["Adobe Illustrator", "Print-ready A4 and A-board format"],
     result: "Client had a professional flyer and A-board ready to attract walk-ins and answer common questions before clients even step inside.",
   },
-  {
-    id: "apexbytes-business-card", hub: "design" as HubId, title: "Apexbytes Business Card Design", tag: HUB_NAMES.design,
-    shortDesc: "Double-sided business card for the Apexbytes brand — clean, minimal, and professional.",
-    image: "/abbc.jpg", images: ["/abbc.jpg"], clientType: "practice" as const,
-    clientGoal: "Design a business card that looks clean and professional — something that represents the Apexbytes brand without being too busy.",
-    whatWeDid: ["Designed front with brand logo, founder name, and role","Back features the brand icon large on a dark navy background in orange","Kept everything minimal — no clutter, just the essentials","Double-sided layout with strong contrast between front and back"],
-    tools: ["Adobe Illustrator", "Double-sided business card format"],
-    result: "A sharp, professional card that stands out and represents the brand well.",
-  },
+  
   {
     id: "wedding-party-programme", hub: "design" as HubId, title: "Wedding Party Programme", tag: HUB_NAMES.design,
     shortDesc: "Printed wedding party programme with roles, names, and a celebratory layout.",
