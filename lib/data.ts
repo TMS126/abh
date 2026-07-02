@@ -233,6 +233,27 @@ export const PROJECTS = [
     result: "Client received a complete, professional CV ready for job applications.",
   },
   {
+  id: "cv-modernization",
+  hub: "doc" as HubId,
+  title: "Professional CV Redesign & Modern Layouts",
+  tag: HUB_NAMES.doc,
+  shortDesc: "Transformed traditional text-heavy CVs into high-impact, modern layouts with clean typography and professional formatting.",
+  image: "/gallery/docu/1000048082.webp",
+  images: ["/cvs1.webp", "/gallery/docu/1000048085.webp"],
+  clientType: "client" as const,
+  clientGoal: "Clients needed to upgrade their outdated CV formats into eye-catching, professionally structured documents to stand out to recruiters.",
+  whatWeDid: [
+    "Redesigned the layout using contemporary sidebar color-blocking",
+    "Integrated professional profile photo elements seamlessly",
+    "Structured contact details, work experience, and education for rapid scanning",
+    "Formatted a dedicated, clean section for professional references",
+    "Delivered sharp, high-contrast premium prints of the final documents"
+  ],
+  tools: ["Advanced Document Formatting", "Modern Layout Design Principles"],
+  result: "Provided clients with polished, executive-style CVs that elevate their professional presentation and confidence in the job market.",
+},
+
+  {
     id: "rekaofela-bulk-print", hub: "print" as HubId, title: "Rekaofeela Social Club — Constitution Print", tag: HUB_NAMES.print,
     shortDesc: "Typed and printed 100+ copies of a kasi stokvel group's official rules document.",
     image: "/rsc1.webp", images: ["/rsc2.jpg", "/rsc.jpg"], clientType: "client" as const,
