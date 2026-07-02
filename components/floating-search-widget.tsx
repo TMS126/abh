@@ -222,13 +222,12 @@ export function FloatingSearchWidget() {
       {/* ── FAB — third slot in the stack, above the Quote Calculator ──── */}
       <div
         className={cn(
-          "fixed z-[9992] right-4 bottom-[9.5rem] group/search",
-          "transition-all duration-300",
-          !pastTrigger && "opacity-0 pointer-events-none",
-          isOtherOpen
-            ? "opacity-0 pointer-events-none scale-90"
-            : "opacity-100 scale-100"
-        )}
+  "fixed z-[9992] right-4 bottom-[9.5rem] group/search",
+  "transition-all duration-300",
+  pastTrigger && !isOtherOpen
+    ? "opacity-100 scale-100 pointer-events-auto"
+    : "opacity-0 scale-90 pointer-events-none"
+)}
       >
         <div className="flex items-center justify-end gap-2">
           {/* Slide-out label */}
