@@ -30,6 +30,7 @@ const HUBS_DATA = [
         aria-hidden="true"
       />
     ),
+    Icon: Printer,
     colorLight: HUB_COLORS.print.tagText,
     colorDark:  HUB_COLORS.print.tagTextDark,
     services: [
@@ -51,6 +52,7 @@ const HUBS_DATA = [
         aria-hidden="true"
       />
     ),
+    Icon: FileText,
     colorLight: HUB_COLORS.doc.tagText,
     colorDark:  HUB_COLORS.doc.tagTextDark,
     services: [
@@ -72,6 +74,7 @@ const HUBS_DATA = [
         aria-hidden="true"
       />
     ),
+    Icon: PaintBrush,
     colorLight: HUB_COLORS.design.tagText,
     colorDark:  HUB_COLORS.design.tagTextDark,
     services: [
@@ -93,6 +96,7 @@ const HUBS_DATA = [
         aria-hidden="true"
       />
     ),
+    Icon: Globe,
     colorLight: HUB_COLORS.eservice.tagText,
     colorDark:  HUB_COLORS.eservice.tagTextDark,
     services: [
@@ -114,6 +118,7 @@ const HUBS_DATA = [
         aria-hidden="true"
       />
     ),
+    Icon: Desktop,
     colorLight: HUB_COLORS.tech.tagText,
     colorDark:  HUB_COLORS.tech.tagTextDark,
     services: [
@@ -155,6 +160,7 @@ export function HeroSection() {
   const colorFor  = (hub: typeof HUBS_DATA[number]) => isDark ? hub.colorDark : hub.colorLight
   const active    = HUBS_DATA[activeHub]
   const activeColor = colorFor(active)
+  const WatermarkIcon = active.Icon
 
   const handleNavigate = (path: string) => router.push(path)
 
@@ -216,10 +222,29 @@ export function HeroSection() {
         </p>
 
         {/* CTAs */}
-        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center w-full mb-12">
+        <div className="relative w-full flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center mb-12">
+
+          {/* Giant tilted hub-icon watermark — synced to the active hub in the
+              Core Hub Ecosystem selector below. Sits behind the CTA buttons,
+              bleeds off-screen, and cross-fades color/icon on hub change. */}
+          <div
+            key={active.id}
+            aria-hidden="true"
+            className="absolute inset-y-0 -right-[18%] md:-right-[10%] flex items-center justify-center pointer-events-none select-none opacity-[0.14] dark:opacity-[0.18] transition-colors duration-700 ease-out animate-in fade-in zoom-in-95 duration-500"
+            style={{ color: activeColor, zIndex: 0 }}
+          >
+            <WatermarkIcon
+              size={520}
+              weight="fill"
+              aria-hidden="true"
+              style={{ transform: "rotate(-16deg)" }}
+              className="shrink-0 md:w-[620px] md:h-[620px]"
+            />
+          </div>
+
           <button
             onClick={() => handleNavigate("/services")}
-            className="inline-flex items-center gap-3 group px-8 py-4 rounded-[14px] font-sans font-black text-base text-white transition-all duration-300 active:scale-95 shadow-lg bg-brand-blue hover:opacity-90"
+            className="relative z-10 inline-flex items-center gap-3 group px-8 py-4 rounded-[14px] font-sans font-black text-base text-white transition-all duration-300 active:scale-95 shadow-lg bg-brand-blue hover:opacity-90"
           >
             View Services
             <ArrowRight weight="bold" className="w-5 h-5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
@@ -229,7 +254,7 @@ export function HeroSection() {
             href={WA.general}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center w-[56px] h-[56px] rounded-full text-white transition-all duration-300 active:scale-95 shrink-0 shadow-lg"
+            className="relative z-10 inline-flex items-center justify-center w-[56px] h-[56px] rounded-full text-white transition-all duration-300 active:scale-95 shrink-0 shadow-lg"
             style={{ backgroundColor: BRAND.whatsapp }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = BRAND.whatsappDark }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = BRAND.whatsapp }}
@@ -427,4 +452,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-       }
+                    } 
