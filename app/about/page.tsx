@@ -3,7 +3,7 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 
 export const metadata = {
-  title: "About Us — Apexbytes Hub",
+  title: "About Us — ApexbytesHub",
   description: "A local business built on community, trust, and real results.",
 }
 
