@@ -7,7 +7,7 @@ import { WhatsappLogo } from "@phosphor-icons/react"
 
 
 export const metadata = {
-  title: "Services — Apexbytes Hub",
+  title: "Services — ApexbytesHub",
   description: "Printing, documents, design, government services and tech support — all in one place.",
 }
 
