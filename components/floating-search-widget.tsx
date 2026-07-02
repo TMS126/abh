@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation"
 import { X, MagnifyingGlass, Printer, FileText, PaintBrush, Globe, Desktop } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
-import { HUBS, HUB_COLORS, HubKey, HubId } from "@/lib"
+import { BIZ, HUB_COLORS, HubKey } from "@/lib/brand"
+import { HUBS, HubId } from "@/lib/data"
 
 // Must match the route of your Services main page exactly — this widget
 // is hidden everywhere else, including on Services with query params like
