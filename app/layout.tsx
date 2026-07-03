@@ -36,7 +36,13 @@ export const metadata: Metadata = {
   keywords:    ['printing', 'CV services', 'tech support', 'government services', 'SASSA', 'SARS', 'Kgotsong', 'Bothaville'],
   authors:     [{ name: BIZ.name }],
   icons: {
-    icon:     [{ url: '/favicon.ico', type: 'image/ico' }],
+    icon: [
+      { url: '/favicon-light-32.png', sizes: '32x32', type: 'image/png', media: '(prefers-color-scheme: light)' },
+      { url: '/favicon-light-16.png', sizes: '16x16', type: 'image/png', media: '(prefers-color-scheme: light)' },
+      { url: '/favicon-dark-32.png',  sizes: '32x32', type: 'image/png', media: '(prefers-color-scheme: dark)'  },
+      { url: '/favicon-dark-16.png',  sizes: '16x16', type: 'image/png', media: '(prefers-color-scheme: dark)'  },
+      { url: '/favicon.ico', type: 'image/ico' },
+    ],
     apple:    [{ url: '/apple-icon.png', type: 'image/png' }],
     shortcut: [{ url: '/logo.png', type: 'image/png' }],
   },
@@ -84,5 +90,5 @@ export default function RootLayout({
       </body>
     </html>
   )
+
 }
- 
