@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
-import { X, WhatsappLogo, PaperPlaneTilt, Check } from "@phosphor-icons/react"
+import { X, WhatsappLogo, PaperPlaneTilt, Check, CaretDown } from "@phosphor-icons/react"
 import { BIZ, BRAND } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 import { useTheme } from "next-themes"
@@ -38,7 +38,10 @@ export function WhatsAppFAB() {
   const [hub,     setHub]            = useState("")
   const [note,    setNote]           = useState("")
   const [step,    setStep]           = useState<"form" | "sent">("form")
+  const [isMenuOpen, setIsMenuOpen]  = useState(false)
+  
   const nameRef                      = useRef<HTMLInputElement>(null)
+  const menuRef                      = useRef<HTMLDivElement>(null)
   const scrollTimer                  = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Mount delay
@@ -74,6 +77,18 @@ export function WhatsAppFAB() {
     return () => document.removeEventListener("keydown", fn)
   }, [isOpen])
 
+  // Close menu on click outside
+  useEffect(() => {
+    if (!isMenuOpen) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [isMenuOpen])
+
   // Body scroll lock
   useEffect(() => {
     if (!isOpen) return
@@ -90,7 +105,13 @@ export function WhatsAppFAB() {
 
   const handleClose = () => {
     setIsOpen(false)
-    setTimeout(() => { setStep("form"); setName(""); setHub(""); setNote("") }, 400)
+    setTimeout(() => { 
+      setStep("form"); 
+      setName(""); 
+      setHub(""); 
+      setNote(""); 
+      setIsMenuOpen(false);
+    }, 400)
   }
 
   const isValid     = name.trim().length > 1 && hub !== ""
@@ -205,49 +226,103 @@ export function WhatsAppFAB() {
                   />
                 </div>
 
-                {/* Hub selector — inline radio cards */}
-                <div>
+                {/* Hub selector — Custom Dropdown */}
+                <div className="relative" ref={menuRef}>
                   <label className="text-[0.62rem] font-black uppercase tracking-widest text-zinc-400 block mb-1.5">
                     What do you need help with?
                   </label>
-                  <div className="flex flex-col gap-1.5">
-                    {HUBS.map((h) => {
-                      const isSelected = hub === h.id
-                      return (
-                        <button
-                          key={h.id}
-                          type="button"
-                          onClick={() => setHub(h.id)}
-                          className={cn(
-                            "w-full px-4 py-2.5 rounded-[14px] text-left flex items-center gap-3 transition-all duration-150 active:scale-[0.98]",
-                            isSelected
-                              ? "bg-[#25D366]/10 border border-[#25D366]/50"
-                              : GLASS.item
-                          )}
-                        >
-                          {/* Radio dot */}
-                          <span
-                            className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors duration-150"
-                            style={{
-                              borderColor:     isSelected ? "#25D366" : "#d1d5db",
-                              backgroundColor: isSelected ? "#25D366" : "transparent",
-                            }}
-                          >
-                            {isSelected && <Check size={8} weight="bold" className="text-white" />}
+                  
+                  {/* Dropdown Trigger */}
+                  <button
+                    type="button"
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    className={cn(
+                      "w-full px-4 py-2.5 rounded-[14px] text-left flex items-center justify-between transition-all duration-150 active:scale-[0.98]",
+                      hub ? "border-[#25D366]/30" : "",
+                      GLASS.item
+                    )}
+                  >
+                    <div className="flex flex-col min-w-0">
+                      {selectedHub ? (
+                        <>
+                          <span className="text-[0.80rem] font-black text-zinc-900 dark:text-zinc-50 leading-tight">
+                            {selectedHub.label}
                           </span>
-                          <span className="flex flex-col min-w-0">
-                            <span className={cn(
-                              "text-[0.80rem] font-black leading-tight",
-                              isSelected ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-700 dark:text-zinc-300"
-                            )}>
-                              {h.label}
-                            </span>
-                            <span className="text-[0.66rem] font-semibold text-zinc-400 mt-0.5">{h.hint}</span>
+                          <span className="text-[0.66rem] font-semibold text-zinc-400 mt-0.5 truncate">
+                            {selectedHub.hint}
                           </span>
-                        </button>
-                      )
-                    })}
-                  </div>
+                        </>
+                      ) : (
+                        <span className="text-[0.84rem] font-semibold text-zinc-400">
+                          Select an option...
+                        </span>
+                      )}
+                    </div>
+                    <CaretDown 
+                      size={16} 
+                      weight="bold" 
+                      className={cn(
+                        "text-zinc-400 transition-transform duration-200",
+                        isMenuOpen && "rotate-180"
+                      )} 
+                    />
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {isMenuOpen && (
+                    <div 
+                      className={cn(
+                        "absolute left-0 right-0 z-[9999] mt-2 p-1.5",
+                        "rounded-[18px] shadow-xl border border-white/20 dark:border-white/10",
+                        "animate-in fade-in zoom-in-95 duration-150 origin-top",
+                        "bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl"
+                      )}
+                    >
+                      <div className="flex flex-col gap-1 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
+                        {HUBS.map((h) => {
+                          const isSelected = hub === h.id
+                          return (
+                            <button
+                              key={h.id}
+                              type="button"
+                              onClick={() => {
+                                setHub(h.id)
+                                setIsMenuOpen(false)
+                              }}
+                              className={cn(
+                                "w-full px-3 py-2 rounded-[12px] text-left flex items-center gap-3 transition-colors",
+                                isSelected 
+                                  ? "bg-[#25D366]/10" 
+                                  : "hover:bg-zinc-100 dark:hover:bg-white/5"
+                              )}
+                            >
+                              {/* Selection Indicator */}
+                              <div
+                                className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
+                                style={{
+                                  borderColor:     isSelected ? "#25D366" : "#d1d5db",
+                                  backgroundColor: isSelected ? "#25D366" : "transparent",
+                                }}
+                              >
+                                {isSelected && <Check size={8} weight="bold" className="text-white" />}
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                <span className={cn(
+                                  "text-[0.78rem] font-black leading-tight",
+                                  isSelected ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-700 dark:text-zinc-300"
+                                )}>
+                                  {h.label}
+                                </span>
+                                <span className="text-[0.64rem] font-semibold text-zinc-400 mt-0.5">
+                                  {h.hint}
+                                </span>
+                              </div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Optional note */}
@@ -345,7 +420,4 @@ export function WhatsAppFAB() {
       </div>
     </>
   )
-}
- 
-
- 
+      } 
