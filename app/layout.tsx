@@ -41,7 +41,7 @@ export const metadata: Metadata = {
       { url: '/favicon-light-16.png', sizes: '16x16', type: 'image/png', media: '(prefers-color-scheme: light)' },
       { url: '/favicon-dark-32.png',  sizes: '32x32', type: 'image/png', media: '(prefers-color-scheme: dark)'  },
       { url: '/favicon-dark-16.png',  sizes: '16x16', type: 'image/png', media: '(prefers-color-scheme: dark)'  },
-      { url: '/favicon.ico', type: 'image/ico' },
+      { url: '/favicon-1.ico', type: 'image/ico' },
     ],
     apple:    [{ url: '/apple-icon.png', type: 'image/png' }],
     shortcut: [{ url: '/logo.png', type: 'image/png' }],
