@@ -363,49 +363,63 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
       {query && (
         <button
           onClick={() => setQuery("")}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+          className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600"
         >
-          <X size={16} weight="bold" />
+          <X size={12} weight="bold" />
         </button>
       )}
-      {focused && results.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-[14px] shadow-2xl overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
-          {results.map((s, i) => (
-            <button
-              key={i}
-              onClick={() => pick(s)}
-              className="w-full px-5 py-4 flex items-center gap-4 text-left hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors border-b border-zinc-50 dark:border-zinc-900 last:border-0"
-            >
-              <div
-                className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
-                style={{ backgroundColor: `${HUB_COLORS[s.hubId as HubKey].tagText}12`, color: HUB_COLORS[s.hubId as HubKey].tagText }}
-              >
-                <HubIcon id={s.hubId} size={20} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-black text-zinc-900 dark:text-zinc-50 truncate">{s.name}</p>
-                <p className="text-[0.7rem] font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">{s.sectionTitle}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-sm font-black text-[#1E6FA8] dark:text-[#A9D6F2]">{s.price}</p>
-              </div>
-            </button>
-          ))}
+      {focused && query.trim().length > 0 && (
+        <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-xl overflow-hidden z-30 animate-in fade-in zoom-in-95 duration-150">
+          {results.length > 0 ? (
+            <div className="max-h-[320px] overflow-y-auto p-2">
+              {results.map((s, idx) => {
+                const colors = HUB_COLORS[s.hubId as HubKey]
+                const accent = isDark ? colors.tagTextDark : colors.tagText
+                return (
+                  <button
+                    key={`${s.hubId}-${s.name}-${idx}`}
+                    onClick={() => pick(s)}
+                    className="w-full flex items-center gap-3 p-3 rounded-[10px] hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left"
+                  >
+                    <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${accent}15`, color: accent }}>
+                      <HubIcon id={s.hubId} size={18} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{s.name}</p>
+                      <p className="text-[0.65rem] font-bold uppercase tracking-wider text-zinc-400 truncate">{s.sectionTitle} · {HUBS[s.hubId].title}</p>
+                    </div>
+                    <span className="text-xs font-black shrink-0" style={{ color: accent }}>{s.price}</span>
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="p-5 text-center">
+              <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">No services found</p>
+              <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-1">Try a different word, or WhatsApp us directly.</p>
+            </div>
+          )}
         </div>
       )}
     </div>
   )
 }
 
-// ─── Hub Modal ────────────────────────────────────────────────────────────────
-function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; onClose: () => void; onSelectService: (s: SelectedService) => void }) {
+
+function HubModal({
+  hubId, onClose, onSelectService,
+}: {
+  hubId: HubId | null
+  onClose: () => void
+  onSelectService: (svc: SelectedService) => void
+}) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
-  const hub = hubId ? HUBS[hubId] : null
-  const colors = hubId ? HUB_COLORS[hubId as HubKey] : null
-  const accent = isDark ? colors?.tagTextDark : colors?.tagText
+  const [openSectionIdx, setOpenSectionIdx] = useState<number | null>(0)
 
-  // Close on Escape
+  useEffect(() => { setOpenSectionIdx(0) }, [hubId])
+
+  // Escape key closes the modal, mirroring the gallery page's overlay behavior.
   useEffect(() => {
     if (!hubId) return
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
@@ -413,65 +427,79 @@ function HubModal({ hubId, onClose, onSelectService }: { hubId: HubId | null; on
     return () => window.removeEventListener("keydown", onKey)
   }, [hubId, onClose])
 
-  if (!hub || !colors) return null
+  if (!hubId) return null
+  const hub         = HUBS[hubId]
+  const colors      = HUB_COLORS[hubId as HubKey]
+  const accent      = isDark ? colors.tagTextDark : colors.tagText
+  const solidAccent = colors.tagText
 
   return (
     <div className="fixed inset-0 z-[10100] flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm overscroll-contain" onClick={onClose} />
-      <div className="relative w-full max-w-2xl rounded-[14px] overflow-hidden shadow-2xl bg-white dark:bg-zinc-950 animate-in zoom-in-95 duration-300 border border-zinc-100 dark:border-zinc-800 max-h-[90vh] flex flex-col">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md overscroll-contain" onClick={onClose} />
+      <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-500 border border-zinc-100 dark:border-zinc-800">
+
         {/* Header */}
-        <div className="px-6 py-6 md:px-8 md:py-8 flex justify-between items-start border-b border-zinc-100 dark:border-zinc-800 shrink-0">
-          <div className="flex items-center gap-4 md:gap-6">
-            <div
-              className="w-14 h-14 md:w-16 md:h-16 rounded-[14px] flex items-center justify-center shrink-0 shadow-md"
-              style={{ backgroundColor: `${accent}12`, color: accent }}
-            >
-              <HubIcon id={hubId as HubId} size={32} />
+        <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center" style={{ backgroundColor: `${accent}05` }}>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 md:w-14 md:h-14 rounded-[14px] flex items-center justify-center shadow-lg bg-zinc-100 dark:bg-zinc-800" style={{ border: `2px solid ${accent}` }}>
+              <HubIcon id={hubId} size={28} color={accent} />
             </div>
             <div>
-              <h2 className="font-sans font-black text-2xl md:text-3xl text-zinc-900 dark:text-zinc-50 leading-tight">
-                {hub.title}
-              </h2>
-              <p className="abh-body text-[0.84rem] md:text-sm mt-1">{hub.tagline}</p>
+              <h2 className="abh-card-heading text-xl md:text-2xl">{hub.title}</h2>
+              <p className="abh-label mt-0.5">{hub.sections.reduce((sum, s) => sum + s.items.length, 0)} Available Services</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
-            style={{ backgroundColor: `${accent}12`, color: accent }}
+            className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+            style={{ backgroundColor: `${accent}15`, color: accent }}
           >
             <X size={20} weight="bold" />
           </button>
         </div>
 
-        {/* Sections */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-6 md:px-8 md:py-8 min-h-0">
-          <div className="space-y-10">
-            {hub.sections.map((section, sIdx) => (
-              <div key={sIdx}>
-                <h3 className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500 mb-5 flex items-center gap-3">
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-8">
+          <div className="inline-flex flex-wrap gap-2 mb-5">
+            {hub.sections.map((section, sIdx) => {
+              const isOpen = openSectionIdx === sIdx
+              return (
+                <button
+                  key={sIdx}
+                  onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-full text-[0.7rem] font-black tracking-tight whitespace-nowrap transition-all duration-200",
+                    isOpen ? "text-white shadow-sm" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                  )}
+                  style={isOpen ? { backgroundColor: solidAccent } : {}}
+                >
                   {section.title}
-                  <div className="h-px flex-1 bg-zinc-100 dark:bg-zinc-900" />
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {section.items.map((item, iIdx) => (
-                    <button
-                      key={iIdx}
-                      onClick={() => onSelectService({ ...item, hubId: hubId as HubId, sectionTitle: section.title })}
-                      className="group flex items-center justify-between p-4 rounded-[12px] border border-zinc-100 dark:border-zinc-900 bg-white dark:bg-zinc-950 hover:border-zinc-200 dark:hover:border-zinc-800 hover:shadow-md transition-all text-left"
-                    >
-                      <div className="flex-1 min-w-0 pr-3">
-                        <p className="text-[0.84rem] font-black text-zinc-800 dark:text-zinc-200 group-hover:text-[#1E6FA8] dark:group-hover:text-[#A9D6F2] transition-colors truncate">
-                          {item.name}
-                        </p>
-                      </div>
-                      <p className="text-[0.84rem] font-black" style={{ color: accent }}>{item.price}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
+                </button>
+              )
+            })}
           </div>
+
+          {openSectionIdx !== null && hub.sections[openSectionIdx] && (
+            <div
+              key={openSectionIdx}
+              className="rounded-[14px] bg-zinc-50 dark:bg-zinc-900/50 shadow-sm p-3 md:p-4 grid grid-cols-1 gap-2 animate-in fade-in zoom-in-95 duration-300"
+            >
+              {hub.sections[openSectionIdx].items.map((item, iIdx) => (
+                <button
+                  key={iIdx}
+                  onClick={() => onSelectService({
+                    name: item.name, price: item.price, hubId,
+                    sectionTitle: hub.sections[openSectionIdx!].title,
+                    requirements: item.requirements, desc: item.description,
+                  })}
+                  className="flex items-center justify-between p-3.5 md:p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:border-[#1E6FA8] dark:hover:border-[#A9D6F2] transition-all"
+                >
+                  <span className="text-[0.84rem] font-black text-zinc-800 dark:text-zinc-200 text-left">{item.name}</span>
+                  <span className="text-[0.84rem] font-black shrink-0 ml-3" style={{ color: accent }}>{item.price}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -761,7 +789,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
               <div className="flex items-start gap-2 px-1">
                 <ShieldCheck size={13} weight="fill" className="text-[#6FBF1A] shrink-0 mt-0.5" />
                 <p className="abh-muted text-[0.67rem] leading-relaxed">
-                  Your file goes directly to ApexbytesHub only — safe, private, and used only for your order. No explicit or inappropriate content allowed.
+                  Your file goes directly to Apexbytes Hub only — safe, private, and used only for your order. No explicit or inappropriate content allowed.
                 </p>
               </div>
             </div>
@@ -848,14 +876,14 @@ function NoticeBanner() {
       </div>
     </div>
   )
-}
+        }
 
 // ─── Closing tagline ──────────────────────────────────────────────────────────
 function ClosingTagline() {
   return (
-    <div className="relative mt-12 mb-4 overflow-hidden rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-gradient-to-br from-[#1E6FA8]/5 via-white to-[#6FBF1A]/5 dark:from-[#1E6FA8]/10 dark:via-zinc-950 dark:to-[#6FBF1A]/10 px-6 py-10 md:py-12 text-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
+    <div className="relative mt-2 mb-4 overflow-hidden rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-gradient-to-br from-[#1E6FA8]/5 via-white to-[#6FBF1A]/5 dark:from-[#1E6FA8]/10 dark:via-zinc-950 dark:to-[#6FBF1A]/10 px-6 py-10 md:py-12 text-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#1E6FA8] via-[#6FBF1A] to-[#F4A261]" />
-      <p className="abh-eyebrow text-zinc-400 dark:text-zinc-500 mb-3">Why ApexbytesHub</p>
+      <p className="abh-eyebrow text-zinc-400 dark:text-zinc-500 mb-3">Why Apexbytes Hub</p>
       <p className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 leading-snug max-w-2xl mx-auto">
         From your first CV to your next big idea — one hub does it all, right here in Bothaville.
       </p>
@@ -1016,4 +1044,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-  }
+    } 
