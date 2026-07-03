@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback, useEffect } from "react"
+import { useSearchParams, usePathname } from "next/navigation"
 import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut, ArrowsLeftRight } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import Image from "next/image"
@@ -721,12 +722,36 @@ function HubFilter({ label, active, accent, isDark, onClick }: {
 export function GalleryPage() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
+  const searchParams = useSearchParams()
+  const pathname      = usePathname()
   const [activeFilter,    setActiveFilter]    = useState<HubId | "all">("all")
   const [selectedProject, setSelectedProject] = useState<ProjectData | null>(null)
   const [zoomIndex,       setZoomIndex]       = useState<number | null>(null)
 
   // Back button: zoom → project → page (modal by modal)
   useGalleryBackStack(selectedProject, setSelectedProject, zoomIndex, setZoomIndex)
+
+  // Deep link: ?project=<id> opens that project directly and filters to its
+  // hub, so the carousel row behind the modal makes sense on load.
+  useEffect(() => {
+    const projectId = searchParams.get("project")
+    if (!projectId) return
+    const match = PROJECTS.find(p => p.id === projectId)
+    if (match) {
+      setActiveFilter(match.hub as HubId)
+      setSelectedProject(match)
+    }
+  }, [searchParams])
+
+  // Keep the URL in sync with the open project so it's shareable at any
+  // point. This rewrites (never adds) the current history entry's URL —
+  // the actual push/pop entries are still owned entirely by
+  // useGalleryBackStack above, so closing a project (by X, backdrop, or
+  // back gesture) naturally clears the param without any extra wiring.
+  useEffect(() => {
+    const url = selectedProject ? `${pathname}?project=${selectedProject.id}` : pathname
+    window.history.replaceState(window.history.state, "", url)
+  }, [selectedProject, pathname])
 
   // Scroll lock while project modal is open
   useEffect(() => {
@@ -813,9 +838,4 @@ export function GalleryPage() {
       />
     </section>
   )
-}
- 
- 
- 
- 
-   
+                                   } 
