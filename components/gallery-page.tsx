@@ -1,8 +1,7 @@
 "use client"
 
-import { useState, useRef, useCallback, useEffect, Suspense } from "react"
-import { useSearchParams, usePathname } from "next/navigation"
-import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut, ArrowsLeftRight, ShareNetwork } from "@phosphor-icons/react"
+import { useState, useRef, useCallback, useEffect } from "react"
+import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut, ArrowsLeftRight } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -18,6 +17,7 @@ const ROW_ORDER: { id: HubId; label: string; short: string }[] = [
   { id: "eservice", label: "E-Service Hub", short: "E-Service" },
   { id: "tech",     label: "Tech Hub",      short: "Tech" },
 ]
+
 // Hubs that support before/after
 const BA_HUBS: HubId[] = ["design", "tech"]
 
@@ -276,32 +276,13 @@ function ZoomOverlay({ images, startIndex, onClose }: { images: string[]; startI
 function ProjectHeader({ project, accent, hasBA, onClose }: {
   project: ProjectData; accent: string; hasBA: boolean; onClose: () => void
 }) {
-  const [copied, setCopied] = useState(false)
-  
-  const handleShare = () => {
-    const url = new URL(window.location.href)
-    url.searchParams.set("project", project.id)
-    navigator.clipboard.writeText(url.toString())
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   return (
     <div className="flex justify-between items-start mb-6 shrink-0">
       <div>
-        <div className="flex flex-wrap items-center gap-2 mb-3">
-          <span className="text-[0.65rem] font-bold px-2.5 py-1 rounded-[14px] inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>{project.tag}</span>
-          {hasBA && (
-            <span className="text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ backgroundColor: `${accent}20`, color: accent }}>Before &amp; After</span>
-          )}
-          <button 
-            onClick={handleShare}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[0.6rem] font-black uppercase tracking-widest bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
-          >
-            {copied ? <Check size={12} weight="bold" className="text-green-500" /> : <ShareNetwork size={12} weight="bold" />}
-            {copied ? "Link Copied" : "Share"}
-          </button>
-        </div>
+        <span className="text-[0.65rem] font-bold px-2.5 py-1 rounded-[14px] mb-3 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>{project.tag}</span>
+        {hasBA && (
+          <span className="ml-2 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ backgroundColor: `${accent}20`, color: accent }}>Before & After</span>
+        )}
         <h2 className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 leading-tight mt-1">{project.title}</h2>
         {project.clientType && (
           <p className={cn("text-[0.72rem] italic mt-1", project.clientType === "sample" ? "text-brand-orange" : "text-zinc-400 dark:text-zinc-500")}>
@@ -329,96 +310,214 @@ function ProjectImageSection({ project, accent, activeImg, setActiveImg, compari
         <>
           <div className="relative flex-1 overflow-hidden cursor-zoom-in group/img" onClick={() => setZoomIndex(activeImg)}>
             <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="(max-width: 768px) 100vw, 55vw" className="object-cover transition-opacity duration-300" priority={activeImg === 0} />
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity bg-black/20">
-              <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30">
-                <ArrowsOut size={24} weight="bold" />
-              </div>
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 pointer-events-none">
+              <div className="bg-black/40 backdrop-blur-sm rounded-full p-2.5"><ArrowsOut size={18} weight="bold" className="text-white" /></div>
             </div>
           </div>
           {allImages.length > 1 && (
-            <div className="flex gap-1.5 p-3 bg-zinc-950/50 backdrop-blur-md overflow-x-auto no-scrollbar shrink-0">
-              {allImages.map((img: string, i: number) => (
-                <button key={i} onClick={() => setActiveImg(i)} className={cn("relative w-14 h-14 rounded-[8px] overflow-hidden border-2 shrink-0 transition-all", activeImg === i ? "border-white scale-105 z-10 shadow-lg" : "border-transparent opacity-50 hover:opacity-80")}>
-                  <SafeImage src={img} alt={`Thumb ${i + 1}`} accent={accent} fill sizes="60px" className="object-cover" />
+            <div className="flex gap-2 px-3 py-2.5 overflow-x-auto no-scrollbar shrink-0 border-t border-white/10">
+              {allImages.map((img: string, idx: number) => (
+                <button key={idx} onClick={() => setActiveImg(idx)}
+                  className={cn("relative shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-[8px] overflow-hidden border-2 transition-all", activeImg === idx ? "scale-105" : "border-transparent opacity-50 hover:opacity-80")}
+                  style={activeImg === idx ? { borderColor: accent } : {}}
+                >
+                  <SafeImage src={img} alt={`Thumb ${idx + 1}`} accent={accent} fill sizes="56px" className="object-cover" />
                 </button>
               ))}
             </div>
           )}
         </>
       )}
+      {hasBA && (
+        <div className="shrink-0 flex border-t border-white/10 bg-zinc-950">
+          <button onClick={() => setComparing(false)} className={cn("flex-1 py-2.5 text-[0.65rem] font-black uppercase tracking-widest transition-all duration-200", !comparing ? "text-white" : "text-white/30 hover:text-white/60")} style={!comparing ? { borderBottom: `2px solid ${accent}` } : {}} >Gallery</button>
+          <button onClick={() => setComparing(true)} className={cn("flex-1 py-2.5 text-[0.65rem] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all duration-200", comparing ? "text-white" : "text-white/30 hover:text-white/60")} style={comparing ? { borderBottom: `2px solid ${accent}` } : {}}><ArrowsLeftRight size={13} weight="bold" />Before / After</button>
+        </div>
+      )}
     </div>
   )
 }
 
-function ProjectViewerModal({ project, onClose, zoomIndex, setZoomIndex }: {
-  project: ProjectData | null; onClose: () => void; zoomIndex: number | null; setZoomIndex: (i: number | null) => void
+function ProjectDetailsPanel({ project, accent }: { project: ProjectData; accent: string }) {
+  return (
+    <div className="space-y-6 md:space-y-8">
+      <section>
+        <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>The Goal</h4>
+        <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.clientGoal}</p>
+      </section>
+      <section>
+        <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>What we did</h4>
+        <ul className="space-y-2">
+          {project.whatWeDid.map((item, i) => (
+            <li key={i} className="flex items-start gap-2.5 text-sm text-zinc-600 dark:text-zinc-300 font-medium">
+              <Check size={14} weight="bold" className="mt-1 shrink-0" style={{ color: accent }} />{item}
+            </li>
+          ))}
+        </ul>
+      </section>
+      <section>
+        <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>The Result</h4>
+        <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.result}</p>
+      </section>
+    </div>
+  )
+}
+
+// ─── Project viewer modal ─────────────────────────────────────────────────────
+function ProjectViewerModal({
+  project, onClose, zoomIndex, setZoomIndex,
+}: {
+  project: ProjectData | null
+  onClose: () => void
+  zoomIndex: number | null
+  setZoomIndex: (i: number | null) => void
 }) {
-  const [activeImg, setActiveImg] = useState(0)
-  const [comparing, setComparing] = useState(false)
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
+  const [activeImg,  setActiveImg]  = useState(0)
+  const [comparing,  setComparing]  = useState(false)
 
-  useEffect(() => { if (project) { setActiveImg(0); setComparing(false) } }, [project])
+  useEffect(() => { setActiveImg(0); setZoomIndex(null); setComparing(false) }, [project?.id])
 
   if (!project) return null
 
-  const hubId    = project.hub as HubId
-  const c        = HUB_COLORS[hubId as HubKey]
-  const accent   = isDark ? c.tagTextDark : c.tagText
-  const hasBA    = BA_HUBS.includes(hubId) && !!(project as any).beforeImage && !!(project as any).afterImage
-  const beforeImg = (project as any).beforeImage
-  const afterImg  = (project as any).afterImage
-  const allImages = project.gallery && project.gallery.length > 0 ? project.gallery : [project.image]
+  const accent    = isDark ? HUB_COLORS[project.hub as HubKey].tagTextDark : HUB_COLORS[project.hub as HubKey].tagText
+  const allImages = project.images?.length > 0 ? project.images : [project.image]
+  const hasBA     = BA_HUBS.includes(project.hub as HubId) && !!(project as any).beforeImage && !!(project as any).afterImage
+  const beforeImg = (project as any).beforeImage as string | undefined
+  const afterImg  = (project as any).afterImage  as string | undefined
 
   return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-0 md:p-6 animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[10200] flex items-end md:items-center justify-center md:p-4 animate-in fade-in duration-300">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
-      
-      <div className="relative w-full h-full md:max-w-6xl md:h-[85vh] bg-white dark:bg-zinc-950 md:rounded-[24px] shadow-2xl overflow-hidden flex flex-col md:flex-row animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
-        <ProjectImageSection project={project} accent={accent} activeImg={activeImg} setActiveImg={setActiveImg} comparing={comparing} setComparing={setComparing} setZoomIndex={setZoomIndex} hasBA={hasBA} beforeImg={beforeImg} afterImg={afterImg} allImages={allImages} />
-        
-        <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-zinc-950 h-[60%] md:h-auto overflow-y-auto">
-          <div className="p-6 md:p-8 flex flex-col h-full">
-            <ProjectHeader project={project} accent={accent} hasBA={hasBA} onClose={onClose} />
-            
-            <div className="flex-1 space-y-8">
-              <section>
-                <h3 className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 mb-3">The Brief</h3>
-                <p className="text-[0.92rem] text-zinc-700 dark:text-zinc-300 leading-relaxed font-medium">{project.description}</p>
-              </section>
 
-              {hasBA && (
-                <button 
-                  onClick={() => setComparing(!comparing)}
-                  className={cn("w-full py-3 rounded-[14px] border-2 flex items-center justify-center gap-3 transition-all font-black text-xs uppercase tracking-widest", comparing ? "bg-zinc-900 text-white border-zinc-900" : "border-zinc-100 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900")}
-                >
-                  <ArrowsLeftRight size={16} weight="bold" />
-                  {comparing ? "Show Gallery" : "Compare Before/After"}
-                </button>
+      <div className={cn(
+        "relative w-full bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800",
+        "rounded-t-[20px] md:rounded-[14px]",
+        "flex flex-col md:flex-row",
+        "h-[95vh] md:h-[85vh] md:max-w-5xl md:overflow-hidden",
+        "animate-in slide-in-from-bottom-4 md:zoom-in-95 duration-500",
+      )}>
+
+        {/* Image / Compare section */}
+        <div className="h-[40%] md:h-auto md:flex-1 flex flex-col overflow-hidden bg-zinc-900">
+
+          {comparing && hasBA ? (
+            /* ── Before / After slider ── */
+            <div className="relative flex-1">
+              <BeforeAfterSlider before={beforeImg!} after={afterImg!} accent={accent} />
+            </div>
+          ) : (
+            /* ── Normal image viewer ── */
+            <>
+              <div className="relative flex-1 overflow-hidden cursor-zoom-in group/img" onClick={() => setZoomIndex(activeImg)}>
+                <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="(max-width: 768px) 100vw, 55vw" className="object-cover transition-opacity duration-300" />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 pointer-events-none">
+                  <div className="bg-black/40 backdrop-blur-sm rounded-full p-2.5"><ArrowsOut size={18} weight="bold" className="text-white" /></div>
+                </div>
+              </div>
+              {allImages.length > 1 && (
+                <div className="flex gap-2 px-3 py-2.5 overflow-x-auto no-scrollbar shrink-0 border-t border-white/10">
+                  {allImages.map((img, idx) => (
+                    <button key={idx} onClick={() => setActiveImg(idx)}
+                      className={cn("relative shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-[8px] overflow-hidden border-2 transition-all", activeImg === idx ? "scale-105" : "border-transparent opacity-50 hover:opacity-80")}
+                      style={activeImg === idx ? { borderColor: accent } : {}}
+                    >
+                      <SafeImage src={img} alt={`Thumb ${idx + 1}`} accent={accent} fill sizes="56px" className="object-cover" />
+                    </button>
+                  ))}
+                </div>
               )}
+            </>
+          )}
 
-              <section>
-                <h3 className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 mb-3">The Result</h3>
-                <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.result}</p>
-              </section>
-            </div>
-
-            <div className="mt-8 pt-6 border-t border-zinc-100 dark:border-zinc-900">
-              <a
-                href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(`Hi ${BIZ.name}! I saw "${project.title}" in your gallery and I'd like something similar.`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={onClose}
-                className="flex items-center justify-center gap-2 w-full py-4 rounded-[16px] text-sm font-black text-white shadow-xl transition-all active:scale-[0.98] hover:shadow-green-500/20"
-                style={{ backgroundColor: "#25D366" }}
+          {/* Toggle bar — only for B/A projects */}
+          {hasBA && (
+            <div className="shrink-0 flex border-t border-white/10 bg-zinc-950">
+              <button
+                onClick={() => setComparing(false)}
+                className={cn("flex-1 py-2.5 text-[0.65rem] font-black uppercase tracking-widest transition-all duration-200", !comparing ? "text-white" : "text-white/30 hover:text-white/60")}
+                style={!comparing ? { borderBottom: `2px solid ${accent}` } : {}}
               >
-                Get a project like this
-              </a>
+                Gallery
+              </button>
+              <button
+                onClick={() => setComparing(true)}
+                className={cn("flex-1 py-2.5 text-[0.65rem] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all duration-200", comparing ? "text-white" : "text-white/30 hover:text-white/60")}
+                style={comparing ? { borderBottom: `2px solid ${accent}` } : {}}
+              >
+                <ArrowsLeftRight size={13} weight="bold" />
+                Before / After
+              </button>
             </div>
+          )}
+        </div>
+
+        {/* Details panel */}
+        <div className={cn("relative flex flex-col border-zinc-100 dark:border-zinc-800 overflow-y-auto overscroll-contain", "h-[60%] border-t md:h-auto md:border-t-0 md:border-l md:w-[380px]", "p-6 md:p-8")}>
+          <div className="flex justify-between items-start mb-6 shrink-0">
+            <div>
+              <span className="text-[0.65rem] font-bold px-2.5 py-1 rounded-[14px] mb-3 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>{project.tag}</span>
+              {hasBA && (
+                <span className="ml-2 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ backgroundColor: `${accent}20`, color: accent }}>Before &amp; After</span>
+              )}
+              <h2 className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 leading-tight mt-1">{project.title}</h2>
+              {project.clientType === "practice" && (
+                <p className="text-[0.72rem] italic text-zinc-400 dark:text-zinc-500 mt-1">
+                  Practice design — portfolio project, not a real client
+                </p>
+              )}
+              {project.clientType === "client" && (
+                <p className="text-[0.72rem] italic text-zinc-400 dark:text-zinc-500 mt-1">
+                  Real client work
+                </p>
+              )}
+              {project.clientType === "sample" && (
+                <p className="text-[0.72rem] italic text-brand-orange mt-1">
+                  Representative example — reflects our work, not an actual client project
+                </p>
+              )}
+            </div>
+            <button onClick={onClose} className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 shrink-0 ml-3 transition-colors">
+              <X size={18} weight="bold" />
+            </button>
+          </div>
+          <div className="space-y-6 md:space-y-8">
+            <section>
+              <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>The Goal</h4>
+              <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.clientGoal}</p>
+            </section>
+            <section>
+              <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>What we did</h4>
+              <ul className="space-y-2">
+                {project.whatWeDid.map((item, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-zinc-600 dark:text-zinc-300 font-medium">
+                    <Check size={14} weight="bold" className="mt-1 shrink-0" style={{ color: accent }} />{item}
+                  </li>
+                ))}
+              </ul>
+            </section>
+            <section>
+              <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>The Result</h4>
+              <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.result}</p>
+            </section>
+
+            {/* CTA */}
+            <a
+              href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(`Hi ${BIZ.name}! I saw "${project.title}" in your gallery and I'd like something similar.`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={onClose}
+              className="flex items-center justify-center gap-2 w-full py-3.5 rounded-[14px] text-sm font-bold text-white shadow-lg transition-transform active:scale-[0.98]"
+              style={{ backgroundColor: "#25D366" }}
+            >
+              Get a project like this
+            </a>
           </div>
         </div>
       </div>
 
+      {/* Zoom overlay sits on top — back button closes this first */}
       {zoomIndex !== null && !comparing && (
         <ZoomOverlay images={allImages} startIndex={zoomIndex} onClose={() => setZoomIndex(null)} />
       )}
@@ -426,6 +525,7 @@ function ProjectViewerModal({ project, onClose, zoomIndex, setZoomIndex }: {
   )
 }
 
+// ─── Unified swipe carousel ───────────────────────────────────────────────────
 function ProjectCarousel({ projects, accent, onSelect }: { projects: ProjectData[]; accent: string; onSelect: (p: ProjectData) => void }) {
   const [activeIdx, setActiveIdx] = useState(0)
   const trackRef   = useRef<HTMLDivElement>(null)
@@ -465,6 +565,7 @@ function ProjectCarousel({ projects, accent, onSelect }: { projects: ProjectData
               <div className="relative aspect-[16/9] md:aspect-[16/8] bg-zinc-100 dark:bg-zinc-900">
                 <SafeImage src={project.image} alt={project.title} accent={accent} fill sizes="(max-width: 768px) 100vw, 800px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                {/* B/A badge */}
                 {BA_HUBS.includes(project.hub as HubId) && !!(project as any).beforeImage && !!(project as any).afterImage && (
                   <div className="absolute top-4 right-4 flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.6rem] font-black uppercase tracking-wider text-white shadow-lg" style={{ backgroundColor: `${accent}dd`, backdropFilter: "blur(6px)" }}>
                     <ArrowsLeftRight size={11} weight="bold" />
@@ -502,45 +603,87 @@ function ProjectCarousel({ projects, accent, onSelect }: { projects: ProjectData
   )
 }
 
-function ProjectsPopover({ projects, accent, isDark, onSelect }: { projects: ProjectData[], accent: string, isDark: boolean, onSelect: (p: ProjectData) => void }) {
+// ─── Projects count popover ───────────────────────────────────────────────────
+function ProjectsPopover({
+  projects, accent, isDark, onSelect,
+}: {
+  projects: ProjectData[]
+  accent: string
+  isDark: boolean
+  onSelect: (p: ProjectData) => void
+}) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!open) return
-    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
     document.addEventListener("mousedown", handler)
     return () => document.removeEventListener("mousedown", handler)
   }, [open])
 
+  // Fix 1st-click issue: only use hover on devices that support it
   const canHover = typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches
 
+  // Mobile back button closes popover first
   useEffect(() => {
     if (!open) return
-    window.history.pushState({ projectsPopover: true }, "")
-    const onPop = () => setOpen(false)
+    const state = { projectsPopover: true }
+    window.history.pushState(state, "")
+    const onPop = (e: PopStateEvent) => {
+      setOpen(false)
+    }
     window.addEventListener("popstate", onPop)
     return () => window.removeEventListener("popstate", onPop)
   }, [open])
 
   return (
-    <div ref={ref} className="relative ml-auto" onMouseEnter={() => canHover && setOpen(true)} onMouseLeave={() => canHover && setOpen(false)}>
-      <button onClick={() => setOpen(o => !o)} className={cn("text-xs font-bold px-3 py-1 rounded-full transition-opacity duration-200 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:scale-105", open && "opacity-0 pointer-events-none")}>
+    <div 
+      ref={ref} 
+      className="relative ml-auto"
+      onMouseEnter={() => canHover && setOpen(true)}
+      onMouseLeave={() => canHover && setOpen(false)}
+    >
+      {/* Spacer pill - keeps position, never shifts layout */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={cn(
+          "text-xs font-bold px-3 py-1 rounded-full transition-opacity duration-200",
+          "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:scale-105",
+          open && "opacity-0 pointer-events-none"
+        )}
+        aria-expanded={open}
+      >
         {projects.length} {projects.length === 1 ? "project" : "projects"}
       </button>
+
       {open && (
         <div className="absolute right-0 top-0 z-50 w-64 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
           <div className="px-4 py-3 cursor-pointer" onClick={() => setOpen(false)}>
-            <span className="text-[0.65rem] font-black" style={{ color: accent }}>{projects.length} {projects.length === 1 ? "project" : "projects"}</span>
+            <span className="text-[0.65rem] font-black" style={{ color: accent }}>
+              {projects.length} {projects.length === 1 ? "project" : "projects"}
+            </span>
           </div>
           <div className="p-2 border-t border-zinc-100 dark:border-zinc-800">
             {projects.map(p => (
-              <button key={p.id} onClick={() => { onSelect(p); setOpen(false) }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left group/item">
+              <button
+                key={p.id}
+                onClick={() => { onSelect(p); setOpen(false) }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left group/item"
+              >
                 <div className="w-8 h-8 rounded-[8px] shrink-0 overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900">
-                  {p.image ? <img src={p.image} alt={p.title} className="w-full h-full object-cover" /> : <div className="w-full h-full" style={{ backgroundColor: `${accent}20` }} />}
+                  {p.image ? (
+                    <img src={p.image} alt={p.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full" style={{ backgroundColor: `${accent}20` }} />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate group-hover/item:underline" style={{ textDecorationColor: accent }}>{p.title}</p>
+                  <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate group-hover/item:underline" style={{ textDecorationColor: accent }}>
+                    {p.title}
+                  </p>
                   <p className="text-[0.6rem] font-medium text-zinc-400 truncate">{p.shortDesc}</p>
                 </div>
               </button>
@@ -552,49 +695,40 @@ function ProjectsPopover({ projects, accent, isDark, onSelect }: { projects: Pro
   )
 }
 
-function HubFilter({ label, active, accent, isDark, onClick }: { label: string; active: boolean; accent?: string; isDark: boolean; onClick: () => void }) {
+
+
+// ─── Hub filter pill ─────────────────────────────────────────────────────────
+function HubFilter({ label, active, accent, isDark, onClick }: {
+  label: string; active: boolean; accent?: string; isDark: boolean; onClick: () => void
+}) {
   const isAll = label.toLowerCase().includes('all')
   return (
-    <button onClick={onClick} className={cn("px-5 py-2 rounded-[14px] text-[0.72rem] font-bold transition-all", active ? cn("shadow-md", isAll ? "bg-brand-blue text-white" : (isDark ? "text-zinc-900" : "text-white")) : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800")} style={active && accent && !isAll ? { backgroundColor: accent } : {}}>
+    <button
+      onClick={onClick}
+      className={cn(
+        "px-5 py-2 rounded-[14px] text-[0.72rem] font-bold transition-all",
+        active
+          ? cn("shadow-md", isAll ? "bg-brand-blue text-white" : (isDark ? "text-zinc-900" : "text-white"))
+          : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+      )}
+      style={active && accent && !isAll ? { backgroundColor: accent } : {}}
+    >
       {label}
     </button>
   )
 }
 
-function GalleryContent() {
-  const searchParams = useSearchParams()
-  const pathname      = usePathname()
+export function GalleryPage() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
-  
   const [activeFilter,    setActiveFilter]    = useState<HubId | "all">("all")
   const [selectedProject, setSelectedProject] = useState<ProjectData | null>(null)
   const [zoomIndex,       setZoomIndex]       = useState<number | null>(null)
 
-  // Handle Deep Linking on mount
-  useEffect(() => {
-    const projectId = searchParams.get("project")
-    if (projectId) {
-      const project = PROJECTS.find(p => p.id === projectId)
-      if (project) {
-        setSelectedProject(project)
-        setActiveFilter(project.hub as HubId)
-      }
-    }
-  }, [searchParams])
-
-  // Keep the URL in sync with the open project so it's shareable at any
-  // point. This rewrites (never adds) the current history entry's URL —
-  // the actual push/pop entries are still owned entirely by
-  // useGalleryBackStack above, so closing a project (by X, backdrop, or
-  // back gesture) naturally clears the param without any extra wiring.
-  useEffect(() => {
-    const url = selectedProject ? `${pathname}?project=${selectedProject.id}` : pathname
-    window.history.replaceState(window.history.state, "", url)
-  }, [selectedProject, pathname])
-
+  // Back button: zoom → project → page (modal by modal)
   useGalleryBackStack(selectedProject, setSelectedProject, zoomIndex, setZoomIndex)
 
+  // Scroll lock while project modal is open
   useEffect(() => {
     if (!selectedProject) return
     const scrollY = window.scrollY
@@ -615,65 +749,73 @@ function GalleryContent() {
   const filteredRows = activeFilter === "all" ? ROW_ORDER : ROW_ORDER.filter(r => r.id === activeFilter)
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 md:px-8">
-      <div className="text-center mb-12">
-        <h1 className="abh-page-title mb-4">Our Portfolio</h1>
-        <p className="abh-tagline max-w-2xl mx-auto">Real results for real clients. Select a category to explore our work in depth.</p>
-        <div className="abh-divider" />
-      </div>
-
-      <div className="flex flex-wrap gap-2 justify-center mb-10">
-        <HubFilter label="All hubs" active={activeFilter === "all"} isDark={isDark} onClick={() => setActiveFilter("all")} />
-        {ROW_ORDER.map(row => (
-          <HubFilter key={row.id} label={row.short} active={activeFilter === row.id} accent={getAccent(row.id)} isDark={isDark} onClick={() => setActiveFilter(row.id)} />
-        ))}
-      </div>
-
-      <div className="max-w-2xl mx-auto mb-16 rounded-[14px] border border-brand-orange/20 bg-brand-orange/5 dark:bg-brand-orange/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
-        <div className="w-12 h-12 shrink-0 rounded-[14px] bg-brand-orange/10 flex items-center justify-center text-brand-orange">
-          <Info size={28} weight="fill" />
-        </div>
-        <div className="flex-1 min-w-0 pt-0.5">
-          <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-snug">
-            We use high-quality sample photos to represent our services, ensuring the professional standard shown is exactly what you receive.
-          </p>
-        </div>
-      </div>
-
-      <div className="space-y-20">
-        {filteredRows.map(row => {
-          const projects = PROJECTS.filter(p => p.hub === row.id)
-          if (projects.length === 0) return null
-          const accent = getAccent(row.id)
-          return (
-            <div key={row.id}>
-              <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
-                <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: accent }} />
-                <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
-                <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
-              </div>
-              <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} />
-            </div>
-          )
-        })}
-      </div>
-
-      <ProjectViewerModal project={selectedProject} onClose={() => setSelectedProject(null)} zoomIndex={zoomIndex} setZoomIndex={setZoomIndex} />
-    </div>
-  )
-}
-
-export function GalleryPage() {
-  return (
     <section className="min-h-screen bg-background pt-[calc(var(--nav-h)+2rem)] pb-24 overflow-x-hidden">
-      <Suspense fallback={
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="w-8 h-8 border-4 border-brand-blue border-t-transparent rounded-full animate-spin" />
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+
+        <div className="text-center mb-12">
+          <h1 className="abh-page-title mb-4">Our Portfolio</h1>
+          <p className="abh-tagline max-w-2xl mx-auto">Real results for real clients. Select a category to explore our work in depth.</p>
+          <div className="abh-divider" />
         </div>
-      }>
-        <GalleryContent />
-      </Suspense>
+
+        {/* Filter pills */}
+        <div className="flex flex-wrap gap-2 justify-center mb-10">
+          <HubFilter label="All hubs" active={activeFilter === "all"} isDark={isDark} onClick={() => setActiveFilter("all")} />
+          {ROW_ORDER.map(row => (
+            <HubFilter
+              key={row.id}
+              label={row.short}
+              active={activeFilter === row.id}
+              accent={getAccent(row.id)}
+              isDark={isDark}
+              onClick={() => setActiveFilter(row.id)}
+            />
+          ))}
+        </div>
+
+        {/* Notice — consistent with Services page */}
+        <div className="max-w-2xl mx-auto mb-16 rounded-[14px] border border-brand-orange/20 bg-brand-orange/5 dark:bg-brand-orange/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+          <div className="w-12 h-12 shrink-0 rounded-[14px] bg-brand-orange/10 flex items-center justify-center text-brand-orange">
+            <Info size={28} weight="fill" />
+          </div>
+          <div className="flex-1 min-w-0 pt-0.5">
+            <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-snug">
+              We use high-quality sample photos to represent our services, ensuring the professional standard shown is exactly what you receive.
+            </p>
+          </div>
+        </div>
+
+        {/* Hub rows */}
+        <div className="space-y-20">
+          {filteredRows.map(row => {
+            const projects = PROJECTS.filter(p => p.hub === row.id)
+            if (projects.length === 0) return null
+            const accent = getAccent(row.id)
+            return (
+              <div key={row.id}>
+                <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
+                  <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: accent }} />
+                  <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
+                  <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
+                </div>
+                <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} />
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      <ProjectViewerModal
+        project={selectedProject}
+        onClose={() => setSelectedProject(null)}
+        zoomIndex={zoomIndex}
+        setZoomIndex={setZoomIndex}
+      />
     </section>
   )
 }
-                                   
+ 
+ 
+ 
+ 
+    
