@@ -9,6 +9,7 @@ import {
   X, Printer, FileText, Palette,
   Globe, Cpu, Info, Heart,
   Question, CaretDown, CurrencyDollar,
+  Copy, Check,
 } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, WA, FOOTER_NAV, FAQS } from "@/lib/brand"
@@ -121,8 +122,18 @@ function FooterContent() {
   const [isTermsOpen,   setIsTermsOpen]   = useState(false)
   const [isFaqOpen,     setIsFaqOpen]     = useState(false)
   const [openFaqIndex,  setOpenFaqIndex]  = useState<number | null>(null)
+  const [phoneCopied,   setPhoneCopied]   = useState(false)
 
   useEffect(() => { setMounted(true) }, [])
+
+  // Fallback for desktop browsers where the wa.me link doesn't auto-open
+  // WhatsApp — lets the person copy the number and message manually instead.
+  const handleCopyPhone = async () => {
+    if (typeof navigator === "undefined" || !navigator.clipboard) return
+    await navigator.clipboard.writeText(BIZ.phone)
+    setPhoneCopied(true)
+    setTimeout(() => setPhoneCopied(false), 2000)
+  }
 
   return (
     <div className="pt-16 pb-12">
@@ -170,18 +181,38 @@ function FooterContent() {
         <div>
           <h3 className="text-[0.7rem] font-black uppercase tracking-widest mb-8 text-zinc-400">Connect</h3>
           <ul className="flex flex-col gap-5">
-            <li>
-              <a
-                href={WA.general}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-4 text-sm text-zinc-600 dark:text-zinc-300 hover:text-brand-whatsapp transition-colors"
-              >
-                <div className="w-10 h-10 rounded-[14px] border border-zinc-100 dark:border-zinc-800 flex items-center justify-center bg-white dark:bg-zinc-900 shadow-sm" aria-hidden="true">
-                  <WhatsappLogo weight="fill" className="w-5 h-5" />
-                </div>
-                {BIZ.phone}
-              </a>
+            <li className="relative">
+              <div className="flex items-center gap-2">
+                <a
+                  href={WA.general}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-4 text-sm text-zinc-600 dark:text-zinc-300 hover:text-brand-whatsapp transition-colors flex-1 min-w-0"
+                >
+                  <div className="w-10 h-10 rounded-[14px] border border-zinc-100 dark:border-zinc-800 flex items-center justify-center bg-white dark:bg-zinc-900 shadow-sm shrink-0" aria-hidden="true">
+                    <WhatsappLogo weight="fill" className="w-5 h-5" />
+                  </div>
+                  <span className="truncate">{BIZ.phone}</span>
+                </a>
+                {/* Copy fallback — for desktop browsers where wa.me doesn't auto-open WhatsApp */}
+                <button
+                  type="button"
+                  onClick={handleCopyPhone}
+                  aria-label="Copy phone number"
+                  className="w-8 h-8 rounded-[10px] flex items-center justify-center border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm text-zinc-400 hover:text-brand-blue transition-all active:scale-95 shrink-0"
+                >
+                  {phoneCopied ? (
+                    <Check weight="bold" className="w-3.5 h-3.5 text-brand-green" />
+                  ) : (
+                    <Copy weight="bold" className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
+              {phoneCopied && (
+                <span className="absolute -top-7 right-0 whitespace-nowrap text-[0.6rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full shadow-lg animate-in fade-in zoom-in-95 duration-200">
+                  Copied!
+                </span>
+              )}
             </li>
             <li>
               <a
@@ -352,4 +383,4 @@ export function Footer() {
       <FooterContent />
     </footer>
   )
-}
+        } 
