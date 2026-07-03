@@ -283,7 +283,7 @@ export function FloatingSearchWidget() {
 
           {/* Search input */}
           <div className="px-5 pt-4 pb-2 shrink-0">
-            <div className={cn("flex items-center gap-2 px-4 py-2.5 rounded-[14px]", GLASS.item)}>
+            <div className={cn("flex items-center gap-2 px-4 py-2.5 border-b border-zinc-200 dark:border-zinc-800")}>
               <MagnifyingGlass size={16} weight="bold" className="shrink-0 text-zinc-400" />
               <input
                 ref={inputRef}
@@ -341,5 +341,4 @@ export function FloatingSearchWidget() {
       )}
     </>
   )
-}
- 
+                  }
