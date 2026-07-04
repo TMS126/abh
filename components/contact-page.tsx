@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { useTheme } from "next-themes"
-import { CaretDown, DownloadSimple, AddressBook, Clock, Sparkle } from "@phosphor-icons/react"
+import { CaretDown, DownloadSimple, AddressBook, Clock, Sparkle, WhatsappLogo, Phone, EnvelopeSimple, MapPin } from "@phosphor-icons/react"
 import { BRAND, BIZ, WA, FAQS, CONTACT_LINKS, HOURS } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 import { BusinessStatusFull } from "@/components/business-status"
@@ -16,7 +16,15 @@ const FORM_HUBS: Record<string, { light: string; dark: string }> = {
   "Tech Hub":                   { light: "#333333",        dark: "#B8CCE0" },
   "Not Sure — Help Me Choose":  { light: "#777777",        dark: "#9A9A9A" },
 }
-
+// Maps each CONTACT_LINKS entry to its icon by title — relies on the
+// exact titles set in lib/brand.ts ("WhatsApp Us", "Call Us", "Email Us",
+// "Visit Us"). If those titles ever change, update the keys here too.
+const CONTACT_ICONS: Record<string, React.ElementType> = {
+  "WhatsApp Us": WhatsappLogo,
+  "Call Us":     Phone,
+  "Email Us":    EnvelopeSimple,
+  "Visit Us":    MapPin,
+}
 function downloadBusinessVCard() {
   const vcard = [
     "BEGIN:VCARD",
@@ -240,25 +248,43 @@ function ContactPageInner() {
               <h2 className="abh-section-heading mb-1">Get In Touch</h2>
               <p className="abh-body">WhatsApp, call, email or visit us in {BIZ.location}.</p>
             </div>
-
-            {/* Contact links */}
-            <div className="flex flex-col gap-3">
-              {CONTACT_LINKS.map((c) => (
-                <a
-                  key={c.title}
-                  href={c.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-4 p-4 abh-card hover:border-brand-blue transition-all"
-                >
-                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.dot }} />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{c.title}</p>
-                    <p className="abh-muted break-words">{c.value}</p>
-                  </div>
-                </a>
-              ))}
-            </div>
+            
+            {/* Contact links — 2×2 grid at all breakpoints, one icon per link.
+    Resting state is fully neutral (no color at all) so the grid doesn't
+    look busy; each card's icon, dot, and border only pick up its brand
+    color on hover/focus, matching the hover-reveal pattern used
+    elsewhere in this file (e.g. HubSelect's option rows). Padding and
+    min-height are sized for comfortable thumb taps on mobile. */}
+<div className="grid grid-cols-2 gap-3">
+  {CONTACT_LINKS.map((c) => {
+    const Icon = CONTACT_ICONS[c.title] ?? Phone
+    return (
+      <a
+        key={c.title}
+        href={c.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group flex flex-col items-center justify-center text-center gap-2 p-4 min-h-[104px] abh-card border-transparent transition-all duration-200 active:scale-[0.97]"
+        style={{ borderColor: "transparent" }}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = c.dot }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "transparent" }}
+      >
+        <span
+          className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 transition-colors duration-200 text-zinc-400 dark:text-zinc-500 bg-zinc-50 dark:bg-zinc-900"
+          style={{ ["--icon-color" as any]: c.dot }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = c.dot; e.currentTarget.style.backgroundColor = `${c.dot}15` }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = ""; e.currentTarget.style.backgroundColor = "" }}
+        >
+          <Icon size={20} weight="fill" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{c.title}</p>
+          <p className="abh-muted break-words text-xs">{c.value}</p>
+        </div>
+      </a>
+    )
+  })}
+</div>
 
             {/* vCard download */}
             <div className="abh-card p-5 flex items-center justify-between gap-4">
