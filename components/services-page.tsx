@@ -361,19 +361,27 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
 
   return (
     <div ref={wrapRef} className="relative mx-auto w-full max-w-md">
-      <MagnifyingGlass size={18} weight="bold" className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+      <MagnifyingGlass
+        size={18}
+        weight="bold"
+        className="absolute left-4 top-1/2 -translate-y-1/2 text-white/80 pointer-events-none"
+      />
       <input
         type="text"
         value={query}
         onChange={e => setQuery(e.target.value)}
         onFocus={() => setFocused(true)}
         placeholder="Search"
-        className="w-full pl-11 pr-10 py-3.5 rounded-[14px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none focus:border-[#1E6FA8] transition-colors text-center focus:text-left"
+        className={cn(
+          "w-full pl-11 pr-10 py-4 rounded-[14px] font-sans font-black text-base text-white placeholder:text-white/70",
+          "shadow-lg transition-all duration-300 outline-none text-center focus:text-left focus:scale-[0.99]",
+          "bg-brand-green dark:bg-brand-green-dark hover:opacity-90"
+        )}
       />
       {query && (
         <button
           onClick={() => setQuery("")}
-          className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600"
+          className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
         >
           <X size={12} weight="bold" />
         </button>
@@ -413,8 +421,7 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
       )}
     </div>
   )
-}
-
+                             }
 
 function HubModal({
   hubId, onClose, onSelectService,
