@@ -10,6 +10,25 @@ import { cn } from "@/lib/utils"
 
 type NavColorPair = { light: string; dark: string }
 
+// Picks white or near-black text against a given background hex, based on
+// actual WCAG relative luminance rather than assuming light/dark theme
+// tells you which one you need. Some route colors (e.g. light-mode green
+// and orange) are mid-brightness and read as failing contrast with white
+// text even though "light mode" might suggest white is the safe choice —
+// this checks the real color instead of guessing from the theme.
+function getReadableTextColor(hex: string): string {
+  const clean = hex.replace("#", "")
+  const r = parseInt(clean.substring(0, 2), 16) / 255
+  const g = parseInt(clean.substring(2, 4), 16) / 255
+  const b = parseInt(clean.substring(4, 6), 16) / 255
+  const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4))
+  const luminance = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
+  // Contrast against white (lum 1.0) vs near-black (lum ~0.012, #18181b)
+  const contrastWhite = 1.05 / (luminance + 0.05)
+  const contrastDark  = (luminance + 0.05) / 0.062
+  return contrastWhite >= contrastDark ? "#ffffff" : "#18181b"
+}
+
 export function Navbar() {
   const router   = useRouter()
   const pathname = usePathname()
@@ -69,9 +88,9 @@ export function Navbar() {
   const pillClass = "bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md py-2 rounded-[14px] border border-gray-200 dark:border-zinc-800 shadow-sm"
 
   // Per-page accent, used for: the mobile menu's active link, the shared
-  // controls pill's route echo, and (now) the desktop nav's active pill
-  // fill. Same map drives all three so the palette stays consistent
-  // everywhere in the navbar.
+  // controls pill's route echo, and the desktop nav's active pill fill.
+  // Same map drives all three so the palette stays consistent everywhere
+  // in the navbar.
   const MOBILE_NAV_COLORS: { [path: string]: NavColorPair } = {
     "/":         { light: BRAND.blue,       dark: BRAND.lightBlue   }, // Home — primary blue
     "/services": { light: BRAND.green,      dark: BRAND.lightGreen  },
@@ -89,19 +108,17 @@ export function Navbar() {
   const routeColor  = mounted && routeAccent ? (theme === "dark" ? routeAccent.dark : routeAccent.light) : undefined
 
   // Individual link pill — replaces the old shared frosted-container
-  // look on desktop. Rest state: subtle border + soft shadow (bg-white
-  // so it still reads as a pill against the page, per your call to keep
-  // a resting pill style rather than fully plain text). Active: solid
-  // fill using the current page's routeColor (falls back to brand-blue
-  // if a route isn't in MOBILE_NAV_COLORS) instead of a fixed blue, so
-  // desktop matches the mobile menu's per-page echo. Hover: nudges the
-  // whole pill up (-translate-y-0.5) for a little life, scoped to
-  // desktop only per your earlier call.
+  // look on desktop. Rest state: subtle border + soft shadow. Active:
+  // solid fill using the link's own routeColor, with text color computed
+  // per-color via getReadableTextColor rather than assumed from theme
+  // (see note above the helper — some route colors need dark text even
+  // in "light mode" contexts). Hover: nudges the whole pill up for a
+  // little life, scoped to desktop only.
   const desktopLinkClass = (isActive: boolean, isCta?: boolean) =>
     cn(
       "px-4 py-2 rounded-[14px] text-[0.84rem] transition-all duration-300 border hover:-translate-y-0.5",
       isActive
-        ? "font-black text-white border-transparent shadow-sm"
+        ? "font-black border-transparent shadow-sm"
         : "font-medium text-zinc-500 dark:text-zinc-400 bg-white/80 dark:bg-zinc-900/80 border-gray-200 dark:border-zinc-800 shadow-sm hover:text-brand-blue dark:hover:text-brand-light-blue hover:shadow-md",
       isCta && "border-2 border-brand-orange text-brand-orange hover:bg-brand-orange/10"
     )
@@ -152,20 +169,21 @@ export function Navbar() {
 
           {/* Desktop Nav — shared frosted container removed; each link is
               now its own pill via desktopLinkClass. Each link's own path
-              (not the current page) determines its active fill color, so
-              hovering to About shows blueDark, Gallery shows orange, etc.,
-              matching the mobile menu's per-page palette. */}
+              (not the current page) determines its active fill color, and
+              text color is computed per-color via getReadableTextColor so
+              contrast holds regardless of theme. */}
           <div className={cn("hidden md:flex items-center gap-2 pointer-events-auto absolute left-1/2 -translate-x-1/2 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
             {NAV_ITEMS.map((item) => {
               const isActive   = pathname === item.path
               const itemAccent = MOBILE_NAV_COLORS[item.path]
               const itemColor  = mounted && itemAccent ? (theme === "dark" ? itemAccent.dark : itemAccent.light) : BRAND.blue
+              const itemTextClr = getReadableTextColor(itemColor)
 
               return (
                 <button
                   key={item.id}
                   onClick={() => navigate(item.path)}
-                  style={isActive ? { backgroundColor: itemColor } : undefined}
+                  style={isActive ? { backgroundColor: itemColor, color: itemTextClr } : undefined}
                   className={desktopLinkClass(isActive, item.isCta)}
                 >
                   {item.label}
