@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect, Suspense } from "react"
 import { useSearchParams, usePathname } from "next/navigation"
 import Link from "next/link"
-import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut, ArrowsLeftRight, LinkSimple, ShareNetwork, EnvelopeSimple } from "@phosphor-icons/react"
+import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut, ArrowsLeftRight, LinkSimple, ShareNetwork, EnvelopeSimple, MagnifyingGlass, Shuffle } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -39,16 +39,6 @@ function buildInquireHref(project: ProjectData): string {
 }
 
 // ─── Back-button modal stack ──────────────────────────────────────────────────
-// Two layers: project modal → zoom overlay.
-//
-// Design: this hook is the ONLY thing that ever mutates browser history for
-// these two modals. Opening a modal pushes a history entry. Closing a modal
-// — whether by X button, backdrop click, Escape, or an actual back
-// gesture — always goes through history (via the returned close* helpers,
-// which call history.back()). The popstate handler is the single place
-// that clears React state. This way there is never a "phantom" forward
-// history entry left behind by a manual close, which previously forced
-// users to press back twice to leave the page.
 function useGalleryBackStack(
   selectedProject: ProjectData | null,
   setSelectedProject: (p: ProjectData | null) => void,
@@ -58,7 +48,6 @@ function useGalleryBackStack(
   const projectPushed = useRef(false)
   const zoomPushed = useRef(false)
 
-  // Push history entry when project opens
   useEffect(() => {
     if (selectedProject && !projectPushed.current) {
       window.history.pushState({ abModal: "project" }, "")
@@ -66,7 +55,6 @@ function useGalleryBackStack(
     }
   }, [selectedProject])
 
-  // Push history entry when zoom opens
   useEffect(() => {
     if (zoomIndex !== null && !zoomPushed.current) {
       window.history.pushState({ abModal: "zoom" }, "")
@@ -74,11 +62,8 @@ function useGalleryBackStack(
     }
   }, [zoomIndex])
 
-  // popstate = back button / swipe-back gesture (or a programmatic
-  // history.back() call from one of the close helpers below)
   useEffect(() => {
     const onPop = () => {
-      // Innermost first
       if (zoomIndex !== null) {
         zoomPushed.current = false
         setZoomIndex(null)
@@ -94,12 +79,8 @@ function useGalleryBackStack(
     return () => window.removeEventListener("popstate", onPop)
   }, [zoomIndex, selectedProject, setZoomIndex, setSelectedProject])
 
-  // Close helpers — use these anywhere a modal is dismissed manually
-  // (X button, backdrop click, CTA click, Escape key, image click-to-close).
-  // They consume the pushed history entry instead of leaving it stale.
   const closeZoom = useCallback(() => {
     if (zoomPushed.current) {
-      // popstate handler above will clear zoomIndex once this resolves
       window.history.back()
     } else {
       setZoomIndex(null)
@@ -107,8 +88,6 @@ function useGalleryBackStack(
   }, [setZoomIndex])
 
   const closeProject = useCallback(() => {
-    // Zoom always sits above the project modal — close it first if open,
-    // then close the project on its own separate back-step.
     if (zoomIndex !== null) {
       closeZoom()
       return
@@ -175,7 +154,6 @@ function BeforeAfterSlider({ before, after, accent }: { before: string; after: s
   const rafRef = useRef<number>()
   const [revealed, setRevealed] = useState(false)
 
-  // Spring animation
   useEffect(() => {
     const animate = () => {
       setPos(p => {
@@ -188,7 +166,6 @@ function BeforeAfterSlider({ before, after, accent }: { before: string; after: s
     return () => cancelAnimationFrame(rafRef.current!)
   }, [])
 
-  // Initial sweep hint
   useEffect(() => {
     if (revealed) return
     const timer = setTimeout(() => {
@@ -214,9 +191,6 @@ function BeforeAfterSlider({ before, after, accent }: { before: string; after: s
   }
   const onDoubleClick = () => { targetRef.current = 50 }
 
-  // Defensive floor: pos is clamped to [2, 98] above, so this is currently
-  // unreachable, but guards against a divide-by-near-zero blowout in the
-  // inner "before" layer's width calculation if that clamp is ever loosened.
   const safePos = Math.max(pos, 1)
 
   return (
@@ -227,13 +201,11 @@ function BeforeAfterSlider({ before, after, accent }: { before: string; after: s
       onPointerMove={onPointerMove}
       onDoubleClick={onDoubleClick}
     >
-      {/* AFTER — full base */}
       <div className="absolute inset-0">
         <SafeImage src={after} alt="After" accent={accent} fill sizes="55vw" className="object-cover" priority />
         <span className="absolute bottom-3 right-3 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full text-white shadow" style={{ backgroundColor: `${accent}cc` }}>After</span>
       </div>
 
-      {/* BEFORE — clipped left */}
       <div className="absolute inset-0 overflow-hidden" style={{ width: `${pos}%` }}>
         <div className="absolute inset-0" style={{ width: `${10000 / safePos}%` }}>
           <SafeImage src={before} alt="Before" accent={accent} fill sizes="55vw" className="object-cover" priority />
@@ -241,10 +213,8 @@ function BeforeAfterSlider({ before, after, accent }: { before: string; after: s
         <span className="absolute bottom-3 left-3 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-black/50 text-white shadow">Before</span>
       </div>
 
-      {/* Divider line */}
       <div className="absolute top-0 bottom-0 w-0.5 pointer-events-none" style={{ left: `${pos}%`, backgroundColor: "rgba(255,255,255,0.9)", boxShadow: "0 0 8px rgba(0,0,0,0.4)", transform: "translateX(-0.5px)" }} />
 
-      {/* Handle */}
       <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 pointer-events-none" style={{ left: `${pos}%` }}>
         <div className="w-11 h-11 rounded-full flex items-center justify-center shadow-xl border-2 border-white/90 backdrop-blur-sm transition-transform hover:scale-110" style={{ backgroundColor: accent }}>
           <ArrowsLeftRight size={18} weight="bold" className="text-white" />
@@ -328,8 +298,6 @@ function ZoomOverlay({ images, startIndex, onClose }: { images: string[]; startI
 }
 
 // ─── Share / copy-link button ─────────────────────────────────────────────────
-// Surfaces the existing ?project=<id> deep link so a visitor can copy a
-// shareable URL straight to this project (e.g. to send it on WhatsApp).
 function ShareButton({ url, title }: { url: string; title: string }) {
   const [shared, setShared] = useState(false)
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>()
@@ -338,16 +306,12 @@ function ShareButton({ url, title }: { url: string; title: string }) {
 
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation()
-    // Prefer the phone's native share sheet (WhatsApp, Messages, Mail,
-    // etc.) so sharing a project feels like sharing anything else on the
-    // phone, rather than a "copy link" utility action.
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({ title, text: `Check out "${title}" from Apexbytes Hub`, url })
         return
       } catch {
-        // User dismissed the share sheet, or share failed — fall through
-        // to clipboard so the button still does something useful.
+        // fall through to clipboard
       }
     }
     try {
@@ -355,7 +319,7 @@ function ShareButton({ url, title }: { url: string; title: string }) {
       setShared(true)
       timeoutRef.current = setTimeout(() => setShared(false), 1500)
     } catch {
-      // Clipboard API unavailable (e.g. insecure context) — fail silently.
+      // fail silently
     }
   }
 
@@ -373,9 +337,6 @@ function ShareButton({ url, title }: { url: string; title: string }) {
 }
 
 // ─── Project Viewer Components ───────────────────────────────────────────────
-// These are the single source of truth for the modal's header / image
-// section / details panel — ProjectViewerModal below composes them instead
-// of keeping its own duplicate inline copies.
 function ProjectHeader({ project, accent, hasBA, shareUrl, onClose }: {
   project: ProjectData; accent: string; hasBA: boolean; shareUrl: string; onClose: () => void
 }) {
@@ -418,9 +379,6 @@ function ProjectImageSection({
   hasSiblings: boolean; onPrevProject: () => void; onNextProject: () => void
   siblingPosition?: string
 }) {
-  // Swipe left/right on the main image itself to move between this
-  // project's own images — previously this only worked once you'd already
-  // tapped in to the full-screen zoom overlay.
   const touchStartX = useRef(0)
   const touchStartY = useRef(0)
   const didSwipeRef = useRef(false)
@@ -438,8 +396,6 @@ function ProjectImageSection({
     didSwipeRef.current = true
     setActiveImg(dx < 0 ? (activeImg + 1) % allImages.length : (activeImg - 1 + allImages.length) % allImages.length)
   }
-  // A swipe shouldn't also trigger the zoom-in tap that fires right after
-  // touchend on mobile.
   const handleImageClick = () => {
     if (didSwipeRef.current) { didSwipeRef.current = false; return }
     onZoom(activeImg)
@@ -464,7 +420,6 @@ function ProjectImageSection({
               <div className="bg-black/40 backdrop-blur-sm rounded-full p-2.5"><ArrowsOut size={18} weight="bold" className="text-white" /></div>
             </div>
 
-            {/* Cycle to prev/next project — mirrors keyboard left/right */}
             {hasSiblings && (
               <>
                 <button
@@ -535,10 +490,6 @@ function ProjectDetailsPanel({ project, accent, onClose }: { project: ProjectDat
         <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.result}</p>
       </section>
 
-      {/* CTAs — WhatsApp stays primary (fastest path for most clients);
-          "Inquire about this" is a secondary path into the full contact
-          form for people who'd rather not use WhatsApp, prefilled with the
-          matching service hub and a message naming this project. */}
       <div className="space-y-2.5">
         <a
           href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(`Hi ${BIZ.name}! I saw "${project.title}" in your gallery and I'd like something similar.`)}`}
@@ -580,9 +531,6 @@ function ProjectViewerModal({
   const isDark = resolvedTheme === "dark"
   const [activeImg,  setActiveImg]  = useState(0)
   const [comparing,  setComparing]  = useState(false)
-  // 0–1, tracks scroll offset continuously (not a hard on/off flip) so the
-  // shadow genuinely eases in as you scroll rather than snapping in at a
-  // threshold.
   const [shadowOpacity, setShadowOpacity] = useState(0)
   const detailsRef = useRef<HTMLDivElement>(null)
 
@@ -593,8 +541,6 @@ function ProjectViewerModal({
     if (detailsRef.current) detailsRef.current.scrollTop = 0
   }, [project?.id])
 
-  // Fully faded in by ~40px of scroll — short enough to feel responsive,
-  // long enough that the fade itself is visible rather than instant.
   const SHADOW_FADE_DISTANCE = 40
   const handleDetailsScroll = () => {
     if (!detailsRef.current) return
@@ -617,9 +563,6 @@ function ProjectViewerModal({
     onNavigate(siblings[i])
   }, [hasSiblings, currentIdx, siblings, onNavigate])
 
-  // Left/right arrow keys cycle projects within the same hub without
-  // closing the modal. Disabled while the zoom overlay is open — that
-  // overlay owns the arrow keys itself for cycling between images.
   useEffect(() => {
     if (!project || zoomIndex !== null) return
     const fn = (e: KeyboardEvent) => {
@@ -670,21 +613,11 @@ function ProjectViewerModal({
           siblingPosition={siblingPosition}
         />
 
-        {/* Details panel */}
         <div
           ref={detailsRef}
           onScroll={handleDetailsScroll}
           className={cn("relative flex flex-col border-zinc-100 dark:border-zinc-800 overflow-y-auto overscroll-contain", "h-[60%] border-t md:h-auto md:border-t-0 md:border-l md:w-[380px]", "p-6 md:p-8")}
         >
-          {/* Shadow that eases in as the panel scrolls — gives the
-              impression the image above is casting a shadow onto the text
-              sliding underneath. Opacity tracks scroll offset continuously
-              (see shadowOpacity/SHADOW_FADE_DISTANCE above) rather than
-              snapping on past a threshold, and the gradient itself uses
-              several stops so the falloff reads as a genuine soft fade
-              rather than a flat tinted band. Zero-height sticky wrapper so
-              it never affects layout; the visible band is an absolutely
-              positioned child bleeding past the panel's own padding. */}
           <div className="sticky top-0 h-0 z-20 pointer-events-none" aria-hidden>
             <div
               className="absolute -inset-x-6 md:-inset-x-8 -top-6 md:-top-8 h-14 md:h-16"
@@ -705,7 +638,6 @@ function ProjectViewerModal({
         </div>
       </div>
 
-      {/* Zoom overlay sits on top — back button closes this first */}
       {zoomIndex !== null && !comparing && (
         <ZoomOverlay images={allImages} startIndex={zoomIndex} onClose={onCloseZoom} />
       )}
@@ -753,7 +685,6 @@ function ProjectCarousel({ projects, accent, onSelect }: { projects: ProjectData
               <div className="relative aspect-[16/9] md:aspect-[16/8] bg-zinc-100 dark:bg-zinc-900">
                 <SafeImage src={project.image} alt={project.title} accent={accent} fill sizes="(max-width: 768px) 100vw, 800px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                {/* B/A badge */}
                 {BA_HUBS.includes(project.hub as HubId) && !!(project as any).beforeImage && !!(project as any).afterImage && (
                   <div className="absolute top-4 right-4 flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.6rem] font-black uppercase tracking-wider text-white shadow-lg" style={{ backgroundColor: `${accent}dd`, backdropFilter: "blur(6px)" }}>
                     <ArrowsLeftRight size={11} weight="bold" />
@@ -792,12 +723,6 @@ function ProjectCarousel({ projects, accent, onSelect }: { projects: ProjectData
 }
 
 // ─── Projects count popover ───────────────────────────────────────────────────
-// History handling mirrors useGalleryBackStack above: only a click-triggered
-// open pushes a history entry (hover opens on desktop never touch history,
-// so hovering in and out repeatedly can no longer spam the back-stack), and
-// closing — by outside click, item selection, or a back gesture — always
-// goes through the same closePopover() path so the pushed entry is
-// consistently consumed exactly once.
 function ProjectsPopover({
   projects, accent, isDark, onSelect,
 }: {
@@ -832,8 +757,6 @@ function ProjectsPopover({
     return () => document.removeEventListener("mousedown", handler)
   }, [open, closePopover])
 
-  // Push a history entry only for a click-triggered open (mobile / tap),
-  // never for a hover-triggered open (desktop).
   useEffect(() => {
     if (open && openedByClickRef.current && !pushedRef.current) {
       window.history.pushState({ projectsPopover: true }, "")
@@ -869,7 +792,6 @@ function ProjectsPopover({
       onMouseEnter={() => canHover && setOpen(true)}
       onMouseLeave={() => { if (canHover) { setOpen(false); openedByClickRef.current = false } }}
     >
-      {/* Spacer pill - keeps position, never shifts layout */}
       <button
         onClick={handleToggleClick}
         className={cn(
@@ -939,6 +861,22 @@ function HubFilter({ label, active, accent, isDark, onClick }: {
   )
 }
 
+// ─── Empty hub state ──────────────────────────────────────────────────────────
+// Shown instead of silently hiding a row when a specific hub filter yields
+// zero projects — either because the hub genuinely has none yet, or a
+// search query filtered everything out for that hub.
+function EmptyHubState({ label, query }: { label: string; query?: string }) {
+  return (
+    <div className="max-w-md mx-auto text-center py-12 px-6 rounded-[14px] border border-dashed border-zinc-200 dark:border-zinc-800">
+      <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">
+        {query
+          ? <>No {label} projects match &ldquo;{query}&rdquo;</>
+          : <>No {label} projects yet — check back soon.</>}
+      </p>
+    </div>
+  )
+}
+
 function GalleryPageInner() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
@@ -947,15 +885,11 @@ function GalleryPageInner() {
   const [activeFilter,    setActiveFilter]    = useState<HubId | "all">("all")
   const [selectedProject, setSelectedProject] = useState<ProjectData | null>(null)
   const [zoomIndex,       setZoomIndex]       = useState<number | null>(null)
+  const [searchQuery,     setSearchQuery]     = useState("")
+  const [surpriseFlash,   setSurpriseFlash]   = useState(false)
 
-  // Back button: zoom → project → page (modal by modal). closeProject /
-  // closeZoom are the only sanctioned way to dismiss these modals now —
-  // they route the close through history.back() so no phantom entry is
-  // left behind for a later real back-press to silently consume.
   const { closeProject, closeZoom } = useGalleryBackStack(selectedProject, setSelectedProject, zoomIndex, setZoomIndex)
 
-  // Deep link: ?project=<id> opens that project directly and filters to its
-  // hub, so the carousel row behind the modal makes sense on load.
   useEffect(() => {
     const projectId = searchParams.get("project")
     if (!projectId) return
@@ -966,17 +900,11 @@ function GalleryPageInner() {
     }
   }, [searchParams])
 
-  // Keep the URL in sync with the open project so it's shareable at any
-  // point. This rewrites (never adds) the current history entry's URL —
-  // the actual push/pop entries are still owned entirely by
-  // useGalleryBackStack above, so closing a project (by X, backdrop, or
-  // back gesture) naturally clears the param without any extra wiring.
   useEffect(() => {
     const url = selectedProject ? `${pathname}?project=${selectedProject.id}` : pathname
     window.history.replaceState(window.history.state, "", url)
   }, [selectedProject, pathname])
 
-  // Scroll lock while project modal is open
   useEffect(() => {
     if (!selectedProject) return
     const scrollY = window.scrollY
@@ -996,6 +924,46 @@ function GalleryPageInner() {
   )
   const filteredRows = activeFilter === "all" ? ROW_ORDER : ROW_ORDER.filter(r => r.id === activeFilter)
 
+  // Keyword search — matches title, tag, and short description. Kept to
+  // these three fields (rather than the longer goal/result prose) so
+  // matches stay obviously relevant to what someone typed.
+  const searchLower = searchQuery.trim().toLowerCase()
+  const matchesSearch = useCallback((p: ProjectData) => {
+    if (!searchLower) return true
+    return (
+      p.title.toLowerCase().includes(searchLower) ||
+      p.tag.toLowerCase().includes(searchLower) ||
+      p.shortDesc.toLowerCase().includes(searchLower)
+    )
+  }, [searchLower])
+
+  // Total matches across whatever's currently in view (respects the hub
+  // filter), used to decide between per-hub empty cards and a single
+  // page-level "no results" message when searching across all hubs.
+  const totalMatches = PROJECTS.filter(
+    p => (activeFilter === "all" || p.hub === activeFilter) && matchesSearch(p)
+  ).length
+
+  // "Surprise me" — opens a random project from the full catalog (not just
+  // the current filter/search, per the brief: "a random project from any
+  // hub"). Avoids repeating the project that's already open. The brief
+  // flash gives tactile feedback that something happened before the modal
+  // takes over the screen.
+  const handleSurprise = useCallback(() => {
+    if (PROJECTS.length === 0) return
+    setSurpriseFlash(true)
+    setTimeout(() => {
+      let pool = PROJECTS
+      if (selectedProject && PROJECTS.length > 1) {
+        pool = PROJECTS.filter(p => p.id !== selectedProject.id)
+      }
+      const pick = pool[Math.floor(Math.random() * pool.length)]
+      setActiveFilter(pick.hub as HubId)
+      setSelectedProject(pick)
+      setSurpriseFlash(false)
+    }, 220)
+  }, [selectedProject])
+
   // Keyboard-nav siblings: always the full set of projects in the open
   // project's own hub, regardless of the current filter pill — so cycling
   // works the same whether you opened it from "All hubs" or a single hub.
@@ -1009,6 +977,41 @@ function GalleryPageInner() {
           <h1 className="abh-page-title mb-4">Our Portfolio</h1>
           <p className="abh-tagline max-w-2xl mx-auto">Real results for real clients. Select a category to explore our work in depth.</p>
           <div className="abh-divider" />
+        </div>
+
+        {/* Search + Surprise me */}
+        <div className="flex items-center justify-center gap-2.5 max-w-md mx-auto mb-6">
+          <div className="relative flex-1">
+            <MagnifyingGlass size={16} weight="bold" className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search"
+              className="w-full pl-10 pr-9 py-2.5 rounded-[14px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none focus:border-brand-blue transition-colors text-center focus:text-left"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600"
+              >
+                <X size={11} weight="bold" />
+              </button>
+            )}
+          </div>
+          <button
+            onClick={handleSurprise}
+            aria-label="Surprise me with a random project"
+            className={cn(
+              "shrink-0 flex items-center gap-1.5 px-3.5 py-2.5 rounded-[14px] text-[0.7rem] font-bold whitespace-nowrap transition-all duration-200 group/surprise",
+              "bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800",
+              surpriseFlash && "scale-90 opacity-60"
+            )}
+          >
+            <Shuffle size={14} weight="bold" className="transition-transform duration-300 group-hover/surprise:rotate-180" />
+            Surprise me
+          </button>
         </div>
 
         {/* Filter pills */}
@@ -1039,23 +1042,50 @@ function GalleryPageInner() {
         </div>
 
         {/* Hub rows */}
-        <div className="space-y-20">
-          {filteredRows.map(row => {
-            const projects = PROJECTS.filter(p => p.hub === row.id)
-            if (projects.length === 0) return null
-            const accent = getAccent(row.id)
-            return (
-              <div key={row.id}>
-                <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
-                  <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: accent }} />
-                  <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
-                  <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
+        {searchLower && totalMatches === 0 ? (
+          <div className="max-w-md mx-auto text-center py-16 px-6">
+            <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">
+              No projects match &ldquo;{searchQuery.trim()}&rdquo;
+            </p>
+            <button
+              onClick={() => setSearchQuery("")}
+              className="mt-3 text-xs font-black underline text-brand-blue"
+            >
+              Clear search
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-20">
+            {filteredRows.map(row => {
+              const accent = getAccent(row.id)
+              const projects = PROJECTS.filter(p => p.hub === row.id && matchesSearch(p))
+
+              if (projects.length === 0) {
+                if (activeFilter !== row.id) return null
+                return (
+                  <div key={row.id}>
+                    <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
+                      <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: accent }} />
+                      <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
+                    </div>
+                    <EmptyHubState label={row.label} query={searchLower ? searchQuery.trim() : undefined} />
+                  </div>
+                )
+              }
+
+              return (
+                <div key={row.id}>
+                  <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
+                    <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: accent }} />
+                    <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
+                    <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
+                  </div>
+                  <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} />
                 </div>
-                <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} />
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       <ProjectViewerModal
@@ -1072,9 +1102,6 @@ function GalleryPageInner() {
   )
 }
 
-// Lightweight skeleton shown for the instant it takes useSearchParams() to
-// resolve on the client. Keeps the layout shape (title + divider) so there's
-// no visible flash/collapse when the real content mounts.
 function GallerySkeleton() {
   return (
     <section className="min-h-screen bg-background pt-[calc(var(--nav-h)+2rem)] pb-24">
@@ -1086,11 +1113,6 @@ function GallerySkeleton() {
   )
 }
 
-// useSearchParams() requires a Suspense boundary around any component that
-// calls it, or Next.js fails to prerender the page (build error:
-// "useSearchParams() should be wrapped in a suspense boundary"). Wrapping
-// here — rather than requiring app/gallery/page.tsx to add its own
-// <Suspense> — keeps this component a drop-in replacement.
 export function GalleryPage() {
   return (
     <Suspense fallback={<GallerySkeleton />}>
