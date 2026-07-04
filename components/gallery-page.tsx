@@ -1151,43 +1151,53 @@ function GalleryPageInner() {
           <div className="abh-divider" />
         </div>
 
-        {/* Search + Surprise me — one grouped pill, equal-width halves */}
-        <div className="flex items-stretch max-w-md mx-auto mb-6 rounded-[14px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] overflow-hidden">
-          <div className="relative flex-1 basis-1/2">
-            <MagnifyingGlass size={16} weight="bold" className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-              placeholder={searchFocused ? "Search" : "Search Project"}
-              className="w-full pl-10 pr-9 py-2.5 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none transition-colors text-center focus:text-left"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                aria-label="Clear search"
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600"
-              >
-                <X size={11} weight="bold" />
-              </button>
-            )}
-          </div>
-          <div className="w-px bg-zinc-200 dark:bg-zinc-800 my-2" />
-          <button
-            onClick={handleSurprise}
-            aria-label="Surprise me with a random project"
-            className={cn(
-              "flex-1 basis-1/2 flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-sm font-bold whitespace-nowrap transition-all duration-200 group/surprise",
-              "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900",
-              surpriseFlash && "scale-90 opacity-60"
-            )}
-          >
-            <Shuffle size={14} weight="bold" className="transition-transform duration-300 group-hover/surprise:rotate-180" />
-            Surprise me
-          </button>
-        </div>
+      {/* Search + Surprise me — solid brand-orange pill matching the View
+    Services CTA's exact button style (rounded-[14px], shadow-lg,
+    font-black text-base, py-4, active:scale-95). Colors pulled from
+    BRAND.orangeAccessible / orangeAccessibleDark — verified WCAG AA/AAA
+    against white text, see lib/brand.ts. */}
+<div
+  className="flex items-stretch max-w-md mx-auto mb-6 rounded-[14px] shadow-lg overflow-hidden transition-colors duration-300"
+  style={{ backgroundColor: isDark ? BRAND.orangeAccessibleDark : BRAND.orangeAccessible }}
+>
+  <div className="relative flex-1 basis-1/2">
+    <MagnifyingGlass
+      size={16}
+      weight="bold"
+      className="absolute left-4 top-1/2 -translate-y-1/2 text-white pointer-events-none"
+    />
+    <input
+      type="text"
+      value={searchQuery}
+      onChange={e => setSearchQuery(e.target.value)}
+      onFocus={() => setSearchFocused(true)}
+      onBlur={() => setSearchFocused(false)}
+      placeholder={searchFocused ? "Search" : "Search Project"}
+      className="w-full pl-10 pr-9 py-4 bg-transparent font-sans font-black text-base text-white placeholder:text-white/80 outline-none transition-colors text-center focus:text-left"
+    />
+    {searchQuery && (
+      <button
+        onClick={() => setSearchQuery("")}
+        aria-label="Clear search"
+        className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+      >
+        <X size={11} weight="bold" />
+      </button>
+    )}
+  </div>
+  <div className="w-px bg-white/25 my-2" />
+  <button
+    onClick={handleSurprise}
+    aria-label="Surprise me with a random project"
+    className={cn(
+      "flex-1 basis-1/2 flex items-center justify-center gap-1.5 px-3.5 py-4 font-sans font-black text-base text-white whitespace-nowrap transition-all duration-200 active:scale-95 hover:bg-white/10 group/surprise",
+      surpriseFlash && "scale-90 opacity-60"
+    )}
+  >
+    <Shuffle size={14} weight="bold" className="transition-transform duration-300 group-hover/surprise:rotate-180" />
+    Surprise me
+  </button>
+</div>
 
         {/* Filter — collapsible dropdown instead of a row of always-visible
             pills, so it doesn't visually compete with the search/surprise
