@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect, Suspense } from "react"
 import { useSearchParams, usePathname } from "next/navigation"
 import Link from "next/link"
-import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut, ArrowsLeftRight, LinkSimple, ShareNetwork, EnvelopeSimple, MagnifyingGlass, Shuffle } from "@phosphor-icons/react"
+import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut, ArrowsLeftRight, LinkSimple, ShareNetwork, EnvelopeSimple, MagnifyingGlass, Shuffle, Heart } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -336,9 +336,42 @@ function ShareButton({ url, title }: { url: string; title: string }) {
   )
 }
 
-// ─── Project Viewer Components ───────────────────────────────────────────────
-function ProjectHeader({ project, accent, hasBA, shareUrl, onClose }: {
-  project: ProjectData; accent: string; hasBA: boolean; shareUrl: string; onClose: () => void
+// ─── Like (heart) button ──────────────────────────────────────────────────────
+// Shared between the carousel cards and the modal header so the two stay
+// visually consistent. "card" context sits on top of a photo (dark pill,
+// white/red icon); "header" context sits on the light details panel
+// (matches ShareButton's neutral pill styling). Re-keying the icon on
+// `liked` retriggers the zoom-in animation as a little "pop" on toggle.
+function LikeButton({ liked, onToggle, context = "header" }: {
+  liked: boolean; onToggle: (e: React.MouseEvent) => void; context?: "card" | "header"
+}) {
+  return (
+    <button
+      onClick={onToggle}
+      aria-label={liked ? "Unlike this project" : "Like this project"}
+      aria-pressed={liked}
+      className={cn(
+        "w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-90",
+        context === "card"
+          ? "bg-black/40 hover:bg-black/60 backdrop-blur-sm"
+          : "bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+      )}
+    >
+      <Heart
+        key={liked ? "liked" : "unliked"}
+        size={16}
+        weight={liked ? "fill" : "bold"}
+        className="animate-in zoom-in-50 duration-300"
+        style={{ color: liked ? "#ef4444" : context === "card" ? "#fff" : undefined }}
+      />
+    </button>
+  )
+}
+
+
+function ProjectHeader({ project, accent, hasBA, shareUrl, liked, onToggleLike, onClose }: {
+  project: ProjectData; accent: string; hasBA: boolean; shareUrl: string
+  liked: boolean; onToggleLike: () => void; onClose: () => void
 }) {
   return (
     <div className="flex justify-between items-start mb-6 shrink-0">
@@ -355,8 +388,15 @@ function ProjectHeader({ project, accent, hasBA, shareUrl, onClose }: {
             {project.clientType === "sample" && "Representative example — reflects our work, not an actual client project"}
           </p>
         )}
+        {liked && (
+          <p className="flex items-center gap-1 text-[0.68rem] font-bold text-red-500 mt-1.5 animate-in fade-in duration-300">
+            <Heart size={11} weight="fill" />
+            You liked this
+          </p>
+        )}
       </div>
       <div className="flex items-center gap-2 shrink-0 ml-3">
+        <LikeButton liked={liked} onToggle={(e) => { e.stopPropagation(); onToggleLike() }} context="header" />
         <ShareButton url={shareUrl} title={project.title} />
         <button onClick={onClose} className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
           <X size={18} weight="bold" />
@@ -516,7 +556,7 @@ function ProjectDetailsPanel({ project, accent, onClose }: { project: ProjectDat
 
 // ─── Project viewer modal ─────────────────────────────────────────────────────
 function ProjectViewerModal({
-  project, onClose, zoomIndex, setZoomIndex, onCloseZoom, pathname, siblings, onNavigate,
+  project, onClose, zoomIndex, setZoomIndex, onCloseZoom, pathname, siblings, onNavigate, likedIds, onToggleLike,
 }: {
   project: ProjectData | null
   onClose: () => void
@@ -526,6 +566,8 @@ function ProjectViewerModal({
   pathname: string
   siblings: ProjectData[]
   onNavigate: (p: ProjectData) => void
+  likedIds: Set<string>
+  onToggleLike: (id: string) => void
 }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
@@ -628,7 +670,15 @@ function ProjectViewerModal({
               }}
             />
           </div>
-          <ProjectHeader project={project} accent={accent} hasBA={hasBA} shareUrl={shareUrl} onClose={onClose} />
+          <ProjectHeader
+            project={project}
+            accent={accent}
+            hasBA={hasBA}
+            shareUrl={shareUrl}
+            liked={likedIds.has(project.id)}
+            onToggleLike={() => onToggleLike(project.id)}
+            onClose={onClose}
+          />
           <ProjectDetailsPanel project={project} accent={accent} onClose={onClose} />
           {hasSiblings && (
             <p className="hidden md:block text-[0.65rem] font-medium text-zinc-400 text-center mt-6">
@@ -646,7 +696,10 @@ function ProjectViewerModal({
 }
 
 // ─── Unified swipe carousel ───────────────────────────────────────────────────
-function ProjectCarousel({ projects, accent, onSelect }: { projects: ProjectData[]; accent: string; onSelect: (p: ProjectData) => void }) {
+function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }: {
+  projects: ProjectData[]; accent: string; onSelect: (p: ProjectData) => void
+  likedIds: Set<string>; onToggleLike: (id: string) => void
+}) {
   const [activeIdx, setActiveIdx] = useState(0)
   const trackRef   = useRef<HTMLDivElement>(null)
   const isDragging = useRef(false)
@@ -685,6 +738,13 @@ function ProjectCarousel({ projects, accent, onSelect }: { projects: ProjectData
               <div className="relative aspect-[16/9] md:aspect-[16/8] bg-zinc-100 dark:bg-zinc-900">
                 <SafeImage src={project.image} alt={project.title} accent={accent} fill sizes="(max-width: 768px) 100vw, 800px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                <div className="absolute top-4 left-4 z-10">
+                  <LikeButton
+                    liked={likedIds.has(project.id)}
+                    onToggle={(e) => { e.stopPropagation(); onToggleLike(project.id) }}
+                    context="card"
+                  />
+                </div>
                 {BA_HUBS.includes(project.hub as HubId) && !!(project as any).beforeImage && !!(project as any).afterImage && (
                   <div className="absolute top-4 right-4 flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.6rem] font-black uppercase tracking-wider text-white shadow-lg" style={{ backgroundColor: `${accent}dd`, backdropFilter: "blur(6px)" }}>
                     <ArrowsLeftRight size={11} weight="bold" />
@@ -877,6 +937,8 @@ function EmptyHubState({ label, query }: { label: string; query?: string }) {
   )
 }
 
+const LIKES_STORAGE_KEY = "apexbytes-gallery-likes"
+
 function GalleryPageInner() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
@@ -887,6 +949,33 @@ function GalleryPageInner() {
   const [zoomIndex,       setZoomIndex]       = useState<number | null>(null)
   const [searchQuery,     setSearchQuery]     = useState("")
   const [surpriseFlash,   setSurpriseFlash]   = useState(false)
+  const [likedIds,        setLikedIds]        = useState<Set<string>>(new Set())
+  const likesHydrated = useRef(false)
+
+  // Load liked projects once on mount, then persist on every change
+  // thereafter. The hydrated guard stops that first mount's setState (with
+  // whatever was already saved) from immediately re-writing an empty set
+  // back over real stored data before it's been read.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(LIKES_STORAGE_KEY)
+      if (raw) setLikedIds(new Set(JSON.parse(raw)))
+    } catch {}
+    likesHydrated.current = true
+  }, [])
+  useEffect(() => {
+    if (!likesHydrated.current) return
+    try { localStorage.setItem(LIKES_STORAGE_KEY, JSON.stringify(Array.from(likedIds))) } catch {}
+  }, [likedIds])
+
+  const toggleLike = useCallback((id: string) => {
+    setLikedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
 
   const { closeProject, closeZoom } = useGalleryBackStack(selectedProject, setSelectedProject, zoomIndex, setZoomIndex)
 
@@ -1080,7 +1169,7 @@ function GalleryPageInner() {
                     <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
                     <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
                   </div>
-                  <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} />
+                  <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} likedIds={likedIds} onToggleLike={toggleLike} />
                 </div>
               )
             })}
@@ -1097,6 +1186,8 @@ function GalleryPageInner() {
         pathname={pathname}
         siblings={modalSiblings}
         onNavigate={setSelectedProject}
+        likedIds={likedIds}
+        onToggleLike={toggleLike}
       />
     </section>
   )
