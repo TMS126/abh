@@ -184,25 +184,33 @@ export function Navbar() {
         <div className="relative z-10 w-full h-full flex flex-col items-center justify-center px-6">
           <nav className="w-full max-w-[320px] flex flex-col items-center gap-2.5">
             {NAV_ITEMS.map((item, idx) => {
-              const isActive = pathname === item.path
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => navigate(item.path)}
-                  style={{ transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms" }}
-                  className={cn(
-                    "py-3 px-8 rounded-[14px] font-sans text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
-                    isActive
-                      ? "font-semibold text-brand-blue dark:text-brand-light-blue bg-zinc-100 dark:bg-zinc-800"
-                      : "font-medium text-zinc-700 dark:text-zinc-200 hover:text-brand-blue",
-                    item.isCta && "border-2 border-brand-orange text-brand-orange hover:bg-brand-orange/10",
-                    menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
-                  )}
-                >
-                  {item.label}
-                </button>
-              )
-            })}
+  const isActive    = pathname === item.path
+  const accent      = MOBILE_NAV_COLORS[item.path]
+  const activeColor = accent ? (mounted && theme === "dark" ? accent.dark : accent.light) : undefined
+
+  return (
+    <button
+      key={item.id}
+      onClick={() => navigate(item.path)}
+      style={{
+        transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms",
+        ...(isActive && activeColor
+          ? { color: activeColor, backgroundColor: `${activeColor}18` }
+          : {}),
+      }}
+      className={cn(
+        "py-3 px-8 rounded-[14px] font-sans text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
+        isActive
+          ? "font-semibold"
+          : "font-medium text-zinc-700 dark:text-zinc-200 hover:text-brand-blue bg-transparent",
+        item.isCta && "border-2 border-brand-orange text-brand-orange hover:bg-brand-orange/10",
+        menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+      )}
+    >
+      {item.label}
+    </button>
+  )
+})}
           </nav>
         </div>
 
