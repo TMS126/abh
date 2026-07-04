@@ -66,14 +66,36 @@ export function Navbar() {
 
   const pillClass = "bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md py-2 rounded-[14px] border border-gray-200 dark:border-zinc-800 shadow-sm"
 
+  // Individual link pill — replaces the old shared frosted-container
+  // look on desktop. Rest state: subtle border + soft shadow (bg-white
+  // so it still reads as a pill against the page, per your call to keep
+  // a resting pill style rather than fully plain text). Active: solid
+  // brand-blue fill, same as before. Hover: nudges the whole pill up
+  // (-translate-y-0.5) for a little life, per your call to scope the
+  // lift effect to desktop only.
+  const desktopLinkClass = (isActive: boolean, isCta?: boolean) =>
+    cn(
+      "px-4 py-2 rounded-[14px] text-[0.84rem] transition-all duration-300 border hover:-translate-y-0.5",
+      isActive
+        ? "font-black bg-brand-blue text-white border-transparent shadow-sm"
+        : "font-medium text-zinc-500 dark:text-zinc-400 bg-white/80 dark:bg-zinc-900/80 border-gray-200 dark:border-zinc-800 shadow-sm hover:text-brand-blue dark:hover:text-brand-light-blue hover:shadow-md",
+      isCta && "border-2 border-brand-orange text-brand-orange hover:bg-brand-orange/10"
+    )
+
   return (
     <>
       <header className="fixed left-0 right-0 top-0 z-[9999] flex justify-center px-4 md:px-8 pt-5 h-[--nav-h] items-center pointer-events-none">
         <div className="relative flex items-center justify-between w-full max-w-[1200px]">
 
-          {/* Logo — hides when menu is open */}
+          {/* Logo — hides when menu is open, or when scrolling down (same
+              show/hide-on-scroll-direction logic as the rest of the nav) */}
           <div
-            className={cn(pillClass, "flex items-center cursor-pointer select-none pointer-events-auto group transition-all duration-300", isTextExpanded ? "pl-3 pr-4 gap-2.5" : "px-2.5 gap-0", menuOpen ? "opacity-0" : "opacity-100")}
+            className={cn(
+              pillClass,
+              "flex items-center cursor-pointer select-none pointer-events-auto group transition-all duration-300",
+              isTextExpanded ? "pl-3 pr-4 gap-2.5" : "px-2.5 gap-0",
+              menuOpen || (!navVisible) ? "opacity-0 -translate-y-20 pointer-events-none" : "opacity-100 translate-y-0 pointer-events-auto"
+            )}
             onMouseEnter={handleLogoMouseEnter}
             onMouseLeave={handleLogoMouseLeave}
             onClick={() => navigate("/")}
@@ -104,19 +126,18 @@ export function Navbar() {
             </div>
           </div>
 
-          {/* Desktop Nav */}
-          <div className={cn(pillClass, "hidden md:flex items-center gap-1 px-1 pointer-events-auto absolute left-1/2 -translate-x-1/2 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
+          {/* Desktop Nav — shared frosted container removed; each link is
+              now its own pill via desktopLinkClass. Wrapper below only
+              handles layout (gap, centering, show/hide-on-scroll), no
+              background/border/blur of its own anymore. */}
+          <div className={cn("hidden md:flex items-center gap-2 pointer-events-auto absolute left-1/2 -translate-x-1/2 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
             {NAV_ITEMS.map((item) => {
               const isActive = pathname === item.path
               return (
                 <button
                   key={item.id}
                   onClick={() => navigate(item.path)}
-                  className={cn(
-                    "px-4 py-2 rounded-[14px] text-[0.84rem] transition-all duration-300",
-                    isActive ? "font-black bg-brand-blue text-white" : "font-medium text-zinc-500 dark:text-zinc-400 hover:text-brand-blue dark:hover:text-brand-light-blue",
-                    item.isCta && "border-2 border-brand-orange text-brand-orange hover:bg-brand-orange/10"
-                  )}
+                  className={desktopLinkClass(isActive, item.isCta)}
                 >
                   {item.label}
                 </button>
@@ -207,4 +228,4 @@ export function Navbar() {
       </div>
     </>
   )
-}
+                } 
