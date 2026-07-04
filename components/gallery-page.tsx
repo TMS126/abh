@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback, useEffect } from "react"
+import { useSearchParams, usePathname } from "next/navigation"
 import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut, ArrowsLeftRight } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import Image from "next/image"
@@ -22,53 +23,88 @@ const ROW_ORDER: { id: HubId; label: string; short: string }[] = [
 const BA_HUBS: HubId[] = ["design", "tech"]
 
 // ─── Back-button modal stack ──────────────────────────────────────────────────
-// Three layers: project modal → zoom overlay.
-// Each back gesture closes only the topmost layer.
+// Two layers: project modal → zoom overlay.
+//
+// Design: this hook is the ONLY thing that ever mutates browser history for
+// these two modals. Opening a modal pushes a history entry. Closing a modal
+// — whether by X button, backdrop click, Escape, or an actual back
+// gesture — always goes through history (via the returned close* helpers,
+// which call history.back()). The popstate handler is the single place
+// that clears React state. This way there is never a "phantom" forward
+// history entry left behind by a manual close, which previously forced
+// users to press back twice to leave the page.
 function useGalleryBackStack(
   selectedProject: ProjectData | null,
   setSelectedProject: (p: ProjectData | null) => void,
   zoomIndex: number | null,
   setZoomIndex: (i: number | null) => void,
 ) {
-  const prevProject = useRef<ProjectData | null>(null)
-  const prevZoom    = useRef<number | null>(null)
+  const projectPushed = useRef(false)
+  const zoomPushed = useRef(false)
 
   // Push history entry when project opens
   useEffect(() => {
-    if (selectedProject && selectedProject !== prevProject.current) {
+    if (selectedProject && !projectPushed.current) {
       window.history.pushState({ abModal: "project" }, "")
-      prevProject.current = selectedProject
+      projectPushed.current = true
     }
   }, [selectedProject])
 
   // Push history entry when zoom opens
   useEffect(() => {
-    if (zoomIndex !== null && zoomIndex !== prevZoom.current) {
+    if (zoomIndex !== null && !zoomPushed.current) {
       window.history.pushState({ abModal: "zoom" }, "")
-      prevZoom.current = zoomIndex
+      zoomPushed.current = true
     }
   }, [zoomIndex])
 
-  // popstate = back button / swipe-back gesture
+  // popstate = back button / swipe-back gesture (or a programmatic
+  // history.back() call from one of the close helpers below)
   useEffect(() => {
     const onPop = () => {
       // Innermost first
       if (zoomIndex !== null) {
+        zoomPushed.current = false
         setZoomIndex(null)
-        prevZoom.current = null
-        // Re-push project entry so next back closes the project modal
-        window.history.pushState({ abModal: "project" }, "")
         return
       }
       if (selectedProject) {
+        projectPushed.current = false
         setSelectedProject(null)
-        prevProject.current = null
         return
       }
     }
     window.addEventListener("popstate", onPop)
     return () => window.removeEventListener("popstate", onPop)
   }, [zoomIndex, selectedProject, setZoomIndex, setSelectedProject])
+
+  // Close helpers — use these anywhere a modal is dismissed manually
+  // (X button, backdrop click, CTA click, Escape key, image click-to-close).
+  // They consume the pushed history entry instead of leaving it stale.
+  const closeZoom = useCallback(() => {
+    if (zoomPushed.current) {
+      // popstate handler above will clear zoomIndex once this resolves
+      window.history.back()
+    } else {
+      setZoomIndex(null)
+    }
+  }, [setZoomIndex])
+
+  const closeProject = useCallback(() => {
+    // Zoom always sits above the project modal — close it first if open,
+    // then close the project on its own separate back-step.
+    if (zoomIndex !== null) {
+      closeZoom()
+      return
+    }
+    if (projectPushed.current) {
+      window.history.back()
+    } else {
+      setSelectedProject(null)
+    }
+  }, [zoomIndex, closeZoom, setSelectedProject])
+
+  return { closeProject, closeZoom }
 }
 
 // ─── Image placeholder ────────────────────────────────────────────────────────
@@ -115,7 +151,6 @@ function SafeImage({ src, alt, accent, fill, sizes, className, priority = false 
   )
 }
 
-// ─── Full-screen zoom overlay ─────────────────────────────────────────────────
 // ─── Before / After drag-reveal slider ───────────────────────────────────────
 function BeforeAfterSlider({ before, after, accent }: { before: string; after: string; accent: string }) {
   const [pos, setPos] = useState(50)
@@ -163,6 +198,11 @@ function BeforeAfterSlider({ before, after, accent }: { before: string; after: s
   }
   const onDoubleClick = () => { targetRef.current = 50 }
 
+  // Defensive floor: pos is clamped to [2, 98] above, so this is currently
+  // unreachable, but guards against a divide-by-near-zero blowout in the
+  // inner "before" layer's width calculation if that clamp is ever loosened.
+  const safePos = Math.max(pos, 1)
+
   return (
     <div
       ref={containerRef}
@@ -179,7 +219,7 @@ function BeforeAfterSlider({ before, after, accent }: { before: string; after: s
 
       {/* BEFORE — clipped left */}
       <div className="absolute inset-0 overflow-hidden" style={{ width: `${pos}%` }}>
-        <div className="absolute inset-0" style={{ width: `${10000 / pos}%` }}>
+        <div className="absolute inset-0" style={{ width: `${10000 / safePos}%` }}>
           <SafeImage src={before} alt="Before" accent={accent} fill sizes="55vw" className="object-cover" priority />
         </div>
         <span className="absolute bottom-3 left-3 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-black/50 text-white shadow">Before</span>
@@ -271,8 +311,10 @@ function ZoomOverlay({ images, startIndex, onClose }: { images: string[]; startI
   )
 }
 
-
 // ─── Project Viewer Components ───────────────────────────────────────────────
+// These are the single source of truth for the modal's header / image
+// section / details panel — ProjectViewerModal below composes them instead
+// of keeping its own duplicate inline copies.
 function ProjectHeader({ project, accent, hasBA, onClose }: {
   project: ProjectData; accent: string; hasBA: boolean; onClose: () => void
 }) {
@@ -281,7 +323,7 @@ function ProjectHeader({ project, accent, hasBA, onClose }: {
       <div>
         <span className="text-[0.65rem] font-bold px-2.5 py-1 rounded-[14px] mb-3 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>{project.tag}</span>
         {hasBA && (
-          <span className="ml-2 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ backgroundColor: `${accent}20`, color: accent }}>Before & After</span>
+          <span className="ml-2 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ backgroundColor: `${accent}20`, color: accent }}>Before &amp; After</span>
         )}
         <h2 className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 leading-tight mt-1">{project.title}</h2>
         {project.clientType && (
@@ -299,7 +341,16 @@ function ProjectHeader({ project, accent, hasBA, onClose }: {
   )
 }
 
-function ProjectImageSection({ project, accent, activeImg, setActiveImg, comparing, setComparing, setZoomIndex, hasBA, beforeImg, afterImg, allImages }: any) {
+function ProjectImageSection({
+  project, accent, activeImg, setActiveImg, comparing, setComparing, onZoom, hasBA, beforeImg, afterImg, allImages,
+}: {
+  project: ProjectData; accent: string
+  activeImg: number; setActiveImg: (i: number) => void
+  comparing: boolean; setComparing: (b: boolean) => void
+  onZoom: (i: number) => void
+  hasBA: boolean; beforeImg?: string; afterImg?: string
+  allImages: string[]
+}) {
   return (
     <div className="h-[40%] md:h-auto md:flex-1 flex flex-col overflow-hidden bg-zinc-900">
       {comparing && hasBA ? (
@@ -308,7 +359,7 @@ function ProjectImageSection({ project, accent, activeImg, setActiveImg, compari
         </div>
       ) : (
         <>
-          <div className="relative flex-1 overflow-hidden cursor-zoom-in group/img" onClick={() => setZoomIndex(activeImg)}>
+          <div className="relative flex-1 overflow-hidden cursor-zoom-in group/img" onClick={() => onZoom(activeImg)}>
             <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="(max-width: 768px) 100vw, 55vw" className="object-cover transition-opacity duration-300" priority={activeImg === 0} />
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 pointer-events-none">
               <div className="bg-black/40 backdrop-blur-sm rounded-full p-2.5"><ArrowsOut size={18} weight="bold" className="text-white" /></div>
@@ -316,7 +367,7 @@ function ProjectImageSection({ project, accent, activeImg, setActiveImg, compari
           </div>
           {allImages.length > 1 && (
             <div className="flex gap-2 px-3 py-2.5 overflow-x-auto no-scrollbar shrink-0 border-t border-white/10">
-              {allImages.map((img: string, idx: number) => (
+              {allImages.map((img, idx) => (
                 <button key={idx} onClick={() => setActiveImg(idx)}
                   className={cn("relative shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-[8px] overflow-hidden border-2 transition-all", activeImg === idx ? "scale-105" : "border-transparent opacity-50 hover:opacity-80")}
                   style={activeImg === idx ? { borderColor: accent } : {}}
@@ -338,7 +389,7 @@ function ProjectImageSection({ project, accent, activeImg, setActiveImg, compari
   )
 }
 
-function ProjectDetailsPanel({ project, accent }: { project: ProjectData; accent: string }) {
+function ProjectDetailsPanel({ project, accent, onClose }: { project: ProjectData; accent: string; onClose: () => void }) {
   return (
     <div className="space-y-6 md:space-y-8">
       <section>
@@ -359,25 +410,38 @@ function ProjectDetailsPanel({ project, accent }: { project: ProjectData; accent
         <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>The Result</h4>
         <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.result}</p>
       </section>
+
+      {/* CTA */}
+      <a
+        href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(`Hi ${BIZ.name}! I saw "${project.title}" in your gallery and I'd like something similar.`)}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={onClose}
+        className="flex items-center justify-center gap-2 w-full py-3.5 rounded-[14px] text-sm font-bold text-white shadow-lg transition-transform active:scale-[0.98]"
+        style={{ backgroundColor: "#25D366" }}
+      >
+        Get a project like this
+      </a>
     </div>
   )
 }
 
 // ─── Project viewer modal ─────────────────────────────────────────────────────
 function ProjectViewerModal({
-  project, onClose, zoomIndex, setZoomIndex,
+  project, onClose, zoomIndex, setZoomIndex, onCloseZoom,
 }: {
   project: ProjectData | null
   onClose: () => void
   zoomIndex: number | null
   setZoomIndex: (i: number | null) => void
+  onCloseZoom: () => void
 }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
   const [activeImg,  setActiveImg]  = useState(0)
   const [comparing,  setComparing]  = useState(false)
 
-  useEffect(() => { setActiveImg(0); setZoomIndex(null); setComparing(false) }, [project?.id])
+  useEffect(() => { setActiveImg(0); setComparing(false) }, [project?.id])
 
   if (!project) return null
 
@@ -399,127 +463,30 @@ function ProjectViewerModal({
         "animate-in slide-in-from-bottom-4 md:zoom-in-95 duration-500",
       )}>
 
-        {/* Image / Compare section */}
-        <div className="h-[40%] md:h-auto md:flex-1 flex flex-col overflow-hidden bg-zinc-900">
-
-          {comparing && hasBA ? (
-            /* ── Before / After slider ── */
-            <div className="relative flex-1">
-              <BeforeAfterSlider before={beforeImg!} after={afterImg!} accent={accent} />
-            </div>
-          ) : (
-            /* ── Normal image viewer ── */
-            <>
-              <div className="relative flex-1 overflow-hidden cursor-zoom-in group/img" onClick={() => setZoomIndex(activeImg)}>
-                <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="(max-width: 768px) 100vw, 55vw" className="object-cover transition-opacity duration-300" />
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 pointer-events-none">
-                  <div className="bg-black/40 backdrop-blur-sm rounded-full p-2.5"><ArrowsOut size={18} weight="bold" className="text-white" /></div>
-                </div>
-              </div>
-              {allImages.length > 1 && (
-                <div className="flex gap-2 px-3 py-2.5 overflow-x-auto no-scrollbar shrink-0 border-t border-white/10">
-                  {allImages.map((img, idx) => (
-                    <button key={idx} onClick={() => setActiveImg(idx)}
-                      className={cn("relative shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-[8px] overflow-hidden border-2 transition-all", activeImg === idx ? "scale-105" : "border-transparent opacity-50 hover:opacity-80")}
-                      style={activeImg === idx ? { borderColor: accent } : {}}
-                    >
-                      <SafeImage src={img} alt={`Thumb ${idx + 1}`} accent={accent} fill sizes="56px" className="object-cover" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-
-          {/* Toggle bar — only for B/A projects */}
-          {hasBA && (
-            <div className="shrink-0 flex border-t border-white/10 bg-zinc-950">
-              <button
-                onClick={() => setComparing(false)}
-                className={cn("flex-1 py-2.5 text-[0.65rem] font-black uppercase tracking-widest transition-all duration-200", !comparing ? "text-white" : "text-white/30 hover:text-white/60")}
-                style={!comparing ? { borderBottom: `2px solid ${accent}` } : {}}
-              >
-                Gallery
-              </button>
-              <button
-                onClick={() => setComparing(true)}
-                className={cn("flex-1 py-2.5 text-[0.65rem] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all duration-200", comparing ? "text-white" : "text-white/30 hover:text-white/60")}
-                style={comparing ? { borderBottom: `2px solid ${accent}` } : {}}
-              >
-                <ArrowsLeftRight size={13} weight="bold" />
-                Before / After
-              </button>
-            </div>
-          )}
-        </div>
+        <ProjectImageSection
+          project={project}
+          accent={accent}
+          activeImg={activeImg}
+          setActiveImg={setActiveImg}
+          comparing={comparing}
+          setComparing={setComparing}
+          onZoom={setZoomIndex}
+          hasBA={hasBA}
+          beforeImg={beforeImg}
+          afterImg={afterImg}
+          allImages={allImages}
+        />
 
         {/* Details panel */}
         <div className={cn("relative flex flex-col border-zinc-100 dark:border-zinc-800 overflow-y-auto overscroll-contain", "h-[60%] border-t md:h-auto md:border-t-0 md:border-l md:w-[380px]", "p-6 md:p-8")}>
-          <div className="flex justify-between items-start mb-6 shrink-0">
-            <div>
-              <span className="text-[0.65rem] font-bold px-2.5 py-1 rounded-[14px] mb-3 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>{project.tag}</span>
-              {hasBA && (
-                <span className="ml-2 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ backgroundColor: `${accent}20`, color: accent }}>Before &amp; After</span>
-              )}
-              <h2 className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 leading-tight mt-1">{project.title}</h2>
-              {project.clientType === "practice" && (
-                <p className="text-[0.72rem] italic text-zinc-400 dark:text-zinc-500 mt-1">
-                  Practice design — portfolio project, not a real client
-                </p>
-              )}
-              {project.clientType === "client" && (
-                <p className="text-[0.72rem] italic text-zinc-400 dark:text-zinc-500 mt-1">
-                  Real client work
-                </p>
-              )}
-              {project.clientType === "sample" && (
-                <p className="text-[0.72rem] italic text-brand-orange mt-1">
-                  Representative example — reflects our work, not an actual client project
-                </p>
-              )}
-            </div>
-            <button onClick={onClose} className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 shrink-0 ml-3 transition-colors">
-              <X size={18} weight="bold" />
-            </button>
-          </div>
-          <div className="space-y-6 md:space-y-8">
-            <section>
-              <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>The Goal</h4>
-              <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.clientGoal}</p>
-            </section>
-            <section>
-              <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>What we did</h4>
-              <ul className="space-y-2">
-                {project.whatWeDid.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-sm text-zinc-600 dark:text-zinc-300 font-medium">
-                    <Check size={14} weight="bold" className="mt-1 shrink-0" style={{ color: accent }} />{item}
-                  </li>
-                ))}
-              </ul>
-            </section>
-            <section>
-              <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>The Result</h4>
-              <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.result}</p>
-            </section>
-
-            {/* CTA */}
-            <a
-              href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(`Hi ${BIZ.name}! I saw "${project.title}" in your gallery and I'd like something similar.`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={onClose}
-              className="flex items-center justify-center gap-2 w-full py-3.5 rounded-[14px] text-sm font-bold text-white shadow-lg transition-transform active:scale-[0.98]"
-              style={{ backgroundColor: "#25D366" }}
-            >
-              Get a project like this
-            </a>
-          </div>
+          <ProjectHeader project={project} accent={accent} hasBA={hasBA} onClose={onClose} />
+          <ProjectDetailsPanel project={project} accent={accent} onClose={onClose} />
         </div>
       </div>
 
       {/* Zoom overlay sits on top — back button closes this first */}
       {zoomIndex !== null && !comparing && (
-        <ZoomOverlay images={allImages} startIndex={zoomIndex} onClose={() => setZoomIndex(null)} />
+        <ZoomOverlay images={allImages} startIndex={zoomIndex} onClose={onCloseZoom} />
       )}
     </div>
   )
@@ -604,6 +571,12 @@ function ProjectCarousel({ projects, accent, onSelect }: { projects: ProjectData
 }
 
 // ─── Projects count popover ───────────────────────────────────────────────────
+// History handling mirrors useGalleryBackStack above: only a click-triggered
+// open pushes a history entry (hover opens on desktop never touch history,
+// so hovering in and out repeatedly can no longer spam the back-stack), and
+// closing — by outside click, item selection, or a back gesture — always
+// goes through the same closePopover() path so the pushed entry is
+// consistently consumed exactly once.
 function ProjectsPopover({
   projects, accent, isDark, onSelect,
 }: {
@@ -614,41 +587,70 @@ function ProjectsPopover({
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const openedByClickRef = useRef(false)
+  const pushedRef = useRef(false)
+
+  const canHover = typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches
+
+  const closePopover = useCallback(() => {
+    openedByClickRef.current = false
+    if (pushedRef.current) {
+      pushedRef.current = false
+      window.history.back()
+    } else {
+      setOpen(false)
+    }
+  }, [])
 
   useEffect(() => {
     if (!open) return
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      if (ref.current && !ref.current.contains(e.target as Node)) closePopover()
     }
     document.addEventListener("mousedown", handler)
     return () => document.removeEventListener("mousedown", handler)
+  }, [open, closePopover])
+
+  // Push a history entry only for a click-triggered open (mobile / tap),
+  // never for a hover-triggered open (desktop).
+  useEffect(() => {
+    if (open && openedByClickRef.current && !pushedRef.current) {
+      window.history.pushState({ projectsPopover: true }, "")
+      pushedRef.current = true
+    }
   }, [open])
 
-  // Fix 1st-click issue: only use hover on devices that support it
-  const canHover = typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches
-
-  // Mobile back button closes popover first
   useEffect(() => {
-    if (!open) return
-    const state = { projectsPopover: true }
-    window.history.pushState(state, "")
-    const onPop = (e: PopStateEvent) => {
-      setOpen(false)
+    const onPop = () => {
+      if (pushedRef.current) {
+        pushedRef.current = false
+        openedByClickRef.current = false
+        setOpen(false)
+      }
     }
     window.addEventListener("popstate", onPop)
     return () => window.removeEventListener("popstate", onPop)
-  }, [open])
+  }, [])
+
+  const handleToggleClick = () => {
+    if (open) {
+      closePopover()
+    } else {
+      openedByClickRef.current = true
+      setOpen(true)
+    }
+  }
 
   return (
     <div 
       ref={ref} 
       className="relative ml-auto"
       onMouseEnter={() => canHover && setOpen(true)}
-      onMouseLeave={() => canHover && setOpen(false)}
+      onMouseLeave={() => { if (canHover) { setOpen(false); openedByClickRef.current = false } }}
     >
       {/* Spacer pill - keeps position, never shifts layout */}
       <button
-        onClick={() => setOpen(o => !o)}
+        onClick={handleToggleClick}
         className={cn(
           "text-xs font-bold px-3 py-1 rounded-full transition-opacity duration-200",
           "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:scale-105",
@@ -661,7 +663,7 @@ function ProjectsPopover({
 
       {open && (
         <div className="absolute right-0 top-0 z-50 w-64 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-          <div className="px-4 py-3 cursor-pointer" onClick={() => setOpen(false)}>
+          <div className="px-4 py-3 cursor-pointer" onClick={closePopover}>
             <span className="text-[0.65rem] font-black" style={{ color: accent }}>
               {projects.length} {projects.length === 1 ? "project" : "projects"}
             </span>
@@ -670,7 +672,7 @@ function ProjectsPopover({
             {projects.map(p => (
               <button
                 key={p.id}
-                onClick={() => { onSelect(p); setOpen(false) }}
+                onClick={() => { onSelect(p); closePopover() }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left group/item"
               >
                 <div className="w-8 h-8 rounded-[8px] shrink-0 overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900">
@@ -694,8 +696,6 @@ function ProjectsPopover({
     </div>
   )
 }
-
-
 
 // ─── Hub filter pill ─────────────────────────────────────────────────────────
 function HubFilter({ label, active, accent, isDark, onClick }: {
@@ -721,12 +721,39 @@ function HubFilter({ label, active, accent, isDark, onClick }: {
 export function GalleryPage() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
+  const searchParams = useSearchParams()
+  const pathname      = usePathname()
   const [activeFilter,    setActiveFilter]    = useState<HubId | "all">("all")
   const [selectedProject, setSelectedProject] = useState<ProjectData | null>(null)
   const [zoomIndex,       setZoomIndex]       = useState<number | null>(null)
 
-  // Back button: zoom → project → page (modal by modal)
-  useGalleryBackStack(selectedProject, setSelectedProject, zoomIndex, setZoomIndex)
+  // Back button: zoom → project → page (modal by modal). closeProject /
+  // closeZoom are the only sanctioned way to dismiss these modals now —
+  // they route the close through history.back() so no phantom entry is
+  // left behind for a later real back-press to silently consume.
+  const { closeProject, closeZoom } = useGalleryBackStack(selectedProject, setSelectedProject, zoomIndex, setZoomIndex)
+
+  // Deep link: ?project=<id> opens that project directly and filters to its
+  // hub, so the carousel row behind the modal makes sense on load.
+  useEffect(() => {
+    const projectId = searchParams.get("project")
+    if (!projectId) return
+    const match = PROJECTS.find(p => p.id === projectId)
+    if (match) {
+      setActiveFilter(match.hub as HubId)
+      setSelectedProject(match)
+    }
+  }, [searchParams])
+
+  // Keep the URL in sync with the open project so it's shareable at any
+  // point. This rewrites (never adds) the current history entry's URL —
+  // the actual push/pop entries are still owned entirely by
+  // useGalleryBackStack above, so closing a project (by X, backdrop, or
+  // back gesture) naturally clears the param without any extra wiring.
+  useEffect(() => {
+    const url = selectedProject ? `${pathname}?project=${selectedProject.id}` : pathname
+    window.history.replaceState(window.history.state, "", url)
+  }, [selectedProject, pathname])
 
   // Scroll lock while project modal is open
   useEffect(() => {
@@ -807,15 +834,12 @@ export function GalleryPage() {
 
       <ProjectViewerModal
         project={selectedProject}
-        onClose={() => setSelectedProject(null)}
+        onClose={closeProject}
         zoomIndex={zoomIndex}
         setZoomIndex={setZoomIndex}
+        onCloseZoom={closeZoom}
       />
     </section>
   )
 }
  
- 
- 
- 
-    
