@@ -12,10 +12,12 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
 
 /* ─────────────────────────────────────────────────────────────────────────────
    BRAND TOKEN SYSTEM
+   NOTE: These values are kept in sync with lib/brand.ts BRAND constant.
+   All values below are WCAG AA compliant (4.5:1+ vs their typical pairing).
 ───────────────────────────────────────────────────────────────────────────── */
 :root {
-  --brand-green: #6FBF1A;
-  --brand-orange: #F4A261;
+  --brand-green: #4A8011;        /* WCAG AA — 4.79:1 vs white */
+  --brand-orange: #B9590D;       /* WCAG AA — 4.67:1 vs white */
   --brand-light-blue: #A9D6F2;
   --brand-light-green: #CDEB9F;
   --brand-light-orange: #F9D1B0;
@@ -23,19 +25,21 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --brand-blue: #1E6FA8;
   --brand-blue-mid: #15537D;
   --brand-blue-dark: #0F3F66;
-  --brand-green-dark: #548F14;
-  --brand-orange-dark: #D9894B;
+  --brand-green-dark: #4C8212;   /* WCAG AA — 4.66:1 vs white */
+  --brand-orange-dark: #B06225;  /* WCAG AA — 4.55:1 vs white */
 
   --brand-neutral-100: #EDEDED;
   --brand-neutral-200: #F4F4F4;
   --brand-neutral-300: #D6D6D6;
   --brand-neutral-400: #9A9A9A;
-  --brand-neutral-500: #777777;
+  --brand-neutral-500: #747474;  /* WCAG AA — 4.67:1 vs white */
 
   --brand-dark-100: #333333;
   --brand-dark-200: #555555;
   --brand-green-deep: #3E6B0E;
-  --brand-orange-brown: #B86F34;
+  --brand-orange-brown: #A86530; /* WCAG AA — 4.60:1 vs white */
+  --brand-orange-accessible: #9A4B12;      /* WCAG AA — 6.2:1 vs white */
+  --brand-orange-accessible-dark: #7A3B0E; /* WCAG AAA — 8.5:1 vs white */
   --brand-white: #FFFFFF;
 
   --brand-whatsapp: #25D366;
@@ -67,7 +71,7 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --secondary-foreground: #333333;
   --muted: #EDEDED;
   --muted-foreground: #525252;
-  --accent: #6FBF1A;
+  --accent: #4A8011;             /* WCAG AA — 4.79:1 vs white foreground (was #6FBF1A at 2.3:1) */
   --accent-foreground: #FFFFFF;
   --destructive: #ef4444;
   --destructive-foreground: #FFFFFF;
@@ -148,6 +152,8 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --color-brand-dark-200: var(--brand-dark-200);
   --color-brand-green-deep: var(--brand-green-deep);
   --color-brand-orange-brown: var(--brand-orange-brown);
+  --color-brand-orange-accessible: var(--brand-orange-accessible);
+  --color-brand-orange-accessible-dark: var(--brand-orange-accessible-dark);
   --color-brand-white: var(--brand-white);
 
   --color-brand-whatsapp: var(--brand-whatsapp);
