@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect, Suspense } from "react"
 import { useSearchParams, usePathname } from "next/navigation"
 import Link from "next/link"
-import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut, ArrowsLeftRight, LinkSimple, EnvelopeSimple } from "@phosphor-icons/react"
+import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut, ArrowsLeftRight, LinkSimple, ShareNetwork, EnvelopeSimple } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -330,31 +330,44 @@ function ZoomOverlay({ images, startIndex, onClose }: { images: string[]; startI
 // ─── Share / copy-link button ─────────────────────────────────────────────────
 // Surfaces the existing ?project=<id> deep link so a visitor can copy a
 // shareable URL straight to this project (e.g. to send it on WhatsApp).
-function ShareButton({ url }: { url: string }) {
-  const [copied, setCopied] = useState(false)
+function ShareButton({ url, title }: { url: string; title: string }) {
+  const [shared, setShared] = useState(false)
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>()
 
   useEffect(() => () => clearTimeout(timeoutRef.current), [])
 
-  const handleCopy = async (e: React.MouseEvent) => {
+  const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation()
+    // Prefer the phone's native share sheet (WhatsApp, Messages, Mail,
+    // etc.) so sharing a project feels like sharing anything else on the
+    // phone, rather than a "copy link" utility action.
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title, text: `Check out "${title}" from Apexbytes Hub`, url })
+        return
+      } catch {
+        // User dismissed the share sheet, or share failed — fall through
+        // to clipboard so the button still does something useful.
+      }
+    }
     try {
       await navigator.clipboard.writeText(url)
-      setCopied(true)
-      timeoutRef.current = setTimeout(() => setCopied(false), 1500)
+      setShared(true)
+      timeoutRef.current = setTimeout(() => setShared(false), 1500)
     } catch {
-      // Clipboard API unavailable (e.g. insecure context) — fail silently,
-      // the button just won't show the "copied" confirmation.
+      // Clipboard API unavailable (e.g. insecure context) — fail silently.
     }
   }
 
+  const canNativeShare = typeof navigator !== "undefined" && !!navigator.share
+
   return (
     <button
-      onClick={handleCopy}
-      aria-label="Copy link to this project"
+      onClick={handleShare}
+      aria-label="Share this project"
       className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 shrink-0 transition-colors"
     >
-      {copied ? <Check size={16} weight="bold" className="text-green-500" /> : <LinkSimple size={16} weight="bold" />}
+      {shared ? <Check size={16} weight="bold" className="text-green-500" /> : canNativeShare ? <ShareNetwork size={16} weight="bold" /> : <LinkSimple size={16} weight="bold" />}
     </button>
   )
 }
@@ -383,7 +396,7 @@ function ProjectHeader({ project, accent, hasBA, shareUrl, onClose }: {
         )}
       </div>
       <div className="flex items-center gap-2 shrink-0 ml-3">
-        <ShareButton url={shareUrl} />
+        <ShareButton url={shareUrl} title={project.title} />
         <button onClick={onClose} className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
           <X size={18} weight="bold" />
         </button>
@@ -405,6 +418,33 @@ function ProjectImageSection({
   hasSiblings: boolean; onPrevProject: () => void; onNextProject: () => void
   siblingPosition?: string
 }) {
+  // Swipe left/right on the main image itself to move between this
+  // project's own images — previously this only worked once you'd already
+  // tapped in to the full-screen zoom overlay.
+  const touchStartX = useRef(0)
+  const touchStartY = useRef(0)
+  const didSwipeRef = useRef(false)
+
+  const onImageTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+    didSwipeRef.current = false
+  }
+  const onImageTouchEnd = (e: React.TouchEvent) => {
+    if (allImages.length < 2) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current)
+    if (Math.abs(dx) < 40 || dy > Math.abs(dx)) return
+    didSwipeRef.current = true
+    setActiveImg(dx < 0 ? (activeImg + 1) % allImages.length : (activeImg - 1 + allImages.length) % allImages.length)
+  }
+  // A swipe shouldn't also trigger the zoom-in tap that fires right after
+  // touchend on mobile.
+  const handleImageClick = () => {
+    if (didSwipeRef.current) { didSwipeRef.current = false; return }
+    onZoom(activeImg)
+  }
+
   return (
     <div className="h-[40%] md:h-auto md:flex-1 flex flex-col overflow-hidden bg-zinc-900">
       {comparing && hasBA ? (
@@ -413,8 +453,16 @@ function ProjectImageSection({
         </div>
       ) : (
         <>
-          <div className="relative flex-1 overflow-hidden cursor-zoom-in group/img" onClick={() => onZoom(activeImg)}>
-            <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="(max-width: 768px) 100vw, 55vw" className="object-cover transition-opacity duration-300" priority={activeImg === 0} />
+          <div
+            className="relative flex-1 overflow-hidden cursor-zoom-in group/img"
+            onClick={handleImageClick}
+            onTouchStart={onImageTouchStart}
+            onTouchEnd={onImageTouchEnd}
+          >
+            {/* object-contain (not cover) so the full image is always
+                visible uncropped, at any screen size, rather than filling
+                the frame and clipping the edges. */}
+            <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="(max-width: 768px) 100vw, 55vw" className="object-contain transition-opacity duration-300" priority={activeImg === 0} />
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 pointer-events-none">
               <div className="bg-black/40 backdrop-blur-sm rounded-full p-2.5"><ArrowsOut size={18} weight="bold" className="text-white" /></div>
             </div>
@@ -535,8 +583,20 @@ function ProjectViewerModal({
   const isDark = resolvedTheme === "dark"
   const [activeImg,  setActiveImg]  = useState(0)
   const [comparing,  setComparing]  = useState(false)
+  const [detailsScrolled, setDetailsScrolled] = useState(false)
+  const detailsRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => { setActiveImg(0); setComparing(false) }, [project?.id])
+  useEffect(() => {
+    setActiveImg(0)
+    setComparing(false)
+    setDetailsScrolled(false)
+    if (detailsRef.current) detailsRef.current.scrollTop = 0
+  }, [project?.id])
+
+  const handleDetailsScroll = () => {
+    if (!detailsRef.current) return
+    setDetailsScrolled(detailsRef.current.scrollTop > 4)
+  }
 
   const currentIdx = project ? siblings.findIndex(p => p.id === project.id) : -1
   const hasSiblings = siblings.length > 1 && currentIdx !== -1
@@ -607,7 +667,26 @@ function ProjectViewerModal({
         />
 
         {/* Details panel */}
-        <div className={cn("relative flex flex-col border-zinc-100 dark:border-zinc-800 overflow-y-auto overscroll-contain", "h-[60%] border-t md:h-auto md:border-t-0 md:border-l md:w-[380px]", "p-6 md:p-8")}>
+        <div
+          ref={detailsRef}
+          onScroll={handleDetailsScroll}
+          className={cn("relative flex flex-col border-zinc-100 dark:border-zinc-800 overflow-y-auto overscroll-contain", "h-[60%] border-t md:h-auto md:border-t-0 md:border-l md:w-[380px]", "p-6 md:p-8")}
+        >
+          {/* Sticky shadow that appears once the panel is scrolled — gives
+              the impression the image above is casting a shadow onto the
+              text as it slides underneath, rather than text and image
+              feeling like flat, disconnected layers. Zero height so it
+              never affects layout; the visible band is an absolutely
+              positioned child bleeding past the panel's own padding. */}
+          <div className="sticky top-0 h-0 z-20 pointer-events-none" aria-hidden>
+            <div
+              className={cn(
+                "absolute -inset-x-6 md:-inset-x-8 -top-6 md:-top-8 h-8 transition-opacity duration-300",
+                detailsScrolled ? "opacity-100" : "opacity-0"
+              )}
+              style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.16), rgba(0,0,0,0))" }}
+            />
+          </div>
           <ProjectHeader project={project} accent={accent} hasBA={hasBA} shareUrl={shareUrl} onClose={onClose} />
           <ProjectDetailsPanel project={project} accent={accent} onClose={onClose} />
           {hasSiblings && (
@@ -1011,3 +1090,4 @@ export function GalleryPage() {
     </Suspense>
   )
 }
+ 
