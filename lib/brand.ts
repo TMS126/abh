@@ -26,6 +26,8 @@ export const BRAND = {
 
   orangeDark: "#D9894B",
   orangeBrown: "#B86F34",
+  orangeAccessible: "#9A4B12",     // WCAG AA — 6.2:1 with white text
+  orangeAccessibleDark: "#7A3B0E", // WCAG AAA — 8.5:1 with white text
 
   neutral100: "#EDEDED",
   neutral200: "#F4F4F4",
