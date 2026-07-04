@@ -80,6 +80,9 @@ interface CartItem {
 const STORAGE_KEY = "apexbytes-quote-cart"
 
 // ─── Liquid glass style helpers ────────────────────────────────────────────────
+// All visual depth is achieved via CSS properties — no canvas, no filters on
+// scroll containers, no blur inside lists. A single backdrop-filter on the
+// panel shell is the only GPU layer.
 const GLASS = {
   panel: "bg-white/70 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/40 dark:border-white/10",
   section: "bg-white/60 dark:bg-white/5 border border-white/60 dark:border-white/10",
@@ -122,16 +125,21 @@ export function QuoteCalculatorWidget() {
 
   // Lock body scroll while open
   useEffect(() => {
-    if (!isOpen) return
-    const scrollY = window.scrollY
-    const { style } = document.body
-    style.position = "fixed"; style.top = `-${scrollY}px`
-    style.left = "0"; style.right = "0"; style.width = "100%"; style.overflow = "hidden"
-    return () => {
-      style.position = ""; style.top = ""; style.left = ""; style.right = ""; style.width = ""; style.overflow = ""
-      window.scrollTo(0, scrollY)
-    }
+    document.body.style.overflow = isOpen ? "hidden" : ""
+    return () => { document.body.style.overflow = "" }
   }, [isOpen])
+
+  // Listen for "abh:add-to-quote" events fired by the ServiceDetailModal.
+  // Opens the calculator and adds the item so the user sees instant feedback.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { hubId, sectionTitle, name, price } = (e as CustomEvent).detail
+      addItem(hubId, sectionTitle, name, price)
+      setIsOpen(true)
+    }
+    window.addEventListener("abh:add-to-quote", handler)
+    return () => window.removeEventListener("abh:add-to-quote", handler)
+  }, [])  // addItem is stable — defined outside render
 
   const getAccent     = (id: HubId) => { const c = HUB_COLORS[id as HubKey]; return isDark ? c.tagTextDark : c.tagText }
   const getSolid      = (id: HubId) => HUB_COLORS[id as HubKey].tagText
@@ -172,7 +180,7 @@ export function QuoteCalculatorWidget() {
       const qty = item.qty || 1
       const effRate = getEffectiveRate(item.id, qty, item.unitPrice)
       const qtyLabel = item.unit ? `${qty} ${item.unit}${qty > 1 ? "s" : ""}` : `x${qty}`
-      msg += `• ${item.name} (${item.sectionTitle}) — ${qtyLabel} @ R${effRate} = R${effRate * qty}\n`
+      msg += `• ${getDisplayName(item.sectionTitle, item.name)} — ${qtyLabel} @ R${effRate} = R${effRate * qty}\n`
     })
     msg += `\nTotal: R${total}`
     if (totalSavings > 0) msg += ` (saved R${totalSavings} with bulk pricing)`
@@ -205,6 +213,7 @@ export function QuoteCalculatorWidget() {
         )}
       >
         <div className="flex items-center justify-end gap-2">
+          {/* Slide-out label */}
           <span className={cn(
             "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap",
             "bg-white dark:bg-zinc-900 text-brand-blue",
@@ -241,8 +250,10 @@ export function QuoteCalculatorWidget() {
           )}
           style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.3)" }}
         >
+          {/* Specular highlight strip */}
           <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent pointer-events-none" />
 
+          {/* Header */}
           <div
             className="flex items-center justify-between px-5 py-4 shrink-0 border-b border-white/20 dark:border-white/10"
             style={{ background: "linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 100%)" }}
@@ -256,7 +267,8 @@ export function QuoteCalculatorWidget() {
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto min-h-0 overscroll-contain">
+          <div className="flex-1 overflow-y-auto min-h-0">
+
             {/* ── Cart ───────────────────────────────────────────────── */}
             {cart.length > 0 && (
               <div className="p-4 border-b border-white/20 dark:border-white/10 space-y-2">
@@ -267,15 +279,15 @@ export function QuoteCalculatorWidget() {
                 {cart.map(item => {
                   const qty = item.qty || 1
                   const effRate = getEffectiveRate(item.id, qty, item.unitPrice)
+                  const lineTotal = effRate * qty
                   const discounted = effRate < item.unitPrice
                   const hint = getBulkHint(item.id, qty, effRate, item.unitPrice)
+                  const displayName = getDisplayName(item.sectionTitle, item.name)
                   const accent = getAccent(item.hubId)
                   return (
-                    <div key={item.id} className={cn("p-3 rounded-[14px] shadow-sm space-y-2 animate-in fade-in slide-in-from-right-2 duration-200", GLASS.item)}>
+                    <div key={item.id} className={cn("p-3 rounded-[14px] shadow-sm space-y-2", GLASS.item)}>
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">
-                          {item.name} <span className="text-zinc-400 font-bold">({item.sectionTitle})</span>
-                        </p>
+                        <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{displayName}</p>
                         <button onClick={() => removeItem(item.id)} className="text-zinc-400 hover:text-red-500 shrink-0 transition-colors"><Trash size={14} weight="bold" /></button>
                       </div>
                       <div className="flex items-center gap-2 text-xs">
@@ -290,11 +302,12 @@ export function QuoteCalculatorWidget() {
                             value={item.qty === 0 ? "" : item.qty}
                             onChange={e => setQtyDraft(item.id, e.target.value)}
                             onBlur={() => handleQtyBlur(item.id, item.qty)}
-                            className="w-10 text-center bg-transparent text-xs font-black text-zinc-800 dark:text-zinc-200 outline-none"
+                            placeholder="1"
+                            className="w-10 text-center text-xs font-black bg-transparent border-none outline-none text-zinc-900 dark:text-zinc-100"
                           />
                           <button onClick={() => updateQty(item.id, qty + 1)} className={cn("w-6 h-6 rounded-full flex items-center justify-center transition-colors", GLASS.btn)}><Plus size={12} weight="bold" /></button>
                         </div>
-                        <span className="text-sm font-black text-zinc-800 dark:text-zinc-200">R{effRate * qty}</span>
+                        <span className="text-sm font-black text-zinc-900 dark:text-zinc-50">R{lineTotal}</span>
                       </div>
                       {hint && (
                         <p className={cn("text-[0.6rem] font-bold", discounted ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400")}>{hint}</p>
@@ -315,69 +328,97 @@ export function QuoteCalculatorWidget() {
                 const isHubOpen = openHub === hubId
 
                 return (
-                  <div key={hubId} className={cn("rounded-[14px] overflow-hidden transition-all duration-300 ease-in-out", GLASS.section)}>
+                  <div key={hubId} className={cn("rounded-[14px] overflow-hidden", GLASS.section)}>
+                    {/* Hub header */}
                     <button
                       onClick={() => setOpenHub(isHubOpen ? null : hubId)}
                       className="w-full flex items-center gap-3 p-3 text-left hover:bg-white/20 dark:hover:bg-white/5 transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${accent}20`, color: accent }}>
+                      <div
+                        className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: `${accent}20`, color: accent }}
+                      >
                         <HubIcon id={hubId} />
                       </div>
                       <span className="flex-1 text-xs font-black text-zinc-800 dark:text-zinc-200">{hub.title}</span>
-                      <CaretDown size={14} className={cn("transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]", isHubOpen ? "rotate-180" : "rotate-0")} style={{ color: isHubOpen ? accent : undefined }} />
+                      <CaretDown
+                        size={14}
+                        className={cn("transition-transform duration-300", isHubOpen ? "rotate-180" : "rotate-0")}
+                        style={{ color: isHubOpen ? accent : undefined }}
+                      />
                     </button>
 
-                    <div className={cn("grid transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]", isHubOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
-                      <div className="overflow-hidden">
-                        <div className="border-t border-white/20 dark:border-white/10">
-                          {hub.sections.map((section, sIdx) => {
-                            const isSectionOpen = openSections[hubId] === sIdx
-                            return (
-                              <div key={sIdx} className={cn(sIdx > 0 && "border-t border-white/15 dark:border-white/[0.07]")}>
-                                <button
-                                  onClick={() => toggleSection(hubId, sIdx)}
-                                  className="w-full flex items-center justify-between px-3 py-2.5 transition-colors hover:bg-white/20 dark:hover:bg-white/5"
-                                >
-                                  <span className="text-[0.65rem] font-black uppercase tracking-[0.15em] px-2.5 py-1 rounded-full transition-all duration-300"
-                                    style={isSectionOpen ? { backgroundColor: solidAccent, color: "#fff" } : { backgroundColor: `${accent}18`, color: accent }}
-                                  >
-                                    {section.title}
-                                  </span>
-                                  <CaretDown size={12} className={cn("mr-1 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]", isSectionOpen ? "rotate-180" : "rotate-0")} style={{ color: accent }} />
-                                </button>
+                    {/* Hub body: category accordions */}
+                    {isHubOpen && (
+                      <div className="border-t border-white/20 dark:border-white/10">
+                        {hub.sections.map((section, sIdx) => {
+                          const isSectionOpen = openSections[hubId] === sIdx
 
-                                <div className={cn("grid transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]", isSectionOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
-                                  <div className="overflow-hidden">
-                                    <div className="px-3 pb-3 pt-1 space-y-1.5">
-                                      {section.items.map((item, iIdx) => {
-                                        const itemId = `${hubId}-${section.title}-${item.name}`
-                                        const hasBulk = !!BULK_TIERS[itemId]
-                                        return (
-                                          <div key={iIdx} className={cn("flex items-center justify-between gap-2 p-2 rounded-[10px] shadow-sm transition-all duration-200 hover:scale-[1.02]", GLASS.item)}>
-                                            <div className="min-w-0">
-                                              <p className="text-xs font-bold text-zinc-700 dark:text-zinc-300 truncate">{item.name}</p>
-                                              <p className="text-[0.65rem] font-medium text-zinc-400">{item.price}{hasBulk && <span className="font-bold ml-1" style={{ color: accent }}>· bulk</span>}</p>
-                                            </div>
-                                            <button
-                                              onClick={() => addItem(hubId, section.title, item.name, item.price)}
-                                              className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-white shadow-sm active:scale-90 transition-transform"
-                                              style={{ backgroundColor: solidAccent }}
-                                              aria-label={`Add ${item.name}`}
-                                            >
-                                              <Plus size={13} weight="bold" />
-                                            </button>
-                                          </div>
-                                        )
-                                      })}
-                                    </div>
-                                  </div>
+                          return (
+                            <div
+                              key={sIdx}
+                              className={cn(sIdx > 0 && "border-t border-white/15 dark:border-white/[0.07]")}
+                            >
+                              {/* Category pill — accordion trigger */}
+                              <button
+                                onClick={() => toggleSection(hubId, sIdx)}
+                                className="w-full flex items-center justify-between px-3 py-2 transition-colors hover:bg-white/20 dark:hover:bg-white/5"
+                              >
+                                <span
+                                  className="text-[0.65rem] font-black uppercase tracking-[0.15em] px-2.5 py-1 rounded-full"
+                                  style={
+                                    isSectionOpen
+                                      ? { backgroundColor: solidAccent, color: "#fff" }
+                                      : { backgroundColor: `${accent}18`, color: accent }
+                                  }
+                                >
+                                  {section.title}
+                                </span>
+                                <CaretDown
+                                  size={12}
+                                  className={cn("mr-1 transition-transform duration-200", isSectionOpen ? "rotate-180" : "rotate-0")}
+                                  style={{ color: accent }}
+                                />
+                              </button>
+
+                              {/* Items */}
+                              {isSectionOpen && (
+                                <div className="px-3 pb-3 pt-1 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                                  {section.items.map((item, iIdx) => {
+                                    const itemId = `${hubId}-${section.title}-${item.name}`
+                                    const hasBulk = !!BULK_TIERS[itemId]
+                                    return (
+                                      <div
+                                        key={iIdx}
+                                        className={cn("flex items-center justify-between gap-2 p-2 rounded-[10px] shadow-sm", GLASS.item)}
+                                      >
+                                        <div className="min-w-0">
+                                          <p className="text-xs font-bold text-zinc-700 dark:text-zinc-300 truncate">
+                                            {getDisplayName(section.title, item.name)}
+                                          </p>
+                                          <p className="text-[0.65rem] font-medium text-zinc-400">
+                                            {item.price}
+                                            {hasBulk && <span className="font-bold ml-1" style={{ color: accent }}>· bulk</span>}
+                                          </p>
+                                        </div>
+                                        <button
+                                          onClick={() => addItem(hubId, section.title, item.name, item.price)}
+                                          className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-white shadow-sm active:scale-90 transition-transform"
+                                          style={{ backgroundColor: solidAccent }}
+                                          aria-label={`Add ${item.name}`}
+                                        >
+                                          <Plus size={13} weight="bold" />
+                                        </button>
+                                      </div>
+                                    )
+                                  })}
                                 </div>
-                              </div>
-                            )
-                          })}
-                        </div>
+                              )}
+                            </div>
+                          )
+                        })}
                       </div>
-                    </div>
+                    )}
                   </div>
                 )
               })}
@@ -386,10 +427,14 @@ export function QuoteCalculatorWidget() {
 
           {/* ── Footer ───────────────────────────────────────────────────── */}
           {cart.length > 0 && (
-            <div className="px-4 pb-4 pt-3 shrink-0 border-t border-white/20 dark:border-white/10 space-y-3" style={{ background: "linear-gradient(to top, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 100%)" }}>
+            <div
+              className="px-4 pb-4 pt-3 shrink-0 border-t border-white/20 dark:border-white/10 space-y-3"
+              style={{ background: "linear-gradient(to top, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 100%)" }}
+            >
               {totalSavings > 0 && (
-                <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-emerald-600 dark:text-emerald-400 animate-bounce">
-                  <SealPercent size={14} weight="fill" /> Saving R{totalSavings} with bulk pricing
+                <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-emerald-600 dark:text-emerald-400">
+                  <SealPercent size={14} weight="fill" />
+                  Saving R{totalSavings} with bulk pricing
                 </div>
               )}
               <div className="flex items-center justify-between">
@@ -398,7 +443,7 @@ export function QuoteCalculatorWidget() {
               </div>
               <button
                 onClick={sendQuote}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-[14px] font-black text-sm text-white active:scale-95 transition-all shadow-lg hover:shadow-[#25D366]/40 hover:-translate-y-0.5"
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-[14px] font-black text-sm text-white active:scale-95 transition-all shadow-lg"
                 style={{ backgroundColor: "#25D366" }}
               >
                 <WhatsappLogo size={20} weight="fill" /> Send Quote via WhatsApp
@@ -409,4 +454,6 @@ export function QuoteCalculatorWidget() {
       )}
     </>
   )
-    } 
+}
+ 
+  
