@@ -91,7 +91,17 @@ const PREFIX_SECTIONS: Record<string, string> = {
 function cleanText(s: string) {
   return s.replace(/\s*\/\s*/g, " or ").replace(/\s*\+\s*/g, " and ").replace(/\s*&\s*/g, " and ")
 }
-
+// Swaps the verb "bring" for "provide" anywhere it appears, case-preserved.
+// Used to make requirement/description text read naturally for hubs that are
+// fully remote (Design, eService) without needing to rewrite every sentence
+// in data.ts by hand.
+function remoteizeText(text: string) {
+  return text.replace(/\bbring\b/gi, (match) => {
+    if (match === "Bring") return "Provide"
+    if (match === "BRING") return "PROVIDE"
+    return "provide"
+  })
+}
 function naturalServiceLabel(name: string, sectionTitle: string) {
   const cleanName = cleanText(name)
   if (SUFFIX_SECTIONS[sectionTitle]) return `${cleanName} ${SUFFIX_SECTIONS[sectionTitle]}`
@@ -662,14 +672,17 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     ? `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). Price shown: ${svc.price}. My file: ${fileUrl}`
     : `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). Price shown: ${svc.price}. Can you assist?`
 
-  const requirements = svc.requirements?.length
+  const requirements = (svc.requirements?.length
     ? svc.requirements
-    : ["Just bring your file, document or USB — we'll take care of the rest."]
+    : isRemote
+      ? ["Just share (upload) your file or details with us via WhatsApp / Email — we'll take care of the rest."]
+      : ["Just bring your file, document or USB — we'll take care of the rest."]
+  ).map(r => (isRemote ? remoteizeText(r) : r))
 
-  const desc = svc.desc?.trim()
+  const descRaw = svc.desc?.trim()
     ? svc.desc
     : `${naturalLabel} is one of our ${hubTitle} services. We handle everything professionally so you don't have to worry about a thing.`
-
+  const desc = isRemote ? remoteizeText(descRaw) : descRaw
   return (
     <div className="fixed inset-0 z-[10200] flex items-center justify-center p-4 animate-in fade-in duration-300">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm overscroll-contain" onClick={onClose} />
