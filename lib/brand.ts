@@ -11,8 +11,8 @@
 
 // ─── BUSINESS INFO ───────────────────────────────────────────────────────────
 export const BRAND = {
-  green: "#6FBF1A",
-  orange: "#F4A261",
+  green: "#4A8011",        // WCAG AA — 4.79:1 vs white (was #6FBF1A at 2.3:1)
+  orange: "#B9590D",       // WCAG AA — 4.67:1 vs white (was #F4A261 at 2.06:1)
   lightBlue: "#A9D6F2",
   lightGreen: "#CDEB9F",
   lightOrange: "#F9D1B0",
@@ -21,25 +21,29 @@ export const BRAND = {
   blueMid: "#15537D",
   blueDark: "#0F3F66",
 
-  greenDark: "#548F14",
+  greenDark: "#4C8212",    // WCAG AA — 4.66:1 vs white (was #548F14 at 3.95:1)
   greenDeep: "#3E6B0E",
 
-  orangeDark: "#D9894B",
-  orangeBrown: "#B86F34",
+  orangeDark: "#B06225",   // WCAG AA — 4.55:1 vs white (was #D9894B at 2.75:1)
+  orangeBrown: "#A86530",  // WCAG AA — 4.60:1 vs white (was #B86F34 at 3.92:1)
   orangeAccessible: "#9A4B12",     // WCAG AA — 6.2:1 with white text
   orangeAccessibleDark: "#7A3B0E", // WCAG AAA — 8.5:1 with white text
 
   neutral100: "#EDEDED",
   neutral200: "#F4F4F4",
   neutral300: "#D6D6D6",
-  neutral400: "#9A9A",
-  neutral500: "#777777",
+  neutral400: "#9A9A9A",   // fixed invalid hex (was "#9A9A" — missing 2 digits)
+  neutral500: "#747474",   // WCAG AA — 4.67:1 vs white (was #777777 at 4.48:1, just under)
 
   dark100: "#333333",
   dark200: "#555555",
 
   white: "#FFFFFF",
 
+  // WhatsApp's official brand green — intentionally left unchanged.
+  // Logos/brand marks are exempt from WCAG 1.4.3; altering it would break
+  // brand recognition. Only ~2:1 vs white — avoid pairing with pure white
+  // text/icons if strict AA compliance matters for a given use.
   whatsapp: "#25D366",
   whatsappDark: "#1ebe5a",
 
@@ -338,4 +342,4 @@ export const FOOTER_NAV = [
   { label: "Gallery", path: "/gallery" },
   { label: "About", path: "/about" },
   { label: "Contact", path: "/contact" },
-] as const  
+] as const
