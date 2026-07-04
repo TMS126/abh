@@ -459,10 +459,7 @@ function ProjectImageSection({
             onTouchStart={onImageTouchStart}
             onTouchEnd={onImageTouchEnd}
           >
-            {/* object-contain (not cover) so the full image is always
-                visible uncropped, at any screen size, rather than filling
-                the frame and clipping the edges. */}
-            <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="(max-width: 768px) 100vw, 55vw" className="object-contain transition-opacity duration-300" priority={activeImg === 0} />
+            <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="(max-width: 768px) 100vw, 55vw" className="object-cover transition-opacity duration-300" priority={activeImg === 0} />
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 pointer-events-none">
               <div className="bg-black/40 backdrop-blur-sm rounded-full p-2.5"><ArrowsOut size={18} weight="bold" className="text-white" /></div>
             </div>
@@ -583,19 +580,26 @@ function ProjectViewerModal({
   const isDark = resolvedTheme === "dark"
   const [activeImg,  setActiveImg]  = useState(0)
   const [comparing,  setComparing]  = useState(false)
-  const [detailsScrolled, setDetailsScrolled] = useState(false)
+  // 0–1, tracks scroll offset continuously (not a hard on/off flip) so the
+  // shadow genuinely eases in as you scroll rather than snapping in at a
+  // threshold.
+  const [shadowOpacity, setShadowOpacity] = useState(0)
   const detailsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setActiveImg(0)
     setComparing(false)
-    setDetailsScrolled(false)
+    setShadowOpacity(0)
     if (detailsRef.current) detailsRef.current.scrollTop = 0
   }, [project?.id])
 
+  // Fully faded in by ~40px of scroll — short enough to feel responsive,
+  // long enough that the fade itself is visible rather than instant.
+  const SHADOW_FADE_DISTANCE = 40
   const handleDetailsScroll = () => {
     if (!detailsRef.current) return
-    setDetailsScrolled(detailsRef.current.scrollTop > 4)
+    const ratio = Math.min(detailsRef.current.scrollTop / SHADOW_FADE_DISTANCE, 1)
+    setShadowOpacity(ratio)
   }
 
   const currentIdx = project ? siblings.findIndex(p => p.id === project.id) : -1
@@ -672,19 +676,23 @@ function ProjectViewerModal({
           onScroll={handleDetailsScroll}
           className={cn("relative flex flex-col border-zinc-100 dark:border-zinc-800 overflow-y-auto overscroll-contain", "h-[60%] border-t md:h-auto md:border-t-0 md:border-l md:w-[380px]", "p-6 md:p-8")}
         >
-          {/* Sticky shadow that appears once the panel is scrolled — gives
-              the impression the image above is casting a shadow onto the
-              text as it slides underneath, rather than text and image
-              feeling like flat, disconnected layers. Zero height so it
-              never affects layout; the visible band is an absolutely
+          {/* Shadow that eases in as the panel scrolls — gives the
+              impression the image above is casting a shadow onto the text
+              sliding underneath. Opacity tracks scroll offset continuously
+              (see shadowOpacity/SHADOW_FADE_DISTANCE above) rather than
+              snapping on past a threshold, and the gradient itself uses
+              several stops so the falloff reads as a genuine soft fade
+              rather than a flat tinted band. Zero-height sticky wrapper so
+              it never affects layout; the visible band is an absolutely
               positioned child bleeding past the panel's own padding. */}
           <div className="sticky top-0 h-0 z-20 pointer-events-none" aria-hidden>
             <div
-              className={cn(
-                "absolute -inset-x-6 md:-inset-x-8 -top-6 md:-top-8 h-8 transition-opacity duration-300",
-                detailsScrolled ? "opacity-100" : "opacity-0"
-              )}
-              style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.16), rgba(0,0,0,0))" }}
+              className="absolute -inset-x-6 md:-inset-x-8 -top-6 md:-top-8 h-14 md:h-16"
+              style={{
+                opacity: shadowOpacity,
+                transition: "opacity 60ms linear",
+                background: "linear-gradient(to bottom, rgba(0,0,0,0.26) 0%, rgba(0,0,0,0.13) 35%, rgba(0,0,0,0.045) 65%, rgba(0,0,0,0) 100%)",
+              }}
             />
           </div>
           <ProjectHeader project={project} accent={accent} hasBA={hasBA} shareUrl={shareUrl} onClose={onClose} />
@@ -731,7 +739,7 @@ function ProjectCarousel({ projects, accent, onSelect }: { projects: ProjectData
   const onMouseUp   = () => { isDragging.current = false }
 
   return (
-    <div className="relative">
+    <div className="relative md:max-w-2xl lg:max-w-3xl md:mx-auto">
       <div
         ref={trackRef}
         onScroll={onScroll}
