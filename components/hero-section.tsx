@@ -16,7 +16,7 @@ import {
   Desktop,
 } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
-import { BRAND, BIZ, WA, MARQUEE_ITEMS, HUB_COLORS } from "@/lib/brand"
+import { BRAND, BIZ,MARQUEE_ITEMS, HUB_COLORS } from "@/lib/brand"
 
 // ─── Hub data ─────────────────────────────────────────────────────────────────
 const HUBS_DATA = [
@@ -220,49 +220,63 @@ export function HeroSection() {
         <p className="text-sm md:text-base font-medium text-zinc-600 dark:text-zinc-400 mb-10 max-w-[600px] px-2 leading-relaxed">
           From printing your documents to navigating government services — we make it simple, fast, and friendly.
         </p>
+{/* CTA — now the sole hero action since the WhatsApp button was removed.
+    Kept at its original compact width (not stretched to full-width per
+    your call), but bumped up in size/weight and given some life:
+    animated gradient fill (blue → green, matches the brand's dual-tone
+    identity), a soft pulsing glow behind it, and icon + lift motion on
+    hover. */}
+<div className="relative w-full flex justify-center items-center mb-12">
 
-        {/* CTAs */}
-        <div className="relative w-full flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center mb-12">
+  {/* Giant tilted hub-icon watermark — synced to the active hub in the
+      Core Hub Ecosystem selector below. Sits behind the CTA button,
+      bleeds off-screen, and cross-fades color/icon on hub change. */}
+  <div
+    key={active.id}
+    aria-hidden="true"
+    className="absolute inset-y-0 -right-[18%] md:-right-[10%] flex items-center justify-center pointer-events-none select-none opacity-[0.14] dark:opacity-[0.18] transition-colors duration-700 ease-out animate-in fade-in zoom-in-95 duration-500"
+    style={{ color: activeColor, zIndex: 0 }}
+  >
+    <WatermarkIcon
+      size={520}
+      weight="fill"
+      aria-hidden="true"
+      style={{ transform: "rotate(-16deg)" }}
+      className="shrink-0 md:w-[620px] md:h-[620px]"
+    />
+  </div>
 
-          {/* Giant tilted hub-icon watermark — synced to the active hub in the
-              Core Hub Ecosystem selector below. Sits behind the CTA buttons,
-              bleeds off-screen, and cross-fades color/icon on hub change. */}
-          <div
-            key={active.id}
-            aria-hidden="true"
-            className="absolute inset-y-0 -right-[18%] md:-right-[10%] flex items-center justify-center pointer-events-none select-none opacity-[0.14] dark:opacity-[0.18] transition-colors duration-700 ease-out animate-in fade-in zoom-in-95 duration-500"
-            style={{ color: activeColor, zIndex: 0 }}
-          >
-            <WatermarkIcon
-              size={520}
-              weight="fill"
-              aria-hidden="true"
-              style={{ transform: "rotate(-16deg)" }}
-              className="shrink-0 md:w-[620px] md:h-[620px]"
-            />
-          </div>
+  {/* Soft pulsing glow, sits behind the button */}
+  <div
+    aria-hidden="true"
+    className="absolute w-[220px] h-[80px] rounded-full blur-2xl pointer-events-none abh-cta-glow"
+    style={{ backgroundImage: `linear-gradient(135deg, ${BRAND.blue} 0%, ${BRAND.green} 100%)` }}
+  />
 
-          <button
-            onClick={() => handleNavigate("/services")}
-            className="relative z-10 inline-flex items-center gap-3 group px-8 py-4 rounded-[14px] font-sans font-black text-base text-white transition-all duration-300 active:scale-95 shadow-lg bg-brand-blue hover:opacity-90"
-          >
-            View Services
-            <ArrowRight weight="bold" className="w-5 h-5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
-          </button>
+  <style>{`
+    @keyframes abh-cta-glow-pulse {
+      0%, 100% { opacity: 0.35; transform: scale(0.95); }
+      50%      { opacity: 0.6;  transform: scale(1.15); }
+    }
+    .abh-cta-glow { animation: abh-cta-glow-pulse 3s ease-in-out infinite; }
 
-          <a
-            href={WA.general}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="relative z-10 inline-flex items-center justify-center w-[56px] h-[56px] rounded-full text-white transition-all duration-300 active:scale-95 shrink-0 shadow-lg"
-            style={{ backgroundColor: BRAND.whatsapp }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = BRAND.whatsappDark }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = BRAND.whatsapp }}
-            aria-label={`Chat with ${BIZ.name} on WhatsApp`}
-          >
-            <WhatsappLogo weight="fill" className="w-7 h-7" aria-hidden="true" />
-          </a>
-        </div>
+    @keyframes abh-cta-gradient-shift {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .abh-cta-gradient { background-size: 200% 200%; animation: abh-cta-gradient-shift 4s ease infinite; }
+  `}</style>
+
+  <button
+    onClick={() => handleNavigate("/services")}
+    className="abh-cta-gradient relative z-10 inline-flex items-center gap-3 group px-10 py-5 rounded-[16px] font-sans font-black text-lg text-white transition-all duration-300 active:scale-95 hover:-translate-y-1 shadow-lg hover:shadow-2xl"
+    style={{ backgroundImage: `linear-gradient(135deg, ${BRAND.blue} 0%, ${BRAND.blueMid} 50%, ${BRAND.green} 100%)` }}
+  >
+    View Services
+    <ArrowRight weight="bold" className="w-6 h-6 transition-transform duration-300 group-hover:translate-x-1.5" aria-hidden="true" />
+  </button>
+</div>
 
         {/* Marquee */}
         <div
