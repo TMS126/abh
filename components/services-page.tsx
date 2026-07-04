@@ -509,6 +509,13 @@ function HubModal({
 // ─── Service Detail Modal ─────────────────────────────────────────────────────
 type Tab = "bring" | "about"
 
+// Hubs whose services are handled entirely online/remotely — no physical
+// item ever needs to be dropped off, so the "Bring" pill reads oddly there.
+const REMOTE_HUBS: HubId[] = ["design", "eservice"]
+function isRemoteHub(hubId: HubId) {
+  return REMOTE_HUBS.includes(hubId)
+}
+
 function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onClose: () => void }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
@@ -628,6 +635,8 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   const hubTitle     = HUBS[svc.hubId]?.title || svc.sectionTitle
   const naturalLabel = naturalServiceLabel(svc.name, svc.sectionTitle)
   const acceptHint   = formatAcceptHint(HUB_ACCEPT[svc.hubId])
+  const isRemote     = isRemoteHub(svc.hubId)
+  const bringLabel   = isRemote ? "Provide" : "Bring"
 
   const handleShare = async () => {
     const shareText = `${naturalLabel} — ${svc.price} at ${BIZ.name}`
@@ -721,7 +730,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                     : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
                 )}
               >
-                {t === "bring" ? "Bring" : "Description"}
+                {t === "bring" ? bringLabel : "Description"}
               </button>
             ))}
           </div>
@@ -754,7 +763,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
               <p className="abh-body text-[0.84rem]">{desc}</p>
               <p className="abh-muted mt-5">
                 Have questions? Switch to the{" "}
-                <span className="font-black" style={{ color: accent }}>What to Bring</span> tab or chat with us directly.
+                <span className="font-black" style={{ color: accent }}>{bringLabel}</span> tab or chat with us directly.
               </p>
             </div>
           )}
@@ -1044,4 +1053,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-    }  
+    } 
