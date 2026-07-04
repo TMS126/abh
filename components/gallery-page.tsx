@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect, Suspense } from "react"
 import { useSearchParams, usePathname } from "next/navigation"
 import Link from "next/link"
-import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut, ArrowsLeftRight, LinkSimple, ShareNetwork, EnvelopeSimple, MagnifyingGlass, Shuffle, Heart } from "@phosphor-icons/react"
+import { X, Check, Info, CaretLeft, CaretRight, CaretDown, Image as ImageIcon, ArrowsOut, ArrowsLeftRight, LinkSimple, ShareNetwork, EnvelopeSimple, MagnifyingGlass, Shuffle, Heart } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -368,7 +368,7 @@ function LikeButton({ liked, onToggle, context = "header" }: {
   )
 }
 
-
+// ─── Project Viewer Components ───────────────────────────────────────────────
 function ProjectHeader({ project, accent, hasBA, shareUrl, liked, onToggleLike, onClose }: {
   project: ProjectData; accent: string; hasBA: boolean; shareUrl: string
   liked: boolean; onToggleLike: () => void; onClose: () => void
@@ -900,24 +900,106 @@ function ProjectsPopover({
   )
 }
 
-// ─── Hub filter pill ─────────────────────────────────────────────────────────
-function HubFilter({ label, active, accent, isDark, onClick }: {
-  label: string; active: boolean; accent?: string; isDark: boolean; onClick: () => void
+// ─── Hub filter dropdown ──────────────────────────────────────────────────────
+// Replaces the old always-visible row of filter pills, which competed
+// visually with the search + surprise-me group above it. Collapsed to a
+// single line; opens a short menu on tap. History handling mirrors
+// ProjectsPopover: a click-triggered open pushes one history entry, and
+// every close path (outside click, selecting an option, or a real back
+// gesture) consumes it exactly once.
+function FilterDropdown({
+  activeFilter, onSelect, getAccent,
+}: {
+  activeFilter: HubId | "all"
+  onSelect: (f: HubId | "all") => void
+  getAccent: (id: HubId) => string
 }) {
-  const isAll = label.toLowerCase().includes('all')
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const pushedRef = useRef(false)
+
+  const closeDropdown = useCallback(() => {
+    if (pushedRef.current) {
+      pushedRef.current = false
+      window.history.back()
+    } else {
+      setOpen(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) closeDropdown()
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [open, closeDropdown])
+
+  useEffect(() => {
+    if (open && !pushedRef.current) {
+      window.history.pushState({ filterDropdown: true }, "")
+      pushedRef.current = true
+    }
+  }, [open])
+
+  useEffect(() => {
+    const onPop = () => {
+      if (pushedRef.current) {
+        pushedRef.current = false
+        setOpen(false)
+      }
+    }
+    window.addEventListener("popstate", onPop)
+    return () => window.removeEventListener("popstate", onPop)
+  }, [])
+
+  const options: { id: HubId | "all"; label: string }[] = [
+    { id: "all", label: "All hubs" },
+    ...ROW_ORDER.map(r => ({ id: r.id, label: r.label })),
+  ]
+  const current       = options.find(o => o.id === activeFilter)
+  const currentAccent = activeFilter !== "all" ? getAccent(activeFilter) : undefined
+
   return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "px-5 py-2 rounded-[14px] text-[0.72rem] font-bold transition-all",
-        active
-          ? cn("shadow-md", isAll ? "bg-brand-blue text-white" : (isDark ? "text-zinc-900" : "text-white"))
-          : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+    <div ref={ref} className="relative max-w-md mx-auto mb-10">
+      <button
+        onClick={() => (open ? closeDropdown() : setOpen(true))}
+        aria-expanded={open}
+        className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-[14px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] transition-colors"
+      >
+        <span className="flex items-center gap-2 text-sm font-bold text-zinc-800 dark:text-zinc-200">
+          {currentAccent && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: currentAccent }} />}
+          <span style={currentAccent ? { color: currentAccent } : undefined}>{current?.label ?? "All hubs"}</span>
+        </span>
+        <CaretDown size={14} weight="bold" className={cn("text-zinc-400 transition-transform duration-200 shrink-0", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-full mt-2 z-30 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <div className="p-2 max-h-[320px] overflow-y-auto">
+            {options.map(opt => {
+              const accent   = opt.id !== "all" ? getAccent(opt.id as HubId) : undefined
+              const isActive = activeFilter === opt.id
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => { onSelect(opt.id); closeDropdown() }}
+                  className={cn(
+                    "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-left text-sm font-bold transition-colors",
+                    isActive ? "bg-zinc-50 dark:bg-zinc-900" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                  )}
+                >
+                  {accent && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: accent }} />}
+                  <span className="text-zinc-800 dark:text-zinc-200" style={accent ? { color: accent } : undefined}>{opt.label}</span>
+                  {isActive && <Check size={14} weight="bold" className="ml-auto shrink-0" style={{ color: accent }} />}
+                </button>
+              )
+            })}
+          </div>
+        </div>
       )}
-      style={active && accent && !isAll ? { backgroundColor: accent } : {}}
-    >
-      {label}
-    </button>
+    </div>
   )
 }
 
@@ -948,6 +1030,7 @@ function GalleryPageInner() {
   const [selectedProject, setSelectedProject] = useState<ProjectData | null>(null)
   const [zoomIndex,       setZoomIndex]       = useState<number | null>(null)
   const [searchQuery,     setSearchQuery]     = useState("")
+  const [searchFocused,   setSearchFocused]   = useState(false)
   const [surpriseFlash,   setSurpriseFlash]   = useState(false)
   const [likedIds,        setLikedIds]        = useState<Set<string>>(new Set())
   const likesHydrated = useRef(false)
@@ -1068,16 +1151,18 @@ function GalleryPageInner() {
           <div className="abh-divider" />
         </div>
 
-        {/* Search + Surprise me */}
-        <div className="flex items-center justify-center gap-2.5 max-w-md mx-auto mb-6">
-          <div className="relative flex-1">
+        {/* Search + Surprise me — one grouped pill, equal-width halves */}
+        <div className="flex items-stretch max-w-md mx-auto mb-6 rounded-[14px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] overflow-hidden">
+          <div className="relative flex-1 basis-1/2">
             <MagnifyingGlass size={16} weight="bold" className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search"
-              className="w-full pl-10 pr-9 py-2.5 rounded-[14px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none focus:border-brand-blue transition-colors text-center focus:text-left"
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              placeholder={searchFocused ? "Search" : "Search for Project"}
+              className="w-full pl-10 pr-9 py-2.5 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none transition-colors text-center focus:text-left"
             />
             {searchQuery && (
               <button
@@ -1089,12 +1174,13 @@ function GalleryPageInner() {
               </button>
             )}
           </div>
+          <div className="w-px bg-zinc-200 dark:bg-zinc-800 my-2" />
           <button
             onClick={handleSurprise}
             aria-label="Surprise me with a random project"
             className={cn(
-              "shrink-0 flex items-center gap-1.5 px-3.5 py-2.5 rounded-[14px] text-[0.7rem] font-bold whitespace-nowrap transition-all duration-200 group/surprise",
-              "bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800",
+              "flex-1 basis-1/2 flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-sm font-bold whitespace-nowrap transition-all duration-200 group/surprise",
+              "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900",
               surpriseFlash && "scale-90 opacity-60"
             )}
           >
@@ -1103,20 +1189,10 @@ function GalleryPageInner() {
           </button>
         </div>
 
-        {/* Filter pills */}
-        <div className="flex flex-wrap gap-2 justify-center mb-10">
-          <HubFilter label="All hubs" active={activeFilter === "all"} isDark={isDark} onClick={() => setActiveFilter("all")} />
-          {ROW_ORDER.map(row => (
-            <HubFilter
-              key={row.id}
-              label={row.short}
-              active={activeFilter === row.id}
-              accent={getAccent(row.id)}
-              isDark={isDark}
-              onClick={() => setActiveFilter(row.id)}
-            />
-          ))}
-        </div>
+        {/* Filter — collapsible dropdown instead of a row of always-visible
+            pills, so it doesn't visually compete with the search/surprise
+            group above it */}
+        <FilterDropdown activeFilter={activeFilter} onSelect={setActiveFilter} getAccent={getAccent} />
 
         {/* Notice — consistent with Services page */}
         <div className="max-w-2xl mx-auto mb-16 rounded-[14px] border border-brand-orange/20 bg-brand-orange/5 dark:bg-brand-orange/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
@@ -1210,5 +1286,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-}
- 
+  } 
