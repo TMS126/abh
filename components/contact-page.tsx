@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { useTheme } from "next-themes"
-import { CaretDown, DownloadSimple, AddressBook, Clock } from "@phosphor-icons/react"
+import { CaretDown, DownloadSimple, AddressBook, Clock, Sparkle } from "@phosphor-icons/react"
 import { BRAND, BIZ, WA, FAQS, CONTACT_LINKS, HOURS } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 import { BusinessStatusFull } from "@/components/business-status"
@@ -158,10 +159,29 @@ function HubSelect({ value, onChange }: { value: string; onChange: (val: string)
   )
 }
 
-export function ContactPage() {
+function ContactPageInner() {
+  const searchParams = useSearchParams()
   const [formData,  setFormData]  = useState({ name: "", phone: "", service: "", message: "" })
   const [touched,   setTouched]   = useState<Record<string, boolean>>({})
   const [vcardDone, setVcardDone] = useState(false)
+  const [prefilled, setPrefilled] = useState(false)
+
+  // Prefill from a deep link — e.g. the gallery's "Inquire about this" CTA
+  // sends /contact?service=<Hub Label>&message=<text>. Only accept a
+  // service value that actually matches one of the dropdown options, so a
+  // malformed or unexpected query param can't silently select nothing.
+  useEffect(() => {
+    const serviceParam = searchParams.get("service")
+    const messageParam = searchParams.get("message")
+    if (!serviceParam && !messageParam) return
+
+    setFormData((prev) => ({
+      ...prev,
+      service: serviceParam && FORM_HUBS[serviceParam] ? serviceParam : prev.service,
+      message: messageParam ?? prev.message,
+    }))
+    setPrefilled(true)
+  }, [searchParams])
 
   const isNameValid    = (val: string) => val.trim().length >= 2
   const isPhoneValid   = (val: string) => /^[0-9+\s-]{10,15}$/.test(val.trim())
@@ -313,8 +333,14 @@ export function ContactPage() {
 
           {/* Right column — form card, full height */}
           <div className="abh-card p-8 flex flex-col">
-            <h2 className="abh-section-heading mb-6">Send a Message</h2>
-            <div className="flex flex-col gap-4 flex-1">
+            <h2 className="abh-section-heading mb-2">Send a Message</h2>
+            {prefilled && (
+              <p className="flex items-center gap-1.5 text-[0.7rem] font-bold mb-4" style={{ color: BRAND.blue }}>
+                <Sparkle size={14} weight="fill" />
+                Prefilled from the gallery — feel free to edit before sending
+              </p>
+            )}
+            <div className={cn("flex flex-col gap-4 flex-1", !prefilled && "mt-4")}>
               {[
                 { label: "Your Name",     type: "text", key: "name",  validate: isNameValid,  error: "Name too short"     },
                 { label: "Phone Number",  type: "tel",  key: "phone", validate: isPhoneValid, error: "Invalid phone number" },
@@ -325,6 +351,7 @@ export function ContactPage() {
                     <label className="abh-label block mb-1.5">{f.label}</label>
                     <input
                       type={f.type}
+                      value={formData[f.key as keyof typeof formData]}
                       className={cn(
                         "w-full px-4 py-3 border rounded-[14px] bg-white dark:bg-zinc-900 text-sm font-medium text-zinc-800 dark:text-zinc-200 transition-all outline-none",
                         err
@@ -361,6 +388,7 @@ export function ContactPage() {
                       : "border-zinc-100 dark:border-zinc-800 focus:border-brand-blue"
                   )}
                   rows={4}
+                  value={formData.message}
                   onBlur={() => setTouched({ ...touched, message: true })}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 />
@@ -382,6 +410,32 @@ export function ContactPage() {
 
       <FAQAccordion />
     </div>
+  )
+}
+
+// Same shape as the real page, minus the form's live values, so there's no
+// layout jump while useSearchParams() resolves on the client.
+function ContactSkeleton() {
+  return (
+    <div className="min-h-screen bg-background">
+      <section className="px-4 md:px-8 pt-[calc(var(--nav-h)+2rem)] pb-8">
+        <div className="max-w-[980px] mx-auto">
+          <h1 className="abh-page-title mb-3">Contact Us</h1>
+          <div className="abh-divider" />
+        </div>
+      </section>
+    </div>
+  )
+}
+
+// useSearchParams() requires a Suspense boundary around any component that
+// calls it, or Next.js fails to prerender the page (same error class as
+// the gallery page). Wrapping here keeps app/contact/page.tsx untouched.
+export function ContactPage() {
+  return (
+    <Suspense fallback={<ContactSkeleton />}>
+      <ContactPageInner />
+    </Suspense>
   )
 }
  
