@@ -198,9 +198,9 @@ export const HUBS: Record<HubId, Hub> = {
 export const PROJECTS = [
   {
     id: "apexbytes-business-card", hub: "design" as HubId, title: "Apexbytes Business Card Design", tag: HUB_NAMES.design,
-    shortDesc: "Double-sided business card for the Apexbytes brand — clean, minimal, and professional.",
+    shortDesc: "Double-sided business card for the (old) Apexbytes brand — clean, minimal, and professional.",
     image: "/abbc.jpg", images: ["/abbc.jpg"], clientType: "practice" as const,
-    clientGoal: "Design a business card that looks clean and professional — something that represents the Apexbytes brand without being too busy.",
+    clientGoal: "Design a business card that looks clean and professional — something that represents the (old) Apexbytes brand without being too busy.",
     whatWeDid: ["Designed front with brand logo, founder name, and role","Back features the brand icon large on a dark navy background in orange","Kept everything minimal — no clutter, just the essentials","Double-sided layout with strong contrast between front and back"],
     tools: ["Adobe Illustrator", "Double-sided business card format"],
     result: "A sharp, professional card that stands out and represents the brand well.",
@@ -258,7 +258,7 @@ export const PROJECTS = [
     shortDesc: "Typed and printed 100+ copies of a kasi stokvel group's official rules document.",
     image: "/rsc1.webp", images: ["/rsc2.jpg", "/rsc.jpg"], clientType: "client" as const,
     clientGoal: "Rekaofeela Social Club, a local stokvel group in Kgotsong, needed their official rules typed up and printed in bulk so every member could have a personal copy.",
-    whatWeDid: ["Typed the full stokvel rules from handwritten notes","Formatted the document clearly for easy reading","Printed 100+ copies in black and white","Ensured consistent print quality across the entire batch"],
+    whatWeDid: ["","Formatted the document clearly for easy reading","Printed 100+ copies in black and white","Ensured consistent print quality across the entire batch"],
     tools: ["Microsoft Word", "Canon Megatank — bulk B&W printing"],
     result: "Every Rekaofeela Social Club member received a clean, printed copy of the group's rules — professionally done and ready for their meeting.",
   },
@@ -281,9 +281,9 @@ export const PROJECTS = [
     result: "Laptop became faster and ready for daily use.",
   },
   {
-    id: "pure-african-herbs", hub: "design" as HubId, title: "Pure African Herbs — Flyer & A-Board Design", tag: HUB_NAMES.design,
-    shortDesc: "Health services flyer and A-board poster for a local herbal specialist in Bothaville.",
-    image: "/Ahm.jpg", images: ["/Aphp1.png", "/Aphp2.jpg", "/Ahm.jpg"], clientType: "client" as const,
+    id: "pure-african-herbs", hub: "design" as HubId, title: "Pure African Herbs — Flyer Design", tag: HUB_NAMES.design,
+    shortDesc: "Health services poster for a local herbal specialist in Bothaville.",
+    image: "/Ahm.jpg", images: ["/Aphp1.png", "/Aphp2.png", "/Ahm.jpg"], clientType: "client" as const,
     clientGoal: "The client needed a professional flyer for their herbal health practice — something that lists conditions they treat, contact details, pricing, and hours. It also needed to work as a big A-board outside the shop.",
     whatWeDid: ["Designed a green health-themed layout matching the herbal brand","Organised conditions treated into a clean bullet list","Added pricing, specialist name, and contact numbers clearly","Included shop address and trading hours at the bottom","Created an A-board version for outdoor display","Added organic and no-side-effects trust badges"],
     tools: ["Adobe Illustrator", "Print-ready A4 and A-board format"],
