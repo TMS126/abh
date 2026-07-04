@@ -125,24 +125,51 @@ export function Navbar() {
               </span>
             </div>
           </div>
-
+          
+// Mobile-only per-page accent, applied on the active nav link inside the
+// slide-out menu. Desktop nav intentionally untouched — it already has
+// its own solid-blue active fill regardless of which page it is.
+const MOBILE_NAV_COLORS: Record<string, { light: string; dark: string }> = {
+  "/":         { light: BRAND.blue,       dark: BRAND.lightBlue   }, // Home — primary blue
+  "/services": { light: BRAND.green,      dark: BRAND.lightGreen  },
+  "/gallery":  { light: BRAND.orange,     dark: BRAND.lightOrange },
+  "/about":    { light: BRAND.blueDark,   dark: BRAND.lightBlue   }, // "another blue" — same distinct navy used for Contact's page-glow earlier
+  "/contact":  { light: BRAND.neutral500, dark: BRAND.neutral300  }, // grey, per your call
+            }
+          
           {/* Desktop Nav — shared frosted container removed; each link is
               now its own pill via desktopLinkClass. Wrapper below only
               handles layout (gap, centering, show/hide-on-scroll), no
               background/border/blur of its own anymore. */}
           <div className={cn("hidden md:flex items-center gap-2 pointer-events-auto absolute left-1/2 -translate-x-1/2 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
-            {NAV_ITEMS.map((item) => {
-              const isActive = pathname === item.path
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => navigate(item.path)}
-                  className={desktopLinkClass(isActive, item.isCta)}
-                >
-                  {item.label}
-                </button>
-              )
-            })}
+           {NAV_ITEMS.map((item, idx) => {
+  const isActive    = pathname === item.path
+  const accent      = MOBILE_NAV_COLORS[item.path]
+  const activeColor = accent ? (mounted && theme === "dark" ? accent.dark : accent.light) : undefined
+
+  return (
+    <button
+      key={item.id}
+      onClick={() => navigate(item.path)}
+      style={{
+        transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms",
+        ...(isActive && activeColor
+          ? { color: activeColor, backgroundColor: `${activeColor}18` }
+          : {}),
+      }}
+      className={cn(
+        "py-3 px-8 rounded-[14px] font-sans text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
+        isActive
+          ? "font-semibold"
+          : "font-medium text-zinc-700 dark:text-zinc-200 hover:text-brand-blue bg-transparent",
+        item.isCta && "border-2 border-brand-orange text-brand-orange hover:bg-brand-orange/10",
+        menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+      )}
+    >
+      {item.label}
+    </button>
+  )
+})}
           </div>
 
           {/* Controls — Always visible on desktop, hidden on mobile when menu is open */}
