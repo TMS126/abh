@@ -8,6 +8,8 @@ import { Sun, Moon, X } from "@phosphor-icons/react"
 import { NAV_ITEMS, BRAND } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 
+type NavColorPair = { light: string; dark: string }
+
 export function Navbar() {
   const router   = useRouter()
   const pathname = usePathname()
@@ -65,6 +67,17 @@ export function Navbar() {
   }
 
   const pillClass = "bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md py-2 rounded-[14px] border border-gray-200 dark:border-zinc-800 shadow-sm"
+
+  // Mobile-only per-page accent, applied on the active nav link inside the
+  // slide-out menu. Desktop nav intentionally untouched — it already has
+  // its own solid-blue active fill regardless of which page it is.
+  const MOBILE_NAV_COLORS: { [path: string]: NavColorPair } = {
+    "/":         { light: BRAND.blue,       dark: BRAND.lightBlue   }, // Home — primary blue
+    "/services": { light: BRAND.green,      dark: BRAND.lightGreen  },
+    "/gallery":  { light: BRAND.orange,     dark: BRAND.lightOrange },
+    "/about":    { light: BRAND.blueDark,   dark: BRAND.lightBlue   }, // "another blue" — same distinct navy used for Contact's page-glow earlier
+    "/contact":  { light: BRAND.neutral500, dark: BRAND.neutral300  }, // grey, per your call
+  }
 
   // Individual link pill — replaces the old shared frosted-container
   // look on desktop. Rest state: subtle border + soft shadow (bg-white
@@ -184,33 +197,33 @@ export function Navbar() {
         <div className="relative z-10 w-full h-full flex flex-col items-center justify-center px-6">
           <nav className="w-full max-w-[320px] flex flex-col items-center gap-2.5">
             {NAV_ITEMS.map((item, idx) => {
-  const isActive    = pathname === item.path
-  const accent      = MOBILE_NAV_COLORS[item.path]
-  const activeColor = accent ? (mounted && theme === "dark" ? accent.dark : accent.light) : undefined
+              const isActive    = pathname === item.path
+              const accent      = MOBILE_NAV_COLORS[item.path]
+              const activeColor = accent ? (mounted && theme === "dark" ? accent.dark : accent.light) : undefined
 
-  return (
-    <button
-      key={item.id}
-      onClick={() => navigate(item.path)}
-      style={{
-        transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms",
-        ...(isActive && activeColor
-          ? { color: activeColor, backgroundColor: `${activeColor}18` }
-          : {}),
-      }}
-      className={cn(
-        "py-3 px-8 rounded-[14px] font-sans text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
-        isActive
-          ? "font-semibold"
-          : "font-medium text-zinc-700 dark:text-zinc-200 hover:text-brand-blue bg-transparent",
-        item.isCta && "border-2 border-brand-orange text-brand-orange hover:bg-brand-orange/10",
-        menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
-      )}
-    >
-      {item.label}
-    </button>
-  )
-})}
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => navigate(item.path)}
+                  style={{
+                    transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms",
+                    ...(isActive && activeColor
+                      ? { color: activeColor, backgroundColor: `${activeColor}18` }
+                      : {}),
+                  }}
+                  className={cn(
+                    "py-3 px-8 rounded-[14px] font-sans text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
+                    isActive
+                      ? "font-semibold"
+                      : "font-medium text-zinc-700 dark:text-zinc-200 hover:text-brand-blue bg-transparent",
+                    item.isCta && "border-2 border-brand-orange text-brand-orange hover:bg-brand-orange/10",
+                    menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+                  )}
+                >
+                  {item.label}
+                </button>
+              )
+            })}
           </nav>
         </div>
 
@@ -236,4 +249,4 @@ export function Navbar() {
       </div>
     </>
   )
-                }  
+            }
