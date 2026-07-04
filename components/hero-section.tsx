@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import {
   ArrowRight,
-  WhatsappLogo,
   PlusCircle,
   Gear,
   Wrench,
@@ -16,9 +15,13 @@ import {
   Desktop,
 } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
-import { BRAND, BIZ,MARQUEE_ITEMS, HUB_COLORS } from "@/lib/brand"
+import { BRAND, BIZ, MARQUEE_ITEMS, HUB_COLORS } from "@/lib/brand"
 
 // ─── Hub data ─────────────────────────────────────────────────────────────────
+// colorLight/colorDark now mirror the exact per-hub palette used in the
+// Contact page's "Service Needed" dropdown (FORM_HUBS in contact-page.tsx)
+// instead of HUB_COLORS.<id>.tagText, which is the same generic grey
+// (#374151) for every single hub and gave no real color distinction here.
 const HUBS_DATA = [
   {
     id: "print",
@@ -31,8 +34,8 @@ const HUBS_DATA = [
       />
     ),
     Icon: Printer,
-    colorLight: HUB_COLORS.print.tagText,
-    colorDark:  HUB_COLORS.print.tagTextDark,
+    colorLight: BRAND.blue,       // matches FORM_HUBS["Print Hub"].light
+    colorDark:  BRAND.lightBlue,  // matches FORM_HUBS["Print Hub"].dark
     services: [
       { name: "B&W Print",        price: "R5"  },
       { name: "Colour Print",     price: "R8"  },
@@ -53,8 +56,8 @@ const HUBS_DATA = [
       />
     ),
     Icon: FileText,
-    colorLight: HUB_COLORS.doc.tagText,
-    colorDark:  HUB_COLORS.doc.tagTextDark,
+    colorLight: BRAND.green,       // matches FORM_HUBS["Document Hub"].light
+    colorDark:  BRAND.lightGreen,  // matches FORM_HUBS["Document Hub"].dark
     services: [
       { name: "CV from Scratch",    price: "R30" },
       { name: "CV Upgrade",         price: "R40" },
@@ -75,8 +78,8 @@ const HUBS_DATA = [
       />
     ),
     Icon: PaintBrush,
-    colorLight: HUB_COLORS.design.tagText,
-    colorDark:  HUB_COLORS.design.tagTextDark,
+    colorLight: BRAND.orangeDark,   // matches FORM_HUBS["Design Hub"].light
+    colorDark:  BRAND.lightOrange,  // matches FORM_HUBS["Design Hub"].dark
     services: [
       { name: "Logo (Basic)",       price: "R300" },
       { name: "Logo (Standard)",    price: "R500" },
@@ -97,8 +100,8 @@ const HUBS_DATA = [
       />
     ),
     Icon: Globe,
-    colorLight: HUB_COLORS.eservice.tagText,
-    colorDark:  HUB_COLORS.eservice.tagTextDark,
+    colorLight: BRAND.blueMid,    // matches FORM_HUBS["E-Service Hub"].light ("#15537D")
+    colorDark:  BRAND.lightBlue,  // matches FORM_HUBS["E-Service Hub"].dark
     services: [
       { name: "SASSA Status Check",         price: "R20"  },
       { name: "SASSA SRD Application",      price: "R40"  },
@@ -119,8 +122,8 @@ const HUBS_DATA = [
       />
     ),
     Icon: Desktop,
-    colorLight: HUB_COLORS.tech.tagText,
-    colorDark:  HUB_COLORS.tech.tagTextDark,
+    colorLight: BRAND.dark100,  // matches FORM_HUBS["Tech Hub"].light ("#333333")
+    colorDark:  "#B8CCE0",      // matches FORM_HUBS["Tech Hub"].dark
     services: [
       { name: "Software Install",              price: "R80"  },
       { name: "PC Setup",                      price: "R250" },
@@ -131,6 +134,23 @@ const HUBS_DATA = [
     ],
   },
 ]
+
+// Two-tone gradient pairs for the View Services CTA — one pair per hub,
+// each pulled from colors already established for that hub elsewhere in
+// the codebase (HUB_COLORS.<id>.gradient uses the same family), so the
+// button's "dancing" gradient stays within that hub's own color identity
+// rather than crossing into another hub's hue. Kept theme-independent
+// (unlike colorLight/colorDark above) since these are all already
+// WCAG-AA-safe against white button text in both themes — using the
+// lighter dark-mode pastels here instead would fail contrast with white
+// text.
+const CTA_GRADIENTS: Record<string, [string, string]> = {
+  print:    [BRAND.blue,       BRAND.blueMid],
+  doc:      [BRAND.green,      BRAND.greenDeep],
+  design:   [BRAND.orangeDark, BRAND.orangeBrown],
+  eservice: [BRAND.blueMid,    BRAND.blueDark],
+  tech:     [BRAND.dark100,    BRAND.dark200],
+}
 
 function pickRandomService(hubIndex: number, excludeName?: string) {
   const list = HUBS_DATA[hubIndex].services
@@ -161,6 +181,7 @@ export function HeroSection() {
   const active    = HUBS_DATA[activeHub]
   const activeColor = colorFor(active)
   const WatermarkIcon = active.Icon
+  const [ctaFrom, ctaTo] = CTA_GRADIENTS[active.id] ?? [BRAND.blue, BRAND.blueMid]
 
   const handleNavigate = (path: string) => router.push(path)
 
@@ -208,6 +229,19 @@ export function HeroSection() {
           75%  { border-radius: 65% 35% 45% 55% / 40% 55% 45% 60%; }
           100% { border-radius: 42% 58% 65% 35% / 45% 40% 60% 55%; }
         }
+
+        @keyframes abh-cta-glow-pulse {
+          0%, 100% { opacity: 0.35; transform: scale(0.95); }
+          50%      { opacity: 0.6;  transform: scale(1.15); }
+        }
+        .abh-cta-glow { animation: abh-cta-glow-pulse 3s ease-in-out infinite; }
+
+        @keyframes abh-cta-gradient-shift {
+          0%   { background-position: 0% 50%; }
+          50%  { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .abh-cta-gradient { background-size: 200% 200%; animation: abh-cta-gradient-shift 4s ease infinite; }
       `}</style>
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center text-center relative z-10 w-full mb-8">
@@ -220,63 +254,52 @@ export function HeroSection() {
         <p className="text-sm md:text-base font-medium text-zinc-600 dark:text-zinc-400 mb-10 max-w-[600px] px-2 leading-relaxed">
           From printing your documents to navigating government services — we make it simple, fast, and friendly.
         </p>
-{/* CTA — now the sole hero action since the WhatsApp button was removed.
-    Kept at its original compact width (not stretched to full-width per
-    your call), but bumped up in size/weight and given some life:
-    animated gradient fill (blue → green, matches the brand's dual-tone
-    identity), a soft pulsing glow behind it, and icon + lift motion on
-    hover. */}
-<div className="relative w-full flex justify-center items-center mb-12">
 
-  {/* Giant tilted hub-icon watermark — synced to the active hub in the
-      Core Hub Ecosystem selector below. Sits behind the CTA button,
-      bleeds off-screen, and cross-fades color/icon on hub change. */}
-  <div
-    key={active.id}
-    aria-hidden="true"
-    className="absolute inset-y-0 -right-[18%] md:-right-[10%] flex items-center justify-center pointer-events-none select-none opacity-[0.14] dark:opacity-[0.18] transition-colors duration-700 ease-out animate-in fade-in zoom-in-95 duration-500"
-    style={{ color: activeColor, zIndex: 0 }}
-  >
-    <WatermarkIcon
-      size={520}
-      weight="fill"
-      aria-hidden="true"
-      style={{ transform: "rotate(-16deg)" }}
-      className="shrink-0 md:w-[620px] md:h-[620px]"
-    />
-  </div>
+        {/* CTA — sole hero action. Gradient fill now tracks whichever hub
+            is active in the Core Hub Ecosystem selector below, using
+            CTA_GRADIENTS for that hub's own two-tone color pair. The
+            `key` on the button forces a brief remount + fade-in whenever
+            the hub changes, since background-image itself can't be
+            smoothly interpolated by CSS — the continuous "dancing"
+            keyframe animation keeps running underneath regardless. */}
+        <div className="relative w-full flex justify-center items-center mb-12">
 
-  {/* Soft pulsing glow, sits behind the button */}
-  <div
-    aria-hidden="true"
-    className="absolute w-[220px] h-[80px] rounded-full blur-2xl pointer-events-none abh-cta-glow"
-    style={{ backgroundImage: `linear-gradient(135deg, ${BRAND.blue} 0%, ${BRAND.green} 100%)` }}
-  />
+          {/* Giant tilted hub-icon watermark — synced to the active hub in the
+              Core Hub Ecosystem selector below. Sits behind the CTA button,
+              bleeds off-screen, and cross-fades color/icon on hub change. */}
+          <div
+            key={active.id}
+            aria-hidden="true"
+            className="absolute inset-y-0 -right-[18%] md:-right-[10%] flex items-center justify-center pointer-events-none select-none opacity-[0.14] dark:opacity-[0.18] transition-colors duration-700 ease-out animate-in fade-in zoom-in-95 duration-500"
+            style={{ color: activeColor, zIndex: 0 }}
+          >
+            <WatermarkIcon
+              size={520}
+              weight="fill"
+              aria-hidden="true"
+              style={{ transform: "rotate(-16deg)" }}
+              className="shrink-0 md:w-[620px] md:h-[620px]"
+            />
+          </div>
 
-  <style>{`
-    @keyframes abh-cta-glow-pulse {
-      0%, 100% { opacity: 0.35; transform: scale(0.95); }
-      50%      { opacity: 0.6;  transform: scale(1.15); }
-    }
-    .abh-cta-glow { animation: abh-cta-glow-pulse 3s ease-in-out infinite; }
+          {/* Soft pulsing glow, sits behind the button — also tracks the active hub */}
+          <div
+            key={`glow-${active.id}`}
+            aria-hidden="true"
+            className="absolute w-[220px] h-[80px] rounded-full blur-2xl pointer-events-none abh-cta-glow"
+            style={{ backgroundImage: `linear-gradient(135deg, ${ctaFrom} 0%, ${ctaTo} 100%)` }}
+          />
 
-    @keyframes abh-cta-gradient-shift {
-      0%   { background-position: 0% 50%; }
-      50%  { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-    .abh-cta-gradient { background-size: 200% 200%; animation: abh-cta-gradient-shift 4s ease infinite; }
-  `}</style>
-
-  <button
-    onClick={() => handleNavigate("/services")}
-    className="abh-cta-gradient relative z-10 inline-flex items-center gap-3 group px-10 py-5 rounded-[16px] font-sans font-black text-lg text-white transition-all duration-300 active:scale-95 hover:-translate-y-1 shadow-lg hover:shadow-2xl"
-    style={{ backgroundImage: `linear-gradient(135deg, ${BRAND.blue} 0%, ${BRAND.blueMid} 50%, ${BRAND.green} 100%)` }}
-  >
-    View Services
-    <ArrowRight weight="bold" className="w-6 h-6 transition-transform duration-300 group-hover:translate-x-1.5" aria-hidden="true" />
-  </button>
-</div>
+          <button
+            key={active.id}
+            onClick={() => handleNavigate("/services")}
+            className="abh-cta-gradient relative z-10 inline-flex items-center gap-3 group px-10 py-5 rounded-[16px] font-sans font-black text-lg text-white transition-all duration-300 active:scale-95 hover:-translate-y-1 shadow-lg hover:shadow-2xl animate-in fade-in duration-500"
+            style={{ backgroundImage: `linear-gradient(135deg, ${ctaFrom} 0%, ${ctaTo} 50%, ${ctaFrom} 100%)` }}
+          >
+            View Services
+            <ArrowRight weight="bold" className="w-6 h-6 transition-transform duration-300 group-hover:translate-x-1.5" aria-hidden="true" />
+          </button>
+        </div>
 
         {/* Marquee */}
         <div
@@ -466,4 +489,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-                    } 
+             } 
