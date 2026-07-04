@@ -237,34 +237,53 @@ export function Navbar() {
         {/* Nav links — centered */}
         <div className="relative z-10 w-full h-full flex flex-col items-center justify-center px-6">
           <nav className="w-full max-w-[320px] flex flex-col items-center gap-2.5">
-            {NAV_ITEMS.map((item, idx) => {
-              const isActive    = pathname === item.path
-              const accent      = MOBILE_NAV_COLORS[item.path]
-              const activeColor = accent ? (mounted && theme === "dark" ? accent.dark : accent.light) : undefined
+          {NAV_ITEMS.map((item, idx) => {
+  const isActive    = pathname === item.path
+  const accent      = MOBILE_NAV_COLORS[item.path]
+  const activeColor = accent ? (mounted && theme === "dark" ? accent.dark : accent.light) : undefined
 
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => navigate(item.path)}
-                  style={{
-                    transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms",
-                    ...(isActive && activeColor
-                      ? { color: activeColor, backgroundColor: `${activeColor}18` }
-                      : {}),
-                  }}
-                  className={cn(
-                    "py-3 px-8 rounded-[14px] font-sans text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
-                    isActive
-                      ? "font-semibold"
-                      : "font-medium text-zinc-700 dark:text-zinc-200 hover:text-brand-blue bg-transparent",
-                    item.isCta && "border-2 border-brand-orange text-brand-orange hover:bg-brand-orange/10",
-                    menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
-                  )}
-                >
-                  {item.label}
-                </button>
-              )
-            })}
+  return (
+    <button
+      key={item.id}
+      onClick={() => navigate(item.path)}
+      style={{
+        transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms",
+        ...(isActive && activeColor
+          ? { color: activeColor, backgroundColor: `${activeColor}18` }
+          : {}),
+      }}
+      className={cn(
+        "py-3 px-8 rounded-[14px] font-sans text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
+        isActive
+          ? "font-semibold"
+          : "font-medium text-zinc-700 dark:text-zinc-200 hover:text-brand-blue bg-transparent",
+        // Contact's CTA marker switched from an orange border to a neutral
+        // grey one — it still reads as "this one's different" (the CTA)
+        // without pulling in an accent color, matching Contact's own
+        // grey/neutral assignment in MOBILE_NAV_COLORS rather than
+        // clashing with it.
+        item.isCta && "border-2 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800/60",
+        menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+      )}
+    >
+      {/* Current-page dot — small colored marker inline before the label,
+          only for whichever link matches the live route. Uses the same
+          per-page color as the active fill/text above, so it's redundant
+          with the tinted background but gives a quicker, more obvious
+          "you are here" cue than color alone. */}
+      <span className="inline-flex items-center justify-center gap-2">
+        {isActive && activeColor && (
+          <span
+            aria-hidden="true"
+            className="w-1.5 h-1.5 rounded-full shrink-0"
+            style={{ backgroundColor: activeColor }}
+          />
+        )}
+        {item.label}
+      </span>
+    </button>
+  )
+})}
           </nav>
         </div>
 
