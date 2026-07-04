@@ -507,7 +507,6 @@ function ProjectDetailsPanel({ project, accent, onClose }: { project: ProjectDat
         </a>
         <Link
           href={buildInquireHref(project)}
-          onClick={onClose}
           className="flex items-center justify-center gap-2 w-full py-3.5 rounded-[14px] text-sm font-bold border-2 transition-transform active:scale-[0.98]"
           style={{ borderColor: accent, color: accent }}
         >
@@ -1012,4 +1011,3 @@ export function GalleryPage() {
     </Suspense>
   )
 }
- 
