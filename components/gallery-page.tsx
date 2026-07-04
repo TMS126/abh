@@ -2,7 +2,8 @@
 
 import { useState, useRef, useCallback, useEffect, Suspense } from "react"
 import { useSearchParams, usePathname } from "next/navigation"
-import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut, ArrowsLeftRight } from "@phosphor-icons/react"
+import Link from "next/link"
+import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut, ArrowsLeftRight, LinkSimple, EnvelopeSimple } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -21,6 +22,21 @@ const ROW_ORDER: { id: HubId; label: string; short: string }[] = [
 
 // Hubs that support before/after
 const BA_HUBS: HubId[] = ["design", "tech"]
+
+// Matches the "Service Needed" dropdown options on /contact (FORM_HUBS keys
+// in contact-page.tsx) so the "Inquire about this" CTA can deep-link
+// straight into a prefilled service selection.
+function hubLabelFor(hub: string): string {
+  return ROW_ORDER.find(r => r.id === hub)?.label ?? ""
+}
+
+function buildInquireHref(project: ProjectData): string {
+  const params = new URLSearchParams({
+    service: hubLabelFor(project.hub),
+    message: `I'm interested in a project like "${project.title}" — could we discuss pricing and turnaround?`,
+  })
+  return `/contact?${params.toString()}`
+}
 
 // ─── Back-button modal stack ──────────────────────────────────────────────────
 // Two layers: project modal → zoom overlay.
@@ -311,12 +327,44 @@ function ZoomOverlay({ images, startIndex, onClose }: { images: string[]; startI
   )
 }
 
+// ─── Share / copy-link button ─────────────────────────────────────────────────
+// Surfaces the existing ?project=<id> deep link so a visitor can copy a
+// shareable URL straight to this project (e.g. to send it on WhatsApp).
+function ShareButton({ url }: { url: string }) {
+  const [copied, setCopied] = useState(false)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>()
+
+  useEffect(() => () => clearTimeout(timeoutRef.current), [])
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      timeoutRef.current = setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // Clipboard API unavailable (e.g. insecure context) — fail silently,
+      // the button just won't show the "copied" confirmation.
+    }
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      aria-label="Copy link to this project"
+      className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 shrink-0 transition-colors"
+    >
+      {copied ? <Check size={16} weight="bold" className="text-green-500" /> : <LinkSimple size={16} weight="bold" />}
+    </button>
+  )
+}
+
 // ─── Project Viewer Components ───────────────────────────────────────────────
 // These are the single source of truth for the modal's header / image
 // section / details panel — ProjectViewerModal below composes them instead
 // of keeping its own duplicate inline copies.
-function ProjectHeader({ project, accent, hasBA, onClose }: {
-  project: ProjectData; accent: string; hasBA: boolean; onClose: () => void
+function ProjectHeader({ project, accent, hasBA, shareUrl, onClose }: {
+  project: ProjectData; accent: string; hasBA: boolean; shareUrl: string; onClose: () => void
 }) {
   return (
     <div className="flex justify-between items-start mb-6 shrink-0">
@@ -334,15 +382,19 @@ function ProjectHeader({ project, accent, hasBA, onClose }: {
           </p>
         )}
       </div>
-      <button onClick={onClose} className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 shrink-0 ml-3 transition-colors">
-        <X size={18} weight="bold" />
-      </button>
+      <div className="flex items-center gap-2 shrink-0 ml-3">
+        <ShareButton url={shareUrl} />
+        <button onClick={onClose} className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+          <X size={18} weight="bold" />
+        </button>
+      </div>
     </div>
   )
 }
 
 function ProjectImageSection({
   project, accent, activeImg, setActiveImg, comparing, setComparing, onZoom, hasBA, beforeImg, afterImg, allImages,
+  hasSiblings, onPrevProject, onNextProject, siblingPosition,
 }: {
   project: ProjectData; accent: string
   activeImg: number; setActiveImg: (i: number) => void
@@ -350,6 +402,8 @@ function ProjectImageSection({
   onZoom: (i: number) => void
   hasBA: boolean; beforeImg?: string; afterImg?: string
   allImages: string[]
+  hasSiblings: boolean; onPrevProject: () => void; onNextProject: () => void
+  siblingPosition?: string
 }) {
   return (
     <div className="h-[40%] md:h-auto md:flex-1 flex flex-col overflow-hidden bg-zinc-900">
@@ -364,6 +418,31 @@ function ProjectImageSection({
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 pointer-events-none">
               <div className="bg-black/40 backdrop-blur-sm rounded-full p-2.5"><ArrowsOut size={18} weight="bold" className="text-white" /></div>
             </div>
+
+            {/* Cycle to prev/next project — mirrors keyboard left/right */}
+            {hasSiblings && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onPrevProject() }}
+                  aria-label="Previous project"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors active:scale-90"
+                >
+                  <CaretLeft size={16} weight="bold" />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onNextProject() }}
+                  aria-label="Next project"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors active:scale-90"
+                >
+                  <CaretRight size={16} weight="bold" />
+                </button>
+                {siblingPosition && (
+                  <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 px-2.5 py-1 rounded-full bg-black/40 text-white text-[0.6rem] font-bold tracking-widest">
+                    {siblingPosition}
+                  </div>
+                )}
+              </>
+            )}
           </div>
           {allImages.length > 1 && (
             <div className="flex gap-2 px-3 py-2.5 overflow-x-auto no-scrollbar shrink-0 border-t border-white/10">
@@ -411,30 +490,47 @@ function ProjectDetailsPanel({ project, accent, onClose }: { project: ProjectDat
         <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.result}</p>
       </section>
 
-      {/* CTA */}
-      <a
-        href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(`Hi ${BIZ.name}! I saw "${project.title}" in your gallery and I'd like something similar.`)}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={onClose}
-        className="flex items-center justify-center gap-2 w-full py-3.5 rounded-[14px] text-sm font-bold text-white shadow-lg transition-transform active:scale-[0.98]"
-        style={{ backgroundColor: "#25D366" }}
-      >
-        Get a project like this
-      </a>
+      {/* CTAs — WhatsApp stays primary (fastest path for most clients);
+          "Inquire about this" is a secondary path into the full contact
+          form for people who'd rather not use WhatsApp, prefilled with the
+          matching service hub and a message naming this project. */}
+      <div className="space-y-2.5">
+        <a
+          href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(`Hi ${BIZ.name}! I saw "${project.title}" in your gallery and I'd like something similar.`)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={onClose}
+          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-[14px] text-sm font-bold text-white shadow-lg transition-transform active:scale-[0.98]"
+          style={{ backgroundColor: "#25D366" }}
+        >
+          Get a project like this
+        </a>
+        <Link
+          href={buildInquireHref(project)}
+          onClick={onClose}
+          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-[14px] text-sm font-bold border-2 transition-transform active:scale-[0.98]"
+          style={{ borderColor: accent, color: accent }}
+        >
+          <EnvelopeSimple size={16} weight="bold" />
+          Inquire about this
+        </Link>
+      </div>
     </div>
   )
 }
 
 // ─── Project viewer modal ─────────────────────────────────────────────────────
 function ProjectViewerModal({
-  project, onClose, zoomIndex, setZoomIndex, onCloseZoom,
+  project, onClose, zoomIndex, setZoomIndex, onCloseZoom, pathname, siblings, onNavigate,
 }: {
   project: ProjectData | null
   onClose: () => void
   zoomIndex: number | null
   setZoomIndex: (i: number | null) => void
   onCloseZoom: () => void
+  pathname: string
+  siblings: ProjectData[]
+  onNavigate: (p: ProjectData) => void
 }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
@@ -443,6 +539,34 @@ function ProjectViewerModal({
 
   useEffect(() => { setActiveImg(0); setComparing(false) }, [project?.id])
 
+  const currentIdx = project ? siblings.findIndex(p => p.id === project.id) : -1
+  const hasSiblings = siblings.length > 1 && currentIdx !== -1
+
+  const goPrevProject = useCallback(() => {
+    if (!hasSiblings) return
+    const i = (currentIdx - 1 + siblings.length) % siblings.length
+    onNavigate(siblings[i])
+  }, [hasSiblings, currentIdx, siblings, onNavigate])
+
+  const goNextProject = useCallback(() => {
+    if (!hasSiblings) return
+    const i = (currentIdx + 1) % siblings.length
+    onNavigate(siblings[i])
+  }, [hasSiblings, currentIdx, siblings, onNavigate])
+
+  // Left/right arrow keys cycle projects within the same hub without
+  // closing the modal. Disabled while the zoom overlay is open — that
+  // overlay owns the arrow keys itself for cycling between images.
+  useEffect(() => {
+    if (!project || zoomIndex !== null) return
+    const fn = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft")  goPrevProject()
+      if (e.key === "ArrowRight") goNextProject()
+    }
+    document.addEventListener("keydown", fn)
+    return () => document.removeEventListener("keydown", fn)
+  }, [project, zoomIndex, goPrevProject, goNextProject])
+
   if (!project) return null
 
   const accent    = isDark ? HUB_COLORS[project.hub as HubKey].tagTextDark : HUB_COLORS[project.hub as HubKey].tagText
@@ -450,6 +574,8 @@ function ProjectViewerModal({
   const hasBA     = BA_HUBS.includes(project.hub as HubId) && !!(project as any).beforeImage && !!(project as any).afterImage
   const beforeImg = (project as any).beforeImage as string | undefined
   const afterImg  = (project as any).afterImage  as string | undefined
+  const shareUrl  = typeof window !== "undefined" ? `${window.location.origin}${pathname}?project=${project.id}` : `${pathname}?project=${project.id}`
+  const siblingPosition = hasSiblings ? `${currentIdx + 1} / ${siblings.length}` : undefined
 
   return (
     <div className="fixed inset-0 z-[10200] flex items-end md:items-center justify-center md:p-4 animate-in fade-in duration-300">
@@ -475,12 +601,21 @@ function ProjectViewerModal({
           beforeImg={beforeImg}
           afterImg={afterImg}
           allImages={allImages}
+          hasSiblings={hasSiblings}
+          onPrevProject={goPrevProject}
+          onNextProject={goNextProject}
+          siblingPosition={siblingPosition}
         />
 
         {/* Details panel */}
         <div className={cn("relative flex flex-col border-zinc-100 dark:border-zinc-800 overflow-y-auto overscroll-contain", "h-[60%] border-t md:h-auto md:border-t-0 md:border-l md:w-[380px]", "p-6 md:p-8")}>
-          <ProjectHeader project={project} accent={accent} hasBA={hasBA} onClose={onClose} />
+          <ProjectHeader project={project} accent={accent} hasBA={hasBA} shareUrl={shareUrl} onClose={onClose} />
           <ProjectDetailsPanel project={project} accent={accent} onClose={onClose} />
+          {hasSiblings && (
+            <p className="hidden md:block text-[0.65rem] font-medium text-zinc-400 text-center mt-6">
+              Use ← → to browse other {hubLabelFor(project.hub)} projects
+            </p>
+          )}
         </div>
       </div>
 
@@ -775,6 +910,11 @@ function GalleryPageInner() {
   )
   const filteredRows = activeFilter === "all" ? ROW_ORDER : ROW_ORDER.filter(r => r.id === activeFilter)
 
+  // Keyboard-nav siblings: always the full set of projects in the open
+  // project's own hub, regardless of the current filter pill — so cycling
+  // works the same whether you opened it from "All hubs" or a single hub.
+  const modalSiblings = selectedProject ? PROJECTS.filter(p => p.hub === selectedProject.hub) : []
+
   return (
     <section className="min-h-screen bg-background pt-[calc(var(--nav-h)+2rem)] pb-24 overflow-x-hidden">
       <div className="max-w-[1400px] mx-auto px-4 md:px-8">
@@ -838,6 +978,9 @@ function GalleryPageInner() {
         zoomIndex={zoomIndex}
         setZoomIndex={setZoomIndex}
         onCloseZoom={closeZoom}
+        pathname={pathname}
+        siblings={modalSiblings}
+        onNavigate={setSelectedProject}
       />
     </section>
   )
