@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation"
 import {
   X, Printer, FileText, PaintBrush, Globe, Desktop,
   PaperPlaneTilt, Megaphone, MagnifyingGlass,
-  Clock, Star, History
+  Clock, Star, ClockCounterClockwise
 } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
@@ -101,7 +101,7 @@ function RecentlyViewed({ onSelect }: { onSelect: (svc: SelectedService) => void
   return (
     <div className="mb-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="flex items-center gap-2 mb-3 px-1">
-        <History size={16} weight="bold" className="text-zinc-400" />
+        <ClockCounterClockwise size={16} weight="bold" className="text-zinc-400" />
         <span className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400">Recently Viewed</span>
       </div>
       <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
@@ -868,4 +868,4 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
       )}
     </div>
   )
-    }
+            } 
