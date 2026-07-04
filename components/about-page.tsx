@@ -49,32 +49,35 @@ export function AboutPage() {
 
           <div className="abh-divider mx-auto" />
 
-          {/* Stats strip — bordered card grid */}
-          <div className="mt-10 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x divide-zinc-200 dark:divide-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-[14px] overflow-hidden bg-white dark:bg-zinc-950 shadow-sm">
-            {[
-              { value: BIZ.hubCount,     label: "Service Hubs",  hoverColor: "#1E6FA8" },
-              { value: BIZ.serviceCount, label: "Services",      hoverColor: "#6FBF1A" },
-              { value: "Since 2023",     label: "Est. Kgotsong", hoverColor: "#F4A261" },
-            ].map((s, i) => (
-              <div
-                key={i}
-                className="group flex flex-col items-center justify-center py-5 px-3 transition-colors duration-200 cursor-default hover:bg-zinc-50 dark:hover:bg-zinc-900/60"
-              >
-                <p
-                  className="font-sans font-black text-xl leading-none text-zinc-800 dark:text-zinc-100 transition-colors duration-200"
-                  style={{ color: undefined }}
-                  onMouseEnter={e => (e.currentTarget.style.color = s.hoverColor)}
-                  onMouseLeave={e => (e.currentTarget.style.color = "")}
-                >
-                  {s.value}
-                </p>
-                <p className="text-[0.62rem] font-medium uppercase tracking-widest text-zinc-400 mt-1.5 text-center">
-                  {s.label}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+          {/* Stats strip — solid brand-blue pill matching the View Services /
+    Search+Surprise button proportions (rounded-[14px], shadow-lg,
+    font-black, py-4-equivalent padding). BRAND.blue verifies at ~5.4:1
+    against white text (AA), BRAND.blueDark at ~10.9:1 (AAA) — both
+    already accessible without needing new tokens, unlike the orange
+    case. Per-item hover tinting removed since the whole strip is now
+    one solid color; dividers switched to white/25 to sit on the fill. */}
+<div
+  className="mt-10 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x divide-white/25 rounded-[14px] overflow-hidden shadow-lg transition-colors duration-300"
+  style={{ backgroundColor: isDark ? BRAND.blueDark : BRAND.blue }}
+>
+  {[
+    { value: BIZ.hubCount,     label: "Service Hubs"  },
+    { value: BIZ.serviceCount, label: "Services"      },
+    { value: "Since 2023",     label: "Est. Kgotsong" },
+  ].map((s, i) => (
+    <div
+      key={i}
+      className="flex flex-col items-center justify-center py-5 px-3 transition-colors duration-200 cursor-default hover:bg-white/10"
+    >
+      <p className="font-sans font-black text-xl leading-none text-white">
+        {s.value}
+      </p>
+      <p className="text-[0.62rem] font-medium uppercase tracking-widest text-white/70 mt-1.5 text-center">
+        {s.label}
+      </p>
+    </div>
+  ))}
+</div>
       </section>
 
       {/* ── Story ── */}
