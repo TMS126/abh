@@ -338,6 +338,12 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
   const wrapRef   = useRef<HTMLDivElement>(null)
   const index     = useMemo(buildSearchIndex, [])
 
+  // Theme-aware fill + hover shade, same pairing pattern as the WhatsApp
+  // button in the hero (base color / dark-hover color), just swapped for
+  // brand green so it reads consistently in both light and dark mode.
+  const fillColor  = isDark ? BRAND.greenDark : BRAND.green
+  const hoverColor = isDark ? BRAND.greenDeep : BRAND.greenDark
+
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return []
@@ -372,11 +378,10 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
         onChange={e => setQuery(e.target.value)}
         onFocus={() => setFocused(true)}
         placeholder="Search"
-        className={cn(
-          "w-full pl-11 pr-10 py-4 rounded-[14px] font-sans font-black text-base text-white placeholder:text-white/70",
-          "shadow-lg transition-all duration-300 outline-none text-center focus:text-left focus:scale-[0.99]",
-          "bg-brand-green dark:bg-brand-green-dark hover:opacity-90"
-        )}
+        className="w-full pl-11 pr-10 py-4 rounded-[14px] font-sans font-black text-base text-white placeholder:text-white/70 shadow-lg transition-all duration-300 outline-none text-center focus:text-left focus:scale-[0.99]"
+        style={{ backgroundColor: fillColor }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = hoverColor }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = fillColor }}
       />
       {query && (
         <button
@@ -421,7 +426,8 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
       )}
     </div>
   )
-                             }
+}
+
 
 function HubModal({
   hubId, onClose, onSelectService,
