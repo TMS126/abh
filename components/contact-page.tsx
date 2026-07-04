@@ -161,10 +161,15 @@ function HubSelect({ value, onChange }: { value: string; onChange: (val: string)
 
 function ContactPageInner() {
   const searchParams = useSearchParams()
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  const isDark = mounted && resolvedTheme === "dark"
   const [formData,  setFormData]  = useState({ name: "", phone: "", service: "", message: "" })
   const [touched,   setTouched]   = useState<Record<string, boolean>>({})
   const [vcardDone, setVcardDone] = useState(false)
   const [prefilled, setPrefilled] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
 
   // Prefill from a deep link — e.g. the gallery's "Inquire about this" CTA
   // sends /contact?service=<Hub Label>&message=<text>. Only accept a
@@ -335,7 +340,7 @@ function ContactPageInner() {
           <div className="abh-card p-8 flex flex-col">
             <h2 className="abh-section-heading mb-2">Send a Message</h2>
             {prefilled && (
-              <p className="flex items-center gap-1.5 text-[0.7rem] font-bold mb-4" style={{ color: BRAND.blue }}>
+              <p className="flex items-center gap-1.5 text-[0.7rem] font-bold mb-4" style={{ color: isDark ? "#A9D6F2" : BRAND.blue }}>
                 <Sparkle size={14} weight="fill" />
                 Prefilled from the gallery — feel free to edit before sending
               </p>
