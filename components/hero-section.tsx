@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import {
@@ -18,24 +18,16 @@ import { cn } from "@/lib/utils"
 import { BRAND, BIZ, MARQUEE_ITEMS, HUB_COLORS } from "@/lib/brand"
 
 // ─── Hub data ─────────────────────────────────────────────────────────────────
-// colorLight/colorDark now mirror the exact per-hub palette used in the
-// Contact page's "Service Needed" dropdown (FORM_HUBS in contact-page.tsx)
-// instead of HUB_COLORS.<id>.tagText, which is the same generic grey
-// (#374151) for every single hub and gave no real color distinction here.
 const HUBS_DATA = [
   {
     id: "print",
     name: "Print Hub",
     icon: (active: boolean) => (
-      <Printer
-        size={28}
-        weight={active ? "fill" : "regular"}
-        aria-hidden="true"
-      />
+      <Printer size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: Printer,
-    colorLight: BRAND.blue,       // matches FORM_HUBS["Print Hub"].light
-    colorDark:  BRAND.lightBlue,  // matches FORM_HUBS["Print Hub"].dark
+    colorLight: BRAND.blue,
+    colorDark:  BRAND.lightBlue,
     services: [
       { name: "B&W Print",        price: "R5"  },
       { name: "Colour Print",     price: "R8"  },
@@ -49,15 +41,11 @@ const HUBS_DATA = [
     id: "doc",
     name: "Docu Hub",
     icon: (active: boolean) => (
-      <FileText
-        size={28}
-        weight={active ? "fill" : "regular"}
-        aria-hidden="true"
-      />
+      <FileText size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: FileText,
-    colorLight: BRAND.green,       // matches FORM_HUBS["Document Hub"].light
-    colorDark:  BRAND.lightGreen,  // matches FORM_HUBS["Document Hub"].dark
+    colorLight: BRAND.green,
+    colorDark:  BRAND.lightGreen,
     services: [
       { name: "CV from Scratch",    price: "R30" },
       { name: "CV Upgrade",         price: "R40" },
@@ -71,15 +59,11 @@ const HUBS_DATA = [
     id: "design",
     name: "Design Hub",
     icon: (active: boolean) => (
-      <PaintBrush
-        size={28}
-        weight={active ? "fill" : "regular"}
-        aria-hidden="true"
-      />
+      <PaintBrush size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: PaintBrush,
-    colorLight: BRAND.orangeDark,   // matches FORM_HUBS["Design Hub"].light
-    colorDark:  BRAND.lightOrange,  // matches FORM_HUBS["Design Hub"].dark
+    colorLight: BRAND.orangeDark,
+    colorDark:  BRAND.lightOrange,
     services: [
       { name: "Logo (Basic)",       price: "R300" },
       { name: "Logo (Standard)",    price: "R500" },
@@ -93,15 +77,11 @@ const HUBS_DATA = [
     id: "eservice",
     name: "E-Service Hub",
     icon: (active: boolean) => (
-      <Globe
-        size={28}
-        weight={active ? "fill" : "regular"}
-        aria-hidden="true"
-      />
+      <Globe size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: Globe,
-    colorLight: BRAND.blueMid,    // matches FORM_HUBS["E-Service Hub"].light ("#15537D")
-    colorDark:  BRAND.lightBlue,  // matches FORM_HUBS["E-Service Hub"].dark
+    colorLight: BRAND.blueMid,
+    colorDark:  BRAND.lightBlue,
     services: [
       { name: "SASSA Status Check",         price: "R20"  },
       { name: "SASSA SRD Application",      price: "R40"  },
@@ -115,15 +95,11 @@ const HUBS_DATA = [
     id: "tech",
     name: "Tech Hub",
     icon: (active: boolean) => (
-      <Desktop
-        size={28}
-        weight={active ? "fill" : "regular"}
-        aria-hidden="true"
-      />
+      <Desktop size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: Desktop,
-    colorLight: BRAND.dark100,  // matches FORM_HUBS["Tech Hub"].light ("#333333")
-    colorDark:  "#B8CCE0",      // matches FORM_HUBS["Tech Hub"].dark
+    colorLight: BRAND.dark100,
+    colorDark:  "#B8CCE0",
     services: [
       { name: "Software Install",              price: "R80"  },
       { name: "PC Setup",                      price: "R250" },
@@ -135,15 +111,6 @@ const HUBS_DATA = [
   },
 ]
 
-// Two-tone gradient pairs for the View Services CTA — one pair per hub,
-// each pulled from colors already established for that hub elsewhere in
-// the codebase (HUB_COLORS.<id>.gradient uses the same family), so the
-// button's "dancing" gradient stays within that hub's own color identity
-// rather than crossing into another hub's hue. Kept theme-independent
-// (unlike colorLight/colorDark above) since these are all already
-// WCAG-AA-safe against white button text in both themes — using the
-// lighter dark-mode pastels here instead would fail contrast with white
-// text.
 const CTA_GRADIENTS: Record<string, [string, string]> = {
   print:    [BRAND.blue,       BRAND.blueMid],
   doc:      [BRAND.green,      BRAND.greenDeep],
@@ -164,6 +131,19 @@ function pickRandomService(hubIndex: number, excludeName?: string) {
   return next
 }
 
+// ─── Watermark crossfade layer type ───────────────────────────────────────────
+// Fixes the "previous icon never disappears" bug. The old implementation
+// used a `key`-forced remount + tailwindcss-animate's `animate-in` classes
+// to fake a crossfade — on some mobile browsers, a rapid unmount/remount
+// doesn't reliably clear the old layer's compositing before the new one
+// paints, which is exactly the stacked-icon ghosting you saw. This version
+// never unmounts a layer mid-transition: it adds a new layer, waits one
+// frame, flips only that layer's opacity class to "visible" (triggering a
+// real CSS opacity transition on every layer at once — old ones fade to 0,
+// new one fades to target), then prunes every layer except the current one
+// only *after* the transition duration has actually elapsed.
+type WatermarkLayer = { key: string; Icon: React.ElementType; color: string }
+
 // ─── Hero Section ─────────────────────────────────────────────────────────────
 export function HeroSection() {
   const router = useRouter()
@@ -182,6 +162,29 @@ export function HeroSection() {
   const activeColor = colorFor(active)
   const WatermarkIcon = active.Icon
   const [ctaFrom, ctaTo] = CTA_GRADIENTS[active.id] ?? [BRAND.blue, BRAND.blueMid]
+
+  // Watermark crossfade state
+  const [watermarkLayers, setWatermarkLayers] = useState<WatermarkLayer[]>([])
+  const [visibleKey,       setVisibleKey]      = useState<string | null>(null)
+  const pruneTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
+
+  useEffect(() => {
+    const newKey = `${active.id}-${isDark}`
+    setWatermarkLayers(prev => (prev.some(l => l.key === newKey) ? prev : [...prev, { key: newKey, Icon: WatermarkIcon, color: activeColor }]))
+
+    const raf = requestAnimationFrame(() => setVisibleKey(newKey))
+    return () => cancelAnimationFrame(raf)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active.id, isDark])
+
+  useEffect(() => {
+    if (watermarkLayers.length <= 1) return
+    if (pruneTimeoutRef.current) clearTimeout(pruneTimeoutRef.current)
+    pruneTimeoutRef.current = setTimeout(() => {
+      setWatermarkLayers(prev => prev.filter(l => l.key === visibleKey))
+    }, 750) // matches the layer's transition-duration-700 + small buffer
+    return () => { if (pruneTimeoutRef.current) clearTimeout(pruneTimeoutRef.current) }
+  }, [watermarkLayers, visibleKey])
 
   const handleNavigate = (path: string) => router.push(path)
 
@@ -255,34 +258,42 @@ export function HeroSection() {
           From printing your documents to navigating government services — we make it simple, fast, and friendly.
         </p>
 
-        {/* CTA — sole hero action. Gradient fill now tracks whichever hub
-            is active in the Core Hub Ecosystem selector below, using
-            CTA_GRADIENTS for that hub's own two-tone color pair. The
-            `key` on the button forces a brief remount + fade-in whenever
-            the hub changes, since background-image itself can't be
-            smoothly interpolated by CSS — the continuous "dancing"
-            keyframe animation keeps running underneath regardless. */}
+        {/* CTA — gradient tracks the active hub, crossfade-safe watermark behind it */}
         <div className="relative w-full flex justify-center items-center mb-12">
 
-          {/* Giant tilted hub-icon watermark — synced to the active hub in the
-              Core Hub Ecosystem selector below. Sits behind the CTA button,
-              bleeds off-screen, and cross-fades color/icon on hub change. */}
+          {/* Giant tilted hub-icon watermark — crossfades via opacity
+              transitions on stacked layers rather than key-based remount.
+              See WatermarkLayer comment above for why this replaced the
+              old approach. */}
           <div
-            key={active.id}
             aria-hidden="true"
-            className="absolute inset-y-0 -right-[18%] md:-right-[10%] flex items-center justify-center pointer-events-none select-none opacity-[0.14] dark:opacity-[0.18] transition-colors duration-700 ease-out animate-in fade-in zoom-in-95 duration-500"
-            style={{ color: activeColor, zIndex: 0 }}
+            className="absolute inset-y-0 -right-[18%] md:-right-[10%] flex items-center justify-center pointer-events-none select-none z-0"
           >
-            <WatermarkIcon
-              size={520}
-              weight="fill"
-              aria-hidden="true"
-              style={{ transform: "rotate(-16deg)" }}
-              className="shrink-0 md:w-[620px] md:h-[620px]"
-            />
+            {watermarkLayers.map((layer) => {
+              const LayerIcon = layer.Icon
+              const isVisible = layer.key === visibleKey
+              return (
+                <div
+                  key={layer.key}
+                  className={cn(
+                    "absolute inset-0 flex items-center justify-center transition-opacity duration-700 ease-out",
+                    isVisible ? "opacity-[0.14] dark:opacity-[0.18]" : "opacity-0"
+                  )}
+                  style={{ color: layer.color }}
+                >
+                  <LayerIcon
+                    size={520}
+                    weight="fill"
+                    aria-hidden="true"
+                    style={{ transform: "rotate(-16deg)" }}
+                    className="shrink-0 md:w-[620px] md:h-[620px]"
+                  />
+                </div>
+              )
+            })}
           </div>
 
-          {/* Soft pulsing glow, sits behind the button — also tracks the active hub */}
+          {/* Soft pulsing glow behind the button — tracks the active hub */}
           <div
             key={`glow-${active.id}`}
             aria-hidden="true"
@@ -301,37 +312,8 @@ export function HeroSection() {
           </button>
         </div>
 
-        {/* Marquee */}
-        <div
-          role="marquee"
-          aria-label="Our services"
-          onMouseEnter={() => setMarqueePaused(true)}
-          onMouseLeave={() => setMarqueePaused(false)}
-          onTouchStart={() => setMarqueePaused(p => !p)}
-          className="relative w-full py-4 overflow-hidden select-none mb-12 group/marquee"
-        >
-          <div
-            className="flex whitespace-nowrap w-max animate-marquee"
-            style={{ animationPlayState: marqueePaused ? "paused" : "running" }}
-          >
-            {[0, 1].map((copy) => (
-              <div key={copy} className="flex items-center shrink-0">
-                {MARQUEE_ITEMS.map((item, idx) => (
-                  <React.Fragment key={idx}>
-                    <span className="inline-flex items-center px-5 text-brand-blue-dark dark:text-brand-light-blue font-semibold text-sm transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100">
-                      {item}
-                    </span>
-                    {/* Orange dot — intentional accent, approved exception */}
-                    <span className="text-brand-orange font-black text-base leading-none shrink-0" aria-hidden="true">•</span>
-                  </React.Fragment>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Core Hub Ecosystem */}
-        <div className="abh-card w-full max-w-[840px] mx-auto p-6 sm:p-10 md:p-12 flex flex-col items-center bg-white/60 dark:bg-zinc-900/50 backdrop-blur-md">
+        {/* Core Hub Ecosystem — moved above the marquee, per your call */}
+        <div className="abh-card w-full max-w-[840px] mx-auto p-6 sm:p-10 md:p-12 flex flex-col items-center bg-white/60 dark:bg-zinc-900/50 backdrop-blur-md mb-12">
 
           <div className="w-full flex flex-col items-center mb-8">
             <h2 className="abh-section-heading mb-2 text-center">Core Hub Ecosystem</h2>
@@ -373,7 +355,6 @@ export function HeroSection() {
                   <span
                     className="transition-all duration-200 flex"
                     style={{
-                      // Resting: grey. Hovered: hub color (no fill). Active: hub color (fill via icon prop).
                       color: isActive || isHovered ? hubColor : "#9A9A9A",
                       transform: isActive ? "translateY(-2px) scale(1.08)" : "none",
                     }}
@@ -423,6 +404,35 @@ export function HeroSection() {
             </button>
           </div>
         </div>
+
+        {/* Marquee — now below the Core Hub Ecosystem card, per your call */}
+        <div
+          role="marquee"
+          aria-label="Our services"
+          onMouseEnter={() => setMarqueePaused(true)}
+          onMouseLeave={() => setMarqueePaused(false)}
+          onTouchStart={() => setMarqueePaused(p => !p)}
+          className="relative w-full py-4 overflow-hidden select-none group/marquee"
+        >
+          <div
+            className="flex whitespace-nowrap w-max animate-marquee"
+            style={{ animationPlayState: marqueePaused ? "paused" : "running" }}
+          >
+            {[0, 1].map((copy) => (
+              <div key={copy} className="flex items-center shrink-0">
+                {MARQUEE_ITEMS.map((item, idx) => (
+                  <React.Fragment key={idx}>
+                    <span className="inline-flex items-center px-5 text-brand-blue-dark dark:text-brand-light-blue font-semibold text-sm transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100">
+                      {item}
+                    </span>
+                    {/* Orange dot — intentional accent, approved exception */}
+                    <span className="text-brand-orange font-black text-base leading-none shrink-0" aria-hidden="true">•</span>
+                  </React.Fragment>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   )
@@ -459,7 +469,6 @@ export function StatsBar() {
               className="flex flex-col items-center justify-center gap-2 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 py-5 sm:py-6 px-3 sm:px-4 text-center transition-all duration-200 shadow-sm cursor-pointer"
               style={{ borderColor: isHov ? stat.color : undefined }}
             >
-              {/* Icon container — brand color resting (no fill), solid fill on hover */}
               <div
                 className="w-10 h-10 rounded-[12px] flex items-center justify-center mb-1 transition-all duration-200"
                 style={{
@@ -467,19 +476,11 @@ export function StatsBar() {
                   color: isHov ? "#ffffff" : stat.color,
                 }}
               >
-                <Icon
-                  size={20}
-                  weight={isHov ? "fill" : "regular"}
-                  aria-hidden="true"
-                />
+                <Icon size={20} weight={isHov ? "fill" : "regular"} aria-hidden="true" />
               </div>
-
-              {/* Value — neutral, no per-stat color */}
               <div className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
                 {stat.value}
               </div>
-
-              {/* Label */}
               <div className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
                 {stat.label}
               </div>
@@ -489,4 +490,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-             } 
+        } 
