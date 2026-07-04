@@ -69,8 +69,7 @@ export function Navbar() {
   const pillClass = "bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md py-2 rounded-[14px] border border-gray-200 dark:border-zinc-800 shadow-sm"
 
   // Mobile-only per-page accent, applied on the active nav link inside the
-  // slide-out menu. Desktop nav intentionally untouched — it already has
-  // its own solid-blue active fill regardless of which page it is.
+  // slide-out menu, and reused below for the controls pill's route echo.
   const MOBILE_NAV_COLORS: { [path: string]: NavColorPair } = {
     "/":         { light: BRAND.blue,       dark: BRAND.lightBlue   }, // Home — primary blue
     "/services": { light: BRAND.green,      dark: BRAND.lightGreen  },
@@ -78,6 +77,14 @@ export function Navbar() {
     "/about":    { light: BRAND.blueDark,   dark: BRAND.lightBlue   }, // "another blue" — same distinct navy used for Contact's page-glow earlier
     "/contact":  { light: BRAND.neutral500, dark: BRAND.neutral300  }, // grey, per your call
   }
+
+  // Route echo — the shared controls pill (theme toggle, hamburger,
+  // close button) picks up the current page's color instead of a fixed
+  // orange/blue, tying it to the same per-page palette as the edge glow
+  // and mobile nav. Falls back to undefined (existing hardcoded colors)
+  // if a route somehow isn't in the map.
+  const routeAccent = MOBILE_NAV_COLORS[pathname]
+  const routeColor  = mounted && routeAccent ? (theme === "dark" ? routeAccent.dark : routeAccent.light) : undefined
 
   // Individual link pill — replaces the old shared frosted-container
   // look on desktop. Rest state: subtle border + soft shadow (bg-white
@@ -158,24 +165,31 @@ export function Navbar() {
             })}
           </div>
 
-          {/* Controls — Always visible on desktop, hidden on mobile when menu is open */}
+          {/* Controls — Always visible on desktop, hidden on mobile when menu is open.
+              Theme toggle icon, hamburger bars, and mobile close button now echo
+              the current page's color via routeColor, falling back to the original
+              hardcoded orange/light-blue when a route isn't in MOBILE_NAV_COLORS. */}
           <div className={cn(pillClass, "flex items-center gap-3 pl-3 pr-3 pointer-events-auto ml-4 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
             <button onClick={handleThemeToggle} className="flex items-center justify-center w-7 h-7 active:scale-90 transition-transform" aria-label="Toggle theme">
-              {mounted && (theme === "dark" ? <Moon size={20} weight="fill" className="text-brand-light-blue" /> : <Sun size={20} weight="fill" className="text-brand-orange" />)}
+              {mounted && (
+                theme === "dark"
+                  ? <Moon size={20} weight="fill" style={{ color: routeColor ?? BRAND.lightBlue }} className="transition-colors duration-300" />
+                  : <Sun  size={20} weight="fill" style={{ color: routeColor ?? BRAND.orange }}    className="transition-colors duration-300" />
+              )}
             </button>
 
             <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 md:hidden" />
 
             <button ref={menuTriggerRef} onClick={() => setMenuOpen(true)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 md:hidden", menuOpen ? "opacity-0 pointer-events-none" : "opacity-100")}>
               <div className="w-4 h-[12px] flex flex-col justify-between items-center">
-                <span className="w-full h-[2.5px] bg-brand-orange dark:bg-brand-light-blue rounded-full" />
-                <span className="w-full h-[2.5px] bg-brand-orange dark:bg-brand-light-blue rounded-full" />
-                <span className="w-full h-[2.5px] bg-brand-orange dark:bg-brand-light-blue rounded-full" />
+                <span className="w-full h-[2.5px] rounded-full transition-colors duration-300" style={{ backgroundColor: routeColor ?? (mounted && theme === "dark" ? BRAND.lightBlue : BRAND.orange) }} />
+                <span className="w-full h-[2.5px] rounded-full transition-colors duration-300" style={{ backgroundColor: routeColor ?? (mounted && theme === "dark" ? BRAND.lightBlue : BRAND.orange) }} />
+                <span className="w-full h-[2.5px] rounded-full transition-colors duration-300" style={{ backgroundColor: routeColor ?? (mounted && theme === "dark" ? BRAND.lightBlue : BRAND.orange) }} />
               </div>
             </button>
 
             <button onClick={() => setMenuOpen(false)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 absolute right-3 md:hidden", menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none")}>
-              <X size={20} weight="bold" className="text-brand-orange" />
+              <X size={20} weight="bold" style={{ color: routeColor ?? BRAND.orange }} className="transition-colors duration-300" />
             </button>
           </div>
         </div>
@@ -249,4 +263,4 @@ export function Navbar() {
       </div>
     </>
   )
-            }
+    } 
