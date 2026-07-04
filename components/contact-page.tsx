@@ -23,7 +23,7 @@ function downloadBusinessVCard() {
     "VERSION:3.0",
     `FN:Theji Meje ApexbytesHub`,
     `N:ApexbytesHub;Theji Meje;;;`,
-    `ORG:Apexbytes Hub`,
+    `ORG:ApexbytesHub`,
     `TITLE:Founder & Lead Designer`,
     `TEL;TYPE=CELL,PREF:+27753338260`,
     `EMAIL;TYPE=WORK:apexbytesza@gmail.com`,
@@ -271,7 +271,7 @@ function ContactPageInner() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Save Our Contact</p>
-                  <p className="abh-muted">Add Apexbytes Hub to your phone</p>
+                  <p className="abh-muted">Add ApexbytesHub to your phone</p>
                 </div>
               </div>
               <button
