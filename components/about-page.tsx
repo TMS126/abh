@@ -78,6 +78,8 @@ export function AboutPage() {
     </div>
   ))}
 </div>
+</div>
+  
       </section>
 
       {/* ── Story ── */}
