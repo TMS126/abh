@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useCallback, useEffect } from "react"
+import { useState, useRef, useCallback, useEffect, Suspense } from "react"
 import { useSearchParams, usePathname } from "next/navigation"
 import { X, Check, Info, CaretLeft, CaretRight, Image as ImageIcon, ArrowsOut, ArrowsLeftRight } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
@@ -718,7 +718,7 @@ function HubFilter({ label, active, accent, isDark, onClick }: {
   )
 }
 
-export function GalleryPage() {
+function GalleryPageInner() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
   const searchParams = useSearchParams()
@@ -840,6 +840,33 @@ export function GalleryPage() {
         onCloseZoom={closeZoom}
       />
     </section>
+  )
+}
+
+// Lightweight skeleton shown for the instant it takes useSearchParams() to
+// resolve on the client. Keeps the layout shape (title + divider) so there's
+// no visible flash/collapse when the real content mounts.
+function GallerySkeleton() {
+  return (
+    <section className="min-h-screen bg-background pt-[calc(var(--nav-h)+2rem)] pb-24">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8 text-center">
+        <h1 className="abh-page-title mb-4">Our Portfolio</h1>
+        <div className="abh-divider" />
+      </div>
+    </section>
+  )
+}
+
+// useSearchParams() requires a Suspense boundary around any component that
+// calls it, or Next.js fails to prerender the page (build error:
+// "useSearchParams() should be wrapped in a suspense boundary"). Wrapping
+// here — rather than requiring app/gallery/page.tsx to add its own
+// <Suspense> — keeps this component a drop-in replacement.
+export function GalleryPage() {
+  return (
+    <Suspense fallback={<GallerySkeleton />}>
+      <GalleryPageInner />
+    </Suspense>
   )
 }
  
