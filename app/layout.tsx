@@ -8,6 +8,7 @@ import { LocalBusinessJsonLd } from '@/components/ui/json-ld'
 import { FloatingSearchWidget } from '@/components/floating-search-widget'
 import { QuoteCalculatorWidget } from '@/components/QuoteCalculatorWidget'
 import { WhatsAppFAB } from '@/components/whatsapp-fab'
+import { PageEdgeGlow } from '@/components/page-edge-glow'
 import './globals.css'
 
 // ─── Fonts ───────────────────────────────────────────────────────────
@@ -75,6 +76,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange={false}
         >
+          <PageEdgeGlow />
           <LocalBusinessJsonLd />
           <InstanceGuardProvider>
             {children}
@@ -91,4 +93,4 @@ export default function RootLayout({
     </html>
   )
 
-}
+} 
