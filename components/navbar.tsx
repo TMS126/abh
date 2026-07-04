@@ -68,8 +68,10 @@ export function Navbar() {
 
   const pillClass = "bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md py-2 rounded-[14px] border border-gray-200 dark:border-zinc-800 shadow-sm"
 
-  // Mobile-only per-page accent, applied on the active nav link inside the
-  // slide-out menu, and reused below for the controls pill's route echo.
+  // Per-page accent, used for: the mobile menu's active link, the shared
+  // controls pill's route echo, and (now) the desktop nav's active pill
+  // fill. Same map drives all three so the palette stays consistent
+  // everywhere in the navbar.
   const MOBILE_NAV_COLORS: { [path: string]: NavColorPair } = {
     "/":         { light: BRAND.blue,       dark: BRAND.lightBlue   }, // Home — primary blue
     "/services": { light: BRAND.green,      dark: BRAND.lightGreen  },
@@ -90,14 +92,16 @@ export function Navbar() {
   // look on desktop. Rest state: subtle border + soft shadow (bg-white
   // so it still reads as a pill against the page, per your call to keep
   // a resting pill style rather than fully plain text). Active: solid
-  // brand-blue fill, same as before. Hover: nudges the whole pill up
-  // (-translate-y-0.5) for a little life, per your call to scope the
-  // lift effect to desktop only.
+  // fill using the current page's routeColor (falls back to brand-blue
+  // if a route isn't in MOBILE_NAV_COLORS) instead of a fixed blue, so
+  // desktop matches the mobile menu's per-page echo. Hover: nudges the
+  // whole pill up (-translate-y-0.5) for a little life, scoped to
+  // desktop only per your earlier call.
   const desktopLinkClass = (isActive: boolean, isCta?: boolean) =>
     cn(
       "px-4 py-2 rounded-[14px] text-[0.84rem] transition-all duration-300 border hover:-translate-y-0.5",
       isActive
-        ? "font-black bg-brand-blue text-white border-transparent shadow-sm"
+        ? "font-black text-white border-transparent shadow-sm"
         : "font-medium text-zinc-500 dark:text-zinc-400 bg-white/80 dark:bg-zinc-900/80 border-gray-200 dark:border-zinc-800 shadow-sm hover:text-brand-blue dark:hover:text-brand-light-blue hover:shadow-md",
       isCta && "border-2 border-brand-orange text-brand-orange hover:bg-brand-orange/10"
     )
@@ -147,16 +151,21 @@ export function Navbar() {
           </div>
 
           {/* Desktop Nav — shared frosted container removed; each link is
-              now its own pill via desktopLinkClass. Wrapper below only
-              handles layout (gap, centering, show/hide-on-scroll), no
-              background/border/blur of its own anymore. */}
+              now its own pill via desktopLinkClass. Each link's own path
+              (not the current page) determines its active fill color, so
+              hovering to About shows blueDark, Gallery shows orange, etc.,
+              matching the mobile menu's per-page palette. */}
           <div className={cn("hidden md:flex items-center gap-2 pointer-events-auto absolute left-1/2 -translate-x-1/2 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
             {NAV_ITEMS.map((item) => {
-              const isActive = pathname === item.path
+              const isActive   = pathname === item.path
+              const itemAccent = MOBILE_NAV_COLORS[item.path]
+              const itemColor  = mounted && itemAccent ? (theme === "dark" ? itemAccent.dark : itemAccent.light) : BRAND.blue
+
               return (
                 <button
                   key={item.id}
                   onClick={() => navigate(item.path)}
+                  style={isActive ? { backgroundColor: itemColor } : undefined}
                   className={desktopLinkClass(isActive, item.isCta)}
                 >
                   {item.label}
@@ -166,7 +175,7 @@ export function Navbar() {
           </div>
 
           {/* Controls — Always visible on desktop, hidden on mobile when menu is open.
-              Theme toggle icon, hamburger bars, and mobile close button now echo
+              Theme toggle icon, hamburger bars, and mobile close button echo
               the current page's color via routeColor, falling back to the original
               hardcoded orange/light-blue when a route isn't in MOBILE_NAV_COLORS. */}
           <div className={cn(pillClass, "flex items-center gap-3 pl-3 pr-3 pointer-events-auto ml-4 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
