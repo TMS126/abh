@@ -1161,7 +1161,7 @@ function GalleryPageInner() {
               onChange={e => setSearchQuery(e.target.value)}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
-              placeholder={searchFocused ? "Search" : "Search for Project"}
+              placeholder={searchFocused ? "Search" : "Search Project"}
               className="w-full pl-10 pr-9 py-2.5 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none transition-colors text-center focus:text-left"
             />
             {searchQuery && (
