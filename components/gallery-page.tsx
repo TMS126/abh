@@ -342,6 +342,11 @@ function ShareButton({ url, title }: { url: string; title: string }) {
 // white/red icon); "header" context sits on the light details panel
 // (matches ShareButton's neutral pill styling). Re-keying the icon on
 // `liked` retriggers the zoom-in animation as a little "pop" on toggle.
+//
+// WCAG NOTE: the "liked" red uses a light/dark pair (red-600 / red-400)
+// instead of a single hardcoded hex. The old #ef4444 measured 3.76:1 on
+// white — below the 4.5:1 normal-text minimum. red-600 hits 4.83:1 on
+// white, and red-400 hits ~7.2:1 on the zinc-950 dark-mode panel.
 function LikeButton({ liked, onToggle, context = "header" }: {
   liked: boolean; onToggle: (e: React.MouseEvent) => void; context?: "card" | "header"
 }) {
@@ -361,8 +366,10 @@ function LikeButton({ liked, onToggle, context = "header" }: {
         key={liked ? "liked" : "unliked"}
         size={16}
         weight={liked ? "fill" : "bold"}
-        className="animate-in zoom-in-50 duration-300"
-        style={{ color: liked ? "#ef4444" : context === "card" ? "#fff" : undefined }}
+        className={cn(
+          "animate-in zoom-in-50 duration-300",
+          liked ? "text-red-600 dark:text-red-400" : context === "card" ? "text-white" : ""
+        )}
       />
     </button>
   )
@@ -389,7 +396,7 @@ function ProjectHeader({ project, accent, hasBA, shareUrl, liked, onToggleLike, 
           </p>
         )}
         {liked && (
-          <p className="flex items-center gap-1 text-[0.68rem] font-bold text-red-500 mt-1.5 animate-in fade-in duration-300">
+          <p className="flex items-center gap-1 text-[0.68rem] font-bold text-red-600 dark:text-red-400 mt-1.5 animate-in fade-in duration-300">
             <Heart size={11} weight="fill" />
             You liked this
           </p>
