@@ -184,7 +184,11 @@ function Modal({ open, onClose, title, subtitle, children }: {
   )
 }
 
+// ─── Full-screen mandatory Terms modal — agree-only, no X/Esc/backdrop close ──
 function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void }) {
+  const guardActive = useRef(false)
+  const BUFFER = 5 // number of dummy history entries kept "in front" of the modal
+
   useEffect(() => {
     document.documentElement.classList.toggle("scroll-locked", open)
     document.body.classList.toggle("scroll-locked", open)
@@ -194,20 +198,35 @@ function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void 
     }
   }, [open])
 
-  // Trap the hardware/browser back button — re-push state so back does nothing
+  // Trap the hardware/browser back button. A single pushState can be
+  // skipped past by a fast double back-tap before our JS re-arms it,
+  // so we keep a small buffer of dummy entries topped up on every pop.
   useEffect(() => {
     if (!open) return
-    window.history.pushState({ termsGate: true }, "")
-    const onPop = () => {
+
+    guardActive.current = true
+    for (let i = 0; i < BUFFER; i++) {
       window.history.pushState({ termsGate: true }, "")
     }
+
+    const onPop = () => {
+      if (!guardActive.current) return
+      for (let i = 0; i < BUFFER; i++) {
+        window.history.pushState({ termsGate: true }, "")
+      }
+    }
+
     window.addEventListener("popstate", onPop)
-    return () => window.removeEventListener("popstate", onPop)
+    return () => {
+      guardActive.current = false
+      window.removeEventListener("popstate", onPop)
+    }
   }, [open])
 
   const handleAgree = () => {
-    // Consume the trapped history entry we pushed, then close
-    window.history.back()
+    guardActive.current = false
+    // Unwind the buffered entries we pushed, then close
+    window.history.go(-BUFFER)
     onAgree()
   }
 
@@ -220,15 +239,17 @@ function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void 
       aria-label="Terms & Service Policies"
       className="fixed inset-0 z-[99999] bg-white dark:bg-zinc-950 flex flex-col animate-in fade-in duration-200"
     >
-      <div className="px-6 pt-8 pb-5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
+      {/* Header — no close button; shadow makes scrolling content appear to slide under it */}
+      <div className="px-6 pt-8 pb-5 border-b border-zinc-100 dark:border-zinc-800 shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] relative z-10">
         <h2 className="font-sans font-black text-2xl text-brand-blue">Terms & Service Policies</h2>
         <p className="text-[0.65rem] font-medium text-zinc-400 mt-1">
           {BIZ.name} · Updated {BIZ.year}
         </p>
       </div>
 
+      {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-6 space-y-8">
-        <div className="p-5 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+        <div className="p-5 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 shadow-[0_2px_10px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
           <h3 className="font-bold flex items-center gap-2 mb-2 text-[0.82rem] text-zinc-900 dark:text-zinc-50">
             <Info weight="fill" className="w-4 h-4" aria-hidden="true" /> Operational Rule
           </h3>
@@ -253,6 +274,7 @@ function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void 
         ))}
       </div>
 
+      {/* Pinned footer — only exit point */}
       <div className="px-6 py-5 border-t border-zinc-100 dark:border-zinc-800 shrink-0 bg-white dark:bg-zinc-950">
         <button
           onClick={handleAgree}
@@ -263,7 +285,7 @@ function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void 
       </div>
     </div>
   )
-                  }
+}
 
 // ─── Footer content ───────────────────────────────────────────────────────────
 function FooterContent() {
@@ -494,4 +516,4 @@ export function Footer() {
       <FooterContent />
     </footer>
   )
-    } 
+  } 
