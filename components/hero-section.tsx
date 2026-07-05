@@ -191,6 +191,15 @@ export function HeroSection() {
   const handleSelectHub = (index: number) => {
     setActiveHub(index)
     setSpotlightService(pickRandomService(index))
+
+    // Tells the Navbar to tint its logo/toggle/hamburger icons to this
+    // hub's color while on the homepage. Navbar resets this on any
+    // pathname change, so it never persists once the person navigates
+    // away (see requirement: stay on normal "/" color until clicked).
+    const hub = HUBS_DATA[index]
+    window.dispatchEvent(
+      new CustomEvent("abh:heroHubSelect", { detail: { light: hub.colorLight, dark: hub.colorDark } })
+    )
   }
 
   const handleReroll = () => {
