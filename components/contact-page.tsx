@@ -14,7 +14,7 @@ const FORM_HUBS: Record<string, { light: string; dark: string }> = {
   "Design Hub":                 { light: BRAND.orangeDark, dark: "#F9D1B0" },
   "E-Service Hub":              { light: "#15537D",        dark: "#A9D6F2" },
   "Tech Hub":                   { light: "#333333",        dark: "#B8CCE0" },
-  "Not Sure — Help Me Choose":  { light: "#777777",        dark: "#9A9A9A" },
+ "Not Sure — Help Me Choose":  { light: BRAND.neutral500, dark: "#9A9A9A" }, // was #777777 (4.48:1, fails AA text) — neutral500 is 4.67:1, passes
 }
 // Maps each CONTACT_LINKS entry to its icon by title — relies on the
 // exact titles set in lib/brand.ts ("WhatsApp Us", "Call Us", "Email Us",
@@ -45,7 +45,7 @@ function downloadBusinessVCard() {
   const url  = URL.createObjectURL(blob)
   const a    = document.createElement("a")
   a.href     = url
-  a.download = "Theji-Meje-ApexbytesHub.vcf"
+  a.download = "ApexbytesHub.vcf"
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -256,8 +256,15 @@ function ContactPageInner() {
     elsewhere in this file (e.g. HubSelect's option rows). Padding and
     min-height are sized for comfortable thumb taps on mobile. */}
 <div className="grid grid-cols-2 gap-3">
-  {CONTACT_LINKS.map((c) => {
+{CONTACT_LINKS.map((c) => {
     const Icon = CONTACT_ICONS[c.title] ?? Phone
+    // "Visit Us" carries a themed {dotLight, dotDark} pair (its flat
+    // blueDark used to fail contrast on the dark-mode chip); every other
+    // entry still uses a single flat `dot` since those already pass in
+    // both themes with adequate margin.
+    const dotColor = "dotLight" in c
+      ? (isDark ? c.dotDark : c.dotLight)
+      : c.dot
     return (
       <a
         key={c.title}
@@ -266,13 +273,13 @@ function ContactPageInner() {
         rel="noopener noreferrer"
         className="group flex flex-col items-center justify-center text-center gap-2 p-4 min-h-[104px] abh-card border-transparent transition-all duration-200 active:scale-[0.97]"
         style={{ borderColor: "transparent" }}
-        onMouseEnter={(e) => { e.currentTarget.style.borderColor = c.dot }}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = dotColor }}
         onMouseLeave={(e) => { e.currentTarget.style.borderColor = "transparent" }}
       >
         <span
           className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 transition-colors duration-200 text-zinc-400 dark:text-zinc-500 bg-zinc-50 dark:bg-zinc-900"
-          style={{ ["--icon-color" as any]: c.dot }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = c.dot; e.currentTarget.style.backgroundColor = `${c.dot}15` }}
+          style={{ ["--icon-color" as any]: dotColor }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = dotColor; e.currentTarget.style.backgroundColor = `${dotColor}15` }}
           onMouseLeave={(e) => { e.currentTarget.style.color = ""; e.currentTarget.style.backgroundColor = "" }}
         >
           <Icon size={20} weight="fill" aria-hidden="true" />
