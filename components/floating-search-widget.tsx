@@ -283,7 +283,10 @@ export function FloatingSearchWidget() {
 
           {/* Search input */}
           <div className="px-5 pt-4 pb-2 shrink-0">
-            <div className={cn("flex items-center gap-2 px-4 py-2.5 border-b border-zinc-200 dark:border-zinc-800")}>
+            <div className={cn(
+              "flex items-center justify-center gap-2 px-4 py-3 rounded-[14px] relative",
+              GLASS.item
+            )}>
               <MagnifyingGlass size={16} weight="bold" className="shrink-0 text-zinc-400" />
               <input
                 ref={inputRef}
@@ -291,10 +294,10 @@ export function FloatingSearchWidget() {
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Search"
-                className="flex-1 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none min-w-0 text-center focus:text-left"
+                className="flex-1 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none min-w-0 text-center px-2"
               />
               {query && (
-                <button onClick={() => setQuery("")} className="w-5 h-5 rounded-[14px] bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 shrink-0">
+                <button onClick={() => setQuery("")} className="w-5 h-5 rounded-[14px] bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 shrink-0 absolute right-4">
                   <X size={11} weight="bold" />
                 </button>
               )}
@@ -341,4 +344,4 @@ export function FloatingSearchWidget() {
       )}
     </>
   )
-        } 
+  } 
