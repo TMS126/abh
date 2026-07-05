@@ -258,7 +258,7 @@ export const FAQS = [
   {
     question: "How long does it take to complete a design or document task?",
     answer:
-      "Most basic tasks are same-day. Custom design work takes 24–48 hours depending on complexity.",
+      "Print and Document Hub tasks are same-day. Design Hub work (logos, flyers, business cards, invitations) takes 2–3 business days.",
   },
   {
     question: "What are your payment terms?",
