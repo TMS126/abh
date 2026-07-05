@@ -25,6 +25,11 @@ const GLASS = {
 
 const ACCENT_ORANGE = "#F4A261"
 
+// Fixed height for the results viewport — keeps the panel's footprint
+// stable as the match count changes while typing, instead of jumping
+// around. Individual rows still animate in/out inside this frame.
+const RESULTS_HEIGHT = "360px"
+
 interface SearchableService {
   hubId: HubId; sectionTitle: string; name: string
   price: string; description: string; requirements: string[]
@@ -282,7 +287,7 @@ export function FloatingSearchWidget() {
             </button>
           </div>
 
-          {/* Search input — no visible border anywhere, 14px corners, soft shadow */}
+          {/* Search input — permanent ring, no solid fill */}
           <div className="px-5 pt-3 pb-1.5 shrink-0">
             <div className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-[14px] border-2 border-blue-500">
               <MagnifyingGlass size={16} weight="bold" className="shrink-0 text-blue-500" />
@@ -293,7 +298,8 @@ export function FloatingSearchWidget() {
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Search"
                 className="flex-1 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 min-w-0 text-center px-2 outline-none"
-              />  {query && (
+              />
+              {query && (
                 <button onClick={() => setQuery("")} className="w-5 h-5 rounded-[14px] bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 shrink-0">
                   <X size={11} weight="bold" />
                 </button>
@@ -301,10 +307,18 @@ export function FloatingSearchWidget() {
             </div>
           </div>
 
-          {/* Results */}
-          <div className="flex-1 overflow-y-auto min-h-0 px-5 pb-5 pt-2">
+          {/* Results — fixed-height viewport so the panel never jumps as
+              the match count changes; each row/state fades + slides in
+              on its own rather than popping into place. */}
+          <div
+            className="overflow-y-auto px-5 pb-5 pt-2"
+            style={{ height: RESULTS_HEIGHT }}
+          >
             {query.trim().length === 0 ? (
-              <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 text-center py-8">
+              <p
+                key="hint"
+                className="text-xs font-medium text-zinc-400 dark:text-zinc-500 text-center py-8 animate-in fade-in duration-300"
+              >
                 Start typing to find a service — CV, laminating, SASSA
               </p>
             ) : results.length > 0 ? (
@@ -316,7 +330,8 @@ export function FloatingSearchWidget() {
                     <button
                       key={`${s.hubId}-${s.name}-${idx}`}
                       onClick={() => pick(s)}
-                      className="w-full flex items-center gap-3 p-2.5 rounded-[14px] shadow-sm transition-colors text-left hover:bg-white/40 dark:hover:bg-white/10 bg-white/80 dark:bg-white/[0.06]"
+                      style={{ animationDelay: `${idx * 40}ms`, animationFillMode: "backwards" }}
+                      className="w-full flex items-center gap-3 p-2.5 rounded-[14px] shadow-sm transition-colors text-left hover:bg-white/40 dark:hover:bg-white/10 bg-white/80 dark:bg-white/[0.06] animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out"
                     >
                       <div className="w-9 h-9 rounded-[14px] flex items-center justify-center shrink-0 shadow-sm" style={{ backgroundColor: `${accent}20`, color: accent }}>
                         <HubIcon id={s.hubId} size={18} />
@@ -331,7 +346,7 @@ export function FloatingSearchWidget() {
                 })}
               </div>
             ) : (
-              <div className="text-center py-8">
+              <div key="empty" className="text-center py-8 animate-in fade-in duration-300">
                 <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">No services found</p>
                 <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-1">Try a different word or WhatsApp us directly.</p>
               </div>
