@@ -103,9 +103,26 @@ export function Navbar() {
   // orange/blue, tying it to the same per-page palette as the edge glow
   // and mobile nav. Falls back to undefined (existing hardcoded colors)
   // if a route somehow isn't in the map.
-  const routeAccent = MOBILE_NAV_COLORS[pathname]
-  const routeColor  = mounted && routeAccent ? (theme === "dark" ? routeAccent.dark : routeAccent.light) : undefined
+  // Hub color picked from the Core Hub Ecosystem selector on the homepage
+  // (see hero-section.tsx's handleSelectHub). Starts null so the navbar
+  // stays on the normal "/" route color until the person actually clicks
+  // a hub — and resets to null on every pathname change, so it never
+  // carries over once they navigate away.
+  const [heroHubColor, setHeroHubColor] = useState<{ light: string; dark: string } | null>(null)
 
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ light: string; dark: string }>).detail
+      if (detail) setHeroHubColor(detail)
+    }
+    window.addEventListener("abh:heroHubSelect", handler)
+    return () => window.removeEventListener("abh:heroHubSelect", handler)
+  }, [])
+
+  useEffect(() => { setHeroHubColor(null) }, [pathname])
+
+  const routeAccent = (pathname === "/" && heroHubColor) ? heroHubColor : MOBILE_NAV_COLORS[pathname]
+  const routeColor   = mounted && routeAccent ? (theme === "dark" ? routeAccent.dark : routeAccent.light) : undefined
   // Logo icon fill — same routeColor as the controls pill, so the logo
   // itself now re-tints per page (blue on Home, green on Services, orange
   // on Gallery, etc.) instead of the old two-state light/dark CSS filter
