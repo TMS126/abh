@@ -338,11 +338,14 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
   const wrapRef   = useRef<HTMLDivElement>(null)
   const index     = useMemo(buildSearchIndex, [])
 
-  // Theme-aware fill + hover shade, same pairing pattern as the WhatsApp
-  // button in the hero (base color / dark-hover color), just swapped for
-  // brand green so it reads consistently in both light and dark mode.
-  const fillColor  = isDark ? BRAND.greenDark : BRAND.green
-  const hoverColor = isDark ? BRAND.greenDeep : BRAND.greenDark
+  // Resting color kept identical to PageEdgeGlow's "/services" route color
+  // (BRAND.green), in both light and dark mode, so this pill and the
+  // top-of-page flash read as the same brand color rather than a
+  // similar-but-different shade — see components/page-edge-glow.tsx.
+  // hoverColor stays a separate, deliberately darker shade purely as mouse
+  // hover feedback, not a theme swap.
+  const fillColor  = BRAND.green
+  const hoverColor = BRAND.greenDeep
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -1079,4 +1082,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-    } 
+  }
