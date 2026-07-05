@@ -287,9 +287,9 @@ export function FloatingSearchWidget() {
             </button>
           </div>
 
-          {/* Search input — permanent ring, no solid fill */}
+          {/* Search input — underline style, no box/ring */}
           <div className="px-5 pt-3 pb-1.5 shrink-0">
-            <div className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-[14px] border-2 border-blue-500">
+            <div className="flex items-center justify-center gap-2 px-1 py-1.5 border-b-2 border-blue-500">
               <MagnifyingGlass size={16} weight="bold" className="shrink-0 text-blue-500" />
               <input
                 ref={inputRef}
