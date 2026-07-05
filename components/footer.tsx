@@ -6,18 +6,19 @@ import { useTheme } from "next-themes"
 import Image from "next/image"
 import {
   WhatsappLogo, EnvelopeSimple,
-  Printer, FileText, Palette,
+  X, Printer, FileText, Palette,
   Globe, Cpu, Info, Heart,
   CaretDown, CurrencyDollar,
   Copy, Check,
 } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
-import { BRAND, BIZ, WA, FOOTER_NAV, FAQS } from "@/lib/brand"
+import { BRAND, BIZ, WA, FOOTER_NAV, FAQS, HUB_COLORS } from "@/lib/brand"
 import { BusinessStatusFull } from "@/components/business-status"
 
 const TERMS_SECTIONS = [
   {
     icon: "Printer",
+    color: HUB_COLORS.print.primary,
     title: "Print Hub – Everything Paper",
     points: [
       { label: "Printing Services", text: "B&W, Colour, and Bulk printing. For bulk discounts, submit your entire order together." },
@@ -29,6 +30,7 @@ const TERMS_SECTIONS = [
   },
   {
     icon: "FileText",
+    color: HUB_COLORS.doc.primary,
     title: "Document Hub – All Document Work",
     points: [
       { label: "Document Assistance", text: "Full CV creation, typing, editing, and formatting. You are responsible for the accuracy of all content you provide." },
@@ -40,6 +42,7 @@ const TERMS_SECTIONS = [
   },
   {
     icon: "Palette",
+    color: HUB_COLORS.design.primary,
     title: "Design Hub – Creative Work",
     points: [
       { label: "Branding Design", text: "Logos and business cards built in Adobe Illustrator. No generic templates." },
@@ -52,6 +55,7 @@ const TERMS_SECTIONS = [
   },
   {
     icon: "Globe",
+    color: HUB_COLORS.eservice.primary,
     title: "E-Service Hub – External Systems",
     points: [
       { label: "Government Services", text: `Admin help across SARS, SASSA, CSD, PSIRA, UIF, etc. ${BIZ.name} is not responsible for government processing delays.` },
@@ -64,6 +68,7 @@ const TERMS_SECTIONS = [
   },
   {
     icon: "Cpu",
+    color: HUB_COLORS.tech.primary,
     title: "Tech Hub – Hardware & Software",
     points: [
       { label: "System Maintenance", text: "Software installations, cleaning, virus removal, and performance optimisation." },
@@ -74,6 +79,7 @@ const TERMS_SECTIONS = [
   },
   {
     icon: "CurrencyDollar",
+    color: BRAND.dark100,
     title: "Payment Terms",
     points: [
       { label: "Standard Services", text: "Payable on execution. Clear, upfront pricing with no hidden fees." },
@@ -83,6 +89,7 @@ const TERMS_SECTIONS = [
   },
   {
     icon: "Info",
+    color: BRAND.dark100,
     title: "General Terms",
     points: [
       { label: "Appointments", text: "Confirmed in advance; late arrival may mean rescheduling. Cancellations need 24-hour notice where possible." },
@@ -93,17 +100,17 @@ const TERMS_SECTIONS = [
   },
 ]
 
-const ICON_MAP: Record<string, React.ReactNode> = {
-  Printer:        <Printer        weight="fill" className="w-4 h-4" aria-hidden="true" />,
-  FileText:       <FileText       weight="fill" className="w-4 h-4" aria-hidden="true" />,
-  Palette:        <Palette        weight="fill" className="w-4 h-4" aria-hidden="true" />,
-  Globe:          <Globe          weight="fill" className="w-4 h-4" aria-hidden="true" />,
-  Cpu:            <Cpu            weight="fill" className="w-4 h-4" aria-hidden="true" />,
-  CurrencyDollar: <CurrencyDollar weight="fill" className="w-4 h-4" aria-hidden="true" />,
-  Info:           <Info           weight="fill" className="w-4 h-4" aria-hidden="true" />,
+const ICON_COMPONENTS: Record<string, React.ElementType> = {
+  Printer: Printer,
+  FileText: FileText,
+  Palette: Palette,
+  Globe: Globe,
+  Cpu: Cpu,
+  CurrencyDollar: CurrencyDollar,
+  Info: Info,
 }
 
-// ─── Full-screen mandatory Terms modal — agree-only, no X/Esc/backdrop close ──
+// ─── Terms modal — full-screen on mobile, centered padded card on desktop ──
 function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void }) {
   const guardActive = useRef(false)
   const BUFFER = 5
@@ -139,7 +146,7 @@ function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void 
     }
   }, [open])
 
-  const handleAgree = () => {
+  const handleClose = () => {
     guardActive.current = false
     window.history.go(-BUFFER)
     onAgree()
@@ -152,48 +159,69 @@ function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void 
       role="dialog"
       aria-modal="true"
       aria-label="Terms & Service Policies"
-      className="fixed inset-0 z-[99999] bg-white dark:bg-zinc-950 flex flex-col animate-in fade-in duration-200"
+      className="fixed inset-0 z-[99999] flex items-center justify-center md:p-8 bg-white dark:bg-zinc-950 md:bg-black/50 md:dark:bg-black/70 md:backdrop-blur-sm animate-in fade-in duration-200"
     >
-      <div className="px-6 pt-8 pb-5 border-b border-zinc-100 dark:border-zinc-800 shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] relative z-10">
-        <h2 className="font-sans font-black text-2xl text-brand-blue">Terms & Service Policies</h2>
-        <p className="text-[0.65rem] font-medium text-zinc-400 mt-1">
-          {BIZ.name} · Updated {BIZ.year}
-        </p>
-      </div>
+      <div className="relative w-full h-full md:h-[85vh] md:max-w-3xl bg-white dark:bg-zinc-950 md:rounded-[20px] md:shadow-2xl overflow-hidden flex flex-col animate-in md:zoom-in-95 duration-300">
 
-      <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-6 space-y-8">
-        <div className="p-5 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 shadow-[0_2px_10px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
-          <h3 className="font-bold flex items-center gap-2 mb-2 text-[0.82rem] text-zinc-900 dark:text-zinc-50">
-            <Info weight="fill" className="w-4 h-4" aria-hidden="true" /> Operational Rule
-          </h3>
-          <p className="text-[0.82rem] text-zinc-600 dark:text-zinc-400 leading-relaxed">
-            By tapping "I Agree" below, you confirm full agreement with all operational rules and terms listed here.
-          </p>
+        {/* Header — small X, no other dismiss path */}
+        <div className="px-6 md:px-10 pt-8 pb-5 border-b border-zinc-100 dark:border-zinc-800 shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] relative z-10 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="font-sans font-black text-2xl text-brand-blue">Terms & Service Policies</h2>
+            <p className="text-[0.65rem] font-medium text-zinc-400 mt-1">
+              {BIZ.name} · Updated {BIZ.year}
+            </p>
+          </div>
+          <button
+            onClick={handleClose}
+            aria-label="Close Terms & Service Policies"
+            className="w-8 h-8 shrink-0 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all active:scale-95"
+          >
+            <X size={14} weight="bold" aria-hidden="true" />
+          </button>
         </div>
 
-        {TERMS_SECTIONS.map((s, i) => (
-          <div key={i} className="space-y-3">
-            <h3 className="font-black flex items-center gap-2 text-[0.82rem] text-brand-blue">
-              {ICON_MAP[s.icon]} {s.title}
-            </h3>
-            <ul className="space-y-2 list-disc list-inside pl-1">
-              {s.points.map((p, j) => (
-                <li key={j} className="text-[0.82rem] text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                  <strong className="text-zinc-700 dark:text-zinc-300">{p.label}:</strong> {p.text}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
+        {/* Scrollable body — constrained + padded on desktop */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-6 md:px-10 py-6 md:py-10">
+          <div className="max-w-2xl mx-auto space-y-8">
+            <div className="p-5 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 shadow-[0_2px_10px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
+              <h3 className="font-bold flex items-center gap-2 mb-2 text-[0.82rem] text-zinc-900 dark:text-zinc-50">
+                <Info weight="fill" className="w-4 h-4" aria-hidden="true" /> Operational Rule
+              </h3>
+              <p className="text-[0.82rem] text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                By tapping "I Agree" below, you confirm full agreement with all operational rules and terms listed here.
+              </p>
+            </div>
 
-      <div className="px-6 py-5 border-t border-zinc-100 dark:border-zinc-800 shrink-0 bg-white dark:bg-zinc-950">
-        <button
-          onClick={handleAgree}
-          className="w-full py-4 rounded-[14px] bg-brand-blue text-white font-black text-[0.9rem] active:scale-[0.98] transition-transform"
-        >
-          I Agree
-        </button>
+            {TERMS_SECTIONS.map((s, i) => {
+              const IconComp = ICON_COMPONENTS[s.icon]
+              return (
+                <div key={i} className="space-y-3">
+                  <h3 className="font-black flex items-center gap-2 text-[0.82rem]" style={{ color: s.color }}>
+                    <IconComp weight="fill" className="w-4 h-4 shrink-0" aria-hidden="true" style={{ color: s.color }} />
+                    {s.title}
+                  </h3>
+                  <ul className="space-y-2 list-disc list-inside pl-1">
+                    {s.points.map((p, j) => (
+                      <li key={j} className="text-[0.82rem] text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                        <strong className="text-zinc-700 dark:text-zinc-300">{p.label}:</strong> {p.text}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Footer — button shrinks to natural width, centered */}
+        <div className="px-6 md:px-10 py-6 border-t border-zinc-100 dark:border-zinc-800 shrink-0 bg-white dark:bg-zinc-950 flex justify-center">
+          <button
+            onClick={handleClose}
+            className="px-10 py-3 rounded-[14px] bg-brand-blue text-white font-black text-[0.9rem] active:scale-[0.98] transition-transform"
+          >
+            I Agree
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -313,13 +341,11 @@ function FooterContent() {
 
   const toggleFaqIndex = (i: number) => setOpenFaqIndex((prev) => (prev === i ? null : i))
 
-  // FAQs already live on the Contact page — don't duplicate them in the footer there
   const showFaq = pathname !== "/contact"
 
   return (
     <div className="pt-16 pb-12">
 
-      {/* ── FAQ — centered, same placement rules on mobile and desktop ── */}
       {showFaq && (
         <div className="px-6 mb-12 flex justify-center">
           <FaqAccordion
@@ -420,7 +446,6 @@ function FooterContent() {
         </div>
       </div>
 
-      {/* ── Legal bar — Terms centered, same size as "Built with ❤️" ── */}
       <div className="max-w-[1200px] mx-auto border-t border-zinc-100 dark:border-zinc-800 pt-8 px-6 md:px-8 grid grid-cols-1 md:grid-cols-3 items-center gap-4">
         <p className="text-[0.65rem] font-medium text-zinc-400 text-center md:text-left">
           © {new Date().getFullYear()} {BIZ.name}. All rights reserved.
@@ -438,7 +463,6 @@ function FooterContent() {
         </p>
       </div>
 
-      {/* ── Terms — full-screen, agree-only ── */}
       <TermsGateModal
         open={isTermsOpen}
         onAgree={() => setIsTermsOpen(false)}
@@ -454,4 +478,4 @@ export function Footer() {
       <FooterContent />
     </footer>
   )
-              } 
+           } 
