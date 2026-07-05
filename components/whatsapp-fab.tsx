@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
-import { X, WhatsappLogo, PaperPlaneTilt, Check, CaretDown } from "@phosphor-icons/react"
+import { X, WhatsappLogo, PaperPlaneTilt, Check } from "@phosphor-icons/react"
 import { BIZ } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 import { useTheme } from "next-themes"
@@ -11,36 +11,30 @@ import { useExclusiveWidget } from "@/hooks/use-exclusive-widget"
 const WA_NUMBER  = "27753338260"
 const GREETING   = "Hi there 👋 Tell us what you need and we'll get back to you right away!"
 
-// ── WhatsApp's actual wallpaper/tick colors — kept purely as the backdrop
-// feel and status accents. Bubble fills below no longer use WA's solid
-// bubbleIn/bubbleOut colors; those are replaced by the glass tokens further
-// down so the panel matches the Quote Calculator widget's frosted style. ──
+// ── WhatsApp's actual palette — restored as real solid colors for every
+// surface that's meant to read as an authentic WhatsApp chat (header,
+// wallpaper, bubbles, compose bar). The glass/frosted treatment made these
+// hard to read against the page background, so header/bubbles/compose are
+// back to true WA colors rather than translucency. ──────────────────────
 const WA = {
+  headerLight:   "#075E54",
+  headerDark:    "#1F2C34",
   wallpaperLight: "#E5DDD5",
   wallpaperDark:  "#0B141A",
+  bubbleInLight:  "#FFFFFF",
+  bubbleInDark:   "#202C33",
+  bubbleOutLight: "#D9FDD3",
+  bubbleOutDark:  "#005C4B",
   textLight:      "#111B21",
   textDark:       "#E9EDEF",
   subLight:       "#667781",
   subDark:        "#8696A0",
+  composeBarLight:"#F0F2F5",
+  composeBarDark: "#1F2C34",
+  composeFieldLight: "#FFFFFF",
+  composeFieldDark:  "#2A3942",
   accent:         "#25D366",
   tick:           "#53BDEB",
-} as const
-
-// ── Same glass tokens used in QuoteCalculatorWidget, reused here so both
-// FAB panels share one visual language. dropdown/chatLabel added so the
-// last two remaining solid surfaces (menu overlay, FAB slide-out label)
-// also read as glass instead of flat opaque fills. ──────────────────────
-const GLASS = {
-  panel:   "bg-white/70 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/40 dark:border-white/10",
-  header:  "bg-white/50 dark:bg-zinc-900/40 backdrop-blur-xl border-b border-white/40 dark:border-white/10",
-  bubbleIn:  "bg-white/70 dark:bg-zinc-900/55 backdrop-blur-md border border-white/60 dark:border-white/10",
-  bubbleOut: "bg-[#25D366]/15 dark:bg-[#25D366]/12 backdrop-blur-md border border-[#25D366]/30",
-  pill:    "bg-zinc-100/80 dark:bg-white/[0.08] border border-white/60 dark:border-white/10",
-  btn:     "bg-zinc-100/70 dark:bg-white/[0.07] border border-white/60 dark:border-white/10",
-  composeBar: "bg-white/60 dark:bg-zinc-900/50 backdrop-blur-xl border-t border-white/40 dark:border-white/10",
-  composeField: "bg-white/80 dark:bg-white/[0.06] border border-white/70 dark:border-white/10",
-  dropdown: "bg-white/80 dark:bg-zinc-900/75 backdrop-blur-2xl border border-white/50 dark:border-white/10",
-  chatLabel: "bg-white/75 dark:bg-zinc-900/65 backdrop-blur-md border border-white/40 dark:border-white/10",
 } as const
 
 const HUBS = [
@@ -86,12 +80,11 @@ export function WhatsAppFAB() {
   const [hub,     setHub]            = useState("")
   const [note,    setNote]           = useState("")
   const [step,    setStep]           = useState<"form" | "sent">("form")
-  const [isMenuOpen, setIsMenuOpen]  = useState(false)
+  const [hubPicking, setHubPicking]  = useState(false)
   const [openTime, setOpenTime]      = useState("")
   const [sentTime, setSentTime]      = useState("")
 
   const nameRef                      = useRef<HTMLInputElement>(null)
-  const menuRef                      = useRef<HTMLDivElement>(null)
   const scrollTimer                  = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Mount delay
@@ -130,18 +123,6 @@ export function WhatsAppFAB() {
     return () => document.removeEventListener("keydown", fn)
   }, [isOpen])
 
-  // Close menu on click outside
-  useEffect(() => {
-    if (!isMenuOpen) return
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setIsMenuOpen(false)
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [isMenuOpen])
-
   // Body scroll lock
   useEffect(() => {
     if (!isOpen) return
@@ -163,7 +144,7 @@ export function WhatsAppFAB() {
       setName("");
       setHub("");
       setNote("");
-      setIsMenuOpen(false);
+      setHubPicking(false);
     }, 400)
   }
 
@@ -183,10 +164,15 @@ export function WhatsAppFAB() {
     setStep("sent")
   }
 
-  // ── Theme-derived tokens ────────────────────────────────────────────────
+  // ── Theme-derived tokens — real WhatsApp colors ─────────────────────────
+  const headerBg     = isDark ? WA.headerDark      : WA.headerLight
   const wallpaperBg  = isDark ? WA.wallpaperDark    : WA.wallpaperLight
+  const bubbleIn     = isDark ? WA.bubbleInDark     : WA.bubbleInLight
+  const bubbleOut    = isDark ? WA.bubbleOutDark    : WA.bubbleOutLight
   const textColor    = isDark ? WA.textDark         : WA.textLight
   const subColor     = isDark ? WA.subDark          : WA.subLight
+  const composeBarBg = isDark ? WA.composeBarDark   : WA.composeBarLight
+  const composeField = isDark ? WA.composeFieldDark : WA.composeFieldLight
   const wallpaperPattern = buildWallpaperPattern(isDark ? "#FFFFFF" : "#000000")
 
   return (
@@ -204,75 +190,79 @@ export function WhatsAppFAB() {
       {isOpen && (
         <div
           className={cn(
-            "fixed bottom-24 right-4 left-4 md:left-auto md:right-6 z-[9991] md:w-[420px] max-h-[75vh]",
-            "rounded-[20px] shadow-2xl flex flex-col overflow-hidden",
-            "animate-in slide-in-from-bottom-4 fade-in duration-300",
-            GLASS.panel
+            "fixed bottom-24 right-4 left-4 md:left-auto md:right-6 z-[9991] md:w-[400px] max-h-[75vh]",
+            "rounded-[20px] shadow-2xl flex flex-col overflow-hidden bg-white dark:bg-zinc-950",
+            "animate-in slide-in-from-bottom-4 fade-in duration-300"
           )}
-          style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.25)" }}
+          style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.25)" }}
         >
-          {/* Specular highlight strip — same touch as the Quote Calculator panel */}
-          <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent pointer-events-none z-10" />
-
-          {/* ── Glass header — logo.png in a neutral frame, no color tint,
-              so it reads as a plain brand mark rather than a WhatsApp-teal
-              chat header. More breathing room (py-6, gap-4) than before. ── */}
-          <div className={cn("flex items-center gap-4 px-6 py-6 shrink-0", GLASS.header)}>
-            <div
-              className={cn(
-                "w-12 h-12 rounded-[14px] flex items-center justify-center shrink-0 p-1.5",
-                "bg-zinc-100/70 dark:bg-white/[0.08] border border-white/60 dark:border-white/10"
-              )}
-            >
-              <div className="relative w-full h-full">
-                <Image src="/logo.png" alt="" fill sizes="48px" className="object-contain" />
+          {/* ── WhatsApp-style header — solid teal bar, real WA color.
+              logo.png replaces the old avatar glyph, tinted via filter so
+              it's a dark mark in light mode and a light mark in dark mode
+              regardless of the file's own colors — same trick used for the
+              navbar's watermark logo. ── */}
+          <div
+            className="flex items-center gap-3.5 px-5 py-5 shrink-0"
+            style={{ backgroundColor: headerBg }}
+          >
+            <div className="w-11 h-11 rounded-[12px] flex items-center justify-center shrink-0 bg-white/90 p-1.5">
+              <div
+                className="relative w-full h-full"
+                style={{ filter: isDark ? "brightness(0) invert(1)" : "brightness(0)" }}
+              >
+                <Image src="/logo.png" alt="" fill sizes="44px" className="object-contain" />
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-sans font-black text-[1.02rem] leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 truncate">
+              <h3 className="font-sans font-black text-[0.98rem] leading-tight tracking-tight text-white truncate">
                 {BIZ.name}
               </h3>
-              <div className="flex items-center gap-1.5 mt-1">
+              <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="relative flex h-2 w-2 shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
                 </span>
-                <p className="text-[0.7rem] font-semibold text-zinc-500 dark:text-zinc-400">
+                <p className="text-[0.7rem] font-medium text-white/80">
                   Online · replies within 15 min
                 </p>
               </div>
             </div>
             <button
               onClick={handleClose}
-              className={cn("w-9 h-9 rounded-full flex items-center justify-center text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors shrink-0", GLASS.btn)}
+              className="w-9 h-9 rounded-full flex items-center justify-center text-white/90 hover:bg-white/10 transition-colors shrink-0"
               aria-label="Close"
             >
-              <X size={17} weight="bold" />
+              <X size={18} weight="bold" />
             </button>
           </div>
 
-          {/* ── Chat body — wallpaper background kept for the "chat" feel,
-              bubbles glass, more breathing room between them (gap-4, py-6) ── */}
+          {/* ── Chat body — real WA wallpaper + solid bubble colors ──── */}
           <div
             className="flex-1 overflow-y-auto overscroll-contain min-h-0 relative"
             style={{ backgroundColor: wallpaperBg, backgroundImage: wallpaperPattern, backgroundSize: "200px 200px" }}
           >
             {step === "form" ? (
-              <div className="relative z-10 px-5 py-6 flex flex-col gap-4">
+              <div className="relative z-10 px-4 py-5 flex flex-col gap-3">
 
-                {/* Greeting — incoming glass bubble */}
-                <div className={cn("relative self-start max-w-[85%] px-5 py-3.5 rounded-[16px] rounded-tl-[4px] shadow-sm", GLASS.bubbleIn)}>
+                {/* Greeting — incoming message bubble */}
+                <div
+                  className="relative self-start max-w-[85%] px-4 py-3 rounded-lg rounded-tl-none shadow-sm"
+                  style={{ backgroundColor: bubbleIn }}
+                >
                   <p className="text-[0.84rem] leading-relaxed pr-10" style={{ color: textColor }}>
                     {GREETING}
                   </p>
-                  <span className="absolute bottom-2 right-3.5 text-[0.6rem]" style={{ color: subColor }}>
+                  <span className="absolute bottom-1.5 right-3 text-[0.6rem]" style={{ color: subColor }}>
                     {openTime}
                   </span>
                 </div>
 
-                {/* Name — incoming glass bubble containing the field */}
-                <div className={cn("relative self-start w-[92%] max-w-[92%] px-5 py-3.5 rounded-[16px] rounded-tl-[4px] shadow-sm", GLASS.bubbleIn)}>
-                  <label className="text-[0.62rem] font-black uppercase tracking-widest block mb-2" style={{ color: subColor }}>
+                {/* Name — incoming bubble containing the field */}
+                <div
+                  className="relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-lg rounded-tl-none shadow-sm"
+                  style={{ backgroundColor: bubbleIn }}
+                >
+                  <label className="text-[0.62rem] font-black uppercase tracking-widest block mb-1.5" style={{ color: subColor }}>
                     Your Name
                   </label>
                   <input
@@ -286,15 +276,22 @@ export function WhatsAppFAB() {
                   />
                 </div>
 
-                {/* Hub selector — incoming glass bubble containing dropdown trigger */}
-                <div className={cn("relative self-start w-[92%] max-w-[92%] px-5 py-3.5 rounded-[16px] rounded-tl-[4px] shadow-sm", GLASS.bubbleIn)} ref={menuRef}>
-                  <label className="text-[0.62rem] font-black uppercase tracking-widest block mb-2" style={{ color: subColor }}>
+                {/* Hub selector — no longer a floating dropdown. Tapping
+                    the summary row reveals pills INLINE, in normal
+                    document flow, so they push the note bubble down
+                    instead of floating over it. Pills appear immediately
+                    below the question, not lower over other content. */}
+                <div
+                  className="relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-lg rounded-tl-none shadow-sm"
+                  style={{ backgroundColor: bubbleIn }}
+                >
+                  <label className="text-[0.62rem] font-black uppercase tracking-widest block mb-1.5" style={{ color: subColor }}>
                     What do you need help with?
                   </label>
 
                   <button
                     type="button"
-                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    onClick={() => setHubPicking(!hubPicking)}
                     className="w-full text-left flex items-center justify-between"
                   >
                     <div className="flex flex-col min-w-0">
@@ -309,80 +306,46 @@ export function WhatsAppFAB() {
                         </>
                       ) : (
                         <span className="text-[0.86rem] font-semibold" style={{ color: subColor }}>
-                          Select an option...
+                          Tap to choose...
                         </span>
                       )}
                     </div>
-                    <CaretDown
-                      size={16}
-                      weight="bold"
-                      className={cn("transition-transform duration-200 shrink-0", isMenuOpen && "rotate-180")}
-                      style={{ color: subColor }}
-                    />
                   </button>
 
-                  {/* Dropdown menu — now uses GLASS.dropdown instead of a
-                      near-opaque solid fill, so it's consistent glass with
-                      the rest of the panel rather than the one remaining
-                      solid surface. */}
-                  {isMenuOpen && (
-                    <div
-                      className={cn(
-                        "absolute left-0 right-0 z-[9999] mt-3 p-2",
-                        "rounded-[18px] shadow-xl",
-                        "animate-in fade-in zoom-in-95 duration-150 origin-top",
-                        GLASS.dropdown
-                      )}
-                    >
-                      <div className="flex flex-col gap-1.5 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
-                        {HUBS.map((h) => {
-                          const isSelected = hub === h.id
-                          return (
-                            <button
-                              key={h.id}
-                              type="button"
-                              onClick={() => {
-                                setHub(h.id)
-                                setIsMenuOpen(false)
-                              }}
-                              className={cn(
-                                "w-full px-3.5 py-3 rounded-[12px] text-left flex items-center gap-3 transition-colors",
-                                isSelected
-                                  ? "bg-[#25D366]/10"
-                                  : "hover:bg-zinc-100/60 dark:hover:bg-white/5"
-                              )}
-                            >
-                              <div
-                                className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
-                                style={{
-                                  borderColor:     isSelected ? "#25D366" : "#d1d5db",
-                                  backgroundColor: isSelected ? "#25D366" : "transparent",
-                                }}
-                              >
-                                {isSelected && <Check size={8} weight="bold" className="text-white" />}
-                              </div>
-                              <div className="flex flex-col min-w-0">
-                                <span className={cn(
-                                  "text-[0.78rem] font-black leading-tight",
-                                  isSelected ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-700 dark:text-zinc-300"
-                                )}>
-                                  {h.label}
-                                </span>
-                                <span className="text-[0.64rem] font-semibold text-zinc-400 mt-0.5">
-                                  {h.hint}
-                                </span>
-                              </div>
-                            </button>
-                          )
-                        })}
-                      </div>
+                  {/* Pill grid — expands inline below the question */}
+                  {hubPicking && (
+                    <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t" style={{ borderColor: `${subColor}30` }}>
+                      {HUBS.map((h) => {
+                        const isSelected = hub === h.id
+                        return (
+                          <button
+                            key={h.id}
+                            type="button"
+                            onClick={() => { setHub(h.id); setHubPicking(false) }}
+                            className={cn(
+                              "px-3 py-2 rounded-full text-[0.74rem] font-black transition-colors border",
+                              isSelected ? "text-white" : "hover:bg-black/5 dark:hover:bg-white/5"
+                            )}
+                            style={{
+                              backgroundColor: isSelected ? WA.accent : "transparent",
+                              borderColor:     isSelected ? WA.accent : `${subColor}40`,
+                              color:           isSelected ? "#fff" : textColor,
+                            }}
+                          >
+                            {h.label}
+                          </button>
+                        )
+                      })}
                     </div>
                   )}
                 </div>
 
-                {/* Optional note — incoming glass bubble */}
-                <div className={cn("relative self-start w-[92%] max-w-[92%] px-5 py-3.5 rounded-[16px] rounded-tl-[4px] shadow-sm", GLASS.bubbleIn)}>
-                  <label className="text-[0.62rem] font-black uppercase tracking-widest block mb-2" style={{ color: subColor }}>
+                {/* Optional note — incoming bubble */}
+                <div
+                  className="relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-lg rounded-tl-none shadow-sm"
+                  style={{ backgroundColor: bubbleIn }}
+                >
+                  <label className="text-[0.62rem] font-black uppercase tracking-widest block mb-1.5" style={{ color: subColor }}>
                     Anything else? <span className="normal-case font-semibold opacity-60">(optional)</span>
                   </label>
                   <textarea
@@ -397,13 +360,16 @@ export function WhatsAppFAB() {
 
               </div>
             ) : (
-              /* Sent confirmation — outgoing glass bubble, tinted WhatsApp green, WA-style ticks */
-              <div className="relative z-10 min-h-full px-5 py-6 flex flex-col justify-end items-end gap-4">
-                <div className={cn("relative max-w-[85%] px-5 py-3.5 rounded-[16px] rounded-tr-[4px] shadow-sm", GLASS.bubbleOut)}>
-                  <p className="text-[0.84rem] leading-relaxed pr-14" style={{ color: textColor }}>
+              /* Sent confirmation — outgoing message bubble, real WA mint + ticks */
+              <div className="relative z-10 min-h-full px-4 py-5 flex flex-col justify-end items-end gap-3">
+                <div
+                  className="relative max-w-[85%] px-4 py-3 rounded-lg rounded-tr-none shadow-sm"
+                  style={{ backgroundColor: bubbleOut }}
+                >
+                  <p className="text-[0.84rem] leading-relaxed pr-14" style={{ color: isDark ? WA.textDark : WA.textLight }}>
                     Message ready — opening WhatsApp now…
                   </p>
-                  <span className="absolute bottom-2 right-3.5 flex items-center gap-0.5 text-[0.6rem]" style={{ color: subColor }}>
+                  <span className="absolute bottom-1.5 right-3 flex items-center gap-0.5 text-[0.6rem]" style={{ color: subColor }}>
                     {sentTime}
                     <span className="relative w-3.5 h-2.5 inline-block ml-0.5">
                       <Check size={11} weight="bold" className="absolute left-0" style={{ color: WA.tick }} />
@@ -413,8 +379,8 @@ export function WhatsAppFAB() {
                 </div>
                 <button
                   onClick={handleClose}
-                  className={cn("px-6 py-3 rounded-full text-[0.78rem] font-bold shadow-sm transition-colors", GLASS.composeField)}
-                  style={{ color: textColor }}
+                  className="px-5 py-2.5 rounded-full text-[0.78rem] font-bold shadow-sm"
+                  style={{ backgroundColor: composeField, color: textColor }}
                 >
                   Close
                 </button>
@@ -422,20 +388,22 @@ export function WhatsAppFAB() {
             )}
           </div>
 
-          {/* ── Compose bar — glass, send button stays WhatsApp green so
-              the action still reads clearly as "send" ── */}
+          {/* ── Compose bar — real WA solid colors ───────────────────── */}
           {step === "form" && (
-            <div className={cn("shrink-0 flex items-center gap-3 px-5 py-4", GLASS.composeBar)}>
+            <div
+              className="shrink-0 flex items-center gap-2.5 px-4 py-3.5"
+              style={{ backgroundColor: composeBarBg }}
+            >
               <div
-                className={cn("flex-1 rounded-full px-5 py-3.5 text-[0.82rem] font-medium truncate shadow-sm", GLASS.composeField)}
-                style={{ color: isValid ? textColor : subColor }}
+                className="flex-1 rounded-full px-4 py-3 text-[0.82rem] font-medium truncate shadow-sm"
+                style={{ backgroundColor: composeField, color: isValid ? textColor : subColor }}
               >
                 {isValid ? "Ready to send your message" : "Fill in your name & topic to continue"}
               </div>
               <button
                 onClick={handleSend}
                 disabled={!isValid}
-                className="w-11 h-11 rounded-full flex items-center justify-center text-white shrink-0 transition-transform active:scale-90 disabled:opacity-40 disabled:active:scale-100 shadow-md"
+                className="w-11 h-11 rounded-full flex items-center justify-center text-white shrink-0 transition-transform active:scale-90 disabled:opacity-40 disabled:active:scale-100"
                 style={{ backgroundColor: WA.accent }}
                 aria-label="Send"
               >
@@ -446,8 +414,7 @@ export function WhatsAppFAB() {
         </div>
       )}
 
-      {/* ── FAB — icon/color unchanged; slide-out label now glass instead
-          of a flat solid pill ── */}
+      {/* ── FAB ───────────────────────────────────────────────────── */}
       <div
         className={cn(
           "fixed z-[9992] right-4 bottom-6 group/wa",
@@ -459,12 +426,11 @@ export function WhatsAppFAB() {
         )}
       >
         <div className="flex items-center justify-end gap-2">
-          {/* Slide-out label — glass pill instead of flat solid white/zinc */}
+          {/* Slide-out label */}
           <span className={cn(
             "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap",
-            "text-[#25D366]",
-            "px-3 py-1.5 rounded-full shadow-md",
-            GLASS.chatLabel,
+            "bg-white dark:bg-zinc-900 text-[#25D366]",
+            "px-2.5 py-1 rounded-full shadow-md border border-zinc-100 dark:border-zinc-800",
             "transition-all duration-300 origin-right",
             isOpen
               ? "opacity-0 scale-x-0 pointer-events-none"
@@ -488,4 +454,4 @@ export function WhatsAppFAB() {
       </div>
     </>
   )
-    } 
+} 
