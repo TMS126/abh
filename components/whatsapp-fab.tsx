@@ -1,9 +1,8 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import Image from "next/image"
-import { X, WhatsappLogo, PaperPlaneTilt, Check, CaretDown } from "@phosphor-icons/react"
-import { BIZ, BRAND } from "@/lib/brand"
+import { X, WhatsappLogo, PaperPlaneTilt, Check, CaretDown, UserCircle } from "@phosphor-icons/react"
+import { BIZ } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 import { useTheme } from "next-themes"
 import { useExclusiveWidget } from "@/hooks/use-exclusive-widget"
@@ -11,12 +10,32 @@ import { useExclusiveWidget } from "@/hooks/use-exclusive-widget"
 const WA_NUMBER  = "27753338260"
 const GREETING   = "Hi there 👋 Tell us what you need and we'll get back to you right away!"
 
-// ── Same glass tokens as QuoteCalculatorWidget ─────────────────────────────────
+// ── WhatsApp's actual palette — header teal, chat wallpaper, bubble colors ──
+const WA = {
+  headerLight:   "#075E54",
+  headerDark:    "#1F2C34",
+  wallpaperLight: "#E5DDD5",
+  wallpaperDark:  "#0B141A",
+  bubbleInLight:  "#FFFFFF",
+  bubbleInDark:   "#202C33",
+  bubbleOutLight: "#D9FDD3",
+  bubbleOutDark:  "#005C4B",
+  textLight:      "#111B21",
+  textDark:       "#E9EDEF",
+  subLight:       "#667781",
+  subDark:        "#8696A0",
+  composeBarLight:"#F0F2F5",
+  composeBarDark: "#1F2C34",
+  composeFieldLight: "#FFFFFF",
+  composeFieldDark:  "#2A3942",
+  accent:         "#25D366",
+  tick:           "#53BDEB",
+} as const
+
+// ── Same glass tokens, still used for the floating dropdown menu (not a
+// chat bubble itself, so it keeps its own frosted-glass treatment) ──────────
 const GLASS = {
-  panel:   "bg-white/70 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/40 dark:border-white/10",
-  section: "bg-white/60 dark:bg-white/5 border border-white/60 dark:border-white/10",
-  item:    "bg-white/80 dark:bg-white/[0.06] border border-white/70 dark:border-white/[0.08]",
-  btn:     "bg-zinc-100/70 dark:bg-white/[0.07] border border-white/60 dark:border-white/10",
+  btn: "bg-white/15 border border-white/20",
 } as const
 
 const HUBS = [
@@ -27,6 +46,30 @@ const HUBS = [
   { id: "tech",     label: "Tech Hub",      hint: "PC repairs, software, setup" },
   { id: "other",    label: "Not sure yet",  hint: "We'll help you figure it out" },
 ]
+
+// Faint tiled doodle pattern approximating WhatsApp's chat wallpaper —
+// generated as an inline SVG so no external asset is needed.
+function buildWallpaperPattern(strokeColor: string) {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+      <g fill="none" stroke="${strokeColor}" stroke-width="1.2" opacity="0.35">
+        <circle cx="20" cy="30" r="6" />
+        <path d="M60 20 q10 -15 20 0 q10 15 20 0" />
+        <path d="M120 60 l8 8 l-8 8 l-8 -8 z" />
+        <circle cx="170" cy="40" r="4" />
+        <path d="M30 110 q8 10 16 0 q8 -10 16 0" />
+        <path d="M100 140 l10 10 m0 -10 l-10 10" />
+        <circle cx="160" cy="150" r="5" />
+        <path d="M60 170 q10 -12 20 0" />
+      </g>
+    </svg>
+  `
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`
+}
+
+function formatTime() {
+  return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+}
 
 export function WhatsAppFAB() {
   const { resolvedTheme }           = useTheme()
@@ -39,7 +82,9 @@ export function WhatsAppFAB() {
   const [note,    setNote]           = useState("")
   const [step,    setStep]           = useState<"form" | "sent">("form")
   const [isMenuOpen, setIsMenuOpen]  = useState(false)
-  
+  const [openTime, setOpenTime]      = useState("")
+  const [sentTime, setSentTime]      = useState("")
+
   const nameRef                      = useRef<HTMLInputElement>(null)
   const menuRef                      = useRef<HTMLDivElement>(null)
   const scrollTimer                  = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -64,9 +109,12 @@ export function WhatsAppFAB() {
     }
   }, [])
 
-  // Focus name on open
+  // Focus name + stamp the greeting bubble's time on open
   useEffect(() => {
-    if (isOpen && step === "form") setTimeout(() => nameRef.current?.focus(), 200)
+    if (isOpen && step === "form") {
+      setOpenTime(formatTime())
+      setTimeout(() => nameRef.current?.focus(), 200)
+    }
   }, [isOpen, step])
 
   // Close on Escape
@@ -105,11 +153,11 @@ export function WhatsAppFAB() {
 
   const handleClose = () => {
     setIsOpen(false)
-    setTimeout(() => { 
-      setStep("form"); 
-      setName(""); 
-      setHub(""); 
-      setNote(""); 
+    setTimeout(() => {
+      setStep("form");
+      setName("");
+      setHub("");
+      setNote("");
       setIsMenuOpen(false);
     }, 400)
   }
@@ -126,11 +174,20 @@ export function WhatsAppFAB() {
       note.trim() ? `More details: ${note.trim()}` : "",
     ].filter(Boolean).join("\n")
     window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message)}`, "_blank")
+    setSentTime(formatTime())
     setStep("sent")
   }
 
-  // Accent color matching calculator's titleAccent pattern
-  const accentColor = isDark ? "#CDEB9F" : "#25D366"
+  // ── Theme-derived tokens ────────────────────────────────────────────────
+  const headerBg     = isDark ? WA.headerDark      : WA.headerLight
+  const wallpaperBg  = isDark ? WA.wallpaperDark    : WA.wallpaperLight
+  const bubbleIn     = isDark ? WA.bubbleInDark     : WA.bubbleInLight
+  const bubbleOut    = isDark ? WA.bubbleOutDark    : WA.bubbleOutLight
+  const textColor    = isDark ? WA.textDark         : WA.textLight
+  const subColor     = isDark ? WA.subDark          : WA.subLight
+  const composeBarBg = isDark ? WA.composeBarDark   : WA.composeBarLight
+  const composeField = isDark ? WA.composeFieldDark : WA.composeFieldLight
+  const wallpaperPattern = buildWallpaperPattern(isDark ? "#FFFFFF" : "#000000")
 
   return (
     <>
@@ -149,66 +206,72 @@ export function WhatsAppFAB() {
           className={cn(
             "fixed bottom-24 right-4 left-4 md:left-auto md:right-6 z-[9991] md:w-[400px] max-h-[75vh]",
             "rounded-[20px] shadow-2xl flex flex-col overflow-hidden",
-            "animate-in slide-in-from-bottom-4 fade-in duration-300",
-            GLASS.panel
+            "animate-in slide-in-from-bottom-4 fade-in duration-300"
           )}
-          style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.3)" }}
+          style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.25)" }}
         >
-          {/* Specular highlight — same as calculator */}
-          <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent pointer-events-none" />
-
-          {/* Header */}
+          {/* ── WhatsApp-style header — solid teal bar ───────────────── */}
           <div
-            className="flex items-center gap-3 px-5 py-4 shrink-0 border-b border-white/20 dark:border-white/10"
-            style={{ background: "linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 100%)" }}
+            className="flex items-center gap-3 px-4 py-3 shrink-0"
+            style={{ backgroundColor: headerBg }}
           >
-            {/* Avatar */}
+            {/* Neutral avatar — no brand color/logo, just a plain profile glyph */}
             <div
-              className="relative w-9 h-9 rounded-full overflow-hidden shrink-0 flex items-center justify-center"
-              style={{ backgroundColor: BRAND.blue }}
+              className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+              style={{ backgroundColor: isDark ? "#2A3942" : "#E9EDEF" }}
             >
-              <Image src="/logo.png" alt="" fill sizes="36px" className="object-contain p-1.5" />
+              <UserCircle size={26} weight="fill" style={{ color: isDark ? "#CFD9DE" : "#54656F" }} />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-sans font-black text-lg leading-tight" style={{ color: accentColor }}>
+              <h3 className="font-sans font-bold text-[0.95rem] leading-tight text-white truncate">
                 {BIZ.name}
               </h3>
               <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                <p className="text-[0.62rem] font-semibold text-zinc-500 dark:text-zinc-400">
-                  Online · replies in ~30 min
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
+                </span>
+                <p className="text-[0.68rem] font-medium text-white/80">
+                  Online · replies within 15 min
                 </p>
               </div>
             </div>
             <button
               onClick={handleClose}
-              className={cn("w-8 h-8 rounded-full flex items-center justify-center text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors", GLASS.btn)}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-white/90 hover:bg-white/10 transition-colors"
               aria-label="Close"
             >
-              <X size={16} weight="bold" />
+              <X size={18} weight="bold" />
             </button>
           </div>
 
-          {/* Scrollable body */}
-          <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">
+          {/* ── Chat body — wallpaper background, bubbles ────────────── */}
+          <div
+            className="flex-1 overflow-y-auto overscroll-contain min-h-0 relative"
+            style={{ backgroundColor: wallpaperBg, backgroundImage: wallpaperPattern, backgroundSize: "200px 200px" }}
+          >
             {step === "form" ? (
-              <div className="px-5 py-5 flex flex-col gap-4">
+              <div className="relative z-10 px-3 py-4 flex flex-col gap-2">
 
-                {/* Greeting bubble */}
-                <div className={cn("relative self-start max-w-[88%] px-4 py-3 rounded-[12px] rounded-tl-none text-[0.80rem] leading-relaxed shadow-sm", GLASS.item)}>
-                  <span className="text-zinc-700 dark:text-zinc-300">{GREETING}</span>
-                  <span
-                    className="absolute -left-[6px] top-0 w-0 h-0"
-                    style={{
-                      borderTop: `8px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.9)"}`,
-                      borderLeft: "7px solid transparent",
-                    }}
-                  />
+                {/* Greeting — incoming message bubble */}
+                <div
+                  className="relative self-start max-w-[85%] px-3 py-2 rounded-lg rounded-tl-none shadow-sm"
+                  style={{ backgroundColor: bubbleIn }}
+                >
+                  <p className="text-[0.82rem] leading-relaxed pr-10" style={{ color: textColor }}>
+                    {GREETING}
+                  </p>
+                  <span className="absolute bottom-1 right-2 text-[0.6rem]" style={{ color: subColor }}>
+                    {openTime}
+                  </span>
                 </div>
 
-                {/* Name */}
-                <div>
-                  <label className="text-[0.62rem] font-black uppercase tracking-widest text-zinc-400 block mb-1.5">
+                {/* Name — incoming bubble containing the field */}
+                <div
+                  className="relative self-start w-[92%] max-w-[92%] px-3 py-2.5 rounded-lg rounded-tl-none shadow-sm"
+                  style={{ backgroundColor: bubbleIn }}
+                >
+                  <label className="text-[0.6rem] font-black uppercase tracking-widest block mb-1" style={{ color: subColor }}>
                     Your Name
                   </label>
                   <input
@@ -217,60 +280,53 @@ export function WhatsAppFAB() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Thembi"
-                    className={cn(
-                      "w-full px-4 py-2.5 rounded-[14px] text-[0.84rem] font-semibold",
-                      "text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400",
-                      "focus:outline-none transition-colors",
-                      GLASS.item
-                    )}
+                    className="w-full bg-transparent text-[0.84rem] font-semibold outline-none border-none"
+                    style={{ color: textColor }}
                   />
                 </div>
 
-                {/* Hub selector — Custom Dropdown */}
-                <div className="relative" ref={menuRef}>
-                  <label className="text-[0.62rem] font-black uppercase tracking-widest text-zinc-400 block mb-1.5">
+                {/* Hub selector — incoming bubble containing dropdown trigger */}
+                <div
+                  className="relative self-start w-[92%] max-w-[92%] px-3 py-2.5 rounded-lg rounded-tl-none shadow-sm"
+                  style={{ backgroundColor: bubbleIn }}
+                  ref={menuRef}
+                >
+                  <label className="text-[0.6rem] font-black uppercase tracking-widest block mb-1" style={{ color: subColor }}>
                     What do you need help with?
                   </label>
-                  
-                  {/* Dropdown Trigger */}
+
                   <button
                     type="button"
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className={cn(
-                      "w-full px-4 py-2.5 rounded-[14px] text-left flex items-center justify-between transition-all duration-150 active:scale-[0.98]",
-                      hub ? "border-[#25D366]/30" : "",
-                      GLASS.item
-                    )}
+                    className="w-full text-left flex items-center justify-between"
                   >
                     <div className="flex flex-col min-w-0">
                       {selectedHub ? (
                         <>
-                          <span className="text-[0.80rem] font-black text-zinc-900 dark:text-zinc-50 leading-tight">
+                          <span className="text-[0.82rem] font-black leading-tight" style={{ color: textColor }}>
                             {selectedHub.label}
                           </span>
-                          <span className="text-[0.66rem] font-semibold text-zinc-400 mt-0.5 truncate">
+                          <span className="text-[0.64rem] font-semibold mt-0.5 truncate" style={{ color: subColor }}>
                             {selectedHub.hint}
                           </span>
                         </>
                       ) : (
-                        <span className="text-[0.84rem] font-semibold text-zinc-400">
+                        <span className="text-[0.84rem] font-semibold" style={{ color: subColor }}>
                           Select an option...
                         </span>
                       )}
                     </div>
-                    <CaretDown 
-                      size={16} 
-                      weight="bold" 
-                      className={cn(
-                        "text-zinc-400 transition-transform duration-200",
-                        isMenuOpen && "rotate-180"
-                      )} 
+                    <CaretDown
+                      size={16}
+                      weight="bold"
+                      className={cn("transition-transform duration-200 shrink-0", isMenuOpen && "rotate-180")}
+                      style={{ color: subColor }}
                     />
                   </button>
 
-                  {/* Dropdown Menu */}
+                  {/* Dropdown menu — floating overlay, keeps its own frosted look */}
                   {isMenuOpen && (
-                    <div 
+                    <div
                       className={cn(
                         "absolute left-0 right-0 z-[9999] mt-2 p-1.5",
                         "rounded-[18px] shadow-xl border border-white/20 dark:border-white/10",
@@ -291,12 +347,11 @@ export function WhatsAppFAB() {
                               }}
                               className={cn(
                                 "w-full px-3 py-2 rounded-[12px] text-left flex items-center gap-3 transition-colors",
-                                isSelected 
-                                  ? "bg-[#25D366]/10" 
+                                isSelected
+                                  ? "bg-[#25D366]/10"
                                   : "hover:bg-zinc-100 dark:hover:bg-white/5"
                               )}
                             >
-                              {/* Selection Indicator */}
                               <div
                                 className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
                                 style={{
@@ -325,9 +380,12 @@ export function WhatsAppFAB() {
                   )}
                 </div>
 
-                {/* Optional note */}
-                <div>
-                  <label className="text-[0.62rem] font-black uppercase tracking-widest text-zinc-400 block mb-1.5">
+                {/* Optional note — incoming bubble */}
+                <div
+                  className="relative self-start w-[92%] max-w-[92%] px-3 py-2.5 rounded-lg rounded-tl-none shadow-sm"
+                  style={{ backgroundColor: bubbleIn }}
+                >
+                  <label className="text-[0.6rem] font-black uppercase tracking-widest block mb-1" style={{ color: subColor }}>
                     Anything else? <span className="normal-case font-semibold opacity-60">(optional)</span>
                   </label>
                   <textarea
@@ -335,48 +393,64 @@ export function WhatsAppFAB() {
                     onChange={(e) => setNote(e.target.value)}
                     placeholder="e.g. I need a CV today and want to collect by 3pm…"
                     rows={2}
-                    className={cn(
-                      "w-full px-4 py-2.5 rounded-[14px] text-[0.84rem] font-semibold",
-                      "text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400",
-                      "focus:outline-none resize-none transition-colors",
-                      GLASS.item
-                    )}
+                    className="w-full bg-transparent text-[0.84rem] font-semibold outline-none border-none resize-none"
+                    style={{ color: textColor }}
                   />
                 </div>
 
-                {/* Send */}
-                <button
-                  onClick={handleSend}
-                  disabled={!isValid}
-                  className="flex items-center justify-center gap-2.5 w-full py-3.5 rounded-[14px] font-black text-sm text-white transition-all active:scale-95 disabled:opacity-30 disabled:active:scale-100 mb-1"
-                  style={{ backgroundColor: "#25D366" }}
-                >
-                  <PaperPlaneTilt size={15} weight="fill" />
-                  Open WhatsApp to Send
-                </button>
-
               </div>
             ) : (
-              /* Sent confirmation */
-              <div className="px-5 py-10 flex flex-col items-center text-center gap-4">
-                <div className="w-14 h-14 rounded-full flex items-center justify-center bg-[#25D366]/15">
-                  <WhatsappLogo size={28} weight="fill" style={{ color: "#25D366" }} />
-                </div>
-                <div>
-                  <p className="font-black text-lg text-zinc-900 dark:text-zinc-50 mb-1">WhatsApp opened!</p>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                    Your message is pre-filled. Hit <strong>Send</strong> in WhatsApp — we'll reply shortly.
+              /* Sent confirmation — outgoing message bubble, WA-style ticks */
+              <div className="relative z-10 min-h-full px-3 py-4 flex flex-col justify-end items-end gap-3">
+                <div
+                  className="relative max-w-[85%] px-3 py-2 rounded-lg rounded-tr-none shadow-sm"
+                  style={{ backgroundColor: bubbleOut }}
+                >
+                  <p className="text-[0.82rem] leading-relaxed pr-14" style={{ color: isDark ? WA.textDark : WA.textLight }}>
+                    Message ready — opening WhatsApp now…
                   </p>
+                  <span className="absolute bottom-1 right-2 flex items-center gap-0.5 text-[0.6rem]" style={{ color: subColor }}>
+                    {sentTime}
+                    <span className="relative w-3.5 h-2.5 inline-block ml-0.5">
+                      <Check size={11} weight="bold" className="absolute left-0" style={{ color: WA.tick }} />
+                      <Check size={11} weight="bold" className="absolute left-[3px]" style={{ color: WA.tick }} />
+                    </span>
+                  </span>
                 </div>
                 <button
                   onClick={handleClose}
-                  className={cn("mt-1 px-6 py-2.5 rounded-[14px] text-sm font-bold text-zinc-600 dark:text-zinc-300 transition-colors", GLASS.btn)}
+                  className="px-5 py-2 rounded-full text-[0.78rem] font-bold shadow-sm"
+                  style={{ backgroundColor: composeField, color: textColor }}
                 >
                   Close
                 </button>
               </div>
             )}
           </div>
+
+          {/* ── Compose bar — WhatsApp-style send row, only on the form step ── */}
+          {step === "form" && (
+            <div
+              className="shrink-0 flex items-center gap-2 px-3 py-2.5"
+              style={{ backgroundColor: composeBarBg }}
+            >
+              <div
+                className="flex-1 rounded-full px-4 py-2.5 text-[0.8rem] font-medium truncate shadow-sm"
+                style={{ backgroundColor: composeField, color: isValid ? textColor : subColor }}
+              >
+                {isValid ? "Ready to send your message" : "Fill in your name & topic to continue"}
+              </div>
+              <button
+                onClick={handleSend}
+                disabled={!isValid}
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0 transition-transform active:scale-90 disabled:opacity-40 disabled:active:scale-100"
+                style={{ backgroundColor: WA.accent }}
+                aria-label="Send"
+              >
+                <PaperPlaneTilt size={17} weight="fill" />
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -420,4 +494,4 @@ export function WhatsAppFAB() {
       </div>
     </>
   )
-      } 
+            }
