@@ -21,7 +21,7 @@ const TERMS_SECTIONS = [
     title: "Print Hub – Everything Paper",
     points: [
       { label: "Printing Services", text: "B&W, Colour, and Bulk printing. For bulk discounts, submit your entire order together." },
-      { label: "Paper Types", text: "A3, A4, A5, A6 paper in various gsm. Add lamination, spiral binding, or stapling." },
+      { label: "Paper Types", text: "A4 paper in various gsm. Add lamination, paper-clipping or stapling." },
       { label: "Files & Proofing", text: "Submit files in PDF, DOCX, JPG, or PNG and proofread before sending — we're not responsible for errors in your original file." },
       { label: "Payment & Collection", text: "Large orders require full payment before collection. Laminated and bound items cannot be returned once completed." },
       { label: "Turnaround", text: "Same-day, no exceptions." },
