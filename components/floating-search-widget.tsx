@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { usePathname } from "next/navigation"
-import { X, Printer, FileText, PaintBrush, Globe, Desktop } from "@phosphor-icons/react"
+import { MagnifyingGlass, X, Printer, FileText, PaintBrush, Globe, Desktop } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey } from "@/lib/brand"
