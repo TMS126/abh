@@ -284,15 +284,16 @@ export function FloatingSearchWidget() {
 
           {/* Search input — no visible border anywhere, 14px corners, soft shadow */}
           <div className="px-5 pt-3 pb-1.5 shrink-0">
-            <div className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-[14px] shadow-sm bg-white/80 dark:bg-white/[0.06]">
-              <MagnifyingGlass size={16} weight="bold" className="shrink-0 text-zinc-400" />
+            <div className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-[14px] border-2 border-blue-500">
+              <MagnifyingGlass size={16} weight="bold" className="shrink-0 text-blue-500" />
               <input
                 ref={inputRef}
                 type="text"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Search"
-                className="flex-1 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 min-w-0 text-center px-2 rounded-[14px] outline-none focus:ring-2 focus:ring-blue-500"/>  {query && (
+                className="flex-1 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 min-w-0 text-center px-2 outline-none"
+              />  {query && (
                 <button onClick={() => setQuery("")} className="w-5 h-5 rounded-[14px] bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 shrink-0">
                   <X size={11} weight="bold" />
                 </button>
