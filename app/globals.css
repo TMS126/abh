@@ -34,8 +34,10 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --brand-neutral-400: #9A9A9A;
   --brand-neutral-500: #747474;  /* WCAG AA — 4.67:1 vs white */
 
-  --brand-dark-100: #333333;
+  
+   --brand-dark-100: #333333;
   --brand-dark-200: #555555;
+  --brand-tech-grey-dark: #B8CCE0;  /* Tech Hub dark-mode accent — synced with BRAND.techGreyDark */
   --brand-green-deep: #3E6B0E;
   --brand-orange-brown: #A86530; /* WCAG AA — 4.60:1 vs white */
   --brand-orange-accessible: #9A4B12;      /* WCAG AA — 6.2:1 vs white */
@@ -150,6 +152,7 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
 
   --color-brand-dark-100: var(--brand-dark-100);
   --color-brand-dark-200: var(--brand-dark-200);
+  --color-brand-tech-grey-dark: var(--brand-tech-grey-dark);
   --color-brand-green-deep: var(--brand-green-deep);
   --color-brand-orange-brown: var(--brand-orange-brown);
   --color-brand-orange-accessible: var(--brand-orange-accessible);
