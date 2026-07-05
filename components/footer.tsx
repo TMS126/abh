@@ -100,9 +100,10 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   Globe:          <Globe          weight="fill" className="w-4 h-4" aria-hidden="true" />,
   Cpu:            <Cpu            weight="fill" className="w-4 h-4" aria-hidden="true" />,
   CurrencyDollar: <CurrencyDollar weight="fill" className="w-4 h-4" aria-hidden="true" />,
+  Info:           <Info           weight="fill" className="w-4 h-4" aria-hidden="true" />,
 }
 
-// ─── Modal ────────────────────────────────────────────────────────────────────
+// ─── Standard dismissible Modal (used for FAQ) ─────────────────────────────
 function Modal({ open, onClose, title, subtitle, children }: {
   open: boolean; onClose: () => void; title: string; subtitle?: string; children: React.ReactNode
 }) {
@@ -183,6 +184,74 @@ function Modal({ open, onClose, title, subtitle, children }: {
   )
 }
 
+// ─── Full-screen mandatory Terms modal — agree-only, no X/Esc/backdrop close ──
+function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void }) {
+  useEffect(() => {
+    document.documentElement.classList.toggle("scroll-locked", open)
+    document.body.classList.toggle("scroll-locked", open)
+    return () => {
+      document.documentElement.classList.remove("scroll-locked")
+      document.body.classList.remove("scroll-locked")
+    }
+  }, [open])
+
+  if (!open) return null
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Terms & Service Policies"
+      className="fixed inset-0 z-[99999] bg-white dark:bg-zinc-950 flex flex-col animate-in fade-in duration-200"
+    >
+      {/* Header — intentionally no close button */}
+      <div className="px-6 pt-8 pb-5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
+        <h2 className="font-sans font-black text-2xl text-brand-blue">Terms & Service Policies</h2>
+        <p className="text-[0.65rem] font-medium text-zinc-400 mt-1">
+          {BIZ.name} · Updated {BIZ.year}
+        </p>
+      </div>
+
+      {/* Scrollable body */}
+      <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-6 space-y-8">
+        <div className="p-5 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+          <h3 className="font-bold flex items-center gap-2 mb-2 text-[0.82rem] text-zinc-900 dark:text-zinc-50">
+            <Info weight="fill" className="w-4 h-4" aria-hidden="true" /> Operational Rule
+          </h3>
+          <p className="text-[0.82rem] text-zinc-600 dark:text-zinc-400 leading-relaxed">
+            By tapping "I Agree" below, you confirm full agreement with all operational rules and terms listed here.
+          </p>
+        </div>
+
+        {TERMS_SECTIONS.map((s, i) => (
+          <div key={i} className="space-y-3">
+            <h3 className="font-black flex items-center gap-2 text-[0.82rem] text-brand-blue">
+              {ICON_MAP[s.icon]} {s.title}
+            </h3>
+            <ul className="space-y-2 list-disc list-inside pl-1">
+              {s.points.map((p, j) => (
+                <li key={j} className="text-[0.82rem] text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                  <strong className="text-zinc-700 dark:text-zinc-300">{p.label}:</strong> {p.text}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      {/* Pinned footer — only exit point */}
+      <div className="px-6 py-5 border-t border-zinc-100 dark:border-zinc-800 shrink-0 bg-white dark:bg-zinc-950">
+        <button
+          onClick={onAgree}
+          className="w-full py-4 rounded-[14px] bg-brand-blue text-white font-black text-[0.9rem] active:scale-[0.98] transition-transform"
+        >
+          I Agree
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── Footer content ───────────────────────────────────────────────────────────
 function FooterContent() {
   const router = useRouter()
@@ -195,8 +264,6 @@ function FooterContent() {
 
   useEffect(() => { setMounted(true) }, [])
 
-  // Fallback for desktop browsers where the wa.me link doesn't auto-open
-  // WhatsApp — lets the person copy the number and message manually instead.
   const handleCopyPhone = async () => {
     if (typeof navigator === "undefined" || !navigator.clipboard) return
     await navigator.clipboard.writeText(BIZ.phone)
@@ -208,10 +275,8 @@ function FooterContent() {
     <div className="pt-16 pb-12">
       <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16 mb-16 px-6 md:px-8">
 
-        {/* Brand — logo + name reduced, tagline unchanged */}
         <div className="flex flex-col gap-6">
           <div className="flex items-center gap-2 select-none">
-            {/* Logo: reduced from w-9 h-9 to w-6 h-6 */}
             <div
               className="relative w-6 h-6 overflow-hidden rounded-[10px] shrink-0"
               aria-hidden="true"
@@ -219,7 +284,6 @@ function FooterContent() {
             >
               <Image src="/logo.png" alt="" fill className="object-contain" />
             </div>
-            {/* Name: reduced from text-2xl to text-base */}
             <h2 className="font-sans font-black text-base tracking-tight text-zinc-900 dark:text-white">
               ApexbytesHub
             </h2>
@@ -229,7 +293,6 @@ function FooterContent() {
           </p>
         </div>
 
-        {/* Quick links — unchanged */}
         <nav aria-label="Footer navigation">
           <h3 className="text-[0.7rem] font-black uppercase tracking-widest mb-8 text-zinc-400">Quick Links</h3>
           <ul className="flex flex-col gap-4">
@@ -246,7 +309,6 @@ function FooterContent() {
           </ul>
         </nav>
 
-        {/* Connect */}
         <div>
           <h3 className="text-[0.7rem] font-black uppercase tracking-widest mb-8 text-zinc-400">Connect</h3>
           <ul className="flex flex-col gap-5">
@@ -263,7 +325,6 @@ function FooterContent() {
                   </div>
                   <span className="truncate">{BIZ.phone}</span>
                 </a>
-                {/* Copy fallback — for desktop browsers where wa.me doesn't auto-open WhatsApp */}
                 <button
                   type="button"
                   onClick={handleCopyPhone}
@@ -297,7 +358,6 @@ function FooterContent() {
             <li className="pt-2">
               <BusinessStatusFull />
             </li>
-            {/* Help Center — reduced to match legal bar size */}
             <li className="pt-2">
               <button
                 onClick={() => setIsFaqOpen(true)}
@@ -316,15 +376,12 @@ function FooterContent() {
         </div>
       </div>
 
-      {/* ── Legal bar — all text at [0.65rem], same as "built with ❤️" ── */}
       <div className="max-w-[1200px] mx-auto border-t border-zinc-100 dark:border-zinc-800 pt-8 px-6 md:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
         <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
-          {/* © line — same size as "built with ❤️" */}
           <p className="text-[0.65rem] font-medium text-zinc-400">
             © {new Date().getFullYear()} {BIZ.name}. All rights reserved.
           </p>
           <span className="hidden md:inline text-zinc-200 dark:text-zinc-800 text-[0.65rem]" aria-hidden="true">·</span>
-          {/* Terms — same size as "built with ❤️" */}
           <button
             onClick={() => setIsTermsOpen(true)}
             className="text-[0.45rem] font-medium text-zinc-400 hover:text-brand-blue transition-colors"
@@ -332,46 +389,18 @@ function FooterContent() {
             Terms &amp; Policies
           </button>
         </div>
-        {/* "Built with ❤️" — reference size, unchanged */}
         <p className="text-[0.65rem] font-medium text-zinc-400 flex items-center gap-1.5">
           Built with <Heart weight="fill" className="w-3 h-3 text-brand-orange" aria-hidden="true" /> for the Kgotsong community
         </p>
       </div>
 
-      {/* ── Terms modal — unchanged ── */}
-      <Modal
+      {/* ── Terms — full-screen, agree-only ── */}
+      <TermsGateModal
         open={isTermsOpen}
-        onClose={() => setIsTermsOpen(false)}
-        title="Terms & Service Policies"
-        subtitle={`${BIZ.name} · Studio Rules`}
-      >
-        <div className="px-8 py-8 space-y-8">
-          <div className="p-5 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
-            <h3 className="font-bold flex items-center gap-2 mb-2 text-[0.82rem] text-zinc-900 dark:text-zinc-50">
-              <Info weight="fill" className="w-4 h-4" aria-hidden="true" /> Operational Rule
-            </h3>
-            <p className="text-[0.82rem] text-zinc-600 dark:text-zinc-400 leading-relaxed">
-              By starting any order or sending a message through our WhatsApp channels, you confirm full agreement with all operational rules and terms below.
-            </p>
-          </div>
-          {TERMS_SECTIONS.map((s, i) => (
-            <div key={i} className="space-y-3">
-              <h3 className="font-black flex items-center gap-2 text-[0.82rem] text-brand-blue">
-                {ICON_MAP[s.icon]} {s.title}
-              </h3>
-              <ul className="space-y-2 list-disc list-inside pl-1">
-                {s.points.map((p, j) => (
-                  <li key={j} className="text-[0.82rem] text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                    <strong className="text-zinc-700 dark:text-zinc-300">{p.label}:</strong> {p.text}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </Modal>
+        onAgree={() => setIsTermsOpen(false)}
+      />
 
-      {/* ── FAQ modal — unchanged ── */}
+      {/* ── FAQ modal — unchanged, still dismissible ── */}
       <Modal
         open={isFaqOpen}
         onClose={() => setIsFaqOpen(false)}
@@ -452,4 +481,4 @@ export function Footer() {
       <FooterContent />
     </footer>
   )
-        } 
+    } 
