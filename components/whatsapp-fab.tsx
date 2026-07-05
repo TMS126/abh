@@ -1,8 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import Image from "next/image"
-import { X, WhatsappLogo, PaperPlaneTilt, Check, CaretDown } from "@phosphor-icons/react"
+import { X, WhatsappLogo, PaperPlaneTilt, Check, CaretDown, UserCircle } from "@phosphor-icons/react"
 import { BIZ } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 import { useTheme } from "next-themes"
@@ -11,32 +10,32 @@ import { useExclusiveWidget } from "@/hooks/use-exclusive-widget"
 const WA_NUMBER  = "27753338260"
 const GREETING   = "Hi there 👋 Tell us what you need and we'll get back to you right away!"
 
-// ── WhatsApp's actual wallpaper/tick colors — kept purely as the backdrop
-// feel and status accents. Bubble fills below no longer use WA's solid
-// bubbleIn/bubbleOut colors; those are replaced by the glass tokens further
-// down so the panel matches the Quote Calculator widget's frosted style. ──
+// ── WhatsApp's actual palette — header teal, chat wallpaper, bubble colors ──
 const WA = {
+  headerLight:   "#075E54",
+  headerDark:    "#1F2C34",
   wallpaperLight: "#E5DDD5",
   wallpaperDark:  "#0B141A",
+  bubbleInLight:  "#FFFFFF",
+  bubbleInDark:   "#202C33",
+  bubbleOutLight: "#D9FDD3",
+  bubbleOutDark:  "#005C4B",
   textLight:      "#111B21",
   textDark:       "#E9EDEF",
   subLight:       "#667781",
   subDark:        "#8696A0",
+  composeBarLight:"#F0F2F5",
+  composeBarDark: "#1F2C34",
+  composeFieldLight: "#FFFFFF",
+  composeFieldDark:  "#2A3942",
   accent:         "#25D366",
   tick:           "#53BDEB",
 } as const
 
-// ── Same glass tokens used in QuoteCalculatorWidget, reused here so both
-// FAB panels share one visual language. ─────────────────────────────────
+// ── Same glass tokens, still used for the floating dropdown menu (not a
+// chat bubble itself, so it keeps its own frosted-glass treatment) ──────────
 const GLASS = {
-  panel:   "bg-white/70 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/40 dark:border-white/10",
-  header:  "bg-white/50 dark:bg-zinc-900/40 backdrop-blur-xl border-b border-white/40 dark:border-white/10",
-  bubbleIn:  "bg-white/70 dark:bg-zinc-900/55 backdrop-blur-md border border-white/60 dark:border-white/10",
-  bubbleOut: "bg-[#25D366]/15 dark:bg-[#25D366]/12 backdrop-blur-md border border-[#25D366]/30",
-  pill:    "bg-zinc-100/80 dark:bg-white/[0.08] border border-white/60 dark:border-white/10",
-  btn:     "bg-zinc-100/70 dark:bg-white/[0.07] border border-white/60 dark:border-white/10",
-  composeBar: "bg-white/60 dark:bg-zinc-900/50 backdrop-blur-xl border-t border-white/40 dark:border-white/10",
-  composeField: "bg-white/80 dark:bg-white/[0.06] border border-white/70 dark:border-white/10",
+  btn: "bg-white/15 border border-white/20",
 } as const
 
 const HUBS = [
@@ -180,9 +179,14 @@ export function WhatsAppFAB() {
   }
 
   // ── Theme-derived tokens ────────────────────────────────────────────────
+  const headerBg     = isDark ? WA.headerDark      : WA.headerLight
   const wallpaperBg  = isDark ? WA.wallpaperDark    : WA.wallpaperLight
+  const bubbleIn     = isDark ? WA.bubbleInDark     : WA.bubbleInLight
+  const bubbleOut    = isDark ? WA.bubbleOutDark    : WA.bubbleOutLight
   const textColor    = isDark ? WA.textDark         : WA.textLight
   const subColor     = isDark ? WA.subDark          : WA.subLight
+  const composeBarBg = isDark ? WA.composeBarDark   : WA.composeBarLight
+  const composeField = isDark ? WA.composeFieldDark : WA.composeFieldLight
   const wallpaperPattern = buildWallpaperPattern(isDark ? "#FFFFFF" : "#000000")
 
   return (
@@ -200,75 +204,74 @@ export function WhatsAppFAB() {
       {isOpen && (
         <div
           className={cn(
-            "fixed bottom-24 right-4 left-4 md:left-auto md:right-6 z-[9991] md:w-[420px] max-h-[75vh]",
+            "fixed bottom-24 right-4 left-4 md:left-auto md:right-6 z-[9991] md:w-[400px] max-h-[75vh]",
             "rounded-[20px] shadow-2xl flex flex-col overflow-hidden",
-            "animate-in slide-in-from-bottom-4 fade-in duration-300",
-            GLASS.panel
+            "animate-in slide-in-from-bottom-4 fade-in duration-300"
           )}
-          style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.25)" }}
+          style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.25)" }}
         >
-          {/* Specular highlight strip — same touch as the Quote Calculator panel */}
-          <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent pointer-events-none z-10" />
-
-          {/* ── Glass header — logo.png in a neutral frame, no color tint,
-              so it reads as a plain brand mark rather than a WhatsApp-teal
-              chat header. More breathing room (py-5, gap-3.5) than before. ── */}
-          <div className={cn("flex items-center gap-3.5 px-5 py-5 shrink-0", GLASS.header)}>
+          {/* ── WhatsApp-style header — solid teal bar ───────────────── */}
+          <div
+            className="flex items-center gap-3 px-4 py-3 shrink-0"
+            style={{ backgroundColor: headerBg }}
+          >
+            {/* Neutral avatar — no brand color/logo, just a plain profile glyph */}
             <div
-              className={cn(
-                "w-12 h-12 rounded-[14px] flex items-center justify-center shrink-0 p-1.5",
-                "bg-zinc-100/70 dark:bg-white/[0.08] border border-white/60 dark:border-white/10"
-              )}
+              className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+              style={{ backgroundColor: isDark ? "#2A3942" : "#E9EDEF" }}
             >
-              <div className="relative w-full h-full">
-                <Image src="/logo.png" alt="" fill sizes="48px" className="object-contain" />
-              </div>
+              <UserCircle size={26} weight="fill" style={{ color: isDark ? "#CFD9DE" : "#54656F" }} />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-sans font-black text-[1.02rem] leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 truncate">
+              <h3 className="font-sans font-bold text-[0.95rem] leading-tight text-white truncate">
                 {BIZ.name}
               </h3>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="relative flex h-2 w-2 shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              <div className="flex items-center gap-1.5">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
                 </span>
-                <p className="text-[0.7rem] font-semibold text-zinc-500 dark:text-zinc-400">
+                <p className="text-[0.68rem] font-medium text-white/80">
                   Online · replies within 15 min
                 </p>
               </div>
             </div>
             <button
               onClick={handleClose}
-              className={cn("w-9 h-9 rounded-full flex items-center justify-center text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors shrink-0", GLASS.btn)}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-white/90 hover:bg-white/10 transition-colors"
               aria-label="Close"
             >
-              <X size={17} weight="bold" />
+              <X size={18} weight="bold" />
             </button>
           </div>
 
-          {/* ── Chat body — wallpaper background kept for the "chat" feel,
-              bubbles now glass instead of solid WhatsApp bubble colors ── */}
+          {/* ── Chat body — wallpaper background, bubbles ────────────── */}
           <div
             className="flex-1 overflow-y-auto overscroll-contain min-h-0 relative"
             style={{ backgroundColor: wallpaperBg, backgroundImage: wallpaperPattern, backgroundSize: "200px 200px" }}
           >
             {step === "form" ? (
-              <div className="relative z-10 px-4 py-5 flex flex-col gap-3">
+              <div className="relative z-10 px-3 py-4 flex flex-col gap-2">
 
-                {/* Greeting — incoming glass bubble */}
-                <div className={cn("relative self-start max-w-[85%] px-4 py-3 rounded-[16px] rounded-tl-[4px] shadow-sm", GLASS.bubbleIn)}>
-                  <p className="text-[0.84rem] leading-relaxed pr-10" style={{ color: textColor }}>
+                {/* Greeting — incoming message bubble */}
+                <div
+                  className="relative self-start max-w-[85%] px-3 py-2 rounded-lg rounded-tl-none shadow-sm"
+                  style={{ backgroundColor: bubbleIn }}
+                >
+                  <p className="text-[0.82rem] leading-relaxed pr-10" style={{ color: textColor }}>
                     {GREETING}
                   </p>
-                  <span className="absolute bottom-1.5 right-3 text-[0.6rem]" style={{ color: subColor }}>
+                  <span className="absolute bottom-1 right-2 text-[0.6rem]" style={{ color: subColor }}>
                     {openTime}
                   </span>
                 </div>
 
-                {/* Name — incoming glass bubble containing the field */}
-                <div className={cn("relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-[16px] rounded-tl-[4px] shadow-sm", GLASS.bubbleIn)}>
-                  <label className="text-[0.62rem] font-black uppercase tracking-widest block mb-1.5" style={{ color: subColor }}>
+                {/* Name — incoming bubble containing the field */}
+                <div
+                  className="relative self-start w-[92%] max-w-[92%] px-3 py-2.5 rounded-lg rounded-tl-none shadow-sm"
+                  style={{ backgroundColor: bubbleIn }}
+                >
+                  <label className="text-[0.6rem] font-black uppercase tracking-widest block mb-1" style={{ color: subColor }}>
                     Your Name
                   </label>
                   <input
@@ -277,14 +280,18 @@ export function WhatsAppFAB() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Thembi"
-                    className="w-full bg-transparent text-[0.86rem] font-semibold outline-none border-none"
+                    className="w-full bg-transparent text-[0.84rem] font-semibold outline-none border-none"
                     style={{ color: textColor }}
                   />
                 </div>
 
-                {/* Hub selector — incoming glass bubble containing dropdown trigger */}
-                <div className={cn("relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-[16px] rounded-tl-[4px] shadow-sm", GLASS.bubbleIn)} ref={menuRef}>
-                  <label className="text-[0.62rem] font-black uppercase tracking-widest block mb-1.5" style={{ color: subColor }}>
+                {/* Hub selector — incoming bubble containing dropdown trigger */}
+                <div
+                  className="relative self-start w-[92%] max-w-[92%] px-3 py-2.5 rounded-lg rounded-tl-none shadow-sm"
+                  style={{ backgroundColor: bubbleIn }}
+                  ref={menuRef}
+                >
+                  <label className="text-[0.6rem] font-black uppercase tracking-widest block mb-1" style={{ color: subColor }}>
                     What do you need help with?
                   </label>
 
@@ -296,15 +303,15 @@ export function WhatsAppFAB() {
                     <div className="flex flex-col min-w-0">
                       {selectedHub ? (
                         <>
-                          <span className="text-[0.84rem] font-black leading-tight" style={{ color: textColor }}>
+                          <span className="text-[0.82rem] font-black leading-tight" style={{ color: textColor }}>
                             {selectedHub.label}
                           </span>
-                          <span className="text-[0.66rem] font-semibold mt-0.5 truncate" style={{ color: subColor }}>
+                          <span className="text-[0.64rem] font-semibold mt-0.5 truncate" style={{ color: subColor }}>
                             {selectedHub.hint}
                           </span>
                         </>
                       ) : (
-                        <span className="text-[0.86rem] font-semibold" style={{ color: subColor }}>
+                        <span className="text-[0.84rem] font-semibold" style={{ color: subColor }}>
                           Select an option...
                         </span>
                       )}
@@ -321,7 +328,7 @@ export function WhatsAppFAB() {
                   {isMenuOpen && (
                     <div
                       className={cn(
-                        "absolute left-0 right-0 z-[9999] mt-2.5 p-1.5",
+                        "absolute left-0 right-0 z-[9999] mt-2 p-1.5",
                         "rounded-[18px] shadow-xl border border-white/20 dark:border-white/10",
                         "animate-in fade-in zoom-in-95 duration-150 origin-top",
                         "bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl"
@@ -339,7 +346,7 @@ export function WhatsAppFAB() {
                                 setIsMenuOpen(false)
                               }}
                               className={cn(
-                                "w-full px-3 py-2.5 rounded-[12px] text-left flex items-center gap-3 transition-colors",
+                                "w-full px-3 py-2 rounded-[12px] text-left flex items-center gap-3 transition-colors",
                                 isSelected
                                   ? "bg-[#25D366]/10"
                                   : "hover:bg-zinc-100 dark:hover:bg-white/5"
@@ -373,9 +380,12 @@ export function WhatsAppFAB() {
                   )}
                 </div>
 
-                {/* Optional note — incoming glass bubble */}
-                <div className={cn("relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-[16px] rounded-tl-[4px] shadow-sm", GLASS.bubbleIn)}>
-                  <label className="text-[0.62rem] font-black uppercase tracking-widest block mb-1.5" style={{ color: subColor }}>
+                {/* Optional note — incoming bubble */}
+                <div
+                  className="relative self-start w-[92%] max-w-[92%] px-3 py-2.5 rounded-lg rounded-tl-none shadow-sm"
+                  style={{ backgroundColor: bubbleIn }}
+                >
+                  <label className="text-[0.6rem] font-black uppercase tracking-widest block mb-1" style={{ color: subColor }}>
                     Anything else? <span className="normal-case font-semibold opacity-60">(optional)</span>
                   </label>
                   <textarea
@@ -383,20 +393,23 @@ export function WhatsAppFAB() {
                     onChange={(e) => setNote(e.target.value)}
                     placeholder="e.g. I need a CV today and want to collect by 3pm…"
                     rows={2}
-                    className="w-full bg-transparent text-[0.86rem] font-semibold outline-none border-none resize-none"
+                    className="w-full bg-transparent text-[0.84rem] font-semibold outline-none border-none resize-none"
                     style={{ color: textColor }}
                   />
                 </div>
 
               </div>
             ) : (
-              /* Sent confirmation — outgoing glass bubble, tinted WhatsApp green, WA-style ticks */
-              <div className="relative z-10 min-h-full px-4 py-5 flex flex-col justify-end items-end gap-3">
-                <div className={cn("relative max-w-[85%] px-4 py-3 rounded-[16px] rounded-tr-[4px] shadow-sm", GLASS.bubbleOut)}>
-                  <p className="text-[0.84rem] leading-relaxed pr-14" style={{ color: textColor }}>
+              /* Sent confirmation — outgoing message bubble, WA-style ticks */
+              <div className="relative z-10 min-h-full px-3 py-4 flex flex-col justify-end items-end gap-3">
+                <div
+                  className="relative max-w-[85%] px-3 py-2 rounded-lg rounded-tr-none shadow-sm"
+                  style={{ backgroundColor: bubbleOut }}
+                >
+                  <p className="text-[0.82rem] leading-relaxed pr-14" style={{ color: isDark ? WA.textDark : WA.textLight }}>
                     Message ready — opening WhatsApp now…
                   </p>
-                  <span className="absolute bottom-1.5 right-3 flex items-center gap-0.5 text-[0.6rem]" style={{ color: subColor }}>
+                  <span className="absolute bottom-1 right-2 flex items-center gap-0.5 text-[0.6rem]" style={{ color: subColor }}>
                     {sentTime}
                     <span className="relative w-3.5 h-2.5 inline-block ml-0.5">
                       <Check size={11} weight="bold" className="absolute left-0" style={{ color: WA.tick }} />
@@ -406,8 +419,8 @@ export function WhatsAppFAB() {
                 </div>
                 <button
                   onClick={handleClose}
-                  className={cn("px-5 py-2.5 rounded-full text-[0.78rem] font-bold shadow-sm transition-colors", GLASS.composeField)}
-                  style={{ color: textColor }}
+                  className="px-5 py-2 rounded-full text-[0.78rem] font-bold shadow-sm"
+                  style={{ backgroundColor: composeField, color: textColor }}
                 >
                   Close
                 </button>
@@ -415,31 +428,33 @@ export function WhatsAppFAB() {
             )}
           </div>
 
-          {/* ── Compose bar — glass instead of solid, send button stays
-              WhatsApp green so the action still reads clearly as "send" ── */}
+          {/* ── Compose bar — WhatsApp-style send row, only on the form step ── */}
           {step === "form" && (
-            <div className={cn("shrink-0 flex items-center gap-2.5 px-4 py-3.5", GLASS.composeBar)}>
+            <div
+              className="shrink-0 flex items-center gap-2 px-3 py-2.5"
+              style={{ backgroundColor: composeBarBg }}
+            >
               <div
-                className={cn("flex-1 rounded-full px-4 py-3 text-[0.82rem] font-medium truncate shadow-sm", GLASS.composeField)}
-                style={{ color: isValid ? textColor : subColor }}
+                className="flex-1 rounded-full px-4 py-2.5 text-[0.8rem] font-medium truncate shadow-sm"
+                style={{ backgroundColor: composeField, color: isValid ? textColor : subColor }}
               >
                 {isValid ? "Ready to send your message" : "Fill in your name & topic to continue"}
               </div>
               <button
                 onClick={handleSend}
                 disabled={!isValid}
-                className="w-11 h-11 rounded-full flex items-center justify-center text-white shrink-0 transition-transform active:scale-90 disabled:opacity-40 disabled:active:scale-100 shadow-md"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0 transition-transform active:scale-90 disabled:opacity-40 disabled:active:scale-100"
                 style={{ backgroundColor: WA.accent }}
                 aria-label="Send"
               >
-                <PaperPlaneTilt size={18} weight="fill" />
+                <PaperPlaneTilt size={17} weight="fill" />
               </button>
             </div>
           )}
         </div>
       )}
 
-      {/* ── FAB — unchanged: still the WhatsApp icon, still green ───── */}
+      {/* ── FAB ───────────────────────────────────────────────────── */}
       <div
         className={cn(
           "fixed z-[9992] right-4 bottom-6 group/wa",
@@ -479,4 +494,4 @@ export function WhatsAppFAB() {
       </div>
     </>
   )
-                                                }  
+    }
