@@ -197,11 +197,30 @@ export function HeroSection() {
     setSpotlightService(prev => pickRandomService(activeHub, prev.name))
   }
 
-  return (
+ return (
     <section
       aria-label="Hero"
       className="relative min-h-[calc(100vh-var(--nav-h))] w-full flex flex-col items-center justify-center px-4 md:px-8 pt-[calc(var(--nav-h)+64px)] md:pt-[140px] pb-16 md:pb-28 overflow-hidden cursor-default select-none bg-background transition-colors duration-300"
     >
+      {/* Storefront photo — full-bleed background for the hero only.
+          Sits below the noise texture, ambient blob, and scrim, all of
+          which layer on top of it exactly as before. */}
+      <div className="absolute inset-0 z-0 pointer-events-none" aria-hidden="true">
+        <img
+          src="/storefront.webp"
+          alt=""
+          className="w-full h-full object-cover"
+        />
+      </div>
+
+      {/* Dark scrim — keeps the headline, paragraph, and cards readable
+          over the photo. Slightly stronger in dark mode since the photo
+          itself doesn't change with theme. */}
+      <div
+        className="absolute inset-0 z-0 pointer-events-none bg-white/80 dark:bg-[#0D1B2A]/88"
+        aria-hidden="true"
+      />
+
       {/* Noise texture */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <div
