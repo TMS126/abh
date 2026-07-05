@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
 import Image from "next/image"
 import {
@@ -106,7 +106,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
 // ─── Full-screen mandatory Terms modal — agree-only, no X/Esc/backdrop close ──
 function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void }) {
   const guardActive = useRef(false)
-  const BUFFER = 5 // number of dummy history entries kept "in front" of the modal
+  const BUFFER = 5
 
   useEffect(() => {
     document.documentElement.classList.toggle("scroll-locked", open)
@@ -199,7 +199,7 @@ function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void 
   )
 }
 
-// ─── FAQ pill accordion — outer pill toggles the panel, each Q/A is its own inner accordion ──
+// ─── FAQ pill accordion — raised 3D container, centered, larger inner text ──
 function FaqAccordion({
   isOpen,
   onToggle,
@@ -212,16 +212,20 @@ function FaqAccordion({
   onToggleIndex: (i: number) => void
 }) {
   return (
-    <div className="w-full">
+    <div className="w-full flex flex-col items-center">
       <button
         onClick={onToggle}
         aria-expanded={isOpen}
         aria-controls="faq-accordion-panel"
-        className="inline-flex items-center gap-2 text-[0.65rem] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400 hover:text-brand-blue transition-colors px-4 py-2 rounded-full border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm"
+        className={cn(
+          "inline-flex items-center gap-2 text-[0.75rem] font-black text-zinc-700 dark:text-zinc-200 hover:text-brand-blue transition-colors px-6 py-3 rounded-full border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900",
+          "shadow-[0_8px_20px_rgba(0,0,0,0.10),0_2px_6px_rgba(0,0,0,0.06)]",
+          "dark:shadow-[0_8px_20px_rgba(0,0,0,0.45),0_2px_6px_rgba(0,0,0,0.3)]"
+        )}
       >
-        FAQs
+        Frequently Asked Questions
         <CaretDown
-          className={cn("w-3 h-3 transition-transform duration-200", isOpen && "rotate-180")}
+          className={cn("w-3.5 h-3.5 transition-transform duration-200", isOpen && "rotate-180")}
           aria-hidden="true"
         />
       </button>
@@ -229,8 +233,8 @@ function FaqAccordion({
       <div
         id="faq-accordion-panel"
         className={cn(
-          "grid transition-all duration-300 ease-in-out",
-          isOpen ? "grid-rows-[1fr] opacity-100 mt-3" : "grid-rows-[0fr] opacity-0"
+          "grid w-full max-w-md transition-all duration-300 ease-in-out",
+          isOpen ? "grid-rows-[1fr] opacity-100 mt-4" : "grid-rows-[0fr] opacity-0"
         )}
       >
         <div className="overflow-hidden space-y-2">
@@ -250,14 +254,14 @@ function FaqAccordion({
                   onClick={() => onToggleIndex(i)}
                   aria-expanded={open}
                   aria-controls={`faq-inner-${i}`}
-                  className="flex items-center justify-between w-full text-left gap-4 px-4 py-3"
+                  className="flex items-center justify-between w-full text-left gap-4 px-5 py-4"
                 >
-                  <h4 className="text-[0.75rem] font-black text-zinc-800 dark:text-zinc-100 leading-snug">
+                  <h4 className="text-[0.85rem] font-black text-zinc-800 dark:text-zinc-100 leading-snug">
                     {faq.question}
                   </h4>
                   <CaretDown
                     className={cn(
-                      "w-3 h-3 text-zinc-400 shrink-0 transition-transform duration-200",
+                      "w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform duration-200",
                       open && "rotate-180"
                     )}
                     aria-hidden="true"
@@ -273,7 +277,7 @@ function FaqAccordion({
                   )}
                 >
                   <div className="overflow-hidden">
-                    <div className="px-4 pb-4 pt-1 text-[0.72rem] text-zinc-500 dark:text-zinc-400 leading-relaxed whitespace-pre-wrap">
+                    <div className="px-5 pb-5 pt-1 text-[0.8rem] text-zinc-500 dark:text-zinc-400 leading-relaxed whitespace-pre-wrap">
                       {faq.answer}
                     </div>
                   </div>
@@ -290,6 +294,7 @@ function FaqAccordion({
 // ─── Footer content ───────────────────────────────────────────────────────────
 function FooterContent() {
   const router = useRouter()
+  const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const [mounted,             setMounted]             = useState(false)
   const [isTermsOpen,         setIsTermsOpen]         = useState(false)
@@ -308,18 +313,23 @@ function FooterContent() {
 
   const toggleFaqIndex = (i: number) => setOpenFaqIndex((prev) => (prev === i ? null : i))
 
+  // FAQs already live on the Contact page — don't duplicate them in the footer there
+  const showFaq = pathname !== "/contact"
+
   return (
     <div className="pt-16 pb-12">
 
-      {/* ── Mobile-only: FAQs pill promoted to the top of the footer ── */}
-      <div className="md:hidden px-6 mb-10">
-        <FaqAccordion
-          isOpen={isFaqAccordionOpen}
-          onToggle={() => setIsFaqAccordionOpen((v) => !v)}
-          openIndex={openFaqIndex}
-          onToggleIndex={toggleFaqIndex}
-        />
-      </div>
+      {/* ── FAQ — centered, same placement rules on mobile and desktop ── */}
+      {showFaq && (
+        <div className="px-6 mb-12 flex justify-center">
+          <FaqAccordion
+            isOpen={isFaqAccordionOpen}
+            onToggle={() => setIsFaqAccordionOpen((v) => !v)}
+            openIndex={openFaqIndex}
+            onToggleIndex={toggleFaqIndex}
+          />
+        </div>
+      )}
 
       <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16 mb-16 px-6 md:px-8">
 
@@ -406,15 +416,6 @@ function FooterContent() {
             <li className="pt-2">
               <BusinessStatusFull />
             </li>
-            {/* ── Desktop-only: FAQs pill stays in the Connect column ── */}
-            <li className="pt-2 hidden md:block">
-              <FaqAccordion
-                isOpen={isFaqAccordionOpen}
-                onToggle={() => setIsFaqAccordionOpen((v) => !v)}
-                openIndex={openFaqIndex}
-                onToggleIndex={toggleFaqIndex}
-              />
-            </li>
           </ul>
         </div>
       </div>
@@ -453,4 +454,4 @@ export function Footer() {
       <FooterContent />
     </footer>
   )
-        } 
+              } 
