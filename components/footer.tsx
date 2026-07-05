@@ -6,9 +6,9 @@ import { useTheme } from "next-themes"
 import Image from "next/image"
 import {
   WhatsappLogo, EnvelopeSimple,
-  X, Printer, FileText, Palette,
+  Printer, FileText, Palette,
   Globe, Cpu, Info, Heart,
-  Question, CaretDown, CurrencyDollar,
+  CaretDown, CurrencyDollar,
   Copy, Check,
 } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
@@ -103,87 +103,6 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   Info:           <Info           weight="fill" className="w-4 h-4" aria-hidden="true" />,
 }
 
-// ─── Standard dismissible Modal (used for FAQ) ─────────────────────────────
-function Modal({ open, onClose, title, subtitle, children }: {
-  open: boolean; onClose: () => void; title: string; subtitle?: string; children: React.ReactNode
-}) {
-  const ref      = useRef<HTMLDivElement>(null)
-  const closeRef = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => { if (open) closeRef.current?.focus() }, [open])
-
-  useEffect(() => {
-    if (!open) return
-    const fn = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { onClose(); return }
-      if (e.key !== "Tab" || !ref.current) return
-      const els   = ref.current.querySelectorAll<HTMLElement>('button,[href],[tabindex]:not([tabindex="-1"])')
-      const first = els[0]; const last = els[els.length - 1]
-      if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last?.focus() } }
-      else            { if (document.activeElement === last)  { e.preventDefault(); first?.focus() } }
-    }
-    document.addEventListener("keydown", fn)
-    return () => document.removeEventListener("keydown", fn)
-  }, [open, onClose])
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("scroll-locked", open)
-    document.body.classList.toggle("scroll-locked", open)
-    return () => {
-      document.documentElement.classList.remove("scroll-locked")
-      document.body.classList.remove("scroll-locked")
-    }
-  }, [open])
-
-  useEffect(() => {
-    if (!open) return
-    window.history.pushState({ modal: title }, "")
-    const onPop = () => {
-      onClose()
-      window.history.pushState({ modal: null }, "")
-    }
-    window.addEventListener("popstate", onPop)
-    return () => window.removeEventListener("popstate", onPop)
-  }, [open, onClose, title])
-
-  if (!open) return null
-
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
-      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
-    >
-      <div className="absolute inset-0 overscroll-contain" onClick={onClose} aria-hidden="true" />
-      <div
-        ref={ref}
-        className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300"
-      >
-        <div className="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-zinc-900/50 shrink-0">
-          <div>
-            <h2 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50">{title}</h2>
-            {subtitle && (
-              <p className="text-[0.62rem] font-black uppercase tracking-widest text-zinc-400 mt-0.5">{subtitle}</p>
-            )}
-          </div>
-          <button
-            ref={closeRef}
-            onClick={onClose}
-            aria-label={`Close ${title}`}
-            className="w-8 h-8 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all active:scale-95"
-          >
-            <X size={16} weight="bold" aria-hidden="true" />
-          </button>
-        </div>
-        <div className="overflow-y-auto overscroll-contain flex-1">
-          {children}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ─── Full-screen mandatory Terms modal — agree-only, no X/Esc/backdrop close ──
 function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void }) {
   const guardActive = useRef(false)
@@ -198,9 +117,6 @@ function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void 
     }
   }, [open])
 
-  // Trap the hardware/browser back button. A single pushState can be
-  // skipped past by a fast double back-tap before our JS re-arms it,
-  // so we keep a small buffer of dummy entries topped up on every pop.
   useEffect(() => {
     if (!open) return
 
@@ -225,7 +141,6 @@ function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void 
 
   const handleAgree = () => {
     guardActive.current = false
-    // Unwind the buffered entries we pushed, then close
     window.history.go(-BUFFER)
     onAgree()
   }
@@ -239,7 +154,6 @@ function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void 
       aria-label="Terms & Service Policies"
       className="fixed inset-0 z-[99999] bg-white dark:bg-zinc-950 flex flex-col animate-in fade-in duration-200"
     >
-      {/* Header — no close button; shadow makes scrolling content appear to slide under it */}
       <div className="px-6 pt-8 pb-5 border-b border-zinc-100 dark:border-zinc-800 shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] relative z-10">
         <h2 className="font-sans font-black text-2xl text-brand-blue">Terms & Service Policies</h2>
         <p className="text-[0.65rem] font-medium text-zinc-400 mt-1">
@@ -247,7 +161,6 @@ function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void 
         </p>
       </div>
 
-      {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-6 space-y-8">
         <div className="p-5 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 shadow-[0_2px_10px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
           <h3 className="font-bold flex items-center gap-2 mb-2 text-[0.82rem] text-zinc-900 dark:text-zinc-50">
@@ -274,7 +187,6 @@ function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void 
         ))}
       </div>
 
-      {/* Pinned footer — only exit point */}
       <div className="px-6 py-5 border-t border-zinc-100 dark:border-zinc-800 shrink-0 bg-white dark:bg-zinc-950">
         <button
           onClick={handleAgree}
@@ -287,15 +199,103 @@ function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void 
   )
 }
 
+// ─── FAQ pill accordion — outer pill toggles the panel, each Q/A is its own inner accordion ──
+function FaqAccordion({
+  isOpen,
+  onToggle,
+  openIndex,
+  onToggleIndex,
+}: {
+  isOpen: boolean
+  onToggle: () => void
+  openIndex: number | null
+  onToggleIndex: (i: number) => void
+}) {
+  return (
+    <div className="w-full">
+      <button
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        aria-controls="faq-accordion-panel"
+        className="inline-flex items-center gap-2 text-[0.65rem] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400 hover:text-brand-blue transition-colors px-4 py-2 rounded-full border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm"
+      >
+        FAQs
+        <CaretDown
+          className={cn("w-3 h-3 transition-transform duration-200", isOpen && "rotate-180")}
+          aria-hidden="true"
+        />
+      </button>
+
+      <div
+        id="faq-accordion-panel"
+        className={cn(
+          "grid transition-all duration-300 ease-in-out",
+          isOpen ? "grid-rows-[1fr] opacity-100 mt-3" : "grid-rows-[0fr] opacity-0"
+        )}
+      >
+        <div className="overflow-hidden space-y-2">
+          {FAQS.map((faq, i) => {
+            const open = openIndex === i
+            return (
+              <div
+                key={i}
+                className={cn(
+                  "rounded-[14px] border transition-all duration-200",
+                  open
+                    ? "border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/60"
+                    : "border-transparent bg-white dark:bg-zinc-900/20 hover:border-zinc-100 dark:hover:border-zinc-800"
+                )}
+              >
+                <button
+                  onClick={() => onToggleIndex(i)}
+                  aria-expanded={open}
+                  aria-controls={`faq-inner-${i}`}
+                  className="flex items-center justify-between w-full text-left gap-4 px-4 py-3"
+                >
+                  <h4 className="text-[0.75rem] font-black text-zinc-800 dark:text-zinc-100 leading-snug">
+                    {faq.question}
+                  </h4>
+                  <CaretDown
+                    className={cn(
+                      "w-3 h-3 text-zinc-400 shrink-0 transition-transform duration-200",
+                      open && "rotate-180"
+                    )}
+                    aria-hidden="true"
+                  />
+                </button>
+                <div
+                  id={`faq-inner-${i}`}
+                  role="region"
+                  aria-label={faq.question}
+                  className={cn(
+                    "grid transition-all duration-300 ease-in-out",
+                    open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                  )}
+                >
+                  <div className="overflow-hidden">
+                    <div className="px-4 pb-4 pt-1 text-[0.72rem] text-zinc-500 dark:text-zinc-400 leading-relaxed whitespace-pre-wrap">
+                      {faq.answer}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Footer content ───────────────────────────────────────────────────────────
 function FooterContent() {
   const router = useRouter()
   const { theme, setTheme } = useTheme()
-  const [mounted,       setMounted]       = useState(false)
-  const [isTermsOpen,   setIsTermsOpen]   = useState(false)
-  const [isFaqOpen,     setIsFaqOpen]     = useState(false)
-  const [openFaqIndex,  setOpenFaqIndex]  = useState<number | null>(null)
-  const [phoneCopied,   setPhoneCopied]   = useState(false)
+  const [mounted,             setMounted]             = useState(false)
+  const [isTermsOpen,         setIsTermsOpen]         = useState(false)
+  const [isFaqAccordionOpen,  setIsFaqAccordionOpen]  = useState(false)
+  const [openFaqIndex,        setOpenFaqIndex]        = useState<number | null>(null)
+  const [phoneCopied,         setPhoneCopied]         = useState(false)
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -306,8 +306,21 @@ function FooterContent() {
     setTimeout(() => setPhoneCopied(false), 2000)
   }
 
+  const toggleFaqIndex = (i: number) => setOpenFaqIndex((prev) => (prev === i ? null : i))
+
   return (
     <div className="pt-16 pb-12">
+
+      {/* ── Mobile-only: FAQs pill promoted to the top of the footer ── */}
+      <div className="md:hidden px-6 mb-10">
+        <FaqAccordion
+          isOpen={isFaqAccordionOpen}
+          onToggle={() => setIsFaqAccordionOpen((v) => !v)}
+          openIndex={openFaqIndex}
+          onToggleIndex={toggleFaqIndex}
+        />
+      </div>
+
       <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16 mb-16 px-6 md:px-8">
 
         <div className="flex flex-col gap-6">
@@ -393,38 +406,33 @@ function FooterContent() {
             <li className="pt-2">
               <BusinessStatusFull />
             </li>
-            <li className="pt-2">
-              <button
-                onClick={() => setIsFaqOpen(true)}
-                className="flex items-center gap-3 text-[0.65rem] font-medium text-zinc-400 hover:text-brand-blue transition-colors"
-              >
-                <div
-                  className="w-7 h-7 rounded-[10px] flex items-center justify-center border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm shrink-0"
-                  aria-hidden="true"
-                >
-                  <Question weight="bold" className="w-3.5 h-3.5" />
-                </div>
-                Help Center (FAQ)
-              </button>
+            {/* ── Desktop-only: FAQs pill stays in the Connect column ── */}
+            <li className="pt-2 hidden md:block">
+              <FaqAccordion
+                isOpen={isFaqAccordionOpen}
+                onToggle={() => setIsFaqAccordionOpen((v) => !v)}
+                openIndex={openFaqIndex}
+                onToggleIndex={toggleFaqIndex}
+              />
             </li>
           </ul>
         </div>
       </div>
 
-      <div className="max-w-[1200px] mx-auto border-t border-zinc-100 dark:border-zinc-800 pt-8 px-6 md:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
-        <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
-          <p className="text-[0.65rem] font-medium text-zinc-400">
-            © {new Date().getFullYear()} {BIZ.name}. All rights reserved.
-          </p>
-          <span className="hidden md:inline text-zinc-200 dark:text-zinc-800 text-[0.65rem]" aria-hidden="true">·</span>
-          <button
-            onClick={() => setIsTermsOpen(true)}
-            className="text-[0.45rem] font-medium text-zinc-400 hover:text-brand-blue transition-colors"
-          >
-            Terms &amp; Policies
-          </button>
-        </div>
-        <p className="text-[0.65rem] font-medium text-zinc-400 flex items-center gap-1.5">
+      {/* ── Legal bar — Terms centered, same size as "Built with ❤️" ── */}
+      <div className="max-w-[1200px] mx-auto border-t border-zinc-100 dark:border-zinc-800 pt-8 px-6 md:px-8 grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+        <p className="text-[0.65rem] font-medium text-zinc-400 text-center md:text-left">
+          © {new Date().getFullYear()} {BIZ.name}. All rights reserved.
+        </p>
+
+        <button
+          onClick={() => setIsTermsOpen(true)}
+          className="text-[0.65rem] font-medium text-zinc-400 hover:text-brand-blue transition-colors justify-self-center"
+        >
+          Terms &amp; Policies
+        </button>
+
+        <p className="text-[0.65rem] font-medium text-zinc-400 flex items-center justify-center md:justify-end gap-1.5">
           Built with <Heart weight="fill" className="w-3 h-3 text-brand-orange" aria-hidden="true" /> for the Kgotsong community
         </p>
       </div>
@@ -434,77 +442,6 @@ function FooterContent() {
         open={isTermsOpen}
         onAgree={() => setIsTermsOpen(false)}
       />
-
-      {/* ── FAQ modal — unchanged, still dismissible ── */}
-      <Modal
-        open={isFaqOpen}
-        onClose={() => setIsFaqOpen(false)}
-        title="Help Center"
-        subtitle="Common Questions"
-      >
-        <div className="px-6 py-8 space-y-2">
-          {FAQS.map((faq, i) => {
-            const isOpen = openFaqIndex === i
-            return (
-              <div
-                key={i}
-                className={cn(
-                  "rounded-[14px] border transition-all duration-200",
-                  isOpen
-                    ? "border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/60"
-                    : "border-transparent bg-white dark:bg-zinc-900/20 hover:border-zinc-100 dark:hover:border-zinc-800"
-                )}
-              >
-                <button
-                  onClick={() => setOpenFaqIndex(isOpen ? null : i)}
-                  aria-expanded={isOpen}
-                  aria-controls={`faq-${i}`}
-                  className="flex items-center justify-between w-full text-left gap-4 px-5 py-4"
-                >
-                  <h4 className="text-[0.82rem] font-black text-zinc-800 dark:text-zinc-100 leading-snug">
-                    {faq.question}
-                  </h4>
-                  <CaretDown
-                    className={cn(
-                      "w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform duration-200",
-                      isOpen && "rotate-180"
-                    )}
-                    aria-hidden="true"
-                  />
-                </button>
-                <div
-                  id={`faq-${i}`}
-                  role="region"
-                  aria-label={faq.question}
-                  className={cn(
-                    "grid transition-all duration-300 ease-in-out",
-                    isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-                  )}
-                >
-                  <div className="overflow-hidden">
-                    <div className="px-5 pb-5 pt-1 text-[0.8rem] text-zinc-500 dark:text-zinc-400 leading-relaxed whitespace-pre-wrap">
-                      {faq.answer}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-          <div className="pt-4 pb-2 text-center">
-            <p className="text-[0.72rem] font-medium text-zinc-400 dark:text-zinc-600">
-              Still need help?{" "}
-              <a
-                href={WA.general}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-black text-brand-blue hover:underline"
-              >
-                WhatsApp us directly
-              </a>
-            </p>
-          </div>
-        </div>
-      </Modal>
     </div>
   )
 }
@@ -516,4 +453,4 @@ export function Footer() {
       <FooterContent />
     </footer>
   )
-  } 
+        } 
