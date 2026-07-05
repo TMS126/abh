@@ -1,450 +1,212 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import Image from "next/image"
-import { X, WhatsappLogo, PaperPlaneTilt, Check, CaretDown } from "@phosphor-icons/react"
-import { BIZ } from "@/lib/brand"
-import { cn } from "@/lib/utils"
+import { useState, useEffect, useMemo, useRef } from "react"
+import { Calculator, X, Plus, Minus, Trash, WhatsappLogo, CaretDown, SealPercent, Printer, FileText, PaintBrush, Globe, Desktop } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
+import { cn } from "@/lib/utils"
+import { HUB_COLORS, HubKey, BIZ, waLink } from "@/lib/brand"
+import { HUBS, HubId } from "@/lib/data"
 import { useExclusiveWidget } from "@/hooks/use-exclusive-widget"
 
-const WA_NUMBER  = "27753338260"
-const GREETING   = "Hi there 👋 Tell us what you need and we'll get back to you right away!"
+const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
-// ── WhatsApp's actual wallpaper/tick colors — kept purely as the backdrop
-// feel and status accents. Bubble fills below no longer use WA's solid
-// bubbleIn/bubbleOut colors; those are replaced by the glass tokens further
-// down so the panel matches the Quote Calculator widget's frosted style. ──
-const WA = {
-  wallpaperLight: "#E5DDD5",
-  wallpaperDark:  "#0B141A",
-  textLight:      "#111B21",
-  textDark:       "#E9EDEF",
-  subLight:       "#667781",
-  subDark:        "#8696A0",
-  accent:         "#25D366",
-  tick:           "#53BDEB",
-} as const
+// ─── BULK PRICING TIERS ───────────────────────────────────────────────────────
+const BULK_TIERS: Record<string, { min: number; rate: number }[]> = {
+  "print-Copying-Black & White":        [{ min: 10, rate: 2 }, { min: 100, rate: 1 }],
+  "print-Copying-Colour":               [{ min: 10, rate: 4 }, { min: 50,  rate: 3 }],
+  "print-Printing-Black & White":       [{ min: 10, rate: 4 }, { min: 100, rate: 3 }],
+  "print-Printing-Colour":              [{ min: 10, rate: 7 }, { min: 50,  rate: 5 }],
+  "doc-Typing + Printing-Black & White":[{ min: 10, rate: 10 }],
+  "doc-Typing + Printing-Colour":       [{ min: 10, rate: 11 }],
+}
 
-// ── Same glass tokens used in QuoteCalculatorWidget, reused here so both
-// FAB panels share one visual language. ─────────────────────────────────
+const SECTION_LABEL: Record<string, string> = {
+  "Printing": "Print", "Copying": "Copy", "Typing + Printing": "Typing",
+}
+function getDisplayName(sectionTitle: string, name: string): string {
+  if ((name === "Black & White" || name === "Colour") && SECTION_LABEL[sectionTitle])
+    return `${name} ${SECTION_LABEL[sectionTitle]}`
+  return name
+}
+
+function getEffectiveRate(id: string, qty: number, fallback: number): number {
+  const tiers = BULK_TIERS[id]
+  if (!tiers) return fallback
+  let rate = fallback
+  for (const t of tiers) { if (qty >= t.min) rate = t.rate }
+  return rate
+}
+
+function getNextTier(id: string, qty: number) {
+  const tiers = BULK_TIERS[id]
+  if (!tiers) return null
+  return tiers.find(t => qty < t.min) ?? null
+}
+
+function getBulkHint(id: string, qty: number, effRate: number, baseRate: number): string | null {
+  const next = getNextTier(id, qty)
+  const discounted = effRate < baseRate
+  if (next) {
+    const needed = next.min - qty
+    return discounted
+      ? `Bulk rate applied — add ${needed} more for R${next.rate} each`
+      : `Add ${needed} more to unlock R${next.rate} each`
+  }
+  return discounted ? "Best bulk rate applied" : null
+}
+
+function HubIcon({ id, size = 16, color }: { id: HubId; size?: number; color?: string }) {
+  const p = { size, weight: "fill" as const, color: color ?? "currentColor", "aria-hidden": true }
+  switch (id) {
+    case "print":    return <Printer    {...p} />
+    case "doc":      return <FileText   {...p} />
+    case "design":   return <PaintBrush {...p} />
+    case "eservice": return <Globe      {...p} />
+    case "tech":     return <Desktop    {...p} />
+  }
+}
+
+function parsePrice(price: string): { amount: number; unit: string | null } {
+  const match = price.match(/R(\d+(?:\.\d+)?)(?:\/(.+))?/)
+  if (!match) return { amount: 0, unit: null }
+  return { amount: parseFloat(match[1]), unit: match[2] ?? null }
+}
+
+interface CartItem {
+  id: string; hubId: HubId; sectionTitle: string; name: string
+  unitPrice: number; unit: string | null; qty: number
+}
+
+const STORAGE_KEY = "apexbytes-quote-cart"
+
+// ─── Liquid glass style helpers ────────────────────────────────────────────────
+// All visual depth is achieved via CSS properties — no canvas, no filters on
+// scroll containers, no blur inside lists. A single backdrop-filter on the
+// panel shell is the only GPU layer.
 const GLASS = {
-  panel:   "bg-white/70 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/40 dark:border-white/10",
-  header:  "bg-white/50 dark:bg-zinc-900/40 backdrop-blur-xl border-b border-white/40 dark:border-white/10",
-  bubbleIn:  "bg-white/70 dark:bg-zinc-900/55 backdrop-blur-md border border-white/60 dark:border-white/10",
-  bubbleOut: "bg-[#25D366]/15 dark:bg-[#25D366]/12 backdrop-blur-md border border-[#25D366]/30",
-  pill:    "bg-zinc-100/80 dark:bg-white/[0.08] border border-white/60 dark:border-white/10",
-  btn:     "bg-zinc-100/70 dark:bg-white/[0.07] border border-white/60 dark:border-white/10",
-  composeBar: "bg-white/60 dark:bg-zinc-900/50 backdrop-blur-xl border-t border-white/40 dark:border-white/10",
-  composeField: "bg-white/80 dark:bg-white/[0.06] border border-white/70 dark:border-white/10",
+  panel: "bg-white/70 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/40 dark:border-white/10",
+  section: "bg-white/60 dark:bg-white/5 border border-white/60 dark:border-white/10",
+  item: "bg-white/80 dark:bg-white/[0.06] border border-white/70 dark:border-white/[0.08]",
+  pill: "bg-zinc-100/80 dark:bg-white/[0.08] border border-white/60 dark:border-white/10",
+  btn: "bg-zinc-100/70 dark:bg-white/[0.07] border border-white/60 dark:border-white/10",
 } as const
 
-const HUBS = [
-  { id: "print",    label: "Print Hub",     hint: "Printing, copying, photos" },
-  { id: "doc",      label: "Docu Hub",      hint: "CVs, typing, laminating" },
-  { id: "design",   label: "Design Hub",    hint: "Logos, flyers, branding" },
-  { id: "eservice", label: "E-Service Hub", hint: "SASSA, SARS, NSFAS, PSIRA" },
-  { id: "tech",     label: "Tech Hub",      hint: "PC repairs, software, setup" },
-  { id: "other",    label: "Not sure yet",  hint: "We'll help you figure it out" },
-]
+export function QuoteCalculatorWidget() {
+  const { resolvedTheme } = useTheme(); const isDark = resolvedTheme === "dark"
+  const [isOpen, setIsOpen, isOtherOpen]     = useExclusiveWidget("calculator")
+  const [openHub, setOpenHub]   = useState<HubId | null>(null)
+  const [openSections, setOpenSections] = useState<Record<HubId, number | null>>({} as Record<HubId, number | null>)
+  const [cart, setCart]         = useState<CartItem[]>([])
+  const [hydrated, setHydrated] = useState(false)
+  const isScrolling             = useRef(false)
+  const scrollTimer             = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [scrolled, setScrolled] = useState(false)
 
-// Faint tiled doodle pattern approximating WhatsApp's chat wallpaper —
-// generated as an inline SVG so no external asset is needed.
-function buildWallpaperPattern(strokeColor: string) {
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
-      <g fill="none" stroke="${strokeColor}" stroke-width="1.2" opacity="0.35">
-        <circle cx="20" cy="30" r="6" />
-        <path d="M60 20 q10 -15 20 0 q10 15 20 0" />
-        <path d="M120 60 l8 8 l-8 8 l-8 -8 z" />
-        <circle cx="170" cy="40" r="4" />
-        <path d="M30 110 q8 10 16 0 q8 -10 16 0" />
-        <path d="M100 140 l10 10 m0 -10 l-10 10" />
-        <circle cx="160" cy="150" r="5" />
-        <path d="M60 170 q10 -12 20 0" />
-      </g>
-    </svg>
-  `
-  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`
-}
-
-function formatTime() {
-  return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-}
-
-export function WhatsAppFAB() {
-  const { resolvedTheme }           = useTheme()
-  const isDark                       = resolvedTheme === "dark"
-  const [isOpen,  setIsOpen, isOtherOpen] = useExclusiveWidget("whatsapp")
-  const [visible, setVisible]        = useState(false)
-  const [scrolled, setScrolled]      = useState(false)
-  const [name,    setName]           = useState("")
-  const [hub,     setHub]            = useState("")
-  const [note,    setNote]           = useState("")
-  const [step,    setStep]           = useState<"form" | "sent">("form")
-  const [isMenuOpen, setIsMenuOpen]  = useState(false)
-  const [openTime, setOpenTime]      = useState("")
-  const [sentTime, setSentTime]      = useState("")
-
-  const nameRef                      = useRef<HTMLInputElement>(null)
-  const menuRef                      = useRef<HTMLDivElement>(null)
-  const scrollTimer                  = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // Mount delay
+  // Persist cart
   useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 1000)
-    return () => clearTimeout(t)
+    try { const s = localStorage.getItem(STORAGE_KEY); if (s) setCart(JSON.parse(s)) } catch {}
+    setHydrated(true)
   }, [])
+  useEffect(() => {
+    if (!hydrated) return
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cart)) } catch {}
+  }, [cart, hydrated])
 
-  // Hide completely while scrolling — same pattern as calculator
+  // Fade FAB while scrolling
   useEffect(() => {
     const onScroll = () => {
       setScrolled(true)
       if (scrollTimer.current) clearTimeout(scrollTimer.current)
-      scrollTimer.current = setTimeout(() => setScrolled(false), 300)
+      scrollTimer.current = setTimeout(() => setScrolled(false), 200)
     }
     window.addEventListener("scroll", onScroll, { passive: true })
-    return () => {
-      window.removeEventListener("scroll", onScroll)
-      if (scrollTimer.current) clearTimeout(scrollTimer.current)
-    }
+    return () => { window.removeEventListener("scroll", onScroll); if (scrollTimer.current) clearTimeout(scrollTimer.current) }
   }, [])
 
-  // Focus name + stamp the greeting bubble's time on open
+  // Lock body scroll while open
   useEffect(() => {
-    if (isOpen && step === "form") {
-      setOpenTime(formatTime())
-      setTimeout(() => nameRef.current?.focus(), 200)
-    }
-  }, [isOpen, step])
-
-  // Close on Escape
-  useEffect(() => {
-    if (!isOpen) return
-    const fn = (e: KeyboardEvent) => { if (e.key === "Escape") handleClose() }
-    document.addEventListener("keydown", fn)
-    return () => document.removeEventListener("keydown", fn)
+    document.body.style.overflow = isOpen ? "hidden" : ""
+    return () => { document.body.style.overflow = "" }
   }, [isOpen])
 
-  // Close menu on click outside
+  // Listen for "abh:add-to-quote" events fired by the ServiceDetailModal.
+  // Opens the calculator and adds the item so the user sees instant feedback.
   useEffect(() => {
-    if (!isMenuOpen) return
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setIsMenuOpen(false)
-      }
+    const handler = (e: Event) => {
+      const { hubId, sectionTitle, name, price } = (e as CustomEvent).detail
+      addItem(hubId, sectionTitle, name, price)
+      setIsOpen(true)
     }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [isMenuOpen])
+    window.addEventListener("abh:add-to-quote", handler)
+    return () => window.removeEventListener("abh:add-to-quote", handler)
+  }, [])  // addItem is stable — defined outside render
 
-  // Body scroll lock
-  useEffect(() => {
-    if (!isOpen) return
-    const scrollY = window.scrollY
-    const { style } = document.body
-    style.position = "fixed"; style.top = `-${scrollY}px`
-    style.left = "0"; style.right = "0"; style.width = "100%"; style.overflow = "hidden"
-    return () => {
-      style.position = ""; style.top = ""; style.left = ""
-      style.right = ""; style.width = ""; style.overflow = ""
-      window.scrollTo(0, scrollY)
-    }
-  }, [isOpen])
+  const getAccent     = (id: HubId) => { const c = HUB_COLORS[id as HubKey]; return isDark ? c.tagTextDark : c.tagText }
+  const getSolid      = (id: HubId) => HUB_COLORS[id as HubKey].tagText
+  const titleAccent   = isDark ? HUB_COLORS.design.tagTextDark : HUB_COLORS.design.tagText
 
-  const handleClose = () => {
-    setIsOpen(false)
-    setTimeout(() => {
-      setStep("form");
-      setName("");
-      setHub("");
-      setNote("");
-      setIsMenuOpen(false);
-    }, 400)
+  const addItem = (hubId: HubId, sectionTitle: string, name: string, price: string) => {
+    const { amount, unit } = parsePrice(price)
+    const id = `${hubId}-${sectionTitle}-${name}`
+    setCart(prev => {
+      const ex = prev.find(i => i.id === id)
+      if (ex) return prev.map(i => i.id === id ? { ...i, qty: i.qty + 1 } : i)
+      return [...prev, { id, hubId, sectionTitle, name, unitPrice: amount, unit, qty: 1 }]
+    })
   }
 
-  const isValid     = name.trim().length > 1 && hub !== ""
-  const selectedHub = HUBS.find(h => h.id === hub)
+  const removeItem = (id: string) => setCart(prev => prev.filter(i => i.id !== id))
+  const updateQty  = (id: string, qty: number) => {
+    if (qty < 1) { removeItem(id); return }
+    setCart(prev => prev.map(i => i.id === id ? { ...i, qty } : i))
+  }
+  const setQtyDraft = (id: string, raw: string) => {
+    if (raw === "") { setCart(prev => prev.map(i => i.id === id ? { ...i, qty: 0 } : i)); return }
+    const n = parseInt(raw, 10)
+    if (!isNaN(n) && n >= 0) setCart(prev => prev.map(i => i.id === id ? { ...i, qty: n } : i))
+  }
+  const handleQtyBlur = (id: string, qty: number) => {
+    if (qty < 1) setCart(prev => prev.map(i => i.id === id ? { ...i, qty: 1 } : i))
+  }
+  const clearCart = () => setCart([])
 
-  const handleSend = () => {
-    if (!isValid) return
-    const message = [
-      `Hi ${BIZ.name}! 👋`,
-      `My name is ${name.trim()}.`,
-      `I need help with: *${selectedHub?.label ?? hub}*`,
-      note.trim() ? `More details: ${note.trim()}` : "",
-    ].filter(Boolean).join("\n")
-    window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message)}`, "_blank")
-    setSentTime(formatTime())
-    setStep("sent")
+  const itemCount    = cart.reduce((s, i) => s + (i.qty || 1), 0)
+  const total        = useMemo(() => cart.reduce((s, i) => s + getEffectiveRate(i.id, i.qty || 1, i.unitPrice) * (i.qty || 1), 0), [cart])
+  const totalSavings = useMemo(() => cart.reduce((s, i) => s + (i.unitPrice - getEffectiveRate(i.id, i.qty || 1, i.unitPrice)) * (i.qty || 1), 0), [cart])
+
+  const sendQuote = () => {
+    let msg = `Hi ${BIZ.name}! I'd like a quote for:\n\n`
+    cart.forEach(item => {
+      const qty = item.qty || 1
+      const effRate = getEffectiveRate(item.id, qty, item.unitPrice)
+      const qtyLabel = item.unit ? `${qty} ${item.unit}${qty > 1 ? "s" : ""}` : `x${qty}`
+      msg += `• ${getDisplayName(item.sectionTitle, item.name)} — ${qtyLabel} @ R${effRate} = R${effRate * qty}\n`
+    })
+    msg += `\nTotal: R${total}`
+    if (totalSavings > 0) msg += ` (saved R${totalSavings} with bulk pricing)`
+    window.open(waLink(msg), "_blank")
   }
 
-  // ── Theme-derived tokens ────────────────────────────────────────────────
-  const wallpaperBg  = isDark ? WA.wallpaperDark    : WA.wallpaperLight
-  const textColor    = isDark ? WA.textDark         : WA.textLight
-  const subColor     = isDark ? WA.subDark          : WA.subLight
-  const wallpaperPattern = buildWallpaperPattern(isDark ? "#FFFFFF" : "#000000")
+  const toggleSection = (hubId: HubId, sIdx: number) => {
+    setOpenSections(prev => ({ ...prev, [hubId]: prev[hubId] === sIdx ? null : sIdx }))
+  }
 
   return (
     <>
-      {/* ── Backdrop ──────────────────────────────────────────────── */}
+      {/* ── Backdrop ─────────────────────────────────────────────────────── */}
       {isOpen && (
         <div
           className="fixed inset-0 z-[9989] bg-black/30 backdrop-blur-sm transition-opacity duration-300"
-          onClick={handleClose}
+          onClick={() => setIsOpen(false)}
           aria-hidden="true"
         />
       )}
 
-      {/* ── Panel ─────────────────────────────────────────────────── */}
-      {isOpen && (
-        <div
-          className={cn(
-            "fixed bottom-24 right-4 left-4 md:left-auto md:right-6 z-[9991] md:w-[420px] max-h-[75vh]",
-            "rounded-[20px] shadow-2xl flex flex-col overflow-hidden",
-            "animate-in slide-in-from-bottom-4 fade-in duration-300",
-            GLASS.panel
-          )}
-          style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.25)" }}
-        >
-          {/* Specular highlight strip — same touch as the Quote Calculator panel */}
-          <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent pointer-events-none z-10" />
-
-          {/* ── Glass header — logo.png in a neutral frame, no color tint,
-              so it reads as a plain brand mark rather than a WhatsApp-teal
-              chat header. More breathing room (py-5, gap-3.5) than before. ── */}
-          <div className={cn("flex items-center gap-3.5 px-5 py-5 shrink-0", GLASS.header)}>
-            <div
-              className={cn(
-                "w-12 h-12 rounded-[14px] flex items-center justify-center shrink-0 p-1.5",
-                "bg-zinc-100/70 dark:bg-white/[0.08] border border-white/60 dark:border-white/10"
-              )}
-            >
-              <div className="relative w-full h-full">
-                <Image src="/logo.png" alt="" fill sizes="48px" className="object-contain" />
-              </div>
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-sans font-black text-[1.02rem] leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 truncate">
-                {BIZ.name}
-              </h3>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="relative flex h-2 w-2 shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                </span>
-                <p className="text-[0.7rem] font-semibold text-zinc-500 dark:text-zinc-400">
-                  Online · replies within 15 min
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={handleClose}
-              className={cn("w-9 h-9 rounded-full flex items-center justify-center text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors shrink-0", GLASS.btn)}
-              aria-label="Close"
-            >
-              <X size={17} weight="bold" />
-            </button>
-          </div>
-
-          {/* ── Chat body — wallpaper background kept for the "chat" feel,
-              bubbles now glass instead of solid WhatsApp bubble colors ── */}
-          <div
-            className="flex-1 overflow-y-auto overscroll-contain min-h-0 relative"
-            style={{ backgroundColor: wallpaperBg, backgroundImage: wallpaperPattern, backgroundSize: "200px 200px" }}
-          >
-            {step === "form" ? (
-              <div className="relative z-10 px-4 py-5 flex flex-col gap-3">
-
-                {/* Greeting — incoming glass bubble */}
-                <div className={cn("relative self-start max-w-[85%] px-4 py-3 rounded-[16px] rounded-tl-[4px] shadow-sm", GLASS.bubbleIn)}>
-                  <p className="text-[0.84rem] leading-relaxed pr-10" style={{ color: textColor }}>
-                    {GREETING}
-                  </p>
-                  <span className="absolute bottom-1.5 right-3 text-[0.6rem]" style={{ color: subColor }}>
-                    {openTime}
-                  </span>
-                </div>
-
-                {/* Name — incoming glass bubble containing the field */}
-                <div className={cn("relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-[16px] rounded-tl-[4px] shadow-sm", GLASS.bubbleIn)}>
-                  <label className="text-[0.62rem] font-black uppercase tracking-widest block mb-1.5" style={{ color: subColor }}>
-                    Your Name
-                  </label>
-                  <input
-                    ref={nameRef}
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Thembi"
-                    className="w-full bg-transparent text-[0.86rem] font-semibold outline-none border-none"
-                    style={{ color: textColor }}
-                  />
-                </div>
-
-                {/* Hub selector — incoming glass bubble containing dropdown trigger */}
-                <div className={cn("relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-[16px] rounded-tl-[4px] shadow-sm", GLASS.bubbleIn)} ref={menuRef}>
-                  <label className="text-[0.62rem] font-black uppercase tracking-widest block mb-1.5" style={{ color: subColor }}>
-                    What do you need help with?
-                  </label>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className="w-full text-left flex items-center justify-between"
-                  >
-                    <div className="flex flex-col min-w-0">
-                      {selectedHub ? (
-                        <>
-                          <span className="text-[0.84rem] font-black leading-tight" style={{ color: textColor }}>
-                            {selectedHub.label}
-                          </span>
-                          <span className="text-[0.66rem] font-semibold mt-0.5 truncate" style={{ color: subColor }}>
-                            {selectedHub.hint}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-[0.86rem] font-semibold" style={{ color: subColor }}>
-                          Select an option...
-                        </span>
-                      )}
-                    </div>
-                    <CaretDown
-                      size={16}
-                      weight="bold"
-                      className={cn("transition-transform duration-200 shrink-0", isMenuOpen && "rotate-180")}
-                      style={{ color: subColor }}
-                    />
-                  </button>
-
-                  {/* Dropdown menu — floating overlay, keeps its own frosted look */}
-                  {isMenuOpen && (
-                    <div
-                      className={cn(
-                        "absolute left-0 right-0 z-[9999] mt-2.5 p-1.5",
-                        "rounded-[18px] shadow-xl border border-white/20 dark:border-white/10",
-                        "animate-in fade-in zoom-in-95 duration-150 origin-top",
-                        "bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl"
-                      )}
-                    >
-                      <div className="flex flex-col gap-1 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
-                        {HUBS.map((h) => {
-                          const isSelected = hub === h.id
-                          return (
-                            <button
-                              key={h.id}
-                              type="button"
-                              onClick={() => {
-                                setHub(h.id)
-                                setIsMenuOpen(false)
-                              }}
-                              className={cn(
-                                "w-full px-3 py-2.5 rounded-[12px] text-left flex items-center gap-3 transition-colors",
-                                isSelected
-                                  ? "bg-[#25D366]/10"
-                                  : "hover:bg-zinc-100 dark:hover:bg-white/5"
-                              )}
-                            >
-                              <div
-                                className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
-                                style={{
-                                  borderColor:     isSelected ? "#25D366" : "#d1d5db",
-                                  backgroundColor: isSelected ? "#25D366" : "transparent",
-                                }}
-                              >
-                                {isSelected && <Check size={8} weight="bold" className="text-white" />}
-                              </div>
-                              <div className="flex flex-col min-w-0">
-                                <span className={cn(
-                                  "text-[0.78rem] font-black leading-tight",
-                                  isSelected ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-700 dark:text-zinc-300"
-                                )}>
-                                  {h.label}
-                                </span>
-                                <span className="text-[0.64rem] font-semibold text-zinc-400 mt-0.5">
-                                  {h.hint}
-                                </span>
-                              </div>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Optional note — incoming glass bubble */}
-                <div className={cn("relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-[16px] rounded-tl-[4px] shadow-sm", GLASS.bubbleIn)}>
-                  <label className="text-[0.62rem] font-black uppercase tracking-widest block mb-1.5" style={{ color: subColor }}>
-                    Anything else? <span className="normal-case font-semibold opacity-60">(optional)</span>
-                  </label>
-                  <textarea
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    placeholder="e.g. I need a CV today and want to collect by 3pm…"
-                    rows={2}
-                    className="w-full bg-transparent text-[0.86rem] font-semibold outline-none border-none resize-none"
-                    style={{ color: textColor }}
-                  />
-                </div>
-
-              </div>
-            ) : (
-              /* Sent confirmation — outgoing glass bubble, tinted WhatsApp green, WA-style ticks */
-              <div className="relative z-10 min-h-full px-4 py-5 flex flex-col justify-end items-end gap-3">
-                <div className={cn("relative max-w-[85%] px-4 py-3 rounded-[16px] rounded-tr-[4px] shadow-sm", GLASS.bubbleOut)}>
-                  <p className="text-[0.84rem] leading-relaxed pr-14" style={{ color: textColor }}>
-                    Message ready — opening WhatsApp now…
-                  </p>
-                  <span className="absolute bottom-1.5 right-3 flex items-center gap-0.5 text-[0.6rem]" style={{ color: subColor }}>
-                    {sentTime}
-                    <span className="relative w-3.5 h-2.5 inline-block ml-0.5">
-                      <Check size={11} weight="bold" className="absolute left-0" style={{ color: WA.tick }} />
-                      <Check size={11} weight="bold" className="absolute left-[3px]" style={{ color: WA.tick }} />
-                    </span>
-                  </span>
-                </div>
-                <button
-                  onClick={handleClose}
-                  className={cn("px-5 py-2.5 rounded-full text-[0.78rem] font-bold shadow-sm transition-colors", GLASS.composeField)}
-                  style={{ color: textColor }}
-                >
-                  Close
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* ── Compose bar — glass instead of solid, send button stays
-              WhatsApp green so the action still reads clearly as "send" ── */}
-          {step === "form" && (
-            <div className={cn("shrink-0 flex items-center gap-2.5 px-4 py-3.5", GLASS.composeBar)}>
-              <div
-                className={cn("flex-1 rounded-full px-4 py-3 text-[0.82rem] font-medium truncate shadow-sm", GLASS.composeField)}
-                style={{ color: isValid ? textColor : subColor }}
-              >
-                {isValid ? "Ready to send your message" : "Fill in your name & topic to continue"}
-              </div>
-              <button
-                onClick={handleSend}
-                disabled={!isValid}
-                className="w-11 h-11 rounded-full flex items-center justify-center text-white shrink-0 transition-transform active:scale-90 disabled:opacity-40 disabled:active:scale-100 shadow-md"
-                style={{ backgroundColor: WA.accent }}
-                aria-label="Send"
-              >
-                <PaperPlaneTilt size={18} weight="fill" />
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── FAB — unchanged: still the WhatsApp icon, still green ───── */}
+      {/* ── FAB ──────────────────────────────────────────────────────────── */}
       <div
         className={cn(
-          "fixed z-[9992] right-4 bottom-6 group/wa",
+          "fixed z-[9992] right-4 bottom-[5.5rem] group/calc",
           "transition-all duration-300",
-          !visible && "opacity-0 pointer-events-none",
           (scrolled && !isOpen) || isOtherOpen
             ? "opacity-0 pointer-events-none scale-90"
             : "opacity-100 scale-100"
@@ -454,29 +216,244 @@ export function WhatsAppFAB() {
           {/* Slide-out label */}
           <span className={cn(
             "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap",
-            "bg-white dark:bg-zinc-900 text-[#25D366]",
+            "bg-white dark:bg-zinc-900 text-brand-blue",
             "px-2.5 py-1 rounded-full shadow-md border border-zinc-100 dark:border-zinc-800",
             "transition-all duration-300 origin-right",
             isOpen
               ? "opacity-0 scale-x-0 pointer-events-none"
-              : "opacity-0 scale-x-0 group-hover/wa:opacity-100 group-hover/wa:scale-x-100"
+              : "opacity-0 scale-x-0 group-hover/calc:opacity-100 group-hover/calc:scale-x-100"
           )}>
-            Chat
+            Quote
           </span>
 
           <button
             onClick={() => setIsOpen(o => !o)}
-            aria-label={isOpen ? "Close WhatsApp chat" : `Chat with ${BIZ.name} on WhatsApp`}
-            className="relative w-14 h-14 rounded-full text-white shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-200"
-            style={{ backgroundColor: "#25D366" }}
+            className="relative w-14 h-14 rounded-full bg-brand-blue text-white shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-200"
+            aria-label={isOpen ? "Close quotation calculator" : "Open quotation calculator"}
           >
-            {!isOpen && (
-              <span className="absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-20 pointer-events-none" />
+            {isOpen ? <X size={22} weight="bold" /> : <Calculator size={26} weight="fill" />}
+            {!isOpen && itemCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 rounded-full bg-brand-orange text-white text-[0.65rem] font-black flex items-center justify-center border-2 border-white dark:border-zinc-950">
+                {itemCount}
+              </span>
             )}
-            {isOpen ? <X size={22} weight="bold" /> : <WhatsappLogo size={28} weight="fill" />}
           </button>
         </div>
       </div>
+
+      {/* ── Calculator panel ─────────────────────────────────────────────── */}
+      {isOpen && (
+        <div
+          className={cn(
+            "fixed bottom-24 right-4 left-4 md:left-auto md:right-6 z-[9991] md:w-[400px] max-h-[75vh] rounded-[20px] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-300",
+            GLASS.panel
+          )}
+          style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.3)" }}
+        >
+          {/* Specular highlight strip */}
+          <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent pointer-events-none" />
+
+          {/* Header */}
+          <div
+            className="flex items-center justify-between px-5 py-4 shrink-0 border-b border-white/20 dark:border-white/10"
+            style={{ background: "linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 100%)" }}
+          >
+            <h3 className="font-sans font-black text-lg" style={{ color: titleAccent }}>Quotation Calculator</h3>
+            <button
+              onClick={() => setIsOpen(false)}
+              className={cn("w-8 h-8 rounded-full flex items-center justify-center text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors", GLASS.btn)}
+            >
+              <X size={16} weight="bold" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto min-h-0">
+
+            {/* ── Cart ───────────────────────────────────────────────── */}
+            {cart.length > 0 && (
+              <div className="p-4 border-b border-white/20 dark:border-white/10 space-y-2">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400">Your Quote</span>
+                  <button onClick={clearCart} className="text-[0.65rem] font-bold text-zinc-400 hover:text-red-500 transition-colors">Clear all</button>
+                </div>
+                {cart.map(item => {
+                  const qty = item.qty || 1
+                  const effRate = getEffectiveRate(item.id, qty, item.unitPrice)
+                  const lineTotal = effRate * qty
+                  const discounted = effRate < item.unitPrice
+                  const hint = getBulkHint(item.id, qty, effRate, item.unitPrice)
+                  const displayName = getDisplayName(item.sectionTitle, item.name)
+                  const accent = getAccent(item.hubId)
+                  return (
+                    <div key={item.id} className={cn("p-3 rounded-[14px] shadow-sm space-y-2", GLASS.item)}>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{displayName}</p>
+                        <button onClick={() => removeItem(item.id)} className="text-zinc-400 hover:text-red-500 shrink-0 transition-colors"><Trash size={14} weight="bold" /></button>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        {discounted && <span className="text-red-400 line-through">R{item.unitPrice}{item.unit ? `/${item.unit}` : ""}</span>}
+                        <span className="font-bold text-zinc-700 dark:text-zinc-200" style={{ color: discounted ? accent : undefined }}>R{effRate}{item.unit ? `/${item.unit}` : ""}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-1.5">
+                          <button onClick={() => updateQty(item.id, qty - 1)} className={cn("w-6 h-6 rounded-full flex items-center justify-center transition-colors", GLASS.btn)}><Minus size={12} weight="bold" /></button>
+                          <input
+                            type="number" min={1}
+                            value={item.qty === 0 ? "" : item.qty}
+                            onChange={e => setQtyDraft(item.id, e.target.value)}
+                            onBlur={() => handleQtyBlur(item.id, item.qty)}
+                            placeholder="1"
+                            className="w-10 text-center text-xs font-black bg-transparent border-none outline-none text-zinc-900 dark:text-zinc-100"
+                          />
+                          <button onClick={() => updateQty(item.id, qty + 1)} className={cn("w-6 h-6 rounded-full flex items-center justify-center transition-colors", GLASS.btn)}><Plus size={12} weight="bold" /></button>
+                        </div>
+                        <span className="text-sm font-black text-zinc-900 dark:text-zinc-50">R{lineTotal}</span>
+                      </div>
+                      {hint && (
+                        <p className={cn("text-[0.6rem] font-bold", discounted ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400")}>{hint}</p>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* ── Add Services ───────────────────────────────────────── */}
+            <div className="p-4 space-y-2">
+              <span className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 px-1">Add a Service</span>
+              {HUB_ORDER.map(hubId => {
+                const hub = HUBS[hubId]
+                const accent = getAccent(hubId)
+                const solidAccent = getSolid(hubId)
+                const isHubOpen = openHub === hubId
+
+                return (
+                  <div key={hubId} className={cn("rounded-[14px] overflow-hidden", GLASS.section)}>
+                    {/* Hub header */}
+                    <button
+                      onClick={() => setOpenHub(isHubOpen ? null : hubId)}
+                      className="w-full flex items-center gap-3 p-3 text-left hover:bg-white/20 dark:hover:bg-white/5 transition-colors"
+                    >
+                      <div
+                        className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: `${accent}20`, color: accent }}
+                      >
+                        <HubIcon id={hubId} />
+                      </div>
+                      <span className="flex-1 text-xs font-black text-zinc-800 dark:text-zinc-200">{hub.title}</span>
+                      <CaretDown
+                        size={14}
+                        className={cn("transition-transform duration-300", isHubOpen ? "rotate-180" : "rotate-0")}
+                        style={{ color: isHubOpen ? accent : undefined }}
+                      />
+                    </button>
+
+                    {/* Hub body: category accordions */}
+                    {isHubOpen && (
+                      <div className="border-t border-white/20 dark:border-white/10">
+                        {hub.sections.map((section, sIdx) => {
+                          const isSectionOpen = openSections[hubId] === sIdx
+
+                          return (
+                            <div
+                              key={sIdx}
+                              className={cn(sIdx > 0 && "border-t border-white/15 dark:border-white/[0.07]")}
+                            >
+                              {/* Category pill — accordion trigger */}
+                              <button
+                                onClick={() => toggleSection(hubId, sIdx)}
+                                className="w-full flex items-center justify-between px-3 py-2 transition-colors hover:bg-white/20 dark:hover:bg-white/5"
+                              >
+                                <span
+                                  className="text-[0.65rem] font-black uppercase tracking-[0.15em] px-2.5 py-1 rounded-full"
+                                  style={
+                                    isSectionOpen
+                                      ? { backgroundColor: solidAccent, color: "#fff" }
+                                      : { backgroundColor: `${accent}18`, color: accent }
+                                  }
+                                >
+                                  {section.title}
+                                </span>
+                                <CaretDown
+                                  size={12}
+                                  className={cn("mr-1 transition-transform duration-200", isSectionOpen ? "rotate-180" : "rotate-0")}
+                                  style={{ color: accent }}
+                                />
+                              </button>
+
+                              {/* Items */}
+                              {isSectionOpen && (
+                                <div className="px-3 pb-3 pt-1 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                                  {section.items.map((item, iIdx) => {
+                                    const itemId = `${hubId}-${section.title}-${item.name}`
+                                    const hasBulk = !!BULK_TIERS[itemId]
+                                    return (
+                                      <div
+                                        key={iIdx}
+                                        className={cn("flex items-center justify-between gap-2 p-2 rounded-[10px] shadow-sm", GLASS.item)}
+                                      >
+                                        <div className="min-w-0">
+                                          <p className="text-xs font-bold text-zinc-700 dark:text-zinc-300 truncate">
+                                            {getDisplayName(section.title, item.name)}
+                                          </p>
+                                          <p className="text-[0.65rem] font-medium text-zinc-400">
+                                            {item.price}
+                                            {hasBulk && <span className="font-bold ml-1" style={{ color: accent }}>· bulk</span>}
+                                          </p>
+                                        </div>
+                                        <button
+                                          onClick={() => addItem(hubId, section.title, item.name, item.price)}
+                                          className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-white shadow-sm active:scale-90 transition-transform"
+                                          style={{ backgroundColor: solidAccent }}
+                                          aria-label={`Add ${item.name}`}
+                                        >
+                                          <Plus size={13} weight="bold" />
+                                        </button>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* ── Footer ───────────────────────────────────────────────────── */}
+          {cart.length > 0 && (
+            <div
+              className="px-4 pb-4 pt-3 shrink-0 border-t border-white/20 dark:border-white/10 space-y-3"
+              style={{ background: "linear-gradient(to top, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 100%)" }}
+            >
+              {totalSavings > 0 && (
+                <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-emerald-600 dark:text-emerald-400">
+                  <SealPercent size={14} weight="fill" />
+                  Saving R{totalSavings} with bulk pricing
+                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-black text-zinc-500">Total</span>
+                <span className="text-2xl font-black text-brand-blue dark:text-brand-light-blue">R{total}</span>
+              </div>
+              <button
+                onClick={sendQuote}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-[14px] font-black text-sm text-white active:scale-95 transition-all shadow-lg"
+                style={{ backgroundColor: "#25D366" }}
+              >
+                <WhatsappLogo size={20} weight="fill" /> Send Quote via WhatsApp
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </>
   )
-                                                } 
+}
+ 
+  
