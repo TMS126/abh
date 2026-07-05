@@ -12,7 +12,7 @@ const PAGE_GLOW_COLORS: Record<string, string> = {
   "/services": BRAND.green,
   "/gallery":  BRAND.orange,
   "/about":    BRAND.blue,
-  "/contact":  BRAND.blueDark, // deliberately distinct from About's BRAND.blue
+  "/contact":  BRAND.dark100, // flat grey (Tech Hub identity) — decorative glow, contrast rules don't apply
 }
 
 export function PageEdgeGlow() {
