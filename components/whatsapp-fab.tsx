@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
-import { X, WhatsappLogo, PaperPlaneTilt, Check } from "@phosphor-icons/react"
+import { X, WhatsappLogo, PaperPlaneTilt, Check, CaretDown } from "@phosphor-icons/react"
 import { BIZ } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 import { useTheme } from "next-themes"
@@ -11,11 +11,8 @@ import { useExclusiveWidget } from "@/hooks/use-exclusive-widget"
 const WA_NUMBER  = "27753338260"
 const GREETING   = "Hi there 👋 Tell us what you need and we'll get back to you right away!"
 
-// ── WhatsApp's actual palette — restored as real solid colors for every
-// surface that's meant to read as an authentic WhatsApp chat (header,
-// wallpaper, bubbles, compose bar). The glass/frosted treatment made these
-// hard to read against the page background, so header/bubbles/compose are
-// back to true WA colors rather than translucency. ──────────────────────
+// ── WhatsApp's actual palette — real solid colors for every WA-mimicking
+// surface (header, wallpaper, bubbles, compose bar). ─────────────────────
 const WA = {
   headerLight:   "#075E54",
   headerDark:    "#1F2C34",
@@ -35,6 +32,11 @@ const WA = {
   composeFieldDark:  "#2A3942",
   accent:         "#25D366",
   tick:           "#53BDEB",
+  // Same neutral avatar-placeholder colors WA itself uses behind a profile
+  // photo — used here as the logo chip's background so it adapts per theme
+  // instead of staying a fixed white.
+  avatarBgLight:  "#E9EDEF",
+  avatarBgDark:   "#2A3942",
 } as const
 
 const HUBS = [
@@ -46,20 +48,23 @@ const HUBS = [
   { id: "other",    label: "Not sure yet",  hint: "We'll help you figure it out" },
 ]
 
-// Faint tiled doodle pattern approximating WhatsApp's chat wallpaper —
-// generated as an inline SVG so no external asset is needed.
+// Faint tiled doodle pattern approximating WhatsApp's chat wallpaper — now
+// includes a simple WA-style speech-bubble glyph alongside the original
+// doodles. Tile bumped 200→240px and opacity nudged down slightly so the
+// extra shape doesn't make it feel more cluttered, just more "on brand".
 function buildWallpaperPattern(strokeColor: string) {
   const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
-      <g fill="none" stroke="${strokeColor}" stroke-width="1.2" opacity="0.35">
-        <circle cx="20" cy="30" r="6" />
-        <path d="M60 20 q10 -15 20 0 q10 15 20 0" />
-        <path d="M120 60 l8 8 l-8 8 l-8 -8 z" />
-        <circle cx="170" cy="40" r="4" />
-        <path d="M30 110 q8 10 16 0 q8 -10 16 0" />
-        <path d="M100 140 l10 10 m0 -10 l-10 10" />
-        <circle cx="160" cy="150" r="5" />
-        <path d="M60 170 q10 -12 20 0" />
+    <svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
+      <g fill="none" stroke="${strokeColor}" stroke-width="1.2" opacity="0.28">
+        <circle cx="24" cy="34" r="6" />
+        <path d="M70 24 q10 -15 20 0 q10 15 20 0" />
+        <path d="M140 66 l8 8 l-8 8 l-8 -8 z" />
+        <path d="M190 34 q14 0 14 14 v8 q0 14 -14 14 h-14 l-8 8 v-10 h0 q-14 0 -14 -14 v-6 q0 -14 14 -14 z" />
+        <circle cx="36" cy="130" r="4" />
+        <path d="M36 150 q8 10 16 0 q8 -10 16 0" />
+        <path d="M118 178 l10 10 m0 -10 l-10 10" />
+        <circle cx="190" cy="190" r="5" />
+        <path d="M70 216 q10 -12 20 0" />
       </g>
     </svg>
   `
@@ -68,6 +73,16 @@ function buildWallpaperPattern(strokeColor: string) {
 
 function formatTime() {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+}
+
+// "Today" / "Yesterday" / a plain date — same pattern WhatsApp uses for its
+// centered date-divider chip above a day's first message.
+function formatDateLabel(date: Date) {
+  const startOf = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+  const diffDays = Math.round((startOf(new Date()) - startOf(date)) / 86400000)
+  if (diffDays === 0) return "Today"
+  if (diffDays === 1) return "Yesterday"
+  return date.toLocaleDateString([], { day: "numeric", month: "long" })
 }
 
 export function WhatsAppFAB() {
@@ -82,6 +97,7 @@ export function WhatsAppFAB() {
   const [step,    setStep]           = useState<"form" | "sent">("form")
   const [hubPicking, setHubPicking]  = useState(false)
   const [openTime, setOpenTime]      = useState("")
+  const [openDate, setOpenDate]      = useState<Date | null>(null)
   const [sentTime, setSentTime]      = useState("")
 
   const nameRef                      = useRef<HTMLInputElement>(null)
@@ -107,10 +123,12 @@ export function WhatsAppFAB() {
     }
   }, [])
 
-  // Focus name + stamp the greeting bubble's time on open
+  // Focus name + stamp the greeting bubble's time/date on open
   useEffect(() => {
     if (isOpen && step === "form") {
+      const now = new Date()
       setOpenTime(formatTime())
+      setOpenDate(now)
       setTimeout(() => nameRef.current?.focus(), 200)
     }
   }, [isOpen, step])
@@ -173,7 +191,24 @@ export function WhatsAppFAB() {
   const subColor     = isDark ? WA.subDark          : WA.subLight
   const composeBarBg = isDark ? WA.composeBarDark   : WA.composeBarLight
   const composeField = isDark ? WA.composeFieldDark : WA.composeFieldLight
+  const avatarBg     = isDark ? WA.avatarBgDark     : WA.avatarBgLight
   const wallpaperPattern = buildWallpaperPattern(isDark ? "#FFFFFF" : "#000000")
+
+  const dateLabel = openDate ? formatDateLabel(openDate) : ""
+
+  const DateDivider = () => (
+    <div className="flex justify-center mb-1">
+      <span
+        className="text-[0.62rem] font-bold uppercase tracking-wide px-3 py-1 rounded-full shadow-sm"
+        style={{
+          backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+          color: subColor,
+        }}
+      >
+        {dateLabel}
+      </span>
+    </div>
+  )
 
   return (
     <>
@@ -196,16 +231,19 @@ export function WhatsAppFAB() {
           )}
           style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.25)" }}
         >
-          {/* ── WhatsApp-style header — solid teal bar, real WA color.
-              logo.png replaces the old avatar glyph, tinted via filter so
-              it's a dark mark in light mode and a light mark in dark mode
-              regardless of the file's own colors — same trick used for the
-              navbar's watermark logo. ── */}
+          {/* ── WhatsApp-style header — solid teal bar. logo.png sits in a
+              round chip (real WA profile-photo shape) whose background now
+              adapts per theme (WA's own avatar-placeholder colors), with
+              the logo itself dark in light mode / light in dark mode, so
+              it never washes out against its own chip. ── */}
           <div
             className="flex items-center gap-3.5 px-5 py-5 shrink-0"
             style={{ backgroundColor: headerBg }}
           >
-            <div className="w-11 h-11 rounded-[12px] flex items-center justify-center shrink-0 bg-white/90 p-1.5">
+            <div
+              className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 p-2"
+              style={{ backgroundColor: avatarBg }}
+            >
               <div
                 className="relative w-full h-full"
                 style={{ filter: isDark ? "brightness(0) invert(1)" : "brightness(0)" }}
@@ -239,10 +277,12 @@ export function WhatsAppFAB() {
           {/* ── Chat body — real WA wallpaper + solid bubble colors ──── */}
           <div
             className="flex-1 overflow-y-auto overscroll-contain min-h-0 relative"
-            style={{ backgroundColor: wallpaperBg, backgroundImage: wallpaperPattern, backgroundSize: "200px 200px" }}
+            style={{ backgroundColor: wallpaperBg, backgroundImage: wallpaperPattern, backgroundSize: "240px 240px" }}
           >
             {step === "form" ? (
               <div className="relative z-10 px-4 py-5 flex flex-col gap-3">
+
+                {openDate && <DateDivider />}
 
                 {/* Greeting — incoming message bubble */}
                 <div
@@ -274,13 +314,16 @@ export function WhatsAppFAB() {
                     className="w-full bg-transparent text-[0.86rem] font-semibold outline-none border-none"
                     style={{ color: textColor }}
                   />
+                  <div className="flex justify-end mt-1.5">
+                    <span className="text-[0.6rem]" style={{ color: subColor }}>{openTime}</span>
+                  </div>
                 </div>
 
-                {/* Hub selector — no longer a floating dropdown. Tapping
-                    the summary row reveals pills INLINE, in normal
-                    document flow, so they push the note bubble down
-                    instead of floating over it. Pills appear immediately
-                    below the question, not lower over other content. */}
+                {/* Hub selector — pills expand inline via a smooth
+                    grid-row collapse (same technique as the FAQ accordion),
+                    so they push content below them rather than floating
+                    over it. Each pill also fades/rises in with a small
+                    per-index stagger for a smoother reveal. */}
                 <div
                   className="relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-lg rounded-tl-none shadow-sm"
                   style={{ backgroundColor: bubbleIn }}
@@ -310,34 +353,59 @@ export function WhatsAppFAB() {
                         </span>
                       )}
                     </div>
+                    <CaretDown
+                      size={15}
+                      weight="bold"
+                      className={cn("transition-transform duration-300 shrink-0", hubPicking && "rotate-180")}
+                      style={{ color: subColor }}
+                    />
                   </button>
 
-                  {/* Pill grid — expands inline below the question */}
-                  {hubPicking && (
-                    <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t" style={{ borderColor: `${subColor}30` }}>
-                      {HUBS.map((h) => {
-                        const isSelected = hub === h.id
-                        return (
-                          <button
-                            key={h.id}
-                            type="button"
-                            onClick={() => { setHub(h.id); setHubPicking(false) }}
-                            className={cn(
-                              "px-3 py-2 rounded-full text-[0.74rem] font-black transition-colors border",
-                              isSelected ? "text-white" : "hover:bg-black/5 dark:hover:bg-white/5"
-                            )}
-                            style={{
-                              backgroundColor: isSelected ? WA.accent : "transparent",
-                              borderColor:     isSelected ? WA.accent : `${subColor}40`,
-                              color:           isSelected ? "#fff" : textColor,
-                            }}
-                          >
-                            {h.label}
-                          </button>
-                        )
-                      })}
+                  {/* Smooth expand/collapse — grid-rows trick avoids the
+                      abrupt snap of a plain conditional render */}
+                  <div
+                    className={cn(
+                      "grid transition-all duration-400 ease-out",
+                      hubPicking ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                    )}
+                  >
+                    <div className="overflow-hidden">
+                      <div
+                        className="flex flex-wrap gap-2 mt-3 pt-3 border-t"
+                        style={{ borderColor: `${subColor}30` }}
+                      >
+                        {HUBS.map((h, idx) => {
+                          const isSelected = hub === h.id
+                          return (
+                            <button
+                              key={h.id}
+                              type="button"
+                              onClick={() => { setHub(h.id); setHubPicking(false) }}
+                              style={{
+                                backgroundColor: isSelected ? WA.accent : "transparent",
+                                borderColor:     isSelected ? WA.accent : `${subColor}40`,
+                                color:           isSelected ? "#fff" : textColor,
+                                transitionDelay: hubPicking ? `${idx * 40}ms` : "0ms",
+                              }}
+                              className={cn(
+                                "px-3.5 py-2 rounded-full text-[0.74rem] font-black border transition-all duration-300",
+                                "shadow-md shadow-black/10 dark:shadow-black/40",
+                                "hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/15 dark:hover:shadow-black/50 active:scale-95",
+                                hubPicking ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1",
+                                !isSelected && "hover:bg-black/5 dark:hover:bg-white/5"
+                              )}
+                            >
+                              {h.label}
+                            </button>
+                          )
+                        })}
+                      </div>
                     </div>
-                  )}
+                  </div>
+
+                  <div className="flex justify-end mt-1.5">
+                    <span className="text-[0.6rem]" style={{ color: subColor }}>{openTime}</span>
+                  </div>
                 </div>
 
                 {/* Optional note — incoming bubble */}
@@ -356,12 +424,19 @@ export function WhatsAppFAB() {
                     className="w-full bg-transparent text-[0.86rem] font-semibold outline-none border-none resize-none"
                     style={{ color: textColor }}
                   />
+                  <div className="flex justify-end mt-1.5">
+                    <span className="text-[0.6rem]" style={{ color: subColor }}>{openTime}</span>
+                  </div>
                 </div>
 
               </div>
             ) : (
-              /* Sent confirmation — outgoing message bubble, real WA mint + ticks */
+              /* Sent confirmation — outgoing message bubble, real WA mint + ticks.
+                 Ticks only ever appear on messages the person actually sent
+                 (delivery status), which is why they're on this bubble alone
+                 and not on the incoming ones above. */
               <div className="relative z-10 min-h-full px-4 py-5 flex flex-col justify-end items-end gap-3">
+                {openDate && <DateDivider />}
                 <div
                   className="relative max-w-[85%] px-4 py-3 rounded-lg rounded-tr-none shadow-sm"
                   style={{ backgroundColor: bubbleOut }}
@@ -454,4 +529,4 @@ export function WhatsAppFAB() {
       </div>
     </>
   )
-} 
+      } 
