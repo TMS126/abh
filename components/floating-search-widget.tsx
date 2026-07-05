@@ -292,8 +292,7 @@ export function FloatingSearchWidget() {
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Search"
-                className="flex-1 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none appearance-none border-none ring-0 shadow-none focus:outline-none focus:ring-0 focus:border-none focus:shadow-none min-w-0 text-center px-2"
-              />
+                className="flex-1 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 min-w-0 text-center px-2 outline-none focus:outline-none focus-visible:outline-none"
               {query && (
                 <button onClick={() => setQuery("")} className="w-5 h-5 rounded-[14px] bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 shrink-0">
                   <X size={11} weight="bold" />
