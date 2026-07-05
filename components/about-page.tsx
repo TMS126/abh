@@ -13,7 +13,6 @@ import {
   ArrowRight,
   UsersThree,
 } from "@phosphor-icons/react"
-import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, ABOUT_VALUES, ABOUT_STANDARDS } from "@/lib/brand"
 
@@ -30,8 +29,6 @@ function renderIcon(iconName: string, className: string) {
 }
 
 export function AboutPage() {
-  const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === "dark"
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
 
   return (
@@ -51,14 +48,15 @@ export function AboutPage() {
 
           {/* Stats strip — solid brand-blue pill matching the View Services /
     Search+Surprise button proportions (rounded-[14px], shadow-lg,
-    font-black, py-4-equivalent padding). BRAND.blue verifies at ~5.4:1
-    against white text (AA), BRAND.blueDark at ~10.9:1 (AAA) — both
-    already accessible without needing new tokens, unlike the orange
-    case. Per-item hover tinting removed since the whole strip is now
-    one solid color; dividers switched to white/25 to sit on the fill. */}
+    font-black, py-4-equivalent padding). Color kept flat BRAND.blue in
+    both light and dark mode — identical to PageEdgeGlow's "/about" route
+    color — so this strip and the top-of-page flash read as the same
+    brand color rather than a similar-but-different shade (previously
+    this swapped to BRAND.blueDark in dark mode). BRAND.blue still
+    verifies at ~5.4:1 against white text (AA) regardless of theme. */}
 <div
   className="mt-10 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x divide-white/25 rounded-[14px] overflow-hidden shadow-lg transition-colors duration-300"
-  style={{ backgroundColor: isDark ? BRAND.blueDark : BRAND.blue }}
+  style={{ backgroundColor: BRAND.blue }}
 >
   {[
     { value: BIZ.hubCount,     label: "Service Hubs"  },
@@ -290,4 +288,4 @@ export function AboutPage() {
 
     </div>
   )
-}
+      }
