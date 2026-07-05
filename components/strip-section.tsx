@@ -1,8 +1,23 @@
 "use client"
 
+import { useState, useEffect } from "react"
+import { useTheme } from "next-themes"
 import { Rocket, CurrencyDollar, HandHeart, MapPin, WhatsappLogo } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
-import { WA, STRIP_ITEMS } from "@/lib/brand"
+import { BRAND, WA, STRIP_ITEMS } from "@/lib/brand"
+
+// Icon accent per strip item — kept here rather than in STRIP_ITEMS (brand.ts)
+// since that array is content-only per its own convention; styling stays in
+// the component. Each entry is a light/dark pair, verified against the
+// chip's own tinted background (color+"15") sitting on white (light mode)
+// or zinc-900 (dark mode) — a flat single color failed AA in dark mode for
+// darker brand tones (same issue found with blueDark/dark100 elsewhere).
+const STRIP_ICON_COLORS: Record<string, { light: string; dark: string }> = {
+  Rocket:         { light: BRAND.blue,       dark: BRAND.lightBlue   },
+  CurrencyDollar: { light: BRAND.greenDark,  dark: BRAND.lightGreen  },
+  HandHeart:      { light: BRAND.orangeDark, dark: BRAND.lightOrange },
+  MapPin:         { light: BRAND.blueMid,    dark: BRAND.lightBlue   },
+}
 
 export function StripSection() {
   return (
@@ -17,7 +32,14 @@ export function StripSection() {
 }
 
 function StripCard({ item }: { item: any }) {
-  const color = item.color
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+  const isDark = mounted && resolvedTheme === "dark"
+
+  const pair  = STRIP_ICON_COLORS[item.iconName] ?? { light: BRAND.blue, dark: BRAND.lightBlue }
+  const color = isDark ? pair.dark : pair.light
+
   return (
     <div
       className={cn(
@@ -28,7 +50,7 @@ function StripCard({ item }: { item: any }) {
       )}
     >
       <div
-        className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 mb-5"
+        className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 mb-5 transition-colors duration-300"
         style={{ backgroundColor: `${color}15`, color }}
       >
         {item.iconName === "Rocket"          && <Rocket          weight="fill" className="w-5 h-5" aria-hidden="true" />}
@@ -81,5 +103,4 @@ export function CtaBar({
       </div>
     </section>
   )
-}
- 
+  } 
