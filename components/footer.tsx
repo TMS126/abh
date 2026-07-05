@@ -12,13 +12,18 @@ import {
   Copy, Check,
 } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
-import { BRAND, BIZ, WA, FOOTER_NAV, FAQS, HUB_COLORS } from "@/lib/brand"
+import { BRAND, BIZ, WA, FOOTER_NAV, FAQS } from "@/lib/brand"
 import { BusinessStatusFull } from "@/components/business-status"
 
+// Each hub gets a light-mode and dark-mode color — both independently
+// verified for contrast against their respective background, since a
+// single fixed hex (like the old eservice navy or tech pale-grey) can
+// pass AA on one theme and become nearly unreadable on the other.
 const TERMS_SECTIONS = [
   {
     icon: "Printer",
-    color: HUB_COLORS.print.primary,
+    colorLight: BRAND.blue,        // #1E6FA8 — AA vs white
+    colorDark: BRAND.lightBlue,    // #A9D6F2 — AA vs near-black
     title: "Print Hub – Everything Paper",
     points: [
       { label: "Printing Services", text: "B&W, Colour, and Bulk printing. For bulk discounts, submit your entire order together." },
@@ -30,7 +35,8 @@ const TERMS_SECTIONS = [
   },
   {
     icon: "FileText",
-    color: HUB_COLORS.doc.primary,
+    colorLight: BRAND.green,       // #4A8011 — AA vs white
+    colorDark: BRAND.lightGreen,   // #CDEB9F — AA vs near-black
     title: "Document Hub – All Document Work",
     points: [
       { label: "Document Assistance", text: "Full CV creation, typing, editing, and formatting. You are responsible for the accuracy of all content you provide." },
@@ -42,7 +48,8 @@ const TERMS_SECTIONS = [
   },
   {
     icon: "Palette",
-    color: HUB_COLORS.design.primary,
+    colorLight: BRAND.orangeDark,  // #B06225 — AA vs white
+    colorDark: BRAND.lightOrange,  // #F9D1B0 — AA vs near-black
     title: "Design Hub – Creative Work",
     points: [
       { label: "Branding Design", text: "Logos and business cards built in Adobe Illustrator. No generic templates." },
@@ -55,7 +62,8 @@ const TERMS_SECTIONS = [
   },
   {
     icon: "Globe",
-    color: HUB_COLORS.eservice.primary,
+    colorLight: BRAND.blueDark,    // #0F3F66 — AA vs white
+    colorDark: BRAND.lightBlue,    // #A9D6F2 — fixes invisibility vs near-black
     title: "E-Service Hub – External Systems",
     points: [
       { label: "Government Services", text: `Admin help across SARS, SASSA, CSD, PSIRA, UIF, etc. ${BIZ.name} is not responsible for government processing delays.` },
@@ -68,7 +76,8 @@ const TERMS_SECTIONS = [
   },
   {
     icon: "Cpu",
-    color: HUB_COLORS.tech.primary,
+    colorLight: BRAND.dark100,      // #333333 — fixes invisibility vs white
+    colorDark: BRAND.techGreyDark,  // #B8CCE0 — AAA vs near-black (existing token)
     title: "Tech Hub – Hardware & Software",
     points: [
       { label: "System Maintenance", text: "Software installations, cleaning, virus removal, and performance optimisation." },
@@ -79,7 +88,8 @@ const TERMS_SECTIONS = [
   },
   {
     icon: "CurrencyDollar",
-    color: BRAND.dark100,
+    colorLight: BRAND.dark100,   // #333333
+    colorDark: "#D4D4D8",        // zinc-300 equivalent — high contrast vs near-black
     title: "Payment Terms",
     points: [
       { label: "Standard Services", text: "Payable on execution. Clear, upfront pricing with no hidden fees." },
@@ -89,7 +99,8 @@ const TERMS_SECTIONS = [
   },
   {
     icon: "Info",
-    color: BRAND.dark100,
+    colorLight: BRAND.dark100,
+    colorDark: "#D4D4D8",
     title: "General Terms",
     points: [
       { label: "Appointments", text: "Confirmed in advance; late arrival may mean rescheduling. Cancellations need 24-hour notice where possible." },
@@ -114,6 +125,15 @@ const ICON_COMPONENTS: Record<string, React.ElementType> = {
 function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void }) {
   const guardActive = useRef(false)
   const BUFFER = 5
+  const { theme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
+
+  // Resolve the theme-correct color for a section. Falls back to light
+  // colors until mounted, avoiding a light/dark mismatch flash on hydration.
+  const resolveColor = (s: { colorLight: string; colorDark: string }) =>
+    mounted && theme === "dark" ? s.colorDark : s.colorLight
 
   useEffect(() => {
     document.documentElement.classList.toggle("scroll-locked", open)
@@ -163,10 +183,9 @@ function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void 
     >
       <div className="relative w-full h-full md:h-[85vh] md:max-w-3xl bg-white dark:bg-zinc-950 md:rounded-[20px] md:shadow-2xl overflow-hidden flex flex-col animate-in md:zoom-in-95 duration-300">
 
-        {/* Header — small X, no other dismiss path */}
         <div className="px-6 md:px-10 pt-8 pb-5 border-b border-zinc-100 dark:border-zinc-800 shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] relative z-10 flex items-start justify-between gap-4">
           <div>
-            <h2 className="font-sans font-black text-2xl text-brand-blue">Terms & Service Policies</h2>
+            <h2 className="font-sans font-black text-2xl text-brand-blue dark:text-brand-light-blue">Terms & Service Policies</h2>
             <p className="text-[0.65rem] font-medium text-zinc-400 mt-1">
               {BIZ.name} · Updated {BIZ.year}
             </p>
@@ -174,13 +193,12 @@ function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void 
           <button
             onClick={handleClose}
             aria-label="Close Terms & Service Policies"
-            className="w-8 h-8 shrink-0 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all active:scale-95"
+            className="w-8 h-8 shrink-0 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all active:scale-95"
           >
             <X size={14} weight="bold" aria-hidden="true" />
           </button>
         </div>
 
-        {/* Scrollable body — constrained + padded on desktop */}
         <div className="flex-1 overflow-y-auto overscroll-contain px-6 md:px-10 py-6 md:py-10">
           <div className="max-w-2xl mx-auto space-y-8">
             <div className="p-5 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 shadow-[0_2px_10px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
@@ -194,10 +212,11 @@ function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void 
 
             {TERMS_SECTIONS.map((s, i) => {
               const IconComp = ICON_COMPONENTS[s.icon]
+              const color = resolveColor(s)
               return (
                 <div key={i} className="space-y-3">
-                  <h3 className="font-black flex items-center gap-2 text-[0.82rem]" style={{ color: s.color }}>
-                    <IconComp weight="fill" className="w-4 h-4 shrink-0" aria-hidden="true" style={{ color: s.color }} />
+                  <h3 className="font-black flex items-center gap-2 text-[0.82rem]" style={{ color }}>
+                    <IconComp weight="fill" className="w-4 h-4 shrink-0" aria-hidden="true" style={{ color }} />
                     {s.title}
                   </h3>
                   <ul className="space-y-2 list-disc list-inside pl-1">
@@ -213,7 +232,6 @@ function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void 
           </div>
         </div>
 
-        {/* Footer — button shrinks to natural width, centered */}
         <div className="px-6 md:px-10 py-6 border-t border-zinc-100 dark:border-zinc-800 shrink-0 bg-white dark:bg-zinc-950 flex justify-center">
           <button
             onClick={handleClose}
@@ -478,4 +496,4 @@ export function Footer() {
       <FooterContent />
     </footer>
   )
-           } 
+    } 
