@@ -233,7 +233,7 @@ export function FloatingSearchWidget() {
           {/* Slide-out label */}
           <span className={cn(
             "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap",
-            "bg-white dark:bg-zinc-900 px-2.5 py-1 rounded-full shadow-md border border-zinc-100 dark:border-zinc-800",
+            "bg-white dark:bg-zinc-900 px-2.5 py-1 rounded-[14px] shadow-md border border-zinc-100 dark:border-zinc-800",
             "transition-all duration-300 origin-right",
             isOpen
               ? "opacity-0 scale-x-0 pointer-events-none"
@@ -246,7 +246,7 @@ export function FloatingSearchWidget() {
 
           <button
             onClick={() => setIsOpen(o => !o)}
-            className="relative w-14 h-14 rounded-full text-white shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-200"
+            className="relative w-14 h-14 rounded-[14px] text-white shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-200"
             style={{ backgroundColor: ACCENT_ORANGE }}
             aria-label={isOpen ? "Close search" : "Search services"}
           >
@@ -275,7 +275,7 @@ export function FloatingSearchWidget() {
             <h3 className="font-sans font-black text-lg" style={{ color: ACCENT_ORANGE }}>Search Services</h3>
             <button
               onClick={handleClose}
-              className={cn("w-8 h-8 rounded-full flex items-center justify-center text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors", GLASS.btn)}
+              className={cn("w-8 h-8 rounded-[14px] flex items-center justify-center text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors", GLASS.btn)}
             >
               <X size={16} weight="bold" />
             </button>
@@ -294,7 +294,7 @@ export function FloatingSearchWidget() {
                 className="flex-1 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none min-w-0 text-center focus:text-left"
               />
               {query && (
-                <button onClick={() => setQuery("")} className="w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 shrink-0">
+                <button onClick={() => setQuery("")} className="w-5 h-5 rounded-[14px] bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 shrink-0">
                   <X size={11} weight="bold" />
                 </button>
               )}
@@ -318,7 +318,7 @@ export function FloatingSearchWidget() {
                       onClick={() => pick(s)}
                       className={cn("w-full flex items-center gap-3 p-2.5 rounded-[14px] shadow-sm transition-colors text-left hover:bg-white/40 dark:hover:bg-white/10", GLASS.item)}
                     >
-                      <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${accent}20`, color: accent }}>
+                      <div className="w-9 h-9 rounded-[14px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${accent}20`, color: accent }}>
                         <HubIcon id={s.hubId} size={18} />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -341,4 +341,4 @@ export function FloatingSearchWidget() {
       )}
     </>
   )
-                  }
+        } 
