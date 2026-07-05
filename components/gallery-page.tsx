@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect, Suspense } from "react"
 import { useSearchParams, usePathname } from "next/navigation"
 import Link from "next/link"
-import { X, Check, Info, CaretLeft, CaretRight, CaretDown, Image as ImageIcon, ArrowsOut, ArrowsLeftRight, LinkSimple, ShareNetwork, EnvelopeSimple, MagnifyingGlass, Shuffle, Heart } from "@phosphor-icons/react"
+import { X, Check, Info, CaretLeft, CaretRight, CaretDown, Image as ImageIcon, ArrowsOut, ArrowsLeftRight, LinkSimple, ShareNetwork, EnvelopeSimple, MagnifyingGlass, Shuffle, Heart, ArrowUp } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -1040,6 +1040,7 @@ function GalleryPageInner() {
   const [searchFocused,   setSearchFocused]   = useState(false)
   const [surpriseFlash,   setSurpriseFlash]   = useState(false)
   const [likedIds,        setLikedIds]        = useState<Set<string>>(new Set())
+  const [showBackToTop,   setShowBackToTop]   = useState(false)
   const likesHydrated = useRef(false)
 
   // Load liked projects once on mount, then persist on every change
@@ -1065,6 +1066,15 @@ function GalleryPageInner() {
       else next.add(id)
       return next
     })
+  }, [])
+
+  // Reveal the Back to Top button once the person has scrolled well past
+  // the search/surprise bar near the top of the page — same threshold and
+  // placement pattern as the Services page.
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 600)
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
   const { closeProject, closeZoom } = useGalleryBackStack(selectedProject, setSelectedProject, zoomIndex, setZoomIndex)
@@ -1158,14 +1168,14 @@ function GalleryPageInner() {
           <div className="abh-divider" />
         </div>
 
-      {/* Search + Surprise me — solid brand-orange pill matching the View
-    Services CTA's exact button style (rounded-[14px], shadow-lg,
-    font-black text-base, py-4, active:scale-95). Colors pulled from
-    BRAND.orangeAccessible / orangeAccessibleDark — verified WCAG AA/AAA
-    against white text, see lib/brand.ts. */}
+      {/* Search + Surprise me — bg color kept identical to PageEdgeGlow's
+    "/gallery" route color (BRAND.orange), so the pill and the top-of-page
+    flash read as the same brand color rather than a similar-but-different
+    shade. Unlike the glow, this stays a single value in both light/dark
+    mode too, for the same reason — see components/page-edge-glow.tsx. */}
 <div
   className="flex items-stretch max-w-md mx-auto mb-6 rounded-[14px] shadow-lg overflow-hidden transition-colors duration-300"
-  style={{ backgroundColor: isDark ? BRAND.orangeAccessibleDark : BRAND.orangeAccessible }}
+  style={{ backgroundColor: BRAND.orange }}
 >
   <div className="relative flex-1 basis-1/2">
     <MagnifyingGlass
@@ -1282,6 +1292,20 @@ function GalleryPageInner() {
         likedIds={likedIds}
         onToggleLike={toggleLike}
       />
+
+      {/* Back to Top — same placement/behavior as Services page: fixed
+          bottom-left so it never collides with the WhatsApp / Quote
+          Calculator / Search FAB stack anchored on the right. */}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        aria-label="Back to top"
+        className={cn(
+          "fixed bottom-6 left-4 z-[9990] w-12 h-12 rounded-full bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-lg flex items-center justify-center transition-all duration-300 active:scale-95 hover:scale-105",
+          showBackToTop ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-4 pointer-events-none"
+        )}
+      >
+        <ArrowUp size={20} weight="bold" className="text-brand-blue dark:text-brand-light-blue" />
+      </button>
     </section>
   )
 }
@@ -1303,4 +1327,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-  } 
+                             }
