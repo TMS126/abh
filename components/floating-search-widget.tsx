@@ -282,11 +282,8 @@ export function FloatingSearchWidget() {
           </div>
 
           {/* Search input */}
-          <div className="px-5 pt-4 pb-2 shrink-0">
-            <div className={cn(
-              "flex items-center justify-center gap-2 px-4 py-3 rounded-[14px] relative",
-              GLASS.item
-            )}>
+          <div className="px-5 pt-3 pb-1.5 shrink-0">
+            <div className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-full bg-white/80 dark:bg-white/[0.06]">
               <MagnifyingGlass size={16} weight="bold" className="shrink-0 text-zinc-400" />
               <input
                 ref={inputRef}
@@ -294,10 +291,10 @@ export function FloatingSearchWidget() {
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Search"
-                className="flex-1 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none min-w-0 text-center px-2"
+                className="flex-1 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none focus:outline-none focus:ring-0 focus:border-none min-w-0 text-center px-2"
               />
               {query && (
-                <button onClick={() => setQuery("")} className="w-5 h-5 rounded-[14px] bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 shrink-0 absolute right-4">
+                <button onClick={() => setQuery("")} className="w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 shrink-0">
                   <X size={11} weight="bold" />
                 </button>
               )}
@@ -308,7 +305,7 @@ export function FloatingSearchWidget() {
           <div className="flex-1 overflow-y-auto min-h-0 px-5 pb-5 pt-2">
             {query.trim().length === 0 ? (
               <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 text-center py-8">
-                Start typing to find a service — e.g. CV, laminating, SASSA
+                Start typing to find a service — CV, laminating, SASSA
               </p>
             ) : results.length > 0 ? (
               <div className="space-y-1.5">
@@ -344,4 +341,4 @@ export function FloatingSearchWidget() {
       )}
     </>
   )
-  } 
+  }
