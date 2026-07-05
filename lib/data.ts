@@ -3,9 +3,17 @@ import { HUB_COLORS, HUB_NAMES, type HubKey } from '@/lib/brand'
 
 export const PRICING = {
   print: { 'B&W Print': 'R5/page', 'Colour Print': 'R8/page', 'B&W Copy': 'R3/page', 'Colour Copy': 'R5/page', 'Glossy Photo (4x6)': 'R20', 'Glossy Photo (A4)': 'R40' },
-  doc: { 'Typing + Print (B&W)': 'R15/page', 'Typing + Print (Colour)': 'R18/page', 'Affidavit / Letter': 'R20', 'CV from Scratch': 'R30', 'CV Upgrade/Fix': 'R40', 'Cover Letter': 'R30', 'Scanning': 'R5/page', 'Laminating (A5)': 'R15', 'Laminating (A4)': 'R20', 'Laminating (A3)': 'R30' },
-  design: { 'Logo — Basic': 'R300', 'Logo — Standard': 'R500', 'Logo — Premium': 'R800', 'Business Card (Single Side)': 'R120', 'Business Card (Double Side)': 'R180', 'Flyer / Poster — Simple': 'R150', 'Flyer / Poster — Custom': 'R250', 'Flyer / Poster — Complex': 'R350', 'Social Media Post': 'R80', 'Post + Story': 'R120', 'Static Invitation': 'R150', 'Video Invitation': 'R300', 'Revision — While Busy': 'R50', 'Revision — After Completion': 'R70' },
-  eservice: { 'SASSA Status Check': 'R20', 'SASSA Payment / Balance Check': 'R15', 'SASSA Update Details': 'R30', 'SASSA SRD Application': 'R40', 'SASSA Reapplication': 'R40', 'SASSA Banking Update': 'R40', 'SASSA Appeal': 'R40', 'SASSA Grant Application': 'R80', 'SARS Enquiry / Statement / Updates': 'R50', 'SARS New Taxpayer / eFiling': 'R70', 'SARS Tax Pin / Penalty': 'R100', 'SARS Tax Clearance': 'R120', 'SARS Pin Submission': 'R120', 'SARS Tax Return / VAT / PAYE': 'R200', 'PSIRA Status Check': 'R30', 'PSIRA Update / Certificate': 'R40', 'PSIRA Lost Certificate': 'R50', 'PSIRA Renewal / New Registration': 'R80', 'PSIRA ID Application': 'R100', 'NSFAS Status Check': 'R20', 'NSFAS Banking Update': 'R20', 'Learnership Application': 'R30', 'Job / DPSA Application': 'R40', 'Bursary Application': 'R40', 'NSFAS Appeal': 'R50', 'NSFAS Application': 'R80', 'University Application': 'R100', 'Email Setup / Send / Receive': 'R15', 'Good Standing Letter': 'R60', 'Google Business Setup': 'R80', 'UIF Monthly Declaration': 'R100', 'UIF Registration': 'R100', 'CSD Update': 'R120', 'UIF Claims': 'R200', 'CSD Registration': 'R300', 'Social Media Setup': 'R60', "Learner's Licence Booking": 'R60', 'WhatsApp Business Setup': 'R80' },
+  doc: { 'Typing + Print (B&W)': 'R15/page', 'Typing + Print (Colour)': 'R18/page', 'Affidavit / Letter': 'R15/page', 'CV from Scratch': 'R30', 'CV Upgrade/Fix': 'R40', 'Cover Letter': 'R30', 'Scanning': 'R5/page', 'Laminating (A5)': 'R15', 'Laminating (A4)': 'R20', 'Laminating (A3)': 'R30' },
+  design: { 'Logo — Basic': 'R300', 'Logo — Standard': 'R500', 'Logo — Premium': 'R800', 'Business Card (Single Side)': 'R120', 'Business Card (Double Side)': 'R180', 'Flyer / Poster — Simple': 'R150', 'Flyer / Poster — Custom': 'R250', 'Flyer / Poster — Complex': 'R350', 'Social Media Post': 'R80', 'Post + Story': 'R120', 'Static Invitation': 'R150', 'Video Invitation': 'R300', 'Business Profile — Basic (1pg)': 'R250', 'Business Profile — Standard (2-3pg)': 'R400', 'Business Profile — Premium (4-5pg)': 'R600', 'Business Profile — Extra Page': 'R80/page', 'Revision — While Busy': 'R50', 'Revision — After Completion': 'R70' },
+  eservice: {
+    'SASSA Status Check': 'R20', 'SASSA Update Details': 'R40', 'SASSA Reapplication': 'R40', 'SASSA SRD Application': 'R40', 'SASSA Appeal': 'R40', 'SASSA Banking Update': 'R50', 'SASSA Grant Application': 'R80',
+    'SARS Enquiry / Statement / Updates': 'R50', 'SARS New Taxpayer / eFiling': 'R70', 'SARS Tax Pin / Penalty': 'R100', 'SARS Tax Clearance': 'R120', 'SARS Pin Submission': 'R120', 'SARS Tax Return / VAT / PAYE': 'R200',
+    // PSIRA — temporarily disabled, uncomment to re-enable
+    // 'PSIRA Status Check': 'R30', 'PSIRA Update / Certificate': 'R40', 'PSIRA Lost Certificate': 'R50', 'PSIRA Renewal / New Registration': 'R80', 'PSIRA ID Application': 'R100',
+    'NSFAS Status Check': 'R20', 'NSFAS Banking Update': 'R40', 'Learnership Application': 'R40', 'Job / DPSA Application': 'R40', 'Bursary Application': 'R40', 'NSFAS Appeal': 'R50', 'NSFAS Application': 'R80', 'University Application': 'R100',
+    'Email Setup / Send / Receive': 'R15', 'Good Standing Letter': 'R60', 'Google Business Setup': 'R80', 'UIF Monthly Declaration': 'R100', 'UIF Registration': 'R100', 'CSD Update': 'R120', 'UIF Claims': 'R200', 'CSD Registration': 'R300',
+    'Social Media Setup': 'R60', "Learner's Licence Booking": 'R60', 'WhatsApp Business Setup': 'R80',
+  },
   tech: { 'Software Install': 'R80', 'App / Office Updates': 'R80', 'Driver Installation': 'R100', 'Printer Setup': 'R100', 'Activation Only': 'R100', 'Microsoft 365 Setup': 'R150', 'Troubleshooting': 'R150/hr', 'PC Cleanup': 'R150', 'Virus / Malware Removal': 'R200', 'OS Update': 'R200', 'PC Setup': 'R250', 'Windows Install (No Activation)': 'R300', 'Windows Install + Activation': 'R350' },
 } as const
 
@@ -13,12 +21,13 @@ export type HubId = HubKey
 
 export interface ServiceItem { name: string; price: string; requirements: string[]; description?: string }
 export interface HubSection { title: string; items: ServiceItem[] }
-export interface Hub { iconName: string; iconColor: string; title: string; grad: string; desc: string; sections: HubSection[]; previews: string[]; tagStyle: { bg: string; color: string }; tagStyleDark: { bg: string; color: string } }
+export interface Hub { iconName: string; iconColor: string; title: string; grad: string; desc: string; turnaround: string; sections: HubSection[]; previews: string[]; tagStyle: { bg: string; color: string }; tagStyleDark: { bg: string; color: string } }
 
 export const HUBS: Record<HubId, Hub> = {
   print: {
     iconName: 'Printer', iconColor: HUB_COLORS.print.light, title: HUB_NAMES.print, grad: HUB_COLORS.print.gradient,
     desc: `Fast, clear and affordable printing for every need — from a single page to bulk jobs.`,
+    turnaround: "Same-day, no exceptions.",
     tagStyle: { bg: HUB_COLORS.print.tagBg, color: HUB_COLORS.print.tagText },
     tagStyleDark: { bg: HUB_COLORS.print.tagBgDark, color: HUB_COLORS.print.tagTextDark },
     previews: ['B&W Printing', 'Colour Printing', 'Photo Prints'],
@@ -40,6 +49,7 @@ export const HUBS: Record<HubId, Hub> = {
   doc: {
     iconName: 'FileText', iconColor: HUB_COLORS.doc.light, title: HUB_NAMES.doc, grad: HUB_COLORS.doc.gradient,
     desc: `From typing and printing to professional CVs and laminating — we handle your paperwork.`,
+    turnaround: "Same-day, no exceptions.",
     tagStyle: { bg: HUB_COLORS.doc.tagBg, color: HUB_COLORS.doc.tagText },
     tagStyleDark: { bg: HUB_COLORS.doc.tagBgDark, color: HUB_COLORS.doc.tagTextDark },
     previews: ['CV Services', 'Typing & Documents', 'Laminating'],
@@ -54,7 +64,7 @@ export const HUBS: Record<HubId, Hub> = {
         { name: 'Cover Letter', price: 'R30', description: `A strong cover letter introduces you to a potential employer before they even read your CV. We write a personalised one based on the job you're applying for, highlighting your key strengths.`, requirements: ['Bring details of the job you are applying for', 'Bring your CV for reference', 'Mention key skills or experience you want highlighted'] },
       ]},
       { title: 'Other Documents', items: [
-        { name: 'Affidavit / Letter', price: 'R20', description: `Need a formal letter or affidavit typed and printed? We handle the wording, formatting, and printing — whether it's for a bank, school, landlord, or the police station. Some affidavits need to be sworn in front of a Commissioner of Oaths after printing.`, requirements: ['Bring your ID document', 'Provide the details/facts that need to be included', 'Some affidavits may require a visit to the police station or Commissioner of Oaths to be sworn'] },
+        { name: 'Affidavit / Letter', price: 'R15/page', description: `Need a formal letter or affidavit typed and printed? We handle the wording, formatting, and printing — whether it's for a bank, school, landlord, or the police station. Some affidavits need to be sworn in front of a Commissioner of Oaths after printing.`, requirements: ['Bring your ID document', 'Provide the details/facts that need to be included', 'Some affidavits may require a visit to the police station or Commissioner of Oaths to be sworn'] },
       ]},
       { title: 'Scanning', items: [
         { name: 'Scan to Digital', price: 'R5/page', description: `We scan your physical documents and convert them into a digital file — PDF or image — that you can save, email, or upload. Perfect for preserving important paperwork or sending documents without going to the post office.`, requirements: ['Bring the original physical document(s) to be scanned', 'Let us know the file format you need (PDF, JPG, etc.)', 'Bring a USB or have WhatsApp/email ready to receive the file'] },
@@ -69,6 +79,7 @@ export const HUBS: Record<HubId, Hub> = {
   design: {
     iconName: 'PaintBrush', iconColor: HUB_COLORS.design.light, title: HUB_NAMES.design, grad: HUB_COLORS.design.gradient,
     desc: `Professional designs for your brand, events and marketing — eye-catching and print-ready.`,
+    turnaround: "2–3 business days, no exceptions.",
     tagStyle: { bg: HUB_COLORS.design.tagBg, color: HUB_COLORS.design.tagText },
     tagStyleDark: { bg: HUB_COLORS.design.tagBgDark, color: HUB_COLORS.design.tagTextDark },
     previews: ['Logo Design', 'Flyers & Posters', 'Invitations'],
@@ -95,6 +106,12 @@ export const HUBS: Record<HubId, Hub> = {
         { name: 'Image/Static', price: 'R150', description: `A beautifully designed static invitation — the kind you save, share on WhatsApp, or print out. Includes event name, date, time, venue, and your theme or aesthetic direction. Clean, elegant, shareable.`, requirements: ['Provide event details (date, time, venue, host)', 'Share any photos or theme preferences', 'Mention your preferred colours or style'] },
         { name: 'Video', price: 'R300', description: `An animated video invitation that plays like a short clip — text reveals, music, transitions, and your event details brought to life. Makes a far stronger impression when shared on WhatsApp or social media.`, requirements: ['Provide event details (date, time, venue, host)', 'Share any photos, video clips, or theme preferences', 'Mention your preferred colours, music, or style'] },
       ]},
+      { title: 'Business Profile', items: [
+        { name: 'Basic (1 page)', price: 'R250', description: `A single polished page covering your logo, about-us blurb, services list, and contact details — clean and professional.`, requirements: ['Provide business name, logo, and short description', 'Share services/contact details to include'] },
+        { name: 'Standard (2-3 pages)', price: 'R400', description: `Adds founder/team info, a more detailed service breakdown, and a testimonials section to the basic profile.`, requirements: ['Provide business name, logo, and description', 'Share founder/team info and services', 'Include any testimonials to feature'] },
+        { name: 'Premium (4-5 pages)', price: 'R600', description: `A full company profile — history/story, services, team, testimonials, and achievements/gallery, professionally laid out throughout.`, requirements: ['Provide full business story/history', 'Share team, services, testimonials, and achievements', 'Provide any gallery images to include'] },
+        { name: 'Additional Pages (beyond 5)', price: 'R80/page', description: `Extra pages added on top of the Premium tier's 5-page limit, for businesses needing a longer profile.`, requirements: ['Specify the additional content needed for extra pages'] },
+      ]},
       { title: 'Revisions', items: [
         { name: 'While Busy', price: 'R50', description: `Changed your mind mid-way? No problem. Revisions requested while the design is still actively being worked on cost less because we haven't finalised anything yet — it's easier to adjust on the fly.`, requirements: ['Clearly describe the changes you would like made', 'This applies only while the project is still in progress'] },
         { name: 'After Completion', price: 'R70', description: `Need changes after your design has already been delivered and signed off? Post-completion revisions require us to reopen the project file and rework finished elements — this is charged at a slightly higher rate to reflect that.`, requirements: ['Clearly describe the changes you would like made', 'This applies once the project has already been delivered/finalized'] },
@@ -104,18 +121,18 @@ export const HUBS: Record<HubId, Hub> = {
   eservice: {
     iconName: 'Globe', iconColor: HUB_COLORS.eservice.light, title: HUB_NAMES.eservice, grad: HUB_COLORS.eservice.gradient,
     desc: `Government platforms made easy. We handle registrations, applications and updates so you don't have to stress.`,
+    turnaround: "Your submission is completed same-day to next-day. Government processing time afterward varies and is outside our control.",
     tagStyle: { bg: HUB_COLORS.eservice.tagBg, color: HUB_COLORS.eservice.tagText },
     tagStyleDark: { bg: HUB_COLORS.eservice.tagBgDark, color: HUB_COLORS.eservice.tagTextDark },
     previews: ['SASSA', 'SARS eFiling', 'UIF & CSD'],
     sections: [
       { title: 'SASSA', items: [
         { name: 'Status Check', price: 'R20', description: `We log into the SASSA portal or use the official channels to check the current status of your grant or application — whether it's approved, pending, declined, or under review. You'll know exactly where things stand before you leave.`, requirements: ['Bring your ID document', 'Bring your SASSA reference number or application number if you have one'] },
-        { name: 'Payment/Balance Check', price: 'R15', description: `We check your SASSA grant payment status — whether your latest payment has been processed, what the amount is, and when it's expected. Useful if your money hasn't come through or you need confirmation.`, requirements: ['Bring your ID document', 'Bring your SASSA card or grant details'] },
-        { name: 'Update Details', price: 'R30', description: `Changed your phone number, address, or personal details? We update your SASSA profile on the official system so your account stays current and payments or communications don't get disrupted.`, requirements: ['Bring your ID document', 'Bring proof of the new details (e.g. new address, new phone number)', 'Bring your SASSA reference number'] },
+        { name: 'Update Details', price: 'R40', description: `Changed your phone number, address, or personal details? We update your SASSA profile on the official system so your account stays current and payments or communications don't get disrupted.`, requirements: ['Bring your ID document', 'Bring proof of the new details (e.g. new address, new phone number)', 'Bring your SASSA reference number'] },
         { name: 'Reapplication', price: 'R40', description: `If your grant lapsed, was cancelled, or you've been asked to reapply, we complete the full reapplication process on your behalf through the correct SASSA channels — correctly the first time.`, requirements: ['Bring your ID document', 'Bring proof of previous application or rejection letter if available', 'Bring proof of income/affidavit of unemployment if required'] },
         { name: 'SRD Application', price: 'R40', description: `We submit your Social Relief of Distress (R350) grant application through the official SASSA SRD portal. We fill in all required details, verify your information, and confirm submission so you have proof it went through.`, requirements: ['Bring your ID document', 'Have your active cellphone number ready (for OTP/SMS)', 'Bring proof of bank account details if applying for bank payment'] },
         { name: 'Appeal', price: 'R40', description: `Declined for a grant you believe you qualify for? We submit a formal appeal on your behalf through the correct SASSA appeal process, ensuring your reasons are clearly stated and your supporting documents are attached.`, requirements: ['Bring your ID document', 'Bring the rejection/decline letter or SMS notification', 'Bring any supporting documents for your appeal'] },
-        { name: 'Banking Update', price: 'R40', description: `Need your SASSA grant paid into a different bank account? We update your banking details on the SASSA system so your next payment goes to the right place — avoiding delays or missed payments.`, requirements: ['Bring your ID document', 'Bring your bank account details or bank confirmation letter', 'Bring your SASSA reference number'] },
+        { name: 'Banking Update', price: 'R50', description: `Need your SASSA grant paid into a different bank account? We update your banking details on the SASSA system so your next payment goes to the right place — avoiding delays or missed payments.`, requirements: ['Bring your ID document', 'Bring your bank account details or bank confirmation letter', 'Bring your SASSA reference number'] },
         { name: 'Grant Application', price: 'R80', description: `Applying for a formal SASSA grant — such as the Child Support Grant, Older Persons Grant, or Disability Grant? We complete the full application with all required supporting documents and submit it correctly.`, requirements: ['Bring your ID document', "Bring supporting documents (e.g. child's birth certificate, disability assessment, proof of income)", 'Have your active cellphone number ready for OTP/SMS confirmations'] },
       ]},
       { title: 'SARS', items: [
@@ -126,6 +143,7 @@ export const HUBS: Record<HubId, Hub> = {
         { name: 'Pin Submission', price: 'R120', description: `Some SARS processes require you to submit a specific PIN or reference. We handle the submission correctly through eFiling so the right information reaches SARS without errors that could delay your matter.`, requirements: ['Bring your ID document', 'Bring your tax reference number', 'Bring the relevant SARS request/letter'] },
         { name: 'Tax Return / VAT / PAYE', price: 'R200', description: `Your annual tax return, VAT201, or PAYE submission completed and filed on eFiling. We work through your income, expenses, and supporting documents to ensure your return is accurate, compliant, and submitted on time.`, requirements: ['Bring your ID document', 'Bring your tax reference number', 'Bring income/expense documents (payslips, invoices, IRP5, bank statements as relevant)'] },
       ]},
+      /* PSIRA — temporarily disabled, re-enable by uncommenting this section
       { title: 'PSIRA', items: [
         { name: 'PSIRA Status Check', price: 'R30', description: `We check your PSIRA registration status online — whether your certificate is active, expired, or pending renewal. Important to know before starting work at any security-regulated site.`, requirements: ['Bring your ID document', 'Bring your PSIRA registration number'] },
         { name: 'Update / Certificate', price: 'R40', description: `Need to update your PSIRA profile details or request a copy of your certificate? We handle the online update or certificate request through the PSIRA portal so your records are current.`, requirements: ['Bring your ID document', 'Bring your PSIRA registration number', 'Bring proof of the new details to be updated'] },
@@ -133,10 +151,11 @@ export const HUBS: Record<HubId, Hub> = {
         { name: 'Renewal / New Registration', price: 'R80', description: `Registering with PSIRA for the first time or renewing an expired registration? We complete the full online application with your training certificates and personal details — keeping your security career compliant.`, requirements: ['Bring your ID document', 'Bring proof of relevant training/qualification (for new registration)', 'Bring your PSIRA registration number (for renewal)', 'Have your active cellphone number ready'] },
         { name: 'ID Application', price: 'R100', description: `Applying for your PSIRA identity card — the physical ID required on duty. We submit the application through the PSIRA portal with the required documentation and a recent photo.`, requirements: ['Bring your ID document', 'Bring your PSIRA registration number', 'Bring a recent passport-style photo if required'] },
       ]},
+      */
       { title: 'Online Applications', items: [
         { name: 'NSFAS Status Check', price: 'R20', description: `We check your NSFAS application or funding status on myNSFAS — whether you're approved, awaiting verification, or declined. Know your status before registration so you can plan accordingly.`, requirements: ['Bring your ID document', 'Bring your NSFAS reference number or login details if you have them'] },
-        { name: 'NSFAS Banking Update', price: 'R20', description: `NSFAS requires accurate banking details to pay your allowances. If your bank details have changed or were entered incorrectly, we update them on myNSFAS so your money reaches you without delays.`, requirements: ['Bring your ID document', 'Bring your bank account details or confirmation letter', 'Bring your NSFAS reference number'] },
-        { name: 'Learnership Application', price: 'R30', description: `Learnerships are government-backed training programmes that pay you while you learn a skill. We find the right opportunity and complete the online application on your behalf with your CV and supporting documents.`, requirements: ['Bring your ID document', 'Bring your highest qualification/certificate', 'Bring your CV if available'] },
+        { name: 'NSFAS Banking Update', price: 'R40', description: `NSFAS requires accurate banking details to pay your allowances. If your bank details have changed or were entered incorrectly, we update them on myNSFAS so your money reaches you without delays.`, requirements: ['Bring your ID document', 'Bring your bank account details or confirmation letter', 'Bring your NSFAS reference number'] },
+        { name: 'Learnership Application', price: 'R40', description: `Learnerships are government-backed training programmes that pay you while you learn a skill. We find the right opportunity and complete the online application on your behalf with your CV and supporting documents.`, requirements: ['Bring your ID document', 'Bring your highest qualification/certificate', 'Bring your CV if available'] },
         { name: 'Job / DPSA Application', price: 'R40', description: `Applying for a government or public service position? We complete your online job application on the DPSA or relevant portal — accurately filling in the Z83 form and attaching your CV and qualifications correctly.`, requirements: ['Bring your ID document', 'Bring your CV and certified qualifications', 'Have details of the specific position/post number ready'] },
         { name: 'Bursary Application', price: 'R40', description: `Bursary applications are competitive and detail-sensitive — a single mistake can disqualify you. We complete your bursary application online, ensuring all fields are correct and all required documents are attached.`, requirements: ['Bring your ID document', 'Bring your academic results/qualifications', 'Bring proof of household income if required', 'Bring acceptance letter from institution if applicable'] },
         { name: 'NSFAS Appeal', price: 'R50', description: `If NSFAS declined your application and you believe it was unfair, you have the right to appeal. We submit your appeal through myNSFAS with a clear motivation and supporting documents to give you the best chance of a reversal.`, requirements: ['Bring your ID document', 'Bring the NSFAS rejection/decline notification', 'Bring supporting documents (e.g. proof of income, motivation letter)'] },
@@ -165,6 +184,7 @@ export const HUBS: Record<HubId, Hub> = {
   tech: {
     iconName: 'Desktop', iconColor: HUB_COLORS.tech.light, title: HUB_NAMES.tech, grad: HUB_COLORS.tech.gradient,
     desc: `From slow laptops to fresh Windows installs — everyday tech problems solved quickly and affordably.`,
+    turnaround: "Most services same-day. Virus/Malware Removal and OS Updates may take several hours. Windows Install & PC Setup: same-day, except next-day if drop-off is late or extra work is needed. Troubleshooting: same-day, hours vary.",
     tagStyle: { bg: HUB_COLORS.tech.tagBg, color: HUB_COLORS.tech.tagText },
     tagStyleDark: { bg: HUB_COLORS.tech.tagBgDark, color: HUB_COLORS.tech.tagTextDark },
     previews: ['Windows Install', 'Virus Removal', 'PC Setup'],
@@ -316,5 +336,4 @@ export type ProjectData = {
   sensitive?: boolean; clientGoal: string; whatWeDid: readonly string[]
   tools: readonly string[]; result: string
 }
-export type Project = typeof PROJECTS[number]
-  
+export type Project = typeof PROJECTS[number] 
