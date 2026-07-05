@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { usePathname } from "next/navigation"
-import { MagnifyingGlass, X, Printer, FileText, PaintBrush, Globe, Desktop } from "@phosphor-icons/react"
+import { X, Printer, FileText, PaintBrush, Globe, Desktop } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey } from "@/lib/brand"
@@ -25,10 +25,11 @@ const GLASS = {
 
 const ACCENT_ORANGE = "#F4A261"
 
-// Fixed height for the results viewport — keeps the panel's footprint
-// stable as the match count changes while typing, instead of jumping
-// around. Individual rows still animate in/out inside this frame.
-const RESULTS_HEIGHT = "360px"
+// Compact height fits roughly one result row before typing starts; once
+// there's a query, the viewport eases open to the fixed "expanded" height
+// so the panel doesn't keep resizing as the match count changes.
+const RESULTS_HEIGHT_COMPACT  = "76px"
+const RESULTS_HEIGHT_EXPANDED = "360px"
 
 interface SearchableService {
   hubId: HubId; sectionTitle: string; name: string
@@ -92,6 +93,7 @@ export function FloatingSearchWidget() {
   const index        = useMemo(buildSearchIndex, [])
 
   const onServicesPage = pathname === SERVICES_PATH
+  const hasQuery = query.trim().length > 0
 
   // Base visibility mirrors the inline search bar's scroll position on the
   // Services page — that bar carries id="abh-inline-search". Unlike the
@@ -287,17 +289,16 @@ export function FloatingSearchWidget() {
             </button>
           </div>
 
-          {/* Search input — underline style, no box/ring */}
+          {/* Search input — underline style, no icon, centered text */}
           <div className="px-5 pt-3 pb-1.5 shrink-0">
-            <div className="flex items-center justify-center gap-2 px-1 py-1.5 border-b-2 border-blue-500">
-              <MagnifyingGlass size={16} weight="bold" className="shrink-0 text-blue-500" />
+            <div className="flex items-center justify-center px-1 py-1.5 border-b-2 border-blue-500">
               <input
                 ref={inputRef}
                 type="text"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                placeholder="Search"
-                className="flex-1 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 min-w-0 text-center px-2 outline-none border-none appearance-none"
+                placeholder="Type Service Name / Description"
+                className="flex-1 bg-transparent text-sm font-medium text-blue-500 placeholder:text-blue-500/70 min-w-0 text-center px-2 outline-none border-none appearance-none"
               />
               {query && (
                 <button onClick={() => setQuery("")} className="w-5 h-5 rounded-[14px] bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 shrink-0">
@@ -307,21 +308,14 @@ export function FloatingSearchWidget() {
             </div>
           </div>
 
-          {/* Results — fixed-height viewport so the panel never jumps as
-              the match count changes; each row/state fades + slides in
-              on its own rather than popping into place. */}
+          {/* Results — compact by default (room for ~1 row), eases open
+              to a fixed expanded height once the user starts typing so
+              the panel doesn't keep resizing as the match count changes. */}
           <div
-            className="overflow-y-auto px-5 pb-5 pt-2"
-            style={{ height: RESULTS_HEIGHT }}
+            className="overflow-y-auto px-5 pb-5 pt-2 transition-[height] duration-300 ease-out"
+            style={{ height: hasQuery ? RESULTS_HEIGHT_EXPANDED : RESULTS_HEIGHT_COMPACT }}
           >
-            {query.trim().length === 0 ? (
-              <p
-                key="hint"
-                className="text-xs font-medium text-zinc-400 dark:text-zinc-500 text-center py-8 animate-in fade-in duration-300"
-              >
-                Start typing to find a service — CV, laminating, SASSA
-              </p>
-            ) : results.length > 0 ? (
+            {!hasQuery ? null : results.length > 0 ? (
               <div className="space-y-1.5">
                 {results.map((s, idx) => {
                   const colors = HUB_COLORS[s.hubId as HubKey]
@@ -356,4 +350,4 @@ export function FloatingSearchWidget() {
       )}
     </>
   )
-      } 
+    } 
