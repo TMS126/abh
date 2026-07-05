@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useTheme } from "next-themes"
 import { useRouter, usePathname } from "next/navigation"
-import Image from "next/image"
 import { Sun, Moon, X } from "@phosphor-icons/react"
 import { NAV_ITEMS, BRAND } from "@/lib/brand"
 import { cn } from "@/lib/utils"
@@ -107,6 +106,13 @@ export function Navbar() {
   const routeAccent = MOBILE_NAV_COLORS[pathname]
   const routeColor  = mounted && routeAccent ? (theme === "dark" ? routeAccent.dark : routeAccent.light) : undefined
 
+  // Logo icon fill — same routeColor as the controls pill, so the logo
+  // itself now re-tints per page (blue on Home, green on Services, orange
+  // on Gallery, etc.) instead of the old two-state light/dark CSS filter
+  // hack. Falls back to the original blue/lightBlue pairing when a route
+  // isn't in the map (or before mount, to avoid a color flash on load).
+  const logoColor = routeColor ?? (mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue)
+
   // Individual link pill — replaces the old shared frosted-container
   // look on desktop. Rest state: subtle border + soft shadow. Active:
   // solid fill using the link's own routeColor, with text color computed
@@ -141,12 +147,25 @@ export function Navbar() {
             onMouseLeave={handleLogoMouseLeave}
             onClick={() => navigate("/")}
           >
+            {/* Logo icon — rendered as a CSS mask over a solid fill instead
+                of an <img>, so logoColor (route-driven) can tint it to any
+                brand color, not just the previous two fixed light/dark
+                filter states. */}
             <div
-              className="relative w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-[14px] overflow-hidden transition-all duration-300"
-              style={mounted && theme === "dark" ? { filter: "brightness(0) invert(1) sepia(0.8) saturate(1.2) hue-rotate(200deg)" } : undefined}
-            >
-              <Image src="/logo.png" alt="" fill priority sizes="36px" className="object-contain" />
-            </div>
+              className="relative w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-[14px] overflow-hidden transition-colors duration-300"
+              style={{
+                backgroundColor: logoColor,
+                WebkitMaskImage: "url(/logo.png)",
+                maskImage: "url(/logo.png)",
+                WebkitMaskSize: "contain",
+                maskSize: "contain",
+                WebkitMaskRepeat: "no-repeat",
+                maskRepeat: "no-repeat",
+                WebkitMaskPosition: "center",
+                maskPosition: "center",
+              }}
+              aria-hidden="true"
+            />
             <div className="font-sans font-black text-[1.1rem] leading-none tracking-tight transition-all duration-500 overflow-hidden flex items-center" style={{ maxWidth: isTextExpanded ? "180px" : "0px" }}>
               <span 
                 className="whitespace-nowrap transition-colors duration-300"
@@ -287,7 +306,9 @@ export function Navbar() {
           </nav>
         </div>
 
-        {/* Icon-only watermark at bottom of menu */}
+        {/* Icon-only watermark at bottom of menu — same mask-based tinting
+            as the header logo, so it also picks up logoColor instead of
+            the old fixed brightness/invert filter pair. */}
         <div
           className={cn(
             "absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center select-none transition-all duration-500 z-10",
@@ -296,17 +317,21 @@ export function Navbar() {
           aria-hidden="true"
         >
           <div
-            className="relative w-8 h-8 shrink-0"
-            style={
-              mounted && theme === "dark"
-                ? { filter: "brightness(0) invert(1) sepia(0.6) saturate(1) hue-rotate(200deg)" }
-                : { filter: "brightness(0)" }
-            }
-          >
-            <Image src="/logo.png" alt="" fill sizes="32px" className="object-contain" />
-          </div>
+            className="relative w-8 h-8 shrink-0 transition-colors duration-300"
+            style={{
+              backgroundColor: logoColor,
+              WebkitMaskImage: "url(/logo.png)",
+              maskImage: "url(/logo.png)",
+              WebkitMaskSize: "contain",
+              maskSize: "contain",
+              WebkitMaskRepeat: "no-repeat",
+              maskRepeat: "no-repeat",
+              WebkitMaskPosition: "center",
+              maskPosition: "center",
+            }}
+          />
         </div>
       </div>
     </>
   )
-    } 
+    }
