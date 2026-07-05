@@ -95,7 +95,7 @@ export function Navbar() {
     "/services": { light: BRAND.green,      dark: BRAND.lightGreen  },
     "/gallery":  { light: BRAND.orange,     dark: BRAND.lightOrange },
     "/about":    { light: BRAND.blueDark,   dark: BRAND.lightBlue   }, // "another blue" — same distinct navy used for Contact's page-glow earlier
-    "/contact":  { light: BRAND.neutral500, dark: BRAND.neutral300  }, // grey, per your call
+   "/contact":  { light: BRAND.dark100, dark: BRAND.techGreyDark }, // Tech Hub's grey identity — dark100 passes ~12.6:1 in light mode, techGreyDark (#B8CCE0) passes ~10.7:1 in dark mode
   }
 
   // Route echo — the shared controls pill (theme toggle, hamburger,
