@@ -251,14 +251,16 @@ export function FloatingSearchWidget() {
             Search
           </span>
 
-          {/* Fully round FAB — matches the Quote Calculator / WhatsApp circles */}
+          {/* Fully round FAB — always shows the search icon; closing is
+              handled by the panel's own header X, backdrop click, or
+              Escape, so this button no longer swaps to an X itself. */}
           <button
             onClick={() => setIsOpen(o => !o)}
             className="relative w-14 h-14 rounded-full text-white shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-200"
             style={{ backgroundColor: ACCENT_ORANGE }}
-            aria-label={isOpen ? "Close search" : "Search services"}
+            aria-label="Search services"
           >
-            {isOpen ? <X size={22} weight="bold" /> : <MagnifyingGlass size={24} weight="bold" />}
+            <MagnifyingGlass size={24} weight="bold" />
           </button>
         </div>
       </div>
@@ -289,19 +291,26 @@ export function FloatingSearchWidget() {
             </button>
           </div>
 
-          {/* Search input — underline style, no icon, centered text */}
+          {/* Search input — underline style, neutral text, clear button
+              sits inside the ring with room reserved so it never overlaps
+              the typed text. */}
           <div className="px-5 pt-3 pb-1.5 shrink-0">
-            <div className="flex items-center justify-center px-1 py-1.5 border-b-2 border-blue-500">
+            <div className="relative flex items-center justify-center px-1 py-1.5 border-b-2 border-blue-500">
               <input
                 ref={inputRef}
                 type="text"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Type Service Name / Description"
-                className="flex-1 bg-transparent text-sm font-medium text-blue-500 placeholder:text-blue-500/70 min-w-0 text-center px-2 outline-none border-none appearance-none"
+                className="flex-1 bg-transparent text-sm font-medium text-zinc-700 dark:text-zinc-200 placeholder:text-zinc-400/60 dark:placeholder:text-zinc-500/60 min-w-0 text-center px-2 outline-none border-none appearance-none"
+                style={{ paddingRight: query ? "1.5rem" : undefined }}
               />
               {query && (
-                <button onClick={() => setQuery("")} className="w-5 h-5 rounded-[14px] bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 shrink-0">
+                <button
+                  onClick={() => setQuery("")}
+                  className="absolute right-1 w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 shrink-0"
+                  aria-label="Clear search"
+                >
                   <X size={11} weight="bold" />
                 </button>
               )}
@@ -350,4 +359,4 @@ export function FloatingSearchWidget() {
       )}
     </>
   )
-    } 
+          } 
