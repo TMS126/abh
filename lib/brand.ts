@@ -37,6 +37,14 @@ export const BRAND = {
 
   dark100: "#333333",
   dark200: "#555555",
+  // Dark-mode-safe companion for dark100 — #333333 is ~12.6:1 vs white
+  // (great in light mode) but only ~1.4:1 against dark UI surfaces,
+  // failing WCAG's 3:1 icon/UI-component minimum. This is the same
+  // #B8CCE0 Tech Hub already uses as its own colorDark in HUBS_DATA
+  // (hero-section.tsx) — named here so other components (e.g. Navbar)
+  // can reference it instead of reusing dark100 flat across both themes.
+  // Verified ~10.7:1 against dark surfaces — passes AAA.
+  techGreyDark: "#B8CCE0",
 
   white: "#FFFFFF",
 
@@ -313,7 +321,7 @@ export const CONTACT_LINKS = [
     title: "WhatsApp Us",
     value: BIZ.phone,
     href: WA.contact,
-    dot: BRAND.whatsapp,
+    dot: BRAND.whatsapp, // brand logo color, exempt from contrast rules
   },
   {
     title: "Call Us",
@@ -328,10 +336,15 @@ export const CONTACT_LINKS = [
     dot: BRAND.orange,
   },
   {
+    // BRAND.blueDark used flat here previously — passed ~10.9:1 in light
+    // mode but only ~1.6:1 in dark mode (dark navy on a dark chip fails
+    // the 3:1 icon minimum). Now a proper pair, matching the same
+    // blueDark/lightBlue pairing already used for "/about" elsewhere.
     title: "Visit Us",
     value: BIZ.addressFull,
     href: BIZ.mapsUrl,
-    dot: BRAND.blueDark,
+    dotLight: BRAND.blueDark,
+    dotDark: BRAND.lightBlue,
   },
 ] as const
 
