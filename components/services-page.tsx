@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useRef, useCallback, type ChangeEvent, type PointerEvent as ReactPointerEvent } from "react"
+import { useState, useEffect, useMemo, useRef, useCallback, type ChangeEvent, type TouchEvent as ReactTouchEvent } from "react"
 import { useSearchParams } from "next/navigation"
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion"
 import {
@@ -526,11 +526,7 @@ function HubModal({
                   })}
                 </div>
 
-                {/* Tagline — moved up to sit right under the category pills
-                    (was previously below the full services list). Fill
-                    removed: now a subtle outline card using the card's own
-                    background, a 1.6px border at low-opacity hub accent,
-                    and accent-colored icon/text instead of white-on-solid. */}
+                {/* Tagline — sits under the category pills, above the services list */}
                 <div
                   className="mb-5 rounded-[14px] p-5 flex items-center gap-4 bg-white dark:bg-zinc-900/40"
                   style={{ border: `1.6px solid ${accent}35` }}
@@ -985,16 +981,19 @@ export function ServicesPage() {
   const [stackOrder, setStackOrder] = useState<HubId[]>(HUB_ORDER)
   const [dragX,       setDragX]     = useState(0)
 
-  // FIX: tap-vs-swipe decisions now live entirely in refs, not state.
-  // React state updates are asynchronous — on a genuinely fast tap,
-  // pointerup could fire and run before React had committed the
-  // isDragging/dragX state set on pointerdown, so the up-handler was
-  // reading a STALE closure (isDragging still false from the prior
-  // render) and bailing out early, doing nothing. Refs are mutated and
-  // read synchronously with no render/commit delay, so this race can't
-  // happen. `dragX` state is kept only for the visual drag transform.
-  const dragStartXRef = useRef(0)
-  const isDraggingRef  = useRef(false)
+  // Tap-vs-swipe decisions live entirely in refs, not state, so they're
+  // read/mutated synchronously with no render/commit delay. `dragX`
+  // state is kept only for the visual drag transform.
+  //
+  // NOTE: this now uses native Touch Events instead of Pointer Events.
+  // Pointer Events + setPointerCapture were unreliable on Samsung
+  // Browser / some Android WebViews — pointercapture could trigger a
+  // silent `pointercancel` right after pointerdown, so `pointerup`
+  // never reached the handler at all (not a stale-closure issue, an
+  // event-never-firing issue). Touch events don't have this failure
+  // mode and are handled directly on the front card only.
+  const dragStartXRef   = useRef(0)
+  const isDraggingRef   = useRef(false)
   const swipeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -1017,27 +1016,27 @@ export function ServicesPage() {
     setActiveHub(hubId)
   }, [])
 
-  const handleStackPointerDown = (e: ReactPointerEvent) => {
+  const handleStackTouchStart = (e: ReactTouchEvent) => {
     if (swipeTimeoutRef.current) {
       clearTimeout(swipeTimeoutRef.current)
       swipeTimeoutRef.current = null
     }
-    dragStartXRef.current = e.clientX
+    dragStartXRef.current = e.touches[0].clientX
     isDraggingRef.current = true
     setDragX(0)
-    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
   }
-  const handleStackPointerMove = (e: ReactPointerEvent) => {
+  const handleStackTouchMove = (e: ReactTouchEvent) => {
     if (!isDraggingRef.current) return
-    setDragX(e.clientX - dragStartXRef.current)
+    setDragX(e.touches[0].clientX - dragStartXRef.current)
   }
-  const handleStackPointerUp = (e: ReactPointerEvent) => {
+  const handleStackTouchEnd = (e: ReactTouchEvent) => {
     if (!isDraggingRef.current) return
     isDraggingRef.current = false
 
-    // Read the live offset synchronously from the DOM event rather than
-    // trusting the (possibly not-yet-committed) dragX state.
-    const finalDragX = e.clientX - dragStartXRef.current
+    // changedTouches, not touches — the finger has already lifted, so
+    // it's no longer in e.touches by the time touchend/touchcancel fires.
+    const touch = e.changedTouches[0]
+    const finalDragX = touch ? touch.clientX - dragStartXRef.current : 0
     const SWIPE_THRESHOLD = 80
     const TAP_THRESHOLD   = 10
 
@@ -1190,10 +1189,10 @@ export function ServicesPage() {
                   <motion.div
                     key={hubId}
                     layoutId={`hubcard-${hubId}`}
-                    onPointerDown={isFront ? handleStackPointerDown : undefined}
-                    onPointerMove={isFront ? handleStackPointerMove : undefined}
-                    onPointerUp={isFront ? handleStackPointerUp : undefined}
-                    onPointerCancel={isFront ? handleStackPointerUp : undefined}
+                    onTouchStart={isFront ? handleStackTouchStart : undefined}
+                    onTouchMove={isFront ? handleStackTouchMove : undefined}
+                    onTouchEnd={isFront ? handleStackTouchEnd : undefined}
+                    onTouchCancel={isFront ? handleStackTouchEnd : undefined}
                     onClick={!isFront ? () => handleCardTap(hubId) : undefined}
                     className={cn(
                       "absolute bottom-0 rounded-[18px] bg-white dark:bg-zinc-950 p-6 flex flex-col items-center text-center touch-none select-none",
@@ -1277,4 +1276,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-    } 
+      } 
