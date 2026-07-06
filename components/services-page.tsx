@@ -526,6 +526,26 @@ function HubModal({
                   })}
                 </div>
 
+                {/* Tagline — moved up to sit right under the category pills
+                    (was previously below the full services list). Fill
+                    removed: now a subtle outline card using the card's own
+                    background, a 1.6px border at low-opacity hub accent,
+                    and accent-colored icon/text instead of white-on-solid. */}
+                <div
+                  className="mb-5 rounded-[14px] p-5 flex items-center gap-4 bg-white dark:bg-zinc-900/40"
+                  style={{ border: `1.6px solid ${accent}35` }}
+                >
+                  <div
+                    className="w-11 h-11 rounded-[12px] flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: `${accent}12` }}
+                  >
+                    <HubIcon id={hubId} size={22} color={accent} />
+                  </div>
+                  <p className="font-sans font-bold text-[0.86rem] leading-snug text-zinc-700 dark:text-zinc-300">
+                    {HUB_TAGLINES[hubId]}
+                  </p>
+                </div>
+
                 {openSectionIdx !== null && hub.sections[openSectionIdx] && (
                   <div
                     key={openSectionIdx}
@@ -547,18 +567,6 @@ function HubModal({
                     ))}
                   </div>
                 )}
-
-                <div
-                  className="mt-6 rounded-[16px] p-6 md:p-8 flex flex-col items-center text-center gap-3"
-                  style={{ backgroundColor: solidAccent }}
-                >
-                  <div className="w-14 h-14 rounded-[14px] flex items-center justify-center bg-white/20">
-                    <HubIcon id={hubId} size={30} color="#fff" />
-                  </div>
-                  <p className="font-sans font-black text-base md:text-lg leading-snug max-w-sm text-white">
-                    {HUB_TAGLINES[hubId]}
-                  </p>
-                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -569,10 +577,6 @@ function HubModal({
 }
 
 // ─── Service Detail Modal — the "sub service" modal (e.g. "SASSA Appeal") ────
-// Position now anchored to the bottom on mobile (full-width sheet, rounded
-// top corners only) instead of vertically centered — reads as emerging
-// from wherever the card was, rather than floating mid-screen. Desktop
-// keeps the original centered card treatment.
 type Tab = "bring" | "about"
 
 const REMOTE_HUBS: HubId[] = ["design", "eservice"]
@@ -980,12 +984,17 @@ export function ServicesPage() {
   // ── Mobile stacked hub cards — order[0] is always the front card ──
   const [stackOrder, setStackOrder] = useState<HubId[]>(HUB_ORDER)
   const [dragX,       setDragX]     = useState(0)
-  const [isDragging,  setIsDragging] = useState(false)
-  const dragStartX = useRef(0)
-  // Tracks a pending "settle" timeout from a completed swipe (the fling +
-  // reorder + reset-to-0 sequence). Cleared and re-armed on every new
-  // gesture so a fast tap right after a swipe can never inherit a stale
-  // in-flight dragX value — see handleStackPointerDown.
+
+  // FIX: tap-vs-swipe decisions now live entirely in refs, not state.
+  // React state updates are asynchronous — on a genuinely fast tap,
+  // pointerup could fire and run before React had committed the
+  // isDragging/dragX state set on pointerdown, so the up-handler was
+  // reading a STALE closure (isDragging still false from the prior
+  // render) and bailing out early, doing nothing. Refs are mutated and
+  // read synchronously with no render/commit delay, so this race can't
+  // happen. `dragX` state is kept only for the visual drag transform.
+  const dragStartXRef = useRef(0)
+  const isDraggingRef  = useRef(false)
   const swipeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -1009,43 +1018,40 @@ export function ServicesPage() {
   }, [])
 
   const handleStackPointerDown = (e: ReactPointerEvent) => {
-    // BUG FIX: a completed swipe leaves a 220ms "settle" timeout pending
-    // (fling → reorder → reset dragX to 0). If a new gesture starts before
-    // that timeout fires, dragX was still sitting at its large "flung"
-    // value — so even a plain tap with near-zero movement would read as
-    // another swipe (|dragX| > SWIPE_THRESHOLD from the STALE value), never
-    // reaching the tap branch that opens the card. Cancelling any pending
-    // settle and zeroing dragX here, synchronously, at the start of every
-    // new gesture fixes that.
     if (swipeTimeoutRef.current) {
       clearTimeout(swipeTimeoutRef.current)
       swipeTimeoutRef.current = null
     }
-    dragStartX.current = e.clientX
+    dragStartXRef.current = e.clientX
+    isDraggingRef.current = true
     setDragX(0)
-    setIsDragging(true)
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
   }
   const handleStackPointerMove = (e: ReactPointerEvent) => {
-    if (!isDragging) return
-    setDragX(e.clientX - dragStartX.current)
+    if (!isDraggingRef.current) return
+    setDragX(e.clientX - dragStartXRef.current)
   }
-  const handleStackPointerUp = () => {
-    if (!isDragging) return
-    setIsDragging(false)
+  const handleStackPointerUp = (e: ReactPointerEvent) => {
+    if (!isDraggingRef.current) return
+    isDraggingRef.current = false
+
+    // Read the live offset synchronously from the DOM event rather than
+    // trusting the (possibly not-yet-committed) dragX state.
+    const finalDragX = e.clientX - dragStartXRef.current
     const SWIPE_THRESHOLD = 80
     const TAP_THRESHOLD   = 10
-    if (Math.abs(dragX) > SWIPE_THRESHOLD) {
-      const flingTo = dragX > 0 ? 520 : -520
+
+    if (Math.abs(finalDragX) > SWIPE_THRESHOLD) {
+      const flingTo = finalDragX > 0 ? 520 : -520
       setDragX(flingTo)
       swipeTimeoutRef.current = setTimeout(() => {
         setStackOrder(prev => [...prev.slice(1), prev[0]])
         setDragX(0)
         swipeTimeoutRef.current = null
       }, 220)
-    } else if (Math.abs(dragX) < TAP_THRESHOLD) {
-      handleCardTap(stackOrder[0])
+    } else if (Math.abs(finalDragX) < TAP_THRESHOLD) {
       setDragX(0)
+      handleCardTap(stackOrder[0])
     } else {
       setDragX(0)
     }
@@ -1206,7 +1212,7 @@ export function ServicesPage() {
                         ? "0 20px 40px rgba(0,0,0,0.20)"
                         : `0 ${10 + index * 6}px ${20 + index * 10}px rgba(0,0,0,${0.14 + index * 0.03})`,
                     }}
-                    transition={isDragging ? { duration: 0 } : { type: "spring", damping: 30, stiffness: 300 }}
+                    transition={isDraggingRef.current ? { duration: 0 } : { type: "spring", damping: 30, stiffness: 300 }}
                   >
                     {/* Name peeks above the front card so back cards stay identifiable */}
                     {!isFront && (
@@ -1271,4 +1277,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-                  } 
+    } 
