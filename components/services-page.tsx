@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback, type ChangeEvent, type TouchEvent as ReactTouchEvent } from "react"
 import { useSearchParams } from "next/navigation"
-import { motion, AnimatePresence, LayoutGroup } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   X, Printer, FileText, PaintBrush, Globe, Desktop,
   PaperPlaneTilt, Megaphone, MagnifyingGlass,
@@ -376,58 +376,28 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
       <MagnifyingGlass
         size={18}
         weight="bold"
-        className="absolute left-4 top-1/2 -translate-y-1/2 text-white/80 pointer-events-none"
+        className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none"
       />
       <input
         type="text"
+        placeholder="Search services..."
         value={query}
-        onChange={e => setQuery(e.target.value)}
+        onChange={(e) => setQuery(e.currentTarget.value)}
         onFocus={() => setFocused(true)}
-        placeholder="Search"
-        className="w-full pl-11 pr-10 py-4 rounded-[14px] font-sans font-black text-base text-white placeholder:text-white/70 shadow-lg transition-all duration-300 outline-none text-center focus:text-left focus:scale-[0.99]"
-        style={{ backgroundColor: fillColor }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = hoverColor }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = fillColor }}
+        className="w-full pl-10 pr-4 py-2.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
       />
-      {query && (
-        <button
-          onClick={() => setQuery("")}
-          className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
-        >
-          <X size={12} weight="bold" />
-        </button>
-      )}
-      {focused && query.trim().length > 0 && (
-        <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-xl overflow-hidden z-30 animate-in fade-in zoom-in-95 duration-150">
-          {results.length > 0 ? (
-            <div className="max-h-[320px] overflow-y-auto p-2">
-              {results.map((s, idx) => {
-                const colors = HUB_COLORS[s.hubId as HubKey]
-                const accent = isDark ? colors.tagTextDark : colors.tagText
-                return (
-                  <button
-                    key={`${s.hubId}-${s.name}-${idx}`}
-                    onClick={() => pick(s)}
-                    className="w-full flex items-center gap-3 p-3 rounded-[10px] hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left"
-                  >
-                    <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${accent}15`, color: accent }}>
-                      <HubIcon id={s.hubId} size={18} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{s.name}</p>
-                      <p className="text-[0.65rem] font-bold uppercase tracking-wider text-zinc-400 truncate">{s.sectionTitle} · {HUBS[s.hubId].title}</p>
-                    </div>
-                    <span className="text-xs font-black shrink-0" style={{ color: accent }}>{s.price}</span>
-                  </button>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="p-5 text-center">
-              <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">No services found</p>
-              <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-1">Try a different word, or WhatsApp us directly.</p>
-            </div>
-          )}
+      {focused && results.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg overflow-hidden z-50">
+          {results.map((s, i) => (
+            <button
+              key={i}
+              onClick={() => pick(s)}
+              className="w-full text-left px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800 border-b border-zinc-100 dark:border-zinc-800 last:border-0 transition-colors"
+            >
+              <div className="font-semibold text-sm text-zinc-900 dark:text-zinc-50">{s.name}</div>
+              <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{s.sectionTitle} • {s.price}</div>
+            </button>
+          ))}
         </div>
       )}
     </div>
@@ -435,11 +405,11 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
 }
 
 // ─── Hub Modal — the "first modal" (list of services within a hub) ────────────
+// REFACTORED: Removed layoutId shared-element transitions. Now uses plain fade/scale.
 function HubModal({
-  hubId, launchId, onClose, onSelectService,
+  hubId, onClose, onSelectService,
 }: {
   hubId: HubId | null
-  launchId?: string
   onClose: () => void
   onSelectService: (svc: SelectedService) => void
 }) {
@@ -476,8 +446,10 @@ function HubModal({
           />
           <motion.div
             key="hub-panel"
-            layoutId={launchId}
-            transition={{ type: "spring", damping: 28, stiffness: 240, mass: 0.8 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
             className="fixed inset-4 md:inset-10 md:mx-auto md:max-w-2xl md:max-h-[85vh] z-[10100] bg-white dark:bg-zinc-950 rounded-[22px] overflow-hidden shadow-2xl border border-zinc-100 dark:border-zinc-800 flex flex-col"
           >
             <motion.div
@@ -833,99 +805,92 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
               )}
               {tab === "about" && (
                 <div className="animate-in fade-in slide-in-from-right-2 duration-200">
-                  <p className="abh-body text-[0.84rem]">{desc}</p>
-                  <p className="abh-muted mt-5">
-                    Have questions? Switch to the{" "}
-                    <span className="font-black text-zinc-700 dark:text-zinc-300">{bringLabel}</span> tab or chat with us directly.
-                  </p>
+                  <p className="abh-body text-[0.84rem] leading-relaxed">{desc}</p>
                 </div>
               )}
             </div>
 
-            <div className="px-6 pb-6 pt-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
-
-              <input
-                ref={fileRef}
-                type="file"
-                accept={HUB_ACCEPT[svc.hubId]}
-                onChange={handleFilePick}
-                className="hidden"
-              />
-
-              {uploadPhase === "idle" && (
-                <div className="space-y-2">
+            <div className="px-6 pb-6 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800 pt-4">
+              {uploadPhase === "idle" && !fileUrl && (
+                <label className="block">
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    onChange={handleFilePick}
+                    accept={HUB_ACCEPT[svc.hubId]}
+                    className="hidden"
+                  />
                   <button
-                    type="button"
                     onClick={() => fileRef.current?.click()}
-                    className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-[14px] font-bold text-sm border-2 border-dashed border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 transition-all active:scale-95 hover:opacity-80"
+                    className="w-full py-3 px-4 rounded-full bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 font-black text-[0.84rem] uppercase tracking-wider transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
                   >
-                    <Paperclip size={17} weight="bold" />
-                    Attach a file (optional)
+                    <Paperclip size={16} weight="bold" />
+                    Upload File ({acceptHint})
                   </button>
-                  <p className="text-[0.65rem] font-medium text-zinc-400 dark:text-zinc-500 text-center px-1">
-                    Accepts: {acceptHint}
-                  </p>
-                  <div className="flex items-start gap-2 px-1">
-                    <ShieldCheck size={13} weight="fill" className="text-[#6FBF1A] shrink-0 mt-0.5" />
-                    <p className="abh-muted text-[0.67rem] leading-relaxed">
-                      Your file goes directly to Apexbytes Hub only — safe, private, and used only for your order. No explicit or inappropriate content allowed.
-                    </p>
-                  </div>
-                </div>
+                </label>
               )}
-
               {uploadPhase === "uploading" && (
-                <div className="flex items-center gap-3 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-zinc-50 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400">
-                  <AbhLoader size={28} />
-                  <span className="font-black tabular-nums shrink-0 text-zinc-700 dark:text-zinc-300">{uploadProgress}%</span>
-                  <span className="truncate">Uploading {file?.name}…</span>
+                <div className="w-full">
+                  <div className="w-full h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-zinc-900 dark:bg-zinc-50"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${uploadProgress}%` }}
+                      transition={{ duration: 0.2 }}
+                    />
+                  </div>
+                  <p className="text-[0.7rem] text-zinc-500 dark:text-zinc-400 mt-2 text-center">{uploadProgress}% uploading...</p>
                 </div>
               )}
-
-              {uploadPhase === "done" && file && (
-                <div className="flex items-center justify-between gap-2 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200/50 dark:border-green-800/30">
-                  <span className="flex items-center gap-2.5 min-w-0">
-                    {previewUrl ? (
-                      <img
-                        src={previewUrl}
-                        alt=""
-                        className="w-8 h-8 rounded-[8px] object-cover shrink-0 border border-green-200/60 dark:border-green-800/40"
-                      />
-                    ) : (
-                      <CheckCircle size={17} weight="fill" className="shrink-0" />
-                    )}
-                    <span className="truncate">{file.name}</span>
-                  </span>
-                  <button type="button" onClick={clearFile} aria-label="Remove file" className="shrink-0 opacity-60 hover:opacity-100 transition-opacity">
-                    <X size={15} weight="bold" />
-                  </button>
-                </div>
-              )}
-
-              {uploadPhase === "error" && (
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200/50 dark:border-red-800/30">
-                    <WarningCircle size={17} weight="fill" className="shrink-0 mt-0.5" />
-                    <span className="leading-snug font-medium">{uploadErr}</span>
+              {uploadPhase === "done" && fileUrl && (
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle size={16} weight="fill" className="text-green-600 dark:text-green-400 shrink-0" />
+                      <span className="text-[0.7rem] font-black uppercase tracking-wider text-green-600 dark:text-green-400">File uploaded</span>
+                    </div>
+                    <p className="text-[0.72rem] text-zinc-600 dark:text-zinc-400 truncate">{file?.name}</p>
                   </div>
                   <button
-                    type="button"
-                    onClick={() => { setUploadPhase("idle"); setUploadErr(null); fileRef.current?.click() }}
-                    className="text-xs font-black underline text-zinc-700 dark:text-zinc-300"
+                    onClick={clearFile}
+                    className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                   >
-                    Try a different file
+                    <X size={16} className="text-zinc-500" />
                   </button>
                 </div>
               )}
+              {uploadPhase === "error" && (
+                <div className="flex items-start gap-3">
+                  <WarningCircle size={16} weight="fill" className="text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[0.72rem] text-red-600 dark:text-red-400">{uploadErr}</p>
+                    <button
+                      onClick={() => setUploadPhase("idle")}
+                      className="text-[0.7rem] font-black uppercase tracking-wider text-red-600 dark:text-red-400 hover:underline mt-1"
+                    >
+                      Try again
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
+            <div className="px-6 pb-6 flex-shrink-0 flex gap-3">
               <a
-                href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waMessage)}`}
+                href={`https://wa.me/${BIZ.whatsapp}?text=${encodeURIComponent(waMessage)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full px-4 py-4 rounded-[14px] font-black text-sm text-white text-center transition-all active:scale-95 shadow-[0_4px_14px_rgba(37,211,102,0.3)] hover:-translate-y-0.5"
-                style={{ backgroundColor: "#25D366" }}
+                className="flex-1 py-3 px-4 rounded-full bg-green-600 dark:bg-green-500 text-white dark:text-zinc-900 font-black text-[0.84rem] uppercase tracking-wider transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
               >
-                Request {naturalLabel}
+                <PaperPlaneTilt size={16} weight="bold" />
+                WhatsApp
+              </a>
+              <a
+                href={`mailto:${BIZ.email}?subject=${encodeURIComponent(`${naturalLabel} Request`)}&body=${encodeURIComponent(waMessage)}`}
+                className="flex-1 py-3 px-4 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 font-black text-[0.84rem] uppercase tracking-wider transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+              >
+                <Megaphone size={16} weight="bold" />
+                Email
               </a>
             </div>
           </motion.div>
@@ -938,81 +903,60 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
 // ─── Notice Banner ────────────────────────────────────────────────────────────
 function NoticeBanner() {
   return (
-    <div className="relative mx-auto w-full max-w-md mb-10 rounded-[14px] border border-[#F4A261]/20 bg-[#F4A261]/5 dark:bg-[#F4A261]/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
-      <div className="w-9 h-9 rounded-[10px] bg-[#F4A261] flex items-center justify-center shrink-0">
-        <Megaphone size={18} weight="fill" color="#fff" />
-      </div>
-      <div className="flex-1 min-w-0 pt-0.5">
-        <span className="abh-eyebrow text-[#D9894B] dark:text-[#F4A261] block mb-1">
-          Notice to Clients
-        </span>
-        <p className="abh-body text-[0.84rem]">
-          {NOTICE.text}<span className="font-black text-zinc-800 dark:text-zinc-100">{NOTICE.date}</span>{NOTICE.textAfter}
+    <div className="w-full mb-8 rounded-[14px] bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 p-4 md:p-5 flex items-start gap-3">
+      <ShieldCheck size={20} weight="fill" className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+      <div className="min-w-0">
+        <p className="text-[0.84rem] text-blue-900 dark:text-blue-200">
+          <strong>{NOTICE.text}</strong>
+          <strong className="text-blue-600 dark:text-blue-300">{NOTICE.date}</strong>
+          <strong>{NOTICE.textAfter}</strong>
         </p>
       </div>
     </div>
   )
 }
 
-// ─── Closing tagline ──────────────────────────────────────────────────────────
+// ─── Closing Tagline ──────────────────────────────────────────────────────────
 function ClosingTagline() {
   return (
-    <div className="relative mt-2 mb-4 overflow-hidden rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-gradient-to-br from-[#1E6FA8]/5 via-white to-[#6FBF1A]/5 dark:from-[#1E6FA8]/10 dark:via-zinc-950 dark:to-[#6FBF1A]/10 px-6 py-10 md:py-12 text-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#1E6FA8] via-[#6FBF1A] to-[#F4A261]" />
-      <p className="abh-eyebrow text-zinc-400 dark:text-zinc-500 mb-3">Why Apexbytes Hub</p>
-      <p className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 leading-snug max-w-2xl mx-auto">
-        From your first CV to your next big idea — one hub does it all, right here in Bothaville.
+    <div className="mt-16 text-center">
+      <h2 className="abh-page-title mb-3">Ready to get started?</h2>
+      <p className="abh-tagline max-w-xl mx-auto">
+        Pick a service, upload your files, and we'll handle the rest. Fast, reliable, and hassle-free.
       </p>
+      <div className="abh-divider mx-auto" />
     </div>
   )
 }
 
-// ─── Services Page ────────────────────────────────────────────────────────────
-export function ServicesPage() {
+// ─── Main Services Page ────────────────────────────────────────────────────────
+export default function ServicesPage() {
   const { resolvedTheme } = useTheme()
-  const isDark       = resolvedTheme === "dark"
+  const isDark = resolvedTheme === "dark"
   const searchParams = useSearchParams()
 
-  const [activeHub,       setActiveHub]       = useState<HubId | null>(null)
+  const [activeHub, setActiveHub] = useState<HubId | null>(null)
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
-  const [showBackToTop,   setShowBackToTop]   = useState(false)
-
-  // ── Mobile stacked hub cards — order[0] is always the front card ──
   const [stackOrder, setStackOrder] = useState<HubId[]>(HUB_ORDER)
-  const [dragX,       setDragX]     = useState(0)
+  const [dragX, setDragX] = useState(0)
+  const [showBackToTop, setShowBackToTop] = useState(false)
 
-  // Tap-vs-swipe decisions live entirely in refs, not state, so they're
-  // read/mutated synchronously with no render/commit delay. `dragX`
-  // state is kept only for the visual drag transform.
-  //
-  // NOTE: this now uses native Touch Events instead of Pointer Events.
-  // Pointer Events + setPointerCapture were unreliable on Samsung
-  // Browser / some Android WebViews — pointercapture could trigger a
-  // silent `pointercancel` right after pointerdown, so `pointerup`
-  // never reached the handler at all (not a stale-closure issue, an
-  // event-never-firing issue). Touch events don't have this failure
-  // mode and are handled directly on the front card only.
-  const dragStartXRef   = useRef(0)
-  const isDraggingRef   = useRef(false)
-  const swipeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isDraggingRef = useRef(false)
+  const dragStartXRef = useRef(0)
+  const swipeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
-    return () => { if (swipeTimeoutRef.current) clearTimeout(swipeTimeoutRef.current) }
+    return () => {
+      if (swipeTimeoutRef.current) clearTimeout(swipeTimeoutRef.current)
+    }
   }, [])
-
-  // Tracks which mobile stack card (if any) launched the currently open
-  // HubModal, so the modal knows whether to do the shared "grow" morph
-  // (mobile tap) or a plain fade (desktop grid click).
-  const [cardLaunchHub, setCardLaunchHub] = useState<HubId | null>(null)
 
   const handleCardTap = useCallback((hubId: HubId) => {
     setStackOrder(prev => [hubId, ...prev.filter(h => h !== hubId)])
-    setCardLaunchHub(hubId)
     setActiveHub(hubId)
   }, [])
 
   const handleDesktopCardClick = useCallback((hubId: HubId) => {
-    setCardLaunchHub(null) // desktop cards use a plain fade, not the shared morph
     setActiveHub(hubId)
   }, [])
 
@@ -1075,7 +1019,6 @@ export function ServicesPage() {
     const hubParam = searchParams.get("hub")
     if (hubParam && HUB_ORDER.includes(hubParam as HubId)) {
       setSelectedService(null)
-      setCardLaunchHub(null)
       setActiveHub(hubParam as HubId)
     }
   }, [searchParams])
@@ -1116,147 +1059,145 @@ export function ServicesPage() {
           <NoticeBanner />
         </div>
 
-        <LayoutGroup>
-          {/* Hub cards (desktop) — unchanged grid layout, hidden below md breakpoint */}
-          <div className="hidden md:grid md:grid-cols-5 gap-5 md:gap-4 pb-2 w-full">
-            {HUB_ORDER.map((hubId) => {
-              const hub    = HUBS[hubId]
-              const colors = HUB_COLORS[hubId as HubKey]
-              const accent = isDark ? colors.tagTextDark : colors.tagText
-              const cardBg = isDark ? "#09090b" : "#ffffff"
-              const exploreColor = ensureAccessible(accent, cardBg, 4.5)
-              return (
-                <button
-                  key={hubId}
-                  onClick={() => handleDesktopCardClick(hubId)}
-                  className="group flex flex-col items-center p-6 md:p-7 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 text-center w-full h-full"
+        {/* Hub cards (desktop) — unchanged grid layout, hidden below md breakpoint */}
+        <div className="hidden md:grid md:grid-cols-5 gap-5 md:gap-4 pb-2 w-full">
+          {HUB_ORDER.map((hubId) => {
+            const hub    = HUBS[hubId]
+            const colors = HUB_COLORS[hubId as HubKey]
+            const accent = isDark ? colors.tagTextDark : colors.tagText
+            const cardBg = isDark ? "#09090b" : "#ffffff"
+            const exploreColor = ensureAccessible(accent, cardBg, 4.5)
+            return (
+              <button
+                key={hubId}
+                onClick={() => handleDesktopCardClick(hubId)}
+                className="group flex flex-col items-center p-6 md:p-7 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 text-center w-full h-full"
+              >
+                <div
+                  className="w-14 h-14 md:w-16 md:h-16 rounded-[14px] flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110 shadow-md"
+                  style={{ backgroundColor: `${accent}12`, color: accent }}
                 >
-                  <div
-                    className="w-14 h-14 md:w-16 md:h-16 rounded-[14px] flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110 shadow-md"
-                    style={{ backgroundColor: `${accent}12`, color: accent }}
-                  >
-                    <HubIcon id={hubId} size={32} />
+                  <HubIcon id={hubId} size={32} />
+                </div>
+                <h3 className="font-sans font-black text-lg md:text-xl text-zinc-900 dark:text-zinc-50 mb-2 group-hover:text-[#1E6FA8] dark:group-hover:text-[#A9D6F2] transition-colors">
+                  {hub.title}
+                </h3>
+                <p className="abh-body text-[0.82rem] line-clamp-2 mb-5">{hub.desc}</p>
+                <div className="flex flex-col items-center gap-1 mb-5">
+                  {hub.previews.map((hint, i) => (
+                    <span key={i} className="text-[0.72rem] font-medium text-zinc-400 dark:text-zinc-500 tracking-wide">
+                      {hint}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-auto flex flex-col items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 text-[0.72rem] font-black lowercase tracking-widest">
+                    <span style={{ color: exploreColor }}>explore</span>
+                    <PaperPlaneTilt size={13} weight="fill" style={{ color: exploreColor }} />
                   </div>
-                  <h3 className="font-sans font-black text-lg md:text-xl text-zinc-900 dark:text-zinc-50 mb-2 group-hover:text-[#1E6FA8] dark:group-hover:text-[#A9D6F2] transition-colors">
+                  <div className="h-px w-6 rounded-full" style={{ backgroundColor: `${accent}30` }} />
+                </div>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Hub cards (mobile) — enlarged CR80-portrait stack, front card always upright */}
+        <div className="md:hidden w-full flex flex-col items-center pb-2">
+          <div
+            className="relative w-full flex justify-center"
+            style={{ height: CARD_H + CARD_PEEK * (stackOrder.length - 1) }}
+          >
+            {stackOrder.map((hubId, index) => {
+              // REFACTORED: Keep card mounted always, just hide it visually when modal is open.
+              // This prevents the unmount/remount race that causes hit-test desync.
+              const isHiddenByModal = activeHub === hubId
+
+              const hub     = HUBS[hubId]
+              const isFront = index === 0
+              const accent  = hubAccentColor(hubId, isDark)
+              const p       = CARD_PERSONALITY[hubId]
+
+              const baseY = -index * CARD_PEEK
+              const scale = isFront ? 1 : Math.max(0.9, 1 - index * 0.02)
+              const brightness = isFront ? 1 : Math.max(0.88, 1 - index * 0.035)
+
+              // Front card is always perfectly upright and centered —
+              // only drag offsets it. Back cards keep their fixed tilt/jitter.
+              const jitterX = isFront ? dragX : p.xJitter
+              const rotate  = isFront ? dragX / 14 : p.rot
+
+              return (
+                <motion.div
+                  key={hubId}
+                  onTouchStart={isFront ? handleStackTouchStart : undefined}
+                  onTouchMove={isFront ? handleStackTouchMove : undefined}
+                  onTouchEnd={isFront ? handleStackTouchEnd : undefined}
+                  onTouchCancel={isFront ? handleStackTouchEnd : undefined}
+                  onClick={!isFront ? () => handleCardTap(hubId) : undefined}
+                  animate={{ opacity: isHiddenByModal ? 0 : 1 }}
+                  className={cn(
+                    "absolute bottom-0 rounded-[18px] bg-white dark:bg-zinc-950 p-6 flex flex-col items-center text-center touch-none select-none",
+                    isFront && "cursor-grab active:cursor-grabbing"
+                  )}
+                  style={{
+                    width: CARD_W,
+                    height: CARD_H,
+                    left: "50%",
+                    marginLeft: -CARD_W / 2,
+                    zIndex: 50 - index * 10,
+                    border: `1.5px solid ${accent}`,
+                    x: jitterX, y: baseY, rotate, scale,
+                    filter: `brightness(${brightness})`,
+                    pointerEvents: isHiddenByModal ? "none" : "auto",
+                    boxShadow: isFront
+                      ? "0 20px 40px rgba(0,0,0,0.20)"
+                      : `0 ${10 + index * 6}px ${20 + index * 10}px rgba(0,0,0,${0.14 + index * 0.03})`,
+                  }}
+                  transition={isDraggingRef.current ? { duration: 0 } : { type: "spring", damping: 30, stiffness: 300 }}
+                >
+                  {/* Name peeks above the front card so back cards stay identifiable */}
+                  {!isFront && (
+                    <div className="absolute top-3 inset-x-0 flex items-center justify-center px-4">
+                      <span
+                        className="text-[0.72rem] font-black uppercase tracking-wider truncate"
+                        style={{ color: accent }}
+                      >
+                        {hub.title}
+                      </span>
+                    </div>
+                  )}
+
+                  <div
+                    className="w-16 h-16 rounded-[16px] flex items-center justify-center mb-5 shadow-md shrink-0 mt-6"
+                    style={{ backgroundColor: `${accent}18`, color: accent }}
+                  >
+                    <HubIcon id={hubId} size={34} />
+                  </div>
+
+                  <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-3">
                     {hub.title}
                   </h3>
-                  <p className="abh-body text-[0.82rem] line-clamp-2 mb-5">{hub.desc}</p>
-                  <div className="flex flex-col items-center gap-1 mb-5">
-                    {hub.previews.map((hint, i) => (
-                      <span key={i} className="text-[0.72rem] font-medium text-zinc-400 dark:text-zinc-500 tracking-wide">
-                        {hint}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="mt-auto flex flex-col items-center gap-1.5">
-                    <div className="flex items-center gap-1.5 text-[0.72rem] font-black lowercase tracking-widest">
-                      <span style={{ color: exploreColor }}>explore</span>
-                      <PaperPlaneTilt size={13} weight="fill" style={{ color: exploreColor }} />
-                    </div>
-                    <div className="h-px w-6 rounded-full" style={{ backgroundColor: `${accent}30` }} />
-                  </div>
-                </button>
+
+                  <p className="abh-body text-[0.86rem] leading-relaxed">{hub.desc}</p>
+                </motion.div>
               )
             })}
           </div>
+          <p className="text-center text-[0.68rem] font-black uppercase tracking-widest text-zinc-400 mt-4">
+            Swipe or tap a card to explore
+          </p>
+        </div>
 
-          {/* Hub cards (mobile) — enlarged CR80-portrait stack, front card always upright */}
-          <div className="md:hidden w-full flex flex-col items-center pb-2">
-            <div
-              className="relative w-full flex justify-center"
-              style={{ height: CARD_H + CARD_PEEK * (stackOrder.length - 1) }}
-            >
-              {stackOrder.map((hubId, index) => {
-                // Hide the card whose HubModal is currently open — it's
-                // "become" the modal, and reappears (shrinking back) when closed.
-                if (activeHub === hubId) return null
+        <div className="w-full">
+          <ClosingTagline />
+        </div>
 
-                const hub     = HUBS[hubId]
-                const isFront = index === 0
-                const accent  = hubAccentColor(hubId, isDark)
-                const p       = CARD_PERSONALITY[hubId]
-
-                const baseY = -index * CARD_PEEK
-                const scale = isFront ? 1 : Math.max(0.9, 1 - index * 0.02)
-                const brightness = isFront ? 1 : Math.max(0.88, 1 - index * 0.035)
-
-                // Front card is always perfectly upright and centered —
-                // only drag offsets it. Back cards keep their fixed tilt/jitter.
-                const jitterX = isFront ? dragX : p.xJitter
-                const rotate  = isFront ? dragX / 14 : p.rot
-
-                return (
-                  <motion.div
-                    key={hubId}
-                    layoutId={`hubcard-${hubId}`}
-                    onTouchStart={isFront ? handleStackTouchStart : undefined}
-                    onTouchMove={isFront ? handleStackTouchMove : undefined}
-                    onTouchEnd={isFront ? handleStackTouchEnd : undefined}
-                    onTouchCancel={isFront ? handleStackTouchEnd : undefined}
-                    onClick={!isFront ? () => handleCardTap(hubId) : undefined}
-                    className={cn(
-                      "absolute bottom-0 rounded-[18px] bg-white dark:bg-zinc-950 p-6 flex flex-col items-center text-center touch-none select-none",
-                      isFront && "cursor-grab active:cursor-grabbing"
-                    )}
-                    style={{
-                      width: CARD_W,
-                      height: CARD_H,
-                      left: "50%",
-                      marginLeft: -CARD_W / 2,
-                      zIndex: 50 - index * 10,
-                      border: `1.5px solid ${accent}`,
-                      x: jitterX, y: baseY, rotate, scale,
-                      filter: `brightness(${brightness})`,
-                      boxShadow: isFront
-                        ? "0 20px 40px rgba(0,0,0,0.20)"
-                        : `0 ${10 + index * 6}px ${20 + index * 10}px rgba(0,0,0,${0.14 + index * 0.03})`,
-                    }}
-                    transition={isDraggingRef.current ? { duration: 0 } : { type: "spring", damping: 30, stiffness: 300 }}
-                  >
-                    {/* Name peeks above the front card so back cards stay identifiable */}
-                    {!isFront && (
-                      <div className="absolute top-3 inset-x-0 flex items-center justify-center px-4">
-                        <span
-                          className="text-[0.72rem] font-black uppercase tracking-wider truncate"
-                          style={{ color: accent }}
-                        >
-                          {hub.title}
-                        </span>
-                      </div>
-                    )}
-
-                    <div
-                      className="w-16 h-16 rounded-[16px] flex items-center justify-center mb-5 shadow-md shrink-0 mt-6"
-                      style={{ backgroundColor: `${accent}18`, color: accent }}
-                    >
-                      <HubIcon id={hubId} size={34} />
-                    </div>
-
-                    <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-3">
-                      {hub.title}
-                    </h3>
-
-                    <p className="abh-body text-[0.86rem] leading-relaxed">{hub.desc}</p>
-                  </motion.div>
-                )
-              })}
-            </div>
-            <p className="text-center text-[0.68rem] font-black uppercase tracking-widest text-zinc-400 mt-4">
-              Swipe or tap a card to explore
-            </p>
-          </div>
-
-          <div className="w-full">
-            <ClosingTagline />
-          </div>
-
-          <HubModal
-            hubId={activeHub}
-            launchId={cardLaunchHub ? `hubcard-${cardLaunchHub}` : undefined}
-            onClose={() => setActiveHub(null)}
-            onSelectService={setSelectedService}
-          />
-        </LayoutGroup>
+        <HubModal
+          hubId={activeHub}
+          onClose={() => setActiveHub(null)}
+          onSelectService={setSelectedService}
+        />
       </div>
 
       <ServiceDetailModal
@@ -1276,4 +1217,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-      } 
+    } 
