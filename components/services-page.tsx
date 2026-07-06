@@ -17,6 +17,14 @@ import { HUBS, HubId } from "@/lib/data"
 // ─── Constants ────────────────────────────────────────────────────────────────
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
+const HUB_TAGLINES: Record<HubId, string> = {
+  print:    "Crisp prints, every time — bring your files, walk out with the real thing.",
+  doc:      "From blank page to polished document — typing, printing, laminating, done.",
+  design:   "Your brand, brought to life — logos, cards, flyers, and more.",
+  eservice: "Government forms, applications & online services — sorted, stress-free.",
+  tech:     "Computers acting up? We fix it, clean it, and get you back online.",
+}
+
 const CLD_CLOUD  = "dk30vh3ft"
 const CLD_PRESET = "apexbyteshub"
 const CLD_MAX_MB = 10
@@ -542,6 +550,18 @@ function HubModal({
                     ))}
                   </div>
                 )}
+
+                <div
+                  className="mt-6 rounded-[16px] p-6 md:p-8 flex flex-col items-center text-center gap-3"
+                  style={{ backgroundColor: solidAccent }}
+                >
+                  <div className="w-14 h-14 rounded-[14px] flex items-center justify-center bg-white/20">
+                    <HubIcon id={hubId} size={30} color="#fff" />
+                  </div>
+                  <p className="font-sans font-black text-base md:text-lg leading-snug max-w-sm text-white">
+                    {HUB_TAGLINES[hubId]}
+                  </p>
+                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -807,9 +827,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                       </li>
                     ))}
                   </ol>
-                  <p className="mt-6 text-[0.95rem] font-normal text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                    {desc}
-                  </p>
                   <p className="abh-muted mt-5">
                     Not sure? Don't worry — just WhatsApp us first and we'll guide you step by step.
                   </p>
@@ -986,6 +1003,7 @@ export function ServicesPage() {
   const handleStackPointerDown = (e: ReactPointerEvent) => {
     dragStartX.current = e.clientX
     setIsDragging(true)
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
   }
   const handleStackPointerMove = (e: ReactPointerEvent) => {
     if (!isDragging) return
@@ -1236,5 +1254,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-}
- 
+    } 
