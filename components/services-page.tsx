@@ -48,7 +48,7 @@ const CARD_W = 240
 const CARD_H = 380
 
 // How far each card's top peeks above the one stacked in front of it.
-const CARD_PEEK = 46
+const CARD_PEEK = 54
 
 // Fixed "personality" per hub — only applies to cards NOT currently at the
 // front of the stack, since the front card must always sit perfectly upright.
@@ -472,14 +472,14 @@ function HubModal({
           <motion.div
             key="hub-panel"
             layoutId={launchId}
-            transition={{ type: "spring", damping: 32, stiffness: 300 }}
+            transition={{ type: "spring", damping: 28, stiffness: 240, mass: 0.8 }}
             className="fixed inset-4 md:inset-10 md:mx-auto md:max-w-2xl md:max-h-[85vh] z-[10100] bg-white dark:bg-zinc-950 rounded-[22px] overflow-hidden shadow-2xl border border-zinc-100 dark:border-zinc-800 flex flex-col"
           >
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ delay: 0.12, duration: 0.2 }}
+              transition={{ delay: 0.05, duration: 0.25, ease: "easeOut" }}
               className="flex flex-col h-full min-h-0"
             >
               <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center shrink-0" style={{ backgroundColor: `${accent}05` }}>
@@ -807,6 +807,9 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                       </li>
                     ))}
                   </ol>
+                  <p className="mt-6 text-[0.95rem] font-normal text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                    {desc}
+                  </p>
                   <p className="abh-muted mt-5">
                     Not sure? Don't worry — just WhatsApp us first and we'll guide you step by step.
                   </p>
@@ -992,7 +995,7 @@ export function ServicesPage() {
     if (!isDragging) return
     setIsDragging(false)
     const SWIPE_THRESHOLD = 80
-    const TAP_THRESHOLD   = 6
+    const TAP_THRESHOLD   = 10
     if (Math.abs(dragX) > SWIPE_THRESHOLD) {
       const flingTo = dragX > 0 ? 520 : -520
       setDragX(flingTo)
@@ -1139,8 +1142,8 @@ export function ServicesPage() {
 
                 // Front card is always perfectly upright and centered —
                 // only drag offsets it. Back cards keep their fixed tilt/jitter.
-                const x = isFront ? dragX : p.xJitter
-                const rotate = isFront ? dragX / 14 : p.rot
+                const jitterX = isFront ? dragX : p.xJitter
+                const rotate  = isFront ? dragX / 14 : p.rot
 
                 return (
                   <motion.div
@@ -1152,15 +1155,17 @@ export function ServicesPage() {
                     onPointerCancel={isFront ? handleStackPointerUp : undefined}
                     onClick={!isFront ? () => handleCardTap(hubId) : undefined}
                     className={cn(
-                      "absolute bottom-0 left-1/2 rounded-[18px] bg-white dark:bg-zinc-950 p-6 flex flex-col items-center text-center touch-none select-none",
+                      "absolute bottom-0 rounded-[18px] bg-white dark:bg-zinc-950 p-6 flex flex-col items-center text-center touch-none select-none",
                       isFront && "cursor-grab active:cursor-grabbing"
                     )}
                     style={{
                       width: CARD_W,
                       height: CARD_H,
+                      left: "50%",
+                      marginLeft: -CARD_W / 2,
                       zIndex: 50 - index * 10,
                       border: `1.5px solid ${accent}`,
-                      x, y: baseY, rotate, scale,
+                      x: jitterX, y: baseY, rotate, scale,
                       filter: `brightness(${brightness})`,
                       boxShadow: isFront
                         ? "0 20px 40px rgba(0,0,0,0.20)"
@@ -1168,8 +1173,20 @@ export function ServicesPage() {
                     }}
                     transition={isDragging ? { duration: 0 } : { type: "spring", damping: 30, stiffness: 300 }}
                   >
+                    {/* Name peeks above the front card so back cards stay identifiable */}
+                    {!isFront && (
+                      <div className="absolute top-3 inset-x-0 flex items-center justify-center px-4">
+                        <span
+                          className="text-[0.72rem] font-black uppercase tracking-wider truncate"
+                          style={{ color: accent }}
+                        >
+                          {hub.title}
+                        </span>
+                      </div>
+                    )}
+
                     <div
-                      className="w-16 h-16 rounded-[16px] flex items-center justify-center mb-5 shadow-md shrink-0"
+                      className="w-16 h-16 rounded-[16px] flex items-center justify-center mb-5 shadow-md shrink-0 mt-6"
                       style={{ backgroundColor: `${accent}18`, color: accent }}
                     >
                       <HubIcon id={hubId} size={34} />
@@ -1220,3 +1237,4 @@ export function ServicesPage() {
     </section>
   )
 }
+ 
