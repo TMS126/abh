@@ -80,9 +80,6 @@ interface CartItem {
 const STORAGE_KEY = "apexbytes-quote-cart"
 
 // ─── Liquid glass style helpers ────────────────────────────────────────────────
-// All visual depth is achieved via CSS properties — no canvas, no filters on
-// scroll containers, no blur inside lists. A single backdrop-filter on the
-// panel shell is the only GPU layer.
 const GLASS = {
   panel: "bg-white/70 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/40 dark:border-white/10",
   section: "bg-white/60 dark:bg-white/5 border border-white/60 dark:border-white/10",
@@ -93,7 +90,7 @@ const GLASS = {
 
 export function QuoteCalculatorWidget() {
   const { resolvedTheme } = useTheme(); const isDark = resolvedTheme === "dark"
-  const [isOpen, setIsOpen, isOtherOpen]     = useExclusiveWidget("calculator")
+  const [isOpen, setIsOpen, isOtherOpen] = useExclusiveWidget("calculator")
   const [openHub, setOpenHub]   = useState<HubId | null>(null)
   const [openSections, setOpenSections] = useState<Record<HubId, number | null>>({} as Record<HubId, number | null>)
   const [cart, setCart]         = useState<CartItem[]>([])
@@ -130,7 +127,6 @@ export function QuoteCalculatorWidget() {
   }, [isOpen])
 
   // Listen for "abh:add-to-quote" events fired by the ServiceDetailModal.
-  // Opens the calculator and adds the item so the user sees instant feedback.
   useEffect(() => {
     const handler = (e: Event) => {
       const { hubId, sectionTitle, name, price } = (e as CustomEvent).detail
@@ -209,18 +205,20 @@ export function QuoteCalculatorWidget() {
           "transition-all duration-300",
           (scrolled && !isOpen) || isOtherOpen
             ? "opacity-0 pointer-events-none scale-90"
-            : "opacity-100 scale-100"
+            : "opacity-100 scale-100 pointer-events-auto"
         )}
       >
         <div className="flex items-center justify-end gap-2">
-          {/* Slide-out label */}
+          {/* Slide-out label — pointer-events-none at all times: it's a
+              purely visual hint and must never intercept taps meant for
+              whatever sits underneath it, even while "hidden" via opacity. */}
           <span className={cn(
-            "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap",
+            "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap pointer-events-none",
             "bg-white dark:bg-zinc-900 text-brand-blue",
             "px-2.5 py-1 rounded-full shadow-md border border-zinc-100 dark:border-zinc-800",
             "transition-all duration-300 origin-right",
             isOpen
-              ? "opacity-0 scale-x-0 pointer-events-none"
+              ? "opacity-0 scale-x-0"
               : "opacity-0 scale-x-0 group-hover/calc:opacity-100 group-hover/calc:scale-x-100"
           )}>
             Quote
@@ -454,6 +452,4 @@ export function QuoteCalculatorWidget() {
       )}
     </>
   )
-}
- 
-  
+                   } 
