@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useRef, useCallback, type ChangeEvent } from "react"
+import { useState, useEffect, useMemo, useRef, useCallback, type ChangeEvent, type PointerEvent as ReactPointerEvent } from "react"
 import { useSearchParams } from "next/navigation"
 import {
   X, Printer, FileText, PaintBrush, Globe, Desktop,
@@ -15,9 +15,6 @@ import { HUBS, HubId } from "@/lib/data"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
-
-// Three natural-language service hints shown on each hub card
-
 
 const CLD_CLOUD  = "dk30vh3ft"
 const CLD_PRESET = "apexbyteshub"
@@ -50,14 +47,20 @@ function getCldUrl(file: File) {
   return `https://api.cloudinary.com/v1_1/${CLD_CLOUD}/${file.type.startsWith("image/") ? "image" : "raw"}/upload`
 }
 
-// Turns ".pdf,.jpg,.jpeg,.png,.doc,.docx" into "PDF, JPG, JPEG, PNG, DOC, DOCX"
-// for a friendly hint under the attach button.
 function formatAcceptHint(accept: string) {
   return accept
     .split(",")
     .map(ext => ext.trim().replace(/^\./, "").toUpperCase())
     .filter(Boolean)
     .join(", ")
+}
+
+// Dedicated per-hub color used for the mobile stacked-card border/icon chip —
+// uses the stronger `primary` shade in light mode and the softer `light`
+// shade in dark mode, so each hub reads as a distinct color at a glance.
+function hubAccentColor(hubId: HubId, isDark: boolean) {
+  const c = HUB_COLORS[hubId as HubKey]
+  return isDark ? c.light : c.primary
 }
 
 function HubIcon({ id, size = 28, color }: { id: HubId; size?: number; color?: string }) {
@@ -85,10 +88,6 @@ const PREFIX_SECTIONS: Record<string, string> = {
 function cleanText(s: string) {
   return s.replace(/\s*\/\s*/g, " or ").replace(/\s*\+\s*/g, " and ").replace(/\s*&\s*/g, " and ")
 }
-// Swaps the verb "bring" for "provide" anywhere it appears, case-preserved.
-// Used to make requirement/description text read naturally for hubs that are
-// fully remote (Design, eService) without needing to rewrite every sentence
-// in data.ts by hand.
 function remoteizeText(text: string) {
   return text.replace(/\bbring\b/gi, (match) => {
     if (match === "Bring") return "Provide"
@@ -108,9 +107,6 @@ function naturalServiceLabel(name: string, sectionTitle: string) {
 }
 
 // ─── WCAG contrast helpers ──────────────────────────────────────────────────
-// Used to guarantee the "explore" label on hub cards always meets at least
-// AA contrast (4.5:1) against the card background, regardless of the raw
-// brand hex value supplied per-hub in HUB_COLORS.
 function hexToRgb(hex: string) {
   const clean = hex.replace("#", "")
   const full = clean.length === 3 ? clean.split("").map(c => c + c).join("") : clean
@@ -182,7 +178,6 @@ function hslToRgb(h: number, s: number, l: number) {
   return { r: r * 255, g: g * 255, b: b * 255 }
 }
 
-/** Nudges `hex` darker/lighter (preserving hue) until it hits `minRatio` contrast against `bgHex`. */
 function ensureAccessible(hex: string, bgHex: string, minRatio = 4.5) {
   if (contrastRatio(hex, bgHex) >= minRatio) return hex
   const hsl = rgbToHsl(hexToRgb(hex))
@@ -200,10 +195,6 @@ function ensureAccessible(hex: string, bgHex: string, minRatio = 4.5) {
 }
 
 // ─── Brand loader ─────────────────────────────────────────────────────────────
-// An abstract rounded-badge outline (not a literal logo trace — see chat notes)
-// with a gradient stroke segment that grows around the shape, "kisses" its own
-// tail, then shrinks back to a small segment and repeats — while the whole
-// badge slowly rotates so the chase reads as continuous travel.
 const ABH_LOADER_PATH =
   "M50,4 C68,4 82,10 90,26 C97,40 96,60 88,74 C80,88 64,96 50,96 " +
   "C34,96 18,90 10,74 C3,60 4,40 12,24 C20,10 34,4 50,4 Z"
@@ -230,7 +221,6 @@ function AbhLoader({ size = 28 }: { size?: number }) {
             <stop offset="100%" stopColor="#F4A261" />
           </linearGradient>
         </defs>
-        {/* Faint full-shape guide, always visible */}
         <path
           d={ABH_LOADER_PATH}
           fill="none"
@@ -239,7 +229,6 @@ function AbhLoader({ size = 28 }: { size?: number }) {
           className="text-zinc-200 dark:text-zinc-700"
           stroke="currentColor"
         />
-        {/* Chasing gradient segment */}
         <path
           d={ABH_LOADER_PATH}
           fill="none"
@@ -332,12 +321,6 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
   const wrapRef   = useRef<HTMLDivElement>(null)
   const index     = useMemo(buildSearchIndex, [])
 
-  // Resting color kept identical to PageEdgeGlow's "/services" route color
-  // (BRAND.green), in both light and dark mode, so this pill and the
-  // top-of-page flash read as the same brand color rather than a
-  // similar-but-different shade — see components/page-edge-glow.tsx.
-  // hoverColor stays a separate, deliberately darker shade purely as mouse
-  // hover feedback, not a theme swap.
   const fillColor  = BRAND.green
   const hoverColor = BRAND.greenDeep
 
@@ -425,7 +408,6 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
   )
 }
 
-
 function HubModal({
   hubId, onClose, onSelectService,
 }: {
@@ -439,7 +421,6 @@ function HubModal({
 
   useEffect(() => { setOpenSectionIdx(0) }, [hubId])
 
-  // Escape key closes the modal, mirroring the gallery page's overlay behavior.
   useEffect(() => {
     if (!hubId) return
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
@@ -458,7 +439,6 @@ function HubModal({
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md overscroll-contain" onClick={onClose} />
       <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-500 border border-zinc-100 dark:border-zinc-800">
 
-        {/* Header */}
         <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center" style={{ backgroundColor: `${accent}05` }}>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 md:w-14 md:h-14 rounded-[14px] flex items-center justify-center shadow-lg bg-zinc-100 dark:bg-zinc-800" style={{ border: `2px solid ${accent}` }}>
@@ -478,7 +458,6 @@ function HubModal({
           </button>
         </div>
 
-        {/* Body */}
         <div className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-8">
           <div className="inline-flex flex-wrap gap-2 mb-5">
             {hub.sections.map((section, sIdx) => {
@@ -529,8 +508,6 @@ function HubModal({
 // ─── Service Detail Modal ─────────────────────────────────────────────────────
 type Tab = "bring" | "about"
 
-// Hubs whose services are handled entirely online/remotely — no physical
-// item ever needs to be dropped off, so the "Bring" pill reads oddly there.
 const REMOTE_HUBS: HubId[] = ["design", "eservice"]
 function isRemoteHub(hubId: HubId) {
   return REMOTE_HUBS.includes(hubId)
@@ -557,13 +534,10 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     if (fileRef.current) fileRef.current.value = ""
   }, [svc?.name])
 
-  // Revoke any outstanding object URL when the modal unmounts, so we don't
-  // leak memory if the person navigates away mid-preview.
   useEffect(() => {
     return () => { if (previewUrl) URL.revokeObjectURL(previewUrl) }
   }, [previewUrl])
 
-  // Escape key closes the modal, mirroring the gallery page's overlay behavior.
   useEffect(() => {
     if (!svc) return
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
@@ -615,7 +589,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     const f = e.target.files?.[0]
     if (!f) return
 
-    // Block explicit/dangerous file types
     if (BLOCKED_MIME_TYPES.has(f.type) || BLOCKED_EXTENSIONS.test(f.name)) {
       setUploadErr("That file type isn't allowed. Please send a document, image, or PDF only.")
       setUploadPhase("error")
@@ -631,8 +604,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     setFile(f)
     setUploadErr(null)
 
-    // Local thumbnail preview for images only — separate from the Cloudinary
-    // upload, so it appears instantly rather than waiting on the network.
     setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null })
     if (f.type.startsWith("image/")) {
       setPreviewUrl(URL.createObjectURL(f))
@@ -698,7 +669,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm overscroll-contain" onClick={onClose} />
       <div className="relative w-full max-w-sm rounded-[14px] overflow-hidden shadow-2xl bg-white dark:bg-zinc-950 animate-in zoom-in-95 duration-300 border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col">
 
-        {/* Header */}
         <div className="px-6 pt-6 pb-0 flex-shrink-0">
           <div className="flex justify-between items-start mb-4">
             <div className="flex-1 min-w-0 pr-3">
@@ -735,12 +705,10 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </div>
           </div>
 
-          {/* Price */}
           <div className="mb-5">
             <span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
           </div>
 
-          {/* Tabs */}
           <div className="flex gap-2">
             {(["bring", "about"] as Tab[]).map((t) => (
               <button
@@ -759,7 +727,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
           </div>
         </div>
 
-        {/* Tab content */}
         <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 min-h-0">
           {tab === "bring" && (
             <div className="animate-in fade-in slide-in-from-left-2 duration-200">
@@ -792,7 +759,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
           )}
         </div>
 
-        {/* Footer — upload + CTA */}
         <div className="px-6 pb-6 pt-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
 
           <input
@@ -803,7 +769,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             className="hidden"
           />
 
-          {/* Idle — attach button + accepted formats + privacy note */}
           {uploadPhase === "idle" && (
             <div className="space-y-2">
               <button
@@ -827,7 +792,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </div>
           )}
 
-          {/* Uploading — brand loader + live percentage from XHR progress */}
           {uploadPhase === "uploading" && (
             <div className="flex items-center gap-3 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-zinc-50 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400">
               <AbhLoader size={28} />
@@ -836,7 +800,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </div>
           )}
 
-          {/* Done — thumbnail (images only) + filename */}
           {uploadPhase === "done" && file && (
             <div className="flex items-center justify-between gap-2 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200/50 dark:border-green-800/30">
               <span className="flex items-center gap-2.5 min-w-0">
@@ -857,7 +820,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </div>
           )}
 
-          {/* Error */}
           {uploadPhase === "error" && (
             <div className="space-y-2">
               <div className="flex items-start gap-2 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200/50 dark:border-red-800/30">
@@ -875,7 +837,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </div>
           )}
 
-          {/* WhatsApp CTA */}
           <a
             href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waMessage)}`}
             target="_blank"
@@ -908,7 +869,7 @@ function NoticeBanner() {
       </div>
     </div>
   )
-        }
+}
 
 // ─── Closing tagline ──────────────────────────────────────────────────────────
 function ClosingTagline() {
@@ -933,19 +894,51 @@ export function ServicesPage() {
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
   const [showBackToTop,   setShowBackToTop]   = useState(false)
 
-  // Reveal the Back to Top button once the person has scrolled well past
-  // the inline search bar near the top of the page.
+  // ── Mobile stacked hub cards — order[0] is always the front card ──
+  const [stackOrder, setStackOrder] = useState<HubId[]>(HUB_ORDER)
+  const [dragX,       setDragX]     = useState(0)
+  const [isDragging,  setIsDragging] = useState(false)
+  const dragStartX = useRef(0)
+
+  const handleCardTap = useCallback((hubId: HubId) => {
+    setStackOrder(prev => [hubId, ...prev.filter(h => h !== hubId)])
+    setActiveHub(hubId)
+  }, [])
+
+  const handleStackPointerDown = (e: ReactPointerEvent) => {
+    dragStartX.current = e.clientX
+    setIsDragging(true)
+  }
+  const handleStackPointerMove = (e: ReactPointerEvent) => {
+    if (!isDragging) return
+    setDragX(e.clientX - dragStartX.current)
+  }
+  const handleStackPointerUp = () => {
+    if (!isDragging) return
+    setIsDragging(false)
+    const SWIPE_THRESHOLD = 80
+    const TAP_THRESHOLD   = 6
+    if (Math.abs(dragX) > SWIPE_THRESHOLD) {
+      const flingTo = dragX > 0 ? 520 : -520
+      setDragX(flingTo)
+      setTimeout(() => {
+        setStackOrder(prev => [...prev.slice(1), prev[0]])
+        setDragX(0)
+      }, 220)
+    } else if (Math.abs(dragX) < TAP_THRESHOLD) {
+      handleCardTap(stackOrder[0])
+      setDragX(0)
+    } else {
+      setDragX(0)
+    }
+  }
+
   useEffect(() => {
     const onScroll = () => setShowBackToTop(window.scrollY > 600)
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
-  // The floating search is now a global root-layout widget (see
-  // components/floating-search-widget.tsx) so it can sit in the same FAB
-  // stack as the Quote Calculator and WhatsApp widgets. It has no direct
-  // access to this page's state, so it dispatches a window event when a
-  // result is tapped, and we open the existing ServiceDetailModal here.
   useEffect(() => {
     const handler = (e: Event) => {
       const svc = (e as CustomEvent<SelectedService>).detail
@@ -955,16 +948,13 @@ export function ServicesPage() {
     return () => window.removeEventListener("abh:selectService", handler)
   }, [setSelectedService])
 
-  // Deep-link via ?hub=
   useEffect(() => {
     const hubParam = searchParams.get("hub")
     if (hubParam && HUB_ORDER.includes(hubParam as HubId)) setActiveHub(hubParam as HubId)
   }, [searchParams])
 
-  // Back button closes modals one at a time
   useModalBackStack(activeHub, setActiveHub, selectedService, setSelectedService)
 
-  // Scroll lock while any modal is open
   useEffect(() => {
     const isOpen = !!(activeHub || selectedService)
     if (!isOpen) return
@@ -983,7 +973,6 @@ export function ServicesPage() {
 
       <div className="max-w-[1248px] mx-auto px-4 md:px-8 flex flex-col items-center">
 
-        {/* Hero */}
         <div className="pt-[calc(var(--nav-h,74px)+2rem)] pb-8 text-center w-full">
           <h1 className="abh-page-title mb-3">Our Service Hubs</h1>
           <p className="abh-tagline max-w-xl mx-auto">
@@ -992,8 +981,6 @@ export function ServicesPage() {
           <div className="abh-divider mx-auto" />
         </div>
 
-        {/* Inline search — id is used by the FloatingSearchWidget (root layout)
-            to know when this bar has scrolled out of view */}
         <div id="abh-inline-search" className="w-full mb-10 flex justify-center">
           <InlineSearchBar onSelect={setSelectedService} />
         </div>
@@ -1002,8 +989,8 @@ export function ServicesPage() {
           <NoticeBanner />
         </div>
 
-        {/* Hub cards — horizontal stack on desktop, wide on desktop (max 1248px) */}
-        <div className="flex flex-col md:grid md:grid-cols-5 gap-5 md:gap-4 pb-2 w-full">
+        {/* Hub cards (desktop) — unchanged grid layout, hidden below md breakpoint */}
+        <div className="hidden md:grid md:grid-cols-5 gap-5 md:gap-4 pb-2 w-full">
           {HUB_ORDER.map((hubId) => {
             const hub    = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
@@ -1024,8 +1011,8 @@ export function ServicesPage() {
                 </div>
                 <h3 className="font-sans font-black text-lg md:text-xl text-zinc-900 dark:text-zinc-50 mb-2 group-hover:text-[#1E6FA8] dark:group-hover:text-[#A9D6F2] transition-colors">
                   {hub.title}
-                </h3><p className="abh-body text-[0.82rem] line-clamp-2 mb-5">{hub.desc}</p>
-                {/* 3 service previews — natural language, subtle, slightly larger than before but never bold */}
+                </h3>
+                <p className="abh-body text-[0.82rem] line-clamp-2 mb-5">{hub.desc}</p>
                 <div className="flex flex-col items-center gap-1 mb-5">
                   {hub.previews.map((hint, i) => (
                     <span key={i} className="text-[0.72rem] font-medium text-zinc-400 dark:text-zinc-500 tracking-wide">
@@ -1045,7 +1032,62 @@ export function ServicesPage() {
           })}
         </div>
 
-        {/* Catchy closing line, right below the hub cards grid */}
+        {/* Hub cards (mobile) — swipeable 3D stack, tap any card to open it */}
+        <div className="md:hidden w-full flex flex-col items-center pb-2">
+          <div className="relative w-full flex justify-center" style={{ height: 300 }}>
+            {stackOrder.map((hubId, index) => {
+              const hub       = HUBS[hubId]
+              const isFront   = index === 0
+              const accent    = hubAccentColor(hubId, isDark)
+              const OFFSETS   = [
+                { x: 0,   y: 0,  r: 0,  s: 1    },
+                { x: 14,  y: 10, r: -4, s: 0.96 },
+                { x: -10, y: 20, r: 4,  s: 0.92 },
+                { x: 18,  y: 30, r: -7, s: 0.88 },
+                { x: -16, y: 40, r: 7,  s: 0.84 },
+              ]
+              const o        = OFFSETS[index] ?? OFFSETS[OFFSETS.length - 1]
+              const liveX    = isFront ? dragX : 0
+              const liveR    = isFront ? o.r + dragX / 14 : o.r
+
+              return (
+                <div
+                  key={hubId}
+                  onPointerDown={isFront ? handleStackPointerDown : undefined}
+                  onPointerMove={isFront ? handleStackPointerMove : undefined}
+                  onPointerUp={isFront ? handleStackPointerUp : undefined}
+                  onPointerCancel={isFront ? handleStackPointerUp : undefined}
+                  onClick={!isFront ? () => handleCardTap(hubId) : undefined}
+                  className={cn(
+                    "absolute top-0 w-[78%] max-w-[300px] rounded-[18px] bg-white dark:bg-zinc-950 p-6 flex flex-col items-center touch-none select-none shadow-[0_12px_28px_rgba(0,0,0,0.16)] dark:shadow-[0_12px_28px_rgba(0,0,0,0.55)]",
+                    isFront && !isDragging && "transition-transform duration-300 ease-out",
+                    isFront && "cursor-grab active:cursor-grabbing"
+                  )}
+                  style={{
+                    zIndex: 50 - index * 10,
+                    border: `2.5px solid ${accent}`,
+                    transform: `translateX(${o.x + liveX}px) translateY(${o.y}px) scale(${o.s}) rotate(${liveR}deg)`,
+                  }}
+                >
+                  <div
+                    className="w-14 h-14 rounded-[14px] flex items-center justify-center mb-3 shadow-md"
+                    style={{ backgroundColor: `${accent}18`, color: accent }}
+                  >
+                    <HubIcon id={hubId} size={28} />
+                  </div>
+                  <h3 className="font-sans font-black text-lg text-zinc-900 dark:text-zinc-50 mb-1 text-center">
+                    {hub.title}
+                  </h3>
+                  <p className="abh-body text-[0.78rem] text-center line-clamp-2">{hub.desc}</p>
+                </div>
+              )
+            })}
+          </div>
+          <p className="text-center text-[0.68rem] font-black uppercase tracking-widest text-zinc-400 mt-4">
+            Swipe or tap a card to explore
+          </p>
+        </div>
+
         <div className="w-full">
           <ClosingTagline />
         </div>
@@ -1061,8 +1103,6 @@ export function ServicesPage() {
         onClose={() => setSelectedService(null)}
       />
 
-      {/* Back to Top — left side, so it never collides with the WhatsApp /
-          Quote Calculator / Search FAB stack anchored on the right. */}
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         aria-label="Back to top"
@@ -1075,4 +1115,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-  }
+    } 
