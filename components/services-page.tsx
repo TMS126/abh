@@ -435,9 +435,6 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
 }
 
 // ─── Hub Modal — the "first modal" (list of services within a hub) ────────────
-// launchId, when set, ties this modal to the mobile stack card that opened it
-// so Framer Motion can morph the card's exact position/size into this
-// fullscreen panel, and shrink back to the same spot on close.
 function HubModal({
   hubId, launchId, onClose, onSelectService,
 }: {
@@ -572,8 +569,10 @@ function HubModal({
 }
 
 // ─── Service Detail Modal — the "sub service" modal (e.g. "SASSA Appeal") ────
-// Per request: only the hub icon carries hub color here. Everything else
-// (badge, price, tabs, requirement numbers, buttons) is neutral.
+// Position now anchored to the bottom on mobile (full-width sheet, rounded
+// top corners only) instead of vertically centered — reads as emerging
+// from wherever the card was, rather than floating mid-screen. Desktop
+// keeps the original centered card treatment.
 type Tab = "bring" | "about"
 
 const REMOTE_HUBS: HubId[] = ["design", "eservice"]
@@ -736,7 +735,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   return (
     <AnimatePresence>
       {svc && (
-        <div className="fixed inset-0 z-[10200] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[10200] flex items-end md:items-center justify-center p-0 md:p-4">
           <motion.div
             className="absolute inset-0 bg-black/40 backdrop-blur-sm overscroll-contain"
             initial={{ opacity: 0 }}
@@ -746,11 +745,11 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             onClick={onClose}
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="relative w-full max-w-sm rounded-[14px] overflow-hidden shadow-2xl bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col"
+            initial={{ opacity: 0, y: 48 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 48 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="relative w-full max-w-sm rounded-t-[20px] md:rounded-[14px] overflow-hidden shadow-2xl bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col"
           >
             <div className="px-6 pt-6 pb-0 flex-shrink-0">
               <div className="flex justify-between items-start mb-4">
@@ -983,6 +982,15 @@ export function ServicesPage() {
   const [dragX,       setDragX]     = useState(0)
   const [isDragging,  setIsDragging] = useState(false)
   const dragStartX = useRef(0)
+  // Tracks a pending "settle" timeout from a completed swipe (the fling +
+  // reorder + reset-to-0 sequence). Cleared and re-armed on every new
+  // gesture so a fast tap right after a swipe can never inherit a stale
+  // in-flight dragX value — see handleStackPointerDown.
+  const swipeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => { if (swipeTimeoutRef.current) clearTimeout(swipeTimeoutRef.current) }
+  }, [])
 
   // Tracks which mobile stack card (if any) launched the currently open
   // HubModal, so the modal knows whether to do the shared "grow" morph
@@ -1001,7 +1009,20 @@ export function ServicesPage() {
   }, [])
 
   const handleStackPointerDown = (e: ReactPointerEvent) => {
+    // BUG FIX: a completed swipe leaves a 220ms "settle" timeout pending
+    // (fling → reorder → reset dragX to 0). If a new gesture starts before
+    // that timeout fires, dragX was still sitting at its large "flung"
+    // value — so even a plain tap with near-zero movement would read as
+    // another swipe (|dragX| > SWIPE_THRESHOLD from the STALE value), never
+    // reaching the tap branch that opens the card. Cancelling any pending
+    // settle and zeroing dragX here, synchronously, at the start of every
+    // new gesture fixes that.
+    if (swipeTimeoutRef.current) {
+      clearTimeout(swipeTimeoutRef.current)
+      swipeTimeoutRef.current = null
+    }
     dragStartX.current = e.clientX
+    setDragX(0)
     setIsDragging(true)
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
   }
@@ -1017,9 +1038,10 @@ export function ServicesPage() {
     if (Math.abs(dragX) > SWIPE_THRESHOLD) {
       const flingTo = dragX > 0 ? 520 : -520
       setDragX(flingTo)
-      setTimeout(() => {
+      swipeTimeoutRef.current = setTimeout(() => {
         setStackOrder(prev => [...prev.slice(1), prev[0]])
         setDragX(0)
+        swipeTimeoutRef.current = null
       }, 220)
     } else if (Math.abs(dragX) < TAP_THRESHOLD) {
       handleCardTap(stackOrder[0])
@@ -1044,11 +1066,6 @@ export function ServicesPage() {
     return () => window.removeEventListener("abh:selectService", handler)
   }, [setSelectedService])
 
-  // Bug fix: opening a hub via ?hub=eservice must ONLY open the hub's
-  // service list, never a pre-picked service. If something elsewhere in
-  // the app (e.g. a nav shortcut) also dispatches abh:selectService
-  // around the same time as this navigation, this guard clears it so the
-  // person always lands on the "choose a service" list first.
   useEffect(() => {
     const hubParam = searchParams.get("hub")
     if (hubParam && HUB_ORDER.includes(hubParam as HubId)) {
@@ -1254,4 +1271,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-    } 
+                  } 
