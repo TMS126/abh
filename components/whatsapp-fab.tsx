@@ -11,8 +11,6 @@ import { useExclusiveWidget } from "@/hooks/use-exclusive-widget"
 const WA_NUMBER  = "27753338260"
 const GREETING   = "Hi there 👋 Tell us what you need and we'll get back to you right away!"
 
-// ── WhatsApp's actual palette — real solid colors for every WA-mimicking
-// surface (header, wallpaper, bubbles, compose bar). ─────────────────────
 const WA = {
   headerLight:   "#075E54",
   headerDark:    "#1F2C34",
@@ -32,9 +30,6 @@ const WA = {
   composeFieldDark:  "#2A3942",
   accent:         "#25D366",
   tick:           "#53BDEB",
-  // Same neutral avatar-placeholder colors WA itself uses behind a profile
-  // photo — used here as the logo chip's background so it adapts per theme
-  // instead of staying a fixed white.
   avatarBgLight:  "#E9EDEF",
   avatarBgDark:   "#2A3942",
 } as const
@@ -48,10 +43,6 @@ const HUBS = [
   { id: "other",    label: "Not sure yet",  hint: "We'll help you figure it out" },
 ]
 
-// Faint tiled doodle pattern approximating WhatsApp's chat wallpaper — now
-// includes a simple WA-style speech-bubble glyph alongside the original
-// doodles. Tile bumped 200→240px and opacity nudged down slightly so the
-// extra shape doesn't make it feel more cluttered, just more "on brand".
 function buildWallpaperPattern(strokeColor: string) {
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
@@ -75,8 +66,6 @@ function formatTime() {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
 }
 
-// "Today" / "Yesterday" / a plain date — same pattern WhatsApp uses for its
-// centered date-divider chip above a day's first message.
 function formatDateLabel(date: Date) {
   const startOf = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
   const diffDays = Math.round((startOf(new Date()) - startOf(date)) / 86400000)
@@ -103,13 +92,11 @@ export function WhatsAppFAB() {
   const nameRef                      = useRef<HTMLInputElement>(null)
   const scrollTimer                  = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Mount delay
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 1000)
     return () => clearTimeout(t)
   }, [])
 
-  // Hide completely while scrolling — same pattern as calculator
   useEffect(() => {
     const onScroll = () => {
       setScrolled(true)
@@ -123,7 +110,6 @@ export function WhatsAppFAB() {
     }
   }, [])
 
-  // Focus name + stamp the greeting bubble's time/date on open
   useEffect(() => {
     if (isOpen && step === "form") {
       const now = new Date()
@@ -133,7 +119,6 @@ export function WhatsAppFAB() {
     }
   }, [isOpen, step])
 
-  // Close on Escape
   useEffect(() => {
     if (!isOpen) return
     const fn = (e: KeyboardEvent) => { if (e.key === "Escape") handleClose() }
@@ -141,7 +126,6 @@ export function WhatsAppFAB() {
     return () => document.removeEventListener("keydown", fn)
   }, [isOpen])
 
-  // Body scroll lock
   useEffect(() => {
     if (!isOpen) return
     const scrollY = window.scrollY
@@ -182,7 +166,6 @@ export function WhatsAppFAB() {
     setStep("sent")
   }
 
-  // ── Theme-derived tokens — real WhatsApp colors ─────────────────────────
   const headerBg     = isDark ? WA.headerDark      : WA.headerLight
   const wallpaperBg  = isDark ? WA.wallpaperDark    : WA.wallpaperLight
   const bubbleIn     = isDark ? WA.bubbleInDark     : WA.bubbleInLight
@@ -231,11 +214,6 @@ export function WhatsAppFAB() {
           )}
           style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.25)" }}
         >
-          {/* ── WhatsApp-style header — solid teal bar. logo.png sits in a
-              round chip (real WA profile-photo shape) whose background now
-              adapts per theme (WA's own avatar-placeholder colors), with
-              the logo itself dark in light mode / light in dark mode, so
-              it never washes out against its own chip. ── */}
           <div
             className="flex items-center gap-3.5 px-5 py-5 shrink-0"
             style={{ backgroundColor: headerBg }}
@@ -274,7 +252,6 @@ export function WhatsAppFAB() {
             </button>
           </div>
 
-          {/* ── Chat body — real WA wallpaper + solid bubble colors ──── */}
           <div
             className="flex-1 overflow-y-auto overscroll-contain min-h-0 relative"
             style={{ backgroundColor: wallpaperBg, backgroundImage: wallpaperPattern, backgroundSize: "240px 240px" }}
@@ -284,7 +261,6 @@ export function WhatsAppFAB() {
 
                 {openDate && <DateDivider />}
 
-                {/* Greeting — incoming message bubble */}
                 <div
                   className="relative self-start max-w-[85%] px-4 py-3 rounded-lg rounded-tl-none shadow-sm"
                   style={{ backgroundColor: bubbleIn }}
@@ -297,7 +273,6 @@ export function WhatsAppFAB() {
                   </span>
                 </div>
 
-                {/* Name — incoming bubble containing the field */}
                 <div
                   className="relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-lg rounded-tl-none shadow-sm"
                   style={{ backgroundColor: bubbleIn }}
@@ -319,11 +294,6 @@ export function WhatsAppFAB() {
                   </div>
                 </div>
 
-                {/* Hub selector — pills expand inline via a smooth
-                    grid-row collapse (same technique as the FAQ accordion),
-                    so they push content below them rather than floating
-                    over it. Each pill also fades/rises in with a small
-                    per-index stagger for a smoother reveal. */}
                 <div
                   className="relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-lg rounded-tl-none shadow-sm"
                   style={{ backgroundColor: bubbleIn }}
@@ -361,8 +331,6 @@ export function WhatsAppFAB() {
                     />
                   </button>
 
-                  {/* Smooth expand/collapse — grid-rows trick avoids the
-                      abrupt snap of a plain conditional render */}
                   <div
                     className={cn(
                       "grid transition-all duration-400 ease-out",
@@ -408,7 +376,6 @@ export function WhatsAppFAB() {
                   </div>
                 </div>
 
-                {/* Optional note — incoming bubble */}
                 <div
                   className="relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-lg rounded-tl-none shadow-sm"
                   style={{ backgroundColor: bubbleIn }}
@@ -431,10 +398,6 @@ export function WhatsAppFAB() {
 
               </div>
             ) : (
-              /* Sent confirmation — outgoing message bubble, real WA mint + ticks.
-                 Ticks only ever appear on messages the person actually sent
-                 (delivery status), which is why they're on this bubble alone
-                 and not on the incoming ones above. */
               <div className="relative z-10 min-h-full px-4 py-5 flex flex-col justify-end items-end gap-3">
                 {openDate && <DateDivider />}
                 <div
@@ -463,7 +426,6 @@ export function WhatsAppFAB() {
             )}
           </div>
 
-          {/* ── Compose bar — real WA solid colors ───────────────────── */}
           {step === "form" && (
             <div
               className="shrink-0 flex items-center gap-2.5 px-4 py-3.5"
@@ -497,18 +459,20 @@ export function WhatsAppFAB() {
           !visible && "opacity-0 pointer-events-none",
           (scrolled && !isOpen) || isOtherOpen
             ? "opacity-0 pointer-events-none scale-90"
-            : "opacity-100 scale-100"
+            : "opacity-100 scale-100 pointer-events-auto"
         )}
       >
         <div className="flex items-center justify-end gap-2">
-          {/* Slide-out label */}
+          {/* Slide-out label — pointer-events-none at all times so the
+              invisible flex sibling can never eat a tap meant for
+              whatever is layered underneath the FAB stack. */}
           <span className={cn(
-            "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap",
+            "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap pointer-events-none",
             "bg-white dark:bg-zinc-900 text-[#25D366]",
             "px-2.5 py-1 rounded-full shadow-md border border-zinc-100 dark:border-zinc-800",
             "transition-all duration-300 origin-right",
             isOpen
-              ? "opacity-0 scale-x-0 pointer-events-none"
+              ? "opacity-0 scale-x-0"
               : "opacity-0 scale-x-0 group-hover/wa:opacity-100 group-hover/wa:scale-x-100"
           )}>
             Chat
@@ -529,4 +493,4 @@ export function WhatsAppFAB() {
       </div>
     </>
   )
-      } 
+    } 
