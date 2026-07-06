@@ -229,21 +229,23 @@ export function FloatingSearchWidget() {
       {/* ── FAB — third slot in the stack, above the Quote Calculator ──── */}
       <div
         className={cn(
-  "fixed z-[9992] right-4 bottom-[9.5rem] group/search",
-  "transition-all duration-300",
-  pastTrigger && !isOtherOpen
-    ? "opacity-100 scale-100 pointer-events-auto"
-    : "opacity-0 scale-90 pointer-events-none"
-)}
+          "fixed z-[9992] right-4 bottom-[9.5rem] group/search",
+          "transition-all duration-300",
+          pastTrigger && !isOtherOpen
+            ? "opacity-100 scale-100 pointer-events-auto"
+            : "opacity-0 scale-90 pointer-events-none"
+        )}
       >
         <div className="flex items-center justify-end gap-2">
-          {/* Slide-out label */}
+          {/* Slide-out label — pointer-events-none at all times: it's a
+              purely visual hint and must never intercept taps meant for
+              whatever sits underneath it, even while "hidden" via opacity. */}
           <span className={cn(
-            "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap",
+            "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap pointer-events-none",
             "bg-white dark:bg-zinc-900 px-2.5 py-1 rounded-full shadow-md border border-zinc-100 dark:border-zinc-800",
             "transition-all duration-300 origin-right",
             isOpen
-              ? "opacity-0 scale-x-0 pointer-events-none"
+              ? "opacity-0 scale-x-0"
               : "opacity-0 scale-x-0 group-hover/search:opacity-100 group-hover/search:scale-x-100"
           )}
           style={{ color: ACCENT_ORANGE }}
@@ -359,4 +361,4 @@ export function FloatingSearchWidget() {
       )}
     </>
   )
-          } 
+}
