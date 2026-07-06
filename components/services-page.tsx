@@ -199,6 +199,15 @@ function ensureAccessible(hex: string, bgHex: string, minRatio = 4.5) {
   return goingDarker ? "#1a1a1a" : "#fafafa"
 }
 
+/** Picks whichever of near-black/near-white reads best on a solid `hex` background —
+ *  used for the hub-color section/description card in HubModal so text always
+ *  stays legible regardless of how light or dark that hub's accent is. */
+function getContrastText(hex: string) {
+  const whiteRatio = contrastRatio(hex, "#ffffff")
+  const blackRatio = contrastRatio(hex, "#1a1a1a")
+  return whiteRatio >= blackRatio ? "#ffffff" : "#1a1a1a"
+}
+
 // ─── Brand loader ─────────────────────────────────────────────────────────────
 // An abstract rounded-badge outline (not a literal logo trace — see chat notes)
 // with a gradient stroke segment that grows around the shape, "kisses" its own
@@ -452,6 +461,10 @@ function HubModal({
   const colors      = HUB_COLORS[hubId as HubKey]
   const accent      = isDark ? colors.tagTextDark : colors.tagText
   const solidAccent = colors.tagText
+  // Text color for the solid hub-colored section/description card below —
+  // auto-flips between near-white and near-black so it always reads clearly
+  // against that hub's specific accent (e.g. Tech's light grey vs Docu's green).
+  const cardText    = getContrastText(solidAccent)
 
   return (
     <div className="fixed inset-0 z-[10100] flex items-center justify-center p-4 animate-in fade-in duration-300">
@@ -480,24 +493,60 @@ function HubModal({
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-8">
-          <div className="inline-flex flex-wrap gap-2 mb-5">
-            {hub.sections.map((section, sIdx) => {
-              const isOpen = openSectionIdx === sIdx
-              return (
+
+          {/* Section tabs + description — fused into one solid, hub-colored
+              card so switching tabs feels like updating one shape rather than
+              two separate pieces. Falls back to plain neutral pills (old
+              behavior) if every section is collapsed (openSectionIdx null). */}
+          {openSectionIdx !== null && hub.sections[openSectionIdx] ? (
+            <div
+              className="rounded-[14px] p-4 md:p-5 mb-5 transition-colors duration-300"
+              style={{
+                backgroundColor: solidAccent,
+                boxShadow: `0 14px 28px -8px ${solidAccent}66, 0 6px 14px -6px ${solidAccent}45`,
+              }}
+            >
+              <div className="flex flex-wrap gap-2 mb-4">
+                {hub.sections.map((section, sIdx) => {
+                  const isOpen = openSectionIdx === sIdx
+                  return (
+                    <button
+                      key={sIdx}
+                      onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)}
+                      className={cn(
+                        "px-3.5 py-1.5 rounded-full text-[0.7rem] font-black tracking-tight whitespace-nowrap transition-all duration-200",
+                        isOpen ? "bg-white/25 dark:bg-black/20" : "bg-black/10 dark:bg-white/10 hover:bg-black/15 dark:hover:bg-white/15"
+                      )}
+                      style={{ color: cardText, opacity: isOpen ? 1 : 0.65 }}
+                    >
+                      {section.title}
+                    </button>
+                  )
+                })}
+              </div>
+              {hub.sections[openSectionIdx].desc && (
+                <p
+                  key={openSectionIdx}
+                  className="text-[0.82rem] font-semibold leading-relaxed animate-in fade-in duration-300"
+                  style={{ color: cardText }}
+                >
+                  {hub.sections[openSectionIdx].desc}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="inline-flex flex-wrap gap-2 mb-5">
+              {hub.sections.map((section, sIdx) => (
                 <button
                   key={sIdx}
-                  onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)}
-                  className={cn(
-                    "px-3.5 py-1.5 rounded-full text-[0.7rem] font-black tracking-tight whitespace-nowrap transition-all duration-200",
-                    isOpen ? "text-white shadow-sm" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
-                  )}
-                  style={isOpen ? { backgroundColor: solidAccent } : {}}
+                  onClick={() => setOpenSectionIdx(sIdx)}
+                  className="px-3.5 py-1.5 rounded-full text-[0.7rem] font-black tracking-tight whitespace-nowrap transition-all duration-200 bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
                 >
                   {section.title}
                 </button>
-              )
-            })}
-          </div>
+              ))}
+            </div>
+          )}
 
           {openSectionIdx !== null && hub.sections[openSectionIdx] && (
             <div
@@ -1075,4 +1124,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-}
+      }
