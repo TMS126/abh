@@ -42,6 +42,26 @@ const NOTICE = {
   textAfter: ". Minor price adjustments have also been made across some services. We appreciate your continued support and will keep you updated as we grow.",
 }
 
+// CR80 card ratio (85.60mm × 53.98mm), rendered portrait — height/width ≈ 1.586
+const CARD_W = 208
+const CARD_H = 330 // 208 × 1.586, rounded
+
+// How far each card's top peeks above the one stacked in front of it.
+// Also doubles as the minimum comfortable tap target for revealing a hidden card.
+const CARD_PEEK = 42
+
+// Fixed "personality" per hub — a small rotation + horizontal jitter that
+// travels with the hub's identity (not its stack position), so the pile
+// looks genuinely messy/hand-tossed rather than mechanically fanned, and
+// stays visually consistent as cards cycle to the front via swipe/tap.
+const CARD_PERSONALITY: Record<HubId, { rot: number; xJitter: number }> = {
+  print:    { rot: -5, xJitter: 4  },
+  doc:      { rot: 4,  xJitter: -7 },
+  design:   { rot: -3, xJitter: 9  },
+  eservice: { rot: 6,  xJitter: -4 },
+  tech:     { rot: -7, xJitter: 2  },
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function getCldUrl(file: File) {
   return `https://api.cloudinary.com/v1_1/${CLD_CLOUD}/${file.type.startsWith("image/") ? "image" : "raw"}/upload`
@@ -1032,23 +1052,23 @@ export function ServicesPage() {
           })}
         </div>
 
-        {/* Hub cards (mobile) — swipeable 3D stack, tap any card to open it */}
+        {/* Hub cards (mobile) — CR80-portrait stack, overlapping at the top, bottoms aligned */}
         <div className="md:hidden w-full flex flex-col items-center pb-2">
-          <div className="relative w-full flex justify-center" style={{ height: 300 }}>
+          <div
+            className="relative w-full flex justify-center"
+            style={{ height: CARD_H + CARD_PEEK * (stackOrder.length - 1) }}
+          >
             {stackOrder.map((hubId, index) => {
-              const hub       = HUBS[hubId]
-              const isFront   = index === 0
-              const accent    = hubAccentColor(hubId, isDark)
-              const OFFSETS   = [
-                { x: 0,   y: 0,  r: 0,  s: 1    },
-                { x: 14,  y: 10, r: -4, s: 0.96 },
-                { x: -10, y: 20, r: 4,  s: 0.92 },
-                { x: 18,  y: 30, r: -7, s: 0.88 },
-                { x: -16, y: 40, r: 7,  s: 0.84 },
-              ]
-              const o        = OFFSETS[index] ?? OFFSETS[OFFSETS.length - 1]
-              const liveX    = isFront ? dragX : 0
-              const liveR    = isFront ? o.r + dragX / 14 : o.r
+              const hub      = HUBS[hubId]
+              const isFront  = index === 0
+              const accent   = hubAccentColor(hubId, isDark)
+              const p        = CARD_PERSONALITY[hubId]
+
+              // Bottoms stay aligned; each card further back sits higher, so its
+              // top edge peeks out above the card stacked in front of it.
+              const baseY = -index * CARD_PEEK
+              const liveX = isFront ? dragX : 0
+              const liveR = isFront ? p.rot + dragX / 14 : p.rot
 
               return (
                 <div
@@ -1059,26 +1079,43 @@ export function ServicesPage() {
                   onPointerCancel={isFront ? handleStackPointerUp : undefined}
                   onClick={!isFront ? () => handleCardTap(hubId) : undefined}
                   className={cn(
-                    "absolute top-0 w-[78%] max-w-[300px] rounded-[18px] bg-white dark:bg-zinc-950 p-6 flex flex-col items-center touch-none select-none shadow-[0_12px_28px_rgba(0,0,0,0.16)] dark:shadow-[0_12px_28px_rgba(0,0,0,0.55)]",
+                    "absolute bottom-0 left-1/2 rounded-[16px] bg-white dark:bg-zinc-950 p-5 flex flex-col touch-none select-none shadow-[0_14px_30px_rgba(0,0,0,0.18)] dark:shadow-[0_14px_30px_rgba(0,0,0,0.6)]",
                     isFront && !isDragging && "transition-transform duration-300 ease-out",
                     isFront && "cursor-grab active:cursor-grabbing"
                   )}
                   style={{
+                    width: CARD_W,
+                    height: CARD_H,
                     zIndex: 50 - index * 10,
                     border: `2.5px solid ${accent}`,
-                    transform: `translateX(${o.x + liveX}px) translateY(${o.y}px) scale(${o.s}) rotate(${liveR}deg)`,
+                    transform: `translateX(calc(-50% + ${p.xJitter + liveX}px)) translateY(${baseY}px) rotate(${liveR}deg)`,
                   }}
                 >
                   <div
-                    className="w-14 h-14 rounded-[14px] flex items-center justify-center mb-3 shadow-md"
+                    className="w-14 h-14 rounded-[14px] flex items-center justify-center mb-4 shadow-md shrink-0"
                     style={{ backgroundColor: `${accent}18`, color: accent }}
                   >
-                    <HubIcon id={hubId} size={28} />
+                    <HubIcon id={hubId} size={32} />
                   </div>
-                  <h3 className="font-sans font-black text-lg text-zinc-900 dark:text-zinc-50 mb-1 text-center">
+
+                  <h3 className="font-sans font-black text-lg text-zinc-900 dark:text-zinc-50 mb-2">
                     {hub.title}
                   </h3>
-                  <p className="abh-body text-[0.78rem] text-center line-clamp-2">{hub.desc}</p>
+
+                  <p className="abh-body text-[0.78rem] line-clamp-3">{hub.desc}</p>
+
+                  <div className="mt-3 flex flex-col gap-1">
+                    {hub.previews.map((hint, i) => (
+                      <span key={i} className="text-[0.68rem] font-medium text-zinc-400 dark:text-zinc-500 tracking-wide">
+                        {hint}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="mt-auto pt-3 flex items-center gap-1.5 text-[0.68rem] font-black lowercase tracking-widest">
+                    <span style={{ color: accent }}>explore</span>
+                    <PaperPlaneTilt size={12} weight="fill" style={{ color: accent }} />
+                  </div>
                 </div>
               )
             })}
