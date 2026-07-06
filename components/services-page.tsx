@@ -17,13 +17,7 @@ import { HUBS, HubId } from "@/lib/data"
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
 // Three natural-language service hints shown on each hub card
-const HUB_PREVIEWS: Record<HubId, [string, string, string]> = {
-  print:    ["Print Documents", "Copy Pages", "Photo Prints"],
-  doc:      ["Build CVs", "Laminate Docs", "Type Letters"],
-  design:   ["Design Logos", "Make Flyers", "Social Posts"],
-  eservice: ["SASSA Help", "SARS eFiling", "UIF Claims"],
-  tech:     ["Install Windows", "Remove Viruses", "Fix Laptops"],
-}
+
 
 const CLD_CLOUD  = "dk30vh3ft"
 const CLD_PRESET = "apexbyteshub"
@@ -1030,11 +1024,10 @@ export function ServicesPage() {
                 </div>
                 <h3 className="font-sans font-black text-lg md:text-xl text-zinc-900 dark:text-zinc-50 mb-2 group-hover:text-[#1E6FA8] dark:group-hover:text-[#A9D6F2] transition-colors">
                   {hub.title}
-                </h3>
-                <p className="abh-body text-[0.82rem] line-clamp-2 mb-5">{hub.tagline}</p>
+                </h3><p className="abh-body text-[0.82rem] line-clamp-2 mb-5">{hub.desc}</p>
                 {/* 3 service previews — natural language, subtle, slightly larger than before but never bold */}
                 <div className="flex flex-col items-center gap-1 mb-5">
-                  {HUB_PREVIEWS[hubId].map((hint, i) => (
+                  {hub.previews.map((hint, i) => (
                     <span key={i} className="text-[0.72rem] font-medium text-zinc-400 dark:text-zinc-500 tracking-wide">
                       {hint}
                     </span>
