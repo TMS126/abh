@@ -930,7 +930,7 @@ function ClosingTagline() {
 }
 
 // ─── Main Services Page ────────────────────────────────────────────────────────
-export default function ServicesPage() {
+export function ServicesPage() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
   const searchParams = useSearchParams()
