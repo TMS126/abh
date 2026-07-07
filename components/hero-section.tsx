@@ -21,7 +21,7 @@ import { BRAND, BIZ, MARQUEE_ITEMS, HUB_COLORS } from "@/lib/brand"
 const HUBS_DATA = [
   {
     id: "print",
-    name: "Print Hub",
+    name: "print hub",
     icon: (active: boolean) => (
       <Printer size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
@@ -29,17 +29,17 @@ const HUBS_DATA = [
     colorLight: BRAND.blue,
     colorDark:  BRAND.lightBlue,
     services: [
-      { name: "B&W Print",        price: "R5"  },
-      { name: "Colour Print",     price: "R8"  },
-      { name: "B&W Copy",         price: "R3"  },
-      { name: "Colour Copy",      price: "R5"  },
-      { name: "Photo 4x6 Glossy", price: "R20" },
-      { name: "Photo A4 Glossy",  price: "R40" },
+      { name: "B&W print",        price: "R5"  },
+      { name: "colour print",     price: "R8"  },
+      { name: "B&W copy",         price: "R3"  },
+      { name: "colour copy",      price: "R5"  },
+      { name: "photo 4x6 glossy", price: "R20" },
+      { name: "photo A4 glossy",  price: "R40" },
     ],
   },
   {
     id: "doc",
-    name: "Docu Hub",
+    name: "docu hub",
     icon: (active: boolean) => (
       <FileText size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
@@ -47,17 +47,17 @@ const HUBS_DATA = [
     colorLight: BRAND.green,
     colorDark:  BRAND.lightGreen,
     services: [
-      { name: "CV from Scratch",    price: "R30" },
-      { name: "CV Upgrade",         price: "R40" },
-      { name: "Cover Letter",       price: "R30" },
-      { name: "Affidavit / Letter", price: "R20" },
-      { name: "Scanning (per page)", price: "R5" },
-      { name: "Laminating A4",      price: "R15" },
+      { name: "CV from scratch",    price: "R30" },
+      { name: "CV upgrade",         price: "R40" },
+      { name: "cover letter",       price: "R30" },
+      { name: "affidavit / letter", price: "R20" },
+      { name: "scanning (per page)", price: "R5" },
+      { name: "laminating A4",      price: "R15" },
     ],
   },
   {
     id: "design",
-    name: "Design Hub",
+    name: "design hub",
     icon: (active: boolean) => (
       <PaintBrush size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
@@ -65,35 +65,39 @@ const HUBS_DATA = [
     colorLight: BRAND.orangeDark,
     colorDark:  BRAND.lightOrange,
     services: [
-      { name: "Logo (Basic)",       price: "R300" },
-      { name: "Logo (Standard)",    price: "R500" },
-      { name: "Business Card",      price: "R120" },
-      { name: "Flyer (Custom)",     price: "R250" },
-      { name: "Social Media Post",  price: "R80"  },
-      { name: "Invitation (Image)", price: "R150" },
+      { name: "logo (basic)",       price: "R300" },
+      { name: "logo (standard)",    price: "R500" },
+      { name: "business card",      price: "R120" },
+      { name: "flyer (custom)",     price: "R250" },
+      { name: "social media post",  price: "R80"  },
+      { name: "invitation (image)", price: "R150" },
     ],
   },
   {
     id: "eservice",
-    name: "E-Service Hub",
+    name: "e-service hub",
     icon: (active: boolean) => (
       <Globe size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: Globe,
-    colorLight: BRAND.blueMid,
-    colorDark:  BRAND.lightBlue,
+    // Teal — kept identical to HUB_COLORS.eservice.primary/accentDark in
+    // lib/brand.ts, so this hub reads the same color everywhere: the hero
+    // selector, the giant watermark, the "start here" button gradient, and
+    // (via the abh:heroHubSelect event below) the navbar's logo/controls.
+    colorLight: "#0F766E",
+    colorDark:  "#99F6E4",
     services: [
-      { name: "SASSA Status Check",         price: "R20"  },
-      { name: "SASSA SRD Application",      price: "R40"  },
-      { name: "SASSA Grant Application",    price: "R80"  },
-      { name: "SARS New Taxpayer / eFiling", price: "R70" },
-      { name: "NSFAS Application",          price: "R80"  },
-      { name: "UIF Claims",                 price: "R200" },
+      { name: "SASSA status check",         price: "R20"  },
+      { name: "SASSA SRD application",      price: "R40"  },
+      { name: "SASSA grant application",    price: "R80"  },
+      { name: "SARS new taxpayer / eFiling", price: "R70" },
+      { name: "NSFAS application",          price: "R80"  },
+      { name: "UIF claims",                 price: "R200" },
     ],
   },
   {
     id: "tech",
-    name: "Tech Hub",
+    name: "tech hub",
     icon: (active: boolean) => (
       <Desktop size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
@@ -101,12 +105,12 @@ const HUBS_DATA = [
     colorLight: BRAND.dark100,
     colorDark:  "#B8CCE0",
     services: [
-      { name: "Software Install",              price: "R80"  },
-      { name: "PC Setup",                      price: "R250" },
-      { name: "Virus Removal",                 price: "R200" },
-      { name: "Windows Install + Activation",  price: "R350" },
-      { name: "Microsoft 365 Setup",           price: "R150" },
-      { name: "Troubleshooting (per hr)",      price: "R150" },
+      { name: "software install",              price: "R80"  },
+      { name: "PC setup",                      price: "R250" },
+      { name: "virus removal",                 price: "R200" },
+      { name: "Windows install + activation",  price: "R350" },
+      { name: "Microsoft 365 setup",           price: "R150" },
+      { name: "troubleshooting (per hr)",      price: "R150" },
     ],
   },
 ]
@@ -115,7 +119,7 @@ const CTA_GRADIENTS: Record<string, [string, string]> = {
   print:    [BRAND.blue,       BRAND.blueMid],
   doc:      [BRAND.green,      BRAND.greenDeep],
   design:   [BRAND.orangeDark, BRAND.orangeBrown],
-  eservice: [BRAND.blueMid,    BRAND.blueDark],
+  eservice: ["#0F766E",        "#115E59"], // teal — matches HUB_COLORS.eservice gradient
   tech:     [BRAND.dark100,    BRAND.dark200],
 }
 
@@ -272,7 +276,10 @@ export function HeroSection() {
           50%  { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
-        .abh-cta-gradient { background-size: 200% 200%; animation: abh-cta-gradient-shift 4s ease infinite; }
+        /* Slowed from 4s to 10s per request — the color shift across the
+           button now reads as a gentle, ambient fade instead of an
+           obviously-looping animation. */
+        .abh-cta-gradient { background-size: 200% 200%; animation: abh-cta-gradient-shift 10s ease infinite; }
       `}</style>
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center text-center relative z-10 w-full mb-8">
@@ -283,7 +290,7 @@ export function HeroSection() {
         </h1>
 
         <p className="text-sm md:text-base font-medium text-zinc-600 dark:text-zinc-400 mb-10 max-w-[600px] px-2 leading-relaxed">
-          From printing your documents to navigating government services — we make it simple, fast, and friendly.
+          from printing your documents to navigating government services — we make it simple, fast, and friendly.
         </p>
 
         {/* CTA — gradient tracks the active hub, crossfade-safe watermark behind it */}
@@ -335,7 +342,7 @@ export function HeroSection() {
             className="abh-cta-gradient relative z-10 inline-flex items-center gap-3 group px-10 py-5 rounded-[16px] font-sans font-black text-lg text-white transition-all duration-300 active:duration-100 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.88] shadow-lg hover:shadow-2xl active:shadow-md active:brightness-90 animate-in fade-in duration-500"
             style={{ backgroundImage: `linear-gradient(135deg, ${ctaFrom} 0%, ${ctaTo} 50%, ${ctaFrom} 100%)` }}
           >
-            View Services
+            start here
             <ArrowRight weight="bold" className="w-6 h-6 transition-transform duration-300 group-hover:translate-x-1.5" aria-hidden="true" />
           </button>
         </div>
@@ -344,16 +351,16 @@ export function HeroSection() {
         <div className="abh-card w-full max-w-[840px] mx-auto p-6 sm:p-10 md:p-12 flex flex-col items-center bg-white/60 dark:bg-zinc-900/50 backdrop-blur-md mb-12">
 
           <div className="w-full flex flex-col items-center mb-8">
-            <h2 className="abh-section-heading mb-2 text-center">Core Hub Ecosystem</h2>
+            <h2 className="abh-section-heading mb-2 text-center">core hub ecosystem</h2>
             <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              Tap a hub to see what we actually do there.
+              tap a hub to see what we actually do there.
             </p>
           </div>
 
-          {/* Hub selector — icons only */}
+          {/* Hub selector — icons only, no border in any state per request */}
           <div
             role="tablist"
-            aria-label="Service hubs"
+            aria-label="service hubs"
             className="flex flex-wrap sm:flex-nowrap justify-center items-stretch gap-3 sm:gap-4 w-full mb-6 px-1"
           >
             {HUBS_DATA.map((hub, index) => {
@@ -371,10 +378,8 @@ export function HeroSection() {
                   onMouseEnter={() => setHoveredHub(index)}
                   onMouseLeave={() => setHoveredHub(null)}
                   className={cn(
-                    "relative flex items-center justify-center px-4 sm:px-5 py-4 rounded-[14px] border transition-all duration-200 flex-1 min-w-[56px]",
-                    isActive
-                      ? "border-transparent shadow-md"
-                      : "border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700"
+                    "relative flex items-center justify-center px-4 sm:px-5 py-4 rounded-[14px] transition-all duration-200 flex-1 min-w-[56px]",
+                    isActive && "shadow-md"
                   )}
                   style={{
                     backgroundColor: isActive || isHovered ? `${hubColor}14` : undefined,
@@ -427,7 +432,7 @@ export function HeroSection() {
               className="inline-flex items-center gap-1.5 text-[0.65rem] font-black uppercase tracking-widest mt-4 transition-opacity hover:opacity-70"
               style={{ color: activeColor }}
             >
-              See all {active.name} services
+              see all {active.name} services
               <ArrowRight weight="bold" className="w-3 h-3" aria-hidden="true" />
             </button>
           </div>
@@ -467,21 +472,23 @@ export function HeroSection() {
 }
 
 // ─── Stats Bar ────────────────────────────────────────────────────────────────
+// More compact per request: reduced section/card padding, smaller icon
+// chips, tighter gaps.
 export function StatsBar() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
 
   const stats = [
-    { icon: PlusCircle, color: BRAND.blue,   value: BIZ.hubCount,    label: "Hubs"        },
-    { icon: Gear,       color: BRAND.green,  value: BIZ.serviceCount, label: "Services"   },
-    { icon: Wrench,     color: BRAND.orange, value: "Fast",           label: "Turnaround" },
+    { icon: PlusCircle, color: BRAND.blue,   value: BIZ.hubCount,    label: "hubs"        },
+    { icon: Gear,       color: BRAND.green,  value: BIZ.serviceCount, label: "services"   },
+    { icon: Wrench,     color: BRAND.orange, value: "fast",           label: "turnaround" },
   ]
 
   return (
-    <section aria-label="Key stats" className="px-4 md:px-8 py-12 md:py-16 transition-colors duration-300">
+    <section aria-label="Key stats" className="px-4 md:px-8 py-8 md:py-10 transition-colors duration-300">
       <div
-        className="grid grid-cols-3 gap-4 sm:gap-6 w-full max-w-[640px] mx-auto"
+        className="grid grid-cols-3 gap-3 sm:gap-4 w-full max-w-[560px] mx-auto"
         role="list"
-        aria-label="Key stats"
+        aria-label="key stats"
       >
         {stats.map((stat, i) => {
           const isHov  = hoveredCard === i
@@ -494,22 +501,22 @@ export function StatsBar() {
               onMouseLeave={() => setHoveredCard(null)}
               onClick={() => setHoveredCard(isHov ? null : i)}
               aria-label={`${stat.value} ${stat.label}`}
-              className="flex flex-col items-center justify-center gap-2 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 py-5 sm:py-6 px-3 sm:px-4 text-center transition-all duration-200 shadow-sm cursor-pointer"
+              className="flex flex-col items-center justify-center gap-1.5 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 py-3.5 sm:py-4 px-3 text-center transition-all duration-200 shadow-sm cursor-pointer"
               style={{ borderColor: isHov ? stat.color : undefined }}
             >
               <div
-                className="w-10 h-10 rounded-[12px] flex items-center justify-center mb-1 transition-all duration-200"
+                className="w-8 h-8 rounded-[10px] flex items-center justify-center mb-0.5 transition-all duration-200"
                 style={{
                   backgroundColor: isHov ? stat.color : `${stat.color}15`,
                   color: isHov ? "#ffffff" : stat.color,
                 }}
               >
-                <Icon size={20} weight={isHov ? "fill" : "regular"} aria-hidden="true" />
+                <Icon size={16} weight={isHov ? "fill" : "regular"} aria-hidden="true" />
               </div>
-              <div className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
+              <div className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
                 {stat.value}
               </div>
-              <div className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+              <div className="text-[0.6rem] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
                 {stat.label}
               </div>
             </div>
@@ -518,4 +525,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-        } 
+} 
