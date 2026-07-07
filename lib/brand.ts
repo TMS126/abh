@@ -63,57 +63,73 @@ export const BRAND = {
 } as const
 
 // ONLY ONE HUB_COLORS EXPORT - WCAG AA COMPLIANT ACTIVE COLORS
+// Sourced from the official brand palette tiers (Bright / Hard / Soft / Dark).
+// Note: the palette has 3 base hues (blue/green/orange) but 5 hubs — E-Service
+// uses teal as the one color outside the palette, since reusing blue would
+// make it indistinguishable from Print Hub at small sizes (icon chips, tags).
 export const HUB_COLORS = {
   print: {
-    primary: BRAND.blue,
-    light: BRAND.lightBlue,
+    primary: BRAND.blue,        // Hard: #1E6FA8
+    light: BRAND.lightBlue,     // Bright: #A9D6F2
     gradient: `linear-gradient(135deg, ${BRAND.blue} 0%, ${BRAND.blueMid} 100%)`,
     tagBg: 'transparent',
     tagText: '#374151',
-    tagBgDark: '#1e40af', // blue-800 - 5.4:1 with white
+    tagBgDark: '#1e40af',
     tagTextDark: '#ffffff',
-    // True per-hub accent pair — used everywhere a hub's actual brand color
-    // should show (icons, prices, tabs, cards), as opposed to tagText/
-    // tagTextDark above which is a flat grey/white shared by all hubs.
     accentLight: BRAND.blue,
     accentDark: BRAND.lightBlue,
   },
 
   doc: {
-    primary: BRAND.green,
-    light: BRAND.lightGreen,
+    primary: BRAND.green,       // Hard (AA-adjusted): #4A8011
+    light: BRAND.lightGreen,    // Bright: #CDEB9F
     gradient: `linear-gradient(135deg, ${BRAND.greenDeep} 0%, ${BRAND.green} 100%)`,
     tagBg: 'transparent',
     tagText: '#374151',
-    tagBgDark: '#166534', // green-800 - 4.6:1 with white
+    tagBgDark: '#166534',
     tagTextDark: '#ffffff',
     accentLight: BRAND.green,
     accentDark: BRAND.lightGreen,
   },
 
   design: {
-    primary: BRAND.orangeDark,
-    light: BRAND.lightOrange,
+    primary: BRAND.orangeDark,  // Hard (AA-adjusted): #B06225
+    light: BRAND.lightOrange,   // Bright: #F9D1B0
     gradient: `linear-gradient(135deg, ${BRAND.orangeBrown} 0%, ${BRAND.orange} 100%)`,
     tagBg: 'transparent',
     tagText: '#374151',
-    tagBgDark: '#9a3412', // orange-800 - 5.9:1 with white
+    tagBgDark: '#9a3412',
     tagTextDark: '#ffffff',
     accentLight: BRAND.orangeDark,
     accentDark: BRAND.lightOrange,
   },
 
   eservice: {
-    primary: BRAND.blueDark,
-    light: BRAND.lightBlue,
-    gradient: `linear-gradient(135deg, #15537D 0%, ${BRAND.blueMid} 100%)`,
+    // Exception — see note above. Not sourced from the palette photo;
+    // kept distinct from Print's blue on purpose.
+    primary: "#0F766E",
+    light: "#99F6E4",
+    gradient: `linear-gradient(135deg, #0F766E 0%, #115E59 100%)`,
     tagBg: 'transparent',
     tagText: '#374151',
-    tagBgDark: '#0F3F66', // blueDark - 7.8:1 with white
+    tagBgDark: '#115E59',
     tagTextDark: '#ffffff',
-    accentLight: BRAND.blueDark,
-    accentDark: BRAND.lightBlue,
+    accentLight: "#0F766E",
+    accentDark: "#99F6E4",
   },
+
+  tech: {
+    primary: BRAND.dark100,       // Dark tier: #333333
+    light: BRAND.techGreyDark,    // #B8CCE0 (existing dark-mode-safe pairing)
+    gradient: `linear-gradient(135deg, ${BRAND.dark100} 0%, ${BRAND.dark200} 100%)`,
+    tagBg: 'transparent',
+    tagText: '#374151',
+    tagBgDark: '#1f2937',
+    tagTextDark: '#ffffff',
+    accentLight: BRAND.dark100,
+    accentDark: BRAND.techGreyDark,
+  },
+} as const
 
   tech: {
     primary: "#B8CCE0",
