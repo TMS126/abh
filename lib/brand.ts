@@ -72,6 +72,11 @@ export const HUB_COLORS = {
     tagText: '#374151',
     tagBgDark: '#1e40af', // blue-800 - 5.4:1 with white
     tagTextDark: '#ffffff',
+    // True per-hub accent pair — used everywhere a hub's actual brand color
+    // should show (icons, prices, tabs, cards), as opposed to tagText/
+    // tagTextDark above which is a flat grey/white shared by all hubs.
+    accentLight: BRAND.blue,
+    accentDark: BRAND.lightBlue,
   },
 
   doc: {
@@ -82,6 +87,8 @@ export const HUB_COLORS = {
     tagText: '#374151',
     tagBgDark: '#166534', // green-800 - 4.6:1 with white
     tagTextDark: '#ffffff',
+    accentLight: BRAND.green,
+    accentDark: BRAND.lightGreen,
   },
 
   design: {
@@ -92,6 +99,8 @@ export const HUB_COLORS = {
     tagText: '#374151',
     tagBgDark: '#9a3412', // orange-800 - 5.9:1 with white
     tagTextDark: '#ffffff',
+    accentLight: BRAND.orangeDark,
+    accentDark: BRAND.lightOrange,
   },
 
   eservice: {
@@ -102,6 +111,8 @@ export const HUB_COLORS = {
     tagText: '#374151',
     tagBgDark: '#0F3F66', // blueDark - 7.8:1 with white
     tagTextDark: '#ffffff',
+    accentLight: BRAND.blueDark,
+    accentDark: BRAND.lightBlue,
   },
 
   tech: {
@@ -112,6 +123,12 @@ export const HUB_COLORS = {
     tagText: '#374151',
     tagBgDark: '#1f2937', // gray-800 - 12.6:1 with white
     tagTextDark: '#ffffff',
+    // Exception: primary/light above are identical (#B8CCE0), a color
+    // verified only for dark backgrounds (~10.7:1) — unreadable on white.
+    // dark100 is Tech's real light-mode color, already used in this hub's
+    // own gradient above, so we reuse it here instead.
+    accentLight: BRAND.dark100,
+    accentDark: "#B8CCE0",
   },
 } as const
 
@@ -355,4 +372,4 @@ export const FOOTER_NAV = [
   { label: "Gallery", path: "/gallery" },
   { label: "About", path: "/about" },
   { label: "Contact", path: "/contact" },
-] as const
+] as const 
