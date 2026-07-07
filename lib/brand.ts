@@ -131,22 +131,7 @@ export const HUB_COLORS = {
   },
 } as const
 
-  tech: {
-    primary: "#B8CCE0",
-    light: "#B8CCE0",
-    gradient: `linear-gradient(135deg, #333333 0%, #555555 100%)`,
-    tagBg: 'transparent',
-    tagText: '#374151',
-    tagBgDark: '#1f2937', // gray-800 - 12.6:1 with white
-    tagTextDark: '#ffffff',
-    // Exception: primary/light above are identical (#B8CCE0), a color
-    // verified only for dark backgrounds (~10.7:1) — unreadable on white.
-    // dark100 is Tech's real light-mode color, already used in this hub's
-    // own gradient above, so we reuse it here instead.
-    accentLight: BRAND.dark100,
-    accentDark: "#B8CCE0",
-  },
-} as const
+  
 
 export const BIZ = {
   name: "ApexbytesHub",
