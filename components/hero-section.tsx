@@ -21,7 +21,7 @@ import { BRAND, BIZ, MARQUEE_ITEMS, HUB_COLORS } from "@/lib/brand"
 const HUBS_DATA = [
   {
     id: "print",
-    name: "print hub",
+    name: "Print Hub",
     icon: (active: boolean) => (
       <Printer size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
@@ -29,17 +29,17 @@ const HUBS_DATA = [
     colorLight: BRAND.blue,
     colorDark:  BRAND.lightBlue,
     services: [
-      { name: "B&W print",        price: "R5"  },
-      { name: "colour print",     price: "R8"  },
-      { name: "B&W copy",         price: "R3"  },
-      { name: "colour copy",      price: "R5"  },
-      { name: "photo 4x6 glossy", price: "R20" },
-      { name: "photo A4 glossy",  price: "R40" },
+      { name: "B&W Print",        price: "R5"  },
+      { name: "Colour Print",     price: "R8"  },
+      { name: "B&W Copy",         price: "R3"  },
+      { name: "Colour Copy",      price: "R5"  },
+      { name: "Photo 4x6 Glossy", price: "R20" },
+      { name: "Photo A4 Glossy",  price: "R40" },
     ],
   },
   {
     id: "doc",
-    name: "docu hub",
+    name: "Docu Hub",
     icon: (active: boolean) => (
       <FileText size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
@@ -47,17 +47,17 @@ const HUBS_DATA = [
     colorLight: BRAND.green,
     colorDark:  BRAND.lightGreen,
     services: [
-      { name: "CV from scratch",    price: "R30" },
-      { name: "CV upgrade",         price: "R40" },
-      { name: "cover letter",       price: "R30" },
-      { name: "affidavit / letter", price: "R20" },
-      { name: "scanning (per page)", price: "R5" },
-      { name: "laminating A4",      price: "R15" },
+      { name: "CV from Scratch",    price: "R30" },
+      { name: "CV Upgrade",         price: "R40" },
+      { name: "Cover Letter",       price: "R30" },
+      { name: "Affidavit / Letter", price: "R20" },
+      { name: "Scanning (per page)", price: "R5" },
+      { name: "Laminating A4",      price: "R15" },
     ],
   },
   {
     id: "design",
-    name: "design hub",
+    name: "Design Hub",
     icon: (active: boolean) => (
       <PaintBrush size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
@@ -65,17 +65,17 @@ const HUBS_DATA = [
     colorLight: BRAND.orangeDark,
     colorDark:  BRAND.lightOrange,
     services: [
-      { name: "logo (basic)",       price: "R300" },
-      { name: "logo (standard)",    price: "R500" },
-      { name: "business card",      price: "R120" },
-      { name: "flyer (custom)",     price: "R250" },
-      { name: "social media post",  price: "R80"  },
-      { name: "invitation (image)", price: "R150" },
+      { name: "Logo (Basic)",       price: "R300" },
+      { name: "Logo (Standard)",    price: "R500" },
+      { name: "Business Card",      price: "R120" },
+      { name: "Flyer (Custom)",     price: "R250" },
+      { name: "Social Media Post",  price: "R80"  },
+      { name: "Invitation (Image)", price: "R150" },
     ],
   },
   {
     id: "eservice",
-    name: "e-service hub",
+    name: "E-Service Hub",
     icon: (active: boolean) => (
       <Globe size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
@@ -87,17 +87,17 @@ const HUBS_DATA = [
     colorLight: "#0F766E",
     colorDark:  "#99F6E4",
     services: [
-      { name: "SASSA status check",         price: "R20"  },
-      { name: "SASSA SRD application",      price: "R40"  },
-      { name: "SASSA grant application",    price: "R80"  },
-      { name: "SARS new taxpayer / eFiling", price: "R70" },
-      { name: "NSFAS application",          price: "R80"  },
-      { name: "UIF claims",                 price: "R200" },
+      { name: "SASSA Status Check",         price: "R20"  },
+      { name: "SASSA SRD Application",      price: "R40"  },
+      { name: "SASSA Grant Application",    price: "R80"  },
+      { name: "SARS New Taxpayer / eFiling", price: "R70" },
+      { name: "NSFAS Application",          price: "R80"  },
+      { name: "UIF Claims",                 price: "R200" },
     ],
   },
   {
     id: "tech",
-    name: "tech hub",
+    name: "Tech Hub",
     icon: (active: boolean) => (
       <Desktop size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
@@ -105,12 +105,12 @@ const HUBS_DATA = [
     colorLight: BRAND.dark100,
     colorDark:  "#B8CCE0",
     services: [
-      { name: "software install",              price: "R80"  },
-      { name: "PC setup",                      price: "R250" },
-      { name: "virus removal",                 price: "R200" },
-      { name: "Windows install + activation",  price: "R350" },
-      { name: "Microsoft 365 setup",           price: "R150" },
-      { name: "troubleshooting (per hr)",      price: "R150" },
+      { name: "Software Install",              price: "R80"  },
+      { name: "PC Setup",                      price: "R250" },
+      { name: "Virus Removal",                 price: "R200" },
+      { name: "Windows Install + Activation",  price: "R350" },
+      { name: "Microsoft 365 Setup",           price: "R150" },
+      { name: "Troubleshooting (per hr)",      price: "R150" },
     ],
   },
 ]
@@ -290,7 +290,7 @@ export function HeroSection() {
         </h1>
 
         <p className="text-sm md:text-base font-medium text-zinc-600 dark:text-zinc-400 mb-10 max-w-[600px] px-2 leading-relaxed">
-          from printing your documents to navigating government services — we make it simple, fast, and friendly.
+          From printing your documents to navigating government services — we make it simple, fast, and friendly.
         </p>
 
         {/* CTA — gradient tracks the active hub, crossfade-safe watermark behind it */}
@@ -342,7 +342,7 @@ export function HeroSection() {
             className="abh-cta-gradient relative z-10 inline-flex items-center gap-3 group px-10 py-5 rounded-[16px] font-sans font-black text-lg text-white transition-all duration-300 active:duration-100 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.88] shadow-lg hover:shadow-2xl active:shadow-md active:brightness-90 animate-in fade-in duration-500"
             style={{ backgroundImage: `linear-gradient(135deg, ${ctaFrom} 0%, ${ctaTo} 50%, ${ctaFrom} 100%)` }}
           >
-            start here
+            Start Here
             <ArrowRight weight="bold" className="w-6 h-6 transition-transform duration-300 group-hover:translate-x-1.5" aria-hidden="true" />
           </button>
         </div>
@@ -351,16 +351,16 @@ export function HeroSection() {
         <div className="abh-card w-full max-w-[840px] mx-auto p-6 sm:p-10 md:p-12 flex flex-col items-center bg-white/60 dark:bg-zinc-900/50 backdrop-blur-md mb-12">
 
           <div className="w-full flex flex-col items-center mb-8">
-            <h2 className="abh-section-heading mb-2 text-center">core hub ecosystem</h2>
+            <h2 className="abh-section-heading mb-2 text-center">Core Hub Ecosystem</h2>
             <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              tap a hub to see what we actually do there.
+              Tap a hub to see what we actually do there.
             </p>
           </div>
 
           {/* Hub selector — icons only, no border in any state per request */}
           <div
             role="tablist"
-            aria-label="service hubs"
+            aria-label="Service hubs"
             className="flex flex-wrap sm:flex-nowrap justify-center items-stretch gap-3 sm:gap-4 w-full mb-6 px-1"
           >
             {HUBS_DATA.map((hub, index) => {
@@ -409,7 +409,7 @@ export function HeroSection() {
           {/* Spotlight panel */}
           <div className="w-full max-w-[560px] rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-5 sm:px-7 py-5 sm:py-6 mb-2 text-left transition-all duration-300">
             <p className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 mb-3">
-              {active.name} · pricing example
+              {active.name} · Pricing Example
             </p>
             <button
               key={`${activeHub}-${spotlightService.name}`}
@@ -432,7 +432,7 @@ export function HeroSection() {
               className="inline-flex items-center gap-1.5 text-[0.65rem] font-black uppercase tracking-widest mt-4 transition-opacity hover:opacity-70"
               style={{ color: activeColor }}
             >
-              see all {active.name} services
+              See All {active.name} Services
               <ArrowRight weight="bold" className="w-3 h-3" aria-hidden="true" />
             </button>
           </div>
@@ -478,9 +478,9 @@ export function StatsBar() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
 
   const stats = [
-    { icon: PlusCircle, color: BRAND.blue,   value: BIZ.hubCount,    label: "hubs"        },
-    { icon: Gear,       color: BRAND.green,  value: BIZ.serviceCount, label: "services"   },
-    { icon: Wrench,     color: BRAND.orange, value: "fast",           label: "turnaround" },
+    { icon: PlusCircle, color: BRAND.blue,   value: BIZ.hubCount,    label: "Hubs"        },
+    { icon: Gear,       color: BRAND.green,  value: BIZ.serviceCount, label: "Services"   },
+    { icon: Wrench,     color: BRAND.orange, value: "Fast",           label: "Turnaround" },
   ]
 
   return (
@@ -488,7 +488,7 @@ export function StatsBar() {
       <div
         className="grid grid-cols-3 gap-3 sm:gap-4 w-full max-w-[560px] mx-auto"
         role="list"
-        aria-label="key stats"
+        aria-label="Key stats"
       >
         {stats.map((stat, i) => {
           const isHov  = hoveredCard === i
@@ -525,4 +525,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-} 
+      } 
