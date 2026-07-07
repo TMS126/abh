@@ -88,14 +88,15 @@ export function Navbar() {
 
   // Per-page accent, used for: the mobile menu's active link, the shared
   // controls pill's route echo, and the desktop nav's active pill fill.
-  // Same map drives all three so the palette stays consistent everywhere
-  // in the navbar.
+  // Every route gets its OWN distinct light/dark pair — no two pages
+  // share a color family, so the active-page color is always a reliable
+  // visual cue for "where am I."
   const MOBILE_NAV_COLORS: { [path: string]: NavColorPair } = {
-    "/":         { light: BRAND.blue,       dark: BRAND.lightBlue   }, // Home — primary blue
-    "/services": { light: BRAND.green,      dark: BRAND.lightGreen  },
-    "/gallery":  { light: BRAND.orange,     dark: BRAND.lightOrange },
-    "/about":    { light: BRAND.blueDark,   dark: BRAND.lightBlue   }, // "another blue" — same distinct navy used for Contact's page-glow earlier
-   "/contact":  { light: BRAND.dark100, dark: BRAND.techGreyDark }, // Tech Hub's grey identity — dark100 passes ~12.6:1 in light mode, techGreyDark (#B8CCE0) passes ~10.7:1 in dark mode
+    "/":         { light: BRAND.blue,   dark: BRAND.lightBlue   }, // Home — primary blue
+    "/services": { light: BRAND.green,  dark: BRAND.lightGreen  }, // Services — green
+    "/gallery":  { light: BRAND.orange, dark: BRAND.lightOrange }, // Gallery — orange
+    "/about":    { light: "#0F766E",    dark: "#99F6E4"         }, // About — teal, distinct from Home's blue
+    "/contact":  { light: BRAND.dark100, dark: "#B8CCE0"        }, // Contact — Tech Hub's grey identity
   }
 
   // Route echo — the shared controls pill (theme toggle, hamburger,
@@ -351,4 +352,4 @@ export function Navbar() {
       </div>
     </>
   )
-    }
+    } 
