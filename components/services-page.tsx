@@ -403,7 +403,7 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
             <div className="max-h-[320px] overflow-y-auto p-2">
               {results.map((s, idx) => {
                 const colors = HUB_COLORS[s.hubId as HubKey]
-                const accent = isDark ? colors.tagTextDark : colors.tagText
+                const accent = isDark ? colors.accentDark : colors.accentLight
                 return (
                   <button
                     key={`${s.hubId}-${s.name}-${idx}`}
@@ -457,14 +457,18 @@ function HubModal({
   }, [hubId, onClose])
 
   if (!hubId) return null
-  const hub         = HUBS[hubId]
-  const colors      = HUB_COLORS[hubId as HubKey]
-  const accent      = isDark ? colors.tagTextDark : colors.tagText
-  const solidAccent = colors.tagText
+  const hub    = HUBS[hubId]
+  const colors = HUB_COLORS[hubId as HubKey]
+  // True saturated per-hub color, as a light/dark pair (accentLight/
+  // accentDark in brand.ts) — replaces the old tagText/tagTextDark, which
+  // was identical grey/white across every hub and never actually showed
+  // this hub's real brand color. Used everywhere in this modal: icon
+  // border, service-count label, tab pills, prices, and the description card.
+  const accent   = isDark ? colors.accentDark : colors.accentLight
   // Text color for the solid hub-colored section/description card below —
   // auto-flips between near-white and near-black so it always reads clearly
   // against that hub's specific accent (e.g. Tech's light grey vs Docu's green).
-  const cardText    = getContrastText(solidAccent)
+  const cardText = getContrastText(accent)
 
   return (
     <div className="fixed inset-0 z-[10100] flex items-center justify-center p-4 animate-in fade-in duration-300">
@@ -479,7 +483,7 @@ function HubModal({
             </div>
             <div>
               <h2 className="abh-card-heading text-xl md:text-2xl">{hub.title}</h2>
-              <p className="abh-label mt-0.5">{hub.sections.reduce((sum, s) => sum + s.items.length, 0)} Available Services</p>
+              <p className="abh-label mt-0.5" style={{ color: accent }}>{hub.sections.reduce((sum, s) => sum + s.items.length, 0)} Available Services</p>
             </div>
           </div>
           <button
@@ -502,8 +506,8 @@ function HubModal({
             <div
               className="rounded-[14px] p-4 md:p-5 mb-5 transition-colors duration-300"
               style={{
-                backgroundColor: solidAccent,
-                boxShadow: `0 14px 28px -8px ${solidAccent}66, 0 6px 14px -6px ${solidAccent}45`,
+                backgroundColor: accent,
+                boxShadow: `0 14px 28px -8px ${accent}66, 0 6px 14px -6px ${accent}45`,
               }}
             >
               <div className="flex flex-wrap gap-2 mb-4">
@@ -700,7 +704,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   if (!svc) return null
 
   const colors       = HUB_COLORS[svc.hubId as HubKey]
-  const accent       = isDark ? colors.tagTextDark : colors.tagText
+  const accent       = isDark ? colors.accentDark : colors.accentLight
   const hubTitle     = HUBS[svc.hubId]?.title || svc.sectionTitle
   const naturalLabel = naturalServiceLabel(svc.name, svc.sectionTitle)
   const acceptHint   = formatAcceptHint(HUB_ACCEPT[svc.hubId])
@@ -1056,7 +1060,7 @@ export function ServicesPage() {
           {HUB_ORDER.map((hubId) => {
             const hub    = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
-            const accent = isDark ? colors.tagTextDark : colors.tagText
+            const accent = isDark ? colors.accentDark : colors.accentLight
             const cardBg = isDark ? "#09090b" : "#ffffff"
             const exploreColor = ensureAccessible(accent, cardBg, 4.5)
             return (
@@ -1124,4 +1128,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-      }
+}
