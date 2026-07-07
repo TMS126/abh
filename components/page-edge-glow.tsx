@@ -3,21 +3,30 @@
 
 import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
+import { useTheme } from "next-themes"
 import { BRAND } from "@/lib/brand"
 
-// Route → glow color. Home ("/") is intentionally left out — no glow on
-// landing, only on the four hub-style pages that have a dedicated brand
-// color per your earlier work (Services/Gallery/About/Contact).
-const PAGE_GLOW_COLORS: Record<string, string> = {
-  "/services": BRAND.green,
-  "/gallery":  BRAND.orange,
-  "/about":    BRAND.blue,
-  "/contact":  BRAND.dark100, // flat grey (Tech Hub identity) — decorative glow, contrast rules don't apply
+type GlowColorPair = { light: string; dark: string }
+
+// Route → glow color pair. Home ("/") is intentionally left out — no glow
+// on landing, only on the four hub-style pages that have a dedicated
+// brand color. Kept in sync with the Navbar's MOBILE_NAV_COLORS so every
+// page reads the same accent everywhere in the app — nav pill, logo,
+// hamburger, and now this edge glow all agree.
+const PAGE_GLOW_COLORS: Record<string, GlowColorPair> = {
+  "/services": { light: BRAND.green,   dark: BRAND.lightGreen  },
+  "/gallery":  { light: BRAND.orange,  dark: BRAND.lightOrange },
+  "/about":    { light: "#0F766E",     dark: "#99F6E4"         }, // teal — matches Navbar's About color
+  "/contact":  { light: BRAND.dark100, dark: "#B8CCE0"         }, // Tech Hub grey identity
 }
 
 export function PageEdgeGlow() {
   const pathname = usePathname()
-  const [runId, setRunId] = useState(0)
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  const [runId,   setRunId]   = useState(0)
+
+  useEffect(() => { setMounted(true) }, [])
 
   // Bumping the key on every pathname change forces the glow div to
   // remount, which restarts its CSS animation from 0 — this covers both
@@ -27,8 +36,11 @@ export function PageEdgeGlow() {
     setRunId((n) => n + 1)
   }, [pathname])
 
-  const color = PAGE_GLOW_COLORS[pathname]
-  if (!color) return null
+  const pair = PAGE_GLOW_COLORS[pathname]
+  if (!pair) return null
+
+  const isDark = mounted && resolvedTheme === "dark"
+  const color  = isDark ? pair.dark : pair.light
 
   return (
     <div
@@ -98,4 +110,4 @@ export function PageEdgeGlow() {
       />
     </div>
   )
-    }
+      } 
