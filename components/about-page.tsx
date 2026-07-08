@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTheme } from "next-themes"
 import {
   Target,
   Heart,
@@ -16,6 +17,12 @@ import {
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, ABOUT_VALUES, ABOUT_STANDARDS } from "@/lib/brand"
 
+// About's dedicated teal — same light/dark pair as the Navbar's "/about"
+// entry and PageEdgeGlow's "/about" entry, so the stats strip, icon
+// chips, mission badge, and CTA all read as the exact same brand color
+// as the top-of-page glow and nav indicator, in both themes.
+const ABOUT_TEAL = { light: "#0F766E", dark: "#99F6E4" }
+
 function renderIcon(iconName: string, className: string) {
   switch (iconName) {
     case "Target":       return <Target       weight="fill" className={className} aria-hidden="true" />
@@ -28,8 +35,29 @@ function renderIcon(iconName: string, className: string) {
   }
 }
 
+// Picks white or near-black text against a given background hex, based on
+// actual WCAG relative luminance — needed because ABOUT_TEAL.dark
+// (#99F6E4) is a light, minty teal that needs dark text, while
+// ABOUT_TEAL.light (#0F766E) is deep enough to need white text.
+function getReadableTextColor(hex: string): string {
+  const clean = hex.replace("#", "")
+  const r = parseInt(clean.substring(0, 2), 16) / 255
+  const g = parseInt(clean.substring(2, 4), 16) / 255
+  const b = parseInt(clean.substring(4, 6), 16) / 255
+  const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4))
+  const luminance = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
+  const contrastWhite = 1.05 / (luminance + 0.05)
+  const contrastDark  = (luminance + 0.05) / 0.062
+  return contrastWhite >= contrastDark ? "#ffffff" : "#18181b"
+}
+
 export function AboutPage() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
+
+  const tealColor = isDark ? ABOUT_TEAL.dark : ABOUT_TEAL.light
+  const tealText  = getReadableTextColor(tealColor)
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
@@ -46,17 +74,16 @@ export function AboutPage() {
 
           <div className="abh-divider mx-auto" />
 
-          {/* Stats strip — solid brand-blue pill matching the View Services /
-    Search+Surprise button proportions (rounded-[14px], shadow-lg,
-    font-black, py-4-equivalent padding). Color kept flat BRAND.blue in
-    both light and dark mode — identical to PageEdgeGlow's "/about" route
-    color — so this strip and the top-of-page flash read as the same
-    brand color rather than a similar-but-different shade (previously
-    this swapped to BRAND.blueDark in dark mode). BRAND.blue still
-    verifies at ~5.4:1 against white text (AA) regardless of theme. */}
+          {/* Stats strip — solid pill matching the View Services / Search+Surprise
+              button proportions (rounded-[14px], shadow-lg, font-black). Now
+              uses About's dedicated teal pair (theme-aware) so this strip
+              matches PageEdgeGlow's "/about" color and the Navbar's About
+              indicator exactly, in both light and dark mode. Text color is
+              computed per-color rather than assumed, since the dark-mode
+              teal is light enough to need dark text for contrast. */}
 <div
-  className="mt-10 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x divide-white/25 rounded-[14px] overflow-hidden shadow-lg transition-colors duration-300"
-  style={{ backgroundColor: BRAND.blue }}
+  className="mt-10 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x rounded-[14px] overflow-hidden shadow-lg transition-colors duration-300"
+  style={{ backgroundColor: tealColor, borderColor: `${tealText}25` }}
 >
   {[
     { value: BIZ.hubCount,     label: "Service Hubs"  },
@@ -65,12 +92,15 @@ export function AboutPage() {
   ].map((s, i) => (
     <div
       key={i}
-      className="flex flex-col items-center justify-center py-5 px-3 transition-colors duration-200 cursor-default hover:bg-white/10"
+      className="flex flex-col items-center justify-center py-5 px-3 transition-colors duration-200 cursor-default"
+      style={{ ["--hover-bg" as any]: `${tealText}10` }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = `${tealText}10` }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent" }}
     >
-      <p className="font-sans font-black text-xl leading-none text-white">
+      <p className="font-sans font-black text-xl leading-none" style={{ color: tealText }}>
         {s.value}
       </p>
-      <p className="text-[0.62rem] font-medium uppercase tracking-widest text-white/70 mt-1.5 text-center">
+      <p className="text-[0.62rem] font-medium uppercase tracking-widest mt-1.5 text-center" style={{ color: `${tealText}b3` }}>
         {s.label}
       </p>
     </div>
@@ -86,7 +116,7 @@ export function AboutPage() {
 
           {/* Pull quote — centered */}
           <div className="mb-12 text-center max-w-[720px] mx-auto">
-            <p className="font-sans font-semibold text-lg md:text-xl leading-snug text-zinc-700 dark:text-zinc-300 italic">
+            <p className="font-sans font-semibold text-lg md:text-xl leading-snug text-zinc-700 dark:text-zinc-300">
               "Not everyone is tech-savvy — and that's exactly why we're here."
             </p>
             <p className="abh-body mt-4 text-sm max-w-lg mx-auto text-center">
@@ -104,7 +134,7 @@ export function AboutPage() {
                 <li key={index} className="flex gap-4 items-start group">
                   <div
                     className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-110"
-                    style={{ backgroundColor: `${BRAND.blue}15`, color: BRAND.blue }}
+                    style={{ backgroundColor: `${tealColor}15`, color: tealColor }}
                     aria-hidden="true"
                   >
                     {renderIcon(item.iconName, "w-5 h-5")}
@@ -128,7 +158,7 @@ export function AboutPage() {
               <div className="flex items-center gap-3 mb-7 pb-6 border-b border-zinc-100 dark:border-zinc-800">
                 <div
                   className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: `${BRAND.blue}15`, color: BRAND.blue }}
+                  style={{ backgroundColor: `${tealColor}15`, color: tealColor }}
                 >
                   <UsersThree size={20} weight="fill" />
                 </div>
@@ -212,17 +242,19 @@ export function AboutPage() {
                   className={cn(
                     "abh-card p-6 flex flex-col h-full outline-none transition-all duration-300 rounded-[14px] bg-white dark:bg-zinc-950 border",
                     isHovered
-                      ? "border-[#1E6FA8] shadow-lg -translate-y-1.5"
+                      ? "shadow-lg -translate-y-1.5"
                       : "border-zinc-200 dark:border-zinc-800 shadow-[0_1px_6px_rgba(0,0,0,0.05)] dark:shadow-[0_1px_6px_rgba(0,0,0,0.2)]"
                   )}
+                  style={isHovered ? { borderColor: tealColor } : undefined}
                 >
                   <div
                     className={cn(
                       "w-11 h-11 rounded-[12px] flex items-center justify-center mb-5 transition-all duration-300 border shrink-0",
                       isHovered
-                        ? "bg-[#1E6FA8] text-white border-transparent scale-110"
-                        : "bg-white dark:bg-zinc-900 text-[#1E6FA8] border-zinc-100 dark:border-zinc-800"
+                        ? "text-white border-transparent scale-110"
+                        : "bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800"
                     )}
+                    style={isHovered ? { backgroundColor: tealColor, color: tealText } : { color: tealColor }}
                     aria-hidden="true"
                   >
                     {renderIcon(item.iconName, "w-5 h-5")}
@@ -250,7 +282,7 @@ export function AboutPage() {
           <div
             className="absolute inset-0 opacity-[0.04] dark:opacity-[0.07]"
             style={{
-              background: `linear-gradient(135deg, ${BRAND.blue} 0%, ${BRAND.green} 50%, ${BRAND.orange} 100%)`,
+              background: `linear-gradient(135deg, ${tealColor} 0%, ${BRAND.green} 50%, ${BRAND.orange} 100%)`,
             }}
           />
         </div>
@@ -258,7 +290,7 @@ export function AboutPage() {
         <div className="relative max-w-[680px] mx-auto flex flex-col items-center">
           <span
             className="inline-block text-[0.65rem] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-6"
-            style={{ backgroundColor: `${BRAND.blue}12`, color: BRAND.blue }}
+            style={{ backgroundColor: `${tealColor}12`, color: tealColor }}
           >
             Our Mission
           </span>
@@ -277,8 +309,8 @@ export function AboutPage() {
 
           <a
             href="/services"
-            className="inline-flex items-center gap-2.5 px-8 py-4 rounded-[14px] font-black text-sm text-white transition-all duration-300 active:scale-95 hover:-translate-y-0.5 shadow-lg"
-            style={{ backgroundColor: BRAND.blue }}
+            className="inline-flex items-center gap-2.5 px-8 py-4 rounded-[14px] font-black text-sm transition-all duration-300 active:scale-95 hover:-translate-y-0.5 shadow-lg"
+            style={{ backgroundColor: tealColor, color: tealText }}
           >
             See All Services
             <ArrowRight size={16} weight="bold" />
@@ -288,4 +320,4 @@ export function AboutPage() {
 
     </div>
   )
-      }
+                } 
