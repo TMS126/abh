@@ -16,6 +16,14 @@ const FORM_HUBS: Record<string, { light: string; dark: string }> = {
   "Tech Hub":                   { light: "#333333",        dark: "#B8CCE0" },
  "Not Sure — Help Me Choose":  { light: BRAND.neutral500, dark: "#9A9A9A" }, // was #777777 (4.48:1, fails AA text) — neutral500 is 4.67:1, passes
 }
+// Contact's dedicated grey pair — same light/dark values as the Navbar's
+// "/contact" entry and PageEdgeGlow's "/contact" entry (Tech Hub grey
+// identity), so small accents on this page (icons, labels, hover states)
+// match the top-of-page glow and nav indicator. Buttons intentionally
+// stay their existing colors (blue / WhatsApp green) per request — only
+// icons/accents use this.
+const CONTACT_GREY = { light: BRAND.dark100, dark: "#B8CCE0" }
+
 // Maps each CONTACT_LINKS entry to its icon by title — relies on the
 // exact titles set in lib/brand.ts ("WhatsApp Us", "Call Us", "Email Us",
 // "Visit Us"). If those titles ever change, update the keys here too.
@@ -52,6 +60,10 @@ function downloadBusinessVCard() {
 
 function FAQAccordion() {
   const [openIndex, setOpenIndex] = useState<number | null>(0)
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+  const greyColor = mounted && resolvedTheme === "dark" ? CONTACT_GREY.dark : CONTACT_GREY.light
 
   return (
     <section className="px-4 md:px-8 py-16 md:py-20">
@@ -70,7 +82,9 @@ function FAQAccordion() {
               <div key={index} className="abh-card overflow-hidden">
                 <button
                   onClick={() => setOpenIndex(isOpen ? null : index)}
-                  className="w-full px-5 py-4 text-left flex items-center justify-between gap-4 text-[0.84rem] font-semibold text-zinc-800 dark:text-zinc-200 hover:text-brand-blue transition-colors"
+                  className="w-full px-5 py-4 text-left flex items-center justify-between gap-4 text-[0.84rem] font-semibold text-zinc-800 dark:text-zinc-200 transition-colors"
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = greyColor }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "" }}
                 >
                   <span className="leading-snug">{faq.question}</span>
                   <CaretDown
@@ -172,6 +186,7 @@ function ContactPageInner() {
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const isDark = mounted && resolvedTheme === "dark"
+  const greyColor = isDark ? CONTACT_GREY.dark : CONTACT_GREY.light
   const [formData,  setFormData]  = useState({ name: "", phone: "", service: "", message: "" })
   const [touched,   setTouched]   = useState<Record<string, boolean>>({})
   const [vcardDone, setVcardDone] = useState(false)
@@ -293,12 +308,13 @@ function ContactPageInner() {
   })}
 </div>
 
-            {/* vCard download */}
+            {/* vCard download — icon chip now uses Contact's grey identity;
+                the Download button itself stays brand blue per request. */}
             <div className="abh-card p-5 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
                 <div
                   className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: `${BRAND.blue}15`, color: BRAND.blue }}
+                  style={{ backgroundColor: `${greyColor}15`, color: greyColor }}
                 >
                   <AddressBook size={20} weight="fill" />
                 </div>
@@ -317,9 +333,13 @@ function ContactPageInner() {
               </button>
             </div>
 
-            {/* Business hours — grows to fill remaining space */}
+            {/* Business hours — grows to fill remaining space. Header icon
+                and label now use Contact's grey identity. */}
             <div className="abh-card p-5 flex-1">
-              <span className="text-[0.65rem] font-black uppercase tracking-widest text-brand-blue flex items-center gap-1.5 mb-3">
+              <span
+                className="text-[0.65rem] font-black uppercase tracking-widest flex items-center gap-1.5 mb-3"
+                style={{ color: greyColor }}
+              >
                 <Clock weight="fill" size={14} /> Business Hours
               </span>
               <div className="space-y-3">
@@ -373,7 +393,7 @@ function ContactPageInner() {
           <div className="abh-card p-8 flex flex-col">
             <h2 className="abh-section-heading mb-2">Send a Message</h2>
             {prefilled && (
-              <p className="flex items-center gap-1.5 text-[0.7rem] font-bold mb-4" style={{ color: isDark ? "#A9D6F2" : BRAND.blue }}>
+              <p className="flex items-center gap-1.5 text-[0.7rem] font-bold mb-4" style={{ color: greyColor }}>
                 <Sparkle size={14} weight="fill" />
                 Prefilled from the gallery — feel free to edit before sending
               </p>
@@ -475,5 +495,4 @@ export function ContactPage() {
       <ContactPageInner />
     </Suspense>
   )
-}
- 
+    } 
