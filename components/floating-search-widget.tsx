@@ -41,6 +41,15 @@ interface SearchableService {
   price: string; description: string; requirements: string[]
 }
 
+// matchField records WHICH field actually satisfied the search query, so
+// the UI can highlight that exact field instead of always assuming the
+// match was in the item's name (it often isn't — e.g. a query matching
+// only the section title or description previously left every result
+// looking un-highlighted, even though a match clearly existed).
+interface SearchResult extends SearchableService {
+  matchField: "name" | "section" | "description"
+}
+
 interface SelectedService {
   name: string; price: string; hubId: HubId
   sectionTitle: string; requirements: string[]; desc?: string
@@ -74,10 +83,9 @@ function HubIcon({ id, size = 16, color }: { id: HubId; size?: number; color?: s
   }
 }
 
-// Highlights the matched substring of a result's name in the hub's own
-// accent color, so as the person types they can see exactly which part
-// of each result is matching — a live confirmation the right item is
-// on its way, not just a static list.
+// Highlights the matched substring of `text` in the hub's own accent
+// color and bold weight, so as the person types they can see exactly
+// which part of a result is matching.
 function HighlightMatch({ text, query, color }: { text: string; query: string; color: string }) {
   const q = query.trim()
   if (!q) return <>{text}</>
@@ -90,6 +98,18 @@ function HighlightMatch({ text, query, color }: { text: string; query: string; c
       {text.slice(idx + q.length)}
     </>
   )
+}
+
+// Short highlighted snippet of context around a match inside a longer
+// field (used for description matches, where showing the whole
+// description would be too long for the result row).
+function matchSnippet(text: string, query: string, radius = 28): string {
+  const q = query.trim().toLowerCase()
+  const idx = text.toLowerCase().indexOf(q)
+  if (idx === -1) return text.slice(0, radius * 2)
+  const start = Math.max(0, idx - radius)
+  const end = Math.min(text.length, idx + q.length + radius)
+  return `${start > 0 ? "…" : ""}${text.slice(start, end)}${end < text.length ? "…" : ""}`
 }
 
 /**
@@ -217,12 +237,21 @@ export function FloatingSearchWidget() {
     return () => document.removeEventListener("keydown", fn)
   }, [isOpen, handleClose])
 
-  const results = useMemo(() => {
+  // Determines WHICH field matched, per result, so the render can
+  // highlight that exact field instead of assuming it was always the name.
+  const results = useMemo((): SearchResult[] => {
     const q = query.trim().toLowerCase()
     if (!q) return []
-    return index
-      .filter(s => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q))
-      .slice(0, 8)
+    const matches: SearchResult[] = []
+    for (const s of index) {
+      let matchField: SearchResult["matchField"] | null = null
+      if (s.name.toLowerCase().includes(q)) matchField = "name"
+      else if (s.sectionTitle.toLowerCase().includes(q)) matchField = "section"
+      else if (s.description.toLowerCase().includes(q)) matchField = "description"
+      if (matchField) matches.push({ ...s, matchField })
+      if (matches.length >= 8) break
+    }
+    return matches
   }, [query, index])
 
   // Picking a result opens ServiceDetailModal on the page, which pushes
@@ -390,9 +419,20 @@ export function FloatingSearchWidget() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">
-                          <HighlightMatch text={s.name} query={query} color={accent} />
+                          {s.matchField === "name"
+                            ? <HighlightMatch text={s.name} query={query} color={accent} />
+                            : s.name}
                         </p>
-                        <p className="text-[0.65rem] font-bold uppercase tracking-wider text-zinc-400 truncate">{s.sectionTitle} · {HUBS[s.hubId].title}</p>
+                        <p className="text-[0.65rem] font-bold uppercase tracking-wider text-zinc-400 truncate">
+                          {s.matchField === "section"
+                            ? <HighlightMatch text={s.sectionTitle} query={query} color={accent} />
+                            : s.sectionTitle} · {HUBS[s.hubId].title}
+                        </p>
+                        {s.matchField === "description" && (
+                          <p className="text-[0.64rem] font-medium text-zinc-400 dark:text-zinc-500 truncate mt-0.5 normal-case">
+                            <HighlightMatch text={matchSnippet(s.description, query)} query={query} color={accent} />
+                          </p>
+                        )}
                       </div>
                       <span className="text-xs font-black shrink-0" style={{ color: accent }}>{s.price}</span>
                     </button>
@@ -410,4 +450,4 @@ export function FloatingSearchWidget() {
       )}
     </>
   )
-} 
+      } 
