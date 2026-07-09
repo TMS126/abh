@@ -213,7 +213,7 @@ export function HeroSection() {
  return (
     <section
       aria-label="Hero"
-      className="relative min-h-[calc(100vh-var(--nav-h))] w-full flex flex-col items-center justify-center px-4 md:px-8 pt-[calc(var(--nav-h)+64px)] md:pt-[140px] pb-16 md:pb-28 overflow-hidden cursor-default select-none bg-background transition-colors duration-300"
+      className="relative min-h-[calc(100vh-var(--nav-h))] w-full flex flex-col items-center justify-center px-4 md:px-8 pt-[calc(var(--nav-h)+96px)] md:pt-[172px] pb-16 md:pb-28 overflow-hidden cursor-default select-none bg-background transition-colors duration-300"
     >
       {/* Storefront photo — full-bleed background for the hero only.
           Sits below the noise texture, ambient blob, and scrim, all of
@@ -347,17 +347,41 @@ export function HeroSection() {
           </button>
         </div>
 
-        {/* Core Hub Ecosystem — moved above the marquee, per your call */}
-        <div className="abh-card w-full max-w-[840px] mx-auto p-6 sm:p-10 md:p-12 flex flex-col items-center bg-white/60 dark:bg-zinc-900/50 backdrop-blur-md mb-12">
+        {/* Core Hub Ecosystem — now a two-tone vertical gradient card that
+            tracks the active hub's color: solid/tinted at the top, fading
+            smoothly to transparent by the lower half (revealing the glass
+            blur beneath, not the raw hero photo, so text stays legible).
+            "relative overflow-hidden" clips the gradient to the card's own
+            rounded corners. */}
+        <div className="abh-card relative overflow-hidden w-full max-w-[840px] mx-auto p-6 sm:p-10 md:p-12 flex flex-col items-center backdrop-blur-md mb-12">
+
+          {/* Gradient wash — see note above; this animates smoothly in
+              most modern browsers since only the color values in the
+              stops change (not their structure/positions), matching how
+              the ambient blob's solid backgroundColor transitions. */}
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `linear-gradient(to bottom, ${activeColor}CC 0%, ${activeColor}5C 45%, ${activeColor}00 75%)`,
+              transition: "background 700ms ease-out",
+            }}
+          />
+          {/* Base glass fill sits BELOW the gradient wash — keeps the
+              lower, faded half of the card legible against the hero photo
+              rather than turning fully see-through. */}
+          <div className="absolute inset-0 -z-10 bg-white/70 dark:bg-zinc-900/60" aria-hidden="true" />
+
+          <div className="relative z-10 w-full flex flex-col items-center">
 
           <div className="w-full flex flex-col items-center mb-8">
-            <h2 className="abh-section-heading mb-2 text-center">Core Hub Ecosystem</h2>
-            <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+            <h2 className="abh-section-heading mb-2 text-center text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.35)]">Core Hub Ecosystem</h2>
+            <p className="text-sm font-medium text-white/85 [text-shadow:0_1px_4px_rgba(0,0,0,0.3)]">
               Tap a hub to see what we actually do there.
             </p>
           </div>
 
-          {/* Hub selector — icons only, no border in any state per request */}
+          {/* Hub selector — icons only, unchanged from before */}
           <div
             role="tablist"
             aria-label="Service hubs"
@@ -406,23 +430,50 @@ export function HeroSection() {
             })}
           </div>
 
-          {/* Spotlight panel */}
-          <div className="w-full max-w-[560px] rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-5 sm:px-7 py-5 sm:py-6 mb-2 text-left transition-all duration-300">
-            <p className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 mb-3">
-              {active.name} · Pricing Example
+          {/* Divider + notch — a single hairline with a small triangular
+              tail fused flush to it, colored with the active hub's color.
+              Reads as one continuous shape (the line "grows" a point)
+              rather than two separate elements, and points straight down
+              at the pricing example below it. */}
+          <div
+            className="relative w-full max-w-[420px] h-px mt-1 mb-7"
+            style={{ backgroundColor: activeColor, transition: "background-color 700ms ease-out" }}
+          >
+            <div
+              className="absolute left-1/2 top-0 -translate-x-1/2"
+              style={{
+                width: 0,
+                height: 0,
+                borderLeft: "7px solid transparent",
+                borderRight: "7px solid transparent",
+                borderTop: `9px solid ${activeColor}`,
+                transition: "border-top-color 700ms ease-out",
+              }}
+              aria-hidden="true"
+            />
+          </div>
+
+          {/* Pricing example — plain text directly on the gradient, no
+              boxed container. Centered as a group under the notch. */}
+          <div className="w-full max-w-[420px] text-center">
+            <p
+              className="text-[0.65rem] font-black uppercase tracking-widest mb-3"
+              style={{ color: activeColor, transition: "color 700ms ease-out" }}
+            >
+              {active.name}
             </p>
             <button
               key={`${activeHub}-${spotlightService.name}`}
               onClick={handleReroll}
               aria-label="Show another example price for this hub"
-              className="w-full flex items-center justify-between gap-4 rounded-[10px] px-1 py-1 -mx-1 transition-opacity hover:opacity-75 active:scale-[0.98] animate-in fade-in duration-200"
+              className="inline-flex flex-col items-center gap-1 mx-auto rounded-[10px] px-3 py-1 transition-opacity hover:opacity-75 active:scale-[0.97] animate-in fade-in duration-200"
             >
-              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200 text-left">
+              <span className="text-sm font-semibold text-white [text-shadow:0_1px_5px_rgba(0,0,0,0.4)]">
                 {spotlightService.name}
               </span>
               <span
-                className="text-xl font-black font-mono shrink-0"
-                style={{ color: activeColor }}
+                className="text-2xl font-black font-mono"
+                style={{ color: activeColor, transition: "color 700ms ease-out" }}
               >
                 {spotlightService.price}
               </span>
@@ -430,11 +481,13 @@ export function HeroSection() {
             <button
               onClick={() => handleNavigate(`/services?hub=${active.id}`)}
               className="inline-flex items-center gap-1.5 text-[0.65rem] font-black uppercase tracking-widest mt-4 transition-opacity hover:opacity-70"
-              style={{ color: activeColor }}
+              style={{ color: activeColor, transition: "color 700ms ease-out" }}
             >
-              See All {active.name} Services
+              View All {active.name} Services
               <ArrowRight weight="bold" className="w-3 h-3" aria-hidden="true" />
             </button>
+          </div>
+
           </div>
         </div>
 
@@ -525,4 +578,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-      } 
+       } 
