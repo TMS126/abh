@@ -539,30 +539,36 @@ export function WhatsAppFAB() {
             )}
           </div>
 
-          {step === "form" && (
+        {step === "form" && (
             <div
-              className="relative shrink-0 flex items-center gap-2.5 px-4 py-3.5 backdrop-blur-xl"
+              className="relative shrink-0 flex items-center px-4 py-3.5 backdrop-blur-xl"
               style={{ backgroundColor: composeBarBg }}
             >
+              {/* Send button now lives INSIDE this pill rather than as a
+                  separate circle beside it — that separate circle sat at
+                  the same bottom-right corner as the widget's own floating
+                  FAB (both anchor to bottom-24/right-4 when open), so the
+                  two visibly overlapped. Nesting it removes that collision
+                  entirely without touching the FAB's position. */}
               <div
-                className="flex-1 rounded-full px-4 py-3 text-[0.82rem] font-medium truncate shadow-sm backdrop-blur-md"
-                style={{ backgroundColor: composeField, color: isValid ? textColor : subColor }}
+                className="flex-1 flex items-center justify-between gap-2 rounded-full pl-4 pr-1.5 py-1.5 shadow-sm backdrop-blur-md"
+                style={{ backgroundColor: composeField }}
               >
-                {isValid ? "Ready to send your message" : "Fill in your name & topic to continue"}
+                <span className="text-[0.82rem] font-medium truncate" style={{ color: isValid ? textColor : subColor }}>
+                  {isValid ? "Ready to send your message" : "Fill in your name & topic to continue"}
+                </span>
+                <button
+                  onClick={handleSend}
+                  disabled={!isValid}
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-white shrink-0 transition-transform duration-150 ease-out active:scale-90 disabled:opacity-40 disabled:active:scale-100 transform-gpu"
+                  style={{ backgroundColor: WA.accent }}
+                  aria-label="Send"
+                >
+                  <PaperPlaneTilt size={16} weight="fill" />
+                </button>
               </div>
-              <button
-                onClick={handleSend}
-                disabled={!isValid}
-                className="w-11 h-11 rounded-full flex items-center justify-center text-white shrink-0 transition-transform duration-150 ease-out active:scale-90 disabled:opacity-40 disabled:active:scale-100 transform-gpu"
-                style={{ backgroundColor: WA.accent }}
-                aria-label="Send"
-              >
-                <PaperPlaneTilt size={18} weight="fill" />
-              </button>
             </div>
           )}
-        </div>
-      )}
 
       {/* ── FAB ───────────────────────────────────────────────────── 
           Position now flips to bottom-24 while open — matching the
