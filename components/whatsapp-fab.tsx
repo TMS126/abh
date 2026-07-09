@@ -539,7 +539,7 @@ export function WhatsAppFAB() {
             )}
           </div>
 
-        {step === "form" && (
+          {step === "form" && (
             <div
               className="relative shrink-0 flex items-center px-4 py-3.5 backdrop-blur-xl"
               style={{ backgroundColor: composeBarBg }}
@@ -569,6 +569,8 @@ export function WhatsAppFAB() {
               </div>
             </div>
           )}
+        </div>
+      )}
 
       {/* ── FAB ───────────────────────────────────────────────────── 
           Position now flips to bottom-24 while open — matching the
@@ -613,4 +615,4 @@ export function WhatsAppFAB() {
       </div>
     </>
   )
-    } 
+  } 
