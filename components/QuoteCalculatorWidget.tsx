@@ -5,7 +5,7 @@ import { Calculator, X, Plus, Minus, Trash, WhatsappLogo, CaretDown, SealPercent
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey, BIZ, BRAND, waLink } from "@/lib/brand"
-import { HUBS, HubId } from "@/lib/data"
+import { HUBS, HubId, type HubSection } from "@/lib/data"
 import { useExclusiveWidget } from "@/hooks/use-exclusive-widget"
 
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
@@ -49,6 +49,22 @@ const SCAN_BULK_MIN  = 5
 const SCAN_BULK_RATE = 4
 function isScanItem(name: string) {
   return /scan/i.test(name)
+}
+
+// Does this specific item carry a bulk discount rule (tiered or scan-based)?
+function itemHasBulk(hubId: HubId, sectionTitle: string, name: string): boolean {
+  const id = `${hubId}-${sectionTitle}-${name}`
+  return !!BULK_TIERS[id] || isScanItem(name)
+}
+// Does ANY item within this section have a bulk rule? — powers the small
+// "· bulk" badge shown next to the section pill (e.g. "Typing + Printing").
+function sectionHasBulk(hubId: HubId, section: HubSection): boolean {
+  return section.items.some(item => itemHasBulk(hubId, section.title, item.name))
+}
+// Does ANY section within this hub have a bulk item? — powers the same
+// badge next to the hub name in "Add a Service" (e.g. "Document Hub").
+function hubHasBulk(hubId: HubId): boolean {
+  return HUBS[hubId].sections.some(section => sectionHasBulk(hubId, section))
 }
 
 const SECTION_LABEL: Record<string, string> = {
@@ -245,8 +261,15 @@ export function QuoteCalculatorWidget() {
     }
   }, [])
 
-  const getAccent     = (id: HubId) => { const c = HUB_COLORS[id as HubKey]; return isDark ? c.tagTextDark : c.tagText }
-  const getSolid      = (id: HubId) => HUB_COLORS[id as HubKey].tagText
+  // True saturated per-hub accent, as a light/dark pair (accentLight/
+  // accentDark in brand.ts) — was previously reading tagText/tagTextDark,
+  // the flat grey pair shared by every hub, which is why this whole panel
+  // showed no real hub colors. getSolid is now the same pair (rather than
+  // always the light-mode value) so solid fills track the theme too;
+  // getReadableTextColor (already defined above) keeps hardcoded-white
+  // text spots safe against it in both themes.
+  const getAccent     = (id: HubId) => { const c = HUB_COLORS[id as HubKey]; return isDark ? c.accentDark : c.accentLight }
+  const getSolid      = (id: HubId) => { const c = HUB_COLORS[id as HubKey]; return isDark ? c.accentDark : c.accentLight }
   const titleAccent   = isDark ? HUB_COLORS.design.tagTextDark : HUB_COLORS.design.tagText
   const fabColor      = isDark ? HOME_BLUE.dark : HOME_BLUE.light
   // Computed once per render — used everywhere fabColor is a BACKGROUND
@@ -458,14 +481,15 @@ export function QuoteCalculatorWidget() {
       )}
 
       {/* ── Sticky mini-total bar ──────────────────────────────────────────
-          Moved up from bottom-[9.75rem] to bottom-[14.5rem] — it used to sit
-          almost exactly on top of the search widget's idle FAB slot
-          (bottom-[9.5rem]), causing the two to visually overlap whenever
-          both were visible on the Services page at once. This clears it. */}
+          Now sits directly beside the FAB (same bottom offset, right-20
+          instead of right-4) rather than stacked ~9rem above it — so it
+          reads as attached to the icon it opens, not a separate floating
+          element. right-20 leaves an ~8px gap after the FAB's own right-4
+          + 56px width, clear of the search widget's idle slot above it. */}
       <div
         className={cn(
-          "fixed z-[9991] right-4 bottom-[14.5rem] transition-all duration-200 ease-out motion-reduce:transition-none transform-gpu",
-          showMiniBar ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-2 pointer-events-none"
+          "fixed z-[9991] right-20 bottom-[5.5rem] transition-all duration-200 ease-out motion-reduce:transition-none transform-gpu",
+          showMiniBar ? "opacity-100 translate-x-0 pointer-events-auto" : "opacity-0 translate-x-2 pointer-events-none"
         )}
       >
         <button
@@ -724,6 +748,7 @@ export function QuoteCalculatorWidget() {
                 const solidAccent = getSolid(hubId)
                 const isHubOpen = openHub === hubId
                 const subtotal = hubSubtotal(hubId)
+                const hubBulk = hubHasBulk(hubId)
 
                 return (
                   <div key={hubId} className={cn("rounded-[14px] overflow-hidden", GLASS.section)}>
@@ -739,7 +764,12 @@ export function QuoteCalculatorWidget() {
                         <HubIcon id={hubId} />
                       </div>
                       <span className="flex-1 min-w-0">
-                        <span className="block text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{hub.title}</span>
+                        <span className="block text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">
+                          {hub.title}
+                          {hubBulk && (
+                            <span className="font-bold ml-1 normal-case" style={{ color: accent }}>· bulk</span>
+                          )}
+                        </span>
                         {subtotal && (
                           <span className="block text-[0.62rem] font-bold mt-0.5" style={{ color: accent }}>
                             {subtotal.count} item{subtotal.count === 1 ? "" : "s"} · R{subtotal.total}
@@ -764,6 +794,7 @@ export function QuoteCalculatorWidget() {
                         <div className="border-t border-white/20 dark:border-white/10">
                           {hub.sections.map((section, sIdx) => {
                             const isSectionOpen = openSections[hubId] === sIdx
+                            const sectionBulk = sectionHasBulk(hubId, section)
 
                             return (
                               <div
@@ -778,11 +809,14 @@ export function QuoteCalculatorWidget() {
                                     className="text-[0.65rem] font-black uppercase tracking-[0.15em] px-2.5 py-1 rounded-full transition-colors duration-200"
                                     style={
                                       isSectionOpen
-                                        ? { backgroundColor: solidAccent, color: "#fff" }
+                                        ? { backgroundColor: solidAccent, color: getReadableTextColor(solidAccent) }
                                         : { backgroundColor: `${accent}18`, color: accent }
                                     }
                                   >
                                     {section.title}
+                                    {sectionBulk && (
+                                      <span className="normal-case font-bold"> · bulk</span>
+                                    )}
                                   </span>
                                   <CaretDown
                                     size={12}
@@ -800,8 +834,7 @@ export function QuoteCalculatorWidget() {
                                   <div className="overflow-hidden">
                                     <div className="px-3 pb-3 pt-1 space-y-1.5">
                                       {section.items.map((item, iIdx) => {
-                                        const itemId = `${hubId}-${section.title}-${item.name}`
-                                        const hasBulk = !!BULK_TIERS[itemId] || isScanItem(item.name)
+                                        const hasBulk = itemHasBulk(hubId, section.title, item.name)
                                         return (
                                           <div
                                             key={iIdx}
@@ -819,8 +852,8 @@ export function QuoteCalculatorWidget() {
                                             </div>
                                             <button
                                               onClick={() => addItem(hubId, section.title, item.name, item.price)}
-                                              className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-white shadow-sm active:scale-90 transition-transform duration-150 transform-gpu"
-                                              style={{ backgroundColor: solidAccent }}
+                                              className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center shadow-sm active:scale-90 transition-transform duration-150 transform-gpu"
+                                              style={{ backgroundColor: solidAccent, color: getReadableTextColor(solidAccent) }}
                                               aria-label={`Add ${item.name}`}
                                             >
                                               <Plus size={13} weight="bold" />
@@ -882,4 +915,4 @@ export function QuoteCalculatorWidget() {
       )}
     </>
   )
-  } 
+}
