@@ -15,6 +15,23 @@ const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 // on a Tailwind utility class that might drift from the actual token.
 const HOME_BLUE = { light: BRAND.blue, dark: BRAND.lightBlue }
 
+// Picks white or near-black text for a given background hex based on
+// actual WCAG relative luminance, rather than assuming a fixed white text
+// color always works. fabColor flips to a LIGHT color in dark mode
+// (BRAND.lightBlue), so any button using it as a background needs this —
+// hardcoded white text on that light background was unreadable.
+function getReadableTextColor(hex: string): string {
+  const clean = hex.replace("#", "")
+  const r = parseInt(clean.substring(0, 2), 16) / 255
+  const g = parseInt(clean.substring(2, 4), 16) / 255
+  const b = parseInt(clean.substring(4, 6), 16) / 255
+  const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4))
+  const luminance = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
+  const contrastWhite = 1.05 / (luminance + 0.05)
+  const contrastDark  = (luminance + 0.05) / 0.062
+  return contrastWhite >= contrastDark ? "#ffffff" : "#18181b"
+}
+
 // ─── BULK PRICING TIERS ───────────────────────────────────────────────────────
 const BULK_TIERS: Record<string, { min: number; rate: number }[]> = {
   "print-Copying-Black & White":        [{ min: 10, rate: 2 }, { min: 100, rate: 1 }],
@@ -195,22 +212,25 @@ export function QuoteCalculatorWidget() {
     return () => window.removeEventListener("abh:add-to-quote", handler)
   }, [])
 
-  // Focus-on-add effect
+  // Focus-on-add effect — scrolls the newly-added/updated row into view
+  // and highlights it. Intentionally does NOT call .focus()/.select() on
+  // the quantity input anymore: that was popping the mobile keyboard open
+  // every single time a service was added, anywhere in the app. The
+  // scroll + ring highlight below already gives clear visual confirmation
+  // without hijacking focus.
   useEffect(() => {
     if (!highlightId) return
     const id = highlightId
     let raf1: number, raf2: number
-    const tryFocus = () => {
+    const tryScroll = () => {
       const el = qtyInputRefs.current[id]
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" })
-        el.focus()
-        el.select()
       } else {
-        raf2 = requestAnimationFrame(tryFocus)
+        raf2 = requestAnimationFrame(tryScroll)
       }
     }
-    raf1 = requestAnimationFrame(tryFocus)
+    raf1 = requestAnimationFrame(tryScroll)
     const clearT = setTimeout(() => setHighlightId(null), 900)
     return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); clearTimeout(clearT) }
   }, [highlightId])
@@ -229,6 +249,10 @@ export function QuoteCalculatorWidget() {
   const getSolid      = (id: HubId) => HUB_COLORS[id as HubKey].tagText
   const titleAccent   = isDark ? HUB_COLORS.design.tagTextDark : HUB_COLORS.design.tagText
   const fabColor      = isDark ? HOME_BLUE.dark : HOME_BLUE.light
+  // Computed once per render — used everywhere fabColor is a BACKGROUND
+  // (not everywhere it's used as text), so the text on top of it always
+  // stays readable regardless of theme.
+  const fabTextColor  = getReadableTextColor(fabColor)
 
   const addItem = (hubId: HubId, sectionTitle: string, name: string, price: string) => {
     const { amount, unit } = parsePrice(price)
@@ -373,9 +397,6 @@ export function QuoteCalculatorWidget() {
   const deleteSavedQuote = (id: string) => setSavedQuotes(prev => prev.filter(q => q.id !== id))
 
   // ── PDF / print export ────────────────────────────────────────────────
-  // No extra dependency needed — opens a formatted print view in a new
-  // window and triggers the browser's native print dialog, where "Save
-  // as PDF" is available on virtually every modern browser/OS.
   const exportQuotePdf = () => {
     if (cart.length === 0) return
     const t = quoteTotals(cart)
@@ -437,13 +458,13 @@ export function QuoteCalculatorWidget() {
       )}
 
       {/* ── Sticky mini-total bar ──────────────────────────────────────────
-          Sits just above the FAB, always visible whenever there's an
-          active quote and the panel is closed — shows the running total,
-          not just an item-count badge, so the person always has a sense
-          of where their quote stands without opening the panel. */}
+          Moved up from bottom-[9.75rem] to bottom-[14.5rem] — it used to sit
+          almost exactly on top of the search widget's idle FAB slot
+          (bottom-[9.5rem]), causing the two to visually overlap whenever
+          both were visible on the Services page at once. This clears it. */}
       <div
         className={cn(
-          "fixed z-[9991] right-4 bottom-[9.75rem] transition-all duration-200 ease-out motion-reduce:transition-none transform-gpu",
+          "fixed z-[9991] right-4 bottom-[14.5rem] transition-all duration-200 ease-out motion-reduce:transition-none transform-gpu",
           showMiniBar ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-2 pointer-events-none"
         )}
       >
@@ -452,8 +473,8 @@ export function QuoteCalculatorWidget() {
           className="flex items-center gap-2.5 pl-3.5 pr-4 py-2.5 rounded-full shadow-lg bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 active:scale-95 transition-transform duration-150"
         >
           <span
-            className="min-w-[20px] h-[20px] px-1 rounded-full text-white text-[0.62rem] font-black flex items-center justify-center"
-            style={{ backgroundColor: fabColor }}
+            className="min-w-[20px] h-[20px] px-1 rounded-full text-[0.62rem] font-black flex items-center justify-center"
+            style={{ backgroundColor: fabColor, color: fabTextColor }}
           >
             {itemCount}
           </span>
@@ -462,10 +483,16 @@ export function QuoteCalculatorWidget() {
         </button>
       </div>
 
-      {/* ── FAB ──────────────────────────────────────────────────────────── */}
+      {/* ── FAB ──────────────────────────────────────────────────────────── 
+          Position now flips to bottom-24 while open — the exact offset the
+          panel itself sits at (see the panel div below), so the button
+          reads as attached to the panel's bottom-right corner rather than
+          floating separately above it. Same pattern the search widget
+          already used. */}
       <div
         className={cn(
-          "fixed z-[9992] right-4 bottom-[5.5rem] group/calc",
+          "fixed z-[9992] right-4 group/calc",
+          isOpen ? "bottom-24" : "bottom-[5.5rem]",
           "transition-all duration-200 ease-out motion-reduce:transition-none transform-gpu",
           (scrolled && !isOpen) || isOtherOpen
             ? "opacity-0 pointer-events-none scale-90"
@@ -490,8 +517,8 @@ export function QuoteCalculatorWidget() {
 
           <button
             onClick={() => setIsOpen(o => !o)}
-            className="relative w-14 h-14 rounded-full text-white shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
-            style={{ backgroundColor: fabColor }}
+            className="relative w-14 h-14 rounded-full shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
+            style={{ backgroundColor: fabColor, color: fabTextColor }}
             aria-label={isOpen ? "Close quotation calculator" : "Open quotation calculator"}
           >
             {isOpen ? <X size={22} weight="bold" /> : <Calculator size={26} weight="fill" />}
@@ -575,8 +602,8 @@ export function QuoteCalculatorWidget() {
                     />
                     <button
                       onClick={confirmSaveQuote}
-                      className="shrink-0 px-3 py-1.5 rounded-[8px] text-xs font-black text-white"
-                      style={{ backgroundColor: fabColor }}
+                      className="shrink-0 px-3 py-1.5 rounded-[8px] text-xs font-black"
+                      style={{ backgroundColor: fabColor, color: fabTextColor }}
                     >
                       Save
                     </button>
@@ -676,7 +703,7 @@ export function QuoteCalculatorWidget() {
                               <p className="text-[0.62rem] font-medium text-zinc-400">{t.count} item{t.count === 1 ? "" : "s"} · R{t.total}</p>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
-                              <button onClick={() => loadSavedQuote(q)} className="px-2.5 py-1 rounded-[8px] text-[0.65rem] font-black text-white" style={{ backgroundColor: fabColor }}>Load</button>
+                              <button onClick={() => loadSavedQuote(q)} className="px-2.5 py-1 rounded-[8px] text-[0.65rem] font-black" style={{ backgroundColor: fabColor, color: fabTextColor }}>Load</button>
                               <button onClick={() => deleteSavedQuote(q.id)} className="w-6 h-6 rounded-full flex items-center justify-center text-zinc-400 hover:text-red-500 transition-colors"><Trash size={12} weight="bold" /></button>
                             </div>
                           </div>
@@ -855,4 +882,4 @@ export function QuoteCalculatorWidget() {
       )}
     </>
   )
-                                              } 
+  } 
