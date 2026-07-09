@@ -218,12 +218,6 @@ export function WhatsAppFAB() {
     setStep("sent")
   }
 
-  // ── Full-glass palette ──────────────────────────────────────────────
-  // Every surface (header, wallpaper, bubbles, compose bar) is now a
-  // translucent, blurred layer tinted with WhatsApp's own accent green
-  // rather than a flat solid color — consistent with the Quote
-  // Calculator and Search widgets' glassmorphism, at the cost of some
-  // "real WhatsApp screenshot" authenticity (per your call).
   const headerBg      = isDark ? "rgba(31,44,52,0.55)"   : "rgba(7,94,84,0.65)"
   const wallpaperBg    = isDark ? "rgba(11,20,26,0.5)"    : "rgba(229,221,213,0.45)"
   const bubbleIn       = isDark ? "rgba(32,44,51,0.6)"    : "rgba(255,255,255,0.65)"
@@ -482,18 +476,20 @@ export function WhatsAppFAB() {
                     style={{ color: textColor }}
                   />
 
-                  {/* Quick-reply chips — tap to append a ready-made phrase
-                      instead of typing it out on a phone keyboard. */}
-                  <div className="flex flex-wrap gap-1.5 mt-2.5">
+                  {/* Quick-reply chips — sized down (smaller padding, text,
+                      and icon than before) so they read as compact
+                      shortcuts rather than competing visually with the
+                      textarea above them. */}
+                  <div className="flex flex-wrap gap-1 mt-2">
                     {QUICK_NOTES.map((phrase) => (
                       <button
                         key={phrase}
                         type="button"
                         onClick={() => addQuickNote(phrase)}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.66rem] font-bold border transition-all duration-150 ease-out motion-reduce:transition-none active:scale-95 hover:-translate-y-0.5"
+                        className="flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[0.6rem] font-bold border transition-all duration-150 ease-out motion-reduce:transition-none active:scale-95 hover:-translate-y-0.5"
                         style={{ borderColor: `${subColor}35`, color: textColor, backgroundColor: `${WA.accent}12` }}
                       >
-                        <Lightning size={10} weight="fill" style={{ color: WA.accent }} />
+                        <Lightning size={8} weight="fill" style={{ color: WA.accent }} />
                         {phrase}
                       </button>
                     ))}
@@ -568,10 +564,14 @@ export function WhatsAppFAB() {
         </div>
       )}
 
-      {/* ── FAB ───────────────────────────────────────────────────── */}
+      {/* ── FAB ───────────────────────────────────────────────────── 
+          Position now flips to bottom-24 while open — matching the
+          panel's own offset — so it reads as attached to the panel's
+          bottom-right corner instead of floating separately below it. */}
       <div
         className={cn(
-          "fixed z-[9992] right-4 bottom-6 group/wa",
+          "fixed z-[9992] right-4 group/wa",
+          isOpen ? "bottom-24" : "bottom-6",
           "transition-all duration-200 ease-out motion-reduce:transition-none transform-gpu",
           !visible && "opacity-0 pointer-events-none",
           (scrolled && !isOpen) || isOtherOpen
