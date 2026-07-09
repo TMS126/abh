@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
-import { X, WhatsappLogo, PaperPlaneTilt, Check, CaretDown, Lightning } from "@phosphor-icons/react"
+import { X, WhatsappLogo, PaperPlaneTilt, Check, CaretDown, Lightning, ArrowsClockwise } from "@phosphor-icons/react"
 import { BIZ } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 import { useTheme } from "next-themes"
@@ -44,14 +44,37 @@ const HUBS = [
   { id: "other",    label: "Not sure yet",  hint: "We'll help you figure it out" },
 ]
 
-// Quick-reply chips for the optional note — tapping one appends a ready-
-// made phrase instead of requiring the person to type it out, especially
-// handy on a phone keyboard.
+// Pool of up to 26 quick-reply phrases for the optional note. Only ONE is
+// shown at a time (in a single chip) rather than all of them at once —
+// tapping the shuffle icon beside it swaps in a different random phrase;
+// tapping the chip itself appends the currently-shown phrase to the note.
 const QUICK_NOTES = [
   "Need it today",
   "Can I WhatsApp a photo?",
   "What time do you close?",
   "How much will this cost?",
+  "Do I need to book first?",
+  "Can you collect from me?",
+  "Is this urgent?",
+  "I'm not sure what I need",
+  "Can I pay online?",
+  "How long will it take?",
+  "Do you deliver?",
+  "Can I send the file now?",
+  "I need this by tomorrow",
+  "What documents should I bring?",
+  "Is walk-in okay?",
+  "Can someone call me instead?",
+  "I have a few questions",
+  "Can you quote me first?",
+  "Do you work weekends?",
+  "I need this urgently",
+  "Can I collect later today?",
+  "Do you accept cash only?",
+  "Is there a discount for bulk?",
+  "Can I get this printed too?",
+  "I'll send more info shortly",
+  "Just checking availability",
 ]
 
 function buildWallpaperPattern(strokeColor: string) {
@@ -85,6 +108,13 @@ function formatDateLabel(date: Date) {
   return date.toLocaleDateString([], { day: "numeric", month: "long" })
 }
 
+function randomQuickNoteIdx(exclude?: number) {
+  if (QUICK_NOTES.length <= 1) return 0
+  let next = exclude
+  while (next === exclude) next = Math.floor(Math.random() * QUICK_NOTES.length)
+  return next as number
+}
+
 export function WhatsAppFAB() {
   const { resolvedTheme }           = useTheme()
   const isDark                       = resolvedTheme === "dark"
@@ -101,6 +131,7 @@ export function WhatsAppFAB() {
   const [sentTime, setSentTime]      = useState("")
   const [showGreeting, setShowGreeting] = useState(false) // gated by a brief "typing…" beat
   const [nameRemembered, setNameRemembered] = useState(false)
+  const [quickNoteIdx, setQuickNoteIdx] = useState(() => randomQuickNoteIdx())
 
   const nameRef                      = useRef<HTMLInputElement>(null)
   const scrollTimer                  = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -144,6 +175,7 @@ export function WhatsAppFAB() {
       setOpenTime(formatTime())
       setOpenDate(now)
       setShowGreeting(false)
+      setQuickNoteIdx(randomQuickNoteIdx())
       if (greetingTimer.current) clearTimeout(greetingTimer.current)
       // Brief "typing…" beat before the greeting appears — small touch
       // that makes the widget feel like a live chat rather than a form
@@ -196,6 +228,7 @@ export function WhatsAppFAB() {
     setOpenTime(formatTime())
     setOpenDate(now)
     setShowGreeting(true)
+    setQuickNoteIdx(randomQuickNoteIdx())
   }
 
   const isValid     = name.trim().length > 1 && hub !== ""
@@ -203,6 +236,9 @@ export function WhatsAppFAB() {
 
   const addQuickNote = (phrase: string) => {
     setNote(prev => (prev.trim() ? `${prev.trim()} ${phrase}` : phrase))
+  }
+  const shuffleQuickNote = () => {
+    setQuickNoteIdx(prev => randomQuickNoteIdx(prev))
   }
 
   const handleSend = () => {
@@ -228,6 +264,14 @@ export function WhatsAppFAB() {
   const composeField    = isDark ? "rgba(42,57,66,0.7)"    : "rgba(255,255,255,0.75)"
   const avatarBg       = isDark ? WA.avatarBgDark         : WA.avatarBgLight
   const wallpaperPattern = buildWallpaperPattern(isDark ? "#FFFFFF" : "#000000")
+
+  // Elevated "floating card" shadow for every chat bubble — deeper/softer
+  // in dark mode (where a flat blur panel otherwise reads as pasted onto
+  // the wallpaper) and a lighter diffused version in light mode, plus a
+  // faint inset highlight on the top edge in both to sell the 3D lift.
+  const bubbleShadow = isDark
+    ? "0 12px 28px rgba(0,0,0,0.55), 0 4px 10px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)"
+    : "0 12px 26px rgba(0,0,0,0.16), 0 4px 10px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.7)"
 
   const dateLabel = openDate ? formatDateLabel(openDate) : ""
 
@@ -319,8 +363,8 @@ export function WhatsAppFAB() {
                     lands, purely cosmetic but makes the open feel alive. */}
                 {!showGreeting && (
                   <div
-                    className="self-start px-4 py-3 rounded-lg rounded-tl-none shadow-sm backdrop-blur-md flex items-center gap-1"
-                    style={{ backgroundColor: bubbleIn }}
+                    className="self-start px-4 py-3 rounded-lg rounded-tl-none backdrop-blur-md flex items-center gap-1"
+                    style={{ backgroundColor: bubbleIn, boxShadow: bubbleShadow }}
                   >
                     {[0, 1, 2].map(i => (
                       <span
@@ -334,8 +378,8 @@ export function WhatsAppFAB() {
 
                 {showGreeting && (
                   <div
-                    className="relative self-start max-w-[85%] px-4 py-3 rounded-lg rounded-tl-none shadow-sm backdrop-blur-md animate-in fade-in slide-in-from-left-1 duration-200 ease-out motion-reduce:animate-none"
-                    style={{ backgroundColor: bubbleIn }}
+                    className="relative self-start max-w-[85%] px-4 py-3 rounded-lg rounded-tl-none backdrop-blur-md animate-in fade-in slide-in-from-left-1 duration-200 ease-out motion-reduce:animate-none"
+                    style={{ backgroundColor: bubbleIn, boxShadow: bubbleShadow }}
                   >
                     <p className="text-[0.84rem] leading-relaxed pr-10" style={{ color: textColor }}>
                       {GREETING}
@@ -348,10 +392,10 @@ export function WhatsAppFAB() {
 
                 <div
                   className={cn(
-                    "relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-lg rounded-tl-none shadow-sm backdrop-blur-md transition-opacity duration-200 ease-out motion-reduce:transition-none",
+                    "relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-lg rounded-tl-none backdrop-blur-md transition-opacity duration-200 ease-out motion-reduce:transition-none",
                     showGreeting ? "opacity-100" : "opacity-0"
                   )}
-                  style={{ backgroundColor: bubbleIn }}
+                  style={{ backgroundColor: bubbleIn, boxShadow: bubbleShadow }}
                 >
                   <label className="text-[0.62rem] font-black uppercase tracking-widest block mb-1.5" style={{ color: subColor }}>
                     Your Name
@@ -375,10 +419,10 @@ export function WhatsAppFAB() {
 
                 <div
                   className={cn(
-                    "relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-lg rounded-tl-none shadow-sm backdrop-blur-md transition-opacity duration-200 ease-out motion-reduce:transition-none",
+                    "relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-lg rounded-tl-none backdrop-blur-md transition-opacity duration-200 ease-out motion-reduce:transition-none",
                     showGreeting ? "opacity-100" : "opacity-0"
                   )}
-                  style={{ backgroundColor: bubbleIn }}
+                  style={{ backgroundColor: bubbleIn, boxShadow: bubbleShadow }}
                 >
                   <label className="text-[0.62rem] font-black uppercase tracking-widest block mb-1.5" style={{ color: subColor }}>
                     What do you need help with?
@@ -421,7 +465,7 @@ export function WhatsAppFAB() {
                   >
                     <div className="overflow-hidden">
                       <div
-                        className="flex flex-wrap gap-2 mt-3 pt-3 border-t"
+                        className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t"
                         style={{ borderColor: `${subColor}30` }}
                       >
                         {HUBS.map((h, idx) => {
@@ -438,7 +482,7 @@ export function WhatsAppFAB() {
                                 transitionDelay: hubPicking ? `${idx * 25}ms` : "0ms",
                               }}
                               className={cn(
-                                "px-3.5 py-2 rounded-full text-[0.74rem] font-black border transition-all duration-150 ease-out motion-reduce:transition-none",
+                                "px-2.5 py-1.5 rounded-full text-[0.6rem] font-black border transition-all duration-150 ease-out motion-reduce:transition-none",
                                 "shadow-sm hover:-translate-y-0.5 hover:shadow-md active:scale-95 transform-gpu",
                                 hubPicking ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1",
                                 !isSelected && "hover:bg-black/5 dark:hover:bg-white/5"
@@ -459,10 +503,10 @@ export function WhatsAppFAB() {
 
                 <div
                   className={cn(
-                    "relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-lg rounded-tl-none shadow-sm backdrop-blur-md transition-opacity duration-200 ease-out motion-reduce:transition-none",
+                    "relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-lg rounded-tl-none backdrop-blur-md transition-opacity duration-200 ease-out motion-reduce:transition-none",
                     showGreeting ? "opacity-100" : "opacity-0"
                   )}
-                  style={{ backgroundColor: bubbleIn }}
+                  style={{ backgroundColor: bubbleIn, boxShadow: bubbleShadow }}
                 >
                   <label className="text-[0.62rem] font-black uppercase tracking-widest block mb-1.5" style={{ color: subColor }}>
                     Anything else? <span className="normal-case font-semibold opacity-60">(optional)</span>
@@ -476,23 +520,28 @@ export function WhatsAppFAB() {
                     style={{ color: textColor }}
                   />
 
-                  {/* Quick-reply chips — sized down (smaller padding, text,
-                      and icon than before) so they read as compact
-                      shortcuts rather than competing visually with the
-                      textarea above them. */}
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {QUICK_NOTES.map((phrase) => (
-                      <button
-                        key={phrase}
-                        type="button"
-                        onClick={() => addQuickNote(phrase)}
-                        className="flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[0.6rem] font-bold border transition-all duration-150 ease-out motion-reduce:transition-none active:scale-95 hover:-translate-y-0.5"
-                        style={{ borderColor: `${subColor}35`, color: textColor, backgroundColor: `${WA.accent}12` }}
-                      >
-                        <Lightning size={8} weight="fill" style={{ color: WA.accent }} />
-                        {phrase}
-                      </button>
-                    ))}
+                  {/* Single random quick-reply chip, drawn from a pool of
+                      26 — tap the chip to append it to the note, tap the
+                      shuffle icon beside it to swap in a different one. */}
+                  <div className="flex items-center gap-1.5 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => addQuickNote(QUICK_NOTES[quickNoteIdx])}
+                      className="flex-1 min-w-0 flex items-center gap-1 px-2 py-1 rounded-full text-[0.62rem] font-bold border transition-all duration-150 ease-out motion-reduce:transition-none active:scale-95 hover:-translate-y-0.5"
+                      style={{ borderColor: `${subColor}35`, color: textColor, backgroundColor: `${WA.accent}12` }}
+                    >
+                      <Lightning size={9} weight="fill" style={{ color: WA.accent }} className="shrink-0" />
+                      <span className="truncate">{QUICK_NOTES[quickNoteIdx]}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={shuffleQuickNote}
+                      aria-label="Show another quick reply"
+                      className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center border transition-transform duration-150 ease-out active:scale-90 active:rotate-180"
+                      style={{ borderColor: `${subColor}35`, color: subColor, backgroundColor: `${WA.accent}0a` }}
+                    >
+                      <ArrowsClockwise size={11} weight="bold" />
+                    </button>
                   </div>
 
                   <div className="flex justify-end mt-1.5">
@@ -505,8 +554,8 @@ export function WhatsAppFAB() {
               <div className="relative z-10 min-h-full px-4 py-5 flex flex-col justify-end items-end gap-3">
                 {openDate && <DateDivider />}
                 <div
-                  className="relative max-w-[85%] px-4 py-3 rounded-lg rounded-tr-none shadow-sm backdrop-blur-md animate-in fade-in slide-in-from-right-1 duration-200 ease-out motion-reduce:animate-none"
-                  style={{ backgroundColor: bubbleOut }}
+                  className="relative max-w-[85%] px-4 py-3 rounded-lg rounded-tr-none backdrop-blur-md animate-in fade-in slide-in-from-right-1 duration-200 ease-out motion-reduce:animate-none"
+                  style={{ backgroundColor: bubbleOut, boxShadow: bubbleShadow }}
                 >
                   <p className="text-[0.84rem] leading-relaxed pr-14" style={{ color: isDark ? WA.textDark : WA.textLight }}>
                     Message ready — opening WhatsApp now…
@@ -544,12 +593,6 @@ export function WhatsAppFAB() {
               className="relative shrink-0 flex items-center px-4 py-3.5 backdrop-blur-xl"
               style={{ backgroundColor: composeBarBg }}
             >
-              {/* Send button now lives INSIDE this pill rather than as a
-                  separate circle beside it — that separate circle sat at
-                  the same bottom-right corner as the widget's own floating
-                  FAB (both anchor to bottom-24/right-4 when open), so the
-                  two visibly overlapped. Nesting it removes that collision
-                  entirely without touching the FAB's position. */}
               <div
                 className="flex-1 flex items-center justify-between gap-2 rounded-full pl-4 pr-1.5 py-1.5 shadow-sm backdrop-blur-md"
                 style={{ backgroundColor: composeField }}
@@ -573,16 +616,17 @@ export function WhatsAppFAB() {
       )}
 
       {/* ── FAB ───────────────────────────────────────────────────── 
-          Position now flips to bottom-24 while open — matching the
-          panel's own offset — so it reads as attached to the panel's
-          bottom-right corner instead of floating separately below it. */}
+          No longer relocates to the panel's corner while open — that
+          was landing it directly on top of the compose bar's send
+          button (both at bottom-24/right-4 simultaneously). The panel's
+          own header X already closes it, so the FAB now simply fades
+          out completely whenever the panel is open. */}
       <div
         className={cn(
-          "fixed z-[9992] right-4 group/wa",
-          isOpen ? "bottom-24" : "bottom-6",
+          "fixed z-[9992] right-4 bottom-6 group/wa",
           "transition-all duration-200 ease-out motion-reduce:transition-none transform-gpu",
           !visible && "opacity-0 pointer-events-none",
-          (scrolled && !isOpen) || isOtherOpen
+          isOpen || (scrolled && !isOpen) || isOtherOpen
             ? "opacity-0 pointer-events-none scale-90"
             : "opacity-100 scale-100 pointer-events-auto"
         )}
@@ -593,9 +637,7 @@ export function WhatsAppFAB() {
             "bg-white dark:bg-zinc-900 text-[#25D366]",
             "px-2.5 py-1 rounded-full shadow-md border border-zinc-100 dark:border-zinc-800",
             "transition-all duration-200 ease-out origin-right motion-reduce:transition-none transform-gpu",
-            isOpen
-              ? "opacity-0 scale-x-0"
-              : "opacity-0 scale-x-0 group-hover/wa:opacity-100 group-hover/wa:scale-x-100"
+            "opacity-0 scale-x-0 group-hover/wa:opacity-100 group-hover/wa:scale-x-100"
           )}>
             Chat
           </span>
@@ -606,13 +648,11 @@ export function WhatsAppFAB() {
             className="relative w-14 h-14 rounded-full text-white shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
             style={{ backgroundColor: "#25D366" }}
           >
-            {!isOpen && (
-              <span className="absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-20 pointer-events-none" />
-            )}
-            {isOpen ? <X size={22} weight="bold" /> : <WhatsappLogo size={28} weight="fill" />}
+            <span className="absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-20 pointer-events-none" />
+            <WhatsappLogo size={28} weight="fill" />
           </button>
         </div>
       </div>
     </>
   )
-  } 
+}
