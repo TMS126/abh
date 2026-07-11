@@ -21,6 +21,12 @@ export const BRAND = {
   blueMid: "#15537D",
   blueDark: "#0F3F66",
 
+  // E-Service Hub's accent — kept out of the blue family on purpose so it
+  // doesn't collide with Print Hub's blue at small sizes (icon chips, tags).
+  teal: "#0F766E",
+  tealDark: "#115E59",
+  tealLight: "#99F6E4",
+
   greenDark: "#4C8212",    // WCAG AA — 4.66:1 vs white (was #548F14 at 3.95:1)
   greenDeep: "#3E6B0E",
 
@@ -105,17 +111,15 @@ export const HUB_COLORS = {
   },
 
   eservice: {
-    // Exception — see note above. Not sourced from the palette photo;
-    // kept distinct from Print's blue on purpose.
-    primary: "#0F766E",
-    light: "#99F6E4",
-    gradient: `linear-gradient(135deg, #0F766E 0%, #115E59 100%)`,
+    primary: BRAND.teal,
+    light: BRAND.tealLight,
+    gradient: `linear-gradient(135deg, ${BRAND.teal} 0%, ${BRAND.tealDark} 100%)`,
     tagBg: 'transparent',
     tagText: '#374151',
-    tagBgDark: '#115E59',
+    tagBgDark: BRAND.tealDark,
     tagTextDark: '#ffffff',
-    accentLight: "#0F766E",
-    accentDark: "#99F6E4",
+    accentLight: BRAND.teal,
+    accentDark: BRAND.tealLight,
   },
 
   tech: {
