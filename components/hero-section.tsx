@@ -73,8 +73,8 @@ const HUBS_DATA = [
       { name: "Invitation (Image)", price: "R150" },
     ],
   },
+  
   {
-    {
     id: "eservice",
     name: "E-Service Hub",
     icon: (active: boolean) => (
