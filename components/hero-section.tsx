@@ -74,18 +74,20 @@ const HUBS_DATA = [
     ],
   },
   {
+    {
     id: "eservice",
     name: "E-Service Hub",
     icon: (active: boolean) => (
       <Globe size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: Globe,
-    // Teal — kept identical to HUB_COLORS.eservice.primary/accentDark in
-    // lib/brand.ts, so this hub reads the same color everywhere: the hero
-    // selector, the giant watermark, the "start here" button gradient, and
-    // (via the abh:heroHubSelect event below) the navbar's logo/controls.
-    colorLight: "#0F766E",
-    colorDark:  "#99F6E4",
+    // Teal — now sourced from BRAND.teal/tealLight (lib/brand.ts), the
+    // same token HUB_COLORS.eservice uses, so this hub reads the same
+    // color everywhere: the hero selector, the giant watermark, the
+    // "Start Here" button gradient, and (via the abh:heroHubSelect event
+    // below) the navbar's logo/controls.
+    colorLight: BRAND.teal,
+    colorDark:  BRAND.tealLight,
     services: [
       { name: "SASSA Status Check",         price: "R20"  },
       { name: "SASSA SRD Application",      price: "R40"  },
@@ -119,7 +121,7 @@ const CTA_GRADIENTS: Record<string, [string, string]> = {
   print:    [BRAND.blue,       BRAND.blueMid],
   doc:      [BRAND.green,      BRAND.greenDeep],
   design:   [BRAND.orangeDark, BRAND.orangeBrown],
-  eservice: ["#0F766E",        "#115E59"], // teal — matches HUB_COLORS.eservice gradient
+  eservice: [BRAND.teal,       BRAND.tealDark], // matches HUB_COLORS.eservice gradient
   tech:     [BRAND.dark100,    BRAND.dark200],
 }
 
