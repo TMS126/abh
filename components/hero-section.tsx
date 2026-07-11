@@ -73,7 +73,6 @@ const HUBS_DATA = [
       { name: "Invitation (Image)", price: "R150" },
     ],
   },
-  
   {
     id: "eservice",
     name: "E-Service Hub",
@@ -81,11 +80,11 @@ const HUBS_DATA = [
       <Globe size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: Globe,
-    // Teal — now sourced from BRAND.teal/tealLight (lib/brand.ts), the
-    // same token HUB_COLORS.eservice uses, so this hub reads the same
-    // color everywhere: the hero selector, the giant watermark, the
-    // "Start Here" button gradient, and (via the abh:heroHubSelect event
-    // below) the navbar's logo/controls.
+    // Teal — sourced from BRAND.teal/tealLight (lib/brand.ts), the same
+    // token HUB_COLORS.eservice uses, so this hub reads the same color
+    // everywhere: the hero selector, the giant watermark, the "Start Here"
+    // button gradient, and (via the abh:heroHubSelect event below) the
+    // navbar's logo/controls.
     colorLight: BRAND.teal,
     colorDark:  BRAND.tealLight,
     services: [
@@ -121,9 +120,18 @@ const CTA_GRADIENTS: Record<string, [string, string]> = {
   print:    [BRAND.blue,       BRAND.blueMid],
   doc:      [BRAND.green,      BRAND.greenDeep],
   design:   [BRAND.orangeDark, BRAND.orangeBrown],
-  eservice: [BRAND.teal,       BRAND.tealDark], // matches HUB_COLORS.eservice gradient
+  eservice: [BRAND.teal,       BRAND.tealDark],
   tech:     [BRAND.dark100,    BRAND.dark200],
 }
+
+// Pool of icons/colors used for the button's "popping hub icons" burst —
+// pulls the actual hub identities so it doubles as a subtle preview of
+// what's inside, rather than generic sparkle shapes.
+const PARTICLE_ICON_POOL = HUBS_DATA.map(h => ({
+  Icon: h.Icon,
+  colorLight: h.colorLight,
+  colorDark: h.colorDark,
+}))
 
 function pickRandomService(hubIndex: number, excludeName?: string) {
   const list = HUBS_DATA[hubIndex].services
@@ -150,6 +158,9 @@ function pickRandomService(hubIndex: number, excludeName?: string) {
 // only *after* the transition duration has actually elapsed.
 type WatermarkLayer = { key: string; Icon: React.ElementType; color: string }
 
+// A single icon fragment spawned when the main CTA is clicked.
+type Particle = { id: number; Icon: React.ElementType; color: string; tx: number; ty: number; rotate: number }
+
 // ─── Hero Section ─────────────────────────────────────────────────────────────
 export function HeroSection() {
   const router = useRouter()
@@ -159,8 +170,13 @@ export function HeroSection() {
   const [marqueePaused,     setMarqueePaused]     = useState(false)
   const [spotlightService,  setSpotlightService]  = useState(() => pickRandomService(0))
   const [hoveredHub,        setHoveredHub]        = useState<number | null>(null)
+  const [particles,         setParticles]         = useState<Particle[]>([])
+
+  const particleIdRef = useRef(0)
+  const navTimeoutRef  = useRef<ReturnType<typeof setTimeout>>()
 
   React.useEffect(() => { setMounted(true) }, [])
+  useEffect(() => () => { if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current) }, [])
 
   const isDark    = mounted && resolvedTheme === "dark"
   const colorFor  = (hub: typeof HUBS_DATA[number]) => isDark ? hub.colorDark : hub.colorLight
@@ -168,6 +184,20 @@ export function HeroSection() {
   const activeColor = colorFor(active)
   const WatermarkIcon = active.Icon
   const [ctaFrom, ctaTo] = CTA_GRADIENTS[active.id] ?? [BRAND.blue, BRAND.blueMid]
+
+  // The "Core Hub Ecosystem" wash: in light mode the top of the gradient
+  // is a saturated/dark-ish hub color (blue/green/orangeDark/teal/dark100)
+  // so white text and icons read fine there. In dark mode the same wash
+  // uses each hub's pastel colorDark variant (light blue/green/orange/
+  // teal/grey) as the fill — white text on a pale pastel wash would fail
+  // contrast, so text flips to dark in that case instead of assuming
+  // "dark theme = light text" like the old version did.
+  const onSaturatedWash = !isDark
+  // Inactive hub-selector icons: same logic — a light icon reads on the
+  // light-mode wash (dark-ish colors) but needs to be dark on the
+  // dark-mode wash (pastel colors), otherwise it disappears (the bug seen
+  // in the screenshot, where a plain fixed grey failed against both).
+  const inactiveIconColor = isDark ? "rgba(24,24,27,0.55)" : "rgba(255,255,255,0.75)"
 
   // Watermark crossfade state
   const [watermarkLayers, setWatermarkLayers] = useState<WatermarkLayer[]>([])
@@ -210,6 +240,40 @@ export function HeroSection() {
 
   const handleReroll = () => {
     setSpotlightService(prev => pickRandomService(activeHub, prev.name))
+  }
+
+  // Spawns a short burst of small hub icons that fly outward from the
+  // button center and fade, giving the impression they "come from inside"
+  // the button when it's pressed.
+  const spawnParticles = () => {
+    const count = 9
+    const next: Particle[] = Array.from({ length: count }).map(() => {
+      const pick = PARTICLE_ICON_POOL[Math.floor(Math.random() * PARTICLE_ICON_POOL.length)]
+      const angle = Math.random() * Math.PI * 2
+      const distance = 70 + Math.random() * 70
+      particleIdRef.current += 1
+      return {
+        id: particleIdRef.current,
+        Icon: pick.Icon,
+        color: isDark ? pick.colorDark : pick.colorLight,
+        tx: Math.cos(angle) * distance,
+        ty: Math.sin(angle) * distance,
+        rotate: (Math.random() - 0.5) * 240,
+      }
+    })
+    setParticles(prev => [...prev, ...next])
+    setTimeout(() => {
+      setParticles(prev => prev.filter(p => !next.some(n => n.id === p.id)))
+    }, 900)
+  }
+
+  // Navigation is delayed slightly so the particle burst is actually
+  // visible before the page transitions away — an instant router.push
+  // would unmount this component before any animation could play.
+  const handleCtaClick = () => {
+    spawnParticles()
+    if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current)
+    navTimeoutRef.current = setTimeout(() => handleNavigate("/services"), 380)
   }
 
  return (
@@ -278,10 +342,36 @@ export function HeroSection() {
           50%  { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
-        /* Slowed from 4s to 10s per request — the color shift across the
-           button now reads as a gentle, ambient fade instead of an
-           obviously-looping animation. */
         .abh-cta-gradient { background-size: 200% 200%; animation: abh-cta-gradient-shift 10s ease infinite; }
+
+        /* 3D "physical button" shadow — a solid dark bottom edge (the
+           depth) plus a soft ambient shadow beneath it, both flattening
+           on press so the button visibly compresses instead of only
+           scaling down. Kept neutral/dark rather than hub-colored so it
+           reads consistently as "this is a raised button" regardless of
+           which hub gradient is active. */
+        .abh-btn-3d {
+          box-shadow:
+            0 7px 0 rgba(0,0,0,0.28),
+            0 14px 26px rgba(0,0,0,0.22);
+        }
+        .abh-btn-3d:active {
+          box-shadow:
+            0 2px 0 rgba(0,0,0,0.28),
+            0 4px 10px rgba(0,0,0,0.16);
+        }
+
+        /* Small hub icons popping out of the button on click, scattering
+           to a random point and fading — driven per-particle via the
+           --tx/--ty/--r custom properties set inline. */
+        @keyframes abh-particle-pop {
+          0%   { transform: translate(0, 0) scale(0.3) rotate(0deg); opacity: 0; }
+          12%  { opacity: 1; }
+          100% { transform: translate(var(--tx), var(--ty)) scale(1) rotate(var(--r)); opacity: 0; }
+        }
+        .abh-particle-pop {
+          animation: abh-particle-pop 850ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
       `}</style>
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center text-center relative z-10 w-full mb-8">
@@ -338,10 +428,38 @@ export function HeroSection() {
             style={{ backgroundImage: `linear-gradient(135deg, ${ctaFrom} 0%, ${ctaTo} 100%)` }}
           />
 
+          {/* Particle burst layer — small hub icons that scatter outward
+              from the button on click, as if they came from inside it.
+              Centered the same way the button is (flex items-center
+              justify-center on this shared container), z-20 so they pop
+              visibly above the button's own surface. */}
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+          >
+            {particles.map((p) => {
+              const PIcon = p.Icon
+              return (
+                <div
+                  key={p.id}
+                  className="absolute abh-particle-pop"
+                  style={{
+                    "--tx": `${p.tx}px`,
+                    "--ty": `${p.ty}px`,
+                    "--r": `${p.rotate}deg`,
+                    color: p.color,
+                  } as React.CSSProperties}
+                >
+                  <PIcon size={20} weight="fill" aria-hidden="true" />
+                </div>
+              )
+            })}
+          </div>
+
           <button
             key={active.id}
-            onClick={() => handleNavigate("/services")}
-            className="abh-cta-gradient relative z-10 inline-flex items-center gap-3 group px-10 py-5 rounded-[16px] font-sans font-black text-lg text-white transition-all duration-300 active:duration-100 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.88] shadow-lg hover:shadow-2xl active:shadow-md active:brightness-90 animate-in fade-in duration-500"
+            onClick={handleCtaClick}
+            className="abh-cta-gradient abh-btn-3d relative z-10 inline-flex items-center gap-3 group px-10 py-5 rounded-[16px] font-sans font-black text-lg text-white transition-all duration-300 active:duration-100 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.92] active:brightness-90 animate-in fade-in duration-500"
             style={{ backgroundImage: `linear-gradient(135deg, ${ctaFrom} 0%, ${ctaTo} 50%, ${ctaFrom} 100%)` }}
           >
             Start Here
@@ -349,146 +467,158 @@ export function HeroSection() {
           </button>
         </div>
 
-        {/* Core Hub Ecosystem — now a two-tone vertical gradient card that
-            tracks the active hub's color: solid/tinted at the top, fading
-            smoothly to transparent by the lower half (revealing the glass
-            blur beneath, not the raw hero photo, so text stays legible).
-            "relative overflow-hidden" clips the gradient to the card's own
-            rounded corners. */}
-        <div className="abh-card relative overflow-hidden w-full max-w-[840px] mx-auto p-6 sm:p-10 md:p-12 flex flex-col items-center backdrop-blur-md mb-12">
+        {/* Core Hub Ecosystem — no card/border/shadow anymore. Just a
+            gradient wash sitting directly on the hero's own scrim: solid
+            near the top, fading smoothly through several stops until it's
+            fully transparent well before the bottom, so there's no hard
+            edge anywhere — it blends straight into the same dimmed
+            backdrop the rest of the hero already sits on. */}
+        <div className="relative w-full max-w-[840px] mx-auto px-6 sm:px-10 md:px-12 pt-10 sm:pt-14 md:pt-16 pb-16 sm:pb-20 flex flex-col items-center mb-12 overflow-hidden">
 
-          {/* Gradient wash — see note above; this animates smoothly in
-              most modern browsers since only the color values in the
-              stops change (not their structure/positions), matching how
-              the ambient blob's solid backgroundColor transitions. */}
+          {/* Gradient wash — multi-stop for a longer, gentler fade than a
+              simple two-stop gradient would give; ends fully transparent
+              well above the bottom of the block so nothing "cuts off." */}
           <div
             aria-hidden="true"
-            className="absolute inset-0 pointer-events-none"
+            className="absolute inset-0 -z-10 pointer-events-none"
             style={{
-              background: `linear-gradient(to bottom, ${activeColor}CC 0%, ${activeColor}5C 45%, ${activeColor}00 75%)`,
+              background: `linear-gradient(to bottom, ${activeColor}E6 0%, ${activeColor}80 32%, ${activeColor}33 58%, ${activeColor}00 82%)`,
               transition: "background 700ms ease-out",
             }}
           />
-          {/* Base glass fill sits BELOW the gradient wash — keeps the
-              lower, faded half of the card legible against the hero photo
-              rather than turning fully see-through. */}
-          <div className="absolute inset-0 -z-10 bg-white/70 dark:bg-zinc-900/60" aria-hidden="true" />
 
-          <div className="relative z-10 w-full flex flex-col items-center">
+          <div className="w-full flex flex-col items-center">
 
-          <div className="w-full flex flex-col items-center mb-8">
-            <h2 className="abh-section-heading mb-2 text-center text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.35)]">Core Hub Ecosystem</h2>
-            <p className="text-sm font-medium text-white/85 [text-shadow:0_1px_4px_rgba(0,0,0,0.3)]">
-              Tap a hub to see what we actually do there.
-            </p>
-          </div>
+            <div className="w-full flex flex-col items-center mb-8">
+              <h2
+                className={cn(
+                  "abh-section-heading mb-2 text-center transition-colors duration-300",
+                  onSaturatedWash ? "text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.35)]" : "text-zinc-900"
+                )}
+              >
+                Core Hub Ecosystem
+              </h2>
+              <p
+                className={cn(
+                  "text-sm font-medium transition-colors duration-300",
+                  onSaturatedWash ? "text-white/85 [text-shadow:0_1px_4px_rgba(0,0,0,0.3)]" : "text-zinc-800/80"
+                )}
+              >
+                Tap a hub to see what we actually do there.
+              </p>
+            </div>
 
-          {/* Hub selector — icons only, unchanged from before */}
-          <div
-            role="tablist"
-            aria-label="Service hubs"
-            className="flex flex-wrap sm:flex-nowrap justify-center items-stretch gap-3 sm:gap-4 w-full mb-6 px-1"
-          >
-            {HUBS_DATA.map((hub, index) => {
-              const isActive  = activeHub === index
-              const isHovered = hoveredHub === index
-              const hubColor  = colorFor(hub)
+            {/* Hub selector — capped to the same width as the divider and
+                pricing block below it, so the whole card reads as one
+                aligned column instead of a wider row sitting above a
+                narrower one. */}
+            <div
+              role="tablist"
+              aria-label="Service hubs"
+              className="flex flex-wrap sm:flex-nowrap justify-center items-stretch gap-3 sm:gap-4 w-full max-w-[420px] mb-6 px-1"
+            >
+              {HUBS_DATA.map((hub, index) => {
+                const isActive  = activeHub === index
+                const isHovered = hoveredHub === index
+                const hubColor  = colorFor(hub)
 
-              return (
-                <button
-                  key={hub.id}
-                  role="tab"
-                  aria-selected={isActive}
-                  aria-label={hub.name}
-                  onClick={() => handleSelectHub(index)}
-                  onMouseEnter={() => setHoveredHub(index)}
-                  onMouseLeave={() => setHoveredHub(null)}
-                  className={cn(
-                    "relative flex items-center justify-center px-4 sm:px-5 py-4 rounded-[14px] transition-all duration-200 flex-1 min-w-[56px]",
-                    isActive && "shadow-md"
-                  )}
-                  style={{
-                    backgroundColor: isActive || isHovered ? `${hubColor}14` : undefined,
-                  }}
-                >
-                  <span
-                    className="transition-all duration-200 flex"
+                return (
+                  <button
+                    key={hub.id}
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-label={hub.name}
+                    onClick={() => handleSelectHub(index)}
+                    onMouseEnter={() => setHoveredHub(index)}
+                    onMouseLeave={() => setHoveredHub(null)}
+                    className={cn(
+                      "relative flex items-center justify-center px-4 sm:px-5 py-4 rounded-[14px] transition-all duration-200 flex-1 min-w-[56px]",
+                      isActive && "shadow-md"
+                    )}
                     style={{
-                      color: isActive || isHovered ? hubColor : "#9A9A9A",
-                      transform: isActive ? "translateY(-2px) scale(1.08)" : "none",
+                      backgroundColor: isActive || isHovered ? `${hubColor}14` : undefined,
                     }}
                   >
-                    {hub.icon(isActive)}
-                  </span>
-                  {isActive && (
                     <span
-                      className="absolute -bottom-[1px] left-1/2 -translate-x-1/2 w-8 h-[3px] rounded-full"
-                      style={{ backgroundColor: hubColor }}
-                      aria-hidden="true"
-                    />
-                  )}
-                </button>
-              )
-            })}
-          </div>
+                      className="transition-all duration-200 flex"
+                      style={{
+                        color: isActive || isHovered ? hubColor : inactiveIconColor,
+                        transform: isActive ? "translateY(-2px) scale(1.08)" : "none",
+                      }}
+                    >
+                      {hub.icon(isActive)}
+                    </span>
+                    {isActive && (
+                      <span
+                        className="absolute -bottom-[1px] left-1/2 -translate-x-1/2 w-8 h-[3px] rounded-full"
+                        style={{ backgroundColor: hubColor }}
+                        aria-hidden="true"
+                      />
+                    )}
+                  </button>
+                )
+              })}
+            </div>
 
-          {/* Divider + notch — a single hairline with a small triangular
-              tail fused flush to it, colored with the active hub's color.
-              Reads as one continuous shape (the line "grows" a point)
-              rather than two separate elements, and points straight down
-              at the pricing example below it. */}
-          <div
-            className="relative w-full max-w-[420px] h-px mt-1 mb-7"
-            style={{ backgroundColor: activeColor, transition: "background-color 700ms ease-out" }}
-          >
+            {/* Divider + notch — a single hairline with a small triangular
+                tail fused flush to it, colored with the active hub's color.
+                Reads as one continuous shape (the line "grows" a point)
+                rather than two separate elements, and points straight down
+                at the pricing example below it. */}
             <div
-              className="absolute left-1/2 top-0 -translate-x-1/2"
-              style={{
-                width: 0,
-                height: 0,
-                borderLeft: "7px solid transparent",
-                borderRight: "7px solid transparent",
-                borderTop: `9px solid ${activeColor}`,
-                transition: "border-top-color 700ms ease-out",
-              }}
-              aria-hidden="true"
-            />
-          </div>
+              className="relative w-full max-w-[420px] h-px mt-1 mb-7"
+              style={{ backgroundColor: activeColor, transition: "background-color 700ms ease-out" }}
+            >
+              <div
+                className="absolute left-1/2 top-0 -translate-x-1/2"
+                style={{
+                  width: 0,
+                  height: 0,
+                  borderLeft: "7px solid transparent",
+                  borderRight: "7px solid transparent",
+                  borderTop: `9px solid ${activeColor}`,
+                  transition: "border-top-color 700ms ease-out",
+                }}
+                aria-hidden="true"
+              />
+            </div>
 
-          {/* Pricing example — plain text directly on the gradient, no
-              boxed container. Centered as a group under the notch. */}
-          <div className="w-full max-w-[420px] text-center">
-            <p
-              className="text-[0.65rem] font-black uppercase tracking-widest mb-3"
-              style={{ color: activeColor, transition: "color 700ms ease-out" }}
-            >
-              {active.name}
-            </p>
-            <button
-              key={`${activeHub}-${spotlightService.name}`}
-              onClick={handleReroll}
-              aria-label="Show another example price for this hub"
-              className="inline-flex flex-col items-center gap-1 mx-auto rounded-[10px] px-3 py-1 transition-opacity hover:opacity-75 active:scale-[0.97] animate-in fade-in duration-200"
-            >
-              <span className="text-sm font-semibold text-white [text-shadow:0_1px_5px_rgba(0,0,0,0.4)]">
-                {spotlightService.name}
-              </span>
-              <span
-                className="text-2xl font-black font-mono"
+            {/* Pricing example — sits in the faded-to-transparent part of
+                the wash, so its text uses the same neutral zinc scheme as
+                the paragraph above (not white), since white would vanish
+                here the same way "Colour Copy" did before. */}
+            <div className="w-full max-w-[420px] text-center">
+              <p
+                className="text-[0.65rem] font-black uppercase tracking-widest mb-3"
                 style={{ color: activeColor, transition: "color 700ms ease-out" }}
               >
-                {spotlightService.price}
-              </span>
-            </button>
-            <button
-              onClick={() => handleNavigate(`/services?hub=${active.id}`)}
-              className="inline-flex items-center gap-1.5 text-[0.65rem] font-black uppercase tracking-widest mt-4 transition-opacity hover:opacity-70"
-              style={{ color: activeColor, transition: "color 700ms ease-out" }}
-            >
-              View All {active.name} Services
-              <ArrowRight weight="bold" className="w-3 h-3" aria-hidden="true" />
-            </button>
-          </div>
+                {active.name}
+              </p>
+              <button
+                key={`${activeHub}-${spotlightService.name}`}
+                onClick={handleReroll}
+                aria-label="Show another example price for this hub"
+                className="inline-flex flex-col items-center gap-1 mx-auto rounded-[10px] px-3 py-1 transition-opacity hover:opacity-75 active:scale-[0.97] animate-in fade-in duration-200"
+              >
+                <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                  {spotlightService.name}
+                </span>
+                <span
+                  className="text-2xl font-black font-mono"
+                  style={{ color: activeColor, transition: "color 700ms ease-out" }}
+                >
+                  {spotlightService.price}
+                </span>
+              </button>
+              <button
+                onClick={() => handleNavigate(`/services?hub=${active.id}`)}
+                className="inline-flex items-center gap-1.5 text-[0.65rem] font-black uppercase tracking-widest mt-4 transition-opacity hover:opacity-70"
+                style={{ color: activeColor, transition: "color 700ms ease-out" }}
+              >
+                View All {active.name} Services
+                <ArrowRight weight="bold" className="w-3 h-3" aria-hidden="true" />
+              </button>
+            </div>
 
           </div>
         </div>
@@ -580,4 +710,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-       } 
+      }
