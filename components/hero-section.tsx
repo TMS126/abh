@@ -80,11 +80,6 @@ const HUBS_DATA = [
       <Globe size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: Globe,
-    // Teal — sourced from BRAND.teal/tealLight (lib/brand.ts), the same
-    // token HUB_COLORS.eservice uses, so this hub reads the same color
-    // everywhere: the hero selector, the giant watermark, the "Start Here"
-    // button gradient, and (via the abh:heroHubSelect event below) the
-    // navbar's logo/controls.
     colorLight: BRAND.teal,
     colorDark:  BRAND.tealLight,
     services: [
@@ -124,15 +119,6 @@ const CTA_GRADIENTS: Record<string, [string, string]> = {
   tech:     [BRAND.dark100,    BRAND.dark200],
 }
 
-// Pool of icons/colors used for the button's "popping hub icons" burst —
-// pulls the actual hub identities so it doubles as a subtle preview of
-// what's inside, rather than generic sparkle shapes.
-const PARTICLE_ICON_POOL = HUBS_DATA.map(h => ({
-  Icon: h.Icon,
-  colorLight: h.colorLight,
-  colorDark: h.colorDark,
-}))
-
 function pickRandomService(hubIndex: number, excludeName?: string) {
   const list = HUBS_DATA[hubIndex].services
   if (list.length === 1) return list[0]
@@ -158,8 +144,21 @@ function pickRandomService(hubIndex: number, excludeName?: string) {
 // only *after* the transition duration has actually elapsed.
 type WatermarkLayer = { key: string; Icon: React.ElementType; color: string }
 
-// A single icon fragment spawned when the main CTA is clicked.
-type Particle = { id: number; Icon: React.ElementType; color: string; tx: number; ty: number; rotate: number }
+// A single icon fragment spawned when the main CTA is clicked. startX/startY
+// are viewport (fixed-position) coordinates of the button center at click
+// time; tx/ty are the pixel offset from there to that hub's own icon in the
+// ecosystem selector, so each particle travels to its real on-screen match
+// rather than a random direction.
+type Particle = {
+  id: number
+  Icon: React.ElementType
+  color: string
+  startX: number
+  startY: number
+  tx: number
+  ty: number
+  rotate: number
+}
 
 // ─── Hero Section ─────────────────────────────────────────────────────────────
 export function HeroSection() {
@@ -174,6 +173,8 @@ export function HeroSection() {
 
   const particleIdRef = useRef(0)
   const navTimeoutRef  = useRef<ReturnType<typeof setTimeout>>()
+  const ctaBtnRef      = useRef<HTMLButtonElement>(null)
+  const hubIconRefs    = useRef<(HTMLButtonElement | null)[]>([])
 
   React.useEffect(() => { setMounted(true) }, [])
   useEffect(() => () => { if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current) }, [])
@@ -185,18 +186,12 @@ export function HeroSection() {
   const WatermarkIcon = active.Icon
   const [ctaFrom, ctaTo] = CTA_GRADIENTS[active.id] ?? [BRAND.blue, BRAND.blueMid]
 
-  // The "Core Hub Ecosystem" wash: in light mode the top of the gradient
-  // is a saturated/dark-ish hub color (blue/green/orangeDark/teal/dark100)
-  // so white text and icons read fine there. In dark mode the same wash
-  // uses each hub's pastel colorDark variant (light blue/green/orange/
-  // teal/grey) as the fill — white text on a pale pastel wash would fail
-  // contrast, so text flips to dark in that case instead of assuming
-  // "dark theme = light text" like the old version did.
+  // The wash's top is fully opaque now (no hero photo visible there at
+  // all). In light mode that opaque top is a saturated hub color, so
+  // white text/icons read fine. In dark mode the same wash uses each
+  // hub's pastel colorDark, so text flips dark there instead of assuming
+  // "dark theme = light text."
   const onSaturatedWash = !isDark
-  // Inactive hub-selector icons: same logic — a light icon reads on the
-  // light-mode wash (dark-ish colors) but needs to be dark on the
-  // dark-mode wash (pastel colors), otherwise it disappears (the bug seen
-  // in the screenshot, where a plain fixed grey failed against both).
   const inactiveIconColor = isDark ? "rgba(24,24,27,0.55)" : "rgba(255,255,255,0.75)"
 
   // Watermark crossfade state
@@ -242,38 +237,50 @@ export function HeroSection() {
     setSpotlightService(prev => pickRandomService(activeHub, prev.name))
   }
 
-  // Spawns a short burst of small hub icons that fly outward from the
-  // button center and fade, giving the impression they "come from inside"
-  // the button when it's pressed.
+  // Spawns exactly one particle per hub, each travelling from the button's
+  // real on-screen center to that hub's own icon position in the selector
+  // below — computed live via getBoundingClientRect so it stays correct
+  // across screen sizes/scroll position, rather than a random scatter.
   const spawnParticles = () => {
-    const count = 9
-    const next: Particle[] = Array.from({ length: count }).map(() => {
-      const pick = PARTICLE_ICON_POOL[Math.floor(Math.random() * PARTICLE_ICON_POOL.length)]
-      const angle = Math.random() * Math.PI * 2
-      const distance = 70 + Math.random() * 70
+    if (!ctaBtnRef.current) return
+    const btnRect = ctaBtnRef.current.getBoundingClientRect()
+    const startX = btnRect.left + btnRect.width / 2
+    const startY = btnRect.top + btnRect.height / 2
+
+    const next: Particle[] = HUBS_DATA.map((hub, i) => {
+      const targetEl = hubIconRefs.current[i]
+      let tx = 0
+      let ty = 0
+      if (targetEl) {
+        const r = targetEl.getBoundingClientRect()
+        tx = (r.left + r.width / 2) - startX
+        ty = (r.top + r.height / 2) - startY
+      }
       particleIdRef.current += 1
       return {
         id: particleIdRef.current,
-        Icon: pick.Icon,
-        color: isDark ? pick.colorDark : pick.colorLight,
-        tx: Math.cos(angle) * distance,
-        ty: Math.sin(angle) * distance,
-        rotate: (Math.random() - 0.5) * 240,
+        Icon: hub.Icon,
+        color: isDark ? hub.colorDark : hub.colorLight,
+        startX, startY, tx, ty,
+        rotate: (Math.random() - 0.5) * 200,
       }
     })
+
     setParticles(prev => [...prev, ...next])
+    // Slowed pop: matches the 1400ms travel animation below plus a
+    // small buffer before cleanup.
     setTimeout(() => {
       setParticles(prev => prev.filter(p => !next.some(n => n.id === p.id)))
-    }, 900)
+    }, 1500)
   }
 
-  // Navigation is delayed slightly so the particle burst is actually
-  // visible before the page transitions away — an instant router.push
-  // would unmount this component before any animation could play.
+  // Navigation is delayed so the particle burst is actually visible before
+  // the page transitions away — an instant router.push would unmount this
+  // component before the (now longer) animation could play out.
   const handleCtaClick = () => {
     spawnParticles()
     if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current)
-    navTimeoutRef.current = setTimeout(() => handleNavigate("/services"), 380)
+    navTimeoutRef.current = setTimeout(() => handleNavigate("/services"), 650)
   }
 
  return (
@@ -281,9 +288,7 @@ export function HeroSection() {
       aria-label="Hero"
       className="relative min-h-[calc(100vh-var(--nav-h))] w-full flex flex-col items-center justify-center px-4 md:px-8 pt-[calc(var(--nav-h)+96px)] md:pt-[172px] pb-16 md:pb-28 overflow-hidden cursor-default select-none bg-background transition-colors duration-300"
     >
-      {/* Storefront photo — full-bleed background for the hero only.
-          Sits below the noise texture, ambient blob, and scrim, all of
-          which layer on top of it exactly as before. */}
+      {/* Storefront photo — full-bleed background for the hero only. */}
       <div className="absolute inset-0 z-0 pointer-events-none" aria-hidden="true">
         <img
           src="/storefront.webp"
@@ -292,9 +297,6 @@ export function HeroSection() {
         />
       </div>
 
-      {/* Dark scrim — keeps the headline, paragraph, and cards readable
-          over the photo. Slightly stronger in dark mode since the photo
-          itself doesn't change with theme. */}
       <div
         className="absolute inset-0 z-0 pointer-events-none bg-white/80 dark:bg-[#0D1B2A]/88"
         aria-hidden="true"
@@ -347,9 +349,7 @@ export function HeroSection() {
         /* 3D "physical button" shadow — a solid dark bottom edge (the
            depth) plus a soft ambient shadow beneath it, both flattening
            on press so the button visibly compresses instead of only
-           scaling down. Kept neutral/dark rather than hub-colored so it
-           reads consistently as "this is a raised button" regardless of
-           which hub gradient is active. */
+           scaling down. */
         .abh-btn-3d {
           box-shadow:
             0 7px 0 rgba(0,0,0,0.28),
@@ -361,22 +361,23 @@ export function HeroSection() {
             0 4px 10px rgba(0,0,0,0.16);
         }
 
-        /* Small hub icons popping out of the button on click, scattering
-           to a random point and fading — driven per-particle via the
-           --tx/--ty/--r custom properties set inline. */
+        /* Particle travel — slowed to 1400ms with an easing curve that
+           eases out gently near the end, so each icon visibly arrives at
+           its target in the ecosystem box rather than snapping there. */
         @keyframes abh-particle-pop {
           0%   { transform: translate(0, 0) scale(0.3) rotate(0deg); opacity: 0; }
-          12%  { opacity: 1; }
-          100% { transform: translate(var(--tx), var(--ty)) scale(1) rotate(var(--r)); opacity: 0; }
+          10%  { opacity: 1; }
+          70%  { opacity: 1; }
+          100% { transform: translate(var(--tx), var(--ty)) scale(0.9) rotate(var(--r)); opacity: 0; }
         }
         .abh-particle-pop {
-          animation: abh-particle-pop 850ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          animation: abh-particle-pop 1400ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
       `}</style>
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center text-center relative z-10 w-full mb-8">
 
-        {/* H1 — left at large size per decision */}
+        {/* H1 */}
         <h1 className="font-sans font-black text-4xl md:text-6xl lg:text-[4.2rem] tracking-tight text-brand-blue-dark dark:text-brand-light-blue leading-[1.1] mb-6 text-balance transition-all duration-300">
           {BIZ.tagline}
         </h1>
@@ -385,13 +386,9 @@ export function HeroSection() {
           From printing your documents to navigating government services — we make it simple, fast, and friendly.
         </p>
 
-        {/* CTA — gradient tracks the active hub, crossfade-safe watermark behind it */}
+        {/* CTA */}
         <div className="relative w-full flex justify-center items-center mb-12">
 
-          {/* Giant tilted hub-icon watermark — crossfades via opacity
-              transitions on stacked layers rather than key-based remount.
-              See WatermarkLayer comment above for why this replaced the
-              old approach. */}
           <div
             aria-hidden="true"
             className="absolute inset-y-0 -right-[18%] md:-right-[10%] flex items-center justify-center pointer-events-none select-none z-0"
@@ -420,7 +417,6 @@ export function HeroSection() {
             })}
           </div>
 
-          {/* Soft pulsing glow behind the button — tracks the active hub */}
           <div
             key={`glow-${active.id}`}
             aria-hidden="true"
@@ -428,35 +424,8 @@ export function HeroSection() {
             style={{ backgroundImage: `linear-gradient(135deg, ${ctaFrom} 0%, ${ctaTo} 100%)` }}
           />
 
-          {/* Particle burst layer — small hub icons that scatter outward
-              from the button on click, as if they came from inside it.
-              Centered the same way the button is (flex items-center
-              justify-center on this shared container), z-20 so they pop
-              visibly above the button's own surface. */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
-          >
-            {particles.map((p) => {
-              const PIcon = p.Icon
-              return (
-                <div
-                  key={p.id}
-                  className="absolute abh-particle-pop"
-                  style={{
-                    "--tx": `${p.tx}px`,
-                    "--ty": `${p.ty}px`,
-                    "--r": `${p.rotate}deg`,
-                    color: p.color,
-                  } as React.CSSProperties}
-                >
-                  <PIcon size={20} weight="fill" aria-hidden="true" />
-                </div>
-              )
-            })}
-          </div>
-
           <button
+            ref={ctaBtnRef}
             key={active.id}
             onClick={handleCtaClick}
             className="abh-cta-gradient abh-btn-3d relative z-10 inline-flex items-center gap-3 group px-10 py-5 rounded-[16px] font-sans font-black text-lg text-white transition-all duration-300 active:duration-100 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.92] active:brightness-90 animate-in fade-in duration-500"
@@ -467,22 +436,18 @@ export function HeroSection() {
           </button>
         </div>
 
-        {/* Core Hub Ecosystem — no card/border/shadow anymore. Just a
-            gradient wash sitting directly on the hero's own scrim: solid
-            near the top, fading smoothly through several stops until it's
-            fully transparent well before the bottom, so there's no hard
-            edge anywhere — it blends straight into the same dimmed
-            backdrop the rest of the hero already sits on. */}
-        <div className="relative w-full max-w-[840px] mx-auto px-6 sm:px-10 md:px-12 pt-10 sm:pt-14 md:pt-16 pb-16 sm:pb-20 flex flex-col items-center mb-12 overflow-hidden">
+        {/* Core Hub Ecosystem — top corners rounded, no container/border/
+            shadow otherwise. Gradient wash: fully opaque at the very top
+            (hero photo never shows through there), fading down through
+            several stops until fully transparent, so the photo only
+            gradually reveals itself in the lower portion. */}
+        <div className="relative w-full max-w-[840px] mx-auto px-6 sm:px-10 md:px-12 pt-10 sm:pt-14 md:pt-16 pb-16 sm:pb-20 flex flex-col items-center mb-12 overflow-hidden rounded-t-[28px]">
 
-          {/* Gradient wash — multi-stop for a longer, gentler fade than a
-              simple two-stop gradient would give; ends fully transparent
-              well above the bottom of the block so nothing "cuts off." */}
           <div
             aria-hidden="true"
             className="absolute inset-0 -z-10 pointer-events-none"
             style={{
-              background: `linear-gradient(to bottom, ${activeColor}E6 0%, ${activeColor}80 32%, ${activeColor}33 58%, ${activeColor}00 82%)`,
+              background: `linear-gradient(to bottom, ${activeColor} 0%, ${activeColor} 14%, ${activeColor}CC 34%, ${activeColor}66 58%, ${activeColor}00 86%)`,
               transition: "background 700ms ease-out",
             }}
           />
@@ -508,10 +473,10 @@ export function HeroSection() {
               </p>
             </div>
 
-            {/* Hub selector — capped to the same width as the divider and
-                pricing block below it, so the whole card reads as one
-                aligned column instead of a wider row sitting above a
-                narrower one. */}
+            {/* Hub selector — refs attached per icon so the particle burst
+                can target each one's real screen position. No underline/
+                bar indicator under the active tab anymore — the tinted
+                background + lifted icon is the only active state. */}
             <div
               role="tablist"
               aria-label="Service hubs"
@@ -525,6 +490,7 @@ export function HeroSection() {
                 return (
                   <button
                     key={hub.id}
+                    ref={(el) => { hubIconRefs.current[index] = el }}
                     role="tab"
                     aria-selected={isActive}
                     aria-label={hub.name}
@@ -548,23 +514,11 @@ export function HeroSection() {
                     >
                       {hub.icon(isActive)}
                     </span>
-                    {isActive && (
-                      <span
-                        className="absolute -bottom-[1px] left-1/2 -translate-x-1/2 w-8 h-[3px] rounded-full"
-                        style={{ backgroundColor: hubColor }}
-                        aria-hidden="true"
-                      />
-                    )}
                   </button>
                 )
               })}
             </div>
 
-            {/* Divider + notch — a single hairline with a small triangular
-                tail fused flush to it, colored with the active hub's color.
-                Reads as one continuous shape (the line "grows" a point)
-                rather than two separate elements, and points straight down
-                at the pricing example below it. */}
             <div
               className="relative w-full max-w-[420px] h-px mt-1 mb-7"
               style={{ backgroundColor: activeColor, transition: "background-color 700ms ease-out" }}
@@ -583,10 +537,6 @@ export function HeroSection() {
               />
             </div>
 
-            {/* Pricing example — sits in the faded-to-transparent part of
-                the wash, so its text uses the same neutral zinc scheme as
-                the paragraph above (not white), since white would vanish
-                here the same way "Colour Copy" did before. */}
             <div className="w-full max-w-[420px] text-center">
               <p
                 className="text-[0.65rem] font-black uppercase tracking-widest mb-3"
@@ -623,7 +573,7 @@ export function HeroSection() {
           </div>
         </div>
 
-        {/* Marquee — now below the Core Hub Ecosystem card, per your call */}
+        {/* Marquee */}
         <div
           role="marquee"
           aria-label="Our services"
@@ -643,7 +593,6 @@ export function HeroSection() {
                     <span className="inline-flex items-center px-5 text-brand-blue-dark dark:text-brand-light-blue font-semibold text-sm transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100">
                       {item}
                     </span>
-                    {/* Orange dot — intentional accent, approved exception */}
                     <span className="text-brand-orange font-black text-base leading-none shrink-0" aria-hidden="true">•</span>
                   </React.Fragment>
                 ))}
@@ -652,13 +601,42 @@ export function HeroSection() {
           </div>
         </div>
       </div>
+
+      {/* Particle burst layer — fixed to the viewport (not the button's own
+          local container) since each particle now needs to travel to a
+          real on-screen target (its matching hub icon), computed via
+          getBoundingClientRect in spawnParticles above. Outer wrapper
+          positions/centers the particle at the button's click-time
+          location; the inner wrapper carries the pop/travel animation, so
+          the two transforms compose instead of one overwriting the other. */}
+      <div aria-hidden="true" className="fixed inset-0 z-[9998] pointer-events-none">
+        {particles.map((p) => {
+          const PIcon = p.Icon
+          return (
+            <div
+              key={p.id}
+              style={{ position: "fixed", left: p.startX, top: p.startY, transform: "translate(-50%, -50%)" }}
+            >
+              <div
+                className="abh-particle-pop"
+                style={{
+                  "--tx": `${p.tx}px`,
+                  "--ty": `${p.ty}px`,
+                  "--r": `${p.rotate}deg`,
+                  color: p.color,
+                } as React.CSSProperties}
+              >
+                <PIcon size={20} weight="fill" aria-hidden="true" />
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </section>
   )
 }
 
 // ─── Stats Bar ────────────────────────────────────────────────────────────────
-// More compact per request: reduced section/card padding, smaller icon
-// chips, tighter gaps.
 export function StatsBar() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
 
@@ -710,4 +688,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-      }
+}
