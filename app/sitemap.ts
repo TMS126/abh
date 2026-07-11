@@ -1,20 +1,20 @@
 import { MetadataRoute } from 'next'
-import { BIZ } from '@/lib/brand'
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://v0-apexbytes-hub-website.vercel.app'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://v0-apexbytes-hub-website.vercel.app'
-  
   const routes = [
-    '',
-    '/about',
-    '/services',
-    '/gallery',
-    '/contact',
-  ].map((route) => ({
-    url: `${baseUrl}${route}`,
-    lastModified: new Date().toISOString(),
-    changeFrequency: 'monthly' as const,
-    priority: route === '' ? 1 : 0.8,
+    { path: '',          priority: 1.0, freq: 'weekly'  },
+    { path: '/services', priority: 0.9, freq: 'weekly'  },
+    { path: '/about',    priority: 0.8, freq: 'monthly' },
+    { path: '/gallery',  priority: 0.7, freq: 'monthly' },
+    { path: '/contact',  priority: 0.8, freq: 'monthly' },
+    { path: '/privacy',  priority: 0.3, freq: 'yearly'  },
+  ].map(({ path, priority, freq }) => ({
+    url:             `${SITE_URL}${path}`,
+    lastModified:    new Date().toISOString(),
+    changeFrequency: freq as MetadataRoute.Sitemap[number]['changeFrequency'],
+    priority,
   }))
 
   return routes
