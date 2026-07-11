@@ -119,6 +119,21 @@ const CTA_GRADIENTS: Record<string, [string, string]> = {
   tech:     [BRAND.dark100,    BRAND.dark200],
 }
 
+// Real WCAG relative luminance of a hex color — used to decide whether text
+// sitting on that color needs to be white or near-black, instead of
+// guessing from the current theme (a "dark mode" pastel like lightGreen is
+// still a LIGHT color and needs dark text, which a theme-based guess gets
+// wrong — this is exactly what caused the invisible "R30" / "Docu Hub"
+// label bug in both screenshots).
+function relativeLuminance(hex: string): number {
+  const clean = hex.replace("#", "")
+  const r = parseInt(clean.substring(0, 2), 16) / 255
+  const g = parseInt(clean.substring(2, 4), 16) / 255
+  const b = parseInt(clean.substring(4, 6), 16) / 255
+  const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4))
+  return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
+}
+
 function pickRandomService(hubIndex: number, excludeName?: string) {
   const list = HUBS_DATA[hubIndex].services
   if (list.length === 1) return list[0]
@@ -132,23 +147,13 @@ function pickRandomService(hubIndex: number, excludeName?: string) {
 }
 
 // ─── Watermark crossfade layer type ───────────────────────────────────────────
-// Fixes the "previous icon never disappears" bug. The old implementation
-// used a `key`-forced remount + tailwindcss-animate's `animate-in` classes
-// to fake a crossfade — on some mobile browsers, a rapid unmount/remount
-// doesn't reliably clear the old layer's compositing before the new one
-// paints, which is exactly the stacked-icon ghosting you saw. This version
-// never unmounts a layer mid-transition: it adds a new layer, waits one
-// frame, flips only that layer's opacity class to "visible" (triggering a
-// real CSS opacity transition on every layer at once — old ones fade to 0,
-// new one fades to target), then prunes every layer except the current one
-// only *after* the transition duration has actually elapsed.
 type WatermarkLayer = { key: string; Icon: React.ElementType; color: string }
 
 // A single icon fragment spawned when the main CTA is clicked. startX/startY
 // are viewport (fixed-position) coordinates of the button center at click
 // time; tx/ty are the pixel offset from there to that hub's own icon in the
-// ecosystem selector, so each particle travels to its real on-screen match
-// rather than a random direction.
+// ecosystem selector, so each particle travels straight to its real
+// on-screen match.
 type Particle = {
   id: number
   Icon: React.ElementType
@@ -157,7 +162,6 @@ type Particle = {
   startY: number
   tx: number
   ty: number
-  rotate: number
 }
 
 // ─── Hero Section ─────────────────────────────────────────────────────────────
@@ -170,14 +174,19 @@ export function HeroSection() {
   const [spotlightService,  setSpotlightService]  = useState(() => pickRandomService(0))
   const [hoveredHub,        setHoveredHub]        = useState<number | null>(null)
   const [particles,         setParticles]         = useState<Particle[]>([])
+  const [landed,            setLanded]            = useState(false)
 
   const particleIdRef = useRef(0)
   const navTimeoutRef  = useRef<ReturnType<typeof setTimeout>>()
+  const landFlashRef   = useRef<ReturnType<typeof setTimeout>>()
   const ctaBtnRef      = useRef<HTMLButtonElement>(null)
   const hubIconRefs    = useRef<(HTMLButtonElement | null)[]>([])
 
   React.useEffect(() => { setMounted(true) }, [])
-  useEffect(() => () => { if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current) }, [])
+  useEffect(() => () => {
+    if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current)
+    if (landFlashRef.current) clearTimeout(landFlashRef.current)
+  }, [])
 
   const isDark    = mounted && resolvedTheme === "dark"
   const colorFor  = (hub: typeof HUBS_DATA[number]) => isDark ? hub.colorDark : hub.colorLight
@@ -186,13 +195,14 @@ export function HeroSection() {
   const WatermarkIcon = active.Icon
   const [ctaFrom, ctaTo] = CTA_GRADIENTS[active.id] ?? [BRAND.blue, BRAND.blueMid]
 
-  // The wash's top is fully opaque now (no hero photo visible there at
-  // all). In light mode that opaque top is a saturated hub color, so
-  // white text/icons read fine. In dark mode the same wash uses each
-  // hub's pastel colorDark, so text flips dark there instead of assuming
-  // "dark theme = light text."
-  const onSaturatedWash = !isDark
-  const inactiveIconColor = isDark ? "rgba(24,24,27,0.55)" : "rgba(255,255,255,0.75)"
+  // washIsLight is computed from the ACTUAL color's luminance, not the
+  // theme — a pastel like lightGreen (#CDEB9F) is a light color even in
+  // dark mode, and needs dark text/icons, not white. This replaces the old
+  // theme-based guess that caused the invisible label/price/link bug.
+  const washIsLight = relativeLuminance(activeColor) > 0.55
+  const neutralOnWash = washIsLight ? "#111827" : "#FFFFFF"
+  const neutralOnWashSoft = washIsLight ? "rgba(17,24,39,0.55)" : "rgba(255,255,255,0.75)"
+  const neutralShadow = washIsLight ? "none" : "0 1px 6px rgba(0,0,0,0.35)"
 
   // Watermark crossfade state
   const [watermarkLayers, setWatermarkLayers] = useState<WatermarkLayer[]>([])
@@ -213,7 +223,7 @@ export function HeroSection() {
     if (pruneTimeoutRef.current) clearTimeout(pruneTimeoutRef.current)
     pruneTimeoutRef.current = setTimeout(() => {
       setWatermarkLayers(prev => prev.filter(l => l.key === visibleKey))
-    }, 750) // matches the layer's transition-duration-700 + small buffer
+    }, 750)
     return () => { if (pruneTimeoutRef.current) clearTimeout(pruneTimeoutRef.current) }
   }, [watermarkLayers, visibleKey])
 
@@ -222,11 +232,6 @@ export function HeroSection() {
   const handleSelectHub = (index: number) => {
     setActiveHub(index)
     setSpotlightService(pickRandomService(index))
-
-    // Tells the Navbar to tint its logo/toggle/hamburger icons to this
-    // hub's color while on the homepage. Navbar resets this on any
-    // pathname change, so it never persists once the person navigates
-    // away (see requirement: stay on normal "/" color until clicked).
     const hub = HUBS_DATA[index]
     window.dispatchEvent(
       new CustomEvent("abh:heroHubSelect", { detail: { light: hub.colorLight, dark: hub.colorDark } })
@@ -237,10 +242,10 @@ export function HeroSection() {
     setSpotlightService(prev => pickRandomService(activeHub, prev.name))
   }
 
-  // Spawns exactly one particle per hub, each travelling from the button's
-  // real on-screen center to that hub's own icon position in the selector
-  // below — computed live via getBoundingClientRect so it stays correct
-  // across screen sizes/scroll position, rather than a random scatter.
+  // Spawns exactly one particle per hub, each travelling in a straight line
+  // (no rotation) from the button's real on-screen center to that hub's
+  // own icon position in the selector below. When the flight completes,
+  // triggers a brief "landed" flash on all 5 target icons.
   const spawnParticles = () => {
     if (!ctaBtnRef.current) return
     const btnRect = ctaBtnRef.current.getBoundingClientRect()
@@ -262,25 +267,25 @@ export function HeroSection() {
         Icon: hub.Icon,
         color: isDark ? hub.colorDark : hub.colorLight,
         startX, startY, tx, ty,
-        rotate: (Math.random() - 0.5) * 200,
       }
     })
 
     setParticles(prev => [...prev, ...next])
-    // Slowed pop: matches the 1400ms travel animation below plus a
-    // small buffer before cleanup.
+
+    const FLIGHT_MS = 1400
     setTimeout(() => {
       setParticles(prev => prev.filter(p => !next.some(n => n.id === p.id)))
-    }, 1500)
+      // Flash all 5 hub icons the moment their particles land.
+      setLanded(true)
+      if (landFlashRef.current) clearTimeout(landFlashRef.current)
+      landFlashRef.current = setTimeout(() => setLanded(false), 650)
+    }, FLIGHT_MS)
   }
 
-  // Navigation is delayed so the particle burst is actually visible before
-  // the page transitions away — an instant router.push would unmount this
-  // component before the (now longer) animation could play out.
   const handleCtaClick = () => {
     spawnParticles()
     if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current)
-    navTimeoutRef.current = setTimeout(() => handleNavigate("/services"), 650)
+    navTimeoutRef.current = setTimeout(() => handleNavigate("/services"), 1750)
   }
 
  return (
@@ -288,13 +293,8 @@ export function HeroSection() {
       aria-label="Hero"
       className="relative min-h-[calc(100vh-var(--nav-h))] w-full flex flex-col items-center justify-center px-4 md:px-8 pt-[calc(var(--nav-h)+96px)] md:pt-[172px] pb-16 md:pb-28 overflow-hidden cursor-default select-none bg-background transition-colors duration-300"
     >
-      {/* Storefront photo — full-bleed background for the hero only. */}
       <div className="absolute inset-0 z-0 pointer-events-none" aria-hidden="true">
-        <img
-          src="/storefront.webp"
-          alt=""
-          className="w-full h-full object-cover"
-        />
+        <img src="/storefront.webp" alt="" className="w-full h-full object-cover" />
       </div>
 
       <div
@@ -302,7 +302,6 @@ export function HeroSection() {
         aria-hidden="true"
       />
 
-      {/* Noise texture */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <div
           className="absolute inset-0 opacity-[0.03] dark:opacity-[0.06]"
@@ -313,7 +312,6 @@ export function HeroSection() {
         />
       </div>
 
-      {/* Ambient blob — shifts to active hub color */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <div
           className="absolute left-1/2 top-[8%] -translate-x-1/2 w-[140vw] md:w-[90vw] max-w-[1400px] aspect-[16/10] opacity-[0.14] dark:opacity-[0.18] blur-3xl transition-colors duration-700 ease-out"
@@ -346,38 +344,32 @@ export function HeroSection() {
         }
         .abh-cta-gradient { background-size: 200% 200%; animation: abh-cta-gradient-shift 10s ease infinite; }
 
-        /* 3D "physical button" shadow — a solid dark bottom edge (the
-           depth) plus a soft ambient shadow beneath it, both flattening
-           on press so the button visibly compresses instead of only
-           scaling down. */
-        .abh-btn-3d {
-          box-shadow:
-            0 7px 0 rgba(0,0,0,0.28),
-            0 14px 26px rgba(0,0,0,0.22);
+        /* Straight-line particle flight — no rotation. Grows slightly
+           mid-flight then settles at full size on arrival, instead of
+           spinning, so it reads as "flying to a destination" not
+           "tumbling." */
+        @keyframes abh-particle-fly {
+          0%   { transform: translate(0, 0) scale(0.5); opacity: 0; }
+          10%  { opacity: 1; }
+          55%  { transform: translate(calc(var(--tx) * 0.55), calc(var(--ty) * 0.55)) scale(1.15); opacity: 1; }
+          100% { transform: translate(var(--tx), var(--ty)) scale(1); opacity: 0; }
         }
-        .abh-btn-3d:active {
-          box-shadow:
-            0 2px 0 rgba(0,0,0,0.28),
-            0 4px 10px rgba(0,0,0,0.16);
+        .abh-particle-fly {
+          animation: abh-particle-fly 1400ms cubic-bezier(0.3, 0.1, 0.2, 1) forwards;
         }
 
-        /* Particle travel — slowed to 1400ms with an easing curve that
-           eases out gently near the end, so each icon visibly arrives at
-           its target in the ecosystem box rather than snapping there. */
-        @keyframes abh-particle-pop {
-          0%   { transform: translate(0, 0) scale(0.3) rotate(0deg); opacity: 0; }
-          10%  { opacity: 1; }
-          70%  { opacity: 1; }
-          100% { transform: translate(var(--tx), var(--ty)) scale(0.9) rotate(var(--r)); opacity: 0; }
+        /* Landed flash — brief bright pulse on each hub icon the instant
+           its matching particle arrives. */
+        @keyframes abh-landed-flash {
+          0%   { transform: scale(1);   filter: brightness(1); }
+          35%  { transform: scale(1.25); filter: brightness(1.6); }
+          100% { transform: scale(1);   filter: brightness(1); }
         }
-        .abh-particle-pop {
-          animation: abh-particle-pop 1400ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
-        }
+        .abh-landed-flash { animation: abh-landed-flash 650ms ease-out; }
       `}</style>
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center text-center relative z-10 w-full mb-8">
 
-        {/* H1 */}
         <h1 className="font-sans font-black text-4xl md:text-6xl lg:text-[4.2rem] tracking-tight text-brand-blue-dark dark:text-brand-light-blue leading-[1.1] mb-6 text-balance transition-all duration-300">
           {BIZ.tagline}
         </h1>
@@ -386,7 +378,9 @@ export function HeroSection() {
           From printing your documents to navigating government services — we make it simple, fast, and friendly.
         </p>
 
-        {/* CTA */}
+        {/* CTA — custom "ugly" hard-edge box-shadow removed. Just the
+            existing soft tailwind shadow classes + hover lift + press
+            scale/brightness remain for depth. */}
         <div className="relative w-full flex justify-center items-center mb-12">
 
           <div
@@ -428,7 +422,7 @@ export function HeroSection() {
             ref={ctaBtnRef}
             key={active.id}
             onClick={handleCtaClick}
-            className="abh-cta-gradient abh-btn-3d relative z-10 inline-flex items-center gap-3 group px-10 py-5 rounded-[16px] font-sans font-black text-lg text-white transition-all duration-300 active:duration-100 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.92] active:brightness-90 animate-in fade-in duration-500"
+            className="abh-cta-gradient relative z-10 inline-flex items-center gap-3 group px-10 py-5 rounded-[14px] font-sans font-black text-lg text-white transition-all duration-300 active:duration-100 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.94] shadow-md hover:shadow-xl active:shadow-sm active:brightness-90 animate-in fade-in duration-500"
             style={{ backgroundImage: `linear-gradient(135deg, ${ctaFrom} 0%, ${ctaTo} 50%, ${ctaFrom} 100%)` }}
           >
             Start Here
@@ -436,12 +430,11 @@ export function HeroSection() {
           </button>
         </div>
 
-        {/* Core Hub Ecosystem — top corners rounded, no container/border/
-            shadow otherwise. Gradient wash: fully opaque at the very top
-            (hero photo never shows through there), fading down through
-            several stops until fully transparent, so the photo only
-            gradually reveals itself in the lower portion. */}
-        <div className="relative w-full max-w-[840px] mx-auto px-6 sm:px-10 md:px-12 pt-10 sm:pt-14 md:pt-16 pb-16 sm:pb-20 flex flex-col items-center mb-12 overflow-hidden rounded-t-[28px]">
+        {/* Core Hub Ecosystem — 14px top radius (was 28px), no card
+            border/shadow. All text sitting directly on the wash now uses
+            neutralOnWash (computed from real luminance) instead of
+            activeColor, so it can never match the background it sits on. */}
+        <div className="relative w-full max-w-[840px] mx-auto px-6 sm:px-10 md:px-12 pt-10 sm:pt-14 md:pt-16 pb-16 sm:pb-20 flex flex-col items-center mb-12 overflow-hidden rounded-t-[14px]">
 
           <div
             aria-hidden="true"
@@ -456,27 +449,24 @@ export function HeroSection() {
 
             <div className="w-full flex flex-col items-center mb-8">
               <h2
-                className={cn(
-                  "abh-section-heading mb-2 text-center transition-colors duration-300",
-                  onSaturatedWash ? "text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.35)]" : "text-zinc-900"
-                )}
+                className="abh-section-heading mb-2 text-center transition-colors duration-300"
+                style={{ color: neutralOnWash, textShadow: neutralShadow }}
               >
                 Core Hub Ecosystem
               </h2>
               <p
-                className={cn(
-                  "text-sm font-medium transition-colors duration-300",
-                  onSaturatedWash ? "text-white/85 [text-shadow:0_1px_4px_rgba(0,0,0,0.3)]" : "text-zinc-800/80"
-                )}
+                className="text-sm font-medium transition-colors duration-300"
+                style={{ color: neutralOnWashSoft, textShadow: neutralShadow }}
               >
                 Tap a hub to see what we actually do there.
               </p>
             </div>
 
-            {/* Hub selector — refs attached per icon so the particle burst
-                can target each one's real screen position. No underline/
-                bar indicator under the active tab anymore — the tinted
-                background + lifted icon is the only active state. */}
+            {/* Hub selector — icon color is now always neutralOnWash
+                (guaranteed contrast against the wash), with the hub's own
+                color showing only as the background tint behind the
+                active/hovered icon. No underline indicator. Landed-flash
+                class fires briefly when a particle arrives. */}
             <div
               role="tablist"
               aria-label="Service hubs"
@@ -499,16 +489,18 @@ export function HeroSection() {
                     onMouseLeave={() => setHoveredHub(null)}
                     className={cn(
                       "relative flex items-center justify-center px-4 sm:px-5 py-4 rounded-[14px] transition-all duration-200 flex-1 min-w-[56px]",
-                      isActive && "shadow-md"
+                      isActive && "shadow-md",
+                      landed && "abh-landed-flash"
                     )}
                     style={{
-                      backgroundColor: isActive || isHovered ? `${hubColor}14` : undefined,
+                      backgroundColor: isActive || isHovered ? `${hubColor}33` : `${neutralOnWash}0D`,
                     }}
                   >
                     <span
                       className="transition-all duration-200 flex"
                       style={{
-                        color: isActive || isHovered ? hubColor : inactiveIconColor,
+                        color: neutralOnWash,
+                        opacity: isActive || isHovered ? 1 : (washIsLight ? 0.55 : 0.7),
                         transform: isActive ? "translateY(-2px) scale(1.08)" : "none",
                       }}
                     >
@@ -521,7 +513,7 @@ export function HeroSection() {
 
             <div
               className="relative w-full max-w-[420px] h-px mt-1 mb-7"
-              style={{ backgroundColor: activeColor, transition: "background-color 700ms ease-out" }}
+              style={{ backgroundColor: neutralOnWashSoft }}
             >
               <div
                 className="absolute left-1/2 top-0 -translate-x-1/2"
@@ -530,8 +522,7 @@ export function HeroSection() {
                   height: 0,
                   borderLeft: "7px solid transparent",
                   borderRight: "7px solid transparent",
-                  borderTop: `9px solid ${activeColor}`,
-                  transition: "border-top-color 700ms ease-out",
+                  borderTop: `9px solid ${neutralOnWashSoft}`,
                 }}
                 aria-hidden="true"
               />
@@ -540,7 +531,7 @@ export function HeroSection() {
             <div className="w-full max-w-[420px] text-center">
               <p
                 className="text-[0.65rem] font-black uppercase tracking-widest mb-3"
-                style={{ color: activeColor, transition: "color 700ms ease-out" }}
+                style={{ color: neutralOnWash }}
               >
                 {active.name}
               </p>
@@ -548,22 +539,19 @@ export function HeroSection() {
                 key={`${activeHub}-${spotlightService.name}`}
                 onClick={handleReroll}
                 aria-label="Show another example price for this hub"
-                className="inline-flex flex-col items-center gap-1 mx-auto rounded-[10px] px-3 py-1 transition-opacity hover:opacity-75 active:scale-[0.97] animate-in fade-in duration-200"
+                className="inline-flex flex-col items-center gap-1 mx-auto rounded-[14px] px-3 py-1 transition-opacity hover:opacity-75 active:scale-[0.97] animate-in fade-in duration-200"
               >
-                <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                <span className="text-sm font-semibold" style={{ color: neutralOnWash }}>
                   {spotlightService.name}
                 </span>
-                <span
-                  className="text-2xl font-black font-mono"
-                  style={{ color: activeColor, transition: "color 700ms ease-out" }}
-                >
+                <span className="text-2xl font-black font-mono" style={{ color: neutralOnWash }}>
                   {spotlightService.price}
                 </span>
               </button>
               <button
                 onClick={() => handleNavigate(`/services?hub=${active.id}`)}
                 className="inline-flex items-center gap-1.5 text-[0.65rem] font-black uppercase tracking-widest mt-4 transition-opacity hover:opacity-70"
-                style={{ color: activeColor, transition: "color 700ms ease-out" }}
+                style={{ color: neutralOnWash }}
               >
                 View All {active.name} Services
                 <ArrowRight weight="bold" className="w-3 h-3" aria-hidden="true" />
@@ -573,7 +561,6 @@ export function HeroSection() {
           </div>
         </div>
 
-        {/* Marquee */}
         <div
           role="marquee"
           aria-label="Our services"
@@ -602,13 +589,8 @@ export function HeroSection() {
         </div>
       </div>
 
-      {/* Particle burst layer — fixed to the viewport (not the button's own
-          local container) since each particle now needs to travel to a
-          real on-screen target (its matching hub icon), computed via
-          getBoundingClientRect in spawnParticles above. Outer wrapper
-          positions/centers the particle at the button's click-time
-          location; the inner wrapper carries the pop/travel animation, so
-          the two transforms compose instead of one overwriting the other. */}
+      {/* Particle burst layer — bigger icons (34px, up from 20px), fixed
+          to the viewport since each travels to a real on-screen target. */}
       <div aria-hidden="true" className="fixed inset-0 z-[9998] pointer-events-none">
         {particles.map((p) => {
           const PIcon = p.Icon
@@ -618,15 +600,15 @@ export function HeroSection() {
               style={{ position: "fixed", left: p.startX, top: p.startY, transform: "translate(-50%, -50%)" }}
             >
               <div
-                className="abh-particle-pop"
+                className="abh-particle-fly"
                 style={{
                   "--tx": `${p.tx}px`,
                   "--ty": `${p.ty}px`,
-                  "--r": `${p.rotate}deg`,
                   color: p.color,
+                  filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.35))",
                 } as React.CSSProperties}
               >
-                <PIcon size={20} weight="fill" aria-hidden="true" />
+                <PIcon size={34} weight="fill" aria-hidden="true" />
               </div>
             </div>
           )
@@ -668,7 +650,7 @@ export function StatsBar() {
               style={{ borderColor: isHov ? stat.color : undefined }}
             >
               <div
-                className="w-8 h-8 rounded-[10px] flex items-center justify-center mb-0.5 transition-all duration-200"
+                className="w-8 h-8 rounded-[14px] flex items-center justify-center mb-0.5 transition-all duration-200"
                 style={{
                   backgroundColor: isHov ? stat.color : `${stat.color}15`,
                   color: isHov ? "#ffffff" : stat.color,
@@ -688,4 +670,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-}
+      } 
