@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useRouter, usePathname } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
 import Image from "next/image"
+import Link from "next/link"
 import {
   WhatsappLogo, EnvelopeSimple,
   X, Printer, FileText, Palette,
@@ -15,15 +16,11 @@ import { cn } from "@/lib/utils"
 import { BRAND, BIZ, WA, FOOTER_NAV, FAQS } from "@/lib/brand"
 import { BusinessStatusFull } from "@/components/business-status"
 
-// Each hub gets a light-mode and dark-mode color — both independently
-// verified for contrast against their respective background, since a
-// single fixed hex (like the old eservice navy or tech pale-grey) can
-// pass AA on one theme and become nearly unreadable on the other.
 const TERMS_SECTIONS = [
   {
     icon: "Printer",
-    colorLight: BRAND.blue,        // #1E6FA8 — AA vs white
-    colorDark: BRAND.lightBlue,    // #A9D6F2 — AA vs near-black
+    colorLight: BRAND.blue,
+    colorDark: BRAND.lightBlue,
     title: "Print Hub – Everything Paper",
     points: [
       { label: "Printing Services", text: "B&W, Colour, and Bulk printing. For bulk discounts, submit your entire order together." },
@@ -35,8 +32,8 @@ const TERMS_SECTIONS = [
   },
   {
     icon: "FileText",
-    colorLight: BRAND.green,       // #4A8011 — AA vs white
-    colorDark: BRAND.lightGreen,   // #CDEB9F — AA vs near-black
+    colorLight: BRAND.green,
+    colorDark: BRAND.lightGreen,
     title: "Document Hub – All Document Work",
     points: [
       { label: "Document Assistance", text: "Full CV creation, typing, editing, and formatting. You are responsible for the accuracy of all content you provide." },
@@ -48,8 +45,8 @@ const TERMS_SECTIONS = [
   },
   {
     icon: "Palette",
-    colorLight: BRAND.orangeDark,  // #B06225 — AA vs white
-    colorDark: BRAND.lightOrange,  // #F9D1B0 — AA vs near-black
+    colorLight: BRAND.orangeDark,
+    colorDark: BRAND.lightOrange,
     title: "Design Hub – Creative Work",
     points: [
       { label: "Branding Design", text: "Logos and business cards built in Adobe Illustrator. No generic templates." },
@@ -62,8 +59,8 @@ const TERMS_SECTIONS = [
   },
   {
     icon: "Globe",
-    colorLight: BRAND.blueDark,    // #0F3F66 — AA vs white
-    colorDark: BRAND.lightBlue,    // #A9D6F2 — fixes invisibility vs near-black
+    colorLight: BRAND.blueDark,
+    colorDark: BRAND.lightBlue,
     title: "E-Service Hub – External Systems",
     points: [
       { label: "Government Services", text: `Admin help across SARS, SASSA, CSD, PSIRA, UIF, etc. ${BIZ.name} is not responsible for government processing delays.` },
@@ -76,8 +73,8 @@ const TERMS_SECTIONS = [
   },
   {
     icon: "Cpu",
-    colorLight: BRAND.dark100,      // #333333 — fixes invisibility vs white
-    colorDark: BRAND.techGreyDark,  // #B8CCE0 — AAA vs near-black (existing token)
+    colorLight: BRAND.dark100,
+    colorDark: BRAND.techGreyDark,
     title: "Tech Hub – Hardware & Software",
     points: [
       { label: "System Maintenance", text: "Software installations, cleaning, virus removal, and performance optimisation." },
@@ -88,8 +85,8 @@ const TERMS_SECTIONS = [
   },
   {
     icon: "CurrencyDollar",
-    colorLight: BRAND.dark100,   // #333333
-    colorDark: "#D4D4D8",        // zinc-300 equivalent — high contrast vs near-black
+    colorLight: BRAND.dark100,
+    colorDark: "#D4D4D8",
     title: "Payment Terms",
     points: [
       { label: "Standard Services", text: "Payable on execution. Clear, upfront pricing with no hidden fees." },
@@ -121,19 +118,31 @@ const ICON_COMPONENTS: Record<string, React.ElementType> = {
   Info: Info,
 }
 
-// ─── Terms modal — full-screen on mobile, centered padded card on desktop ──
+// ─── Terms modal ─────────────────────────────────────────────────────────────
 function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void }) {
-  const guardActive = useRef(false)
+  const guardActive  = useRef(false)
+  const closeBtnRef  = useRef<HTMLButtonElement>(null)
+  const triggerRef   = useRef<HTMLElement | null>(null)
   const BUFFER = 5
   const { theme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => { setMounted(true) }, [])
 
-  // Resolve the theme-correct color for a section. Falls back to light
-  // colors until mounted, avoiding a light/dark mismatch flash on hydration.
   const resolveColor = (s: { colorLight: string; colorDark: string }) =>
     mounted && theme === "dark" ? s.colorDark : s.colorLight
+
+  // Move focus into modal when it opens; restore it when it closes
+  useEffect(() => {
+    if (open) {
+      triggerRef.current = document.activeElement as HTMLElement
+      // Small delay so the modal is in the DOM before focusing
+      const id = setTimeout(() => closeBtnRef.current?.focus(), 50)
+      return () => clearTimeout(id)
+    } else {
+      triggerRef.current?.focus()
+    }
+  }, [open])
 
   useEffect(() => {
     document.documentElement.classList.toggle("scroll-locked", open)
@@ -146,19 +155,12 @@ function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void 
 
   useEffect(() => {
     if (!open) return
-
     guardActive.current = true
-    for (let i = 0; i < BUFFER; i++) {
-      window.history.pushState({ termsGate: true }, "")
-    }
-
+    for (let i = 0; i < BUFFER; i++) window.history.pushState({ termsGate: true }, "")
     const onPop = () => {
       if (!guardActive.current) return
-      for (let i = 0; i < BUFFER; i++) {
-        window.history.pushState({ termsGate: true }, "")
-      }
+      for (let i = 0; i < BUFFER; i++) window.history.pushState({ termsGate: true }, "")
     }
-
     window.addEventListener("popstate", onPop)
     return () => {
       guardActive.current = false
@@ -191,6 +193,7 @@ function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void 
             </p>
           </div>
           <button
+            ref={closeBtnRef}
             onClick={handleClose}
             aria-label="Close Terms & Service Policies"
             className="w-8 h-8 shrink-0 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all active:scale-95"
@@ -206,7 +209,7 @@ function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void 
                 <Info weight="fill" className="w-4 h-4" aria-hidden="true" /> Operational Rule
               </h3>
               <p className="text-[0.82rem] text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                By tapping "I Agree" below, you confirm full agreement with all operational rules and terms listed here.
+                By tapping &ldquo;I Agree&rdquo; below, you confirm full agreement with all operational rules and terms listed here.
               </p>
             </div>
 
@@ -245,7 +248,7 @@ function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () => void 
   )
 }
 
-// ─── FAQ pill accordion — raised 3D container, centered, larger inner text ──
+// ─── FAQ pill accordion ───────────────────────────────────────────────────────
 function FaqAccordion({
   isOpen,
   onToggle,
@@ -339,7 +342,6 @@ function FaqAccordion({
 
 // ─── Footer content ───────────────────────────────────────────────────────────
 function FooterContent() {
-  const router = useRouter()
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const [mounted,             setMounted]             = useState(false)
@@ -395,17 +397,18 @@ function FooterContent() {
           </p>
         </div>
 
+        {/* Nav: use <Link> instead of <button> for correct semantics */}
         <nav aria-label="Footer navigation">
           <h3 className="text-[0.7rem] font-black uppercase tracking-widest mb-8 text-zinc-400">Quick Links</h3>
           <ul className="flex flex-col gap-4">
             {FOOTER_NAV.map((page) => (
               <li key={page.label}>
-                <button
-                  onClick={() => { router.push(page.path); window.scrollTo({ top: 0, behavior: "smooth" }) }}
-                  className="text-sm text-zinc-600 dark:text-zinc-300 hover:translate-x-1 hover:text-brand-blue transition-all duration-200 text-left font-medium"
+                <Link
+                  href={page.path}
+                  className="text-sm text-zinc-600 dark:text-zinc-300 hover:translate-x-1 hover:text-brand-blue transition-all duration-200 font-medium inline-block"
                 >
                   {page.label}
-                </button>
+                </Link>
               </li>
             ))}
           </ul>
@@ -464,17 +467,27 @@ function FooterContent() {
         </div>
       </div>
 
+      {/* Bottom bar */}
       <div className="max-w-[1200px] mx-auto border-t border-zinc-100 dark:border-zinc-800 pt-8 px-6 md:px-8 grid grid-cols-1 md:grid-cols-3 items-center gap-4">
         <p className="text-[0.65rem] font-medium text-zinc-400 text-center md:text-left">
           © {new Date().getFullYear()} {BIZ.name}. All rights reserved.
         </p>
 
-        <button
-          onClick={() => setIsTermsOpen(true)}
-          className="text-[0.65rem] font-medium text-zinc-400 hover:text-brand-blue transition-colors justify-self-center"
-        >
-          Terms &amp; Policies
-        </button>
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={() => setIsTermsOpen(true)}
+            className="text-[0.65rem] font-medium text-zinc-400 hover:text-brand-blue transition-colors"
+          >
+            Terms &amp; Policies
+          </button>
+          <span className="text-zinc-200 dark:text-zinc-700" aria-hidden="true">·</span>
+          <Link
+            href="/privacy"
+            className="text-[0.65rem] font-medium text-zinc-400 hover:text-brand-blue transition-colors"
+          >
+            Privacy Policy
+          </Link>
+        </div>
 
         <p className="text-[0.65rem] font-medium text-zinc-400 flex items-center justify-center md:justify-end gap-1.5">
           Built with <Heart weight="fill" className="w-3 h-3 text-brand-orange" aria-hidden="true" /> for the Kgotsong community
@@ -496,4 +509,4 @@ export function Footer() {
       <FooterContent />
     </footer>
   )
-    } 
+}
