@@ -119,12 +119,9 @@ const CTA_GRADIENTS: Record<string, [string, string]> = {
   tech:     [BRAND.dark100,    BRAND.dark200],
 }
 
-// Real WCAG relative luminance of a hex color — used to decide whether text
-// sitting on that color needs to be white or near-black, instead of
-// guessing from the current theme (a "dark mode" pastel like lightGreen is
-// still a LIGHT color and needs dark text, which a theme-based guess gets
-// wrong — this is exactly what caused the invisible "R30" / "Docu Hub"
-// label bug in both screenshots).
+// Real WCAG relative luminance — used for the ecosystem box's neutral text
+// (heading, subtitle, price, icons), which must always contrast against
+// whichever hub color the wash currently is.
 function relativeLuminance(hex: string): number {
   const clean = hex.replace("#", "")
   const r = parseInt(clean.substring(0, 2), 16) / 255
@@ -132,6 +129,10 @@ function relativeLuminance(hex: string): number {
   const b = parseInt(clean.substring(4, 6), 16) / 255
   const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4))
   return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
+}
+
+function capitalize(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
 function pickRandomService(hubIndex: number, excludeName?: string) {
@@ -149,11 +150,10 @@ function pickRandomService(hubIndex: number, excludeName?: string) {
 // ─── Watermark crossfade layer type ───────────────────────────────────────────
 type WatermarkLayer = { key: string; Icon: React.ElementType; color: string }
 
-// A single icon fragment spawned when the main CTA is clicked. startX/startY
-// are viewport (fixed-position) coordinates of the button center at click
-// time; tx/ty are the pixel offset from there to that hub's own icon in the
-// ecosystem selector, so each particle travels straight to its real
-// on-screen match.
+// A single icon fragment spawned when the main CTA is clicked (touch
+// devices only — see canHover below). startX/startY are viewport
+// coordinates of the button center at click time; tx/ty are the pixel
+// offset to that hub's own icon in the ecosystem selector.
 type Particle = {
   id: number
   Icon: React.ElementType
@@ -175,6 +175,8 @@ export function HeroSection() {
   const [hoveredHub,        setHoveredHub]        = useState<number | null>(null)
   const [particles,         setParticles]         = useState<Particle[]>([])
   const [landed,            setLanded]            = useState(false)
+  const [canHover,          setCanHover]          = useState(false)
+  const [ctaHovered,        setCtaHovered]        = useState(false)
 
   const particleIdRef = useRef(0)
   const navTimeoutRef  = useRef<ReturnType<typeof setTimeout>>()
@@ -183,6 +185,20 @@ export function HeroSection() {
   const hubIconRefs    = useRef<(HTMLButtonElement | null)[]>([])
 
   React.useEffect(() => { setMounted(true) }, [])
+
+  // Detects genuine hover-capable pointers (desktop mouse/trackpad) vs
+  // touch-only devices (mobile/tablet), so the radial spider menu only
+  // shows where hover makes sense, and the click-particle burst only
+  // plays where hover ISN'T available.
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return
+    const mq = window.matchMedia("(hover: hover) and (pointer: fine)")
+    setCanHover(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setCanHover(e.matches)
+    mq.addEventListener("change", handler)
+    return () => mq.removeEventListener("change", handler)
+  }, [])
+
   useEffect(() => () => {
     if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current)
     if (landFlashRef.current) clearTimeout(landFlashRef.current)
@@ -195,14 +211,17 @@ export function HeroSection() {
   const WatermarkIcon = active.Icon
   const [ctaFrom, ctaTo] = CTA_GRADIENTS[active.id] ?? [BRAND.blue, BRAND.blueMid]
 
-  // washIsLight is computed from the ACTUAL color's luminance, not the
-  // theme — a pastel like lightGreen (#CDEB9F) is a light color even in
-  // dark mode, and needs dark text/icons, not white. This replaces the old
-  // theme-based guess that caused the invisible label/price/link bug.
   const washIsLight = relativeLuminance(activeColor) > 0.55
   const neutralOnWash = washIsLight ? "#111827" : "#FFFFFF"
   const neutralOnWashSoft = washIsLight ? "rgba(17,24,39,0.55)" : "rgba(255,255,255,0.75)"
   const neutralShadow = washIsLight ? "none" : "0 1px 6px rgba(0,0,0,0.35)"
+
+  // "View all ___ services" link color — deliberately the OPPOSITE tone
+  // of the current wash (pastel-on-saturated in light mode, saturated-on-
+  // pastel in dark mode). Same hue family as the hub, so it still reads
+  // as "this hub's color," but far enough apart in lightness from its own
+  // background to never repeat the invisible-text bug.
+  const linkColor = isDark ? active.colorLight : active.colorDark
 
   // Watermark crossfade state
   const [watermarkLayers, setWatermarkLayers] = useState<WatermarkLayer[]>([])
@@ -242,10 +261,9 @@ export function HeroSection() {
     setSpotlightService(prev => pickRandomService(activeHub, prev.name))
   }
 
-  // Spawns exactly one particle per hub, each travelling in a straight line
-  // (no rotation) from the button's real on-screen center to that hub's
-  // own icon position in the selector below. When the flight completes,
-  // triggers a brief "landed" flash on all 5 target icons.
+  // Spawns exactly one particle per hub, travelling straight (no spin)
+  // from the button's real on-screen center to that hub's own icon
+  // position. Touch devices only — see canHover gating in handleCtaClick.
   const spawnParticles = () => {
     if (!ctaBtnRef.current) return
     const btnRect = ctaBtnRef.current.getBoundingClientRect()
@@ -272,21 +290,38 @@ export function HeroSection() {
 
     setParticles(prev => [...prev, ...next])
 
-    const FLIGHT_MS = 1400
+    // Sped up per request — was 1400ms, now 700ms on the touch devices
+    // that still use this effect.
+    const FLIGHT_MS = 700
     setTimeout(() => {
       setParticles(prev => prev.filter(p => !next.some(n => n.id === p.id)))
-      // Flash all 5 hub icons the moment their particles land.
       setLanded(true)
       if (landFlashRef.current) clearTimeout(landFlashRef.current)
-      landFlashRef.current = setTimeout(() => setLanded(false), 650)
+      landFlashRef.current = setTimeout(() => setLanded(false), 500)
     }, FLIGHT_MS)
   }
 
   const handleCtaClick = () => {
+    // Desktop/trackpad: the hover radial menu already offers direct
+    // per-hub navigation, so a plain click just goes to the general
+    // services page — no particle burst needed there anymore.
+    if (canHover) {
+      handleNavigate("/services")
+      return
+    }
+    // Touch devices: keep the fast particle burst, then navigate.
     spawnParticles()
     if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current)
-    navTimeoutRef.current = setTimeout(() => handleNavigate("/services"), 1750)
+    navTimeoutRef.current = setTimeout(() => handleNavigate("/services"), 950)
   }
+
+  // Radial "spider legs" positions for the 5 hub shortcuts around the
+  // button — evenly spaced, starting from the top, going clockwise.
+  const RADIUS = 108
+  const radialPositions = HUBS_DATA.map((_, i) => {
+    const angle = (-90 + i * (360 / HUBS_DATA.length)) * (Math.PI / 180)
+    return { x: Math.cos(angle) * RADIUS, y: Math.sin(angle) * RADIUS, angleDeg: (-90 + i * (360 / HUBS_DATA.length)) }
+  })
 
  return (
     <section
@@ -344,28 +379,23 @@ export function HeroSection() {
         }
         .abh-cta-gradient { background-size: 200% 200%; animation: abh-cta-gradient-shift 10s ease infinite; }
 
-        /* Straight-line particle flight — no rotation. Grows slightly
-           mid-flight then settles at full size on arrival, instead of
-           spinning, so it reads as "flying to a destination" not
-           "tumbling." */
+        /* Fast, straight-line particle flight (touch devices only). */
         @keyframes abh-particle-fly {
           0%   { transform: translate(0, 0) scale(0.5); opacity: 0; }
-          10%  { opacity: 1; }
+          12%  { opacity: 1; }
           55%  { transform: translate(calc(var(--tx) * 0.55), calc(var(--ty) * 0.55)) scale(1.15); opacity: 1; }
           100% { transform: translate(var(--tx), var(--ty)) scale(1); opacity: 0; }
         }
         .abh-particle-fly {
-          animation: abh-particle-fly 1400ms cubic-bezier(0.3, 0.1, 0.2, 1) forwards;
+          animation: abh-particle-fly 700ms cubic-bezier(0.3, 0.1, 0.2, 1) forwards;
         }
 
-        /* Landed flash — brief bright pulse on each hub icon the instant
-           its matching particle arrives. */
         @keyframes abh-landed-flash {
           0%   { transform: scale(1);   filter: brightness(1); }
           35%  { transform: scale(1.25); filter: brightness(1.6); }
           100% { transform: scale(1);   filter: brightness(1); }
         }
-        .abh-landed-flash { animation: abh-landed-flash 650ms ease-out; }
+        .abh-landed-flash { animation: abh-landed-flash 500ms ease-out; }
       `}</style>
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center text-center relative z-10 w-full mb-8">
@@ -378,10 +408,13 @@ export function HeroSection() {
           From printing your documents to navigating government services — we make it simple, fast, and friendly.
         </p>
 
-        {/* CTA — custom "ugly" hard-edge box-shadow removed. Just the
-            existing soft tailwind shadow classes + hover lift + press
-            scale/brightness remain for depth. */}
-        <div className="relative w-full flex justify-center items-center mb-12">
+        {/* CTA — wrapped in a hover-tracking container so moving the mouse
+            from the button onto the radial menu doesn't close it. */}
+        <div
+          className="relative w-full flex justify-center items-center mb-12"
+          onMouseEnter={() => canHover && setCtaHovered(true)}
+          onMouseLeave={() => canHover && setCtaHovered(false)}
+        >
 
           <div
             aria-hidden="true"
@@ -418,6 +451,58 @@ export function HeroSection() {
             style={{ backgroundImage: `linear-gradient(135deg, ${ctaFrom} 0%, ${ctaTo} 100%)` }}
           />
 
+          {/* Radial "spider legs" menu — desktop/trackpad only. Always
+              rendered (not conditionally mounted) so opacity/scale can
+              transition smoothly both in and out, gated purely by
+              ctaHovered + canHover. */}
+          {canHover && (
+            <div
+              aria-hidden={!ctaHovered}
+              className="absolute inset-0 flex items-center justify-center z-20"
+              style={{ pointerEvents: ctaHovered ? "auto" : "none" }}
+            >
+              {HUBS_DATA.map((hub, i) => {
+                const pos = radialPositions[i]
+                const hubColor = colorFor(hub)
+                const HubIconEl = hub.Icon
+                return (
+                  <React.Fragment key={hub.id}>
+                    {/* Connecting "leg" line from center to icon */}
+                    <div
+                      aria-hidden="true"
+                      className="absolute left-1/2 top-1/2 origin-left transition-all duration-300 ease-out"
+                      style={{
+                        width: ctaHovered ? RADIUS - 26 : 0,
+                        height: 2,
+                        backgroundColor: `${hubColor}55`,
+                        transform: `rotate(${pos.angleDeg}deg)`,
+                        transitionDelay: ctaHovered ? `${i * 30}ms` : "0ms",
+                      }}
+                    />
+                    <button
+                      onClick={() => handleNavigate(`/services?hub=${hub.id}`)}
+                      aria-label={`Go to ${hub.name}`}
+                      title={hub.name}
+                      className="absolute w-11 h-11 rounded-full flex items-center justify-center shadow-lg transition-all ease-out"
+                      style={{
+                        backgroundColor: hubColor,
+                        color: relativeLuminance(hubColor) > 0.55 ? "#111827" : "#FFFFFF",
+                        transform: ctaHovered
+                          ? `translate(${pos.x}px, ${pos.y}px) scale(1)`
+                          : "translate(0, 0) scale(0.3)",
+                        opacity: ctaHovered ? 1 : 0,
+                        transitionDuration: "320ms",
+                        transitionDelay: ctaHovered ? `${i * 30}ms` : "0ms",
+                      }}
+                    >
+                      <HubIconEl size={20} weight="fill" aria-hidden="true" />
+                    </button>
+                  </React.Fragment>
+                )
+              })}
+            </div>
+          )}
+
           <button
             ref={ctaBtnRef}
             key={active.id}
@@ -430,10 +515,7 @@ export function HeroSection() {
           </button>
         </div>
 
-        {/* Core Hub Ecosystem — 14px top radius (was 28px), no card
-            border/shadow. All text sitting directly on the wash now uses
-            neutralOnWash (computed from real luminance) instead of
-            activeColor, so it can never match the background it sits on. */}
+        {/* Core Hub Ecosystem */}
         <div className="relative w-full max-w-[840px] mx-auto px-6 sm:px-10 md:px-12 pt-10 sm:pt-14 md:pt-16 pb-16 sm:pb-20 flex flex-col items-center mb-12 overflow-hidden rounded-t-[14px]">
 
           <div
@@ -462,11 +544,6 @@ export function HeroSection() {
               </p>
             </div>
 
-            {/* Hub selector — icon color is now always neutralOnWash
-                (guaranteed contrast against the wash), with the hub's own
-                color showing only as the background tint behind the
-                active/hovered icon. No underline indicator. Landed-flash
-                class fires briefly when a particle arrives. */}
             <div
               role="tablist"
               aria-label="Service hubs"
@@ -548,12 +625,15 @@ export function HeroSection() {
                   {spotlightService.price}
                 </span>
               </button>
+              {/* "View all ___ services" — always sentence case now, and
+                  uses linkColor (the hub's opposite-lightness tone) so it
+                  never repeats the same-color-on-same-background bug. */}
               <button
                 onClick={() => handleNavigate(`/services?hub=${active.id}`)}
-                className="inline-flex items-center gap-1.5 text-[0.65rem] font-black uppercase tracking-widest mt-4 transition-opacity hover:opacity-70"
-                style={{ color: neutralOnWash }}
+                className="inline-flex items-center gap-1.5 text-[0.65rem] font-black tracking-wide mt-4 transition-opacity hover:opacity-70"
+                style={{ color: linkColor }}
               >
-                View All {active.name} Services
+                {capitalize(`view all ${active.name.toLowerCase()} services`)}
                 <ArrowRight weight="bold" className="w-3 h-3" aria-hidden="true" />
               </button>
             </div>
@@ -589,8 +669,7 @@ export function HeroSection() {
         </div>
       </div>
 
-      {/* Particle burst layer — bigger icons (34px, up from 20px), fixed
-          to the viewport since each travels to a real on-screen target. */}
+      {/* Particle burst layer — touch devices only (see handleCtaClick). */}
       <div aria-hidden="true" className="fixed inset-0 z-[9998] pointer-events-none">
         {particles.map((p) => {
           const PIcon = p.Icon
@@ -670,4 +749,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-      } 
+         } 
