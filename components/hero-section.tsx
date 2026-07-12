@@ -569,6 +569,7 @@ const linkColor = activeColor
               >
                 {active.name}
               </p>
+             
               <button
                 key={`${activeHub}-${spotlightService.name}`}
                 onClick={handleReroll}
@@ -578,10 +579,13 @@ const linkColor = activeColor
                 <span className="text-sm font-semibold transition-colors duration-300" style={{ color: baseTextColor, textShadow: baseTextShadow }}>
                   {spotlightService.name}
                 </span>
+                
                 <span className="text-2xl font-black font-mono transition-colors duration-300" style={{ color: baseTextColor, textShadow: baseTextShadow }}>
                   {spotlightService.price}
                 </span>
+                
               </button>
+             
               <button
                 onClick={() => handleNavigate(`/services?hub=${active.id}`)}
                 className="flex items-center justify-center gap-1.5 text-[0.65rem] font-black tracking-wide mt-4 transition-opacity hover:opacity-70"
@@ -590,8 +594,13 @@ const linkColor = activeColor
                 View All {active.name} Services
                 <ArrowRight weight="bold" className="w-3 h-3" aria-hidden="true" />
               </button>
+             
             </div>
 
+
+
+
+            
         <div
           role="marquee"
           aria-label="Our services"
