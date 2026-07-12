@@ -147,7 +147,8 @@ function pickRandomService(hubIndex: number, excludeName?: string) {
 type WatermarkLayer = { key: string; Icon: React.ElementType; color: string }
 
 // A single icon fragment spawned when the main CTA is clicked (touch
-// devices only — see canHover below).
+// devices only — see canHover below). Purely decorative now: navigation
+// fires immediately on click and no longer waits for this to finish.
 type Particle = {
   id: number
   Icon: React.ElementType
@@ -173,7 +174,6 @@ export function HeroSection() {
   const [ctaHovered,        setCtaHovered]        = useState(false)
 
   const particleIdRef = useRef(0)
-  const navTimeoutRef  = useRef<ReturnType<typeof setTimeout>>()
   const landFlashRef   = useRef<ReturnType<typeof setTimeout>>()
   const ctaBtnRef      = useRef<HTMLButtonElement>(null)
   const hubIconRefs    = useRef<(HTMLButtonElement | null)[]>([])
@@ -190,7 +190,6 @@ export function HeroSection() {
   }, [])
 
   useEffect(() => () => {
-    if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current)
     if (landFlashRef.current) clearTimeout(landFlashRef.current)
   }, [])
 
@@ -199,6 +198,10 @@ export function HeroSection() {
   const active    = HUBS_DATA[activeHub]
   const activeColor = colorFor(active)
   const WatermarkIcon = active.Icon
+  // CTA gradient always derives from the SAME active hub + SAME BRAND
+  // tokens that drive the navbar's per-hub tint (abh:heroHubSelect below)
+  // and this card's own wash — so all three stay in lockstep automatically
+  // whenever activeHub changes, without any extra wiring.
   const [ctaFrom, ctaTo] = CTA_GRADIENTS[active.id] ?? [BRAND.blue, BRAND.blueMid]
 
   const washIsLight = relativeLuminance(activeColor) > 0.55
@@ -249,6 +252,9 @@ export function HeroSection() {
     setSpotlightService(prev => pickRandomService(activeHub, prev.name))
   }
 
+  // Fire-and-forget cosmetic flourish — spawns icon particles flying from
+  // the button toward each hub tab. Entirely decorative now; it no longer
+  // gates or delays navigation in any way (see handleCtaClick).
   const spawnParticles = () => {
     if (!ctaBtnRef.current) return
     const btnRect = ctaBtnRef.current.getBoundingClientRect()
@@ -284,14 +290,14 @@ export function HeroSection() {
     }, FLIGHT_MS)
   }
 
+  // Instant route — navigation now fires the moment the button is tapped,
+  // full stop. The particle flourish (touch devices only) still plays,
+  // but purely as a visual layer on TOP of the page transition, not a
+  // gate in front of it — there used to be a 950ms setTimeout here
+  // holding navigation back until the animation finished; that's gone.
   const handleCtaClick = () => {
-    if (canHover) {
-      handleNavigate("/services")
-      return
-    }
-    spawnParticles()
-    if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current)
-    navTimeoutRef.current = setTimeout(() => handleNavigate("/services"), 950)
+    handleNavigate("/services")
+    if (!canHover) spawnParticles()
   }
 
   const RADIUS = 108
@@ -494,8 +500,12 @@ export function HeroSection() {
 
         {/* Core Hub Ecosystem — solid backdrop sits behind the gradient
             wash so the fade always resolves to a plain white/near-black
-            surface, never the hero photo. The name/price/link block also
-            gets its own translucent panel for guaranteed local contrast. */}
+            surface, never the hero photo. The price block used to sit in
+            its own translucent grey panel here — that panel muddied both
+            themes and clashed with the gradient (the exact thing flagged
+            in the screenshots), so it's gone: the text now sits straight
+            on the gradient, using the same neutral/link color logic as
+            everything else in this card. */}
         <div className="relative w-full max-w-[840px] mx-auto px-6 sm:px-10 md:px-12 pt-10 sm:pt-14 md:pt-16 pb-16 sm:pb-20 flex flex-col items-center mb-12 overflow-hidden rounded-t-[14px]">
 
           <div
@@ -582,32 +592,38 @@ export function HeroSection() {
               })}
             </div>
 
+            {/* Divider + notch — recolored to the ACTIVE HUB's own color
+                (was drifting to a flat neutral grey, which is why it read
+                as disconnected/lifeless in the screenshots). This is the
+                same "fused, hub-tinted" treatment you approved earlier;
+                it now tracks activeColor and re-tints smoothly on tap. */}
             <div
-              className="relative w-full max-w-[420px] h-px mt-1 mb-7"
-              style={{ backgroundColor: neutralOnWashSoft }}
+              className="relative w-full max-w-[420px] h-px mt-1 mb-7 transition-colors duration-500"
+              style={{ backgroundColor: activeColor }}
             >
               <div
-                className="absolute left-1/2 top-0 -translate-x-1/2"
+                className="absolute left-1/2 top-0 -translate-x-1/2 transition-[border-top-color] duration-500"
                 style={{
                   width: 0,
                   height: 0,
                   borderLeft: "7px solid transparent",
                   borderRight: "7px solid transparent",
-                  borderTop: `9px solid ${neutralOnWashSoft}`,
+                  borderTop: `9px solid ${activeColor}`,
                 }}
                 aria-hidden="true"
               />
             </div>
 
-            <div
-              className="w-full max-w-[420px] text-center rounded-[14px] px-5 py-5 transition-colors duration-300"
-              style={{
-                backgroundColor: washIsLight ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.28)",
-              }}
-            >
+            {/* Price block — plain text directly on the gradient, no boxed
+                panel underneath it anymore. Same color variables used by
+                every other neutral element in this card, so if the
+                gradient ever shifts to an unexpected shade, this text
+                still reads correctly against it (falls back to the exact
+                same rule the rest of the card already relies on). */}
+            <div className="w-full max-w-[420px] text-center">
               <p
-                className="text-[0.65rem] font-black uppercase tracking-widest mb-3"
-                style={{ color: neutralOnWash }}
+                className="text-[0.65rem] font-black uppercase tracking-widest mb-3 transition-colors duration-300"
+                style={{ color: neutralOnWashSoft, textShadow: neutralShadow }}
               >
                 {active.name}
               </p>
@@ -617,10 +633,10 @@ export function HeroSection() {
                 aria-label="Show another example price for this hub"
                 className="inline-flex flex-col items-center gap-1 mx-auto rounded-[14px] px-3 py-1 transition-opacity hover:opacity-75 active:scale-[0.97] animate-in fade-in duration-200"
               >
-                <span className="text-sm font-semibold" style={{ color: neutralOnWash }}>
+                <span className="text-sm font-semibold transition-colors duration-300" style={{ color: neutralOnWash, textShadow: neutralShadow }}>
                   {spotlightService.name}
                 </span>
-                <span className="text-2xl font-black font-mono" style={{ color: neutralOnWash }}>
+                <span className="text-2xl font-black font-mono transition-colors duration-300" style={{ color: neutralOnWash, textShadow: neutralShadow }}>
                   {spotlightService.price}
                 </span>
               </button>
