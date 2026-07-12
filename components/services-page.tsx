@@ -529,13 +529,19 @@ function HubModal({
                 })}
               </div>
               {hub.sections[openSectionIdx].desc && (
-                <p
-                  key={openSectionIdx}
-                  className="text-[0.82rem] font-semibold leading-relaxed animate-in fade-in duration-300"
-                  style={{ color: cardText }}
-                >
-                  {hub.sections[openSectionIdx].desc}
-                </p>
+                <div key={openSectionIdx} className="animate-in fade-in duration-300">
+                  {/* Divider separating the tab pills above from the
+                      description below — sits inside this same solid
+                      accent-colored card, colored off cardText so it stays
+                      visible against whichever hub color is active. */}
+                  <div className="h-px w-full mb-4" style={{ backgroundColor: `${cardText}25` }} />
+                  <p
+                    className="text-[0.82rem] font-semibold leading-relaxed"
+                    style={{ color: cardText }}
+                  >
+                    {hub.sections[openSectionIdx].desc}
+                  </p>
+                </div>
               )}
             </div>
           ) : (
@@ -797,9 +803,13 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     : `${naturalLabel} is one of our ${hubTitle} services. We handle everything professionally so you don't have to worry about a thing.`
   const desc = isRemote ? remoteizeText(descRaw) : descRaw
   return (
-    <div className="fixed inset-0 z-[10200] flex items-center justify-center p-4 animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[10200] flex items-end justify-center animate-in fade-in duration-300">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm overscroll-contain" onClick={onClose} />
-      <div className="relative w-full max-w-sm rounded-[14px] overflow-hidden shadow-2xl bg-white dark:bg-zinc-950 animate-in zoom-in-95 duration-300 border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col">
+      {/* True bottom sheet — docked flush to the bottom edge, capped at the
+          same max-w-2xl as HubModal with only a small horizontal gutter
+          (mx-3/mx-6), sliding up from below the viewport rather than
+          fading + zooming in from the center. */}
+      <div className="relative w-full max-w-2xl mx-3 sm:mx-6 rounded-t-[20px] overflow-hidden shadow-2xl bg-white dark:bg-zinc-950 animate-in slide-in-from-bottom-full duration-300 border border-b-0 border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col">
 
         {/* Header */}
         <div className="px-6 pt-6 pb-0 flex-shrink-0">
@@ -889,9 +899,16 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                   </li>
                 ))}
               </ol>
-              <p className="abh-muted mt-5">
-                {TURNAROUND_DISCLAIMER}
-              </p>
+              {/* Disclaimer box — inset shadow only, no background fill, so it
+                  reads as a subtly recessed note rather than a filled card. */}
+              <div
+                className="mt-5 rounded-[14px] p-4"
+                style={{ boxShadow: `inset 0 1px 4px ${accent}35, inset 0 0 0 1px ${accent}20` }}
+              >
+                <p className="abh-muted !mt-0">
+                  {TURNAROUND_DISCLAIMER}
+                </p>
+              </div>
             </div>
           )}
           {tab === "about" && (
@@ -1207,4 +1224,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-      } 
+         }
