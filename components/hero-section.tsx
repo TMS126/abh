@@ -196,8 +196,21 @@ export function HeroSection() {
   // white). activeColor is already correct: colorLight (a vivid, darker
   // hue) in light theme against the white surface below, colorDark (a
   // pastel, lighter hue) in dark theme against the near-black surface below.
-  const linkColor = activeColor
+const linkColor = activeColor
 
+  // Lower price block (hub name / service name / price) sits near the
+  // BOTTOM of the gradient (58–86% offsets), where the wash has already
+  // faded most of the way to the page's own base surface — white in light
+  // mode, near-black (zinc-950) in dark mode. Using neutralOnWash there
+  // (chosen against the hub's own accent color) breaks for hubs whose dark-
+  // mode accent is itself light/pastel — e.g. Tech's #B8CCE0 — because it
+  // picks near-black text for a spot that's actually faded close to black.
+  // This pair instead targets the surface it's really sitting on.
+  const baseTextColor  = isDark ? "#FFFFFF" : "#111827"
+  const baseTextShadow = isDark ? "0 1px 6px rgba(0,0,0,0.45)" : "none"
+
+
+  
   // Watermark crossfade state
   const [watermarkLayers, setWatermarkLayers] = useState<WatermarkLayer[]>([])
   const [visibleKey,       setVisibleKey]      = useState<string | null>(null)
@@ -549,10 +562,10 @@ export function HeroSection() {
                 "B&W Print / View All..." layout in the screenshot. Now
                 every piece is a real block in a centered flex column —
                 nothing can wrap or drift sideways. */}
-            <div className="w-full max-w-[420px] flex flex-col items-center text-center">
+           <div className="w-full max-w-[420px] flex flex-col items-center text-center">
               <p
                 className="text-[0.65rem] font-black uppercase tracking-widest mb-3 transition-colors duration-300"
-                style={{ color: neutralOnWashSoft, textShadow: neutralShadow }}
+                style={{ color: baseTextColor, textShadow: baseTextShadow }}
               >
                 {active.name}
               </p>
@@ -562,10 +575,10 @@ export function HeroSection() {
                 aria-label="Show another example price for this hub"
                 className="flex flex-col items-center gap-1 mx-auto rounded-[14px] px-3 py-1 transition-opacity hover:opacity-75 active:scale-[0.97] animate-in fade-in duration-200"
               >
-                <span className="text-sm font-semibold transition-colors duration-300" style={{ color: neutralOnWash, textShadow: neutralShadow }}>
+                <span className="text-sm font-semibold transition-colors duration-300" style={{ color: baseTextColor, textShadow: baseTextShadow }}>
                   {spotlightService.name}
                 </span>
-                <span className="text-2xl font-black font-mono transition-colors duration-300" style={{ color: neutralOnWash, textShadow: neutralShadow }}>
+                <span className="text-2xl font-black font-mono transition-colors duration-300" style={{ color: baseTextColor, textShadow: baseTextShadow }}>
                   {spotlightService.price}
                 </span>
               </button>
@@ -578,9 +591,6 @@ export function HeroSection() {
                 <ArrowRight weight="bold" className="w-3 h-3" aria-hidden="true" />
               </button>
             </div>
-
-          </div>
-        </div>
 
         <div
           role="marquee"
