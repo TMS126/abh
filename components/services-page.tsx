@@ -589,6 +589,26 @@ function isRemoteHub(hubId: HubId) {
   return REMOTE_HUBS.includes(hubId)
 }
 
+// Turnaround estimates keyed by section title, with item-level overrides
+const TURNAROUND: Record<string, string> = {
+  "Printing": "Same day", "Copying": "Same day", "Photo Printing": "Same day",
+  "Typing + Printing": "Same day", "CV Services": "Same day",
+  "Other Documents": "Same day", "Scanning": "Same day", "Laminating": "Same day",
+  "Logos": "2–3 days", "Business Cards": "1–2 days",
+  "Flyers & Posters": "1–2 days", "Social Media": "Same day",
+  "Invitations": "1–2 days", "Revisions": "Same day",
+  "SASSA": "Same day", "SARS": "Same day", "PSIRA": "Same day",
+  "Online Applications": "Same day", "Email Services": "Same day",
+  "Business Services": "Same day", "Digital Setup": "Same day",
+  "Software": "Same day", "Hardware": "Same day",
+  "Support": "Same day", "Windows & Office": "Same day",
+}
+const TURNAROUND_OVERRIDE: Record<string, string> = {
+  "Premium Logo": "3–5 days", "Standard Logo": "2–3 days",
+  "Video": "2–3 days", "Tax Return / VAT / PAYE": "1–2 days",
+  "CSD Registration": "1–2 days", "UIF Claims": "1–2 days",
+}
+
 function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onClose: () => void }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
@@ -600,10 +620,11 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   const [uploadErr,   setUploadErr]   = useState<string | null>(null)
   const [previewUrl,  setPreviewUrl]  = useState<string | null>(null)
   const [shareCopied, setShareCopied] = useState(false)
+  const [addedToQuote, setAddedToQuote] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    setTab("bring")
+    setTab("bring"); setAddedToQuote(false)
     setFile(null); setFileUrl(null)
     setUploadPhase("idle"); setUploadErr(null); setUploadProgress(0)
     setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null })
@@ -788,9 +809,19 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </div>
           </div>
 
-          {/* Price */}
-          <div className="mb-5">
+          {/* Price + turnaround pill */}
+          <div className="flex items-center gap-3 mb-5 flex-wrap">
             <span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
+            <span
+              className="flex items-center gap-1.5 text-[0.65rem] font-bold px-2.5 py-1 rounded-full"
+              style={{ backgroundColor: `${accent}12`, color: accent }}
+            >
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.5"/>
+                <path d="M6 3.5V6.25L7.5 7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              {TURNAROUND_OVERRIDE[svc.name] ?? TURNAROUND[svc.sectionTitle] ?? "Same day"}
+            </span>
           </div>
 
           {/* Tabs */}
@@ -927,6 +958,25 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
               </button>
             </div>
           )}
+
+          {/* + Add to Quote — fires abh:add-to-quote; QuoteCalculatorWidget listens */}
+          <button
+            type="button"
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent("abh:add-to-quote", {
+                detail: { hubId: svc.hubId, sectionTitle: svc.sectionTitle, name: svc.name, price: svc.price }
+              }))
+              setAddedToQuote(true)
+              setTimeout(() => setAddedToQuote(false), 2200)
+            }}
+            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-[14px] font-bold text-sm border-2 transition-all duration-200 active:scale-95"
+            style={addedToQuote
+              ? { borderColor: accent, backgroundColor: `${accent}10`, color: accent }
+              : { borderColor: `${accent}35`, color: accent, backgroundColor: "transparent" }
+            }
+          >
+            {addedToQuote ? "✓ Added to Quote" : "+ Add to Quote"}
+          </button>
 
           {/* WhatsApp CTA */}
           <a
@@ -1128,4 +1178,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-}
+  } 
