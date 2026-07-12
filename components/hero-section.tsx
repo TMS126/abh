@@ -131,10 +131,6 @@ function relativeLuminance(hex: string): number {
   return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
 }
 
-function capitalize(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1)
-}
-
 function pickRandomService(hubIndex: number, excludeName?: string) {
   const list = HUBS_DATA[hubIndex].services
   if (list.length === 1) return list[0]
@@ -151,9 +147,7 @@ function pickRandomService(hubIndex: number, excludeName?: string) {
 type WatermarkLayer = { key: string; Icon: React.ElementType; color: string }
 
 // A single icon fragment spawned when the main CTA is clicked (touch
-// devices only — see canHover below). startX/startY are viewport
-// coordinates of the button center at click time; tx/ty are the pixel
-// offset to that hub's own icon in the ecosystem selector.
+// devices only — see canHover below).
 type Particle = {
   id: number
   Icon: React.ElementType
@@ -186,10 +180,6 @@ export function HeroSection() {
 
   React.useEffect(() => { setMounted(true) }, [])
 
-  // Detects genuine hover-capable pointers (desktop mouse/trackpad) vs
-  // touch-only devices (mobile/tablet), so the radial spider menu only
-  // shows where hover makes sense, and the click-particle burst only
-  // plays where hover ISN'T available.
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return
     const mq = window.matchMedia("(hover: hover) and (pointer: fine)")
@@ -216,11 +206,9 @@ export function HeroSection() {
   const neutralOnWashSoft = washIsLight ? "rgba(17,24,39,0.55)" : "rgba(255,255,255,0.75)"
   const neutralShadow = washIsLight ? "none" : "0 1px 6px rgba(0,0,0,0.35)"
 
-  // "View all ___ services" link color — deliberately the OPPOSITE tone
-  // of the current wash (pastel-on-saturated in light mode, saturated-on-
-  // pastel in dark mode). Same hue family as the hub, so it still reads
-  // as "this hub's color," but far enough apart in lightness from its own
-  // background to never repeat the invisible-text bug.
+  // "View all ___ Services" link — opposite-lightness tone of the current
+  // wash (pastel-on-saturated in light mode, saturated-on-pastel in dark
+  // mode), same hue family as the hub, always legible against its own background.
   const linkColor = isDark ? active.colorLight : active.colorDark
 
   // Watermark crossfade state
@@ -261,9 +249,6 @@ export function HeroSection() {
     setSpotlightService(prev => pickRandomService(activeHub, prev.name))
   }
 
-  // Spawns exactly one particle per hub, travelling straight (no spin)
-  // from the button's real on-screen center to that hub's own icon
-  // position. Touch devices only — see canHover gating in handleCtaClick.
   const spawnParticles = () => {
     if (!ctaBtnRef.current) return
     const btnRect = ctaBtnRef.current.getBoundingClientRect()
@@ -290,8 +275,6 @@ export function HeroSection() {
 
     setParticles(prev => [...prev, ...next])
 
-    // Sped up per request — was 1400ms, now 700ms on the touch devices
-    // that still use this effect.
     const FLIGHT_MS = 700
     setTimeout(() => {
       setParticles(prev => prev.filter(p => !next.some(n => n.id === p.id)))
@@ -302,21 +285,15 @@ export function HeroSection() {
   }
 
   const handleCtaClick = () => {
-    // Desktop/trackpad: the hover radial menu already offers direct
-    // per-hub navigation, so a plain click just goes to the general
-    // services page — no particle burst needed there anymore.
     if (canHover) {
       handleNavigate("/services")
       return
     }
-    // Touch devices: keep the fast particle burst, then navigate.
     spawnParticles()
     if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current)
     navTimeoutRef.current = setTimeout(() => handleNavigate("/services"), 950)
   }
 
-  // Radial "spider legs" positions for the 5 hub shortcuts around the
-  // button — evenly spaced, starting from the top, going clockwise.
   const RADIUS = 108
   const radialPositions = HUBS_DATA.map((_, i) => {
     const angle = (-90 + i * (360 / HUBS_DATA.length)) * (Math.PI / 180)
@@ -379,7 +356,6 @@ export function HeroSection() {
         }
         .abh-cta-gradient { background-size: 200% 200%; animation: abh-cta-gradient-shift 10s ease infinite; }
 
-        /* Fast, straight-line particle flight (touch devices only). */
         @keyframes abh-particle-fly {
           0%   { transform: translate(0, 0) scale(0.5); opacity: 0; }
           12%  { opacity: 1; }
@@ -396,6 +372,17 @@ export function HeroSection() {
           100% { transform: scale(1);   filter: brightness(1); }
         }
         .abh-landed-flash { animation: abh-landed-flash 500ms ease-out; }
+
+        /* Windows 11 taskbar-style active indicator — a short pill that
+           grows in under the selected hub icon and fades out instantly
+           when a different hub is chosen. */
+        @keyframes abh-taskbar-indicator-in {
+          0%   { width: 0px;  opacity: 0; }
+          100% { width: 22px; opacity: 1; }
+        }
+        .abh-taskbar-indicator {
+          animation: abh-taskbar-indicator-in 220ms ease-out forwards;
+        }
       `}</style>
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center text-center relative z-10 w-full mb-8">
@@ -408,8 +395,6 @@ export function HeroSection() {
           From printing your documents to navigating government services — we make it simple, fast, and friendly.
         </p>
 
-        {/* CTA — wrapped in a hover-tracking container so moving the mouse
-            from the button onto the radial menu doesn't close it. */}
         <div
           className="relative w-full flex justify-center items-center mb-12"
           onMouseEnter={() => canHover && setCtaHovered(true)}
@@ -451,10 +436,6 @@ export function HeroSection() {
             style={{ backgroundImage: `linear-gradient(135deg, ${ctaFrom} 0%, ${ctaTo} 100%)` }}
           />
 
-          {/* Radial "spider legs" menu — desktop/trackpad only. Always
-              rendered (not conditionally mounted) so opacity/scale can
-              transition smoothly both in and out, gated purely by
-              ctaHovered + canHover. */}
           {canHover && (
             <div
               aria-hidden={!ctaHovered}
@@ -467,7 +448,6 @@ export function HeroSection() {
                 const HubIconEl = hub.Icon
                 return (
                   <React.Fragment key={hub.id}>
-                    {/* Connecting "leg" line from center to icon */}
                     <div
                       aria-hidden="true"
                       className="absolute left-1/2 top-1/2 origin-left transition-all duration-300 ease-out"
@@ -515,7 +495,7 @@ export function HeroSection() {
           </button>
         </div>
 
-        {/* Core Hub Ecosystem */}
+        {/* Core Hub Ecosystem — box, wash, layout all unchanged from before. */}
         <div className="relative w-full max-w-[840px] mx-auto px-6 sm:px-10 md:px-12 pt-10 sm:pt-14 md:pt-16 pb-16 sm:pb-20 flex flex-col items-center mb-12 overflow-hidden rounded-t-[14px]">
 
           <div
@@ -544,6 +524,10 @@ export function HeroSection() {
               </p>
             </div>
 
+            {/* Hub selector — standby icons are now clearly dimmed (lower
+                opacity + no background tint), the selected icon is fully
+                bright with a tinted background, and a short pill indicator
+                (Windows 11 taskbar-style) grows in underneath it. */}
             <div
               role="tablist"
               aria-label="Service hubs"
@@ -565,24 +549,34 @@ export function HeroSection() {
                     onMouseEnter={() => setHoveredHub(index)}
                     onMouseLeave={() => setHoveredHub(null)}
                     className={cn(
-                      "relative flex items-center justify-center px-4 sm:px-5 py-4 rounded-[14px] transition-all duration-200 flex-1 min-w-[56px]",
+                      "relative flex flex-col items-center justify-center gap-1.5 px-4 sm:px-5 pt-4 pb-2.5 rounded-[14px] transition-all duration-200 flex-1 min-w-[56px]",
                       isActive && "shadow-md",
                       landed && "abh-landed-flash"
                     )}
                     style={{
-                      backgroundColor: isActive || isHovered ? `${hubColor}33` : `${neutralOnWash}0D`,
+                      backgroundColor: isActive ? `${hubColor}33` : (isHovered ? `${neutralOnWash}14` : "transparent"),
                     }}
                   >
                     <span
                       className="transition-all duration-200 flex"
                       style={{
-                        color: neutralOnWash,
-                        opacity: isActive || isHovered ? 1 : (washIsLight ? 0.55 : 0.7),
-                        transform: isActive ? "translateY(-2px) scale(1.08)" : "none",
+                        color: isActive ? hubColor : neutralOnWash,
+                        opacity: isActive ? 1 : (isHovered ? 0.85 : (washIsLight ? 0.32 : 0.4)),
+                        transform: isActive ? "translateY(-1px) scale(1.08)" : "none",
                       }}
                     >
                       {hub.icon(isActive)}
                     </span>
+                    {/* Taskbar-style active indicator */}
+                    <span
+                      aria-hidden="true"
+                      className={cn("block h-[3px] rounded-full", isActive && "abh-taskbar-indicator")}
+                      style={{
+                        width: isActive ? 22 : 0,
+                        backgroundColor: hubColor,
+                        opacity: isActive ? 1 : 0,
+                      }}
+                    />
                   </button>
                 )
               })}
@@ -625,15 +619,15 @@ export function HeroSection() {
                   {spotlightService.price}
                 </span>
               </button>
-              {/* "View all ___ services" — always sentence case now, and
-                  uses linkColor (the hub's opposite-lightness tone) so it
-                  never repeats the same-color-on-same-background bug. */}
+              {/* "View All ___ Services" — Title Case, always, per request.
+                  Color stays linkColor (opposite-lightness tone) so it never
+                  repeats the earlier invisible-text bug. */}
               <button
                 onClick={() => handleNavigate(`/services?hub=${active.id}`)}
                 className="inline-flex items-center gap-1.5 text-[0.65rem] font-black tracking-wide mt-4 transition-opacity hover:opacity-70"
                 style={{ color: linkColor }}
               >
-                {capitalize(`view all ${active.name.toLowerCase()} services`)}
+                View All {active.name} Services
                 <ArrowRight weight="bold" className="w-3 h-3" aria-hidden="true" />
               </button>
             </div>
@@ -669,7 +663,6 @@ export function HeroSection() {
         </div>
       </div>
 
-      {/* Particle burst layer — touch devices only (see handleCtaClick). */}
       <div aria-hidden="true" className="fixed inset-0 z-[9998] pointer-events-none">
         {particles.map((p) => {
           const PIcon = p.Icon
@@ -749,4 +742,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-         } 
+                        } 
