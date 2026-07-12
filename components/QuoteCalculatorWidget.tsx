@@ -12,6 +12,23 @@ const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
 const HOME_BLUE = { light: BRAND.blue, dark: BRAND.lightBlue }
 
+// Picks white or near-black based on actual WCAG relative luminance of the
+// given background hex, rather than assuming "white always works." In
+// dark mode fabColor resolves to BRAND.lightBlue (#A9D6F2) — a pale blue
+// that white icons/text fail against, which is exactly the bug this
+// fixes. Same helper already used in Navbar / AboutPage / Search widget.
+function getReadableTextColor(hex: string): string {
+  const clean = hex.replace("#", "")
+  const r = parseInt(clean.substring(0, 2), 16) / 255
+  const g = parseInt(clean.substring(2, 4), 16) / 255
+  const b = parseInt(clean.substring(4, 6), 16) / 255
+  const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4))
+  const luminance = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
+  const contrastWhite = 1.05 / (luminance + 0.05)
+  const contrastDark  = (luminance + 0.05) / 0.062
+  return contrastWhite >= contrastDark ? "#ffffff" : "#18181b"
+}
+
 // ─── BULK PRICING TIERS ───────────────────────────────────────────────────────
 const BULK_TIERS: Record<string, { min: number; rate: number }[]> = {
   "print-Copying-Black & White":        [{ min: 10, rate: 2 }, { min: 100, rate: 1 }],
@@ -211,6 +228,10 @@ export function QuoteCalculatorWidget() {
   const getSolid      = (id: HubId) => HUB_COLORS[id as HubKey].tagText
   const titleAccent   = isDark ? HUB_COLORS.design.tagTextDark : HUB_COLORS.design.tagText
   const fabColor      = isDark ? HOME_BLUE.dark : HOME_BLUE.light
+  // Icon/text color for anything sitting ON TOP of fabColor — computed
+  // from its real luminance instead of assumed white, so it stays legible
+  // even though fabColor swaps to a pale light-blue in dark mode.
+  const fabTextColor  = useMemo(() => getReadableTextColor(fabColor), [fabColor])
 
   const addItem = (hubId: HubId, sectionTitle: string, name: string, price: string) => {
     const { amount, unit } = parsePrice(price)
@@ -388,10 +409,6 @@ export function QuoteCalculatorWidget() {
     if (win) { win.document.write(html); win.document.close() }
   }
 
-  // Mini-bar now shares the exact same visibility rule as the FAB
-  // (hidden while scrolling, while the panel's open, or while another
-  // widget owns the exclusive slot) so the two never disagree about
-  // whether they should be on screen.
   const fabVisible = !(scrolled && !isOpen) && !isOtherOpen
   const showMiniBar = cart.length > 0 && !isOpen && fabVisible
 
@@ -407,13 +424,7 @@ export function QuoteCalculatorWidget() {
         />
       )}
 
-      {/* ── FAB + attached mini-bar ──────────────────────────────────────
-          The mini-total pill now sits directly against the FAB button —
-          same fixed wrapper, stacked right above it with no gap — so it
-          reads as one attached unit (like the "10" badge does) rather
-          than a separate floating pill. Both fade/hide together on the
-          same scroll/otherWidget rule; nothing else on the page is ever
-          covered or overlapped. */}
+      {/* ── FAB + attached mini-bar ────────────────────────────────────── */}
       <div
         className={cn(
           "fixed z-[9992] right-4 bottom-[5.5rem] flex flex-col items-end gap-2 group/calc",
@@ -423,7 +434,9 @@ export function QuoteCalculatorWidget() {
             : "opacity-0 pointer-events-none scale-90"
         )}
       >
-        {/* Mini-total pill — attached directly above the FAB */}
+        {/* Mini-total pill — attached directly above the FAB. Badge circle
+            now uses fabTextColor instead of hardcoded white, so it stays
+            readable against the pale light-blue fabColor in dark mode. */}
         <button
           onClick={() => setIsOpen(true)}
           className={cn(
@@ -432,8 +445,8 @@ export function QuoteCalculatorWidget() {
           )}
         >
           <span
-            className="min-w-[18px] h-[18px] px-1 rounded-full text-white text-[0.6rem] font-black flex items-center justify-center"
-            style={{ backgroundColor: fabColor }}
+            className="min-w-[18px] h-[18px] px-1 rounded-full text-[0.6rem] font-black flex items-center justify-center"
+            style={{ backgroundColor: fabColor, color: fabTextColor }}
           >
             {itemCount}
           </span>
@@ -457,10 +470,13 @@ export function QuoteCalculatorWidget() {
             Quote
           </span>
 
+          {/* FAB — icon color now computed from fabColor's luminance
+              instead of hardcoded text-white, fixing the white-on-pale-
+              blue contrast failure in dark mode. */}
           <button
             onClick={() => setIsOpen(o => !o)}
-            className="relative w-14 h-14 rounded-full text-white shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
-            style={{ backgroundColor: fabColor }}
+            className="relative w-14 h-14 rounded-full shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
+            style={{ backgroundColor: fabColor, color: fabTextColor }}
             aria-label={isOpen ? "Close quotation calculator" : "Open quotation calculator"}
           >
             {isOpen ? <X size={22} weight="bold" /> : <Calculator size={26} weight="fill" />}
@@ -538,10 +554,12 @@ export function QuoteCalculatorWidget() {
                       placeholder="Name this quote (optional)"
                       className="flex-1 min-w-0 px-2.5 py-1.5 rounded-[8px] bg-white dark:bg-zinc-900 text-xs font-medium text-zinc-800 dark:text-zinc-200 outline-none border border-zinc-100 dark:border-zinc-800"
                     />
+                    {/* Save button — text color now computed instead of
+                        hardcoded white. */}
                     <button
                       onClick={confirmSaveQuote}
-                      className="shrink-0 px-3 py-1.5 rounded-[8px] text-xs font-black text-white"
-                      style={{ backgroundColor: fabColor }}
+                      className="shrink-0 px-3 py-1.5 rounded-[8px] text-xs font-black"
+                      style={{ backgroundColor: fabColor, color: fabTextColor }}
                     >
                       Save
                     </button>
@@ -640,7 +658,9 @@ export function QuoteCalculatorWidget() {
                               <p className="text-[0.62rem] font-medium text-zinc-400">{t.count} item{t.count === 1 ? "" : "s"} · R{t.total}</p>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
-                              <button onClick={() => loadSavedQuote(q)} className="px-2.5 py-1 rounded-[8px] text-[0.65rem] font-black text-white" style={{ backgroundColor: fabColor }}>Load</button>
+                              {/* Load button — text color now computed
+                                  instead of hardcoded white. */}
+                              <button onClick={() => loadSavedQuote(q)} className="px-2.5 py-1 rounded-[8px] text-[0.65rem] font-black" style={{ backgroundColor: fabColor, color: fabTextColor }}>Load</button>
                               <button onClick={() => deleteSavedQuote(q.id)} className="w-6 h-6 rounded-full flex items-center justify-center text-zinc-400 hover:text-red-500 transition-colors"><Trash size={12} weight="bold" /></button>
                             </div>
                           </div>
@@ -815,4 +835,4 @@ export function QuoteCalculatorWidget() {
       )}
     </>
   )
-  } 
+    } 
