@@ -589,25 +589,54 @@ function isRemoteHub(hubId: HubId) {
   return REMOTE_HUBS.includes(hubId)
 }
 
-// Turnaround estimates keyed by section title, with item-level overrides
+// Turnaround estimates — researched realistic times for South African retail
+// and government services. Keyed by section title; item-level overrides below.
 const TURNAROUND: Record<string, string> = {
-  "Printing": "Same day", "Copying": "Same day", "Photo Printing": "Same day",
-  "Typing + Printing": "Same day", "CV Services": "Same day",
-  "Other Documents": "Same day", "Scanning": "Same day", "Laminating": "Same day",
-  "Logos": "2–3 days", "Business Cards": "1–2 days",
-  "Flyers & Posters": "1–2 days", "Social Media": "Same day",
-  "Invitations": "1–2 days", "Revisions": "Same day",
-  "SASSA": "Same day", "SARS": "Same day", "PSIRA": "Same day",
-  "Online Applications": "Same day", "Email Services": "Same day",
-  "Business Services": "Same day", "Digital Setup": "Same day",
-  "Software": "Same day", "Hardware": "Same day",
-  "Support": "Same day", "Windows & Office": "Same day",
+  // Print Hub
+  "Printing":            "15–30 mins",
+  "Copying":             "10–20 mins",
+  "Photo Printing":      "20–40 mins",
+  "Scanning":            "10–15 mins",
+  "Laminating":          "10–20 mins",
+  // Docu Hub
+  "Typing + Printing":   "1–3 hours",
+  "CV Services":         "24–48 hours",
+  "Other Documents":     "2–4 hours",
+  // Design Hub
+  "Logos":               "2–3 days",
+  "Business Cards":      "1–2 days",
+  "Flyers & Posters":    "1–2 days",
+  "Social Media":        "24–48 hours",
+  "Invitations":         "1–2 days",
+  "Revisions":           "2–6 hours",
+  // E-Service Hub
+  "SASSA":               "24 hours",
+  "SARS":                "24 hours",
+  "PSIRA":               "1–2 days",
+  "Online Applications": "24 hours",
+  "Email Services":      "15–30 mins",
+  "Business Services":   "1–2 days",
+  "Digital Setup":       "2–4 hours",
+  // Tech Hub
+  "Software":            "1–3 hours",
+  "Hardware":            "1–2 days",
+  "Support":             "2–6 hours",
+  "Windows & Office":    "2–4 hours",
 }
+
+// Item-level overrides for services that differ from their section's estimate
 const TURNAROUND_OVERRIDE: Record<string, string> = {
-  "Premium Logo": "3–5 days", "Standard Logo": "2–3 days",
-  "Video": "2–3 days", "Tax Return / VAT / PAYE": "1–2 days",
-  "CSD Registration": "1–2 days", "UIF Claims": "1–2 days",
+  "Premium Logo":              "3–5 days",
+  "Standard Logo":             "2–3 days",
+  "Video":                     "3–5 days",
+  "Tax Return / VAT / PAYE":   "2–3 days",
+  "CSD Registration":          "1–2 days",
+  "UIF Claims":                "2–3 days",
 }
+
+const TURNAROUND_DISCLAIMER =
+  "Turnaround times are estimates based on standard volume. Factors such as load shedding, third-party system downtime (SARS/SASSA/PSIRA), or complex revision requests may affect final delivery. We appreciate your patience as we ensure the highest quality for your work."
+
 
 function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onClose: () => void }) {
   const { resolvedTheme } = useTheme()
@@ -861,7 +890,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                 ))}
               </ol>
               <p className="abh-muted mt-5">
-                Not sure? Don't worry — just WhatsApp us first and we'll guide you step by step.
+                {TURNAROUND_DISCLAIMER}
               </p>
             </div>
           )}
@@ -1178,4 +1207,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-  } 
+      } 
