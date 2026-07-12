@@ -1,36 +1,16 @@
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
-import { Calculator, X, Plus, Minus, Trash, WhatsappLogo, CaretDown, SealPercent, Printer, FileText, PaintBrush, Globe, Desktop, ArrowCounterClockwise, FloppyDisk, PrinterIcon, FilePdf, BookmarkSimple } from "@phosphor-icons/react"
+import { Calculator, X, Plus, Minus, Trash, WhatsappLogo, CaretDown, SealPercent, Printer, FileText, PaintBrush, Globe, Desktop, ArrowCounterClockwise, FloppyDisk, FilePdf, BookmarkSimple } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey, BIZ, BRAND, waLink } from "@/lib/brand"
-import { HUBS, HubId, type HubSection } from "@/lib/data"
+import { HUBS, HubId } from "@/lib/data"
 import { useExclusiveWidget } from "@/hooks/use-exclusive-widget"
 
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
-// Home page's blue — same light/dark pair used on the Navbar's "/" entry,
-// so the FAB always matches Home's brand blue exactly rather than relying
-// on a Tailwind utility class that might drift from the actual token.
 const HOME_BLUE = { light: BRAND.blue, dark: BRAND.lightBlue }
-
-// Picks white or near-black text for a given background hex based on
-// actual WCAG relative luminance, rather than assuming a fixed white text
-// color always works. fabColor flips to a LIGHT color in dark mode
-// (BRAND.lightBlue), so any button using it as a background needs this —
-// hardcoded white text on that light background was unreadable.
-function getReadableTextColor(hex: string): string {
-  const clean = hex.replace("#", "")
-  const r = parseInt(clean.substring(0, 2), 16) / 255
-  const g = parseInt(clean.substring(2, 4), 16) / 255
-  const b = parseInt(clean.substring(4, 6), 16) / 255
-  const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4))
-  const luminance = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
-  const contrastWhite = 1.05 / (luminance + 0.05)
-  const contrastDark  = (luminance + 0.05) / 0.062
-  return contrastWhite >= contrastDark ? "#ffffff" : "#18181b"
-}
 
 // ─── BULK PRICING TIERS ───────────────────────────────────────────────────────
 const BULK_TIERS: Record<string, { min: number; rate: number }[]> = {
@@ -42,29 +22,10 @@ const BULK_TIERS: Record<string, { min: number; rate: number }[]> = {
   "doc-Typing + Printing-Colour":       [{ min: 10, rate: 11 }],
 }
 
-// Scanning bulk rule — matched by NAME rather than a fixed section/id key.
-// 5+ scans drops to R4 each, regardless of which hub/section it's filed
-// under, as long as the item's name contains "scan".
 const SCAN_BULK_MIN  = 5
 const SCAN_BULK_RATE = 4
 function isScanItem(name: string) {
   return /scan/i.test(name)
-}
-
-// Does this specific item carry a bulk discount rule (tiered or scan-based)?
-function itemHasBulk(hubId: HubId, sectionTitle: string, name: string): boolean {
-  const id = `${hubId}-${sectionTitle}-${name}`
-  return !!BULK_TIERS[id] || isScanItem(name)
-}
-// Does ANY item within this section have a bulk rule? — powers the small
-// "· bulk" badge shown next to the section pill (e.g. "Typing + Printing").
-function sectionHasBulk(hubId: HubId, section: HubSection): boolean {
-  return section.items.some(item => itemHasBulk(hubId, section.title, item.name))
-}
-// Does ANY section within this hub have a bulk item? — powers the same
-// badge next to the hub name in "Add a Service" (e.g. "Document Hub").
-function hubHasBulk(hubId: HubId): boolean {
-  return HUBS[hubId].sections.some(section => sectionHasBulk(hubId, section))
 }
 
 const SECTION_LABEL: Record<string, string> = {
@@ -135,7 +96,6 @@ interface SavedQuote {
 const STORAGE_KEY        = "apexbytes-quote-cart"
 const STORAGE_KEY_SAVED  = "apexbytes-saved-quotes"
 
-// ─── Liquid glass style helpers ────────────────────────────────────────────────
 const GLASS = {
   panel: "bg-white/70 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/40 dark:border-white/10",
   section: "bg-white/60 dark:bg-white/5 border border-white/60 dark:border-white/10",
@@ -161,26 +121,21 @@ export function QuoteCalculatorWidget() {
   const scrollTimer             = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [scrolled, setScrolled] = useState(false)
 
-  // Focus-on-add
   const [highlightId, setHighlightId] = useState<string | null>(null)
   const qtyInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
   const [announce, setAnnounce] = useState("")
 
-  // Undo-on-remove
   const [undoStack, setUndoStack] = useState<{ item: CartItem; index: number } | null>(null)
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Save-quote
   const [savedQuotes, setSavedQuotes] = useState<SavedQuote[]>([])
   const [savedHydrated, setSavedHydrated] = useState(false)
   const [showSaveForm, setShowSaveForm] = useState(false)
   const [saveNameDraft, setSaveNameDraft] = useState("")
   const [showSavedList, setShowSavedList] = useState(false)
 
-  // Long-press stepper
   const pressState = useRef<Record<string, { timeout?: ReturnType<typeof setTimeout>; interval?: ReturnType<typeof setInterval>; longPressed?: boolean }>>({})
 
-  // Persist cart
   useEffect(() => {
     try { const s = localStorage.getItem(STORAGE_KEY); if (s) setCart(JSON.parse(s)) } catch {}
     setHydrated(true)
@@ -190,7 +145,6 @@ export function QuoteCalculatorWidget() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cart)) } catch {}
   }, [cart, hydrated])
 
-  // Persist saved quotes
   useEffect(() => {
     try { const s = localStorage.getItem(STORAGE_KEY_SAVED); if (s) setSavedQuotes(JSON.parse(s)) } catch {}
     setSavedHydrated(true)
@@ -200,7 +154,6 @@ export function QuoteCalculatorWidget() {
     try { localStorage.setItem(STORAGE_KEY_SAVED, JSON.stringify(savedQuotes)) } catch {}
   }, [savedQuotes, savedHydrated])
 
-  // Fade FAB while scrolling
   useEffect(() => {
     const onScroll = () => {
       setScrolled(true)
@@ -211,13 +164,11 @@ export function QuoteCalculatorWidget() {
     return () => { window.removeEventListener("scroll", onScroll); if (scrollTimer.current) clearTimeout(scrollTimer.current) }
   }, [])
 
-  // Lock body scroll while open
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : ""
     return () => { document.body.style.overflow = "" }
   }, [isOpen])
 
-  // Listen for "abh:add-to-quote" events fired by the ServiceDetailModal.
   useEffect(() => {
     const handler = (e: Event) => {
       const { hubId, sectionTitle, name, price } = (e as CustomEvent).detail
@@ -228,30 +179,25 @@ export function QuoteCalculatorWidget() {
     return () => window.removeEventListener("abh:add-to-quote", handler)
   }, [])
 
-  // Focus-on-add effect — scrolls the newly-added/updated row into view
-  // and highlights it. Intentionally does NOT call .focus()/.select() on
-  // the quantity input anymore: that was popping the mobile keyboard open
-  // every single time a service was added, anywhere in the app. The
-  // scroll + ring highlight below already gives clear visual confirmation
-  // without hijacking focus.
   useEffect(() => {
     if (!highlightId) return
     const id = highlightId
     let raf1: number, raf2: number
-    const tryScroll = () => {
+    const tryFocus = () => {
       const el = qtyInputRefs.current[id]
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" })
+        el.focus()
+        el.select()
       } else {
-        raf2 = requestAnimationFrame(tryScroll)
+        raf2 = requestAnimationFrame(tryFocus)
       }
     }
-    raf1 = requestAnimationFrame(tryScroll)
+    raf1 = requestAnimationFrame(tryFocus)
     const clearT = setTimeout(() => setHighlightId(null), 900)
     return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); clearTimeout(clearT) }
   }, [highlightId])
 
-  // Clean up any lingering long-press timers on unmount
   useEffect(() => {
     return () => {
       Object.values(pressState.current).forEach(s => {
@@ -261,21 +207,10 @@ export function QuoteCalculatorWidget() {
     }
   }, [])
 
-  // True saturated per-hub accent, as a light/dark pair (accentLight/
-  // accentDark in brand.ts) — was previously reading tagText/tagTextDark,
-  // the flat grey pair shared by every hub, which is why this whole panel
-  // showed no real hub colors. getSolid is now the same pair (rather than
-  // always the light-mode value) so solid fills track the theme too;
-  // getReadableTextColor (already defined above) keeps hardcoded-white
-  // text spots safe against it in both themes.
-  const getAccent     = (id: HubId) => { const c = HUB_COLORS[id as HubKey]; return isDark ? c.accentDark : c.accentLight }
-  const getSolid      = (id: HubId) => { const c = HUB_COLORS[id as HubKey]; return isDark ? c.accentDark : c.accentLight }
+  const getAccent     = (id: HubId) => { const c = HUB_COLORS[id as HubKey]; return isDark ? c.tagTextDark : c.tagText }
+  const getSolid      = (id: HubId) => HUB_COLORS[id as HubKey].tagText
   const titleAccent   = isDark ? HUB_COLORS.design.tagTextDark : HUB_COLORS.design.tagText
   const fabColor      = isDark ? HOME_BLUE.dark : HOME_BLUE.light
-  // Computed once per render — used everywhere fabColor is a BACKGROUND
-  // (not everywhere it's used as text), so the text on top of it always
-  // stays readable regardless of theme.
-  const fabTextColor  = getReadableTextColor(fabColor)
 
   const addItem = (hubId: HubId, sectionTitle: string, name: string, price: string) => {
     const { amount, unit } = parsePrice(price)
@@ -290,8 +225,6 @@ export function QuoteCalculatorWidget() {
     setAnnounce(`${getDisplayName(sectionTitle, name)} added — now ${nextQty} in your quote`)
   }
 
-  // Remove with undo support — snapshots the item + its position so Undo
-  // can put it back exactly where it was, not just appended to the end.
   const removeItem = (id: string) => {
     setCart(prev => {
       const index = prev.findIndex(i => i.id === id)
@@ -328,8 +261,6 @@ export function QuoteCalculatorWidget() {
     if (qty < 1) setCart(prev => prev.map(i => i.id === id ? { ...i, qty: 1 } : i))
   }
 
-  // Functional step — used by both single-tap +/- and the long-press
-  // repeater below, so neither path relies on a possibly-stale qty value.
   const stepQty = (id: string, delta: number) => {
     setCart(prev => {
       const item = prev.find(i => i.id === id)
@@ -346,10 +277,6 @@ export function QuoteCalculatorWidget() {
     })
   }
 
-  // Long-press stepper — hold +/- to rapid-increment instead of tapping
-  // repeatedly. A short delay before repeats start distinguishes a normal
-  // tap (handled by onClick) from a genuine hold; the flag on release
-  // stops the click that naturally follows a touch/press from double-firing.
   const HOLD_DELAY = 420
   const REPEAT_MS  = 90
   const clearPress = (id: string) => {
@@ -378,7 +305,6 @@ export function QuoteCalculatorWidget() {
 
   const { total, savings: totalSavings, count: itemCount } = useMemo(() => quoteTotals(cart), [cart])
 
-  // Per-hub subtotal — shown in each hub's header once it has items.
   const hubSubtotal = (hubId: HubId) => {
     const items = cart.filter(i => i.hubId === hubId)
     if (items.length === 0) return null
@@ -405,7 +331,6 @@ export function QuoteCalculatorWidget() {
     setOpenSections(prev => ({ ...prev, [hubId]: prev[hubId] === sIdx ? null : sIdx }))
   }
 
-  // ── Save this quote ───────────────────────────────────────────────────
   const confirmSaveQuote = () => {
     if (cart.length === 0) return
     const name = saveNameDraft.trim() || `Quote — ${new Date().toLocaleDateString()}`
@@ -419,7 +344,6 @@ export function QuoteCalculatorWidget() {
   }
   const deleteSavedQuote = (id: string) => setSavedQuotes(prev => prev.filter(q => q.id !== id))
 
-  // ── PDF / print export ────────────────────────────────────────────────
   const exportQuotePdf = () => {
     if (cart.length === 0) return
     const t = quoteTotals(cart)
@@ -464,14 +388,17 @@ export function QuoteCalculatorWidget() {
     if (win) { win.document.write(html); win.document.close() }
   }
 
-  const showMiniBar = cart.length > 0 && !isOpen && !isOtherOpen
+  // Mini-bar now shares the exact same visibility rule as the FAB
+  // (hidden while scrolling, while the panel's open, or while another
+  // widget owns the exclusive slot) so the two never disagree about
+  // whether they should be on screen.
+  const fabVisible = !(scrolled && !isOpen) && !isOtherOpen
+  const showMiniBar = cart.length > 0 && !isOpen && fabVisible
 
   return (
     <>
-      {/* Screen-reader-only live announcer */}
       <span className="sr-only" role="status" aria-live="polite">{announce}</span>
 
-      {/* ── Backdrop ─────────────────────────────────────────────────────── */}
       {isOpen && (
         <div
           className="fixed inset-0 z-[9989] bg-black/30 backdrop-blur-sm transition-opacity duration-200 ease-out motion-reduce:transition-none"
@@ -480,49 +407,40 @@ export function QuoteCalculatorWidget() {
         />
       )}
 
-      {/* ── Sticky mini-total bar ──────────────────────────────────────────
-          Now sits directly beside the FAB (same bottom offset, right-20
-          instead of right-4) rather than stacked ~9rem above it — so it
-          reads as attached to the icon it opens, not a separate floating
-          element. right-20 leaves an ~8px gap after the FAB's own right-4
-          + 56px width, clear of the search widget's idle slot above it. */}
+      {/* ── FAB + attached mini-bar ──────────────────────────────────────
+          The mini-total pill now sits directly against the FAB button —
+          same fixed wrapper, stacked right above it with no gap — so it
+          reads as one attached unit (like the "10" badge does) rather
+          than a separate floating pill. Both fade/hide together on the
+          same scroll/otherWidget rule; nothing else on the page is ever
+          covered or overlapped. */}
       <div
         className={cn(
-          "fixed z-[9991] right-20 bottom-[5.5rem] transition-all duration-200 ease-out motion-reduce:transition-none transform-gpu",
-          showMiniBar ? "opacity-100 translate-x-0 pointer-events-auto" : "opacity-0 translate-x-2 pointer-events-none"
+          "fixed z-[9992] right-4 bottom-[5.5rem] flex flex-col items-end gap-2 group/calc",
+          "transition-all duration-200 ease-out motion-reduce:transition-none transform-gpu",
+          fabVisible
+            ? "opacity-100 scale-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none scale-90"
         )}
       >
+        {/* Mini-total pill — attached directly above the FAB */}
         <button
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-2.5 pl-3.5 pr-4 py-2.5 rounded-full shadow-lg bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 active:scale-95 transition-transform duration-150"
+          className={cn(
+            "flex items-center gap-2 pl-3 pr-3.5 py-2 rounded-full shadow-lg bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 active:scale-95 transition-all duration-200 ease-out origin-bottom-right motion-reduce:transition-none transform-gpu",
+            showMiniBar ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-90 translate-y-1 pointer-events-none"
+          )}
         >
           <span
-            className="min-w-[20px] h-[20px] px-1 rounded-full text-[0.62rem] font-black flex items-center justify-center"
-            style={{ backgroundColor: fabColor, color: fabTextColor }}
+            className="min-w-[18px] h-[18px] px-1 rounded-full text-white text-[0.6rem] font-black flex items-center justify-center"
+            style={{ backgroundColor: fabColor }}
           >
             {itemCount}
           </span>
           <span className="text-xs font-black text-zinc-700 dark:text-zinc-200">R{total}</span>
-          <span className="text-[0.62rem] font-bold uppercase tracking-widest text-zinc-400">View quote</span>
+          <span className="text-[0.6rem] font-bold uppercase tracking-widest text-zinc-400">View quote</span>
         </button>
-      </div>
 
-      {/* ── FAB ──────────────────────────────────────────────────────────── 
-          Position now flips to bottom-24 while open — the exact offset the
-          panel itself sits at (see the panel div below), so the button
-          reads as attached to the panel's bottom-right corner rather than
-          floating separately above it. Same pattern the search widget
-          already used. */}
-      <div
-        className={cn(
-          "fixed z-[9992] right-4 group/calc",
-          isOpen ? "bottom-24" : "bottom-[5.5rem]",
-          "transition-all duration-200 ease-out motion-reduce:transition-none transform-gpu",
-          (scrolled && !isOpen) || isOtherOpen
-            ? "opacity-0 pointer-events-none scale-90"
-            : "opacity-100 scale-100 pointer-events-auto"
-        )}
-      >
         <div className="flex items-center justify-end gap-2">
           <span
             className={cn(
@@ -541,8 +459,8 @@ export function QuoteCalculatorWidget() {
 
           <button
             onClick={() => setIsOpen(o => !o)}
-            className="relative w-14 h-14 rounded-full shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
-            style={{ backgroundColor: fabColor, color: fabTextColor }}
+            className="relative w-14 h-14 rounded-full text-white shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
+            style={{ backgroundColor: fabColor }}
             aria-label={isOpen ? "Close quotation calculator" : "Open quotation calculator"}
           >
             {isOpen ? <X size={22} weight="bold" /> : <Calculator size={26} weight="fill" />}
@@ -566,7 +484,6 @@ export function QuoteCalculatorWidget() {
         >
           <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent pointer-events-none" />
 
-          {/* Header */}
           <div
             className="flex items-center justify-between px-5 py-4 shrink-0 border-b border-white/20 dark:border-white/10"
             style={{ background: "linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 100%)" }}
@@ -582,7 +499,6 @@ export function QuoteCalculatorWidget() {
 
           <div className="flex-1 overflow-y-auto min-h-0">
 
-            {/* ── Undo-on-remove snackbar ──────────────────────────────── */}
             {undoStack && (
               <div className="mx-4 mt-4 flex items-center justify-between gap-3 p-3 rounded-[12px] bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-lg animate-in fade-in slide-in-from-top-1 duration-200">
                 <span className="text-xs font-bold truncate">{getDisplayName(undoStack.item.sectionTitle, undoStack.item.name)} removed</span>
@@ -595,7 +511,6 @@ export function QuoteCalculatorWidget() {
               </div>
             )}
 
-            {/* ── Cart ───────────────────────────────────────────────── */}
             {cart.length > 0 && (
               <div className="p-4 border-b border-white/20 dark:border-white/10 space-y-2">
                 <div className="flex items-center justify-between mb-1 gap-2">
@@ -613,7 +528,6 @@ export function QuoteCalculatorWidget() {
                   </div>
                 </div>
 
-                {/* Save-quote inline form */}
                 {showSaveForm && (
                   <div className="flex items-center gap-2 p-2 rounded-[12px] bg-white/70 dark:bg-white/5 border border-white/60 dark:border-white/10 animate-in fade-in slide-in-from-top-1 duration-150">
                     <input
@@ -626,8 +540,8 @@ export function QuoteCalculatorWidget() {
                     />
                     <button
                       onClick={confirmSaveQuote}
-                      className="shrink-0 px-3 py-1.5 rounded-[8px] text-xs font-black"
-                      style={{ backgroundColor: fabColor, color: fabTextColor }}
+                      className="shrink-0 px-3 py-1.5 rounded-[8px] text-xs font-black text-white"
+                      style={{ backgroundColor: fabColor }}
                     >
                       Save
                     </button>
@@ -705,7 +619,6 @@ export function QuoteCalculatorWidget() {
               </div>
             )}
 
-            {/* ── Saved Quotes ─────────────────────────────────────────── */}
             {savedQuotes.length > 0 && (
               <div className="px-4 pt-4">
                 <button
@@ -727,7 +640,7 @@ export function QuoteCalculatorWidget() {
                               <p className="text-[0.62rem] font-medium text-zinc-400">{t.count} item{t.count === 1 ? "" : "s"} · R{t.total}</p>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
-                              <button onClick={() => loadSavedQuote(q)} className="px-2.5 py-1 rounded-[8px] text-[0.65rem] font-black" style={{ backgroundColor: fabColor, color: fabTextColor }}>Load</button>
+                              <button onClick={() => loadSavedQuote(q)} className="px-2.5 py-1 rounded-[8px] text-[0.65rem] font-black text-white" style={{ backgroundColor: fabColor }}>Load</button>
                               <button onClick={() => deleteSavedQuote(q.id)} className="w-6 h-6 rounded-full flex items-center justify-center text-zinc-400 hover:text-red-500 transition-colors"><Trash size={12} weight="bold" /></button>
                             </div>
                           </div>
@@ -739,7 +652,6 @@ export function QuoteCalculatorWidget() {
               </div>
             )}
 
-            {/* ── Add Services ───────────────────────────────────────── */}
             <div className="p-4 space-y-2">
               <span className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 px-1">Add a Service</span>
               {HUB_ORDER.map(hubId => {
@@ -748,11 +660,9 @@ export function QuoteCalculatorWidget() {
                 const solidAccent = getSolid(hubId)
                 const isHubOpen = openHub === hubId
                 const subtotal = hubSubtotal(hubId)
-                const hubBulk = hubHasBulk(hubId)
 
                 return (
                   <div key={hubId} className={cn("rounded-[14px] overflow-hidden", GLASS.section)}>
-                    {/* Hub header */}
                     <button
                       onClick={() => setOpenHub(isHubOpen ? null : hubId)}
                       className="w-full flex items-center gap-3 p-3 text-left hover:bg-white/20 dark:hover:bg-white/5 transition-colors duration-150"
@@ -764,12 +674,7 @@ export function QuoteCalculatorWidget() {
                         <HubIcon id={hubId} />
                       </div>
                       <span className="flex-1 min-w-0">
-                        <span className="block text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">
-                          {hub.title}
-                          {hubBulk && (
-                            <span className="font-bold ml-1 normal-case" style={{ color: accent }}>· bulk</span>
-                          )}
-                        </span>
+                        <span className="block text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{hub.title}</span>
                         {subtotal && (
                           <span className="block text-[0.62rem] font-bold mt-0.5" style={{ color: accent }}>
                             {subtotal.count} item{subtotal.count === 1 ? "" : "s"} · R{subtotal.total}
@@ -783,7 +688,6 @@ export function QuoteCalculatorWidget() {
                       />
                     </button>
 
-                    {/* Hub body — grid-rows collapse for cheap GPU transitions */}
                     <div
                       className={cn(
                         "grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none",
@@ -794,7 +698,6 @@ export function QuoteCalculatorWidget() {
                         <div className="border-t border-white/20 dark:border-white/10">
                           {hub.sections.map((section, sIdx) => {
                             const isSectionOpen = openSections[hubId] === sIdx
-                            const sectionBulk = sectionHasBulk(hubId, section)
 
                             return (
                               <div
@@ -809,14 +712,11 @@ export function QuoteCalculatorWidget() {
                                     className="text-[0.65rem] font-black uppercase tracking-[0.15em] px-2.5 py-1 rounded-full transition-colors duration-200"
                                     style={
                                       isSectionOpen
-                                        ? { backgroundColor: solidAccent, color: getReadableTextColor(solidAccent) }
+                                        ? { backgroundColor: solidAccent, color: "#fff" }
                                         : { backgroundColor: `${accent}18`, color: accent }
                                     }
                                   >
                                     {section.title}
-                                    {sectionBulk && (
-                                      <span className="normal-case font-bold"> · bulk</span>
-                                    )}
                                   </span>
                                   <CaretDown
                                     size={12}
@@ -834,7 +734,8 @@ export function QuoteCalculatorWidget() {
                                   <div className="overflow-hidden">
                                     <div className="px-3 pb-3 pt-1 space-y-1.5">
                                       {section.items.map((item, iIdx) => {
-                                        const hasBulk = itemHasBulk(hubId, section.title, item.name)
+                                        const itemId = `${hubId}-${section.title}-${item.name}`
+                                        const hasBulk = !!BULK_TIERS[itemId] || isScanItem(item.name)
                                         return (
                                           <div
                                             key={iIdx}
@@ -852,8 +753,8 @@ export function QuoteCalculatorWidget() {
                                             </div>
                                             <button
                                               onClick={() => addItem(hubId, section.title, item.name, item.price)}
-                                              className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center shadow-sm active:scale-90 transition-transform duration-150 transform-gpu"
-                                              style={{ backgroundColor: solidAccent, color: getReadableTextColor(solidAccent) }}
+                                              className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-white shadow-sm active:scale-90 transition-transform duration-150 transform-gpu"
+                                              style={{ backgroundColor: solidAccent }}
                                               aria-label={`Add ${item.name}`}
                                             >
                                               <Plus size={13} weight="bold" />
@@ -876,7 +777,6 @@ export function QuoteCalculatorWidget() {
             </div>
           </div>
 
-          {/* ── Footer ───────────────────────────────────────────────────── */}
           {cart.length > 0 && (
             <div
               className="px-4 pb-4 pt-3 shrink-0 border-t border-white/20 dark:border-white/10 space-y-3"
@@ -915,4 +815,4 @@ export function QuoteCalculatorWidget() {
       )}
     </>
   )
-}
+  } 
