@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback, type ChangeEvent } from "react"
 import { useSearchParams } from "next/navigation"
+import { motion, AnimatePresence, useDragControls, type PanInfo } from "framer-motion"
 import {
   X, Printer, FileText, PaintBrush, Globe, Desktop,
   PaperPlaneTilt, Megaphone, MagnifyingGlass,
@@ -643,6 +644,8 @@ const TURNAROUND_OVERRIDE: Record<string, string> = {
 const TURNAROUND_DISCLAIMER =
   "Turnaround times are estimates based on standard volume. Factors such as load shedding, third-party system downtime (SARS/SASSA/PSIRA), or complex revision requests may affect final delivery. We appreciate your patience as we ensure the highest quality for your work."
 
+// Spring tuned for a native-feeling sheet: snappy but not bouncy.
+const SHEET_TRANSITION = { type: "spring" as const, damping: 32, stiffness: 340 }
 
 function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onClose: () => void }) {
   const { resolvedTheme } = useTheme()
@@ -657,6 +660,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   const [shareCopied, setShareCopied] = useState(false)
   const [addedToQuote, setAddedToQuote] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const dragControls = useDragControls()
 
   useEffect(() => {
     setTab("bring"); setAddedToQuote(false)
@@ -757,6 +761,17 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     if (fileRef.current) fileRef.current.value = ""
   }
 
+  // Swipe-to-close: dragConstraints={{top:0,bottom:0}} means the sheet can't
+  // be dragged away from its resting position except elastically (see
+  // dragElastic below). If the release point/velocity clears the threshold
+  // we close; otherwise framer-motion springs it back to 0 on its own —
+  // no manual "snap back" code needed.
+  const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (info.offset.y > 120 || info.velocity.y > 600) {
+      onClose()
+    }
+  }
+
   if (!svc) return null
 
   const colors       = HUB_COLORS[svc.hubId as HubKey]
@@ -803,16 +818,46 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     : `${naturalLabel} is one of our ${hubTitle} services. We handle everything professionally so you don't have to worry about a thing.`
   const desc = isRemote ? remoteizeText(descRaw) : descRaw
   return (
-    <div className="fixed inset-0 z-[10200] flex items-end justify-center animate-in fade-in duration-300">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm overscroll-contain" onClick={onClose} />
-      {/* True bottom sheet — docked flush to the bottom edge, capped at the
-          same max-w-2xl as HubModal with only a small horizontal gutter
-          (mx-3/mx-6), sliding up from below the viewport rather than
-          fading + zooming in from the center. */}
-      <div className="relative w-full max-w-2xl mx-3 sm:mx-6 rounded-t-[20px] overflow-hidden shadow-2xl bg-white dark:bg-zinc-950 animate-in slide-in-from-bottom-full duration-300 border border-b-0 border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col">
+    <div className="fixed inset-0 z-[10200] flex items-end justify-center">
+      <motion.div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm overscroll-contain"
+        onClick={onClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+      />
+
+      {/* True bottom sheet — same max-w-2xl cap as HubModal with a small
+          horizontal gutter, driven by framer-motion (compositor-animated
+          transform) instead of CSS keyframes, so it stays smooth even with
+          the backdrop-blur active. Drag only initiates from the handle
+          below, so scrolling inside the tab content never fights the sheet. */}
+      <motion.div
+        drag="y"
+        dragControls={dragControls}
+        dragListener={false}
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.55 }}
+        onDragEnd={handleDragEnd}
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={SHEET_TRANSITION}
+        style={{ boxShadow: "0 -16px 44px -10px rgba(0,0,0,0.35), 0 -6px 18px -6px rgba(0,0,0,0.25)" }}
+        className="relative w-full max-w-2xl mx-3 sm:mx-6 rounded-t-[20px] overflow-hidden bg-white dark:bg-zinc-950 border border-b-0 border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col"
+      >
+        {/* Drag handle — the only part of the sheet that starts a drag, so
+            scrolling the tab content below never gets hijacked. */}
+        <div
+          className="w-full flex justify-center pt-3 pb-1.5 cursor-grab active:cursor-grabbing touch-none shrink-0"
+          onPointerDown={(e) => dragControls.start(e)}
+        >
+          <div className="w-10 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+        </div>
 
         {/* Header */}
-        <div className="px-6 pt-6 pb-0 flex-shrink-0">
+        <div className="px-6 pt-1 pb-0 flex-shrink-0">
           <div className="flex justify-between items-start mb-4">
             <div className="flex-1 min-w-0 pr-3">
               <span
@@ -1035,7 +1080,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             Request {naturalLabel}
           </a>
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }
@@ -1205,10 +1250,16 @@ export function ServicesPage() {
         onClose={() => setActiveHub(null)}
         onSelectService={setSelectedService}
       />
-      <ServiceDetailModal
-        svc={selectedService}
-        onClose={() => setSelectedService(null)}
-      />
+
+      <AnimatePresence>
+        {selectedService && (
+          <ServiceDetailModal
+            key={selectedService.name}
+            svc={selectedService}
+            onClose={() => setSelectedService(null)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Back to Top — left side, so it never collides with the WhatsApp /
           Quote Calculator / Search FAB stack anchored on the right. */}
@@ -1224,4 +1275,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-         }
+  }
