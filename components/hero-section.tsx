@@ -628,6 +628,7 @@ const linkColor = activeColor
           </div>
         </div>
       </div>
+          </div>
     </section>
   )
 }
