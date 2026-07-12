@@ -503,15 +503,6 @@ const linkColor = activeColor
                       backgroundColor: isActive ? `${hubColor}33` : (isHovered ? `${neutralOnWash}14` : "transparent"),
                     }}
                   >
-                    {/* Selected icon now always renders in the full-strength
-                        neutral (pure white on a dark wash, near-black on a
-                        light wash) instead of the hub's own hue — on hubs
-                        like teal/blue the hub color nearly matched the
-                        gradient behind it and the "selected" icon all but
-                        vanished. A soft hub-colored glow still marks which
-                        hub it is, without sacrificing contrast. Unselected
-                        icons stay dimmed as before, so selected always
-                        reads unambiguously brighter. */}
                     <span
                       className="transition-all duration-200 flex"
                       style={{
@@ -554,22 +545,14 @@ const linkColor = activeColor
               />
             </div>
 
-            {/* Price block — rebuilt as a plain flex column instead of
-                "text-center" + two inline-flex buttons. The inline-flex
-                buttons were inline-level boxes, so the browser could (and
-                did) wrap them alongside each other on the same text line
-                instead of stacking them, which is exactly the broken
-                "B&W Print / View All..." layout in the screenshot. Now
-                every piece is a real block in a centered flex column —
-                nothing can wrap or drift sideways. */}
-           <div className="w-full max-w-[420px] flex flex-col items-center text-center">
+            <div className="w-full max-w-[420px] flex flex-col items-center text-center">
               <p
                 className="text-[0.65rem] font-black uppercase tracking-widest mb-3 transition-colors duration-300"
                 style={{ color: baseTextColor, textShadow: baseTextShadow }}
               >
                 {active.name}
               </p>
-             
+
               <button
                 key={`${activeHub}-${spotlightService.name}`}
                 onClick={handleReroll}
@@ -579,13 +562,12 @@ const linkColor = activeColor
                 <span className="text-sm font-semibold transition-colors duration-300" style={{ color: baseTextColor, textShadow: baseTextShadow }}>
                   {spotlightService.name}
                 </span>
-                
+
                 <span className="text-2xl font-black font-mono transition-colors duration-300" style={{ color: baseTextColor, textShadow: baseTextShadow }}>
                   {spotlightService.price}
                 </span>
-                
               </button>
-             
+
               <button
                 onClick={() => handleNavigate(`/services?hub=${active.id}`)}
                 className="flex items-center justify-center gap-1.5 text-[0.65rem] font-black tracking-wide mt-4 transition-opacity hover:opacity-70"
@@ -594,41 +576,38 @@ const linkColor = activeColor
                 View All {active.name} Services
                 <ArrowRight weight="bold" className="w-3 h-3" aria-hidden="true" />
               </button>
-             
             </div>
 
-
-
-
-            
-        <div
-          role="marquee"
-          aria-label="Our services"
-          onMouseEnter={() => setMarqueePaused(true)}
-          onMouseLeave={() => setMarqueePaused(false)}
-          onTouchStart={() => setMarqueePaused(p => !p)}
-          className="relative w-full py-4 overflow-hidden select-none group/marquee"
-        >
-          <div
-            className="flex whitespace-nowrap w-max animate-marquee"
-            style={{ animationPlayState: marqueePaused ? "paused" : "running" }}
-          >
-            {[0, 1].map((copy) => (
-              <div key={copy} className="flex items-center shrink-0">
-                {MARQUEE_ITEMS.map((item, idx) => (
-                  <React.Fragment key={idx}>
-                    <span className="inline-flex items-center px-5 text-brand-blue-dark dark:text-brand-light-blue font-semibold text-sm transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100">
-                      {item}
-                    </span>
-                    <span className="text-brand-orange font-black text-base leading-none shrink-0" aria-hidden="true">•</span>
-                  </React.Fragment>
+            <div
+              role="marquee"
+              aria-label="Our services"
+              onMouseEnter={() => setMarqueePaused(true)}
+              onMouseLeave={() => setMarqueePaused(false)}
+              onTouchStart={() => setMarqueePaused(p => !p)}
+              className="relative w-full py-4 overflow-hidden select-none group/marquee"
+            >
+              <div
+                className="flex whitespace-nowrap w-max animate-marquee"
+                style={{ animationPlayState: marqueePaused ? "paused" : "running" }}
+              >
+                {[0, 1].map((copy) => (
+                  <div key={copy} className="flex items-center shrink-0">
+                    {MARQUEE_ITEMS.map((item, idx) => (
+                      <React.Fragment key={idx}>
+                        <span className="inline-flex items-center px-5 text-brand-blue-dark dark:text-brand-light-blue font-semibold text-sm transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100">
+                          {item}
+                        </span>
+                        <span className="text-brand-orange font-black text-base leading-none shrink-0" aria-hidden="true">•</span>
+                      </React.Fragment>
+                    ))}
+                  </div>
                 ))}
               </div>
-            ))}
+            </div>
+
           </div>
         </div>
       </div>
-          </div>
     </section>
   )
 }
@@ -685,4 +664,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-                                                                                     } 
+    } 
