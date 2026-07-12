@@ -80,12 +80,8 @@ const HUBS_DATA = [
       <Globe size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: Globe,
-    // Teal — kept identical to HUB_COLORS.eservice.primary/accentDark in
-    // lib/brand.ts, so this hub reads the same color everywhere: the hero
-    // selector, the giant watermark, the "start here" button gradient, and
-    // (via the abh:heroHubSelect event below) the navbar's logo/controls.
-    colorLight: "#0F766E",
-    colorDark:  "#99F6E4",
+    colorLight: BRAND.teal,
+    colorDark:  BRAND.tealLight,
     services: [
       { name: "SASSA Status Check",         price: "R20"  },
       { name: "SASSA SRD Application",      price: "R40"  },
@@ -119,8 +115,20 @@ const CTA_GRADIENTS: Record<string, [string, string]> = {
   print:    [BRAND.blue,       BRAND.blueMid],
   doc:      [BRAND.green,      BRAND.greenDeep],
   design:   [BRAND.orangeDark, BRAND.orangeBrown],
-  eservice: ["#0F766E",        "#115E59"], // teal — matches HUB_COLORS.eservice gradient
+  eservice: [BRAND.teal,       BRAND.tealDark],
   tech:     [BRAND.dark100,    BRAND.dark200],
+}
+
+// Real WCAG relative luminance — used for the ecosystem box's neutral text
+// (heading, subtitle, price, icons), which must always contrast against
+// whichever hub color the wash currently is.
+function relativeLuminance(hex: string): number {
+  const clean = hex.replace("#", "")
+  const r = parseInt(clean.substring(0, 2), 16) / 255
+  const g = parseInt(clean.substring(2, 4), 16) / 255
+  const b = parseInt(clean.substring(4, 6), 16) / 255
+  const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4))
+  return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
 }
 
 function pickRandomService(hubIndex: number, excludeName?: string) {
@@ -136,17 +144,19 @@ function pickRandomService(hubIndex: number, excludeName?: string) {
 }
 
 // ─── Watermark crossfade layer type ───────────────────────────────────────────
-// Fixes the "previous icon never disappears" bug. The old implementation
-// used a `key`-forced remount + tailwindcss-animate's `animate-in` classes
-// to fake a crossfade — on some mobile browsers, a rapid unmount/remount
-// doesn't reliably clear the old layer's compositing before the new one
-// paints, which is exactly the stacked-icon ghosting you saw. This version
-// never unmounts a layer mid-transition: it adds a new layer, waits one
-// frame, flips only that layer's opacity class to "visible" (triggering a
-// real CSS opacity transition on every layer at once — old ones fade to 0,
-// new one fades to target), then prunes every layer except the current one
-// only *after* the transition duration has actually elapsed.
 type WatermarkLayer = { key: string; Icon: React.ElementType; color: string }
+
+// A single icon fragment spawned when the main CTA is clicked (touch
+// devices only — see canHover below).
+type Particle = {
+  id: number
+  Icon: React.ElementType
+  color: string
+  startX: number
+  startY: number
+  tx: number
+  ty: number
+}
 
 // ─── Hero Section ─────────────────────────────────────────────────────────────
 export function HeroSection() {
@@ -157,8 +167,32 @@ export function HeroSection() {
   const [marqueePaused,     setMarqueePaused]     = useState(false)
   const [spotlightService,  setSpotlightService]  = useState(() => pickRandomService(0))
   const [hoveredHub,        setHoveredHub]        = useState<number | null>(null)
+  const [particles,         setParticles]         = useState<Particle[]>([])
+  const [landed,            setLanded]            = useState(false)
+  const [canHover,          setCanHover]          = useState(false)
+  const [ctaHovered,        setCtaHovered]        = useState(false)
+
+  const particleIdRef = useRef(0)
+  const navTimeoutRef  = useRef<ReturnType<typeof setTimeout>>()
+  const landFlashRef   = useRef<ReturnType<typeof setTimeout>>()
+  const ctaBtnRef      = useRef<HTMLButtonElement>(null)
+  const hubIconRefs    = useRef<(HTMLButtonElement | null)[]>([])
 
   React.useEffect(() => { setMounted(true) }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return
+    const mq = window.matchMedia("(hover: hover) and (pointer: fine)")
+    setCanHover(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setCanHover(e.matches)
+    mq.addEventListener("change", handler)
+    return () => mq.removeEventListener("change", handler)
+  }, [])
+
+  useEffect(() => () => {
+    if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current)
+    if (landFlashRef.current) clearTimeout(landFlashRef.current)
+  }, [])
 
   const isDark    = mounted && resolvedTheme === "dark"
   const colorFor  = (hub: typeof HUBS_DATA[number]) => isDark ? hub.colorDark : hub.colorLight
@@ -166,6 +200,16 @@ export function HeroSection() {
   const activeColor = colorFor(active)
   const WatermarkIcon = active.Icon
   const [ctaFrom, ctaTo] = CTA_GRADIENTS[active.id] ?? [BRAND.blue, BRAND.blueMid]
+
+  const washIsLight = relativeLuminance(activeColor) > 0.55
+  const neutralOnWash = washIsLight ? "#111827" : "#FFFFFF"
+  const neutralOnWashSoft = washIsLight ? "rgba(17,24,39,0.55)" : "rgba(255,255,255,0.75)"
+  const neutralShadow = washIsLight ? "none" : "0 1px 6px rgba(0,0,0,0.35)"
+
+  // "View all ___ Services" link — opposite-lightness tone of the current
+  // wash (pastel-on-saturated in light mode, saturated-on-pastel in dark
+  // mode), same hue family as the hub, always legible against its own background.
+  const linkColor = isDark ? active.colorLight : active.colorDark
 
   // Watermark crossfade state
   const [watermarkLayers, setWatermarkLayers] = useState<WatermarkLayer[]>([])
@@ -186,7 +230,7 @@ export function HeroSection() {
     if (pruneTimeoutRef.current) clearTimeout(pruneTimeoutRef.current)
     pruneTimeoutRef.current = setTimeout(() => {
       setWatermarkLayers(prev => prev.filter(l => l.key === visibleKey))
-    }, 750) // matches the layer's transition-duration-700 + small buffer
+    }, 750)
     return () => { if (pruneTimeoutRef.current) clearTimeout(pruneTimeoutRef.current) }
   }, [watermarkLayers, visibleKey])
 
@@ -195,11 +239,6 @@ export function HeroSection() {
   const handleSelectHub = (index: number) => {
     setActiveHub(index)
     setSpotlightService(pickRandomService(index))
-
-    // Tells the Navbar to tint its logo/toggle/hamburger icons to this
-    // hub's color while on the homepage. Navbar resets this on any
-    // pathname change, so it never persists once the person navigates
-    // away (see requirement: stay on normal "/" color until clicked).
     const hub = HUBS_DATA[index]
     window.dispatchEvent(
       new CustomEvent("abh:heroHubSelect", { detail: { light: hub.colorLight, dark: hub.colorDark } })
@@ -210,31 +249,71 @@ export function HeroSection() {
     setSpotlightService(prev => pickRandomService(activeHub, prev.name))
   }
 
+  const spawnParticles = () => {
+    if (!ctaBtnRef.current) return
+    const btnRect = ctaBtnRef.current.getBoundingClientRect()
+    const startX = btnRect.left + btnRect.width / 2
+    const startY = btnRect.top + btnRect.height / 2
+
+    const next: Particle[] = HUBS_DATA.map((hub, i) => {
+      const targetEl = hubIconRefs.current[i]
+      let tx = 0
+      let ty = 0
+      if (targetEl) {
+        const r = targetEl.getBoundingClientRect()
+        tx = (r.left + r.width / 2) - startX
+        ty = (r.top + r.height / 2) - startY
+      }
+      particleIdRef.current += 1
+      return {
+        id: particleIdRef.current,
+        Icon: hub.Icon,
+        color: isDark ? hub.colorDark : hub.colorLight,
+        startX, startY, tx, ty,
+      }
+    })
+
+    setParticles(prev => [...prev, ...next])
+
+    const FLIGHT_MS = 700
+    setTimeout(() => {
+      setParticles(prev => prev.filter(p => !next.some(n => n.id === p.id)))
+      setLanded(true)
+      if (landFlashRef.current) clearTimeout(landFlashRef.current)
+      landFlashRef.current = setTimeout(() => setLanded(false), 500)
+    }, FLIGHT_MS)
+  }
+
+  const handleCtaClick = () => {
+    if (canHover) {
+      handleNavigate("/services")
+      return
+    }
+    spawnParticles()
+    if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current)
+    navTimeoutRef.current = setTimeout(() => handleNavigate("/services"), 950)
+  }
+
+  const RADIUS = 108
+  const radialPositions = HUBS_DATA.map((_, i) => {
+    const angle = (-90 + i * (360 / HUBS_DATA.length)) * (Math.PI / 180)
+    return { x: Math.cos(angle) * RADIUS, y: Math.sin(angle) * RADIUS, angleDeg: (-90 + i * (360 / HUBS_DATA.length)) }
+  })
+
  return (
     <section
       aria-label="Hero"
       className="relative min-h-[calc(100vh-var(--nav-h))] w-full flex flex-col items-center justify-center px-4 md:px-8 pt-[calc(var(--nav-h)+96px)] md:pt-[172px] pb-16 md:pb-28 overflow-hidden cursor-default select-none bg-background transition-colors duration-300"
     >
-      {/* Storefront photo — full-bleed background for the hero only.
-          Sits below the noise texture, ambient blob, and scrim, all of
-          which layer on top of it exactly as before. */}
       <div className="absolute inset-0 z-0 pointer-events-none" aria-hidden="true">
-        <img
-          src="/storefront.webp"
-          alt=""
-          className="w-full h-full object-cover"
-        />
+        <img src="/storefront.webp" alt="" className="w-full h-full object-cover" />
       </div>
 
-      {/* Dark scrim — keeps the headline, paragraph, and cards readable
-          over the photo. Slightly stronger in dark mode since the photo
-          itself doesn't change with theme. */}
       <div
         className="absolute inset-0 z-0 pointer-events-none bg-white/80 dark:bg-[#0D1B2A]/88"
         aria-hidden="true"
       />
 
-      {/* Noise texture */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <div
           className="absolute inset-0 opacity-[0.03] dark:opacity-[0.06]"
@@ -245,7 +324,6 @@ export function HeroSection() {
         />
       </div>
 
-      {/* Ambient blob — shifts to active hub color */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <div
           className="absolute left-1/2 top-[8%] -translate-x-1/2 w-[140vw] md:w-[90vw] max-w-[1400px] aspect-[16/10] opacity-[0.14] dark:opacity-[0.18] blur-3xl transition-colors duration-700 ease-out"
@@ -276,15 +354,36 @@ export function HeroSection() {
           50%  { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
-        /* Slowed from 4s to 10s per request — the color shift across the
-           button now reads as a gentle, ambient fade instead of an
-           obviously-looping animation. */
         .abh-cta-gradient { background-size: 200% 200%; animation: abh-cta-gradient-shift 10s ease infinite; }
+
+        @keyframes abh-particle-fly {
+          0%   { transform: translate(0, 0) scale(0.5); opacity: 0; }
+          12%  { opacity: 1; }
+          55%  { transform: translate(calc(var(--tx) * 0.55), calc(var(--ty) * 0.55)) scale(1.15); opacity: 1; }
+          100% { transform: translate(var(--tx), var(--ty)) scale(1); opacity: 0; }
+        }
+        .abh-particle-fly {
+          animation: abh-particle-fly 700ms cubic-bezier(0.3, 0.1, 0.2, 1) forwards;
+        }
+
+        @keyframes abh-landed-flash {
+          0%   { transform: scale(1);   filter: brightness(1); }
+          35%  { transform: scale(1.25); filter: brightness(1.6); }
+          100% { transform: scale(1);   filter: brightness(1); }
+        }
+        .abh-landed-flash { animation: abh-landed-flash 500ms ease-out; }
+
+        @keyframes abh-taskbar-indicator-in {
+          0%   { width: 0px;  opacity: 0; }
+          100% { width: 22px; opacity: 1; }
+        }
+        .abh-taskbar-indicator {
+          animation: abh-taskbar-indicator-in 220ms ease-out forwards;
+        }
       `}</style>
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center text-center relative z-10 w-full mb-8">
 
-        {/* H1 — left at large size per decision */}
         <h1 className="font-sans font-black text-4xl md:text-6xl lg:text-[4.2rem] tracking-tight text-brand-blue-dark dark:text-brand-light-blue leading-[1.1] mb-6 text-balance transition-all duration-300">
           {BIZ.tagline}
         </h1>
@@ -293,13 +392,12 @@ export function HeroSection() {
           From printing your documents to navigating government services — we make it simple, fast, and friendly.
         </p>
 
-        {/* CTA — gradient tracks the active hub, crossfade-safe watermark behind it */}
-        <div className="relative w-full flex justify-center items-center mb-12">
+        <div
+          className="relative w-full flex justify-center items-center mb-12"
+          onMouseEnter={() => canHover && setCtaHovered(true)}
+          onMouseLeave={() => canHover && setCtaHovered(false)}
+        >
 
-          {/* Giant tilted hub-icon watermark — crossfades via opacity
-              transitions on stacked layers rather than key-based remount.
-              See WatermarkLayer comment above for why this replaced the
-              old approach. */}
           <div
             aria-hidden="true"
             className="absolute inset-y-0 -right-[18%] md:-right-[10%] flex items-center justify-center pointer-events-none select-none z-0"
@@ -328,7 +426,6 @@ export function HeroSection() {
             })}
           </div>
 
-          {/* Soft pulsing glow behind the button — tracks the active hub */}
           <div
             key={`glow-${active.id}`}
             aria-hidden="true"
@@ -336,10 +433,58 @@ export function HeroSection() {
             style={{ backgroundImage: `linear-gradient(135deg, ${ctaFrom} 0%, ${ctaTo} 100%)` }}
           />
 
+          {canHover && (
+            <div
+              aria-hidden={!ctaHovered}
+              className="absolute inset-0 flex items-center justify-center z-20"
+              style={{ pointerEvents: ctaHovered ? "auto" : "none" }}
+            >
+              {HUBS_DATA.map((hub, i) => {
+                const pos = radialPositions[i]
+                const hubColor = colorFor(hub)
+                const HubIconEl = hub.Icon
+                return (
+                  <React.Fragment key={hub.id}>
+                    <div
+                      aria-hidden="true"
+                      className="absolute left-1/2 top-1/2 origin-left transition-all duration-300 ease-out"
+                      style={{
+                        width: ctaHovered ? RADIUS - 26 : 0,
+                        height: 2,
+                        backgroundColor: `${hubColor}55`,
+                        transform: `rotate(${pos.angleDeg}deg)`,
+                        transitionDelay: ctaHovered ? `${i * 30}ms` : "0ms",
+                      }}
+                    />
+                    <button
+                      onClick={() => handleNavigate(`/services?hub=${hub.id}`)}
+                      aria-label={`Go to ${hub.name}`}
+                      title={hub.name}
+                      className="absolute w-11 h-11 rounded-full flex items-center justify-center shadow-lg transition-all ease-out"
+                      style={{
+                        backgroundColor: hubColor,
+                        color: relativeLuminance(hubColor) > 0.55 ? "#111827" : "#FFFFFF",
+                        transform: ctaHovered
+                          ? `translate(${pos.x}px, ${pos.y}px) scale(1)`
+                          : "translate(0, 0) scale(0.3)",
+                        opacity: ctaHovered ? 1 : 0,
+                        transitionDuration: "320ms",
+                        transitionDelay: ctaHovered ? `${i * 30}ms` : "0ms",
+                      }}
+                    >
+                      <HubIconEl size={20} weight="fill" aria-hidden="true" />
+                    </button>
+                  </React.Fragment>
+                )
+              })}
+            </div>
+          )}
+
           <button
+            ref={ctaBtnRef}
             key={active.id}
-            onClick={() => handleNavigate("/services")}
-            className="abh-cta-gradient relative z-10 inline-flex items-center gap-3 group px-10 py-5 rounded-[16px] font-sans font-black text-lg text-white transition-all duration-300 active:duration-100 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.88] shadow-lg hover:shadow-2xl active:shadow-md active:brightness-90 animate-in fade-in duration-500"
+            onClick={handleCtaClick}
+            className="abh-cta-gradient relative z-10 inline-flex items-center gap-3 group px-10 py-5 rounded-[14px] font-sans font-black text-lg text-white transition-all duration-300 active:duration-100 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.94] shadow-md hover:shadow-xl active:shadow-sm active:brightness-90 animate-in fade-in duration-500"
             style={{ backgroundImage: `linear-gradient(135deg, ${ctaFrom} 0%, ${ctaTo} 50%, ${ctaFrom} 100%)` }}
           >
             Start Here
@@ -347,95 +492,12 @@ export function HeroSection() {
           </button>
         </div>
 
-        {/* Core Hub Ecosystem — now a two-tone vertical gradient card that
-            tracks the active hub's color: solid/tinted at the top, fading
-            smoothly to transparent by the lower half (revealing the glass
-            blur beneath, not the raw hero photo, so text stays legible).
-            "relative overflow-hidden" clips the gradient to the card's own
-            rounded corners. */}
-        <div className="abh-card relative overflow-hidden w-full max-w-[840px] mx-auto p-6 sm:p-10 md:p-12 flex flex-col items-center backdrop-blur-md mb-12">
-
-          {/* Gradient wash — see note above; this animates smoothly in
-              most modern browsers since only the color values in the
-              stops change (not their structure/positions), matching how
-              the ambient blob's solid backgroundColor transitions. */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: `linear-gradient(to bottom, ${activeColor}CC 0%, ${activeColor}5C 45%, ${activeColor}00 75%)`,
-              transition: "background 700ms ease-out",
-            }}
-          />
-          {/* Base glass fill sits BELOW the gradient wash — keeps the
-              lower, faded half of the card legible against the hero photo
-              rather than turning fully see-through. */}
-          <div className="absolute inset-0 -z-10 bg-white/70 dark:bg-zinc-900/60" aria-hidden="true" />
-
-          <div className="relative z-10 w-full flex flex-col items-center">
-
-          <div className="w-full flex flex-col items-center mb-8">
-            <h2 className="abh-section-heading mb-2 text-center text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.35)]">Core Hub Ecosystem</h2>
-            <p className="text-sm font-medium text-white/85 [text-shadow:0_1px_4px_rgba(0,0,0,0.3)]">
-              Tap a hub to see what we actually do there.
-            </p>
-          </div>
-
-          {/* Hub selector — icons only, unchanged from before */}
-          <div
-            role="tablist"
-            aria-label="Service hubs"
-            className="flex flex-wrap sm:flex-nowrap justify-center items-stretch gap-3 sm:gap-4 w-full mb-6 px-1"
-          >
-            {HUBS_DATA.map((hub, index) => {
-              const isActive  = activeHub === index
-              const isHovered = hoveredHub === index
-              const hubColor  = colorFor(hub)
-
-              return (
-                <button
-                  key={hub.id}
-                  role="tab"
-                  aria-selected={isActive}
-                  aria-label={hub.name}
-                  onClick={() => handleSelectHub(index)}
-                  onMouseEnter={() => setHoveredHub(index)}
-                  onMouseLeave={() => setHoveredHub(null)}
-                  className={cn(
-                    "relative flex items-center justify-center px-4 sm:px-5 py-4 rounded-[14px] transition-all duration-200 flex-1 min-w-[56px]",
-                    isActive && "shadow-md"
-                  )}
-                  style={{
-                    backgroundColor: isActive || isHovered ? `${hubColor}14` : undefined,
-                  }}
-                >
-                  <span
-                    className="transition-all duration-200 flex"
-                    style={{
-                      color: isActive || isHovered ? hubColor : "#9A9A9A",
-                      transform: isActive ? "translateY(-2px) scale(1.08)" : "none",
-                    }}
-                  >
-                    {hub.icon(isActive)}
-                  </span>
-                  {isActive && (
-                    <span
-                      className="absolute -bottom-[1px] left-1/2 -translate-x-1/2 w-8 h-[3px] rounded-full"
-                      style={{ backgroundColor: hubColor }}
-                      aria-hidden="true"
-                    />
-                  )}
-{/* Core Hub Ecosystem — added a solid theme-neutral backdrop
-            BEHIND the gradient wash, so as the wash fades toward the
-            bottom it reveals a plain white/near-black surface, never the
-            hero photo underneath. This fixes the washed-out/ghosting text
-            seen previously: dark text chosen for a light pastel wash
-            became nearly invisible once the wash faded and the dark hero
-            photo showed through behind it instead. */}
+        {/* Core Hub Ecosystem — solid backdrop sits behind the gradient
+            wash so the fade always resolves to a plain white/near-black
+            surface, never the hero photo. The name/price/link block also
+            gets its own translucent panel for guaranteed local contrast. */}
         <div className="relative w-full max-w-[840px] mx-auto px-6 sm:px-10 md:px-12 pt-10 sm:pt-14 md:pt-16 pb-16 sm:pb-20 flex flex-col items-center mb-12 overflow-hidden rounded-t-[14px]">
 
-          {/* Solid backdrop — sits below the gradient, above nothing else.
-              Guarantees the fade always resolves to a flat neutral. */}
           <div
             aria-hidden="true"
             className="absolute inset-0 -z-20 pointer-events-none bg-white dark:bg-zinc-950"
@@ -537,10 +599,6 @@ export function HeroSection() {
               />
             </div>
 
-            {/* Name / price / link block — now sits in its own translucent
-                panel (matches the theme, not the hub color) so these three
-                lines always have a guaranteed local backdrop and can never
-                fade into invisibility against the hero photo underneath. */}
             <div
               className="w-full max-w-[420px] text-center rounded-[14px] px-5 py-5 transition-colors duration-300"
               style={{
@@ -579,7 +637,6 @@ export function HeroSection() {
           </div>
         </div>
 
-        {/* Marquee — now below the Core Hub Ecosystem card, per your call */}
         <div
           role="marquee"
           aria-label="Our services"
@@ -599,7 +656,6 @@ export function HeroSection() {
                     <span className="inline-flex items-center px-5 text-brand-blue-dark dark:text-brand-light-blue font-semibold text-sm transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100">
                       {item}
                     </span>
-                    {/* Orange dot — intentional accent, approved exception */}
                     <span className="text-brand-orange font-black text-base leading-none shrink-0" aria-hidden="true">•</span>
                   </React.Fragment>
                 ))}
@@ -608,13 +664,35 @@ export function HeroSection() {
           </div>
         </div>
       </div>
+
+      <div aria-hidden="true" className="fixed inset-0 z-[9998] pointer-events-none">
+        {particles.map((p) => {
+          const PIcon = p.Icon
+          return (
+            <div
+              key={p.id}
+              style={{ position: "fixed", left: p.startX, top: p.startY, transform: "translate(-50%, -50%)" }}
+            >
+              <div
+                className="abh-particle-fly"
+                style={{
+                  "--tx": `${p.tx}px`,
+                  "--ty": `${p.ty}px`,
+                  color: p.color,
+                  filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.35))",
+                } as React.CSSProperties}
+              >
+                <PIcon size={34} weight="fill" aria-hidden="true" />
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </section>
   )
 }
 
 // ─── Stats Bar ────────────────────────────────────────────────────────────────
-// More compact per request: reduced section/card padding, smaller icon
-// chips, tighter gaps.
 export function StatsBar() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
 
@@ -646,7 +724,7 @@ export function StatsBar() {
               style={{ borderColor: isHov ? stat.color : undefined }}
             >
               <div
-                className="w-8 h-8 rounded-[10px] flex items-center justify-center mb-0.5 transition-all duration-200"
+                className="w-8 h-8 rounded-[14px] flex items-center justify-center mb-0.5 transition-all duration-200"
                 style={{
                   backgroundColor: isHov ? stat.color : `${stat.color}15`,
                   color: isHov ? "#ffffff" : stat.color,
@@ -666,4 +744,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-       } 
+      } 
