@@ -22,6 +22,23 @@ const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 // flat hex that only worked in one theme.
 const SEARCH_ORANGE = { light: BRAND.orange, dark: BRAND.lightOrange }
 
+// Picks white or near-black based on actual WCAG relative luminance of
+// the given background hex, rather than assuming "white always works."
+// BRAND.lightOrange (#F9D1B0) is a pale peach — white text/icons on it
+// fail contrast badly, which is exactly the bug this fixes. Same helper
+// pattern already used in Navbar/AboutPage for the same reason.
+function getReadableTextColor(hex: string): string {
+  const clean = hex.replace("#", "")
+  const r = parseInt(clean.substring(0, 2), 16) / 255
+  const g = parseInt(clean.substring(2, 4), 16) / 255
+  const b = parseInt(clean.substring(4, 6), 16) / 255
+  const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4))
+  const luminance = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
+  const contrastWhite = 1.05 / (luminance + 0.05)
+  const contrastDark  = (luminance + 0.05) / 0.062
+  return contrastWhite >= contrastDark ? "#ffffff" : "#18181b"
+}
+
 // ── Distinct glass tokens — heavier blur/saturation and a warm orange
 // wash, so this panel reads as its own "search" identity rather than
 // reusing the neutral glass from the Quote Calculator / WhatsApp panels. ──
@@ -139,6 +156,11 @@ export function FloatingSearchWidget() {
   const index        = useMemo(buildSearchIndex, [])
 
   const accentColor = isDark ? SEARCH_ORANGE.dark : SEARCH_ORANGE.light
+  // FAB icon/X color — computed from accentColor's actual luminance
+  // rather than assumed white, so it stays readable in both themes even
+  // though accentColor swaps between a dark orange (light mode) and a
+  // pale peach (dark mode).
+  const fabIconColor = useMemo(() => getReadableTextColor(accentColor), [accentColor])
 
   const onServicesPage = pathname === SERVICES_PATH
   const hasQuery = query.trim().length > 0
@@ -318,8 +340,8 @@ export function FloatingSearchWidget() {
 
           <button
             onClick={() => (isOpen ? handleClose() : setIsOpen(true))}
-            className="relative w-14 h-14 rounded-full text-white shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
-            style={{ backgroundColor: accentColor }}
+            className="relative w-14 h-14 rounded-full shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
+            style={{ backgroundColor: accentColor, color: fabIconColor }}
             aria-label={isOpen ? "Close search" : "Search services"}
           >
             {isOpen ? <X size={22} weight="bold" /> : <MagnifyingGlass size={24} weight="bold" />}
