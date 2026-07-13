@@ -473,12 +473,12 @@ function FooterContent() {
           © {new Date().getFullYear()} {BIZ.name}. All rights reserved.
         </p>
 
-        <div className="flex items-center justify-center gap-4">
-          <button
+        <button
             onClick={() => setIsTermsOpen(true)}
-            className="text-[0.65rem] font-medium text-zinc-400 hover:text-brand-blue transition-colors"
+            style={{ fontSize: "0.65rem", lineHeight: "1rem" }}
+            className="font-medium text-zinc-400 hover:text-brand-blue transition-colors"
           >
-            Terms &amp; Policies
+            Terms
           </button>
           <span className="text-zinc-200 dark:text-zinc-700" aria-hidden="true">·</span>
           <Link
