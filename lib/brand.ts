@@ -135,7 +135,14 @@ export const HUB_COLORS = {
   },
 } as const
 
-  
+  // Icon accent for generic (non-hub) trust badges like StripSection.
+// Deliberately neutral, not tied to blue/green/orange hierarchy, since
+// these 4 items aren't hub-specific and shouldn't visually compete with
+// hub branding elsewhere on the page.
+export const NEUTRAL_ICON_COLOR = {
+  light: BRAND.dark100,
+  dark: BRAND.techGreyDark,
+} as const
 
 export const BIZ = {
   name: "ApexbytesHub",
