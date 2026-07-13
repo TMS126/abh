@@ -17,16 +17,91 @@ import {
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, MARQUEE_ITEMS, HUB_COLORS } from "@/lib/brand"
-import { getReadableTextColor } from "@/lib/color-utils"
+
+// ─── Contrast-nudging helpers ─────────────────────────────────────────────────
+// Same technique used elsewhere in the app (e.g. the Services page's
+// "explore" label): preserves the hub's own hue rather than swapping to
+// plain black/white, but nudges lightness up or down only as far as needed
+// to clear a contrast threshold against a given neutral surface.
+function hexToRgb(hex: string) {
+  const clean = hex.replace("#", "")
+  const full = clean.length === 3 ? clean.split("").map(c => c + c).join("") : clean
+  const bigint = parseInt(full, 16)
+  return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 }
+}
+function relativeLuminance({ r, g, b }: { r: number; g: number; b: number }) {
+  const [rs, gs, bs] = [r, g, b].map(c => {
+    const s = c / 255
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+  })
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs
+}
+function contrastRatio(hexA: string, hexB: string) {
+  const lA = relativeLuminance(hexToRgb(hexA))
+  const lB = relativeLuminance(hexToRgb(hexB))
+  const [lighter, darker] = lA > lB ? [lA, lB] : [lB, lA]
+  return (lighter + 0.05) / (darker + 0.05)
+}
+function rgbToHex({ r, g, b }: { r: number; g: number; b: number }) {
+  return "#" + [r, g, b].map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("")
+}
+function rgbToHsl({ r, g, b }: { r: number; g: number; b: number }) {
+  const rn = r / 255, gn = g / 255, bn = b / 255
+  const max = Math.max(rn, gn, bn), min = Math.min(rn, gn, bn)
+  let h = 0
+  const l = (max + min) / 2
+  let s = 0
+  if (max !== min) {
+    const d = max - min
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+    switch (max) {
+      case rn: h = (gn - bn) / d + (gn < bn ? 6 : 0); break
+      case gn: h = (bn - rn) / d + 2; break
+      case bn: h = (rn - gn) / d + 4; break
+    }
+    h /= 6
+  }
+  return { h: h * 360, s: s * 100, l: l * 100 }
+}
+function hslToRgb(h: number, s: number, l: number) {
+  const hn = h / 360, sn = s / 100, ln = l / 100
+  let r: number, g: number, b: number
+  if (sn === 0) {
+    r = g = b = ln
+  } else {
+    const hue2rgb = (p: number, q: number, t: number) => {
+      let tt = t
+      if (tt < 0) tt += 1
+      if (tt > 1) tt -= 1
+      if (tt < 1 / 6) return p + (q - p) * 6 * tt
+      if (tt < 1 / 2) return q
+      if (tt < 2 / 3) return p + (q - p) * (2 / 3 - tt) * 6
+      return p
+    }
+    const q = ln < 0.5 ? ln * (1 + sn) : ln + sn - ln * sn
+    const p = 2 * ln - q
+    r = hue2rgb(p, q, hn + 1 / 3); g = hue2rgb(p, q, hn); b = hue2rgb(p, q, hn - 1 / 3)
+  }
+  return { r: r * 255, g: g * 255, b: b * 255 }
+}
+/** Nudges `hex` darker/lighter (preserving hue) until it hits `minRatio` contrast against `bgHex`. */
+function ensureAccessible(hex: string, bgHex: string, minRatio = 4.5) {
+  if (contrastRatio(hex, bgHex) >= minRatio) return hex
+  const hsl = rgbToHsl(hexToRgb(hex))
+  const bgLum = relativeLuminance(hexToRgb(bgHex))
+  const goingDarker = bgLum > 0.5
+  let l = hsl.l
+  for (let i = 0; i < 45; i++) {
+    l += goingDarker ? -2 : 2
+    l = Math.max(0, Math.min(100, l))
+    const candidate = rgbToHex(hslToRgb(hsl.h, hsl.s, l))
+    if (contrastRatio(candidate, bgHex) >= minRatio) return candidate
+    if (l <= 0 || l >= 100) break
+  }
+  return goingDarker ? "#1a1a1a" : "#fafafa"
+}
 
 // ─── Hub data ─────────────────────────────────────────────────────────────────
-// colorLight/colorDark now follow the "Deep/Dark Base" (light mode) and
-// "Bright Accent" (dark mode) pairing from the color architecture doc,
-// rather than the previous ad-hoc BRAND references. This fixes a real
-// bug: Design Hub's old colorLight (BRAND.orangeDark, a medium-bright
-// orange) was light enough that getReadableTextColor() correctly chose
-// black text for WCAG contrast — but visually needed to be white like
-// every other hub. orangeBrown is dark enough to always resolve to white.
 const HUBS_DATA = [
   {
     id: "print",
@@ -53,8 +128,8 @@ const HUBS_DATA = [
       <FileText size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: FileText,
-    colorLight: BRAND.greenDeep,  // Deep/Dark Base — #3E6B0E
-    colorDark:  BRAND.greenDeep,  // Bright Accent  — same, per doc
+    colorLight: BRAND.greenDeep,
+    colorDark:  BRAND.greenDeep,
     services: [
       { name: "CV from Scratch",    price: "R30" },
       { name: "CV Upgrade",         price: "R40" },
@@ -71,8 +146,8 @@ const HUBS_DATA = [
       <PaintBrush size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: PaintBrush,
-    colorLight: BRAND.orangeBrown, // Deep/Dark Base — #B86F34 (FIX: was orangeDark)
-    colorDark:  BRAND.orangeBrown, // Bright Accent  — same, per doc
+    colorLight: BRAND.orangeBrown,
+    colorDark:  BRAND.orangeBrown,
     services: [
       { name: "Logo (Basic)",       price: "R300" },
       { name: "Logo (Standard)",    price: "R500" },
@@ -89,8 +164,8 @@ const HUBS_DATA = [
       <Globe size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: Globe,
-    colorLight: BRAND.blueMid,    // Deep/Dark Base — #15537D
-    colorDark:  BRAND.lightBlue,  // Bright Accent  — #A9D6F2 (pale — dark text is correct here)
+    colorLight: BRAND.blueMid,
+    colorDark:  BRAND.lightBlue,
     services: [
       { name: "SASSA Status Check",         price: "R20"  },
       { name: "SASSA SRD Application",      price: "R40"  },
@@ -107,8 +182,8 @@ const HUBS_DATA = [
       <Desktop size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: Desktop,
-    colorLight: BRAND.dark100,  // Deep/Dark Base — #333333
-    colorDark:  "#B8CCE0",      // Bright Accent  — pale — dark text is correct here
+    colorLight: BRAND.dark100,
+    colorDark:  "#B8CCE0",
     services: [
       { name: "Software Install",              price: "R80"  },
       { name: "PC Setup",                      price: "R250" },
@@ -163,12 +238,6 @@ export function HeroSection() {
   const active    = HUBS_DATA[activeHub]
   const WatermarkIcon = active.Icon
 
-  // Start Here CTA — border/text/glow use the theme-aware neutral identity
-  // color as before. The FILL (the solid overlay that rises on hover/press)
-  // is now a SEPARATE, always-dark neutral — previously the fill reused
-  // CTA_COLOR directly, which in dark mode meant filling with
-  // techGreyDark (a light grey), an oddly bright fill for a dark-mode
-  // button. CTA_FILL_COLOR stays a fixed dark neutral regardless of theme.
   const CTA_COLOR      = isDark ? BRAND.techGreyDark : BRAND.dark100
   const CTA_FILL_COLOR = BRAND.dark100
 
@@ -177,8 +246,16 @@ export function HeroSection() {
   const cardTextSoft  = "rgba(255,255,255,0.82)"
   const cardTextMuted = "rgba(255,255,255,0.55)"
 
-  const spotlightBg   = isDark ? active.colorDark : active.colorLight
-  const spotlightText = getReadableTextColor(spotlightBg)
+  // Neutral surface for the spotlight card — plain white / zinc-900,
+  // regardless of hub. Only the hub NAME label is tinted with the hub's
+  // own color, nudged (hue preserved) for contrast against this exact
+  // surface — that's the "clever plan": a light hub hue against the white
+  // light-mode card, or a dark hub hue against the near-black dark-mode
+  // card, gets auto-corrected; anything that already contrasts fine is
+  // left untouched.
+  const neutralCardBgHex = isDark ? "#18181b" : "#ffffff"
+  const hubColor  = isDark ? active.colorDark : active.colorLight
+  const nameColor = ensureAccessible(hubColor, neutralCardBgHex, 4.5)
 
   // Watermark crossfade state — fixed to brand blue (matches the
   // "blue dominant" rule), doesn't swap color per hub.
@@ -228,10 +305,6 @@ export function HeroSection() {
       aria-label="Hero"
       className="relative min-h-[calc(100vh-var(--nav-h))] w-full flex flex-col items-center justify-center px-4 md:px-8 pt-[calc(var(--nav-h)+56px)] md:pt-[104px] pb-10 md:pb-16 overflow-hidden cursor-default select-none bg-background transition-colors duration-300"
     >
-      {/* Background photo removed entirely per request — section now
-          relies purely on bg-background, so nothing sits behind the
-          noise/blob layers below except the page's own background color. */}
-
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <div
           className="absolute inset-0 opacity-[0.03] dark:opacity-[0.06]"
@@ -242,8 +315,6 @@ export function HeroSection() {
         />
       </div>
 
-      {/* Ambient blob — fixed brand blue (dominant hierarchy color), no
-          longer cycles with the active hub. */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <div
           className="absolute left-1/2 top-[8%] -translate-x-1/2 w-[140vw] md:w-[90vw] max-w-[1400px] aspect-[16/10] opacity-[0.14] dark:opacity-[0.18] blur-3xl"
@@ -280,15 +351,6 @@ export function HeroSection() {
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center relative z-10 w-full mb-6">
 
-        {/* Header row — left-aligned text block + right-aligned image on
-            desktop, both wrapped to the SAME 840px width as the ecosystem
-            box below, so the two elements visually balance against it.
-            Falls back to a centered, stacked layout on mobile (image
-            hidden — the photo isn't essential content there). Tagline is
-            now a neutral black/white (no brand blue) at a larger desktop
-            size, per the color-architecture rule that blue is reserved
-            for small paragraph text (e.g. FAQ answers) elsewhere in the
-            site, not headers. */}
         <div className="w-full max-w-[840px] mx-auto flex flex-col md:flex-row md:items-center gap-6 md:gap-8 mb-6 md:mb-8">
           <div className="flex-1 text-center md:text-left">
             <h1 className="font-sans font-black text-4xl md:text-6xl lg:text-[4.6rem] tracking-tight text-zinc-900 dark:text-zinc-50 leading-[1.08] mb-4 text-balance transition-colors duration-300">
@@ -339,19 +401,12 @@ export function HeroSection() {
             })}
           </div>
 
-          {/* Glow behind the button — solid color, no gradient. */}
           <div
             aria-hidden="true"
             className="absolute w-[220px] h-[80px] rounded-full blur-2xl pointer-events-none abh-cta-glow"
             style={{ backgroundColor: CTA_COLOR }}
           />
 
-          {/* Start Here — border-only at rest, neutral theme-aware
-              identity (dark100 light / techGreyDark dark). On hover/press
-              a solid fill rises from the bottom — that fill is now always
-              CTA_FILL_COLOR (a fixed dark neutral), not CTA_COLOR, so the
-              dark-mode fill reads as a proper dark button rather than
-              filling with the same light grey used for the border/text. */}
           <button
             ref={ctaBtnRef}
             onClick={handleCtaClick}
@@ -379,17 +434,37 @@ export function HeroSection() {
           </button>
         </div>
 
-        {/* Core Hub Ecosystem — permanently filled with flat brand blue.
-            No hover/press reveal, no gradient, ever. Only the spotlight
-            card switches to the active hub's own color; everything else
-            (icons, divider, marquee) stays neutral white against the
-            blue fill. Vertical padding trimmed (was pt-10/16, pb-16/20)
-            to close up the large gap on desktop. */}
+        {/* Core Hub Ecosystem — background is now the storefront photo
+            itself (opacity nudged down slightly, plus a dark overlay for
+            contrast) instead of flat brand blue, with a deep, dramatic
+            drop shadow to make the box stand out from the page. Content
+            wrapped in its own z-10 layer since the image/overlay need to
+            sit behind it, not just be a plain background-color. */}
         <div
-          className="relative w-full max-w-[840px] mx-auto px-6 sm:px-10 md:px-12 pt-8 sm:pt-10 md:pt-12 pb-10 sm:pb-12 md:pb-14 flex flex-col items-center overflow-hidden rounded-[14px]"
-          style={{ backgroundColor: BRAND.blue }}
+          className="relative w-full max-w-[840px] mx-auto rounded-[14px] overflow-hidden"
+          style={{
+            boxShadow:
+              "0 55px 110px -25px rgba(0,0,0,0.6), " +
+              "0 30px 65px -30px rgba(0,0,0,0.7), " +
+              `0 0 90px -20px ${BRAND.blue}60`,
+          }}
         >
-          <div className="w-full flex flex-col items-center">
+          {/* Background photo + dark overlay */}
+          <div className="absolute inset-0 z-0" aria-hidden="true">
+            <Image
+              src="/storefront.webp"
+              alt=""
+              fill
+              sizes="840px"
+              className="object-cover opacity-90"
+            />
+            {/* Dark scrim — image opacity alone isn't enough to keep the
+                white text/icons above reliably readable across the whole
+                photo, so this adds the contrast back in. */}
+            <div className="absolute inset-0 bg-black/45" />
+          </div>
+
+          <div className="relative z-10 w-full flex flex-col items-center px-6 sm:px-10 md:px-12 pt-8 sm:pt-10 md:pt-12 pb-10 sm:pb-12 md:pb-14">
 
             <div className="w-full flex flex-col items-center mb-5">
               <h2
@@ -475,22 +550,17 @@ export function HeroSection() {
               />
             </div>
 
-            {/* Spotlight card — bg = active hub's own color, text is
-                computed via getReadableTextColor() so contrast is always
-                safe regardless of which hub is active. Off-the-screen
-                drop shadow using the hub color for a floating card
-                effect, plus a neutral dark shadow underneath. */}
+            {/* Spotlight card — now a plain NEUTRAL surface (white /
+                zinc-900), same for every hub, so it stays legible sitting
+                on top of the busy photo behind it. Only the hub NAME
+                label is tinted with that hub's own color via nameColor
+                (contrast-nudged above); service name and price stay
+                ordinary neutral text. */}
             <div className="w-full max-w-[420px] flex flex-col items-center text-center">
-              <div
-                className="relative flex flex-col items-center gap-2 rounded-[16px] px-6 py-5 mb-4 transition-colors duration-200"
-                style={{
-                  backgroundColor: spotlightBg,
-                  boxShadow: `0 22px 45px -14px ${spotlightBg}80, 0 12px 24px -10px rgba(0,0,0,0.4)`,
-                }}
-              >
+              <div className="relative flex flex-col items-center gap-2 rounded-[16px] px-6 py-5 mb-4 bg-white dark:bg-zinc-900 shadow-lg transition-colors duration-200">
                 <p
-                  className="text-[0.65rem] font-black uppercase tracking-widest opacity-75"
-                  style={{ color: spotlightText }}
+                  className="text-[0.65rem] font-black uppercase tracking-widest"
+                  style={{ color: nameColor }}
                 >
                   {active.name}
                 </p>
@@ -501,10 +571,10 @@ export function HeroSection() {
                   aria-label="Show another example price for this hub"
                   className="flex flex-col items-center gap-1 rounded-[10px] px-2 py-1 transition-opacity hover:opacity-80 active:scale-[0.97] animate-in fade-in duration-200"
                 >
-                  <span className="text-sm font-semibold" style={{ color: spotlightText }}>
+                  <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
                     {spotlightService.name}
                   </span>
-                  <span className="text-2xl font-black font-mono" style={{ color: spotlightText }}>
+                  <span className="text-2xl font-black font-mono text-zinc-900 dark:text-zinc-50">
                     {spotlightService.price}
                   </span>
                 </button>
@@ -606,4 +676,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-         } 
+    } 
