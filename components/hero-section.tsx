@@ -119,9 +119,9 @@ const CTA_GRADIENTS: Record<string, [string, string]> = {
   tech:     [BRAND.dark100,    BRAND.dark200],
 }
 
-// Real WCAG relative luminance — used for the ecosystem box's neutral text
-// (heading, subtitle, price, icons), which must always contrast against
-// whichever hub color the wash currently is.
+// Real WCAG relative luminance — kept for the desktop radial menu's
+// per-hub circle text (still theme-varying hub colors there), and as a
+// safety fallback for the ecosystem box below.
 function relativeLuminance(hex: string): number {
   const clean = hex.replace("#", "")
   const r = parseInt(clean.substring(0, 2), 16) / 255
@@ -176,41 +176,29 @@ export function HeroSection() {
   const active    = HUBS_DATA[activeHub]
   const activeColor = colorFor(active)
   const WatermarkIcon = active.Icon
-  // CTA gradient always derives from the SAME active hub + SAME BRAND
-  // tokens that drive the navbar's per-hub tint (abh:heroHubSelect below)
-  // and this card's own wash — so all three stay in lockstep automatically
-  // whenever activeHub changes, without any extra wiring.
+  // CTA gradient — the button's own color, NEVER theme-toggled (this
+  // constant map has no isDark branch at all). Everything in the
+  // "Core Hub Ecosystem" box below now deliberately reuses THIS same
+  // source, instead of the theme-varying `activeColor`, per request: the
+  // box's background/accents should track "the main button color" and
+  // stay dark-toned regardless of light/dark mode.
   const [ctaFrom, ctaTo] = CTA_GRADIENTS[active.id] ?? [BRAND.blue, BRAND.blueMid]
 
-  const washIsLight = relativeLuminance(activeColor) > 0.55
-  const neutralOnWash = washIsLight ? "#111827" : "#FFFFFF"
-  const neutralOnWashSoft = washIsLight ? "rgba(17,24,39,0.55)" : "rgba(255,255,255,0.75)"
-  const neutralShadow = washIsLight ? "none" : "0 1px 6px rgba(0,0,0,0.35)"
+  // ── Ecosystem box color model ─────────────────────────────────────────
+  // Background is now a fixed dark wash built from ctaFrom/ctaTo (same as
+  // the button), with a hardcoded dark base underneath the fade — not
+  // bg-white/dark:bg-zinc-950 — so the card never flips light in light
+  // mode. Every CTA_GRADIENTS entry is a genuinely dark hue (verified via
+  // relativeLuminance below), so plain white text is safe everywhere,
+  // with a dynamic fallback kept in for any future hub whose tone might
+  // not be dark enough.
+  const hubAccent   = ctaFrom
+  const accentIsDark = relativeLuminance(hubAccent) <= 0.55
+  const cardText      = accentIsDark ? "#FFFFFF" : "#111827"
+  const cardTextSoft  = accentIsDark ? "rgba(255,255,255,0.82)" : "rgba(17,24,39,0.72)"
+  const cardTextMuted = accentIsDark ? "rgba(255,255,255,0.55)" : "rgba(17,24,39,0.5)"
+  const cardShadow    = accentIsDark ? "0 1px 6px rgba(0,0,0,0.45)" : "none"
 
-  // "View all ___ Services" link — now simply reuses activeColor, the same
-  // theme-aware color already computed by colorFor for everything else in
-  // this card (divider, blob, watermark). Previously this had its own
-  // "opposite-lightness" formula that inverted the mapping — it picked the
-  // SATURATED brand hue in dark mode (unreadable on the near-black surface
-  // the gradient fades to) and the PASTEL hue in light mode (unreadable on
-  // white). activeColor is already correct: colorLight (a vivid, darker
-  // hue) in light theme against the white surface below, colorDark (a
-  // pastel, lighter hue) in dark theme against the near-black surface below.
-const linkColor = activeColor
-
-  // Lower price block (hub name / service name / price) sits near the
-  // BOTTOM of the gradient (58–86% offsets), where the wash has already
-  // faded most of the way to the page's own base surface — white in light
-  // mode, near-black (zinc-950) in dark mode. Using neutralOnWash there
-  // (chosen against the hub's own accent color) breaks for hubs whose dark-
-  // mode accent is itself light/pastel — e.g. Tech's #B8CCE0 — because it
-  // picks near-black text for a spot that's actually faded close to black.
-  // This pair instead targets the surface it's really sitting on.
-  const baseTextColor  = isDark ? "#FFFFFF" : "#111827"
-  const baseTextShadow = isDark ? "0 1px 6px rgba(0,0,0,0.45)" : "none"
-
-
-  
   // Watermark crossfade state
   const [watermarkLayers, setWatermarkLayers] = useState<WatermarkLayer[]>([])
   const [visibleKey,       setVisibleKey]      = useState<string | null>(null)
@@ -249,16 +237,15 @@ const linkColor = activeColor
     setSpotlightService(prev => pickRandomService(activeHub, prev.name))
   }
 
-  // Instant route, no gating of any kind — the mobile "flying particles"
-  // effect that used to play here (and briefly delay navigation while it
-  // finished) has been removed entirely per request. The desktop-only
-  // hover radial menu (the "star-like thing", gated by canHover below) is
-  // the only decorative flourish left on this button.
   const handleCtaClick = () => {
     handleNavigate("/services")
   }
 
-  const RADIUS = 108
+  // Radial "star" menu — brought closer in (108 → 72) so the pointer has
+  // much less distance to travel from the button to any icon, and the
+  // connecting "web" lines are gone entirely (removed from the render
+  // below), per request.
+  const RADIUS = 72
   const radialPositions = HUBS_DATA.map((_, i) => {
     const angle = (-90 + i * (360 / HUBS_DATA.length)) * (Math.PI / 180)
     return { x: Math.cos(angle) * RADIUS, y: Math.sin(angle) * RADIUS, angleDeg: (-90 + i * (360 / HUBS_DATA.length)) }
@@ -339,8 +326,17 @@ const linkColor = activeColor
           From printing your documents to navigating government services — we make it simple, fast, and friendly.
         </p>
 
+        {/* CTA wrapper — given real breathing room via min-height (desktop
+            only, via the canHover check) so the popped-out icons always
+            stay INSIDE this element's bounds. Previously the wrapper's
+            height only matched the button itself, so moving the mouse
+            toward a popped icon at radius 108 immediately exited the
+            wrapper and fired onMouseLeave, closing the menu before the
+            click could land — that's the "icons disappear before I can
+            click them" bug. */}
         <div
           className="relative w-full flex justify-center items-center mb-12"
+          style={canHover ? { minHeight: RADIUS * 2 + 140 } : undefined}
           onMouseEnter={() => canHover && setCtaHovered(true)}
           onMouseLeave={() => canHover && setCtaHovered(false)}
         >
@@ -380,51 +376,45 @@ const linkColor = activeColor
             style={{ backgroundImage: `linear-gradient(135deg, ${ctaFrom} 0%, ${ctaTo} 100%)` }}
           />
 
-          {/* Desktop-only "star" reveal — the sole surviving flourish on
-              this button. The mobile tap-triggered flying-particles effect
-              has been removed entirely per request. */}
+          {/* Desktop-only "star" reveal. FIX: this container is now
+              ALWAYS pointer-events-none — it used to flip to auto and
+              cover the entire area (including the visible "Start Here"
+              button sitting underneath it in z-index) whenever
+              ctaHovered was true, silently swallowing every click on the
+              button. Each individual popped-out icon button below
+              re-enables pointer-events on itself only, so the icons stay
+              clickable while the button underneath is finally reachable
+              too. The connecting "web" lines have been removed entirely. */}
           {canHover && (
             <div
               aria-hidden={!ctaHovered}
-              className="absolute inset-0 flex items-center justify-center z-20"
-              style={{ pointerEvents: ctaHovered ? "auto" : "none" }}
+              className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
             >
               {HUBS_DATA.map((hub, i) => {
                 const pos = radialPositions[i]
                 const hubColor = colorFor(hub)
                 const HubIconEl = hub.Icon
                 return (
-                  <React.Fragment key={hub.id}>
-                    <div
-                      aria-hidden="true"
-                      className="absolute left-1/2 top-1/2 origin-left transition-all duration-300 ease-out"
-                      style={{
-                        width: ctaHovered ? RADIUS - 26 : 0,
-                        height: 2,
-                        backgroundColor: `${hubColor}55`,
-                        transform: `rotate(${pos.angleDeg}deg)`,
-                        transitionDelay: ctaHovered ? `${i * 30}ms` : "0ms",
-                      }}
-                    />
-                    <button
-                      onClick={() => handleNavigate(`/services?hub=${hub.id}`)}
-                      aria-label={`Go to ${hub.name}`}
-                      title={hub.name}
-                      className="absolute w-11 h-11 rounded-full flex items-center justify-center shadow-lg transition-all ease-out"
-                      style={{
-                        backgroundColor: hubColor,
-                        color: relativeLuminance(hubColor) > 0.55 ? "#111827" : "#FFFFFF",
-                        transform: ctaHovered
-                          ? `translate(${pos.x}px, ${pos.y}px) scale(1)`
-                          : "translate(0, 0) scale(0.3)",
-                        opacity: ctaHovered ? 1 : 0,
-                        transitionDuration: "320ms",
-                        transitionDelay: ctaHovered ? `${i * 30}ms` : "0ms",
-                      }}
-                    >
-                      <HubIconEl size={20} weight="fill" aria-hidden="true" />
-                    </button>
-                  </React.Fragment>
+                  <button
+                    key={hub.id}
+                    onClick={() => handleNavigate(`/services?hub=${hub.id}`)}
+                    aria-label={`Go to ${hub.name}`}
+                    title={hub.name}
+                    className="absolute w-11 h-11 rounded-full flex items-center justify-center shadow-lg transition-all ease-out"
+                    style={{
+                      backgroundColor: hubColor,
+                      color: relativeLuminance(hubColor) > 0.55 ? "#111827" : "#FFFFFF",
+                      transform: ctaHovered
+                        ? `translate(${pos.x}px, ${pos.y}px) scale(1)`
+                        : "translate(0, 0) scale(0.3)",
+                      opacity: ctaHovered ? 1 : 0,
+                      pointerEvents: ctaHovered ? "auto" : "none",
+                      transitionDuration: "320ms",
+                      transitionDelay: ctaHovered ? `${i * 30}ms` : "0ms",
+                    }}
+                  >
+                    <HubIconEl size={20} weight="fill" aria-hidden="true" />
+                  </button>
                 )
               })}
             </div>
@@ -434,7 +424,7 @@ const linkColor = activeColor
             ref={ctaBtnRef}
             key={active.id}
             onClick={handleCtaClick}
-            className="abh-cta-gradient relative z-10 inline-flex items-center gap-3 group px-10 py-5 rounded-[14px] font-sans font-black text-lg text-white transition-all duration-300 active:duration-100 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.94] shadow-md hover:shadow-xl active:shadow-sm active:brightness-90 animate-in fade-in duration-500"
+            className="abh-cta-gradient relative z-30 inline-flex items-center gap-3 group px-10 py-5 rounded-[14px] font-sans font-black text-lg text-white transition-all duration-300 active:duration-100 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.94] shadow-md hover:shadow-xl active:shadow-sm active:brightness-90 animate-in fade-in duration-500"
             style={{ backgroundImage: `linear-gradient(135deg, ${ctaFrom} 0%, ${ctaTo} 50%, ${ctaFrom} 100%)` }}
           >
             Start Here
@@ -442,19 +432,25 @@ const linkColor = activeColor
           </button>
         </div>
 
-        {/* Core Hub Ecosystem */}
+        {/* Core Hub Ecosystem — background now built from ctaFrom/ctaTo
+            (the button's own fixed colors), not the theme-toggling
+            `activeColor`. The base layer under the fade is a hardcoded
+            dark hex rather than bg-white/dark:bg-zinc-950, so the card
+            genuinely never turns light in light mode — it stays a dark
+            surface end to end, exactly like the button. */}
         <div className="relative w-full max-w-[840px] mx-auto px-6 sm:px-10 md:px-12 pt-10 sm:pt-14 md:pt-16 pb-16 sm:pb-20 flex flex-col items-center mb-12 overflow-hidden rounded-t-[14px]">
 
           <div
             aria-hidden="true"
-            className="absolute inset-0 -z-20 pointer-events-none bg-white dark:bg-zinc-950"
+            className="absolute inset-0 -z-20 pointer-events-none"
+            style={{ backgroundColor: "#0B0F14" }}
           />
 
           <div
             aria-hidden="true"
             className="absolute inset-0 -z-10 pointer-events-none"
             style={{
-              background: `linear-gradient(to bottom, ${activeColor} 0%, ${activeColor} 14%, ${activeColor}CC 34%, ${activeColor}66 58%, ${activeColor}00 86%)`,
+              background: `linear-gradient(to bottom, ${ctaFrom} 0%, ${ctaFrom} 14%, ${ctaFrom}CC 34%, ${ctaFrom}77 58%, ${ctaFrom}00 86%)`,
               transition: "background 700ms ease-out",
             }}
           />
@@ -464,13 +460,13 @@ const linkColor = activeColor
             <div className="w-full flex flex-col items-center mb-8">
               <h2
                 className="abh-section-heading mb-2 text-center transition-colors duration-300"
-                style={{ color: neutralOnWash, textShadow: neutralShadow }}
+                style={{ color: cardText, textShadow: cardShadow }}
               >
                 Core Hub Ecosystem
               </h2>
               <p
                 className="text-sm font-medium text-center transition-colors duration-300"
-                style={{ color: neutralOnWashSoft, textShadow: neutralShadow }}
+                style={{ color: cardTextSoft, textShadow: cardShadow }}
               >
                 Tap a hub to see what we actually do there.
               </p>
@@ -484,7 +480,6 @@ const linkColor = activeColor
               {HUBS_DATA.map((hub, index) => {
                 const isActive  = activeHub === index
                 const isHovered = hoveredHub === index
-                const hubColor  = colorFor(hub)
 
                 return (
                   <button
@@ -500,16 +495,16 @@ const linkColor = activeColor
                       isActive && "shadow-md"
                     )}
                     style={{
-                      backgroundColor: isActive ? `${hubColor}33` : (isHovered ? `${neutralOnWash}14` : "transparent"),
+                      backgroundColor: isActive ? "rgba(255,255,255,0.18)" : (isHovered ? "rgba(255,255,255,0.08)" : "transparent"),
                     }}
                   >
                     <span
                       className="transition-all duration-200 flex"
                       style={{
-                        color: isActive ? neutralOnWash : neutralOnWash,
-                        opacity: isActive ? 1 : (isHovered ? 0.85 : (washIsLight ? 0.32 : 0.4)),
+                        color: cardText,
+                        opacity: isActive ? 1 : (isHovered ? 0.85 : 0.45),
                         transform: isActive ? "translateY(-1px) scale(1.08)" : "none",
-                        filter: isActive ? `drop-shadow(0 0 7px ${hubColor}99)` : "none",
+                        filter: isActive ? `drop-shadow(0 0 7px ${hubAccent}bb)` : "none",
                       }}
                     >
                       {hub.icon(isActive)}
@@ -519,7 +514,7 @@ const linkColor = activeColor
                       className={cn("block h-[3px] rounded-full", isActive && "abh-taskbar-indicator")}
                       style={{
                         width: isActive ? 22 : 0,
-                        backgroundColor: hubColor,
+                        backgroundColor: cardText,
                         opacity: isActive ? 1 : 0,
                       }}
                     />
@@ -530,16 +525,16 @@ const linkColor = activeColor
 
             <div
               className="relative w-full max-w-[420px] h-px mt-1 mb-7 transition-colors duration-500"
-              style={{ backgroundColor: activeColor }}
+              style={{ backgroundColor: "rgba(255,255,255,0.35)" }}
             >
               <div
-                className="absolute left-1/2 top-0 -translate-x-1/2 transition-[border-top-color] duration-500"
+                className="absolute left-1/2 top-0 -translate-x-1/2"
                 style={{
                   width: 0,
                   height: 0,
                   borderLeft: "7px solid transparent",
                   borderRight: "7px solid transparent",
-                  borderTop: `9px solid ${activeColor}`,
+                  borderTop: "9px solid rgba(255,255,255,0.85)",
                 }}
                 aria-hidden="true"
               />
@@ -548,7 +543,7 @@ const linkColor = activeColor
             <div className="w-full max-w-[420px] flex flex-col items-center text-center">
               <p
                 className="text-[0.65rem] font-black uppercase tracking-widest mb-3 transition-colors duration-300"
-                style={{ color: baseTextColor, textShadow: baseTextShadow }}
+                style={{ color: cardTextSoft, textShadow: cardShadow }}
               >
                 {active.name}
               </p>
@@ -559,11 +554,11 @@ const linkColor = activeColor
                 aria-label="Show another example price for this hub"
                 className="flex flex-col items-center gap-1 mx-auto rounded-[14px] px-3 py-1 transition-opacity hover:opacity-75 active:scale-[0.97] animate-in fade-in duration-200"
               >
-                <span className="text-sm font-semibold transition-colors duration-300" style={{ color: baseTextColor, textShadow: baseTextShadow }}>
+                <span className="text-sm font-semibold transition-colors duration-300" style={{ color: cardText, textShadow: cardShadow }}>
                   {spotlightService.name}
                 </span>
 
-                <span className="text-2xl font-black font-mono transition-colors duration-300" style={{ color: baseTextColor, textShadow: baseTextShadow }}>
+                <span className="text-2xl font-black font-mono transition-colors duration-300" style={{ color: cardText, textShadow: cardShadow }}>
                   {spotlightService.price}
                 </span>
               </button>
@@ -571,20 +566,23 @@ const linkColor = activeColor
               <button
                 onClick={() => handleNavigate(`/services?hub=${active.id}`)}
                 className="flex items-center justify-center gap-1.5 text-[0.65rem] font-black tracking-wide mt-4 transition-opacity hover:opacity-70"
-                style={{ color: linkColor }}
+                style={{ color: cardText, textShadow: cardShadow }}
               >
                 View All {active.name} Services
                 <ArrowRight weight="bold" className="w-3 h-3" aria-hidden="true" />
               </button>
             </div>
 
+            {/* Marquee — pushed further down from the price block above
+                (added mt-10) so it no longer sits high/cramped right under
+                the "View All" link. */}
             <div
               role="marquee"
               aria-label="Our services"
               onMouseEnter={() => setMarqueePaused(true)}
               onMouseLeave={() => setMarqueePaused(false)}
               onTouchStart={() => setMarqueePaused(p => !p)}
-              className="relative w-full py-4 overflow-hidden select-none group/marquee"
+              className="relative w-full mt-10 py-4 overflow-hidden select-none group/marquee"
             >
               <div
                 className="flex whitespace-nowrap w-max animate-marquee"
@@ -594,10 +592,10 @@ const linkColor = activeColor
                   <div key={copy} className="flex items-center shrink-0">
                     {MARQUEE_ITEMS.map((item, idx) => (
                       <React.Fragment key={idx}>
-                        <span className="inline-flex items-center px-5 text-brand-blue-dark dark:text-brand-light-blue font-semibold text-sm transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100">
+                        <span className="inline-flex items-center px-5 font-semibold text-sm transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100" style={{ color: cardTextSoft }}>
                           {item}
                         </span>
-                        <span className="text-brand-orange font-black text-base leading-none shrink-0" aria-hidden="true">•</span>
+                        <span className="font-black text-base leading-none shrink-0" style={{ color: hubAccent }} aria-hidden="true">•</span>
                       </React.Fragment>
                     ))}
                   </div>
@@ -664,4 +662,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-      }
+} 
