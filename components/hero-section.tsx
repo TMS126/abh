@@ -17,6 +17,7 @@ import {
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, MARQUEE_ITEMS, HUB_COLORS } from "@/lib/brand"
+import { getReadableTextColor } from "@/lib/color-utils"
 
 // ─── Hub data ─────────────────────────────────────────────────────────────────
 const HUBS_DATA = [
@@ -112,11 +113,6 @@ const HUBS_DATA = [
   },
 ]
 
-// Fixed CTA identity color. Brand blue is the dominant, always-on color
-// per current direction (blue used most, green/orange far less across
-// the brand).
-const CTA_COLOR = BRAND.blue
-
 function pickRandomService(hubIndex: number, excludeName?: string) {
   const list = HUBS_DATA[hubIndex].services
   if (list.length === 1) return list[0]
@@ -160,24 +156,26 @@ export function HeroSection() {
   const active    = HUBS_DATA[activeHub]
   const WatermarkIcon = active.Icon
 
+  // Start Here CTA — neutral, theme-aware identity color instead of a
+  // fixed brand blue. Uses the existing dark100/techGreyDark pairing
+  // (same one Tech Hub already uses), since there's no dedicated
+  // "neutral" token pair defined in lib/brand.ts yet.
+  const CTA_COLOR = isDark ? BRAND.techGreyDark : BRAND.dark100
+
   // ── Ecosystem box color model ─────────────────────────────────────────
-  // The box is now permanently filled — no hover/press reveal animation,
-  // no gradient, ever. Its fill is a flat brand blue (the dominant color
-  // per the brand hierarchy: blue used most, green next, orange least),
-  // so it stays visually consistent no matter which hub tab is active.
-  //
-  // Only three things are allowed to carry the ACTIVE HUB's own color:
-  // the hub name label, the spotlight service name, and its price.
-  // Everything else in the box — icons, dividers, marquee text — is
-  // neutral (white/translucent-white) against the blue fill.
-  const hubAccent     = active.colorLight   // used ONLY for name / service / price text
+  // The box is permanently filled with flat brand blue — no hover/press
+  // reveal, no gradient. Only the spotlight card (hub name / service /
+  // price) carries the active hub's own bg color, with a WCAG-computed
+  // text color so it's never low-contrast (e.g. orange-on-navy).
   const cardText      = "#FFFFFF"
   const cardTextSoft  = "rgba(255,255,255,0.82)"
   const cardTextMuted = "rgba(255,255,255,0.55)"
 
-  // Watermark crossfade state — the giant background icon is also fixed
-  // to brand blue now (matches the "blue dominant" rule), it no longer
-  // swaps color per hub.
+  const spotlightBg   = isDark ? active.colorDark : active.colorLight
+  const spotlightText = getReadableTextColor(spotlightBg)
+
+  // Watermark crossfade state — fixed to brand blue (matches the
+  // "blue dominant" rule), doesn't swap color per hub.
   const [watermarkLayers, setWatermarkLayers] = useState<WatermarkLayer[]>([])
   const [visibleKey,       setVisibleKey]      = useState<string | null>(null)
   const pruneTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
@@ -339,10 +337,10 @@ export function HeroSection() {
             style={{ backgroundColor: CTA_COLOR }}
           />
 
-          {/* Start Here — border-only at rest, single fixed brand-blue
-              identity. On hover (desktop) or press (mobile, via :active)
-              a solid fill rises from the bottom, fast (150ms), and
-              text/icon flip to white. */}
+          {/* Start Here — border-only at rest, neutral theme-aware
+              identity (dark100 light / techGreyDark dark) instead of
+              brand blue. On hover/press a solid fill rises from the
+              bottom and text/icon flip to white. */}
           <button
             ref={ctaBtnRef}
             onClick={handleCtaClick}
@@ -354,8 +352,13 @@ export function HeroSection() {
               className="absolute inset-0 origin-bottom scale-y-0 transition-transform duration-150 ease-out group-hover:scale-y-100 group-active:scale-y-100"
               style={{ backgroundColor: CTA_COLOR }}
             />
-            <span className="relative z-10 group-hover:text-white group-active:text-white">
-              Start Here
+            <span
+              className="relative z-10"
+              style={{ color: "inherit" }}
+            >
+              <span className="group-hover:text-white group-active:text-white transition-colors duration-150">
+                Start Here
+              </span>
             </span>
             <ArrowRight
               weight="bold"
@@ -366,10 +369,10 @@ export function HeroSection() {
         </div>
 
         {/* Core Hub Ecosystem — permanently filled with flat brand blue.
-            No hover/press reveal, no gradient, ever. Only the hub name,
-            spotlight service name, and its price switch to the active
-            hub's own color; everything else (icons, divider, marquee)
-            stays neutral white against the blue fill. */}
+            No hover/press reveal, no gradient, ever. Only the spotlight
+            card switches to the active hub's own color; everything else
+            (icons, divider, marquee) stays neutral white against the
+            blue fill. */}
         <div
           className="relative w-full max-w-[840px] mx-auto px-6 sm:px-10 md:px-12 pt-10 sm:pt-14 md:pt-16 pb-16 sm:pb-20 flex flex-col items-center mb-12 overflow-hidden rounded-[14px]"
           style={{ backgroundColor: BRAND.blue }}
@@ -419,9 +422,6 @@ export function HeroSection() {
                         : (isHovered ? "rgba(255,255,255,0.08)" : "transparent"),
                     }}
                   >
-                    {/* Icon stays neutral white regardless of hub —
-                        only the text below (name/service/price) carries
-                        the hub's own color. */}
                     <span
                       className="transition-all duration-200 flex"
                       style={{
@@ -463,34 +463,44 @@ export function HeroSection() {
               />
             </div>
 
+            {/* Spotlight card — bg = active hub's own color, text is
+                computed via getReadableTextColor() so contrast is always
+                safe regardless of which hub is active. Off-the-screen
+                drop shadow using the hub color for a floating card
+                effect, plus a neutral dark shadow underneath. */}
             <div className="w-full max-w-[420px] flex flex-col items-center text-center">
-              {/* Hub name — takes the ACTIVE hub's own color. */}
-              <p
-                className="text-[0.65rem] font-black uppercase tracking-widest mb-3"
-                style={{ color: hubAccent }}
+              <div
+                className="relative flex flex-col items-center gap-2 rounded-[16px] px-6 py-5 mb-4 transition-colors duration-200"
+                style={{
+                  backgroundColor: spotlightBg,
+                  boxShadow: `0 22px 45px -14px ${spotlightBg}80, 0 12px 24px -10px rgba(0,0,0,0.4)`,
+                }}
               >
-                {active.name}
-              </p>
+                <p
+                  className="text-[0.65rem] font-black uppercase tracking-widest opacity-75"
+                  style={{ color: spotlightText }}
+                >
+                  {active.name}
+                </p>
 
-              <button
-                key={`${activeHub}-${spotlightService.name}`}
-                onClick={handleReroll}
-                aria-label="Show another example price for this hub"
-                className="flex flex-col items-center gap-1 mx-auto rounded-[14px] px-3 py-1 transition-opacity hover:opacity-75 active:scale-[0.97] animate-in fade-in duration-200"
-              >
-                {/* Service name + price — also take the ACTIVE hub's color. */}
-                <span className="text-sm font-semibold" style={{ color: hubAccent }}>
-                  {spotlightService.name}
-                </span>
-
-                <span className="text-2xl font-black font-mono" style={{ color: hubAccent }}>
-                  {spotlightService.price}
-                </span>
-              </button>
+                <button
+                  key={`${activeHub}-${spotlightService.name}`}
+                  onClick={handleReroll}
+                  aria-label="Show another example price for this hub"
+                  className="flex flex-col items-center gap-1 rounded-[10px] px-2 py-1 transition-opacity hover:opacity-80 active:scale-[0.97] animate-in fade-in duration-200"
+                >
+                  <span className="text-sm font-semibold" style={{ color: spotlightText }}>
+                    {spotlightService.name}
+                  </span>
+                  <span className="text-2xl font-black font-mono" style={{ color: spotlightText }}>
+                    {spotlightService.price}
+                  </span>
+                </button>
+              </div>
 
               <button
                 onClick={() => handleNavigate(`/services?hub=${active.id}`)}
-                className="flex items-center justify-center gap-1.5 text-[0.65rem] font-black tracking-wide mt-4 transition-opacity hover:opacity-70"
+                className="flex items-center justify-center gap-1.5 text-[0.65rem] font-black tracking-wide transition-opacity hover:opacity-70"
                 style={{ color: cardText }}
               >
                 View All {active.name} Services
@@ -584,5 +594,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-}
- 
+        } 
