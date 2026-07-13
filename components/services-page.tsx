@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useRef, useCallback, type ChangeEvent } from "react"
+import { useState, useEffect, useMemo, useRef, type ChangeEvent, type RefObject } from "react"
 import { useSearchParams } from "next/navigation"
 import { motion, AnimatePresence, useDragControls, type PanInfo } from "framer-motion"
 import {
@@ -12,6 +12,7 @@ import {
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey, BIZ, BRAND } from "@/lib/brand"
+import { ensureAccessible, getContrastText } from "@/lib/color"
 import { HUBS, HubId } from "@/lib/data"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -106,107 +107,6 @@ function naturalServiceLabel(name: string, sectionTitle: string) {
     return `${keyword} ${cleanName}`
   }
   return cleanName
-}
-
-// ─── WCAG contrast helpers ──────────────────────────────────────────────────
-// Used to guarantee the "explore" label on hub cards always meets at least
-// AA contrast (4.5:1) against the card background, regardless of the raw
-// brand hex value supplied per-hub in HUB_COLORS.
-function hexToRgb(hex: string) {
-  const clean = hex.replace("#", "")
-  const full = clean.length === 3 ? clean.split("").map(c => c + c).join("") : clean
-  const bigint = parseInt(full, 16)
-  return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 }
-}
-
-function relativeLuminance({ r, g, b }: { r: number; g: number; b: number }) {
-  const [rs, gs, bs] = [r, g, b].map(c => {
-    const s = c / 255
-    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
-  })
-  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs
-}
-
-function contrastRatio(hexA: string, hexB: string) {
-  const lA = relativeLuminance(hexToRgb(hexA))
-  const lB = relativeLuminance(hexToRgb(hexB))
-  const [lighter, darker] = lA > lB ? [lA, lB] : [lB, lA]
-  return (lighter + 0.05) / (darker + 0.05)
-}
-
-function rgbToHex({ r, g, b }: { r: number; g: number; b: number }) {
-  return "#" + [r, g, b]
-    .map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0"))
-    .join("")
-}
-
-function rgbToHsl({ r, g, b }: { r: number; g: number; b: number }) {
-  const rn = r / 255, gn = g / 255, bn = b / 255
-  const max = Math.max(rn, gn, bn), min = Math.min(rn, gn, bn)
-  let h = 0
-  const l = (max + min) / 2
-  let s = 0
-  if (max !== min) {
-    const d = max - min
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-    switch (max) {
-      case rn: h = (gn - bn) / d + (gn < bn ? 6 : 0); break
-      case gn: h = (bn - rn) / d + 2; break
-      case bn: h = (rn - gn) / d + 4; break
-    }
-    h /= 6
-  }
-  return { h: h * 360, s: s * 100, l: l * 100 }
-}
-
-function hslToRgb(h: number, s: number, l: number) {
-  const hn = h / 360, sn = s / 100, ln = l / 100
-  let r: number, g: number, b: number
-  if (sn === 0) {
-    r = g = b = ln
-  } else {
-    const hue2rgb = (p: number, q: number, t: number) => {
-      let tt = t
-      if (tt < 0) tt += 1
-      if (tt > 1) tt -= 1
-      if (tt < 1 / 6) return p + (q - p) * 6 * tt
-      if (tt < 1 / 2) return q
-      if (tt < 2 / 3) return p + (q - p) * (2 / 3 - tt) * 6
-      return p
-    }
-    const q = ln < 0.5 ? ln * (1 + sn) : ln + sn - ln * sn
-    const p = 2 * ln - q
-    r = hue2rgb(p, q, hn + 1 / 3)
-    g = hue2rgb(p, q, hn)
-    b = hue2rgb(p, q, hn - 1 / 3)
-  }
-  return { r: r * 255, g: g * 255, b: b * 255 }
-}
-
-/** Nudges `hex` darker/lighter (preserving hue) until it hits `minRatio` contrast against `bgHex`. */
-function ensureAccessible(hex: string, bgHex: string, minRatio = 4.5) {
-  if (contrastRatio(hex, bgHex) >= minRatio) return hex
-  const hsl = rgbToHsl(hexToRgb(hex))
-  const bgLum = relativeLuminance(hexToRgb(bgHex))
-  const goingDarker = bgLum > 0.5
-  let l = hsl.l
-  for (let i = 0; i < 45; i++) {
-    l += goingDarker ? -2 : 2
-    l = Math.max(0, Math.min(100, l))
-    const candidate = rgbToHex(hslToRgb(hsl.h, hsl.s, l))
-    if (contrastRatio(candidate, bgHex) >= minRatio) return candidate
-    if (l <= 0 || l >= 100) break
-  }
-  return goingDarker ? "#1a1a1a" : "#fafafa"
-}
-
-/** Picks whichever of near-black/near-white reads best on a solid `hex` background —
- *  used for the hub-color section/description card in HubModal so text always
- *  stays legible regardless of how light or dark that hub's accent is. */
-function getContrastText(hex: string) {
-  const whiteRatio = contrastRatio(hex, "#ffffff")
-  const blackRatio = contrastRatio(hex, "#1a1a1a")
-  return whiteRatio >= blackRatio ? "#ffffff" : "#1a1a1a"
 }
 
 // ─── Brand loader ─────────────────────────────────────────────────────────────
@@ -333,6 +233,44 @@ function useModalBackStack(
   }, [activeHub, selectedService, setActiveHub, setSelectedService])
 }
 
+// ─── Focus trap ────────────────────────────────────────────────────────────
+// Keeps Tab/Shift+Tab cycling inside the modal while it's open, moves focus
+// into the modal on open, and restores focus to whatever triggered it once
+// the modal closes — needed for keyboard/screen-reader users to not get
+// stuck on, or lose track of, background page content while a modal is up.
+function useFocusTrap(active: boolean, containerRef: RefObject<HTMLElement>) {
+  const previouslyFocused = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    if (!active) return
+    previouslyFocused.current = document.activeElement as HTMLElement
+    containerRef.current?.focus()
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Tab" || !containerRef.current) return
+      const focusable = containerRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      if (focusable.length === 0) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown)
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown)
+      previouslyFocused.current?.focus?.()
+    }
+  }, [active, containerRef])
+}
+
 // ─── Inline search bar ────────────────────────────────────────────────────────
 function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => void }) {
   const { resolvedTheme } = useTheme()
@@ -393,6 +331,7 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
       {query && (
         <button
           onClick={() => setQuery("")}
+          aria-label="Clear search"
           className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
         >
           <X size={12} weight="bold" />
@@ -446,6 +385,7 @@ function HubModal({
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
   const [openSectionIdx, setOpenSectionIdx] = useState<number | null>(0)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => { setOpenSectionIdx(0) }, [hubId])
 
@@ -456,6 +396,8 @@ function HubModal({
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [hubId, onClose])
+
+  useFocusTrap(!!hubId, containerRef)
 
   if (!hubId) return null
   const hub    = HUBS[hubId]
@@ -473,8 +415,18 @@ function HubModal({
 
   return (
     <div className="fixed inset-0 z-[10100] flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-md overscroll-contain" onClick={onClose} />
-      <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-500 border border-zinc-100 dark:border-zinc-800">
+      {/* backdrop-blur-sm (was -md) — lighter blur, cheaper to composite,
+          especially since this backdrop can be visible at the same time as
+          the ServiceDetailModal's own overlay when both are stacked. */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm overscroll-contain" onClick={onClose} />
+      <div
+        ref={containerRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={hub.title}
+        className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden shadow-2xl flex flex-col max-h-[85dvh] animate-in zoom-in-95 duration-500 border border-zinc-100 dark:border-zinc-800 outline-none"
+      >
 
         {/* Header */}
         <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center" style={{ backgroundColor: `${accent}05` }}>
@@ -489,6 +441,7 @@ function HubModal({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
             style={{ backgroundColor: `${accent}15`, color: accent }}
           >
@@ -660,6 +613,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   const [shareCopied, setShareCopied] = useState(false)
   const [addedToQuote, setAddedToQuote] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const dragControls = useDragControls()
 
   useEffect(() => {
@@ -683,6 +637,8 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [svc, onClose])
+
+  useFocusTrap(!!svc, containerRef)
 
   const doUpload = (f: File) => {
     setUploadPhase("uploading")
@@ -819,8 +775,11 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   const desc = isRemote ? remoteizeText(descRaw) : descRaw
   return (
     <div className="fixed inset-0 z-[10200] flex items-end justify-center">
+      {/* No backdrop-blur here — backdrop-filter is one of the most GPU-expensive
+          effects on mobile, and was the actual source of the slide-up lag (not
+          RAM). Slightly darker opacity keeps the same dimmed feel without it. */}
       <motion.div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm overscroll-contain"
+        className="absolute inset-0 bg-black/50 overscroll-contain"
         onClick={onClose}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -830,10 +789,16 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
 
       {/* True bottom sheet — same max-w-2xl cap as HubModal with a small
           horizontal gutter, driven by framer-motion (compositor-animated
-          transform) instead of CSS keyframes, so it stays smooth even with
-          the backdrop-blur active. Drag only initiates from the handle
-          below, so scrolling inside the tab content never fights the sheet. */}
+          transform) instead of CSS keyframes. will-change-transform pre-
+          promotes this to its own GPU layer before the drag/spring starts.
+          Drag only initiates from the handle below, so scrolling inside the
+          tab content never fights the sheet. */}
       <motion.div
+        ref={containerRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={svc.name}
         drag="y"
         dragControls={dragControls}
         dragListener={false}
@@ -845,11 +810,14 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
         exit={{ y: "100%" }}
         transition={SHEET_TRANSITION}
         style={{ boxShadow: "0 -16px 44px -10px rgba(0,0,0,0.35), 0 -6px 18px -6px rgba(0,0,0,0.25)" }}
-        className="relative w-full max-w-2xl mx-3 sm:mx-6 rounded-t-[20px] overflow-hidden bg-white dark:bg-zinc-950 border border-b-0 border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col"
+        className="relative w-full max-w-2xl mx-3 sm:mx-6 rounded-t-[20px] overflow-hidden bg-white dark:bg-zinc-950 border border-b-0 border-zinc-100 dark:border-zinc-800 max-h-[88dvh] flex flex-col outline-none will-change-transform"
       >
-        {/* Drag handle — the only part of the sheet that starts a drag, so
-            scrolling the tab content below never gets hijacked. */}
+        {/* Drag handle — decorative/visual affordance only; the X button
+            below is the real accessible close control, so this is hidden
+            from screen readers rather than announced as an interactive
+            element with no keyboard equivalent. */}
         <div
+          aria-hidden="true"
           className="w-full flex justify-center pt-3 pb-1.5 cursor-grab active:cursor-grabbing touch-none shrink-0"
           onPointerDown={(e) => dragControls.start(e)}
         >
@@ -885,6 +853,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
               )}
               <button
                 onClick={onClose}
+                aria-label="Close"
                 className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
                 style={{ backgroundColor: `${accent}15`, color: accent }}
               >
@@ -1275,4 +1244,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-  }
+                                                         } 
