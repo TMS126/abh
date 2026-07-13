@@ -20,6 +20,13 @@ import { BRAND, BIZ, MARQUEE_ITEMS, HUB_COLORS } from "@/lib/brand"
 import { getReadableTextColor } from "@/lib/color-utils"
 
 // ─── Hub data ─────────────────────────────────────────────────────────────────
+// colorLight/colorDark now follow the "Deep/Dark Base" (light mode) and
+// "Bright Accent" (dark mode) pairing from the color architecture doc,
+// rather than the previous ad-hoc BRAND references. This fixes a real
+// bug: Design Hub's old colorLight (BRAND.orangeDark, a medium-bright
+// orange) was light enough that getReadableTextColor() correctly chose
+// black text for WCAG contrast — but visually needed to be white like
+// every other hub. orangeBrown is dark enough to always resolve to white.
 const HUBS_DATA = [
   {
     id: "print",
@@ -28,8 +35,8 @@ const HUBS_DATA = [
       <Printer size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: Printer,
-    colorLight: BRAND.blue,
-    colorDark:  BRAND.lightBlue,
+    colorLight: BRAND.blueDark,   // Deep/Dark Base — #0F3F66
+    colorDark:  BRAND.blue,       // Bright Accent  — #1E6FA8
     services: [
       { name: "B&W Print",        price: "R5"  },
       { name: "Colour Print",     price: "R8"  },
@@ -46,8 +53,8 @@ const HUBS_DATA = [
       <FileText size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: FileText,
-    colorLight: BRAND.green,
-    colorDark:  BRAND.lightGreen,
+    colorLight: BRAND.greenDeep,  // Deep/Dark Base — #3E6B0E
+    colorDark:  BRAND.greenDeep,  // Bright Accent  — same, per doc
     services: [
       { name: "CV from Scratch",    price: "R30" },
       { name: "CV Upgrade",         price: "R40" },
@@ -64,8 +71,8 @@ const HUBS_DATA = [
       <PaintBrush size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: PaintBrush,
-    colorLight: BRAND.orangeDark,
-    colorDark:  BRAND.lightOrange,
+    colorLight: BRAND.orangeBrown, // Deep/Dark Base — #B86F34 (FIX: was orangeDark)
+    colorDark:  BRAND.orangeBrown, // Bright Accent  — same, per doc
     services: [
       { name: "Logo (Basic)",       price: "R300" },
       { name: "Logo (Standard)",    price: "R500" },
@@ -82,8 +89,8 @@ const HUBS_DATA = [
       <Globe size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: Globe,
-    colorLight: BRAND.teal,
-    colorDark:  BRAND.tealLight,
+    colorLight: BRAND.blueMid,    // Deep/Dark Base — #15537D
+    colorDark:  BRAND.lightBlue,  // Bright Accent  — #A9D6F2 (pale — dark text is correct here)
     services: [
       { name: "SASSA Status Check",         price: "R20"  },
       { name: "SASSA SRD Application",      price: "R40"  },
@@ -100,8 +107,8 @@ const HUBS_DATA = [
       <Desktop size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: Desktop,
-    colorLight: BRAND.dark100,
-    colorDark:  "#B8CCE0",
+    colorLight: BRAND.dark100,  // Deep/Dark Base — #333333
+    colorDark:  "#B8CCE0",      // Bright Accent  — pale — dark text is correct here
     services: [
       { name: "Software Install",              price: "R80"  },
       { name: "PC Setup",                      price: "R250" },
@@ -156,17 +163,16 @@ export function HeroSection() {
   const active    = HUBS_DATA[activeHub]
   const WatermarkIcon = active.Icon
 
-  // Start Here CTA — neutral, theme-aware identity color instead of a
-  // fixed brand blue. Uses the existing dark100/techGreyDark pairing
-  // (same one Tech Hub already uses), since there's no dedicated
-  // "neutral" token pair defined in lib/brand.ts yet.
-  const CTA_COLOR = isDark ? BRAND.techGreyDark : BRAND.dark100
+  // Start Here CTA — border/text/glow use the theme-aware neutral identity
+  // color as before. The FILL (the solid overlay that rises on hover/press)
+  // is now a SEPARATE, always-dark neutral — previously the fill reused
+  // CTA_COLOR directly, which in dark mode meant filling with
+  // techGreyDark (a light grey), an oddly bright fill for a dark-mode
+  // button. CTA_FILL_COLOR stays a fixed dark neutral regardless of theme.
+  const CTA_COLOR      = isDark ? BRAND.techGreyDark : BRAND.dark100
+  const CTA_FILL_COLOR = BRAND.dark100
 
   // ── Ecosystem box color model ─────────────────────────────────────────
-  // The box is permanently filled with flat brand blue — no hover/press
-  // reveal, no gradient. Only the spotlight card (hub name / service /
-  // price) carries the active hub's own bg color, with a WCAG-computed
-  // text color so it's never low-contrast (e.g. orange-on-navy).
   const cardText      = "#FFFFFF"
   const cardTextSoft  = "rgba(255,255,255,0.82)"
   const cardTextMuted = "rgba(255,255,255,0.55)"
@@ -217,29 +223,14 @@ export function HeroSection() {
     handleNavigate("/services")
   }
 
-  const RADIUS = 72
-
  return (
     <section
       aria-label="Hero"
-      className="relative min-h-[calc(100vh-var(--nav-h))] w-full flex flex-col items-center justify-center px-4 md:px-8 pt-[calc(var(--nav-h)+96px)] md:pt-[172px] pb-16 md:pb-28 overflow-hidden cursor-default select-none bg-background transition-colors duration-300"
+      className="relative min-h-[calc(100vh-var(--nav-h))] w-full flex flex-col items-center justify-center px-4 md:px-8 pt-[calc(var(--nav-h)+56px)] md:pt-[104px] pb-10 md:pb-16 overflow-hidden cursor-default select-none bg-background transition-colors duration-300"
     >
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
-        <Image
-          src="/storefront.webp"
-          alt=""
-          fill
-          priority
-          quality={100}
-          sizes="100vw"
-          className="object-cover scale-105 contrast-[1.06] saturate-[1.12] brightness-[1.02]"
-        />
-      </div>
-
-      <div
-        className="absolute inset-0 z-0 pointer-events-none bg-white/80 dark:bg-[#0D1B2A]/88"
-        aria-hidden="true"
-      />
+      {/* Background photo removed entirely per request — section now
+          relies purely on bg-background, so nothing sits behind the
+          noise/blob layers below except the page's own background color. */}
 
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <div
@@ -287,20 +278,38 @@ export function HeroSection() {
         }
       `}</style>
 
-      <div className="max-w-[1240px] mx-auto flex flex-col items-center text-center relative z-10 w-full mb-8">
+      <div className="max-w-[1240px] mx-auto flex flex-col items-center relative z-10 w-full mb-6">
 
-        <h1 className="font-sans font-black text-4xl md:text-6xl lg:text-[4.2rem] tracking-tight text-brand-blue-dark dark:text-brand-light-blue leading-[1.1] mb-6 text-balance transition-all duration-300">
-          {BIZ.tagline}
-        </h1>
+        {/* Header row — left-aligned text block + right-aligned image on
+            desktop, both wrapped to the SAME 840px width as the ecosystem
+            box below, so the two elements visually balance against it.
+            Falls back to a centered, stacked layout on mobile (image
+            hidden — the photo isn't essential content there). Tagline is
+            now a neutral black/white (no brand blue) at a larger desktop
+            size, per the color-architecture rule that blue is reserved
+            for small paragraph text (e.g. FAQ answers) elsewhere in the
+            site, not headers. */}
+        <div className="w-full max-w-[840px] mx-auto flex flex-col md:flex-row md:items-center gap-6 md:gap-8 mb-6 md:mb-8">
+          <div className="flex-1 text-center md:text-left">
+            <h1 className="font-sans font-black text-4xl md:text-6xl lg:text-[4.6rem] tracking-tight text-zinc-900 dark:text-zinc-50 leading-[1.08] mb-4 text-balance transition-colors duration-300">
+              {BIZ.tagline}
+            </h1>
+            <p className="text-sm md:text-base font-medium text-zinc-600 dark:text-zinc-400 max-w-[480px] md:max-w-none mx-auto md:mx-0 leading-relaxed">
+              From printing your documents to navigating government services — we make it simple, fast, and friendly.
+            </p>
+          </div>
+          <div className="hidden md:block shrink-0 relative w-[260px] h-[190px] rounded-[20px] overflow-hidden shadow-xl border border-black/5 dark:border-white/10">
+            <Image
+              src="/storefront.webp"
+              alt="ApexbytesHub storefront"
+              fill
+              sizes="260px"
+              className="object-cover"
+            />
+          </div>
+        </div>
 
-        <p className="text-sm md:text-base font-medium text-zinc-600 dark:text-zinc-400 mb-10 max-w-[600px] px-2 leading-relaxed">
-          From printing your documents to navigating government services — we make it simple, fast, and friendly.
-        </p>
-
-        <div
-          className="relative w-full flex justify-center items-center mb-12"
-          style={canHover ? { minHeight: RADIUS * 2 + 140 } : undefined}
-        >
+        <div className="relative w-full flex justify-center items-center mb-8">
 
           <div
             aria-hidden="true"
@@ -338,9 +347,11 @@ export function HeroSection() {
           />
 
           {/* Start Here — border-only at rest, neutral theme-aware
-              identity (dark100 light / techGreyDark dark) instead of
-              brand blue. On hover/press a solid fill rises from the
-              bottom and text/icon flip to white. */}
+              identity (dark100 light / techGreyDark dark). On hover/press
+              a solid fill rises from the bottom — that fill is now always
+              CTA_FILL_COLOR (a fixed dark neutral), not CTA_COLOR, so the
+              dark-mode fill reads as a proper dark button rather than
+              filling with the same light grey used for the border/text. */}
           <button
             ref={ctaBtnRef}
             onClick={handleCtaClick}
@@ -350,7 +361,7 @@ export function HeroSection() {
             <span
               aria-hidden="true"
               className="absolute inset-0 origin-bottom scale-y-0 transition-transform duration-150 ease-out group-hover:scale-y-100 group-active:scale-y-100"
-              style={{ backgroundColor: CTA_COLOR }}
+              style={{ backgroundColor: CTA_FILL_COLOR }}
             />
             <span
               className="relative z-10"
@@ -372,14 +383,15 @@ export function HeroSection() {
             No hover/press reveal, no gradient, ever. Only the spotlight
             card switches to the active hub's own color; everything else
             (icons, divider, marquee) stays neutral white against the
-            blue fill. */}
+            blue fill. Vertical padding trimmed (was pt-10/16, pb-16/20)
+            to close up the large gap on desktop. */}
         <div
-          className="relative w-full max-w-[840px] mx-auto px-6 sm:px-10 md:px-12 pt-10 sm:pt-14 md:pt-16 pb-16 sm:pb-20 flex flex-col items-center mb-12 overflow-hidden rounded-[14px]"
+          className="relative w-full max-w-[840px] mx-auto px-6 sm:px-10 md:px-12 pt-8 sm:pt-10 md:pt-12 pb-10 sm:pb-12 md:pb-14 flex flex-col items-center overflow-hidden rounded-[14px]"
           style={{ backgroundColor: BRAND.blue }}
         >
           <div className="w-full flex flex-col items-center">
 
-            <div className="w-full flex flex-col items-center mb-8">
+            <div className="w-full flex flex-col items-center mb-5">
               <h2
                 className="abh-section-heading mb-2 text-center"
                 style={{ color: cardText }}
@@ -514,7 +526,7 @@ export function HeroSection() {
               onMouseEnter={() => setMarqueePaused(true)}
               onMouseLeave={() => setMarqueePaused(false)}
               onTouchStart={(e) => { e.stopPropagation(); setMarqueePaused(p => !p) }}
-              className="relative w-full mt-10 py-4 overflow-hidden select-none group/marquee"
+              className="relative w-full mt-8 py-4 overflow-hidden select-none group/marquee"
             >
               <div
                 className="flex whitespace-nowrap w-max animate-marquee"
@@ -594,4 +606,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-        } 
+         } 
