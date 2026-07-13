@@ -14,6 +14,7 @@ import {
   Globe,
   Desktop,
 } from "@phosphor-icons/react"
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, MARQUEE_ITEMS, HUB_COLORS } from "@/lib/brand"
 
@@ -256,8 +257,16 @@ export function HeroSection() {
       aria-label="Hero"
       className="relative min-h-[calc(100vh-var(--nav-h))] w-full flex flex-col items-center justify-center px-4 md:px-8 pt-[calc(var(--nav-h)+96px)] md:pt-[172px] pb-16 md:pb-28 overflow-hidden cursor-default select-none bg-background transition-colors duration-300"
     >
-      <div className="absolute inset-0 z-0 pointer-events-none" aria-hidden="true">
-        <img src="/storefront.webp" alt="" className="w-full h-full object-cover" />
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
+        <Image
+          src="/storefront.webp"
+          alt=""
+          fill
+          priority
+          quality={100}
+          sizes="100vw"
+          className="object-cover scale-105 contrast-[1.06] saturate-[1.12] brightness-[1.02]"
+        />
       </div>
 
       <div
@@ -438,8 +447,13 @@ export function HeroSection() {
             dark hex rather than bg-white/dark:bg-zinc-950, so the card
             genuinely never turns light in light mode — it stays a dark
             surface end to end, exactly like the button. */}
-        <div className="relative w-full max-w-[840px] mx-auto px-6 sm:px-10 md:px-12 pt-10 sm:pt-14 md:pt-16 pb-16 sm:pb-20 flex flex-col items-center mb-12 overflow-hidden rounded-t-[14px]">
-
+        <div
+          className="relative w-full max-w-[840px] mx-auto px-6 sm:px-10 md:px-12 pt-10 sm:pt-14 md:pt-16 pb-16 sm:pb-20 flex flex-col items-center mb-12 overflow-hidden rounded-[14px]"
+          style={{
+            boxShadow:
+              "0 26px 60px -16px rgba(0,0,0,0.45), 0 10px 28px -8px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.06), inset 0 -28px 34px -18px rgba(0,0,0,0.55)",
+          }}
+        >
           <div
             aria-hidden="true"
             className="absolute inset-0 -z-20 pointer-events-none"
