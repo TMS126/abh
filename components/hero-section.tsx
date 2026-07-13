@@ -112,17 +112,13 @@ const HUBS_DATA = [
   },
 ]
 
-const CTA_GRADIENTS: Record<string, [string, string]> = {
-  print:    [BRAND.blue,       BRAND.blueMid],
-  doc:      [BRAND.green,      BRAND.greenDeep],
-  design:   [BRAND.orangeDark, BRAND.orangeBrown],
-  eservice: [BRAND.teal,       BRAND.tealDark],
-  tech:     [BRAND.dark100,    BRAND.dark200],
-}
+// Fixed CTA identity color. No more per-hub gradient/color swap on the
+// button — brand blue is the dominant, always-on color per current
+// direction (blue used most, green/orange far less across the brand).
+const CTA_COLOR = BRAND.blue
 
-// Real WCAG relative luminance — kept for the desktop radial menu's
-// per-hub circle text (still theme-varying hub colors there), and as a
-// safety fallback for the ecosystem box below.
+// Real WCAG relative luminance — still used for the desktop radial menu's
+// per-hub circle text (those stay theme-varying hub colors).
 function relativeLuminance(hex: string): number {
   const clean = hex.replace("#", "")
   const r = parseInt(clean.substring(0, 2), 16) / 255
@@ -158,6 +154,7 @@ export function HeroSection() {
   const [hoveredHub,        setHoveredHub]        = useState<number | null>(null)
   const [canHover,          setCanHover]          = useState(false)
   const [ctaHovered,        setCtaHovered]        = useState(false)
+  const [ecosystemFilled,   setEcosystemFilled]   = useState(false)
 
   const ctaBtnRef      = useRef<HTMLButtonElement>(null)
 
@@ -177,28 +174,15 @@ export function HeroSection() {
   const active    = HUBS_DATA[activeHub]
   const activeColor = colorFor(active)
   const WatermarkIcon = active.Icon
-  // CTA gradient — the button's own color, NEVER theme-toggled (this
-  // constant map has no isDark branch at all). Everything in the
-  // "Core Hub Ecosystem" box below now deliberately reuses THIS same
-  // source, instead of the theme-varying `activeColor`, per request: the
-  // box's background/accents should track "the main button color" and
-  // stay dark-toned regardless of light/dark mode.
-  const [ctaFrom, ctaTo] = CTA_GRADIENTS[active.id] ?? [BRAND.blue, BRAND.blueMid]
 
   // ── Ecosystem box color model ─────────────────────────────────────────
-  // Background is now a fixed dark wash built from ctaFrom/ctaTo (same as
-  // the button), with a hardcoded dark base underneath the fade — not
-  // bg-white/dark:bg-zinc-950 — so the card never flips light in light
-  // mode. Every CTA_GRADIENTS entry is a genuinely dark hue (verified via
-  // relativeLuminance below), so plain white text is safe everywhere,
-  // with a dynamic fallback kept in for any future hub whose tone might
-  // not be dark enough.
-  const hubAccent   = ctaFrom
-  const accentIsDark = relativeLuminance(hubAccent) <= 0.55
-  const cardText      = accentIsDark ? "#FFFFFF" : "#111827"
-  const cardTextSoft  = accentIsDark ? "rgba(255,255,255,0.82)" : "rgba(17,24,39,0.72)"
-  const cardTextMuted = accentIsDark ? "rgba(255,255,255,0.55)" : "rgba(17,24,39,0.5)"
-  const cardShadow    = accentIsDark ? "0 1px 6px rgba(0,0,0,0.45)" : "none"
+  // Accent is always the hub's DEEP brand tone (`colorLight` field),
+  // regardless of light/dark theme — this guarantees white fill-text
+  // stays WCAG-compliant once the box fills, in either theme.
+  const hubAccent = active.colorLight
+  const cardText      = ecosystemFilled ? "#FFFFFF" : hubAccent
+  const cardTextSoft  = ecosystemFilled ? "rgba(255,255,255,0.82)" : `${hubAccent}B8`
+  const cardTextMuted = ecosystemFilled ? "rgba(255,255,255,0.55)" : `${hubAccent}80`
 
   // Watermark crossfade state
   const [watermarkLayers, setWatermarkLayers] = useState<WatermarkLayer[]>([])
@@ -309,13 +293,6 @@ export function HeroSection() {
         }
         .abh-cta-glow { animation: abh-cta-glow-pulse 3s ease-in-out infinite; }
 
-        @keyframes abh-cta-gradient-shift {
-          0%   { background-position: 0% 50%; }
-          50%  { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        .abh-cta-gradient { background-size: 200% 200%; animation: abh-cta-gradient-shift 10s ease infinite; }
-
         @keyframes abh-taskbar-indicator-in {
           0%   { width: 0px;  opacity: 0; }
           100% { width: 22px; opacity: 1; }
@@ -337,12 +314,7 @@ export function HeroSection() {
 
         {/* CTA wrapper — given real breathing room via min-height (desktop
             only, via the canHover check) so the popped-out icons always
-            stay INSIDE this element's bounds. Previously the wrapper's
-            height only matched the button itself, so moving the mouse
-            toward a popped icon at radius 108 immediately exited the
-            wrapper and fired onMouseLeave, closing the menu before the
-            click could land — that's the "icons disappear before I can
-            click them" bug. */}
+            stay INSIDE this element's bounds. */}
         <div
           className="relative w-full flex justify-center items-center mb-12"
           style={canHover ? { minHeight: RADIUS * 2 + 140 } : undefined}
@@ -378,52 +350,60 @@ export function HeroSection() {
             })}
           </div>
 
+          {/* Glow behind the button — solid color now, no gradient. */}
           <div
-            key={`glow-${active.id}`}
             aria-hidden="true"
             className="absolute w-[220px] h-[80px] rounded-full blur-2xl pointer-events-none abh-cta-glow"
-            style={{ backgroundImage: `linear-gradient(135deg, ${ctaFrom} 0%, ${ctaTo} 100%)` }}
+            style={{ backgroundColor: CTA_COLOR }}
           />
 
-         
+        
 
+          {/* Start Here — border-only at rest, single fixed brand-blue
+              identity (no more per-hub swap, no gradient). On hover
+              (desktop) or press (mobile, via :active) a solid fill rises
+              from the bottom, fast (150ms), and text/icon flip to white. */}
           <button
             ref={ctaBtnRef}
-            key={active.id}
             onClick={handleCtaClick}
-            className="abh-cta-gradient relative z-30 inline-flex items-center gap-3 group px-10 py-5 rounded-[14px] font-sans font-black text-lg text-white transition-all duration-300 active:duration-100 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.94] shadow-md hover:shadow-xl active:shadow-sm active:brightness-90 animate-in fade-in duration-500"
-            style={{ backgroundImage: `linear-gradient(135deg, ${ctaFrom} 0%, ${ctaTo} 50%, ${ctaFrom} 100%)` }}
+            className="group relative z-30 inline-flex items-center gap-3 px-10 py-5 rounded-[14px] font-sans font-black text-lg overflow-hidden border-2 transition-all duration-150 active:duration-75 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.94] shadow-md hover:shadow-xl active:shadow-sm animate-in fade-in duration-500"
+            style={{ borderColor: CTA_COLOR, color: CTA_COLOR }}
           >
-            Start Here
-            <ArrowRight weight="bold" className="w-6 h-6 transition-transform duration-300 group-hover:translate-x-1.5" aria-hidden="true" />
+            <span
+              aria-hidden="true"
+              className="absolute inset-0 origin-bottom scale-y-0 transition-transform duration-150 ease-out group-hover:scale-y-100 group-active:scale-y-100"
+              style={{ backgroundColor: CTA_COLOR }}
+            />
+            <span className="relative z-10 group-hover:text-white group-active:text-white">
+              Start Here
+            </span>
+            <ArrowRight
+              weight="bold"
+              className="relative z-10 w-6 h-6 transition-transform duration-150 group-hover:translate-x-1.5 group-hover:text-white group-active:text-white"
+              aria-hidden="true"
+            />
           </button>
         </div>
 
-        {/* Core Hub Ecosystem — background now built from ctaFrom/ctaTo
-            (the button's own fixed colors), not the theme-toggling
-            `activeColor`. The base layer under the fade is a hardcoded
-            dark hex rather than bg-white/dark:bg-zinc-950, so the card
-            genuinely never turns light in light mode — it stays a dark
-            surface end to end, exactly like the button. */}
+        {/* Core Hub Ecosystem — border-only at rest using the active hub's
+            deep brand tone (always the dark-toned variant, in both
+            light/dark theme). Hovering or pressing fills the box solid
+            with that same color, rising from the bottom (150ms, fast),
+            and all text flips to white for guaranteed contrast. */}
         <div
-          className="relative w-full max-w-[840px] mx-auto px-6 sm:px-10 md:px-12 pt-10 sm:pt-14 md:pt-16 pb-16 sm:pb-20 flex flex-col items-center mb-12 overflow-hidden rounded-[14px]"
-          style={{
-            boxShadow:
-              "0 26px 60px -16px rgba(0,0,0,0.45), 0 10px 28px -8px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.06), inset 0 -28px 34px -18px rgba(0,0,0,0.55)",
-          }}
+          className="relative w-full max-w-[840px] mx-auto px-6 sm:px-10 md:px-12 pt-10 sm:pt-14 md:pt-16 pb-16 sm:pb-20 flex flex-col items-center mb-12 overflow-hidden rounded-[14px] border-2 transition-colors duration-150"
+          style={{ borderColor: hubAccent }}
+          onMouseEnter={() => setEcosystemFilled(true)}
+          onMouseLeave={() => setEcosystemFilled(false)}
+          onTouchStart={() => setEcosystemFilled(true)}
+          onTouchEnd={() => setEcosystemFilled(false)}
         >
           <div
             aria-hidden="true"
-            className="absolute inset-0 -z-20 pointer-events-none"
-            style={{ backgroundColor: "#0B0F14" }}
-          />
-
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 -z-10 pointer-events-none"
+            className="absolute inset-0 -z-10 pointer-events-none origin-bottom transition-transform duration-150 ease-out"
             style={{
-              background: `linear-gradient(to bottom, ${ctaFrom} 0%, ${ctaFrom} 14%, ${ctaFrom}CC 34%, ${ctaFrom}77 58%, ${ctaFrom}00 86%)`,
-              transition: "background 700ms ease-out",
+              backgroundColor: hubAccent,
+              transform: ecosystemFilled ? "scaleY(1)" : "scaleY(0)",
             }}
           />
 
@@ -431,14 +411,14 @@ export function HeroSection() {
 
             <div className="w-full flex flex-col items-center mb-8">
               <h2
-                className="abh-section-heading mb-2 text-center transition-colors duration-300"
-                style={{ color: cardText, textShadow: cardShadow }}
+                className="abh-section-heading mb-2 text-center transition-colors duration-150"
+                style={{ color: cardText }}
               >
                 Core Hub Ecosystem
               </h2>
               <p
-                className="text-sm font-medium text-center transition-colors duration-300"
-                style={{ color: cardTextSoft, textShadow: cardShadow }}
+                className="text-sm font-medium text-center transition-colors duration-150"
+                style={{ color: cardTextSoft }}
               >
                 Tap a hub to see what we actually do there.
               </p>
@@ -467,7 +447,9 @@ export function HeroSection() {
                       isActive && "shadow-md"
                     )}
                     style={{
-                      backgroundColor: isActive ? "rgba(255,255,255,0.18)" : (isHovered ? "rgba(255,255,255,0.08)" : "transparent"),
+                      backgroundColor: isActive
+                        ? (ecosystemFilled ? "rgba(255,255,255,0.18)" : `${hubAccent}1F`)
+                        : (isHovered ? (ecosystemFilled ? "rgba(255,255,255,0.08)" : `${hubAccent}14`) : "transparent"),
                     }}
                   >
                     <span
@@ -476,7 +458,6 @@ export function HeroSection() {
                         color: cardText,
                         opacity: isActive ? 1 : (isHovered ? 0.85 : 0.45),
                         transform: isActive ? "translateY(-1px) scale(1.08)" : "none",
-                        filter: isActive ? `drop-shadow(0 0 7px ${hubAccent}bb)` : "none",
                       }}
                     >
                       {hub.icon(isActive)}
@@ -496,8 +477,8 @@ export function HeroSection() {
             </div>
 
             <div
-              className="relative w-full max-w-[420px] h-px mt-1 mb-7 transition-colors duration-500"
-              style={{ backgroundColor: "rgba(255,255,255,0.35)" }}
+              className="relative w-full max-w-[420px] h-px mt-1 mb-7 transition-colors duration-150"
+              style={{ backgroundColor: ecosystemFilled ? "rgba(255,255,255,0.35)" : `${hubAccent}59` }}
             >
               <div
                 className="absolute left-1/2 top-0 -translate-x-1/2"
@@ -506,7 +487,7 @@ export function HeroSection() {
                   height: 0,
                   borderLeft: "7px solid transparent",
                   borderRight: "7px solid transparent",
-                  borderTop: "9px solid rgba(255,255,255,0.85)",
+                  borderTop: `9px solid ${ecosystemFilled ? "rgba(255,255,255,0.85)" : hubAccent}`,
                 }}
                 aria-hidden="true"
               />
@@ -514,8 +495,8 @@ export function HeroSection() {
 
             <div className="w-full max-w-[420px] flex flex-col items-center text-center">
               <p
-                className="text-[0.65rem] font-black uppercase tracking-widest mb-3 transition-colors duration-300"
-                style={{ color: cardTextSoft, textShadow: cardShadow }}
+                className="text-[0.65rem] font-black uppercase tracking-widest mb-3 transition-colors duration-150"
+                style={{ color: cardTextSoft }}
               >
                 {active.name}
               </p>
@@ -526,11 +507,11 @@ export function HeroSection() {
                 aria-label="Show another example price for this hub"
                 className="flex flex-col items-center gap-1 mx-auto rounded-[14px] px-3 py-1 transition-opacity hover:opacity-75 active:scale-[0.97] animate-in fade-in duration-200"
               >
-                <span className="text-sm font-semibold transition-colors duration-300" style={{ color: cardText, textShadow: cardShadow }}>
+                <span className="text-sm font-semibold transition-colors duration-150" style={{ color: cardText }}>
                   {spotlightService.name}
                 </span>
 
-                <span className="text-2xl font-black font-mono transition-colors duration-300" style={{ color: cardText, textShadow: cardShadow }}>
+                <span className="text-2xl font-black font-mono transition-colors duration-150" style={{ color: cardText }}>
                   {spotlightService.price}
                 </span>
               </button>
@@ -538,22 +519,19 @@ export function HeroSection() {
               <button
                 onClick={() => handleNavigate(`/services?hub=${active.id}`)}
                 className="flex items-center justify-center gap-1.5 text-[0.65rem] font-black tracking-wide mt-4 transition-opacity hover:opacity-70"
-                style={{ color: cardText, textShadow: cardShadow }}
+                style={{ color: cardText }}
               >
                 View All {active.name} Services
                 <ArrowRight weight="bold" className="w-3 h-3" aria-hidden="true" />
               </button>
             </div>
 
-            {/* Marquee — pushed further down from the price block above
-                (added mt-10) so it no longer sits high/cramped right under
-                the "View All" link. */}
             <div
               role="marquee"
               aria-label="Our services"
               onMouseEnter={() => setMarqueePaused(true)}
               onMouseLeave={() => setMarqueePaused(false)}
-              onTouchStart={() => setMarqueePaused(p => !p)}
+              onTouchStart={(e) => { e.stopPropagation(); setMarqueePaused(p => !p) }}
               className="relative w-full mt-10 py-4 overflow-hidden select-none group/marquee"
             >
               <div
@@ -567,7 +545,7 @@ export function HeroSection() {
                         <span className="inline-flex items-center px-5 font-semibold text-sm transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100" style={{ color: cardTextSoft }}>
                           {item}
                         </span>
-                        <span className="font-black text-base leading-none shrink-0" style={{ color: hubAccent }} aria-hidden="true">•</span>
+                        <span className="font-black text-base leading-none shrink-0" style={{ color: cardText }} aria-hidden="true">•</span>
                       </React.Fragment>
                     ))}
                   </div>
@@ -634,4 +612,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-} 
+                                }
