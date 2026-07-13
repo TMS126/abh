@@ -385,49 +385,7 @@ export function HeroSection() {
             style={{ backgroundImage: `linear-gradient(135deg, ${ctaFrom} 0%, ${ctaTo} 100%)` }}
           />
 
-          {/* Desktop-only "star" reveal. FIX: this container is now
-              ALWAYS pointer-events-none — it used to flip to auto and
-              cover the entire area (including the visible "Start Here"
-              button sitting underneath it in z-index) whenever
-              ctaHovered was true, silently swallowing every click on the
-              button. Each individual popped-out icon button below
-              re-enables pointer-events on itself only, so the icons stay
-              clickable while the button underneath is finally reachable
-              too. The connecting "web" lines have been removed entirely. */}
-          {canHover && (
-            <div
-              aria-hidden={!ctaHovered}
-              className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
-            >
-              {HUBS_DATA.map((hub, i) => {
-                const pos = radialPositions[i]
-                const hubColor = colorFor(hub)
-                const HubIconEl = hub.Icon
-                return (
-                  <button
-                    key={hub.id}
-                    onClick={() => handleNavigate(`/services?hub=${hub.id}`)}
-                    aria-label={`Go to ${hub.name}`}
-                    title={hub.name}
-                    className="absolute w-11 h-11 rounded-full flex items-center justify-center shadow-lg transition-all ease-out"
-                    style={{
-                      backgroundColor: hubColor,
-                      color: relativeLuminance(hubColor) > 0.55 ? "#111827" : "#FFFFFF",
-                      transform: ctaHovered
-                        ? `translate(${pos.x}px, ${pos.y}px) scale(1)`
-                        : "translate(0, 0) scale(0.3)",
-                      opacity: ctaHovered ? 1 : 0,
-                      pointerEvents: ctaHovered ? "auto" : "none",
-                      transitionDuration: "320ms",
-                      transitionDelay: ctaHovered ? `${i * 30}ms` : "0ms",
-                    }}
-                  >
-                    <HubIconEl size={20} weight="fill" aria-hidden="true" />
-                  </button>
-                )
-              })}
-            </div>
-          )}
+         
 
           <button
             ref={ctaBtnRef}
