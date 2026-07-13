@@ -259,17 +259,7 @@ export function Navbar() {
                   desktopNavOpen ? "w-0 opacity-0 pointer-events-none" : "w-9 h-9 opacity-100"
                 )}
               >
-                <List size={18} weight="bold" style={{ color: routeColor ?? (mounted && theme === "dark" ? BRAND.lightBlue : BRAND.orange) }} className="transition-colors duration-300" />
-                {/* Current-page dot — small colored marker on the collapsed
-                    pill, so there's a hint of "where you are" even before
-                    hovering/tapping to expand. */}
-                {routeColor && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full ring-2 ring-white dark:ring-zinc-900"
-                    style={{ backgroundColor: routeColor }}
-                  />
-                )}
+               <List size={18} weight="bold" style={{ color: routeColor ?? (mounted && theme === "dark" ? BRAND.lightBlue : BRAND.orange) }} className="transition-colors duration-300" />
               </button>
 
               {/* Revealed links — fade + slide in to replace the hamburger
