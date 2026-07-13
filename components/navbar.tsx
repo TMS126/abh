@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useTheme } from "next-themes"
 import { useRouter, usePathname } from "next/navigation"
-import { Sun, Moon, X } from "@phosphor-icons/react"
+import { Sun, Moon, X, List } from "@phosphor-icons/react"
 import { NAV_ITEMS, BRAND } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 
@@ -37,6 +37,11 @@ export function Navbar() {
   const [menuOpen,       setMenuOpen]       = useState(false)
   const [navVisible,     setNavVisible]     = useState(true)
   const [isTextExpanded, setIsTextExpanded] = useState(true)
+  // Desktop nav-pill expand state — separate from the mobile `menuOpen`
+  // full-screen menu, since this is a small inline hover/tap reveal
+  // rather than a full overlay.
+  const [desktopNavOpen, setDesktopNavOpen] = useState(false)
+  const desktopNavRef = useRef<HTMLDivElement>(null)
 
   const lastScrollY    = useRef(0)
   const logoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -67,8 +72,25 @@ export function Navbar() {
     return () => { document.body.style.overflow = "" }
   }, [menuOpen])
 
+  // Tap-outside closes the desktop nav-pill — needed for the touch/tap
+  // path (Question 5), since there's no hover to fall back on to close it.
+  useEffect(() => {
+    if (!desktopNavOpen) return
+    const onPointerDown = (e: PointerEvent) => {
+      if (desktopNavRef.current && !desktopNavRef.current.contains(e.target as Node)) {
+        setDesktopNavOpen(false)
+      }
+    }
+    document.addEventListener("pointerdown", onPointerDown)
+    return () => document.removeEventListener("pointerdown", onPointerDown)
+  }, [desktopNavOpen])
+
+  // Collapses the pill whenever the route changes (after navigating via
+  // one of its links, or any other route change).
+  useEffect(() => { setDesktopNavOpen(false) }, [pathname])
+
   const navigate = useCallback((path: string) => {
-    router.push(path); setMenuOpen(false); window.scrollTo({ top: 0, behavior: "smooth" })
+    router.push(path); setMenuOpen(false); setDesktopNavOpen(false); window.scrollTo({ top: 0, behavior: "smooth" })
   }, [router])
 
   const handleLogoMouseEnter = () => {
@@ -131,19 +153,18 @@ export function Navbar() {
   // isn't in the map (or before mount, to avoid a color flash on load).
   const logoColor = routeColor ?? (mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue)
 
-  // Individual link pill — replaces the old shared frosted-container
-  // look on desktop. Rest state: subtle border + soft shadow. Active:
-  // solid fill using the link's own routeColor, with text color computed
-  // per-color via getReadableTextColor rather than assumed from theme
-  // (see note above the helper — some route colors need dark text even
-  // in "light mode" contexts). Hover: nudges the whole pill up for a
-  // little life, scoped to desktop only.
+  // Individual link pill — used inside the expanded desktop nav-pill.
+  // Rest state: subtle border + soft shadow. Active: solid fill using
+  // the link's own routeColor, with text color computed per-color via
+  // getReadableTextColor rather than assumed from theme (see note above
+  // the helper — some route colors need dark text even in "light mode"
+  // contexts).
   const desktopLinkClass = (isActive: boolean, isCta?: boolean) =>
     cn(
-      "px-4 py-2 rounded-[14px] text-[0.84rem] transition-all duration-300 border hover:-translate-y-0.5",
+      "px-4 py-2 rounded-[10px] text-[0.84rem] whitespace-nowrap transition-all duration-300 border",
       isActive
         ? "font-black border-transparent shadow-sm"
-        : "font-medium text-zinc-500 dark:text-zinc-400 bg-white/80 dark:bg-zinc-900/80 border-gray-200 dark:border-zinc-800 shadow-sm hover:text-brand-blue dark:hover:text-brand-light-blue hover:shadow-md",
+        : "font-medium text-zinc-500 dark:text-zinc-400 bg-white/60 dark:bg-zinc-800/60 border-gray-200 dark:border-zinc-700 hover:text-brand-blue dark:hover:text-brand-light-blue",
       isCta && "border-2 border-brand-orange text-brand-orange hover:bg-brand-orange/10"
     )
 
@@ -204,29 +225,82 @@ export function Navbar() {
             </div>
           </div>
 
-          {/* Desktop Nav — shared frosted container removed; each link is
-              now its own pill via desktopLinkClass. Each link's own path
-              (not the current page) determines its active fill color, and
-              text color is computed per-color via getReadableTextColor so
-              contrast holds regardless of theme. */}
-          <div className={cn("hidden md:flex items-center gap-2 pointer-events-auto absolute left-1/2 -translate-x-1/2 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
-            {NAV_ITEMS.map((item) => {
-              const isActive   = pathname === item.path
-              const itemAccent = MOBILE_NAV_COLORS[item.path]
-              const itemColor  = mounted && itemAccent ? (theme === "dark" ? itemAccent.dark : itemAccent.light) : BRAND.blue
-              const itemTextClr = getReadableTextColor(itemColor)
+          {/* Desktop Nav — a single pill, collapsed by default to just the
+              hamburger lines + a small current-page dot. Hovering (or
+              tapping, for touch devices without hover) grows it sideways
+              to reveal all 5 links; it stays open while the pointer is
+              anywhere over the pill OR the revealed links, only
+              collapsing once the pointer leaves the whole group. */}
+          <div
+            ref={desktopNavRef}
+            onMouseEnter={() => setDesktopNavOpen(true)}
+            onMouseLeave={() => setDesktopNavOpen(false)}
+            className={cn(
+              "hidden md:flex items-center pointer-events-auto absolute left-1/2 -translate-x-1/2 transition-all duration-300",
+              !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100"
+            )}
+          >
+            <div
+              className={cn(
+                pillClass,
+                "flex items-center overflow-hidden transition-[padding] duration-300 ease-out",
+                desktopNavOpen ? "gap-1.5 px-2" : "px-3"
+              )}
+            >
+              {/* Hamburger trigger — fades out (doesn't slide/morph) once
+                  open, per your call. Also acts as the tap target for
+                  touch devices without hover. */}
+              <button
+                onClick={() => setDesktopNavOpen(v => !v)}
+                aria-label={desktopNavOpen ? "Collapse navigation" : "Expand navigation"}
+                aria-expanded={desktopNavOpen}
+                className={cn(
+                  "relative flex items-center justify-center shrink-0 transition-all duration-200 ease-out",
+                  desktopNavOpen ? "w-0 opacity-0 pointer-events-none" : "w-9 h-9 opacity-100"
+                )}
+              >
+                <List size={18} weight="bold" style={{ color: routeColor ?? (mounted && theme === "dark" ? BRAND.lightBlue : BRAND.orange) }} className="transition-colors duration-300" />
+                {/* Current-page dot — small colored marker on the collapsed
+                    pill, so there's a hint of "where you are" even before
+                    hovering/tapping to expand. */}
+                {routeColor && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full ring-2 ring-white dark:ring-zinc-900"
+                    style={{ backgroundColor: routeColor }}
+                  />
+                )}
+              </button>
 
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => navigate(item.path)}
-                  style={isActive ? { backgroundColor: itemColor, color: itemTextClr } : undefined}
-                  className={desktopLinkClass(isActive, item.isCta)}
-                >
-                  {item.label}
-                </button>
-              )
-            })}
+              {/* Revealed links — fade + slide in to replace the hamburger
+                  rather than sitting alongside it. */}
+              <div
+                className={cn(
+                  "flex items-center gap-1.5 transition-all duration-300 ease-out",
+                  desktopNavOpen
+                    ? "opacity-100 translate-x-0 max-w-[600px]"
+                    : "opacity-0 -translate-x-2 max-w-0 pointer-events-none"
+                )}
+              >
+                {NAV_ITEMS.map((item) => {
+                  const isActive   = pathname === item.path
+                  const itemAccent = MOBILE_NAV_COLORS[item.path]
+                  const itemColor  = mounted && itemAccent ? (theme === "dark" ? itemAccent.dark : itemAccent.light) : BRAND.blue
+                  const itemTextClr = getReadableTextColor(itemColor)
+
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => navigate(item.path)}
+                      style={isActive ? { backgroundColor: itemColor, color: itemTextClr } : undefined}
+                      className={desktopLinkClass(isActive, item.isCta)}
+                    >
+                      {item.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
           </div>
 
           {/* Controls — Always visible on desktop, hidden on mobile when menu is open.
@@ -352,4 +426,4 @@ export function Navbar() {
       </div>
     </>
   )
-    } 
+      } 
