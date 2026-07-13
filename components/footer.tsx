@@ -476,10 +476,10 @@ function FooterContent() {
         <button
             onClick={() => setIsTermsOpen(true)}
             style={{ fontSize: "0.65rem", lineHeight: "1rem" }}
-            className="font-medium text-zinc-400 hover:text-brand-blue transition-colors"
-          >
+            className="font-medium text-zinc-400 hover:text-brand-blue transition-colors"a>
             Terms
           </button>
+        
           <span className="text-zinc-200 dark:text-zinc-700" aria-hidden="true">·</span>
           <Link
             href="/privacy"
