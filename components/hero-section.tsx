@@ -112,21 +112,10 @@ const HUBS_DATA = [
   },
 ]
 
-// Fixed CTA identity color. No more per-hub gradient/color swap on the
-// button — brand blue is the dominant, always-on color per current
-// direction (blue used most, green/orange far less across the brand).
+// Fixed CTA identity color. Brand blue is the dominant, always-on color
+// per current direction (blue used most, green/orange far less across
+// the brand).
 const CTA_COLOR = BRAND.blue
-
-// Real WCAG relative luminance — still used for the desktop radial menu's
-// per-hub circle text (those stay theme-varying hub colors).
-function relativeLuminance(hex: string): number {
-  const clean = hex.replace("#", "")
-  const r = parseInt(clean.substring(0, 2), 16) / 255
-  const g = parseInt(clean.substring(2, 4), 16) / 255
-  const b = parseInt(clean.substring(4, 6), 16) / 255
-  const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4))
-  return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
-}
 
 function pickRandomService(hubIndex: number, excludeName?: string) {
   const list = HUBS_DATA[hubIndex].services
@@ -153,8 +142,6 @@ export function HeroSection() {
   const [spotlightService,  setSpotlightService]  = useState(() => pickRandomService(0))
   const [hoveredHub,        setHoveredHub]        = useState<number | null>(null)
   const [canHover,          setCanHover]          = useState(false)
-  const [ctaHovered,        setCtaHovered]        = useState(false)
-  const [ecosystemFilled,   setEcosystemFilled]   = useState(false)
 
   const ctaBtnRef      = useRef<HTMLButtonElement>(null)
 
@@ -170,33 +157,39 @@ export function HeroSection() {
   }, [])
 
   const isDark    = mounted && resolvedTheme === "dark"
-  const colorFor  = (hub: typeof HUBS_DATA[number]) => isDark ? hub.colorDark : hub.colorLight
   const active    = HUBS_DATA[activeHub]
-  const activeColor = colorFor(active)
   const WatermarkIcon = active.Icon
 
   // ── Ecosystem box color model ─────────────────────────────────────────
-  // Accent is always the hub's DEEP brand tone (`colorLight` field),
-  // regardless of light/dark theme — this guarantees white fill-text
-  // stays WCAG-compliant once the box fills, in either theme.
-  const hubAccent = active.colorLight
-  const cardText      = ecosystemFilled ? "#FFFFFF" : hubAccent
-  const cardTextSoft  = ecosystemFilled ? "rgba(255,255,255,0.82)" : `${hubAccent}B8`
-  const cardTextMuted = ecosystemFilled ? "rgba(255,255,255,0.55)" : `${hubAccent}80`
+  // The box is now permanently filled — no hover/press reveal animation,
+  // no gradient, ever. Its fill is a flat brand blue (the dominant color
+  // per the brand hierarchy: blue used most, green next, orange least),
+  // so it stays visually consistent no matter which hub tab is active.
+  //
+  // Only three things are allowed to carry the ACTIVE HUB's own color:
+  // the hub name label, the spotlight service name, and its price.
+  // Everything else in the box — icons, dividers, marquee text — is
+  // neutral (white/translucent-white) against the blue fill.
+  const hubAccent     = active.colorLight   // used ONLY for name / service / price text
+  const cardText      = "#FFFFFF"
+  const cardTextSoft  = "rgba(255,255,255,0.82)"
+  const cardTextMuted = "rgba(255,255,255,0.55)"
 
-  // Watermark crossfade state
+  // Watermark crossfade state — the giant background icon is also fixed
+  // to brand blue now (matches the "blue dominant" rule), it no longer
+  // swaps color per hub.
   const [watermarkLayers, setWatermarkLayers] = useState<WatermarkLayer[]>([])
   const [visibleKey,       setVisibleKey]      = useState<string | null>(null)
   const pruneTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
 
   useEffect(() => {
-    const newKey = `${active.id}-${isDark}`
-    setWatermarkLayers(prev => (prev.some(l => l.key === newKey) ? prev : [...prev, { key: newKey, Icon: WatermarkIcon, color: activeColor }]))
+    const newKey = `${active.id}`
+    setWatermarkLayers(prev => (prev.some(l => l.key === newKey) ? prev : [...prev, { key: newKey, Icon: WatermarkIcon, color: BRAND.blue }]))
 
     const raf = requestAnimationFrame(() => setVisibleKey(newKey))
     return () => cancelAnimationFrame(raf)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active.id, isDark])
+  }, [active.id])
 
   useEffect(() => {
     if (watermarkLayers.length <= 1) return
@@ -226,15 +219,7 @@ export function HeroSection() {
     handleNavigate("/services")
   }
 
-  // Radial "star" menu — brought closer in (108 → 72) so the pointer has
-  // much less distance to travel from the button to any icon, and the
-  // connecting "web" lines are gone entirely (removed from the render
-  // below), per request.
   const RADIUS = 72
-  const radialPositions = HUBS_DATA.map((_, i) => {
-    const angle = (-90 + i * (360 / HUBS_DATA.length)) * (Math.PI / 180)
-    return { x: Math.cos(angle) * RADIUS, y: Math.sin(angle) * RADIUS, angleDeg: (-90 + i * (360 / HUBS_DATA.length)) }
-  })
 
  return (
     <section
@@ -268,11 +253,13 @@ export function HeroSection() {
         />
       </div>
 
+      {/* Ambient blob — fixed brand blue (dominant hierarchy color), no
+          longer cycles with the active hub. */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <div
-          className="absolute left-1/2 top-[8%] -translate-x-1/2 w-[140vw] md:w-[90vw] max-w-[1400px] aspect-[16/10] opacity-[0.14] dark:opacity-[0.18] blur-3xl transition-colors duration-700 ease-out"
+          className="absolute left-1/2 top-[8%] -translate-x-1/2 w-[140vw] md:w-[90vw] max-w-[1400px] aspect-[16/10] opacity-[0.14] dark:opacity-[0.18] blur-3xl"
           style={{
-            backgroundColor: activeColor,
+            backgroundColor: BRAND.blue,
             animation: "abh-blob-morph 18s ease-in-out infinite",
           }}
         />
@@ -312,14 +299,9 @@ export function HeroSection() {
           From printing your documents to navigating government services — we make it simple, fast, and friendly.
         </p>
 
-        {/* CTA wrapper — given real breathing room via min-height (desktop
-            only, via the canHover check) so the popped-out icons always
-            stay INSIDE this element's bounds. */}
         <div
           className="relative w-full flex justify-center items-center mb-12"
           style={canHover ? { minHeight: RADIUS * 2 + 140 } : undefined}
-          onMouseEnter={() => canHover && setCtaHovered(true)}
-          onMouseLeave={() => canHover && setCtaHovered(false)}
         >
 
           <div
@@ -350,19 +332,17 @@ export function HeroSection() {
             })}
           </div>
 
-          {/* Glow behind the button — solid color now, no gradient. */}
+          {/* Glow behind the button — solid color, no gradient. */}
           <div
             aria-hidden="true"
             className="absolute w-[220px] h-[80px] rounded-full blur-2xl pointer-events-none abh-cta-glow"
             style={{ backgroundColor: CTA_COLOR }}
           />
 
-        
-
           {/* Start Here — border-only at rest, single fixed brand-blue
-              identity (no more per-hub swap, no gradient). On hover
-              (desktop) or press (mobile, via :active) a solid fill rises
-              from the bottom, fast (150ms), and text/icon flip to white. */}
+              identity. On hover (desktop) or press (mobile, via :active)
+              a solid fill rises from the bottom, fast (150ms), and
+              text/icon flip to white. */}
           <button
             ref={ctaBtnRef}
             onClick={handleCtaClick}
@@ -385,39 +365,26 @@ export function HeroSection() {
           </button>
         </div>
 
-        {/* Core Hub Ecosystem — border-only at rest using the active hub's
-            deep brand tone (always the dark-toned variant, in both
-            light/dark theme). Hovering or pressing fills the box solid
-            with that same color, rising from the bottom (150ms, fast),
-            and all text flips to white for guaranteed contrast. */}
+        {/* Core Hub Ecosystem — permanently filled with flat brand blue.
+            No hover/press reveal, no gradient, ever. Only the hub name,
+            spotlight service name, and its price switch to the active
+            hub's own color; everything else (icons, divider, marquee)
+            stays neutral white against the blue fill. */}
         <div
-          className="relative w-full max-w-[840px] mx-auto px-6 sm:px-10 md:px-12 pt-10 sm:pt-14 md:pt-16 pb-16 sm:pb-20 flex flex-col items-center mb-12 overflow-hidden rounded-[14px] border-2 transition-colors duration-150"
-          style={{ borderColor: hubAccent }}
-          onMouseEnter={() => setEcosystemFilled(true)}
-          onMouseLeave={() => setEcosystemFilled(false)}
-          onTouchStart={() => setEcosystemFilled(true)}
-          onTouchEnd={() => setEcosystemFilled(false)}
+          className="relative w-full max-w-[840px] mx-auto px-6 sm:px-10 md:px-12 pt-10 sm:pt-14 md:pt-16 pb-16 sm:pb-20 flex flex-col items-center mb-12 overflow-hidden rounded-[14px]"
+          style={{ backgroundColor: BRAND.blue }}
         >
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 -z-10 pointer-events-none origin-bottom transition-transform duration-150 ease-out"
-            style={{
-              backgroundColor: hubAccent,
-              transform: ecosystemFilled ? "scaleY(1)" : "scaleY(0)",
-            }}
-          />
-
           <div className="w-full flex flex-col items-center">
 
             <div className="w-full flex flex-col items-center mb-8">
               <h2
-                className="abh-section-heading mb-2 text-center transition-colors duration-150"
+                className="abh-section-heading mb-2 text-center"
                 style={{ color: cardText }}
               >
                 Core Hub Ecosystem
               </h2>
               <p
-                className="text-sm font-medium text-center transition-colors duration-150"
+                className="text-sm font-medium text-center"
                 style={{ color: cardTextSoft }}
               >
                 Tap a hub to see what we actually do there.
@@ -448,10 +415,13 @@ export function HeroSection() {
                     )}
                     style={{
                       backgroundColor: isActive
-                        ? (ecosystemFilled ? "rgba(255,255,255,0.18)" : `${hubAccent}1F`)
-                        : (isHovered ? (ecosystemFilled ? "rgba(255,255,255,0.08)" : `${hubAccent}14`) : "transparent"),
+                        ? "rgba(255,255,255,0.18)"
+                        : (isHovered ? "rgba(255,255,255,0.08)" : "transparent"),
                     }}
                   >
+                    {/* Icon stays neutral white regardless of hub —
+                        only the text below (name/service/price) carries
+                        the hub's own color. */}
                     <span
                       className="transition-all duration-200 flex"
                       style={{
@@ -477,8 +447,8 @@ export function HeroSection() {
             </div>
 
             <div
-              className="relative w-full max-w-[420px] h-px mt-1 mb-7 transition-colors duration-150"
-              style={{ backgroundColor: ecosystemFilled ? "rgba(255,255,255,0.35)" : `${hubAccent}59` }}
+              className="relative w-full max-w-[420px] h-px mt-1 mb-7"
+              style={{ backgroundColor: "rgba(255,255,255,0.35)" }}
             >
               <div
                 className="absolute left-1/2 top-0 -translate-x-1/2"
@@ -487,16 +457,17 @@ export function HeroSection() {
                   height: 0,
                   borderLeft: "7px solid transparent",
                   borderRight: "7px solid transparent",
-                  borderTop: `9px solid ${ecosystemFilled ? "rgba(255,255,255,0.85)" : hubAccent}`,
+                  borderTop: "9px solid rgba(255,255,255,0.85)",
                 }}
                 aria-hidden="true"
               />
             </div>
 
             <div className="w-full max-w-[420px] flex flex-col items-center text-center">
+              {/* Hub name — takes the ACTIVE hub's own color. */}
               <p
-                className="text-[0.65rem] font-black uppercase tracking-widest mb-3 transition-colors duration-150"
-                style={{ color: cardTextSoft }}
+                className="text-[0.65rem] font-black uppercase tracking-widest mb-3"
+                style={{ color: hubAccent }}
               >
                 {active.name}
               </p>
@@ -507,11 +478,12 @@ export function HeroSection() {
                 aria-label="Show another example price for this hub"
                 className="flex flex-col items-center gap-1 mx-auto rounded-[14px] px-3 py-1 transition-opacity hover:opacity-75 active:scale-[0.97] animate-in fade-in duration-200"
               >
-                <span className="text-sm font-semibold transition-colors duration-150" style={{ color: cardText }}>
+                {/* Service name + price — also take the ACTIVE hub's color. */}
+                <span className="text-sm font-semibold" style={{ color: hubAccent }}>
                   {spotlightService.name}
                 </span>
 
-                <span className="text-2xl font-black font-mono transition-colors duration-150" style={{ color: cardText }}>
+                <span className="text-2xl font-black font-mono" style={{ color: hubAccent }}>
                   {spotlightService.price}
                 </span>
               </button>
@@ -612,4 +584,5 @@ export function StatsBar() {
       </div>
     </section>
   )
-                                }
+}
+ 
