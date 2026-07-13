@@ -80,15 +80,8 @@ const HUBS_DATA = [
       <Globe size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: Globe,
-    // FIX: BRAND.teal / BRAND.tealLight don't exist in lib/brand.ts — this
-    // was `undefined`, which crashed relativeLuminance() (called on
-    // colorFor(hub)'s result) the moment anyone tapped this tab. Replaced
-    // with BRAND.blueMid / BRAND.lightBlue — the same colors E-Service
-    // already uses everywhere else in the app (FORM_HUBS, HUB_COLORS,
-    // navbar's MOBILE_NAV_COLORS), rather than introducing a new,
-    // unused brand hue.
-    colorLight: BRAND.blueMid,
-    colorDark:  BRAND.lightBlue,
+    colorLight: BRAND.teal,
+    colorDark:  BRAND.tealLight,
     services: [
       { name: "SASSA Status Check",         price: "R20"  },
       { name: "SASSA SRD Application",      price: "R40"  },
@@ -122,9 +115,7 @@ const CTA_GRADIENTS: Record<string, [string, string]> = {
   print:    [BRAND.blue,       BRAND.blueMid],
   doc:      [BRAND.green,      BRAND.greenDeep],
   design:   [BRAND.orangeDark, BRAND.orangeBrown],
-  // FIX: was [BRAND.teal, BRAND.tealDark] — also undefined. Now uses the
-  // same blueMid → blueDark pairing as the hub's own color above.
-  eservice: [BRAND.blueMid,    BRAND.blueDark],
+  eservice: [BRAND.teal,       BRAND.tealDark],
   tech:     [BRAND.dark100,    BRAND.dark200],
 }
 
@@ -673,4 +664,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-    } 
+      }
