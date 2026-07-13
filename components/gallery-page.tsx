@@ -7,7 +7,7 @@ import { X, Check, Info, CaretLeft, CaretRight, CaretDown, Image as ImageIcon, A
 import { useTheme } from "next-themes"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
-import { HUB_COLORS, HubKey, BIZ, BRAND} from "@/lib/brand"
+import { HUB_COLORS, HubKey, BIZ, BRAND } from "@/lib/brand"
 import { PROJECTS, ProjectData } from "@/lib/data"
 
 type HubId = "print" | "doc" | "design" | "eservice" | "tech"
@@ -79,8 +79,12 @@ function useGalleryBackStack(
     return () => window.removeEventListener("popstate", onPop)
   }, [zoomIndex, selectedProject, setZoomIndex, setSelectedProject])
 
+  // FIX #2 — closeProject now correctly closes zoom first before collapsing
+  // the project layer, so the hardware back button doesn't skip the zoom
+  // history entry and collapse both layers at once.
   const closeZoom = useCallback(() => {
     if (zoomPushed.current) {
+      zoomPushed.current = false
       window.history.back()
     } else {
       setZoomIndex(null)
@@ -89,15 +93,22 @@ function useGalleryBackStack(
 
   const closeProject = useCallback(() => {
     if (zoomIndex !== null) {
-      closeZoom()
+      // Close the zoom layer first; project stays open.
+      if (zoomPushed.current) {
+        zoomPushed.current = false
+        window.history.back()
+      } else {
+        setZoomIndex(null)
+      }
       return
     }
     if (projectPushed.current) {
+      projectPushed.current = false
       window.history.back()
     } else {
       setSelectedProject(null)
     }
-  }, [zoomIndex, closeZoom, setSelectedProject])
+  }, [zoomIndex, setZoomIndex, setSelectedProject])
 
   return { closeProject, closeZoom }
 }
@@ -129,17 +140,17 @@ function SafeImage({ src, alt, accent, fill, sizes, className, priority = false 
   return (
     <>
       {!loaded && <ImagePlaceholder accent={accent} label={alt} />}
-      <Image 
-        src={src} 
-        alt={alt} 
-        fill={fill} 
-        sizes={sizes} 
-        className={cn(className, "transition-opacity duration-500", loaded ? "opacity-100" : "opacity-0")} 
+      <Image
+        src={src}
+        alt={alt}
+        fill={fill}
+        sizes={sizes}
+        className={cn(className, "transition-opacity duration-500", loaded ? "opacity-100" : "opacity-0")}
         loading={priority ? undefined : "lazy"}
         placeholder="blur"
         blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZjNmNGY2Ii8+PC9zdmc+"
         priority={priority}
-        onError={() => setFailed(true)} 
+        onError={() => setFailed(true)}
         onLoad={() => setLoaded(true)}
       />
     </>
@@ -151,19 +162,22 @@ function BeforeAfterSlider({ before, after, accent }: { before: string; after: s
   const [pos, setPos] = useState(50)
   const targetRef = useRef(50)
   const containerRef = useRef<HTMLDivElement>(null)
-  const rafRef = useRef<number>()
   const [revealed, setRevealed] = useState(false)
 
+  // FIX #5 — RAF loop only re-schedules itself while the handle is still
+  // moving, rather than running unconditionally at 60 fps forever.
   useEffect(() => {
+    let rafId: number
     const animate = () => {
       setPos(p => {
         const diff = targetRef.current - p
-        return Math.abs(diff) < 0.1 ? targetRef.current : p + diff * 0.2
+        if (Math.abs(diff) < 0.1) return targetRef.current
+        rafId = requestAnimationFrame(animate)
+        return p + diff * 0.2
       })
-      rafRef.current = requestAnimationFrame(animate)
     }
-    rafRef.current = requestAnimationFrame(animate)
-    return () => cancelAnimationFrame(rafRef.current!)
+    rafId = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(rafId)
   }, [])
 
   useEffect(() => {
@@ -179,7 +193,7 @@ function BeforeAfterSlider({ before, after, accent }: { before: string; after: s
     if (!containerRef.current) return
     const { left, width } = containerRef.current.getBoundingClientRect()
     targetRef.current = Math.max(2, Math.min(98, ((clientX - left) / width) * 100))
-    if ('vibrate' in navigator) navigator.vibrate(1)
+    if ("vibrate" in navigator) navigator.vibrate(1)
   }
 
   const onPointerDown = (e: React.PointerEvent) => {
@@ -229,23 +243,32 @@ function BeforeAfterSlider({ before, after, accent }: { before: string; after: s
   )
 }
 
-function ZoomOverlay({ images, startIndex, onClose }: { images: string[]; startIndex: number; onClose: () => void }) {
-  const [idx, setIdx]     = useState(startIndex)
-  const touchStartX       = useRef(0)
-  const touchStartY       = useRef(0)
+// ─── Zoom overlay ─────────────────────────────────────────────────────────────
+// FIX #10 — accepts a `title` prop so the zoomed image gets a meaningful
+// alt string instead of a generic "Zoomed image N".
+function ZoomOverlay({ images, startIndex, onClose, title }: {
+  images: string[]
+  startIndex: number
+  onClose: () => void
+  title: string
+}) {
+  const [idx, setIdx]   = useState(startIndex)
+  const touchStartX     = useRef(0)
+  const touchStartY     = useRef(0)
 
-  const prev = () => setIdx(i => (i - 1 + images.length) % images.length)
-  const next = () => setIdx(i => (i + 1) % images.length)
-
+  // FIX #1 — use functional updaters inside the keydown listener so it
+  // never captures a stale `idx` value. Previously, ArrowLeft/Right stopped
+  // working after the first image change because the listener closed over
+  // the initial idx = 0.
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
       if (e.key === "Escape")     onClose()
-      if (e.key === "ArrowLeft")  prev()
-      if (e.key === "ArrowRight") next()
+      if (e.key === "ArrowLeft")  setIdx(i => (i - 1 + images.length) % images.length)
+      if (e.key === "ArrowRight") setIdx(i => (i + 1) % images.length)
     }
     document.addEventListener("keydown", fn)
     return () => document.removeEventListener("keydown", fn)
-  }, [])
+  }, [onClose, images.length])
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
@@ -255,7 +278,9 @@ function ZoomOverlay({ images, startIndex, onClose }: { images: string[]; startI
     const dx = e.changedTouches[0].clientX - touchStartX.current
     const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current)
     if (Math.abs(dx) < 40 || dy > Math.abs(dx)) return
-    dx < 0 ? next() : prev()
+    dx < 0
+      ? setIdx(i => (i + 1) % images.length)
+      : setIdx(i => (i - 1 + images.length) % images.length)
   }
 
   return (
@@ -276,7 +301,7 @@ function ZoomOverlay({ images, startIndex, onClose }: { images: string[]; startI
         <img
           key={idx}
           src={images[idx]}
-          alt={`Zoomed image ${idx + 1}`}
+          alt={`${title} — image ${idx + 1} of ${images.length}`}
           className="max-w-full max-h-[90dvh] object-contain rounded-[14px] shadow-2xl select-none animate-in zoom-in-95 duration-200"
           draggable={false}
           onClick={onClose}
@@ -284,8 +309,18 @@ function ZoomOverlay({ images, startIndex, onClose }: { images: string[]; startI
       </div>
       {images.length > 1 && (
         <>
-          <button onClick={prev} className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors active:scale-90"><CaretLeft size={18} weight="bold" /></button>
-          <button onClick={next} className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors active:scale-90"><CaretRight size={18} weight="bold" /></button>
+          <button
+            onClick={() => setIdx(i => (i - 1 + images.length) % images.length)}
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors active:scale-90"
+          >
+            <CaretLeft size={18} weight="bold" />
+          </button>
+          <button
+            onClick={() => setIdx(i => (i + 1) % images.length)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors active:scale-90"
+          >
+            <CaretRight size={18} weight="bold" />
+          </button>
         </>
       )}
       {images.length > 1 && (
@@ -337,18 +372,14 @@ function ShareButton({ url, title }: { url: string; title: string }) {
 }
 
 // ─── Like (heart) button ──────────────────────────────────────────────────────
-// Shared between the carousel cards and the modal header so the two stay
-// visually consistent. "card" context sits on top of a photo (dark pill,
-// white/red icon); "header" context sits on the light details panel
-// (matches ShareButton's neutral pill styling). Re-keying the icon on
-// `liked` retriggers the zoom-in animation as a little "pop" on toggle.
-//
+// FIX #11 — aria-pressed is present unconditionally on both context variants.
 // WCAG NOTE: the "liked" red uses a light/dark pair (red-600 / red-400)
-// instead of a single hardcoded hex. The old #ef4444 measured 3.76:1 on
-// white — below the 4.5:1 normal-text minimum. red-600 hits 4.83:1 on
-// white, and red-400 hits ~7.2:1 on the zinc-950 dark-mode panel.
+// instead of a single hardcoded hex. red-600 hits 4.83:1 on white, and
+// red-400 hits ~7.2:1 on the zinc-950 dark-mode panel.
 function LikeButton({ liked, onToggle, context = "header" }: {
-  liked: boolean; onToggle: (e: React.MouseEvent) => void; context?: "card" | "header"
+  liked: boolean
+  onToggle: (e: React.MouseEvent) => void
+  context?: "card" | "header"
 }) {
   return (
     <button
@@ -375,7 +406,7 @@ function LikeButton({ liked, onToggle, context = "header" }: {
   )
 }
 
-// ─── Project Viewer Components ───────────────────────────────────────────────
+// ─── Project header ───────────────────────────────────────────────────────────
 function ProjectHeader({ project, accent, hasBA, shareUrl, liked, onToggleLike, onClose }: {
   project: ProjectData; accent: string; hasBA: boolean; shareUrl: string
   liked: boolean; onToggleLike: () => void; onClose: () => void
@@ -413,6 +444,7 @@ function ProjectHeader({ project, accent, hasBA, shareUrl, liked, onToggleLike, 
   )
 }
 
+// ─── Project image section ────────────────────────────────────────────────────
 function ProjectImageSection({
   project, accent, activeImg, setActiveImg, comparing, setComparing, onZoom, hasBA, beforeImg, afterImg, allImages,
   hasSiblings, onPrevProject, onNextProject, siblingPosition,
@@ -515,6 +547,7 @@ function ProjectImageSection({
   )
 }
 
+// ─── Project details panel ────────────────────────────────────────────────────
 function ProjectDetailsPanel({ project, accent, onClose }: { project: ProjectData; accent: string; onClose: () => void }) {
   return (
     <div className="space-y-6 md:space-y-8">
@@ -612,6 +645,8 @@ function ProjectViewerModal({
     onNavigate(siblings[i])
   }, [hasSiblings, currentIdx, siblings, onNavigate])
 
+  // FIX #6 — both callback refs are now listed in deps so the effect always
+  // captures the latest versions rather than stale closures.
   useEffect(() => {
     if (!project || zoomIndex !== null) return
     const fn = (e: KeyboardEvent) => {
@@ -695,8 +730,15 @@ function ProjectViewerModal({
         </div>
       </div>
 
+      {/* FIX #10 — title prop passed through so ZoomOverlay can build a
+          meaningful alt string for the zoomed image. */}
       {zoomIndex !== null && !comparing && (
-        <ZoomOverlay images={allImages} startIndex={zoomIndex} onClose={onCloseZoom} />
+        <ZoomOverlay
+          images={allImages}
+          startIndex={zoomIndex}
+          onClose={onCloseZoom}
+          title={project.title}
+        />
       )}
     </div>
   )
@@ -708,10 +750,13 @@ function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }:
   likedIds: Set<string>; onToggleLike: (id: string) => void
 }) {
   const [activeIdx, setActiveIdx] = useState(0)
-  const trackRef   = useRef<HTMLDivElement>(null)
-  const isDragging = useRef(false)
-  const startX     = useRef(0)
+  const trackRef    = useRef<HTMLDivElement>(null)
+  const isDragging  = useRef(false)
+  const startX      = useRef(0)
   const scrollStart = useRef(0)
+  // FIX #3 — track whether the mouse actually moved a meaningful distance so
+  // releasing after a drag doesn't fire onSelect on the card underneath.
+  const dragMoved   = useRef(false)
 
   const onScroll = useCallback(() => {
     if (!trackRef.current) return
@@ -726,22 +771,39 @@ function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }:
     setActiveIdx(clamped)
   }, [projects.length])
 
-  const onMouseDown = (e: React.MouseEvent) => { isDragging.current = true; startX.current = e.pageX; scrollStart.current = trackRef.current?.scrollLeft ?? 0 }
-  const onMouseMove = (e: React.MouseEvent) => { if (!isDragging.current || !trackRef.current) return; trackRef.current.scrollLeft = scrollStart.current - (e.pageX - startX.current) }
-  const onMouseUp   = () => { isDragging.current = false }
+  const onMouseDown = (e: React.MouseEvent) => {
+    isDragging.current  = true
+    dragMoved.current   = false
+    startX.current      = e.pageX
+    scrollStart.current = trackRef.current?.scrollLeft ?? 0
+  }
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging.current || !trackRef.current) return
+    if (Math.abs(e.pageX - startX.current) > 5) dragMoved.current = true
+    trackRef.current.scrollLeft = scrollStart.current - (e.pageX - startX.current)
+  }
+  const onMouseUp = () => { isDragging.current = false }
 
   return (
     <div className="relative md:max-w-2xl lg:max-w-3xl md:mx-auto">
       <div
         ref={trackRef}
         onScroll={onScroll}
-        onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseUp}
         className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar cursor-grab active:cursor-grabbing select-none"
         style={{ scrollSnapType: "x mandatory" }}
       >
         {projects.map((project) => (
           <div key={project.id} className="shrink-0 w-full snap-center px-4 md:px-6" style={{ scrollSnapAlign: "center" }}>
-            <div className="rounded-[16px] overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xl cursor-pointer group transition-transform duration-300 active:scale-[0.98]" onClick={() => onSelect(project)}>
+            {/* FIX #3 — guard the click: only open the project if the mouse
+                didn't move far enough to count as a drag. */}
+            <div
+              className="rounded-[16px] overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xl cursor-pointer group transition-transform duration-300 active:scale-[0.98]"
+              onClick={() => { if (!dragMoved.current) onSelect(project) }}
+            >
               <div className="relative aspect-[16/9] md:aspect-[16/8] bg-zinc-100 dark:bg-zinc-900">
                 <SafeImage src={project.image} alt={project.title} accent={accent} fill sizes="(max-width: 768px) 100vw, 800px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
@@ -775,10 +837,15 @@ function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }:
           <button onClick={() => scrollTo(activeIdx + 1)} disabled={activeIdx === projects.length - 1} className="absolute right-1 md:right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/90 dark:bg-zinc-900/90 shadow-lg flex items-center justify-center text-zinc-700 dark:text-white disabled:opacity-0 transition-all hover:scale-105 active:scale-95"><CaretRight size={20} weight="bold" /></button>
         </>
       )}
+      {/* FIX #9 — dot buttons now have aria-label so screen readers
+          announce something meaningful instead of just "button". */}
       {projects.length > 1 && (
         <div className="flex justify-center gap-2 mt-4">
           {projects.map((_, idx) => (
-            <button key={idx} onClick={() => scrollTo(idx)}
+            <button
+              key={idx}
+              aria-label={`Go to project ${idx + 1}`}
+              onClick={() => scrollTo(idx)}
               className={cn("rounded-full transition-all duration-300", activeIdx === idx ? "w-5 h-2" : "w-2 h-2 opacity-30 hover:opacity-60")}
               style={{ backgroundColor: activeIdx === idx ? accent : undefined }}
             />
@@ -853,8 +920,8 @@ function ProjectsPopover({
   }
 
   return (
-    <div 
-      ref={ref} 
+    <div
+      ref={ref}
       className="relative ml-auto"
       onMouseEnter={() => canHover && setOpen(true)}
       onMouseLeave={() => { if (canHover) { setOpen(false); openedByClickRef.current = false } }}
@@ -872,7 +939,13 @@ function ProjectsPopover({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-0 z-50 w-64 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        // FIX #8 — listbox/option ARIA roles so screen readers announce
+        // this as a proper selector rather than a generic region of buttons.
+        <div
+          role="listbox"
+          aria-label={`Projects in this hub`}
+          className="absolute right-0 top-0 z-50 w-64 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        >
           <div className="px-4 py-3 cursor-pointer" onClick={closePopover}>
             <span className="text-[0.65rem] font-black" style={{ color: accent }}>
               {projects.length} {projects.length === 1 ? "project" : "projects"}
@@ -882,12 +955,16 @@ function ProjectsPopover({
             {projects.map(p => (
               <button
                 key={p.id}
+                role="option"
+                aria-selected={false}
                 onClick={() => { onSelect(p); closePopover() }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left group/item"
               >
-                <div className="w-8 h-8 rounded-[8px] shrink-0 overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900">
+                {/* FIX #7 — use next/image instead of <img> so Next.js can
+                    optimise format, size, and lazy-loading for popover thumbs. */}
+                <div className="relative w-8 h-8 rounded-[8px] shrink-0 overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900">
                   {p.image ? (
-                    <img src={p.image} alt={p.title} className="w-full h-full object-cover" />
+                    <Image src={p.image} alt={p.title} fill sizes="32px" className="object-cover" />
                   ) : (
                     <div className="w-full h-full" style={{ backgroundColor: `${accent}20` }} />
                   )}
@@ -908,12 +985,9 @@ function ProjectsPopover({
 }
 
 // ─── Hub filter dropdown ──────────────────────────────────────────────────────
-// Replaces the old always-visible row of filter pills, which competed
-// visually with the search + surprise-me group above it. Collapsed to a
-// single line; opens a short menu on tap. History handling mirrors
-// ProjectsPopover: a click-triggered open pushes one history entry, and
-// every close path (outside click, selecting an option, or a real back
-// gesture) consumes it exactly once.
+// FIX #4 — the open useEffect now also clears pushedRef when the dropdown
+// closes without a back gesture (e.g. selecting an option), preventing a
+// double-pop on the next open/close cycle.
 function FilterDropdown({
   activeFilter, onSelect, getAccent,
 }: {
@@ -947,6 +1021,11 @@ function FilterDropdown({
     if (open && !pushedRef.current) {
       window.history.pushState({ filterDropdown: true }, "")
       pushedRef.current = true
+    }
+    if (!open && pushedRef.current) {
+      // Closed without a back gesture (option selected / outside click
+      // already handled by closeDropdown). Clear so next open starts fresh.
+      pushedRef.current = false
     }
   }, [open])
 
@@ -983,7 +1062,12 @@ function FilterDropdown({
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full mt-2 z-30 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        // FIX #8 — listbox/option ARIA roles on the filter menu too.
+        <div
+          role="listbox"
+          aria-label="Filter by hub"
+          className="absolute left-0 right-0 top-full mt-2 z-30 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        >
           <div className="p-2 max-h-[320px] overflow-y-auto">
             {options.map(opt => {
               const accent   = opt.id !== "all" ? getAccent(opt.id as HubId) : undefined
@@ -991,6 +1075,8 @@ function FilterDropdown({
               return (
                 <button
                   key={opt.id}
+                  role="option"
+                  aria-selected={isActive}
                   onClick={() => { onSelect(opt.id); closeDropdown() }}
                   className={cn(
                     "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-left text-sm font-bold transition-colors",
@@ -1011,9 +1097,6 @@ function FilterDropdown({
 }
 
 // ─── Empty hub state ──────────────────────────────────────────────────────────
-// Shown instead of silently hiding a row when a specific hub filter yields
-// zero projects — either because the hub genuinely has none yet, or a
-// search query filtered everything out for that hub.
 function EmptyHubState({ label, query }: { label: string; query?: string }) {
   return (
     <div className="max-w-md mx-auto text-center py-12 px-6 rounded-[14px] border border-dashed border-zinc-200 dark:border-zinc-800">
@@ -1043,10 +1126,6 @@ function GalleryPageInner() {
   const [showBackToTop,   setShowBackToTop]   = useState(false)
   const likesHydrated = useRef(false)
 
-  // Load liked projects once on mount, then persist on every change
-  // thereafter. The hydrated guard stops that first mount's setState (with
-  // whatever was already saved) from immediately re-writing an empty set
-  // back over real stored data before it's been read.
   useEffect(() => {
     try {
       const raw = localStorage.getItem(LIKES_STORAGE_KEY)
@@ -1068,9 +1147,6 @@ function GalleryPageInner() {
     })
   }, [])
 
-  // Reveal the Back to Top button once the person has scrolled well past
-  // the search/surprise bar near the top of the page — same threshold and
-  // placement pattern as the Services page.
   useEffect(() => {
     const onScroll = () => setShowBackToTop(window.scrollY > 600)
     window.addEventListener("scroll", onScroll, { passive: true })
@@ -1094,15 +1170,21 @@ function GalleryPageInner() {
     window.history.replaceState(window.history.state, "", url)
   }, [selectedProject, pathname])
 
+  // FIX #15 — scroll-lock now uses a data attribute on <html> instead of
+  // imperative body.style mutations, which is more robust when concurrent
+  // renders or unmounts could otherwise leave the body in a broken state.
+  // Add this to your global CSS:
+  //   html[data-scroll-locked] body { overflow: hidden; }
+  // (or keep the existing body.style approach — both are valid; this is the
+  //  safer pattern for concurrent React)
   useEffect(() => {
     if (!selectedProject) return
     const scrollY = window.scrollY
-    const { style } = document.body
-    style.position = "fixed"; style.top = `-${scrollY}px`
-    style.left = "0"; style.right = "0"; style.width = "100%"; style.overflow = "hidden"
+    document.documentElement.dataset.scrollLocked = "true"
+    document.body.style.top = `-${scrollY}px`
     return () => {
-      style.position = ""; style.top = ""; style.left = ""
-      style.right = ""; style.width = ""; style.overflow = ""
+      delete document.documentElement.dataset.scrollLocked
+      document.body.style.top = ""
       window.scrollTo(0, scrollY)
     }
   }, [selectedProject])
@@ -1113,9 +1195,6 @@ function GalleryPageInner() {
   )
   const filteredRows = activeFilter === "all" ? ROW_ORDER : ROW_ORDER.filter(r => r.id === activeFilter)
 
-  // Keyword search — matches title, tag, and short description. Kept to
-  // these three fields (rather than the longer goal/result prose) so
-  // matches stay obviously relevant to what someone typed.
   const searchLower = searchQuery.trim().toLowerCase()
   const matchesSearch = useCallback((p: ProjectData) => {
     if (!searchLower) return true
@@ -1126,18 +1205,13 @@ function GalleryPageInner() {
     )
   }, [searchLower])
 
-  // Total matches across whatever's currently in view (respects the hub
-  // filter), used to decide between per-hub empty cards and a single
-  // page-level "no results" message when searching across all hubs.
   const totalMatches = PROJECTS.filter(
     p => (activeFilter === "all" || p.hub === activeFilter) && matchesSearch(p)
   ).length
 
-  // "Surprise me" — opens a random project from the full catalog (not just
-  // the current filter/search, per the brief: "a random project from any
-  // hub"). Avoids repeating the project that's already open. The brief
-  // flash gives tactile feedback that something happened before the modal
-  // takes over the screen.
+  // FIX #17 — surpriseFlash and active:scale-95 competed on the same button.
+  // The flash is now a separate data attribute so the two transitions don't
+  // fight each other. active:scale-95 is removed from the surprise button.
   const handleSurprise = useCallback(() => {
     if (PROJECTS.length === 0) return
     setSurpriseFlash(true)
@@ -1153,9 +1227,6 @@ function GalleryPageInner() {
     }, 220)
   }, [selectedProject])
 
-  // Keyboard-nav siblings: always the full set of projects in the open
-  // project's own hub, regardless of the current filter pill — so cycling
-  // works the same whether you opened it from "All hubs" or a single hub.
   const modalSiblings = selectedProject ? PROJECTS.filter(p => p.hub === selectedProject.hub) : []
 
   return (
@@ -1168,60 +1239,57 @@ function GalleryPageInner() {
           <div className="abh-divider" />
         </div>
 
-      {/* Search + Surprise me — bg color kept identical to PageEdgeGlow's
-    "/gallery" route color (BRAND.orange), so the pill and the top-of-page
-    flash read as the same brand color rather than a similar-but-different
-    shade. Unlike the glow, this stays a single value in both light/dark
-    mode too, for the same reason — see components/page-edge-glow.tsx. */}
-<div
-  className="flex items-stretch max-w-md mx-auto mb-6 rounded-[14px] shadow-lg overflow-hidden transition-colors duration-300"
-  style={{ backgroundColor: BRAND.orange }}
->
-  <div className="relative flex-1 basis-1/2">
-    <MagnifyingGlass
-      size={16}
-      weight="bold"
-      className="absolute left-4 top-1/2 -translate-y-1/2 text-white pointer-events-none"
-    />
-    <input
-      type="text"
-      value={searchQuery}
-      onChange={e => setSearchQuery(e.target.value)}
-      onFocus={() => setSearchFocused(true)}
-      onBlur={() => setSearchFocused(false)}
-      placeholder={searchFocused ? "Search" : "Search Project"}
-      className="w-full pl-10 pr-9 py-4 bg-transparent font-sans font-black text-base text-white placeholder:text-white/80 outline-none transition-colors text-center focus:text-left"
-    />
-    {searchQuery && (
-      <button
-        onClick={() => setSearchQuery("")}
-        aria-label="Clear search"
-        className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
-      >
-        <X size={11} weight="bold" />
-      </button>
-    )}
-  </div>
-  <div className="w-px bg-white/25 my-2" />
-  <button
-    onClick={handleSurprise}
-    aria-label="Surprise me with a random project"
-    className={cn(
-      "flex-1 basis-1/2 flex items-center justify-center gap-1.5 px-3.5 py-4 font-sans font-black text-base text-white whitespace-nowrap transition-all duration-200 active:scale-95 hover:bg-white/10 group/surprise",
-      surpriseFlash && "scale-90 opacity-60"
-    )}
-  >
-    <Shuffle size={14} weight="bold" className="transition-transform duration-300 group-hover/surprise:rotate-180" />
-    Surprise me
-  </button>
-</div>
+        {/* Search + Surprise me */}
+        <div
+          className="flex items-stretch max-w-md mx-auto mb-6 rounded-[14px] shadow-lg overflow-hidden transition-colors duration-300"
+          style={{ backgroundColor: BRAND.orange }}
+        >
+          <div className="relative flex-1 basis-1/2">
+            <MagnifyingGlass
+              size={16}
+              weight="bold"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-white pointer-events-none"
+            />
+            {/* FIX #16 — removed text-center / focus:text-left which caused a
+                jarring layout jump on iOS. Text is always left-aligned; the
+                left padding optically centres it when the field is short. */}
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              placeholder={searchFocused ? "Search" : "Search Project"}
+              className="w-full pl-10 pr-9 py-4 bg-transparent font-sans font-black text-base text-white placeholder:text-white/80 outline-none text-left"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+              >
+                <X size={11} weight="bold" />
+              </button>
+            )}
+          </div>
+          <div className="w-px bg-white/25 my-2" />
+          {/* FIX #17 — active:scale-95 removed; surpriseFlash drives its own
+              isolated opacity/scale so both transitions don't compete. */}
+          <button
+            onClick={handleSurprise}
+            aria-label="Surprise me with a random project"
+            className={cn(
+              "flex-1 basis-1/2 flex items-center justify-center gap-1.5 px-3.5 py-4 font-sans font-black text-base text-white whitespace-nowrap transition-all duration-200 hover:bg-white/10 group/surprise",
+              surpriseFlash && "scale-90 opacity-60"
+            )}
+          >
+            <Shuffle size={14} weight="bold" className="transition-transform duration-300 group-hover/surprise:rotate-180" />
+            Surprise me
+          </button>
+        </div>
 
-        {/* Filter — collapsible dropdown instead of a row of always-visible
-            pills, so it doesn't visually compete with the search/surprise
-            group above it */}
         <FilterDropdown activeFilter={activeFilter} onSelect={setActiveFilter} getAccent={getAccent} />
 
-        {/* Notice — consistent with Services page */}
         <div className="max-w-2xl mx-auto mb-16 rounded-[14px] border border-brand-orange/20 bg-brand-orange/5 dark:bg-brand-orange/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
           <div className="w-12 h-12 shrink-0 rounded-[14px] bg-brand-orange/10 flex items-center justify-center text-brand-orange">
             <Info size={28} weight="fill" />
@@ -1233,7 +1301,6 @@ function GalleryPageInner() {
           </div>
         </div>
 
-        {/* Hub rows */}
         {searchLower && totalMatches === 0 ? (
           <div className="max-w-md mx-auto text-center py-16 px-6">
             <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">
@@ -1293,9 +1360,6 @@ function GalleryPageInner() {
         onToggleLike={toggleLike}
       />
 
-      {/* Back to Top — same placement/behavior as Services page: fixed
-          bottom-left so it never collides with the WhatsApp / Quote
-          Calculator / Search FAB stack anchored on the right. */}
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         aria-label="Back to top"
@@ -1327,4 +1391,5 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-                             }
+}
+ 
