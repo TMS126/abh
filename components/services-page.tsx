@@ -13,6 +13,7 @@ import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey, BIZ, BRAND } from "@/lib/brand"
 import { ensureAccessible, getContrastText } from "@/lib/color"
+import { trackEvent } from "@/lib/analytics"
 import { HUBS, HubId } from "@/lib/data"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -1019,13 +1020,21 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </div>
           )}
 
-          {/* + Add to Quote — fires abh:add-to-quote; QuoteCalculatorWidget listens */}
+          {/* + Add to Quote — fires abh:add-to-quote; QuoteCalculatorWidget listens.
+              Also tracked as its own GA4 event since it's a stronger buying
+              signal than just opening a service's detail sheet. */}
           <button
             type="button"
             onClick={() => {
               window.dispatchEvent(new CustomEvent("abh:add-to-quote", {
                 detail: { hubId: svc.hubId, sectionTitle: svc.sectionTitle, name: svc.name, price: svc.price }
               }))
+              trackEvent("add_to_quote", {
+                hub_id: svc.hubId,
+                service_name: svc.name,
+                section_title: svc.sectionTitle,
+                price: svc.price,
+              })
               setAddedToQuote(true)
               setTimeout(() => setAddedToQuote(false), 2200)
             }}
@@ -1038,11 +1047,19 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             {addedToQuote ? "✓ Added to Quote" : "+ Add to Quote"}
           </button>
 
-          {/* WhatsApp CTA */}
+          {/* WhatsApp CTA — the actual conversion event. onClick fires the
+              tracking call and lets the link navigate normally afterward. */}
           <a
             href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waMessage)}`}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackEvent("request_whatsapp", {
+              hub_id: svc.hubId,
+              service_name: svc.name,
+              section_title: svc.sectionTitle,
+              price: svc.price,
+              had_file_attached: uploadPhase === "done",
+            })}
             className="flex items-center justify-center gap-2 w-full px-4 py-4 rounded-[14px] font-black text-sm text-white text-center transition-all active:scale-95 shadow-[0_4px_14px_rgba(37,211,102,0.3)] hover:-translate-y-0.5"
             style={{ backgroundColor: "#25D366" }}
           >
@@ -1096,6 +1113,24 @@ export function ServicesPage() {
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
   const [showBackToTop,   setShowBackToTop]   = useState(false)
 
+  // Central place a service becomes "selected" from any entry point (hub
+  // card list, inline search, or the floating search widget's window
+  // event below) — single spot to fire the view_service GA4 event instead
+  // of duplicating the trackEvent call at each call site.
+  const handleSelectService = (svc: SelectedService) => {
+    trackEvent("view_service", {
+      hub_id: svc.hubId,
+      service_name: svc.name,
+      section_title: svc.sectionTitle,
+    })
+    setSelectedService(svc)
+  }
+
+  const handleOpenHub = (hubId: HubId) => {
+    trackEvent("view_hub", { hub_id: hubId, hub_name: HUBS[hubId].title })
+    setActiveHub(hubId)
+  }
+
   // Reveal the Back to Top button once the person has scrolled well past
   // the inline search bar near the top of the page.
   useEffect(() => {
@@ -1108,15 +1143,16 @@ export function ServicesPage() {
   // components/floating-search-widget.tsx) so it can sit in the same FAB
   // stack as the Quote Calculator and WhatsApp widgets. It has no direct
   // access to this page's state, so it dispatches a window event when a
-  // result is tapped, and we open the existing ServiceDetailModal here.
+  // result is tapped, and we open the existing ServiceDetailModal here —
+  // routed through handleSelectService so this entry point is tracked too.
   useEffect(() => {
     const handler = (e: Event) => {
       const svc = (e as CustomEvent<SelectedService>).detail
-      if (svc) setSelectedService(svc)
+      if (svc) handleSelectService(svc)
     }
     window.addEventListener("abh:selectService", handler)
     return () => window.removeEventListener("abh:selectService", handler)
-  }, [setSelectedService])
+  }, [])
 
   // Deep-link via ?hub=
   useEffect(() => {
@@ -1158,7 +1194,7 @@ export function ServicesPage() {
         {/* Inline search — id is used by the FloatingSearchWidget (root layout)
             to know when this bar has scrolled out of view */}
         <div id="abh-inline-search" className="w-full mb-10 flex justify-center">
-          <InlineSearchBar onSelect={setSelectedService} />
+          <InlineSearchBar onSelect={handleSelectService} />
         </div>
 
         <div className="w-full">
@@ -1176,7 +1212,7 @@ export function ServicesPage() {
             return (
               <button
                 key={hubId}
-                onClick={() => setActiveHub(hubId)}
+                onClick={() => handleOpenHub(hubId)}
                 className="group flex flex-col items-center p-6 md:p-7 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 text-center w-full h-full"
               >
                 <div
@@ -1217,7 +1253,7 @@ export function ServicesPage() {
       <HubModal
         hubId={activeHub}
         onClose={() => setActiveHub(null)}
-        onSelectService={setSelectedService}
+        onSelectService={handleSelectService}
       />
 
       <AnimatePresence>
@@ -1244,4 +1280,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-                                                         } 
+                                               } 
