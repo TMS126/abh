@@ -4,20 +4,7 @@ import { useState, useEffect } from "react"
 import { useTheme } from "next-themes"
 import { Rocket, CurrencyDollar, HandHeart, MapPin, WhatsappLogo } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
-import { BRAND, WA, STRIP_ITEMS } from "@/lib/brand"
-
-// Icon accent per strip item — kept here rather than in STRIP_ITEMS (brand.ts)
-// since that array is content-only per its own convention; styling stays in
-// the component. Each entry is a light/dark pair, verified against the
-// chip's own tinted background (color+"15") sitting on white (light mode)
-// or zinc-900 (dark mode) — a flat single color failed AA in dark mode for
-// darker brand tones (same issue found with blueDark/dark100 elsewhere).
-const STRIP_ICON_COLORS: Record<string, { light: string; dark: string }> = {
-  Rocket:         { light: BRAND.blue,       dark: BRAND.lightBlue   },
-  CurrencyDollar: { light: BRAND.greenDark,  dark: BRAND.lightGreen  },
-  HandHeart:      { light: BRAND.orangeDark, dark: BRAND.lightOrange },
-  MapPin:         { light: BRAND.blueMid,    dark: BRAND.lightBlue   },
-}
+import { BRAND, WA, STRIP_ITEMS, NEUTRAL_ICON_COLOR } from "@/lib/brand"
 
 export function StripSection() {
   return (
@@ -37,8 +24,9 @@ function StripCard({ item }: { item: any }) {
   useEffect(() => { setMounted(true) }, [])
   const isDark = mounted && resolvedTheme === "dark"
 
-  const pair  = STRIP_ICON_COLORS[item.iconName] ?? { light: BRAND.blue, dark: BRAND.lightBlue }
-  const color = isDark ? pair.dark : pair.light
+  // Single neutral color for all 4 icons — sourced from brand.ts,
+  // not hub-tied. Theme-aware (dark100 light / techGreyDark dark).
+  const color = isDark ? NEUTRAL_ICON_COLOR.dark : NEUTRAL_ICON_COLOR.light
 
   return (
     <div
@@ -103,4 +91,4 @@ export function CtaBar({
       </div>
     </section>
   )
-  } 
+        } 
