@@ -7,27 +7,6 @@ import { Sun, Moon, X, List } from "@phosphor-icons/react"
 import { NAV_ITEMS, BRAND } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 
-type NavColorPair = { light: string; dark: string }
-
-// Picks white or near-black text against a given background hex, based on
-// actual WCAG relative luminance rather than assuming light/dark theme
-// tells you which one you need. Some route colors (e.g. light-mode green
-// and orange) are mid-brightness and read as failing contrast with white
-// text even though "light mode" might suggest white is the safe choice —
-// this checks the real color instead of guessing from the theme.
-function getReadableTextColor(hex: string): string {
-  const clean = hex.replace("#", "")
-  const r = parseInt(clean.substring(0, 2), 16) / 255
-  const g = parseInt(clean.substring(2, 4), 16) / 255
-  const b = parseInt(clean.substring(4, 6), 16) / 255
-  const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4))
-  const luminance = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
-  // Contrast against white (lum 1.0) vs near-black (lum ~0.012, #18181b)
-  const contrastWhite = 1.05 / (luminance + 0.05)
-  const contrastDark  = (luminance + 0.05) / 0.062
-  return contrastWhite >= contrastDark ? "#ffffff" : "#18181b"
-}
-
 export function Navbar() {
   const router   = useRouter()
   const pathname = usePathname()
@@ -41,6 +20,7 @@ export function Navbar() {
   // full-screen menu, since this is a small inline hover/tap reveal
   // rather than a full overlay.
   const [desktopNavOpen, setDesktopNavOpen] = useState(false)
+  const [contactHovered, setContactHovered] = useState(false)
   const desktopNavRef = useRef<HTMLDivElement>(null)
 
   const lastScrollY    = useRef(0)
@@ -73,7 +53,7 @@ export function Navbar() {
   }, [menuOpen])
 
   // Tap-outside closes the desktop nav-pill — needed for the touch/tap
-  // path (Question 5), since there's no hover to fall back on to close it.
+  // path, since there's no hover to fall back on to close it.
   useEffect(() => {
     if (!desktopNavOpen) return
     const onPointerDown = (e: PointerEvent) => {
@@ -108,65 +88,11 @@ export function Navbar() {
 
   const pillClass = "bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md py-2 rounded-[14px] border border-gray-200 dark:border-zinc-800 shadow-sm"
 
-  // Per-page accent, used for: the mobile menu's active link, the shared
-  // controls pill's route echo, and the desktop nav's active pill fill.
-  // Every route gets its OWN distinct light/dark pair — no two pages
-  // share a color family, so the active-page color is always a reliable
-  // visual cue for "where am I."
-  const MOBILE_NAV_COLORS: { [path: string]: NavColorPair } = {
-    "/":         { light: BRAND.blue,   dark: BRAND.lightBlue   }, // Home — primary blue
-    "/services": { light: BRAND.green,  dark: BRAND.lightGreen  }, // Services — green
-    "/gallery":  { light: BRAND.orange, dark: BRAND.lightOrange }, // Gallery — orange
-    "/about":    { light: "#0F766E",    dark: "#99F6E4"         }, // About — teal, distinct from Home's blue
-    "/contact":  { light: BRAND.dark100, dark: "#B8CCE0"        }, // Contact — Tech Hub's grey identity
-  }
-
-  // Route echo — the shared controls pill (theme toggle, hamburger,
-  // close button) picks up the current page's color instead of a fixed
-  // orange/blue, tying it to the same per-page palette as the edge glow
-  // and mobile nav. Falls back to undefined (existing hardcoded colors)
-  // if a route somehow isn't in the map.
-  // Hub color picked from the Core Hub Ecosystem selector on the homepage
-  // (see hero-section.tsx's handleSelectHub). Starts null so the navbar
-  // stays on the normal "/" route color until the person actually clicks
-  // a hub — and resets to null on every pathname change, so it never
-  // carries over once they navigate away.
-  const [heroHubColor, setHeroHubColor] = useState<{ light: string; dark: string } | null>(null)
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent<{ light: string; dark: string }>).detail
-      if (detail) setHeroHubColor(detail)
-    }
-    window.addEventListener("abh:heroHubSelect", handler)
-    return () => window.removeEventListener("abh:heroHubSelect", handler)
-  }, [])
-
-  useEffect(() => { setHeroHubColor(null) }, [pathname])
-
-  const routeAccent = (pathname === "/" && heroHubColor) ? heroHubColor : MOBILE_NAV_COLORS[pathname]
-  const routeColor   = mounted && routeAccent ? (theme === "dark" ? routeAccent.dark : routeAccent.light) : undefined
-  // Logo icon fill — same routeColor as the controls pill, so the logo
-  // itself now re-tints per page (blue on Home, green on Services, orange
-  // on Gallery, etc.) instead of the old two-state light/dark CSS filter
-  // hack. Falls back to the original blue/lightBlue pairing when a route
-  // isn't in the map (or before mount, to avoid a color flash on load).
-  const logoColor = routeColor ?? (mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue)
-
-  // Individual link pill — used inside the expanded desktop nav-pill.
-  // Rest state: subtle border + soft shadow. Active: solid fill using
-  // the link's own routeColor, with text color computed per-color via
-  // getReadableTextColor rather than assumed from theme (see note above
-  // the helper — some route colors need dark text even in "light mode"
-  // contexts).
-  const desktopLinkClass = (isActive: boolean, isCta?: boolean) =>
-    cn(
-      "px-4 py-2 rounded-[10px] text-[0.84rem] whitespace-nowrap transition-all duration-300 border",
-      isActive
-        ? "font-black border-transparent shadow-sm"
-        : "font-medium text-zinc-500 dark:text-zinc-400 bg-white/60 dark:bg-zinc-800/60 border-gray-200 dark:border-zinc-700 hover:text-brand-blue dark:hover:text-brand-light-blue",
-      isCta && "border-2 border-brand-orange text-brand-orange hover:bg-brand-orange/10"
-    )
+  // Single static brand color for every icon/indicator in the navbar —
+  // no more per-route or per-hub swapping. Only the theme (light/dark)
+  // changes which shade of blue is used.
+  const iconColor = mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue
+  const logoColor = iconColor
 
   return (
     <>
@@ -186,10 +112,6 @@ export function Navbar() {
             onMouseLeave={handleLogoMouseLeave}
             onClick={() => navigate("/")}
           >
-            {/* Logo icon — rendered as a CSS mask over a solid fill instead
-                of an <img>, so logoColor (route-driven) can tint it to any
-                brand color, not just the previous two fixed light/dark
-                filter states. */}
             <div
               className="relative w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-[14px] overflow-hidden transition-colors duration-300"
               style={{
@@ -206,17 +128,17 @@ export function Navbar() {
               aria-hidden="true"
             />
             <div className="font-sans font-black text-[1.1rem] leading-none tracking-tight transition-all duration-500 overflow-hidden flex items-center" style={{ maxWidth: isTextExpanded ? "180px" : "0px" }}>
-              <span 
+              <span
                 className="whitespace-nowrap transition-colors duration-300"
-                style={{ 
+                style={{
                   color: mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue
                 }}
               >
                 Apexbytes
               </span>
-              <span 
+              <span
                 className="whitespace-nowrap transition-colors duration-300"
-                style={{ 
+                style={{
                   color: mounted && theme === "dark" ? BRAND.lightGreen : BRAND.green
                 }}
               >
@@ -226,11 +148,17 @@ export function Navbar() {
           </div>
 
           {/* Desktop Nav — a single pill, collapsed by default to just the
-              hamburger lines + a small current-page dot. Hovering (or
-              tapping, for touch devices without hover) grows it sideways
-              to reveal all 5 links; it stays open while the pointer is
-              anywhere over the pill OR the revealed links, only
-              collapsing once the pointer leaves the whole group. */}
+              hamburger lines. Hovering (or tapping, for touch devices
+              without hover) grows it sideways to reveal all 5 links; it
+              stays open while the pointer is anywhere over the pill OR
+              the revealed links, only collapsing once the pointer leaves
+              the whole group.
+
+              Individual links: NO pill/background container when
+              inactive — plain text only. Active (non-CTA) links get a
+              blue border outline, no fill. The Contact link (CTA) keeps
+              a neutral border by default and fills solid green only on
+              hover. */}
           <div
             ref={desktopNavRef}
             onMouseEnter={() => setDesktopNavOpen(true)}
@@ -248,8 +176,8 @@ export function Navbar() {
               )}
             >
               {/* Hamburger trigger — fades out (doesn't slide/morph) once
-                  open, per your call. Also acts as the tap target for
-                  touch devices without hover. */}
+                  open. Also acts as the tap target for touch devices
+                  without hover. */}
               <button
                 onClick={() => setDesktopNavOpen(v => !v)}
                 aria-label={desktopNavOpen ? "Collapse navigation" : "Expand navigation"}
@@ -259,7 +187,7 @@ export function Navbar() {
                   desktopNavOpen ? "w-0 opacity-0 pointer-events-none" : "w-9 h-9 opacity-100"
                 )}
               >
-               <List size={18} weight="bold" style={{ color: routeColor ?? (mounted && theme === "dark" ? BRAND.lightBlue : BRAND.orange) }} className="transition-colors duration-300" />
+                <List size={18} weight="bold" style={{ color: iconColor }} className="transition-colors duration-300" />
               </button>
 
               {/* Revealed links — fade + slide in to replace the hamburger
@@ -273,17 +201,47 @@ export function Navbar() {
                 )}
               >
                 {NAV_ITEMS.map((item) => {
-                  const isActive   = pathname === item.path
-                  const itemAccent = MOBILE_NAV_COLORS[item.path]
-                  const itemColor  = mounted && itemAccent ? (theme === "dark" ? itemAccent.dark : itemAccent.light) : BRAND.blue
-                  const itemTextClr = getReadableTextColor(itemColor)
+                  const isActive = pathname === item.path
+
+                  if (item.isCta) {
+                    // Contact — neutral border by default, active gets a
+                    // blue border like everything else, hover fills solid
+                    // green regardless of active state.
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => navigate(item.path)}
+                        onMouseEnter={() => setContactHovered(true)}
+                        onMouseLeave={() => setContactHovered(false)}
+                        style={
+                          contactHovered
+                            ? { backgroundColor: BRAND.green, borderColor: BRAND.green, color: "#ffffff" }
+                            : undefined
+                        }
+                        className={cn(
+                          "px-4 py-2 rounded-[10px] text-[0.84rem] whitespace-nowrap transition-all duration-200 border-2",
+                          contactHovered
+                            ? "font-black"
+                            : isActive
+                            ? "font-black border-brand-blue text-brand-blue dark:border-brand-light-blue dark:text-brand-light-blue"
+                            : "font-medium border-zinc-300 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400"
+                        )}
+                      >
+                        {item.label}
+                      </button>
+                    )
+                  }
 
                   return (
                     <button
                       key={item.id}
                       onClick={() => navigate(item.path)}
-                      style={isActive ? { backgroundColor: itemColor, color: itemTextClr } : undefined}
-                      className={desktopLinkClass(isActive, item.isCta)}
+                      className={cn(
+                        "px-4 py-2 rounded-[10px] text-[0.84rem] whitespace-nowrap transition-all duration-200 border-2 border-transparent",
+                        isActive
+                          ? "font-black border-brand-blue text-brand-blue dark:border-brand-light-blue dark:text-brand-light-blue"
+                          : "font-medium text-zinc-500 dark:text-zinc-400 hover:text-brand-blue dark:hover:text-brand-light-blue"
+                      )}
                     >
                       {item.label}
                     </button>
@@ -293,16 +251,15 @@ export function Navbar() {
             </div>
           </div>
 
-          {/* Controls — Always visible on desktop, hidden on mobile when menu is open.
-              Theme toggle icon, hamburger bars, and mobile close button echo
-              the current page's color via routeColor, falling back to the original
-              hardcoded orange/light-blue when a route isn't in MOBILE_NAV_COLORS. */}
+          {/* Controls — Always visible on desktop, hidden on mobile when
+              menu is open. All icons now share the single static
+              iconColor (brand blue), no per-route swapping. */}
           <div className={cn(pillClass, "flex items-center gap-3 pl-3 pr-3 pointer-events-auto ml-4 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
             <button onClick={handleThemeToggle} className="flex items-center justify-center w-7 h-7 active:scale-90 transition-transform" aria-label="Toggle theme">
               {mounted && (
                 theme === "dark"
-                  ? <Moon size={20} weight="fill" style={{ color: routeColor ?? BRAND.lightBlue }} className="transition-colors duration-300" />
-                  : <Sun  size={20} weight="fill" style={{ color: routeColor ?? BRAND.orange }}    className="transition-colors duration-300" />
+                  ? <Moon size={20} weight="fill" style={{ color: iconColor }} className="transition-colors duration-300" />
+                  : <Sun  size={20} weight="fill" style={{ color: iconColor }} className="transition-colors duration-300" />
               )}
             </button>
 
@@ -310,14 +267,14 @@ export function Navbar() {
 
             <button ref={menuTriggerRef} onClick={() => setMenuOpen(true)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 md:hidden", menuOpen ? "opacity-0 pointer-events-none" : "opacity-100")}>
               <div className="w-4 h-[12px] flex flex-col justify-between items-center">
-                <span className="w-full h-[2.5px] rounded-full transition-colors duration-300" style={{ backgroundColor: routeColor ?? (mounted && theme === "dark" ? BRAND.lightBlue : BRAND.orange) }} />
-                <span className="w-full h-[2.5px] rounded-full transition-colors duration-300" style={{ backgroundColor: routeColor ?? (mounted && theme === "dark" ? BRAND.lightBlue : BRAND.orange) }} />
-                <span className="w-full h-[2.5px] rounded-full transition-colors duration-300" style={{ backgroundColor: routeColor ?? (mounted && theme === "dark" ? BRAND.lightBlue : BRAND.orange) }} />
+                <span className="w-full h-[2.5px] rounded-full transition-colors duration-300" style={{ backgroundColor: iconColor }} />
+                <span className="w-full h-[2.5px] rounded-full transition-colors duration-300" style={{ backgroundColor: iconColor }} />
+                <span className="w-full h-[2.5px] rounded-full transition-colors duration-300" style={{ backgroundColor: iconColor }} />
               </div>
             </button>
 
             <button onClick={() => setMenuOpen(false)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 absolute right-3 md:hidden", menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none")}>
-              <X size={20} weight="bold" style={{ color: routeColor ?? BRAND.orange }} className="transition-colors duration-300" />
+              <X size={20} weight="bold" style={{ color: iconColor }} className="transition-colors duration-300" />
             </button>
           </div>
         </div>
@@ -335,62 +292,51 @@ export function Navbar() {
         />
         <div className="absolute inset-0 bg-white/70 dark:bg-zinc-950/80 backdrop-blur-xl" onClick={() => setMenuOpen(false)} />
 
-        {/* Nav links — centered */}
+        {/* Nav links — centered. Active link now gets a solid blue fill
+            plus a side-line bar on the left edge as the "you are here"
+            marker, replacing the old dot-before-label. */}
         <div className="relative z-10 w-full h-full flex flex-col items-center justify-center px-6">
           <nav className="w-full max-w-[320px] flex flex-col items-center gap-2.5">
-          {NAV_ITEMS.map((item, idx) => {
-  const isActive    = pathname === item.path
-  const accent      = MOBILE_NAV_COLORS[item.path]
-  const activeColor = accent ? (mounted && theme === "dark" ? accent.dark : accent.light) : undefined
+            {NAV_ITEMS.map((item, idx) => {
+              const isActive = pathname === item.path
 
-  return (
-    <button
-      key={item.id}
-      onClick={() => navigate(item.path)}
-      style={{
-        transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms",
-        ...(isActive && activeColor
-          ? { color: activeColor, backgroundColor: `${activeColor}18` }
-          : {}),
-      }}
-      className={cn(
-        "py-3 px-8 rounded-[14px] font-sans text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
-        isActive
-          ? "font-semibold"
-          : "font-medium text-zinc-700 dark:text-zinc-200 hover:text-brand-blue bg-transparent",
-        // Contact's CTA marker switched from an orange border to a neutral
-        // grey one — it still reads as "this one's different" (the CTA)
-        // without pulling in an accent color, matching Contact's own
-        // grey/neutral assignment in MOBILE_NAV_COLORS rather than
-        // clashing with it.
-        item.isCta && "border-2 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800/60",
-        menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
-      )}
-    >
-      {/* Current-page dot — small colored marker inline before the label,
-          only for whichever link matches the live route. Uses the same
-          per-page color as the active fill/text above, so it's redundant
-          with the tinted background but gives a quicker, more obvious
-          "you are here" cue than color alone. */}
-      <span className="inline-flex items-center justify-center gap-2">
-        {isActive && activeColor && (
-          <span
-            aria-hidden="true"
-            className="w-1.5 h-1.5 rounded-full shrink-0"
-            style={{ backgroundColor: activeColor }}
-          />
-        )}
-        {item.label}
-      </span>
-    </button>
-  )
-})}
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => navigate(item.path)}
+                  style={{
+                    transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms",
+                    ...(isActive
+                      ? { backgroundColor: iconColor, color: "#ffffff" }
+                      : {}),
+                  }}
+                  className={cn(
+                    "relative py-3 px-8 rounded-[14px] font-sans text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm overflow-hidden",
+                    isActive
+                      ? "font-semibold"
+                      : "font-medium text-zinc-700 dark:text-zinc-200 hover:text-brand-blue bg-transparent",
+                    item.isCta && !isActive && "border-2 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800/60",
+                    menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+                  )}
+                >
+                  {/* Side-line — vertical bar on the left edge, only for
+                      the active link. Replaces the old dot marker. */}
+                  {isActive && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-0 top-0 bottom-0 w-[4px] rounded-r-full"
+                      style={{ backgroundColor: "rgba(255,255,255,0.85)" }}
+                    />
+                  )}
+                  {item.label}
+                </button>
+              )
+            })}
           </nav>
         </div>
 
-        {/* Icon-only watermark at bottom of menu — same mask-based tinting
-            as the header logo, so it also picks up logoColor instead of
-            the old fixed brightness/invert filter pair. */}
+        {/* Icon-only watermark at bottom of menu — static brand blue, no
+            per-route tinting. */}
         <div
           className={cn(
             "absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center select-none transition-all duration-500 z-10",
@@ -416,4 +362,4 @@ export function Navbar() {
       </div>
     </>
   )
-      } 
+}
