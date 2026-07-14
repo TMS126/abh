@@ -159,8 +159,6 @@ const HUBS_DATA = [
       <Globe size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: Globe,
-    // Restored to the original teal identity for E-Service (was
-    // temporarily swapped to blueMid/lightBlue — reverted per request).
     colorLight: BRAND.teal,
     colorDark:  BRAND.tealLight,
     services: [
@@ -203,9 +201,6 @@ function pickRandomService(hubIndex: number, excludeName?: string) {
   }
   return next
 }
-
-// ─── Watermark crossfade layer type ───────────────────────────────────────────
-type WatermarkLayer = { key: string; Icon: React.ElementType; color: string }
 
 // ─── Hero Section ─────────────────────────────────────────────────────────────
 export function HeroSection() {
@@ -254,12 +249,9 @@ export function HeroSection() {
 
   const isDark    = mounted && resolvedTheme === "dark"
   const active    = HUBS_DATA[activeHub]
-  const WatermarkIcon = active.Icon
 
   const CTA_COLOR      = isDark ? BRAND.lightBlue : BRAND.blue
   const CTA_FILL_COLOR = BRAND.blue
-  // Arrow is now always brand orange (theme-aware light/dark variant),
-  // independent of the button's fill/border state.
   const ARROW_COLOR = isDark ? BRAND.lightOrange : BRAND.orange
 
   const cardText      = "#FFFFFF"
@@ -270,27 +262,14 @@ export function HeroSection() {
   const hubColor  = isDark ? active.colorDark : active.colorLight
   const nameColor = ensureAccessible(hubColor, neutralCardBgHex, 4.5)
 
-  const [watermarkLayers, setWatermarkLayers] = useState<WatermarkLayer[]>([])
-  const [visibleKey,       setVisibleKey]      = useState<string | null>(null)
-  const pruneTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
-
+  // Background watermark icon — picked once at random per page load
+  // (not tied to the selected hub tab, so it no longer crossfades when
+  // a tab is clicked). Desktop only.
+  const [pageWatermarkHub, setPageWatermarkHub] = useState<typeof HUBS_DATA[number] | null>(null)
   useEffect(() => {
-    const newKey = `${active.id}`
-    setWatermarkLayers(prev => (prev.some(l => l.key === newKey) ? prev : [...prev, { key: newKey, Icon: WatermarkIcon, color: BRAND.blue }]))
-
-    const raf = requestAnimationFrame(() => setVisibleKey(newKey))
-    return () => cancelAnimationFrame(raf)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active.id])
-
-  useEffect(() => {
-    if (watermarkLayers.length <= 1) return
-    if (pruneTimeoutRef.current) clearTimeout(pruneTimeoutRef.current)
-    pruneTimeoutRef.current = setTimeout(() => {
-      setWatermarkLayers(prev => prev.filter(l => l.key === visibleKey))
-    }, 750)
-    return () => { if (pruneTimeoutRef.current) clearTimeout(pruneTimeoutRef.current) }
-  }, [watermarkLayers, visibleKey])
+    setPageWatermarkHub(HUBS_DATA[Math.floor(Math.random() * HUBS_DATA.length)])
+  }, [])
+  const RandomWatermarkIcon = pageWatermarkHub?.Icon
 
   const handleNavigate = (path: string) => router.push(path)
 
@@ -358,6 +337,11 @@ export function HeroSection() {
         .abh-taskbar-indicator {
           animation: abh-taskbar-indicator-in 220ms ease-out forwards;
         }
+
+        @keyframes abh-watermark-float {
+          0%, 100% { transform: translateY(0px) rotate(-16deg); }
+          50%      { transform: translateY(-16px) rotate(-16deg); }
+        }
       `}</style>
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center relative z-10 w-full mb-6">
@@ -384,32 +368,46 @@ export function HeroSection() {
 
         <div className="relative w-full flex justify-center items-center mb-8">
 
+          {/* Random per-page-load hub icon — desktop only, brand blue,
+              drop shadow, slow float, with a faint mirrored reflection
+              beneath it. Fixed for the session; does not change when a
+              hub tab is clicked. */}
           <div
             aria-hidden="true"
-            className="absolute inset-y-0 -right-[18%] md:-right-[10%] flex items-center justify-center pointer-events-none select-none z-0"
+            className="hidden md:flex absolute inset-y-0 -right-[10%] items-center justify-center pointer-events-none select-none z-0"
           >
-            {watermarkLayers.map((layer) => {
-              const LayerIcon = layer.Icon
-              const isVisible = layer.key === visibleKey
-              return (
-                <div
-                  key={layer.key}
-                  className={cn(
-                    "absolute inset-0 flex items-center justify-center transition-opacity duration-700 ease-out",
-                    isVisible ? "opacity-[0.14] dark:opacity-[0.18]" : "opacity-0"
-                  )}
-                  style={{ color: layer.color }}
-                >
-                  <LayerIcon
-                    size={520}
-                    weight="fill"
-                    aria-hidden="true"
-                    style={{ transform: "rotate(-16deg)" }}
-                    className="shrink-0 md:w-[620px] md:h-[620px]"
-                  />
-                </div>
-              )
-            })}
+            {RandomWatermarkIcon && (
+              <div
+                className="flex flex-col items-center"
+                style={{ animation: "abh-watermark-float 7s ease-in-out infinite" }}
+              >
+                <RandomWatermarkIcon
+                  size={520}
+                  weight="fill"
+                  aria-hidden="true"
+                  style={{
+                    color: BRAND.blue,
+                    transform: "rotate(-16deg)",
+                    filter: "drop-shadow(0 28px 34px rgba(0,0,0,0.28))",
+                  }}
+                  className="shrink-0 opacity-[0.14] dark:opacity-[0.18] md:w-[620px] md:h-[620px]"
+                />
+                {/* Reflection — mirrored copy, fading out downward */}
+                <RandomWatermarkIcon
+                  size={520}
+                  weight="fill"
+                  aria-hidden="true"
+                  style={{
+                    color: BRAND.blue,
+                    transform: "rotate(-16deg) scaleY(-1)",
+                    marginTop: "-36px",
+                    WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,0.28), transparent 65%)",
+                    maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.28), transparent 65%)",
+                  }}
+                  className="shrink-0 opacity-[0.14] dark:opacity-[0.18] md:w-[620px] md:h-[620px]"
+                />
+              </div>
+            )}
           </div>
 
           <div
@@ -437,8 +435,6 @@ export function HeroSection() {
                 Start Here
               </span>
             </span>
-            {/* Arrow — locked to brand orange (theme-aware), no longer
-                flips to white on hover/press like the label does. */}
             <ArrowRight
               weight="bold"
               className="relative z-10 w-6 h-6 transition-transform duration-150 group-hover:translate-x-1.5"
@@ -690,5 +686,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-}
- 
+} 
