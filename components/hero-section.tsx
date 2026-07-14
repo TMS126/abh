@@ -19,10 +19,6 @@ import { cn } from "@/lib/utils"
 import { BRAND, BIZ, MARQUEE_ITEMS, HUB_COLORS } from "@/lib/brand"
 
 // ─── Contrast-nudging helpers ─────────────────────────────────────────────────
-// Same technique used elsewhere in the app (e.g. the Services page's
-// "explore" label): preserves the hub's own hue rather than swapping to
-// plain black/white, but nudges lightness up or down only as far as needed
-// to clear a contrast threshold against a given neutral surface.
 function hexToRgb(hex: string) {
   const clean = hex.replace("#", "")
   const full = clean.length === 3 ? clean.split("").map(c => c + c).join("") : clean
@@ -84,7 +80,6 @@ function hslToRgb(h: number, s: number, l: number) {
   }
   return { r: r * 255, g: g * 255, b: b * 255 }
 }
-/** Nudges `hex` darker/lighter (preserving hue) until it hits `minRatio` contrast against `bgHex`. */
 function ensureAccessible(hex: string, bgHex: string, minRatio = 4.5) {
   if (contrastRatio(hex, bgHex) >= minRatio) return hex
   const hsl = rgbToHsl(hexToRgb(hex))
@@ -110,8 +105,8 @@ const HUBS_DATA = [
       <Printer size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: Printer,
-    colorLight: BRAND.blueDark,   // Deep/Dark Base — #0F3F66
-    colorDark:  BRAND.blue,       // Bright Accent  — #1E6FA8
+    colorLight: BRAND.blueDark,
+    colorDark:  BRAND.blue,
     services: [
       { name: "B&W Print",        price: "R5"  },
       { name: "Colour Print",     price: "R8"  },
@@ -164,8 +159,10 @@ const HUBS_DATA = [
       <Globe size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: Globe,
-    colorLight: BRAND.blueMid,
-    colorDark:  BRAND.lightBlue,
+    // Restored to the original teal identity for E-Service (was
+    // temporarily swapped to blueMid/lightBlue — reverted per request).
+    colorLight: BRAND.teal,
+    colorDark:  BRAND.tealLight,
     services: [
       { name: "SASSA Status Check",         price: "R20"  },
       { name: "SASSA SRD Application",      price: "R40"  },
@@ -221,12 +218,6 @@ export function HeroSection() {
   const [hoveredHub,        setHoveredHub]        = useState<number | null>(null)
   const [canHover,          setCanHover]          = useState(false)
 
-  // ── Ecosystem box 3D tilt ─────────────────────────────────────────────
-  // Desktop-only (gated by canHover): the box rotates subtly toward the
-  // cursor as it moves across it, then eases back flat on mouse leave.
-  // Combined with the layered bevel shadow below (inner top highlight +
-  // inner bottom shadow + outer drop shadows), this reads as an actual
-  // lifted 3D card rather than a flat image with a shadow behind it.
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 })
   const [tilting, setTilting] = useState(false)
   const ecoBoxRef = useRef<HTMLDivElement>(null)
@@ -236,7 +227,7 @@ export function HeroSection() {
     const rect = ecoBoxRef.current.getBoundingClientRect()
     const px = (e.clientX - rect.left) / rect.width
     const py = (e.clientY - rect.top) / rect.height
-    const MAX_TILT = 5 // degrees — kept subtle, not gimmicky
+    const MAX_TILT = 5
     setTilt({
       ry: (px - 0.5) * MAX_TILT * 2,
       rx: (0.5 - py) * MAX_TILT * 2,
@@ -265,31 +256,20 @@ export function HeroSection() {
   const active    = HUBS_DATA[activeHub]
   const WatermarkIcon = active.Icon
 
-  // CTA now uses brand blue (was a neutral dark-grey/black treatment) —
-  // makes the primary action visually match the "blue should dominate"
-  // direction, and ties it back to the same blue used in the watermark
-  // and the box's outer glow below.
   const CTA_COLOR      = isDark ? BRAND.lightBlue : BRAND.blue
   const CTA_FILL_COLOR = BRAND.blue
+  // Arrow is now always brand orange (theme-aware light/dark variant),
+  // independent of the button's fill/border state.
+  const ARROW_COLOR = isDark ? BRAND.lightOrange : BRAND.orange
 
-  // ── Ecosystem box color model ─────────────────────────────────────────
   const cardText      = "#FFFFFF"
   const cardTextSoft  = "rgba(255,255,255,0.82)"
   const cardTextMuted = "rgba(255,255,255,0.55)"
 
-  // Neutral surface for the spotlight card — plain white / zinc-900,
-  // regardless of hub. Only the hub NAME label is tinted with the hub's
-  // own color, nudged (hue preserved) for contrast against this exact
-  // surface — that's the "clever plan": a light hub hue against the white
-  // light-mode card, or a dark hub hue against the near-black dark-mode
-  // card, gets auto-corrected; anything that already contrasts fine is
-  // left untouched.
   const neutralCardBgHex = isDark ? "#18181b" : "#ffffff"
   const hubColor  = isDark ? active.colorDark : active.colorLight
   const nameColor = ensureAccessible(hubColor, neutralCardBgHex, 4.5)
 
-  // Watermark crossfade state — fixed to brand blue (matches the
-  // "blue dominant" rule), doesn't swap color per hub.
   const [watermarkLayers, setWatermarkLayers] = useState<WatermarkLayer[]>([])
   const [visibleKey,       setVisibleKey]      = useState<string | null>(null)
   const pruneTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
@@ -457,22 +437,17 @@ export function HeroSection() {
                 Start Here
               </span>
             </span>
+            {/* Arrow — locked to brand orange (theme-aware), no longer
+                flips to white on hover/press like the label does. */}
             <ArrowRight
               weight="bold"
-              className="relative z-10 w-6 h-6 transition-transform duration-150 group-hover:translate-x-1.5 group-hover:text-white group-active:text-white"
+              className="relative z-10 w-6 h-6 transition-transform duration-150 group-hover:translate-x-1.5"
+              style={{ color: ARROW_COLOR }}
               aria-hidden="true"
             />
           </button>
         </div>
 
-        {/* Core Hub Ecosystem — now a genuine interactive 3D card:
-            mouse-tilt (desktop only) via handleEcoMouseMove/Leave above,
-            plus a bevel-style shadow stack (inner top highlight to
-            simulate a lit top edge, inner bottom shadow for depth at the
-            base, and outer drop shadows so it visibly lifts off the
-            page). transformStyle: preserve-3d plus the perspective()
-            function inline keeps this self-contained — no parent
-            "perspective" wrapper needed. */}
         <div
           ref={ecoBoxRef}
           onMouseMove={handleEcoMouseMove}
@@ -491,7 +466,6 @@ export function HeroSection() {
               "inset 0 -44px 60px -30px rgba(0,0,0,0.55)",
           }}
         >
-          {/* Background photo + dark overlay */}
           <div className="absolute inset-0 z-0" aria-hidden="true">
             <Image
               src="/storefront.webp"
@@ -500,14 +474,7 @@ export function HeroSection() {
               sizes="840px"
               className="object-cover opacity-90"
             />
-            {/* Dark scrim — image opacity alone isn't enough to keep the
-                white text/icons above reliably readable across the whole
-                photo, so this adds the contrast back in. */}
             <div className="absolute inset-0 bg-black/45" />
-            {/* Sheen — a soft diagonal highlight band that shifts subtly
-                with the tilt, reinforcing the "glass/glossy 3D surface"
-                read rather than a flat photo. Desktop-tilt-only; sits
-                static (centered) when not hovering. */}
             <div
               className="absolute inset-0 pointer-events-none opacity-40 mix-blend-overlay"
               style={{
@@ -603,12 +570,6 @@ export function HeroSection() {
               />
             </div>
 
-            {/* Spotlight card — now a plain NEUTRAL surface (white /
-                zinc-900), same for every hub, so it stays legible sitting
-                on top of the busy photo behind it. Only the hub NAME
-                label is tinted with that hub's own color via nameColor
-                (contrast-nudged above); service name and price stay
-                ordinary neutral text. */}
             <div className="w-full max-w-[420px] flex flex-col items-center text-center">
               <div className="relative flex flex-col items-center gap-2 rounded-[16px] px-6 py-5 mb-4 bg-white dark:bg-zinc-900 shadow-lg transition-colors duration-200">
                 <p
@@ -729,4 +690,5 @@ export function StatsBar() {
       </div>
     </section>
   )
-    } 
+}
+ 
