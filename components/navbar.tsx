@@ -253,7 +253,9 @@ export function Navbar() {
 
           {/* Controls — Always visible on desktop, hidden on mobile when
               menu is open. All icons now share the single static
-              iconColor (brand blue), no per-route swapping. */}
+              iconColor (brand blue), no per-route swapping. Vertical
+              divider between the theme toggle and hamburger removed on
+              mobile per request. */}
           <div className={cn(pillClass, "flex items-center gap-3 pl-3 pr-3 pointer-events-auto ml-4 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
             <button onClick={handleThemeToggle} className="flex items-center justify-center w-7 h-7 active:scale-90 transition-transform" aria-label="Toggle theme">
               {mounted && (
@@ -262,8 +264,6 @@ export function Navbar() {
                   : <Sun  size={20} weight="fill" style={{ color: iconColor }} className="transition-colors duration-300" />
               )}
             </button>
-
-            <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 md:hidden" />
 
             <button ref={menuTriggerRef} onClick={() => setMenuOpen(true)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 md:hidden", menuOpen ? "opacity-0 pointer-events-none" : "opacity-100")}>
               <div className="w-4 h-[12px] flex flex-col justify-between items-center">
@@ -292,9 +292,11 @@ export function Navbar() {
         />
         <div className="absolute inset-0 bg-white/70 dark:bg-zinc-950/80 backdrop-blur-xl" onClick={() => setMenuOpen(false)} />
 
-        {/* Nav links — centered. Active link now gets a solid blue fill
-            plus a side-line bar on the left edge as the "you are here"
-            marker, replacing the old dot-before-label. */}
+        {/* Nav links — centered. Active link keeps the solid fill, but the
+            old white side-bar marker is replaced with a small subtle
+            green dot below the label. Inactive-link text now carries a
+            dark-mode-safe hover color so it stays legible against the
+            dark backdrop. */}
         <div className="relative z-10 w-full h-full flex flex-col items-center justify-center px-6">
           <nav className="w-full max-w-[320px] flex flex-col items-center gap-2.5">
             {NAV_ITEMS.map((item, idx) => {
@@ -314,21 +316,21 @@ export function Navbar() {
                     "relative py-3 px-8 rounded-[14px] font-sans text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm overflow-hidden",
                     isActive
                       ? "font-semibold"
-                      : "font-medium text-zinc-700 dark:text-zinc-200 hover:text-brand-blue bg-transparent",
+                      : "font-medium text-zinc-700 dark:text-zinc-100 hover:text-brand-blue dark:hover:text-brand-light-blue bg-transparent",
                     item.isCta && !isActive && "border-2 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800/60",
                     menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
                   )}
                 >
-                  {/* Side-line — vertical bar on the left edge, only for
-                      the active link. Replaces the old dot marker. */}
+                  {item.label}
+
+                  {/* Small subtle green mark below the active link */}
                   {isActive && (
                     <span
                       aria-hidden="true"
-                      className="absolute left-0 top-0 bottom-0 w-[4px] rounded-r-full"
-                      style={{ backgroundColor: "rgba(255,255,255,0.85)" }}
+                      className="absolute left-1/2 -translate-x-1/2 bottom-1 w-1.5 h-1.5 rounded-full"
+                      style={{ backgroundColor: BRAND.green }}
                     />
                   )}
-                  {item.label}
                 </button>
               )
             })}
@@ -362,4 +364,4 @@ export function Navbar() {
       </div>
     </>
   )
-}
+                                             } 
