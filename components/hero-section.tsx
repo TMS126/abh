@@ -221,6 +221,33 @@ export function HeroSection() {
   const [hoveredHub,        setHoveredHub]        = useState<number | null>(null)
   const [canHover,          setCanHover]          = useState(false)
 
+  // ── Ecosystem box 3D tilt ─────────────────────────────────────────────
+  // Desktop-only (gated by canHover): the box rotates subtly toward the
+  // cursor as it moves across it, then eases back flat on mouse leave.
+  // Combined with the layered bevel shadow below (inner top highlight +
+  // inner bottom shadow + outer drop shadows), this reads as an actual
+  // lifted 3D card rather than a flat image with a shadow behind it.
+  const [tilt, setTilt] = useState({ rx: 0, ry: 0 })
+  const [tilting, setTilting] = useState(false)
+  const ecoBoxRef = useRef<HTMLDivElement>(null)
+
+  const handleEcoMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!canHover || !ecoBoxRef.current) return
+    const rect = ecoBoxRef.current.getBoundingClientRect()
+    const px = (e.clientX - rect.left) / rect.width
+    const py = (e.clientY - rect.top) / rect.height
+    const MAX_TILT = 5 // degrees — kept subtle, not gimmicky
+    setTilt({
+      ry: (px - 0.5) * MAX_TILT * 2,
+      rx: (0.5 - py) * MAX_TILT * 2,
+    })
+    setTilting(true)
+  }
+  const handleEcoMouseLeave = () => {
+    setTilt({ rx: 0, ry: 0 })
+    setTilting(false)
+  }
+
   const ctaBtnRef      = useRef<HTMLButtonElement>(null)
 
   React.useEffect(() => { setMounted(true) }, [])
@@ -238,8 +265,12 @@ export function HeroSection() {
   const active    = HUBS_DATA[activeHub]
   const WatermarkIcon = active.Icon
 
-  const CTA_COLOR      = isDark ? BRAND.techGreyDark : BRAND.dark100
-  const CTA_FILL_COLOR = BRAND.dark100
+  // CTA now uses brand blue (was a neutral dark-grey/black treatment) —
+  // makes the primary action visually match the "blue should dominate"
+  // direction, and ties it back to the same blue used in the watermark
+  // and the box's outer glow below.
+  const CTA_COLOR      = isDark ? BRAND.lightBlue : BRAND.blue
+  const CTA_FILL_COLOR = BRAND.blue
 
   // ── Ecosystem box color model ─────────────────────────────────────────
   const cardText      = "#FFFFFF"
@@ -434,19 +465,30 @@ export function HeroSection() {
           </button>
         </div>
 
-        {/* Core Hub Ecosystem — background is now the storefront photo
-            itself (opacity nudged down slightly, plus a dark overlay for
-            contrast) instead of flat brand blue, with a deep, dramatic
-            drop shadow to make the box stand out from the page. Content
-            wrapped in its own z-10 layer since the image/overlay need to
-            sit behind it, not just be a plain background-color. */}
+        {/* Core Hub Ecosystem — now a genuine interactive 3D card:
+            mouse-tilt (desktop only) via handleEcoMouseMove/Leave above,
+            plus a bevel-style shadow stack (inner top highlight to
+            simulate a lit top edge, inner bottom shadow for depth at the
+            base, and outer drop shadows so it visibly lifts off the
+            page). transformStyle: preserve-3d plus the perspective()
+            function inline keeps this self-contained — no parent
+            "perspective" wrapper needed. */}
         <div
+          ref={ecoBoxRef}
+          onMouseMove={handleEcoMouseMove}
+          onMouseLeave={handleEcoMouseLeave}
           className="relative w-full max-w-[840px] mx-auto rounded-[14px] overflow-hidden"
           style={{
+            transform: `perspective(1200px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg) scale(${tilting ? 1.012 : 1})`,
+            transformStyle: "preserve-3d",
+            transition: tilting ? "transform 90ms ease-out" : "transform 500ms cubic-bezier(0.16, 1, 0.3, 1)",
+            willChange: "transform",
             boxShadow:
-              "0 55px 110px -25px rgba(0,0,0,0.6), " +
-              "0 30px 65px -30px rgba(0,0,0,0.7), " +
-              `0 0 90px -20px ${BRAND.blue}60`,
+              "0 60px 120px -25px rgba(0,0,0,0.65), " +
+              "0 35px 70px -30px rgba(0,0,0,0.75), " +
+              `0 0 100px -15px ${BRAND.blue}70, ` +
+              "inset 0 1px 0 rgba(255,255,255,0.28), " +
+              "inset 0 -44px 60px -30px rgba(0,0,0,0.55)",
           }}
         >
           {/* Background photo + dark overlay */}
@@ -462,6 +504,17 @@ export function HeroSection() {
                 white text/icons above reliably readable across the whole
                 photo, so this adds the contrast back in. */}
             <div className="absolute inset-0 bg-black/45" />
+            {/* Sheen — a soft diagonal highlight band that shifts subtly
+                with the tilt, reinforcing the "glass/glossy 3D surface"
+                read rather than a flat photo. Desktop-tilt-only; sits
+                static (centered) when not hovering. */}
+            <div
+              className="absolute inset-0 pointer-events-none opacity-40 mix-blend-overlay"
+              style={{
+                background: `linear-gradient(${115 + tilt.ry * 3}deg, transparent 35%, rgba(255,255,255,0.5) 50%, transparent 65%)`,
+                transition: tilting ? "background 90ms ease-out" : "background 500ms ease-out",
+              }}
+            />
           </div>
 
           <div className="relative z-10 w-full flex flex-col items-center px-6 sm:px-10 md:px-12 pt-8 sm:pt-10 md:pt-12 pb-10 sm:pb-12 md:pb-14">
