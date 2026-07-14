@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useTheme } from "next-themes"
 import { Rocket, CurrencyDollar, HandHeart, MapPin, WhatsappLogo } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
-import { BRAND, WA, STRIP_ITEMS, NEUTRAL_ICON_COLOR } from "@/lib/brand"
+import { BRAND, WA, STRIP_ITEMS } from "@/lib/brand"
 
 export function StripSection() {
   return (
@@ -21,34 +21,66 @@ export function StripSection() {
 function StripCard({ item }: { item: any }) {
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const [hovered, setHovered] = useState(false)
   useEffect(() => { setMounted(true) }, [])
   const isDark = mounted && resolvedTheme === "dark"
 
-  // Single neutral color for all 4 icons — sourced from brand.ts,
-  // not hub-tied. Theme-aware (dark100 light / techGreyDark dark).
-  const color = isDark ? NEUTRAL_ICON_COLOR.dark : NEUTRAL_ICON_COLOR.light
+  // All four icons now use a single fixed brand blue (light/dark pair),
+  // per request — no longer per-item colors from STRIP_ICON_COLORS.
+  const color = isDark ? BRAND.lightBlue : BRAND.blue
+  const fillBlue = BRAND.blue
 
   return (
     <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       className={cn(
-        "rounded-[14px] border p-6 transition-all duration-300 group",
-        "bg-white dark:bg-zinc-900",
+        "relative rounded-[14px] border p-6 transition-all duration-300 group overflow-hidden",
         "border-zinc-100 dark:border-zinc-800",
         "shadow-sm hover:-translate-y-1 hover:shadow-lg"
       )}
+      style={{ backgroundColor: hovered ? fillBlue : undefined }}
     >
+      {/* Non-hovered base surface — swapped out via opacity instead of
+          className so the blue fill (set as the container's own
+          backgroundColor above) can cleanly show through underneath on
+          hover, rather than fighting a competing bg-white/bg-zinc-900
+          class for priority. */}
       <div
-        className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 mb-5 transition-colors duration-300"
-        style={{ backgroundColor: `${color}15`, color }}
-      >
-        {item.iconName === "Rocket"          && <Rocket          weight="fill" className="w-5 h-5" aria-hidden="true" />}
-        {item.iconName === "CurrencyDollar"  && <CurrencyDollar  weight="fill" className="w-5 h-5" aria-hidden="true" />}
-        {item.iconName === "HandHeart"       && <HandHeart       weight="fill" className="w-5 h-5" aria-hidden="true" />}
-        {item.iconName === "MapPin"          && <MapPin          weight="fill" className="w-5 h-5" aria-hidden="true" />}
-      </div>
-      <div>
-        <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200 mb-1">{item.title}</h3>
-        <p className="abh-body text-sm leading-relaxed">{item.desc}</p>
+        className={cn(
+          "absolute inset-0 bg-white dark:bg-zinc-900 transition-opacity duration-300 pointer-events-none",
+          hovered ? "opacity-0" : "opacity-100"
+        )}
+        aria-hidden="true"
+      />
+
+      <div className="relative z-10">
+        <div
+          className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 mb-5 transition-colors duration-300"
+          style={{
+            backgroundColor: hovered ? "rgba(255,255,255,0.2)" : `${color}15`,
+            color: hovered ? "#ffffff" : color,
+          }}
+        >
+          {item.iconName === "Rocket"          && <Rocket          weight="fill" className="w-5 h-5" aria-hidden="true" />}
+          {item.iconName === "CurrencyDollar"  && <CurrencyDollar  weight="fill" className="w-5 h-5" aria-hidden="true" />}
+          {item.iconName === "HandHeart"       && <HandHeart       weight="fill" className="w-5 h-5" aria-hidden="true" />}
+          {item.iconName === "MapPin"          && <MapPin          weight="fill" className="w-5 h-5" aria-hidden="true" />}
+        </div>
+        <div>
+          <h3
+            className="font-sans font-semibold text-sm mb-1 transition-colors duration-300"
+            style={{ color: hovered ? "#ffffff" : undefined }}
+          >
+            <span className={hovered ? "" : "text-zinc-800 dark:text-zinc-200"}>{item.title}</span>
+          </h3>
+          <p
+            className="text-sm leading-relaxed transition-colors duration-300"
+            style={{ color: hovered ? "rgba(255,255,255,0.9)" : undefined }}
+          >
+            <span className={hovered ? "" : "abh-body"}>{item.desc}</span>
+          </p>
+        </div>
       </div>
     </div>
   )
@@ -91,4 +123,4 @@ export function CtaBar({
       </div>
     </section>
   )
-        } 
+                    } 
