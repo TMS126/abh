@@ -111,56 +111,33 @@ function naturalServiceLabel(name: string, sectionTitle: string) {
 }
 
 // ─── Brand loader ─────────────────────────────────────────────────────────────
-// An abstract rounded-badge outline (not a literal logo trace — see chat notes)
-// with a gradient stroke segment that grows around the shape, "kisses" its own
-// tail, then shrinks back to a small segment and repeats — while the whole
-// badge slowly rotates so the chase reads as continuous travel.
-const ABH_LOADER_PATH =
-  "M50,4 C68,4 82,10 90,26 C97,40 96,60 88,74 C80,88 64,96 50,96 " +
-  "C34,96 18,90 10,74 C3,60 4,40 12,24 C20,10 34,4 50,4 Z"
-
+// Three dots in brand order (blue, green, orange), pulsing in sequence so
+// one "grows" at a time rather than all three moving in lockstep — reads as
+// a wave passing through the trio. Replaces the old single-path SVG spinner.
 function AbhLoader({ size = 28 }: { size?: number }) {
+  const dot = Math.max(6, Math.round(size * 0.32))
+  const colors = [BRAND.blue, BRAND.green, BRAND.orange]
   return (
-    <div style={{ width: size, height: size }} className="relative shrink-0 abh-loader-spin">
+    <div className="flex items-center gap-1.5" style={{ height: size }}>
       <style>{`
-        @keyframes abh-loader-rotate { to { transform: rotate(360deg); } }
-        .abh-loader-spin { animation: abh-loader-rotate 2.2s linear infinite; }
-
-        @keyframes abh-loader-dash {
-          0%   { stroke-dasharray: 1, 150;  stroke-dashoffset: 0; }
-          50%  { stroke-dasharray: 46, 150; stroke-dashoffset: -18; }
-          100% { stroke-dasharray: 46, 150; stroke-dashoffset: -63; }
+        @keyframes abh-dot-grow {
+          0%, 80%, 100% { transform: scale(0.55); opacity: 0.45; }
+          40% { transform: scale(1.2); opacity: 1; }
         }
-        .abh-loader-dash { animation: abh-loader-dash 1.5s ease-in-out infinite; }
       `}</style>
-      <svg viewBox="0 0 100 100" width={size} height={size} className="block" aria-hidden="true">
-        <defs>
-          <linearGradient id="abh-loader-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%"   stopColor="#1E6FA8" />
-            <stop offset="50%"  stopColor="#6FBF1A" />
-            <stop offset="100%" stopColor="#F4A261" />
-          </linearGradient>
-        </defs>
-        {/* Faint full-shape guide, always visible */}
-        <path
-          d={ABH_LOADER_PATH}
-          fill="none"
-          strokeWidth="7"
-          pathLength={100}
-          className="text-zinc-200 dark:text-zinc-700"
-          stroke="currentColor"
+      {colors.map((c, i) => (
+        <span
+          key={i}
+          className="rounded-full shrink-0"
+          style={{
+            width: dot,
+            height: dot,
+            backgroundColor: c,
+            animation: "abh-dot-grow 1.2s ease-in-out infinite",
+            animationDelay: `${i * 0.2}s`,
+          }}
         />
-        {/* Chasing gradient segment */}
-        <path
-          d={ABH_LOADER_PATH}
-          fill="none"
-          stroke="url(#abh-loader-grad)"
-          strokeWidth="7"
-          strokeLinecap="round"
-          pathLength={100}
-          className="abh-loader-dash"
-        />
-      </svg>
+      ))}
     </div>
   )
 }
@@ -281,14 +258,12 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
   const wrapRef   = useRef<HTMLDivElement>(null)
   const index     = useMemo(buildSearchIndex, [])
 
-  // Resting color kept identical to PageEdgeGlow's "/services" route color
-  // (BRAND.green), in both light and dark mode, so this pill and the
-  // top-of-page flash read as the same brand color rather than a
-  // similar-but-different shade — see components/page-edge-glow.tsx.
-  // hoverColor stays a separate, deliberately darker shade purely as mouse
-  // hover feedback, not a theme swap.
-  const fillColor  = BRAND.green
-  const hoverColor = BRAND.greenDeep
+  // Brand-blue fill with an inner shadow + light-blue stroke, so the bar
+  // reads as "pressed in" rather than a flat color block. Was brand green;
+  // switched to blue as the page's new dominant color.
+  const fillColor  = BRAND.blue
+  const hoverColor = BRAND.blueMid
+  const priceColor = isDark ? BRAND.lightOrange : BRAND.orangeDark
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -324,8 +299,12 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
         onChange={e => setQuery(e.target.value)}
         onFocus={() => setFocused(true)}
         placeholder="Search"
-        className="w-full pl-11 pr-10 py-4 rounded-[14px] font-sans font-black text-base text-white placeholder:text-white/70 shadow-lg transition-all duration-300 outline-none text-center focus:text-left focus:scale-[0.99]"
-        style={{ backgroundColor: fillColor }}
+        className="w-full pl-11 pr-10 py-4 rounded-[14px] font-sans font-black text-base text-white placeholder:text-white/70 transition-all duration-300 outline-none text-center focus:text-left focus:scale-[0.99]"
+        style={{
+          backgroundColor: fillColor,
+          border: `1.5px solid ${BRAND.lightBlue}`,
+          boxShadow: `0 10px 25px -6px rgba(30,111,168,0.35), inset 0 2px 5px rgba(0,0,0,0.25)`,
+        }}
         onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = hoverColor }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = fillColor }}
       />
@@ -358,7 +337,7 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
                       <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{s.name}</p>
                       <p className="text-[0.65rem] font-bold uppercase tracking-wider text-zinc-400 truncate">{s.sectionTitle} · {HUBS[s.hubId].title}</p>
                     </div>
-                    <span className="text-xs font-black shrink-0" style={{ color: accent }}>{s.price}</span>
+                    <span className="text-xs font-black shrink-0" style={{ color: priceColor }}>{s.price}</span>
                   </button>
                 )
               })}
@@ -403,16 +382,22 @@ function HubModal({
   if (!hubId) return null
   const hub    = HUBS[hubId]
   const colors = HUB_COLORS[hubId as HubKey]
-  // True saturated per-hub color, as a light/dark pair (accentLight/
-  // accentDark in brand.ts) — replaces the old tagText/tagTextDark, which
-  // was identical grey/white across every hub and never actually showed
-  // this hub's real brand color. Used everywhere in this modal: icon
-  // border, service-count label, tab pills, prices, and the description card.
-  const accent   = isDark ? colors.accentDark : colors.accentLight
-  // Text color for the solid hub-colored section/description card below —
-  // auto-flips between near-white and near-black so it always reads clearly
-  // against that hub's specific accent (e.g. Tech's light grey vs Docu's green).
-  const cardText = getContrastText(accent)
+  // Icon border stays hub-specific — the one place per-hub color survives
+  // in this modal now that everything else (card panel, tabs, prices) has
+  // moved to the shared blue/green/orange page scheme.
+  const iconAccent = isDark ? colors.accentDark : colors.accentLight
+
+  // The tab+description panel is now a solid BLUE card (was per-hub accent) —
+  // blue is the page's dominant/structural color. blueMid is used in dark
+  // mode instead of the brighter BRAND.blue so it doesn't glare against a
+  // dark surrounding page.
+  const panelBg   = isDark ? BRAND.blueMid : BRAND.blue
+  const cardText  = getContrastText(panelBg)
+  // Active tab text nudged to a green that's guaranteed readable against
+  // the blue panel — green marks the "highlighted/selected" state.
+  const activeTabColor = ensureAccessible(isDark ? BRAND.lightGreen : BRAND.green, panelBg, 4.5)
+  const priceColor = isDark ? BRAND.lightOrange : BRAND.orangeDark
+  const labelBlue  = isDark ? BRAND.lightBlue : BRAND.blue
 
   return (
     <div className="fixed inset-0 z-[10100] flex items-center justify-center p-4 animate-in fade-in duration-300">
@@ -430,21 +415,21 @@ function HubModal({
       >
 
         {/* Header */}
-        <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center" style={{ backgroundColor: `${accent}05` }}>
+        <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center" style={{ backgroundColor: `${iconAccent}05` }}>
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 md:w-14 md:h-14 rounded-[14px] flex items-center justify-center shadow-lg bg-zinc-100 dark:bg-zinc-800" style={{ border: `2px solid ${accent}` }}>
-              <HubIcon id={hubId} size={28} color={accent} />
+            <div className="w-12 h-12 md:w-14 md:h-14 rounded-[14px] flex items-center justify-center shadow-lg bg-zinc-100 dark:bg-zinc-800" style={{ border: `2px solid ${iconAccent}` }}>
+              <HubIcon id={hubId} size={28} color={iconAccent} />
             </div>
             <div>
               <h2 className="abh-card-heading text-xl md:text-2xl">{hub.title}</h2>
-              <p className="abh-label mt-0.5" style={{ color: accent }}>{hub.sections.reduce((sum, s) => sum + s.items.length, 0)} Available Services</p>
+              <p className="abh-label mt-0.5" style={{ color: labelBlue }}>{hub.sections.reduce((sum, s) => sum + s.items.length, 0)} Available Services</p>
             </div>
           </div>
           <button
             onClick={onClose}
             aria-label="Close"
             className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-            style={{ backgroundColor: `${accent}15`, color: accent }}
+            style={{ backgroundColor: `${labelBlue}15`, color: labelBlue }}
           >
             <X size={20} weight="bold" />
           </button>
@@ -453,16 +438,16 @@ function HubModal({
         {/* Body */}
         <div className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-8">
 
-          {/* Section tabs + description — fused into one solid, hub-colored
-              card so switching tabs feels like updating one shape rather than
-              two separate pieces. Falls back to plain neutral pills (old
+          {/* Section tabs + description — fused into one solid blue card so
+              switching tabs feels like updating one shape rather than two
+              separate pieces. Falls back to plain neutral pills (old
               behavior) if every section is collapsed (openSectionIdx null). */}
           {openSectionIdx !== null && hub.sections[openSectionIdx] ? (
             <div
               className="rounded-[14px] p-4 md:p-5 mb-5 transition-colors duration-300"
               style={{
-                backgroundColor: accent,
-                boxShadow: `0 14px 28px -8px ${accent}66, 0 6px 14px -6px ${accent}45`,
+                backgroundColor: panelBg,
+                boxShadow: `0 14px 28px -8px ${panelBg}66, 0 6px 14px -6px ${panelBg}45`,
               }}
             >
               <div className="flex flex-wrap gap-2 mb-4">
@@ -476,7 +461,7 @@ function HubModal({
                         "px-3.5 py-1.5 rounded-full text-[0.7rem] font-black tracking-tight whitespace-nowrap transition-all duration-200",
                         isOpen ? "bg-white/25 dark:bg-black/20" : "bg-black/10 dark:bg-white/10 hover:bg-black/15 dark:hover:bg-white/15"
                       )}
-                      style={{ color: cardText, opacity: isOpen ? 1 : 0.65 }}
+                      style={{ color: isOpen ? activeTabColor : cardText, opacity: isOpen ? 1 : 0.65 }}
                     >
                       {section.title}
                     </button>
@@ -486,9 +471,8 @@ function HubModal({
               {hub.sections[openSectionIdx].desc && (
                 <div key={openSectionIdx} className="animate-in fade-in duration-300">
                   {/* Divider separating the tab pills above from the
-                      description below — sits inside this same solid
-                      accent-colored card, colored off cardText so it stays
-                      visible against whichever hub color is active. */}
+                      description below — colored off cardText so it stays
+                      visible against the blue panel in both themes. */}
                   <div className="h-px w-full mb-4" style={{ backgroundColor: `${cardText}25` }} />
                   <p
                     className="text-[0.82rem] font-semibold leading-relaxed"
@@ -529,7 +513,7 @@ function HubModal({
                   className="flex items-center justify-between p-3.5 md:p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:border-[#1E6FA8] dark:hover:border-[#A9D6F2] transition-all"
                 >
                   <span className="text-[0.84rem] font-black text-zinc-800 dark:text-zinc-200 text-left">{item.name}</span>
-                  <span className="text-[0.84rem] font-black shrink-0 ml-3" style={{ color: accent }}>{item.price}</span>
+                  <span className="text-[0.84rem] font-black shrink-0 ml-3" style={{ color: priceColor }}>{item.price}</span>
                 </button>
               ))}
             </div>
@@ -731,8 +715,12 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
 
   if (!svc) return null
 
-  const colors       = HUB_COLORS[svc.hubId as HubKey]
-  const accent       = isDark ? colors.accentDark : colors.accentLight
+  // Everything in this modal now uses the shared blue/green/orange scheme —
+  // no more per-hub accent here (that only survives on hub icons elsewhere).
+  const blueColor   = isDark ? BRAND.lightBlue  : BRAND.blue
+  const greenColor  = isDark ? BRAND.lightGreen : BRAND.green
+  const orangeColor = isDark ? BRAND.lightOrange : BRAND.orangeDark
+
   const hubTitle     = HUBS[svc.hubId]?.title || svc.sectionTitle
   const naturalLabel = naturalServiceLabel(svc.name, svc.sectionTitle)
   const acceptHint   = formatAcceptHint(HUB_ACCEPT[svc.hubId])
@@ -831,7 +819,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             <div className="flex-1 min-w-0 pr-3">
               <span
                 className="text-[0.62rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-2.5 inline-block"
-                style={{ backgroundColor: `${accent}15`, color: accent }}
+                style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
               >
                 {cleanText(svc.sectionTitle)}
               </span>
@@ -843,7 +831,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                 onClick={handleShare}
                 aria-label="Share this service"
                 className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                style={{ backgroundColor: `${accent}15`, color: accent }}
+                style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
               >
                 <ShareNetwork size={16} weight="bold" />
               </button>
@@ -856,7 +844,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                 onClick={onClose}
                 aria-label="Close"
                 className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
-                style={{ backgroundColor: `${accent}15`, color: accent }}
+                style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
               >
                 <X size={16} weight="bold" />
               </button>
@@ -865,10 +853,10 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
 
           {/* Price + turnaround pill */}
           <div className="flex items-center gap-3 mb-5 flex-wrap">
-            <span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
+            <span className="text-4xl font-black tracking-tighter" style={{ color: orangeColor }}>{svc.price}</span>
             <span
               className="flex items-center gap-1.5 text-[0.65rem] font-bold px-2.5 py-1 rounded-full"
-              style={{ backgroundColor: `${accent}12`, color: accent }}
+              style={{ backgroundColor: `${orangeColor}12`, color: orangeColor }}
             >
               <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
                 <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.5"/>
@@ -906,7 +894,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                   <li key={idx} className="flex items-start gap-3">
                     <span
                       className={cn("shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[0.7rem] font-black mt-0.5", isDark ? "text-zinc-900" : "text-white")}
-                      style={{ backgroundColor: accent }}
+                      style={{ backgroundColor: blueColor }}
                     >
                       {idx + 1}
                     </span>
@@ -918,7 +906,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                   reads as a subtly recessed note rather than a filled card. */}
               <div
                 className="mt-5 rounded-[14px] p-4"
-                style={{ boxShadow: `inset 0 1px 4px ${accent}35, inset 0 0 0 1px ${accent}20` }}
+                style={{ boxShadow: `inset 0 1px 4px ${blueColor}35, inset 0 0 0 1px ${blueColor}20` }}
               >
                 <p className="abh-muted !mt-0">
                   {TURNAROUND_DISCLAIMER}
@@ -931,7 +919,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
               <p className="abh-body text-[0.84rem]">{desc}</p>
               <p className="abh-muted mt-5">
                 Have questions? Switch to the{" "}
-                <span className="font-black" style={{ color: accent }}>{bringLabel}</span> tab or chat with us directly.
+                <span className="font-black" style={{ color: blueColor }}>{bringLabel}</span> tab or chat with us directly.
               </p>
             </div>
           )}
@@ -955,7 +943,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-[14px] font-bold text-sm border-2 border-dashed transition-all active:scale-95 hover:opacity-80"
-                style={{ borderColor: `${accent}40`, color: accent }}
+                style={{ borderColor: `${blueColor}40`, color: blueColor }}
               >
                 <Paperclip size={17} weight="bold" />
                 Attach a file (optional)
@@ -976,7 +964,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
           {uploadPhase === "uploading" && (
             <div className="flex items-center gap-3 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-zinc-50 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400">
               <AbhLoader size={28} />
-              <span className="font-black tabular-nums shrink-0" style={{ color: accent }}>{uploadProgress}%</span>
+              <span className="font-black tabular-nums shrink-0" style={{ color: blueColor }}>{uploadProgress}%</span>
               <span className="truncate">Uploading {file?.name}…</span>
             </div>
           )}
@@ -1013,16 +1001,16 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                 type="button"
                 onClick={() => { setUploadPhase("idle"); setUploadErr(null); fileRef.current?.click() }}
                 className="text-xs font-black underline"
-                style={{ color: accent }}
+                style={{ color: blueColor }}
               >
                 Try a different file
               </button>
             </div>
           )}
 
-          {/* + Add to Quote — fires abh:add-to-quote; QuoteCalculatorWidget listens.
-              Also tracked as its own GA4 event since it's a stronger buying
-              signal than just opening a service's detail sheet. */}
+          {/* + Add to Quote — green highlight, fires abh:add-to-quote (the
+              QuoteCalculatorWidget listens) and its own GA4 event since it's
+              a stronger buying signal than just opening a service's sheet. */}
           <button
             type="button"
             onClick={() => {
@@ -1040,15 +1028,16 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             }}
             className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-[14px] font-bold text-sm border-2 transition-all duration-200 active:scale-95"
             style={addedToQuote
-              ? { borderColor: accent, backgroundColor: `${accent}10`, color: accent }
-              : { borderColor: `${accent}35`, color: accent, backgroundColor: "transparent" }
+              ? { borderColor: greenColor, backgroundColor: `${greenColor}10`, color: greenColor }
+              : { borderColor: `${greenColor}35`, color: greenColor, backgroundColor: "transparent" }
             }
           >
             {addedToQuote ? "✓ Added to Quote" : "+ Add to Quote"}
           </button>
 
-          {/* WhatsApp CTA — the actual conversion event. onClick fires the
-              tracking call and lets the link navigate normally afterward. */}
+          {/* WhatsApp CTA — kept WhatsApp's own brand green (#25D366), since
+              that's instantly recognizable as a WhatsApp action, separate
+              from our own green highlight color used just above. */}
           <a
             href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waMessage)}`}
             target="_blank"
@@ -1072,14 +1061,16 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
 }
 
 // ─── Notice Banner ────────────────────────────────────────────────────────────
+// Blue = ℹ️ info/update notice (not a warning) — recolored from orange since
+// this banner announces a schedule/pricing update, not something urgent.
 function NoticeBanner() {
   return (
-    <div className="relative mx-auto w-full max-w-md mb-10 rounded-[14px] border border-[#F4A261]/20 bg-[#F4A261]/5 dark:bg-[#F4A261]/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
-      <div className="w-9 h-9 rounded-[10px] bg-[#F4A261] flex items-center justify-center shrink-0">
+    <div className="relative mx-auto w-full max-w-md mb-10 rounded-[14px] border border-[#1E6FA8]/20 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+      <div className="w-9 h-9 rounded-[10px] bg-[#1E6FA8] flex items-center justify-center shrink-0">
         <Megaphone size={18} weight="fill" color="#fff" />
       </div>
       <div className="flex-1 min-w-0 pt-0.5">
-        <span className="abh-eyebrow text-[#D9894B] dark:text-[#F4A261] block mb-1">
+        <span className="abh-eyebrow text-[#15537D] dark:text-[#A9D6F2] block mb-1">
           Notice to Clients
         </span>
         <p className="abh-body text-[0.84rem]">
@@ -1091,10 +1082,12 @@ function NoticeBanner() {
         }
 
 // ─── Closing tagline ──────────────────────────────────────────────────────────
+// No more gradients anywhere on the page — solid blue wash + solid blue top
+// bar, replacing the old blue→green→orange gradient.
 function ClosingTagline() {
   return (
-    <div className="relative mt-2 mb-4 overflow-hidden rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-gradient-to-br from-[#1E6FA8]/5 via-white to-[#6FBF1A]/5 dark:from-[#1E6FA8]/10 dark:via-zinc-950 dark:to-[#6FBF1A]/10 px-6 py-10 md:py-12 text-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#1E6FA8] via-[#6FBF1A] to-[#F4A261]" />
+    <div className="relative mt-2 mb-4 overflow-hidden rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-6 py-10 md:py-12 text-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
+      <div className="absolute inset-x-0 top-0 h-1 bg-[#1E6FA8]" />
       <p className="abh-eyebrow text-zinc-400 dark:text-zinc-500 mb-3">Why Apexbytes Hub</p>
       <p className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 leading-snug max-w-2xl mx-auto">
         From your first CV to your next big idea — one hub does it all, right here in Bothaville.
@@ -1201,27 +1194,39 @@ export function ServicesPage() {
           <NoticeBanner />
         </div>
 
-        {/* Hub cards — horizontal stack on desktop, wide on desktop (max 1248px) */}
+        {/* Hub cards — horizontal stack on desktop, wide on desktop (max 1248px).
+            Default state is neutral (title, border, shadow all plain grey/
+            black) — only the icon swatch and a thin underline beneath it
+            carry that hub's color. Hover brings the hub's color back for
+            border, shadow glow, and title text, via CSS custom properties
+            (--hub-accent / --hub-shadow) so Tailwind's arbitrary-value hover
+            classes can reference a per-card dynamic color. */}
         <div className="flex flex-col md:grid md:grid-cols-5 gap-5 md:gap-4 pb-2 w-full">
           {HUB_ORDER.map((hubId) => {
             const hub    = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
             const accent = isDark ? colors.accentDark : colors.accentLight
             const cardBg = isDark ? "#09090b" : "#ffffff"
-            const exploreColor = ensureAccessible(accent, cardBg, 4.5)
+            const greenBase = isDark ? BRAND.lightGreen : BRAND.green
+            const exploreColor = ensureAccessible(greenBase, cardBg, 4.5)
+            const dividerColor = `${greenBase}40`
             return (
               <button
                 key={hubId}
                 onClick={() => handleOpenHub(hubId)}
-                className="group flex flex-col items-center p-6 md:p-7 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 text-center w-full h-full"
+                style={{ '--hub-accent': accent, '--hub-shadow': `${accent}55` } as any}
+                className="group flex flex-col items-center p-6 md:p-7 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] hover:border-[var(--hub-accent)] hover:shadow-[0_10px_28px_-6px_var(--hub-shadow)] transition-all duration-300 hover:-translate-y-1.5 text-center w-full h-full"
               >
                 <div
-                  className="w-14 h-14 md:w-16 md:h-16 rounded-[14px] flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110 shadow-md"
+                  className="w-14 h-14 md:w-16 md:h-16 rounded-[14px] flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 shadow-md"
                   style={{ backgroundColor: `${accent}12`, color: accent }}
                 >
                   <HubIcon id={hubId} size={32} />
                 </div>
-                <h3 className="font-sans font-black text-lg md:text-xl text-zinc-900 dark:text-zinc-50 mb-2 group-hover:text-[#1E6FA8] dark:group-hover:text-[#A9D6F2] transition-colors">
+                {/* Subtle hub-colored underline beneath the icon — the only
+                    hub-specific color visible in the card's default state. */}
+                <div className="w-8 h-0.5 rounded-full mb-3" style={{ backgroundColor: `${accent}50` }} />
+                <h3 className="font-sans font-black text-lg md:text-xl text-zinc-900 dark:text-zinc-50 mb-2 group-hover:text-[var(--hub-accent)] transition-colors">
                   {hub.title}
                 </h3><p className="abh-body text-[0.82rem] line-clamp-2 mb-5">{hub.desc}</p>
                 {/* 3 service previews — natural language, subtle, slightly larger than before but never bold */}
@@ -1237,7 +1242,7 @@ export function ServicesPage() {
                     <span style={{ color: exploreColor }}>explore</span>
                     <PaperPlaneTilt size={13} weight="fill" style={{ color: exploreColor }} />
                   </div>
-                  <div className="h-px w-6 rounded-full" style={{ backgroundColor: `${accent}30` }} />
+                  <div className="h-px w-6 rounded-full" style={{ backgroundColor: dividerColor }} />
                 </div>
               </button>
             )
@@ -1280,4 +1285,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-                                               } 
+                                                                } 
