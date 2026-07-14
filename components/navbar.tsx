@@ -88,11 +88,9 @@ export function Navbar() {
 
   const pillClass = "bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md py-2 rounded-[14px] border border-gray-200 dark:border-zinc-800 shadow-sm"
 
-  // Single static brand color for every icon/indicator in the navbar —
-  // no more per-route or per-hub swapping. Only the theme (light/dark)
-  // changes which shade of blue is used.
-  const iconColor = mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue
-  const logoColor = iconColor
+  // Always the dark brand blue now — no more light-blue swap in dark
+  // mode, since the light variant read as low-contrast/washed out.
+  const iconColor = BRAND.blue
 
   return (
     <>
@@ -100,7 +98,9 @@ export function Navbar() {
         <div className="relative flex items-center justify-between w-full max-w-[1200px]">
 
           {/* Logo — hides when menu is open, or when scrolling down (same
-              show/hide-on-scroll-direction logic as the rest of the nav) */}
+              show/hide-on-scroll-direction logic as the rest of the nav).
+              Mask-based tinting removed — logo now renders as a plain
+              <img>. */}
           <div
             className={cn(
               pillClass,
@@ -112,27 +112,17 @@ export function Navbar() {
             onMouseLeave={handleLogoMouseLeave}
             onClick={() => navigate("/")}
           >
-            <div
-              className="relative w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-[14px] overflow-hidden transition-colors duration-300"
-              style={{
-                backgroundColor: logoColor,
-                WebkitMaskImage: "url(/logo.png)",
-                maskImage: "url(/logo.png)",
-                WebkitMaskSize: "contain",
-                maskSize: "contain",
-                WebkitMaskRepeat: "no-repeat",
-                maskRepeat: "no-repeat",
-                WebkitMaskPosition: "center",
-                maskPosition: "center",
-              }}
-              aria-hidden="true"
-            />
+            <div className="relative w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-[14px] overflow-hidden">
+              <img
+                src="/logo.png"
+                alt="ApexbytesHub"
+                className="w-full h-full object-contain"
+              />
+            </div>
             <div className="font-sans font-black text-[1.1rem] leading-none tracking-tight transition-all duration-500 overflow-hidden flex items-center" style={{ maxWidth: isTextExpanded ? "180px" : "0px" }}>
               <span
-                className="whitespace-nowrap transition-colors duration-300"
-                style={{
-                  color: mounted && theme === "dark" ? BRAND.lightBlue : BRAND.blue
-                }}
+                className="whitespace-nowrap"
+                style={{ color: BRAND.blue }}
               >
                 Apexbytes
               </span>
@@ -155,10 +145,10 @@ export function Navbar() {
               the whole group.
 
               Individual links: NO pill/background container when
-              inactive — plain text only. Active (non-CTA) links get a
-              blue border outline, no fill. The Contact link (CTA) keeps
-              a neutral border by default and fills solid green only on
-              hover. */}
+              inactive — plain text only. Active (non-CTA) links now get
+              a solid brand-blue fill (was a border-only "stroke" style).
+              The Contact link (CTA) keeps a neutral border by default
+              and fills solid green on hover, blue fill when active. */}
           <div
             ref={desktopNavRef}
             onMouseEnter={() => setDesktopNavOpen(true)}
@@ -187,7 +177,7 @@ export function Navbar() {
                   desktopNavOpen ? "w-0 opacity-0 pointer-events-none" : "w-9 h-9 opacity-100"
                 )}
               >
-                <List size={18} weight="bold" style={{ color: iconColor }} className="transition-colors duration-300" />
+                <List size={18} weight="bold" style={{ color: iconColor }} />
               </button>
 
               {/* Revealed links — fade + slide in to replace the hamburger
@@ -205,8 +195,8 @@ export function Navbar() {
 
                   if (item.isCta) {
                     // Contact — neutral border by default, active gets a
-                    // blue border like everything else, hover fills solid
-                    // green regardless of active state.
+                    // solid blue fill like everything else, hover fills
+                    // solid green regardless of active state.
                     return (
                       <button
                         key={item.id}
@@ -216,14 +206,14 @@ export function Navbar() {
                         style={
                           contactHovered
                             ? { backgroundColor: BRAND.green, borderColor: BRAND.green, color: "#ffffff" }
+                            : isActive
+                            ? { backgroundColor: BRAND.blue, borderColor: BRAND.blue, color: "#ffffff" }
                             : undefined
                         }
                         className={cn(
                           "px-4 py-2 rounded-[10px] text-[0.84rem] whitespace-nowrap transition-all duration-200 border-2",
-                          contactHovered
+                          contactHovered || isActive
                             ? "font-black"
-                            : isActive
-                            ? "font-black border-brand-blue text-brand-blue dark:border-brand-light-blue dark:text-brand-light-blue"
                             : "font-medium border-zinc-300 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400"
                         )}
                       >
@@ -236,11 +226,12 @@ export function Navbar() {
                     <button
                       key={item.id}
                       onClick={() => navigate(item.path)}
+                      style={isActive ? { backgroundColor: BRAND.blue, color: "#ffffff" } : undefined}
                       className={cn(
                         "px-4 py-2 rounded-[10px] text-[0.84rem] whitespace-nowrap transition-all duration-200 border-2 border-transparent",
                         isActive
-                          ? "font-black border-brand-blue text-brand-blue dark:border-brand-light-blue dark:text-brand-light-blue"
-                          : "font-medium text-zinc-500 dark:text-zinc-400 hover:text-brand-blue dark:hover:text-brand-light-blue"
+                          ? "font-black"
+                          : "font-medium text-zinc-500 dark:text-zinc-400 hover:text-brand-blue dark:hover:text-brand-blue"
                       )}
                     >
                       {item.label}
@@ -252,29 +243,27 @@ export function Navbar() {
           </div>
 
           {/* Controls — Always visible on desktop, hidden on mobile when
-              menu is open. All icons now share the single static
-              iconColor (brand blue), no per-route swapping. Vertical
-              divider between the theme toggle and hamburger removed on
-              mobile per request. */}
+              menu is open. All icons share the single static brand-blue
+              iconColor. */}
           <div className={cn(pillClass, "flex items-center gap-3 pl-3 pr-3 pointer-events-auto ml-4 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
             <button onClick={handleThemeToggle} className="flex items-center justify-center w-7 h-7 active:scale-90 transition-transform" aria-label="Toggle theme">
               {mounted && (
                 theme === "dark"
-                  ? <Moon size={20} weight="fill" style={{ color: iconColor }} className="transition-colors duration-300" />
-                  : <Sun  size={20} weight="fill" style={{ color: iconColor }} className="transition-colors duration-300" />
+                  ? <Moon size={20} weight="fill" style={{ color: iconColor }} />
+                  : <Sun  size={20} weight="fill" style={{ color: iconColor }} />
               )}
             </button>
 
             <button ref={menuTriggerRef} onClick={() => setMenuOpen(true)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 md:hidden", menuOpen ? "opacity-0 pointer-events-none" : "opacity-100")}>
               <div className="w-4 h-[12px] flex flex-col justify-between items-center">
-                <span className="w-full h-[2.5px] rounded-full transition-colors duration-300" style={{ backgroundColor: iconColor }} />
-                <span className="w-full h-[2.5px] rounded-full transition-colors duration-300" style={{ backgroundColor: iconColor }} />
-                <span className="w-full h-[2.5px] rounded-full transition-colors duration-300" style={{ backgroundColor: iconColor }} />
+                <span className="w-full h-[2.5px] rounded-full" style={{ backgroundColor: iconColor }} />
+                <span className="w-full h-[2.5px] rounded-full" style={{ backgroundColor: iconColor }} />
+                <span className="w-full h-[2.5px] rounded-full" style={{ backgroundColor: iconColor }} />
               </div>
             </button>
 
             <button onClick={() => setMenuOpen(false)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 absolute right-3 md:hidden", menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none")}>
-              <X size={20} weight="bold" style={{ color: iconColor }} className="transition-colors duration-300" />
+              <X size={20} weight="bold" style={{ color: iconColor }} />
             </button>
           </div>
         </div>
@@ -292,11 +281,9 @@ export function Navbar() {
         />
         <div className="absolute inset-0 bg-white/70 dark:bg-zinc-950/80 backdrop-blur-xl" onClick={() => setMenuOpen(false)} />
 
-        {/* Nav links — centered. Active link keeps the solid fill, but the
-            old white side-bar marker is replaced with a small subtle
-            green dot below the label. Inactive-link text now carries a
-            dark-mode-safe hover color so it stays legible against the
-            dark backdrop. */}
+        {/* Nav links — centered. Active link gets a solid blue fill plus
+            a small subtle green dot below the label. Inactive-link text
+            carries a dark-mode-safe hover color. */}
         <div className="relative z-10 w-full h-full flex flex-col items-center justify-center px-6">
           <nav className="w-full max-w-[320px] flex flex-col items-center gap-2.5">
             {NAV_ITEMS.map((item, idx) => {
@@ -309,14 +296,14 @@ export function Navbar() {
                   style={{
                     transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms",
                     ...(isActive
-                      ? { backgroundColor: iconColor, color: "#ffffff" }
+                      ? { backgroundColor: BRAND.blue, color: "#ffffff" }
                       : {}),
                   }}
                   className={cn(
                     "relative py-3 px-8 rounded-[14px] font-sans text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm overflow-hidden",
                     isActive
                       ? "font-semibold"
-                      : "font-medium text-zinc-700 dark:text-zinc-100 hover:text-brand-blue dark:hover:text-brand-light-blue bg-transparent",
+                      : "font-medium text-zinc-700 dark:text-zinc-100 hover:text-brand-blue dark:hover:text-brand-blue bg-transparent",
                     item.isCta && !isActive && "border-2 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800/60",
                     menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
                   )}
@@ -337,8 +324,7 @@ export function Navbar() {
           </nav>
         </div>
 
-        {/* Icon-only watermark at bottom of menu — static brand blue, no
-            per-route tinting. */}
+        {/* Icon-only watermark at bottom of menu — plain img, no mask. */}
         <div
           className={cn(
             "absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center select-none transition-all duration-500 z-10",
@@ -346,22 +332,11 @@ export function Navbar() {
           )}
           aria-hidden="true"
         >
-          <div
-            className="relative w-8 h-8 shrink-0 transition-colors duration-300"
-            style={{
-              backgroundColor: logoColor,
-              WebkitMaskImage: "url(/logo.png)",
-              maskImage: "url(/logo.png)",
-              WebkitMaskSize: "contain",
-              maskSize: "contain",
-              WebkitMaskRepeat: "no-repeat",
-              maskRepeat: "no-repeat",
-              WebkitMaskPosition: "center",
-              maskPosition: "center",
-            }}
-          />
+          <div className="relative w-8 h-8 shrink-0">
+            <img src="/logo.png" alt="" className="w-full h-full object-contain" />
+          </div>
         </div>
       </div>
     </>
   )
-                                             } 
+                               }
