@@ -262,9 +262,11 @@ export function HeroSection() {
   const hubColor  = isDark ? active.colorDark : active.colorLight
   const nameColor = ensureAccessible(hubColor, neutralCardBgHex, 4.5)
 
-  // Background watermark icon — picked once at random per page load
-  // (not tied to the selected hub tab, so it no longer crossfades when
-  // a tab is clicked). Desktop only.
+  // Background watermark icon — picked once at random per page load,
+  // desktop only. Rotation reduced (was -16deg, now -6deg — "don't tilt
+  // too much"). Reflection swapped for a soft blurred shadow ellipse
+  // beneath it — drop-shadow + floating shadow reads as 3D without the
+  // glossy mirrored look.
   const [pageWatermarkHub, setPageWatermarkHub] = useState<typeof HUBS_DATA[number] | null>(null)
   useEffect(() => {
     setPageWatermarkHub(HUBS_DATA[Math.floor(Math.random() * HUBS_DATA.length)])
@@ -339,15 +341,19 @@ export function HeroSection() {
         }
 
         @keyframes abh-watermark-float {
-          0%, 100% { transform: translateY(0px) rotate(-16deg); }
-          50%      { transform: translateY(-16px) rotate(-16deg); }
+          0%, 100% { transform: translateY(0px) rotate(-6deg); }
+          50%      { transform: translateY(-16px) rotate(-6deg); }
+        }
+        @keyframes abh-watermark-shadow-pulse {
+          0%, 100% { transform: scaleX(1);   opacity: 0.22; }
+          50%      { transform: scaleX(0.82); opacity: 0.14; }
         }
       `}</style>
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center relative z-10 w-full mb-6">
 
-        <div className="w-full max-w-[840px] mx-auto flex flex-col md:flex-row md:items-center gap-6 md:gap-8 mb-6 md:mb-8">
-          <div className="flex-1 text-center md:text-left">
+        <div className="w-full max-w-[840px] mx-auto flex flex-col mb-6 md:mb-8">
+          <div className="text-center md:text-left">
             <h1 className="font-sans font-black text-4xl md:text-6xl lg:text-[4.6rem] tracking-tight text-zinc-900 dark:text-zinc-50 leading-[1.08] mb-4 text-balance transition-colors duration-300">
               {BIZ.tagline}
             </h1>
@@ -355,56 +361,39 @@ export function HeroSection() {
               From printing your documents to navigating government services — we make it simple, fast, and friendly.
             </p>
           </div>
-          <div className="hidden md:block shrink-0 relative w-[260px] h-[190px] rounded-[20px] overflow-hidden shadow-xl border border-black/5 dark:border-white/10">
-            <Image
-              src="/storefront.webp"
-              alt="ApexbytesHub storefront"
-              fill
-              sizes="260px"
-              className="object-cover"
-            />
-          </div>
         </div>
 
         <div className="relative w-full flex justify-center items-center mb-8">
 
           {/* Random per-page-load hub icon — desktop only, brand blue,
-              drop shadow, slow float, with a faint mirrored reflection
-              beneath it. Fixed for the session; does not change when a
-              hub tab is clicked. */}
+              gentle rotation, drop shadow, slow float, with a soft
+              blurred shadow ellipse underneath instead of a mirrored
+              reflection (keeps it looking floating/3D, not glossy). */}
           <div
             aria-hidden="true"
             className="hidden md:flex absolute inset-y-0 -right-[10%] items-center justify-center pointer-events-none select-none z-0"
           >
             {RandomWatermarkIcon && (
-              <div
-                className="flex flex-col items-center"
-                style={{ animation: "abh-watermark-float 7s ease-in-out infinite" }}
-              >
-                <RandomWatermarkIcon
-                  size={520}
-                  weight="fill"
-                  aria-hidden="true"
+              <div className="flex flex-col items-center">
+                <div style={{ animation: "abh-watermark-float 7s ease-in-out infinite" }}>
+                  <RandomWatermarkIcon
+                    size={520}
+                    weight="fill"
+                    aria-hidden="true"
+                    style={{
+                      color: BRAND.blue,
+                      transform: "rotate(-6deg)",
+                      filter: "drop-shadow(0 22px 26px rgba(0,0,0,0.25))",
+                    }}
+                    className="shrink-0 opacity-[0.14] dark:opacity-[0.18] md:w-[620px] md:h-[620px]"
+                  />
+                </div>
+                <div
+                  className="w-44 h-9 md:w-56 md:h-11 rounded-full blur-xl -mt-2"
                   style={{
-                    color: BRAND.blue,
-                    transform: "rotate(-16deg)",
-                    filter: "drop-shadow(0 28px 34px rgba(0,0,0,0.28))",
+                    backgroundColor: "#000000",
+                    animation: "abh-watermark-shadow-pulse 7s ease-in-out infinite",
                   }}
-                  className="shrink-0 opacity-[0.14] dark:opacity-[0.18] md:w-[620px] md:h-[620px]"
-                />
-                {/* Reflection — mirrored copy, fading out downward */}
-                <RandomWatermarkIcon
-                  size={520}
-                  weight="fill"
-                  aria-hidden="true"
-                  style={{
-                    color: BRAND.blue,
-                    transform: "rotate(-16deg) scaleY(-1)",
-                    marginTop: "-36px",
-                    WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,0.28), transparent 65%)",
-                    maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.28), transparent 65%)",
-                  }}
-                  className="shrink-0 opacity-[0.14] dark:opacity-[0.18] md:w-[620px] md:h-[620px]"
                 />
               </div>
             )}
@@ -424,14 +413,14 @@ export function HeroSection() {
           >
             <span
               aria-hidden="true"
-              className="absolute inset-0 origin-bottom scale-y-0 transition-transform duration-150 ease-out group-hover:scale-y-100 group-active:scale-y-100"
+              className="absolute inset-0 origin-bottom scale-y-100 md:scale-y-0 transition-transform duration-150 ease-out md:group-hover:scale-y-100 md:group-active:scale-y-100"
               style={{ backgroundColor: CTA_FILL_COLOR }}
             />
             <span
               className="relative z-10"
               style={{ color: "inherit" }}
             >
-              <span className="group-hover:text-white group-active:text-white transition-colors duration-150">
+              <span className="text-white md:text-inherit md:group-hover:text-white md:group-active:text-white transition-colors duration-150">
                 Start Here
               </span>
             </span>
@@ -468,7 +457,7 @@ export function HeroSection() {
               alt=""
               fill
               sizes="840px"
-              className="object-cover opacity-90"
+              className="object-cover opacity-90 blur-[1.5px]"
             />
             <div className="absolute inset-0 bg-black/45" />
             <div
@@ -686,4 +675,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-} 
+        } 
