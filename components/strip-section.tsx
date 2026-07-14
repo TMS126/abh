@@ -25,8 +25,6 @@ function StripCard({ item }: { item: any }) {
   useEffect(() => { setMounted(true) }, [])
   const isDark = mounted && resolvedTheme === "dark"
 
-  // All four icons now use a single fixed brand blue (light/dark pair),
-  // per request — no longer per-item colors from STRIP_ICON_COLORS.
   const color = isDark ? BRAND.lightBlue : BRAND.blue
   const fillBlue = BRAND.blue
 
@@ -41,11 +39,6 @@ function StripCard({ item }: { item: any }) {
       )}
       style={{ backgroundColor: hovered ? fillBlue : undefined }}
     >
-      {/* Non-hovered base surface — swapped out via opacity instead of
-          className so the blue fill (set as the container's own
-          backgroundColor above) can cleanly show through underneath on
-          hover, rather than fighting a competing bg-white/bg-zinc-900
-          class for priority. */}
       <div
         className={cn(
           "absolute inset-0 bg-white dark:bg-zinc-900 transition-opacity duration-300 pointer-events-none",
@@ -86,6 +79,24 @@ function StripCard({ item }: { item: any }) {
   )
 }
 
+// Real WCAG relative luminance → picks white or near-black text against
+// any given background hex, rather than assuming a fixed color always
+// works. Needed here because ctaBlue itself flips between a DARK blue
+// (light mode) and a LIGHT pastel blue (dark mode) — a single hardcoded
+// text color (e.g. always white) fails against whichever one it wasn't
+// tuned for. Same technique as the navbar's getReadableTextColor.
+function getReadableTextColor(hex: string): string {
+  const clean = hex.replace("#", "")
+  const r = parseInt(clean.substring(0, 2), 16) / 255
+  const g = parseInt(clean.substring(2, 4), 16) / 255
+  const b = parseInt(clean.substring(4, 6), 16) / 255
+  const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4))
+  const luminance = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
+  const contrastWhite = 1.05 / (luminance + 0.05)
+  const contrastDark  = (luminance + 0.05) / 0.062
+  return contrastWhite >= contrastDark ? "#ffffff" : "#18181b"
+}
+
 export function CtaBar({
   title,
   description,
@@ -104,12 +115,11 @@ export function CtaBar({
   useEffect(() => { setMounted(true) }, [])
   const isDark = mounted && resolvedTheme === "dark"
 
-  // Blue dominance pass: the tint wash, glow blur, and label pill are all
-  // turned up from their original subtle values, and the WhatsApp button
-  // itself now uses brand blue (was WhatsApp green) so it doesn't remain
-  // the single most saturated color on the card. Icon stays white for
-  // contrast.
   const ctaBlue = isDark ? BRAND.lightBlue : BRAND.blue
+  // Computed once per render, used everywhere ctaBlue is a SOLID FILL
+  // (the button, the label pill below) — so whatever's drawn on top of
+  // it always stays legible regardless of theme.
+  const ctaTextOnBlue = getReadableTextColor(ctaBlue)
 
   return (
     <section aria-label="Call to action" className="px-4 md:px-8 py-16 transition-colors duration-300 bg-background">
@@ -117,16 +127,23 @@ export function CtaBar({
         <div className="abh-card px-10 py-14 text-center bg-brand-blue/10 border-brand-blue/30 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand-blue rounded-full blur-[100px] opacity-20 -mr-32 -mt-32" aria-hidden="true" />
           <div className="absolute bottom-0 left-0 w-56 h-56 bg-brand-blue rounded-full blur-[100px] opacity-10 -ml-28 -mb-28" aria-hidden="true" />
-          <span className="abh-label text-brand-blue bg-brand-blue/20 px-4 py-1.5 rounded-full mb-6 inline-block relative z-10">Get In Touch</span>
+
+          {/* Was a translucent same-hue pill (text-brand-blue on
+              bg-brand-blue/20) — blue text on a faint blue background is
+              low-contrast in both themes, and gets worse once the wash
+              behind it was turned up. Now a SOLID fill using the same
+              ctaBlue as the button below, with text color computed for
+              guaranteed contrast rather than assumed. */}
+          <span
+            className="text-[0.7rem] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-6 inline-block relative z-10"
+            style={{ backgroundColor: ctaBlue, color: ctaTextOnBlue }}
+          >
+            Get In Touch
+          </span>
+
           <h2 className="abh-section-heading text-2xl mb-4 relative z-10">{title}</h2>
           <p className="abh-body text-lg max-w-[500px] mx-auto mb-10 relative z-10">{description}</p>
           <div className="flex justify-center relative z-10">
-            {/* Rounded into a plain circle (was rounded-[18px]) and sized
-                to roughly match the "GET IN TOUCH" pill above it — not
-                shaped like a pill itself, just using it as the size
-                reference. Color switched from WhatsApp green to brand
-                blue so it doesn't outshine the rest of the blue treatment
-                on this card. */}
             <a
               href={buttonHref || WA.general}
               target="_blank"
@@ -136,11 +153,11 @@ export function CtaBar({
               className="w-20 h-20 rounded-full flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-all"
               style={{ backgroundColor: ctaBlue }}
             >
-              <WhatsappLogo weight="fill" className="w-10 h-10 text-white" aria-hidden="true" />
+              <WhatsappLogo weight="fill" className="w-10 h-10" aria-hidden="true" style={{ color: ctaTextOnBlue }} />
             </a>
           </div>
         </div>
       </div>
     </section>
   )
-}
+    } 
