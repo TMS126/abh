@@ -16,9 +16,6 @@ export function Navbar() {
   const [menuOpen,       setMenuOpen]       = useState(false)
   const [navVisible,     setNavVisible]     = useState(true)
   const [isTextExpanded, setIsTextExpanded] = useState(true)
-  // Desktop nav-pill expand state — separate from the mobile `menuOpen`
-  // full-screen menu, since this is a small inline hover/tap reveal
-  // rather than a full overlay.
   const [desktopNavOpen, setDesktopNavOpen] = useState(false)
   const [contactHovered, setContactHovered] = useState(false)
   const desktopNavRef = useRef<HTMLDivElement>(null)
@@ -52,8 +49,6 @@ export function Navbar() {
     return () => { document.body.style.overflow = "" }
   }, [menuOpen])
 
-  // Tap-outside closes the desktop nav-pill — needed for the touch/tap
-  // path, since there's no hover to fall back on to close it.
   useEffect(() => {
     if (!desktopNavOpen) return
     const onPointerDown = (e: PointerEvent) => {
@@ -65,8 +60,6 @@ export function Navbar() {
     return () => document.removeEventListener("pointerdown", onPointerDown)
   }, [desktopNavOpen])
 
-  // Collapses the pill whenever the route changes (after navigating via
-  // one of its links, or any other route change).
   useEffect(() => { setDesktopNavOpen(false) }, [pathname])
 
   const navigate = useCallback((path: string) => {
@@ -88,19 +81,18 @@ export function Navbar() {
 
   const pillClass = "bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md py-2 rounded-[14px] border border-gray-200 dark:border-zinc-800 shadow-sm"
 
-  // Always the dark brand blue now — no more light-blue swap in dark
-  // mode, since the light variant read as low-contrast/washed out.
-  const iconColor = BRAND.blue
+  // Neutral, theme-adaptive color — used for the logo mask AND all nav
+  // icons (Sun/Moon/List/X/hamburger). Brand blue is reserved for active
+  // nav-link states only, not for icons or the logo.
+  const neutralColor = mounted && theme === "dark" ? "#e4e4e7" /* zinc-200 */ : "#3f3f46" /* zinc-700 */
 
   return (
     <>
       <header className="fixed left-0 right-0 top-0 z-[9999] flex justify-center px-4 md:px-8 pt-5 h-[--nav-h] items-center pointer-events-none">
         <div className="relative flex items-center justify-between w-full max-w-[1200px]">
 
-          {/* Logo — hides when menu is open, or when scrolling down (same
-              show/hide-on-scroll-direction logic as the rest of the nav).
-              Mask-based tinting removed — logo now renders as a plain
-              <img>. */}
+          {/* Logo — mask restored, tinted with the neutral theme-adaptive
+              color (matches nav icons) instead of brand blue. */}
           <div
             className={cn(
               pillClass,
@@ -112,16 +104,24 @@ export function Navbar() {
             onMouseLeave={handleLogoMouseLeave}
             onClick={() => navigate("/")}
           >
-            <div className="relative w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-[14px] overflow-hidden">
-              <img
-                src="/logo.png"
-                alt="ApexbytesHub"
-                className="w-full h-full object-contain"
-              />
-            </div>
+            <div
+              className="relative w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-[14px] overflow-hidden transition-colors duration-300"
+              style={{
+                backgroundColor: neutralColor,
+                WebkitMaskImage: "url(/logo.png)",
+                maskImage: "url(/logo.png)",
+                WebkitMaskSize: "contain",
+                maskSize: "contain",
+                WebkitMaskRepeat: "no-repeat",
+                maskRepeat: "no-repeat",
+                WebkitMaskPosition: "center",
+                maskPosition: "center",
+              }}
+              aria-hidden="true"
+            />
             <div className="font-sans font-black text-[1.1rem] leading-none tracking-tight transition-all duration-500 overflow-hidden flex items-center" style={{ maxWidth: isTextExpanded ? "180px" : "0px" }}>
               <span
-                className="whitespace-nowrap"
+                className="whitespace-nowrap transition-colors duration-300"
                 style={{ color: BRAND.blue }}
               >
                 Apexbytes
@@ -137,18 +137,7 @@ export function Navbar() {
             </div>
           </div>
 
-          {/* Desktop Nav — a single pill, collapsed by default to just the
-              hamburger lines. Hovering (or tapping, for touch devices
-              without hover) grows it sideways to reveal all 5 links; it
-              stays open while the pointer is anywhere over the pill OR
-              the revealed links, only collapsing once the pointer leaves
-              the whole group.
-
-              Individual links: NO pill/background container when
-              inactive — plain text only. Active (non-CTA) links now get
-              a solid brand-blue fill (was a border-only "stroke" style).
-              The Contact link (CTA) keeps a neutral border by default
-              and fills solid green on hover, blue fill when active. */}
+          {/* Desktop Nav */}
           <div
             ref={desktopNavRef}
             onMouseEnter={() => setDesktopNavOpen(true)}
@@ -165,9 +154,6 @@ export function Navbar() {
                 desktopNavOpen ? "gap-1.5 px-2" : "px-3"
               )}
             >
-              {/* Hamburger trigger — fades out (doesn't slide/morph) once
-                  open. Also acts as the tap target for touch devices
-                  without hover. */}
               <button
                 onClick={() => setDesktopNavOpen(v => !v)}
                 aria-label={desktopNavOpen ? "Collapse navigation" : "Expand navigation"}
@@ -177,11 +163,9 @@ export function Navbar() {
                   desktopNavOpen ? "w-0 opacity-0 pointer-events-none" : "w-9 h-9 opacity-100"
                 )}
               >
-                <List size={18} weight="bold" style={{ color: iconColor }} />
+                <List size={18} weight="bold" style={{ color: neutralColor }} className="transition-colors duration-300" />
               </button>
 
-              {/* Revealed links — fade + slide in to replace the hamburger
-                  rather than sitting alongside it. */}
               <div
                 className={cn(
                   "flex items-center gap-1.5 transition-all duration-300 ease-out",
@@ -194,9 +178,6 @@ export function Navbar() {
                   const isActive = pathname === item.path
 
                   if (item.isCta) {
-                    // Contact — neutral border by default, active gets a
-                    // solid blue fill like everything else, hover fills
-                    // solid green regardless of active state.
                     return (
                       <button
                         key={item.id}
@@ -242,28 +223,26 @@ export function Navbar() {
             </div>
           </div>
 
-          {/* Controls — Always visible on desktop, hidden on mobile when
-              menu is open. All icons share the single static brand-blue
-              iconColor. */}
+          {/* Controls */}
           <div className={cn(pillClass, "flex items-center gap-3 pl-3 pr-3 pointer-events-auto ml-4 transition-all duration-300", !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100")}>
             <button onClick={handleThemeToggle} className="flex items-center justify-center w-7 h-7 active:scale-90 transition-transform" aria-label="Toggle theme">
               {mounted && (
                 theme === "dark"
-                  ? <Moon size={20} weight="fill" style={{ color: iconColor }} />
-                  : <Sun  size={20} weight="fill" style={{ color: iconColor }} />
+                  ? <Moon size={20} weight="fill" style={{ color: neutralColor }} className="transition-colors duration-300" />
+                  : <Sun  size={20} weight="fill" style={{ color: neutralColor }} className="transition-colors duration-300" />
               )}
             </button>
 
             <button ref={menuTriggerRef} onClick={() => setMenuOpen(true)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 md:hidden", menuOpen ? "opacity-0 pointer-events-none" : "opacity-100")}>
               <div className="w-4 h-[12px] flex flex-col justify-between items-center">
-                <span className="w-full h-[2.5px] rounded-full" style={{ backgroundColor: iconColor }} />
-                <span className="w-full h-[2.5px] rounded-full" style={{ backgroundColor: iconColor }} />
-                <span className="w-full h-[2.5px] rounded-full" style={{ backgroundColor: iconColor }} />
+                <span className="w-full h-[2.5px] rounded-full transition-colors duration-300" style={{ backgroundColor: neutralColor }} />
+                <span className="w-full h-[2.5px] rounded-full transition-colors duration-300" style={{ backgroundColor: neutralColor }} />
+                <span className="w-full h-[2.5px] rounded-full transition-colors duration-300" style={{ backgroundColor: neutralColor }} />
               </div>
             </button>
 
             <button onClick={() => setMenuOpen(false)} className={cn("flex items-center justify-center w-7 h-7 active:scale-90 absolute right-3 md:hidden", menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none")}>
-              <X size={20} weight="bold" style={{ color: iconColor }} />
+              <X size={20} weight="bold" style={{ color: neutralColor }} className="transition-colors duration-300" />
             </button>
           </div>
         </div>
@@ -274,16 +253,12 @@ export function Navbar() {
         ref={menuRef}
         className={cn("fixed inset-0 z-[9998] md:hidden transition-opacity duration-300", menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none")}
       >
-        {/* Rotational fade background */}
         <div
           className={cn("absolute -inset-[50%] transition-opacity duration-700", menuOpen ? "opacity-100 animate-[spin_16s_linear_infinite]" : "opacity-0")}
           style={{ background: "conic-gradient(from 0deg, rgba(30,111,168,0.18), rgba(111,191,26,0.16), rgba(244,162,97,0.16), rgba(30,111,168,0.18))" }}
         />
         <div className="absolute inset-0 bg-white/70 dark:bg-zinc-950/80 backdrop-blur-xl" onClick={() => setMenuOpen(false)} />
 
-        {/* Nav links — centered. Active link gets a solid blue fill plus
-            a small subtle green dot below the label. Inactive-link text
-            carries a dark-mode-safe hover color. */}
         <div className="relative z-10 w-full h-full flex flex-col items-center justify-center px-6">
           <nav className="w-full max-w-[320px] flex flex-col items-center gap-2.5">
             {NAV_ITEMS.map((item, idx) => {
@@ -310,7 +285,6 @@ export function Navbar() {
                 >
                   {item.label}
 
-                  {/* Small subtle green mark below the active link */}
                   {isActive && (
                     <span
                       aria-hidden="true"
@@ -324,7 +298,7 @@ export function Navbar() {
           </nav>
         </div>
 
-        {/* Icon-only watermark at bottom of menu — plain img, no mask. */}
+        {/* Icon-only watermark — mask restored, neutral theme-adaptive color */}
         <div
           className={cn(
             "absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center select-none transition-all duration-500 z-10",
@@ -332,11 +306,22 @@ export function Navbar() {
           )}
           aria-hidden="true"
         >
-          <div className="relative w-8 h-8 shrink-0">
-            <img src="/logo.png" alt="" className="w-full h-full object-contain" />
-          </div>
+          <div
+            className="relative w-8 h-8 shrink-0 transition-colors duration-300"
+            style={{
+              backgroundColor: neutralColor,
+              WebkitMaskImage: "url(/logo.png)",
+              maskImage: "url(/logo.png)",
+              WebkitMaskSize: "contain",
+              maskSize: "contain",
+              WebkitMaskRepeat: "no-repeat",
+              maskRepeat: "no-repeat",
+              WebkitMaskPosition: "center",
+              maskPosition: "center",
+            }}
+          />
         </div>
       </div>
     </>
   )
-                               }
+    } 
