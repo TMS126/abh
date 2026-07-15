@@ -9,7 +9,6 @@ import { LocalBusinessJsonLd } from '@/components/ui/json-ld'
 import { FloatingSearchWidget } from '@/components/floating-search-widget'
 import { QuoteCalculatorWidget } from '@/components/QuoteCalculatorWidget'
 import { WhatsAppFAB } from '@/components/whatsapp-fab'
-//import { PageEdgeGlow } from '@/components/page-edge-glow'
 import './globals.css'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://v0-apexbytes-hub-website.vercel.app'
@@ -138,8 +137,7 @@ export default function RootLayout({
           defaultTheme="light"
           enableSystem
           disableTransitionOnChange={false}
-        >
-          <PageEdgeGlow />
+        ></ThemeProvider>
           <LocalBusinessJsonLd />
           <InstanceGuardProvider>
             {children}
