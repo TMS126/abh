@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Helvetica, Jost, Inter, JetBrains_Mono } from 'next/font/google'
+import { Inter, JetBrains_Mono } from 'next/font/google'
 import Script from 'next/script'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Analytics } from '@vercel/analytics/next'
@@ -20,15 +20,21 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://v0-apexbytes-hub-w
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-3FJ8QET6RE'
 
 // ─── Fonts ───────────────────────────────────────────────────────────
-// Jost — Futura-style geometric sans, used for headlines/impact text
-const jost = Jost({
+// Inter — used for BOTH headings and body copy now (single-font system).
+// Previously Jost handled headings and Inter handled body; Jost has been
+// dropped in favor of Inter everywhere, since Inter is the closest
+// available match to Helvetica (which Google Fonts doesn't host).
+// --font-heading is kept as its own CSS variable (rather than removed)
+// so nothing in globals.css or Tailwind config that references
+// var(--font-heading) needs to change — it just now resolves to Inter
+// instead of Jost.
+const interHeading = Inter({
   subsets:  ['latin'],
   variable: '--font-heading',
   display:  'swap',
 })
 
-// Inter — Helvetica-style workhorse, used for body copy & data
-const inter = Inter({
+const interBody = Inter({
   subsets:  ['latin'],
   variable: '--font-body',
   display:  'swap',
@@ -116,7 +122,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${jost.variable} ${inter.variable} ${jetbrainsMono.variable}`}
+      className={`${interHeading.variable} ${interBody.variable} ${jetbrainsMono.variable}`}
     >
       <body className="font-sans antialiased min-h-screen bg-white dark:bg-background text-zinc-900 dark:text-zinc-100 transition-colors duration-300">
         {/* Skip to main content — visible only on keyboard focus */}
@@ -165,4 +171,4 @@ export default function RootLayout({
       </body>
     </html>
   )
-        } 
+        }
