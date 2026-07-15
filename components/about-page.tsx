@@ -17,11 +17,17 @@ import {
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, ABOUT_VALUES, ABOUT_STANDARDS } from "@/lib/brand"
 
-// About's dedicated teal — same light/dark pair as the Navbar's "/about"
-// entry and PageEdgeGlow's "/about" entry, so the stats strip, icon
-// chips, mission badge, and CTA all read as the exact same brand color
-// as the top-of-page glow and nav indicator, in both themes.
-const ABOUT_TEAL = { light: "#0F766E", dark: "#99F6E4" }
+// Color hierarchy for this page (per site-wide rule: blue dominant, green
+// less, orange least — reserved for highlights/CTAs only):
+// - BLUE:   stats strip, icon chips, card headers, Standards hover state
+// - GREEN:  Values list icons only
+// - ORANGE: the final "See All Services" CTA button only
+const ABOUT_BLUE   = { light: BRAND.blue,       dark: BRAND.lightBlue   }
+const ABOUT_GREEN  = { light: BRAND.green,      dark: BRAND.lightGreen  }
+const ABOUT_ORANGE = { light: BRAND.orangeDark, dark: BRAND.lightOrange }
+// Neutral used for Standards cards at rest — only picks up blue on hover,
+// so blue reads as a deliberate accent rather than a flat default.
+const ABOUT_NEUTRAL = { light: BRAND.dark100, dark: BRAND.techGreyDark }
 
 function renderIcon(iconName: string, className: string) {
   switch (iconName) {
@@ -36,9 +42,7 @@ function renderIcon(iconName: string, className: string) {
 }
 
 // Picks white or near-black text against a given background hex, based on
-// actual WCAG relative luminance — needed because ABOUT_TEAL.dark
-// (#99F6E4) is a light, minty teal that needs dark text, while
-// ABOUT_TEAL.light (#0F766E) is deep enough to need white text.
+// actual WCAG relative luminance.
 function getReadableTextColor(hex: string): string {
   const clean = hex.replace("#", "")
   const r = parseInt(clean.substring(0, 2), 16) / 255
@@ -53,11 +57,16 @@ function getReadableTextColor(hex: string): string {
 
 export function AboutPage() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
+  const [statsHovered, setStatsHovered] = useState(false)
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
 
-  const tealColor = isDark ? ABOUT_TEAL.dark : ABOUT_TEAL.light
-  const tealText  = getReadableTextColor(tealColor)
+  const blueColor    = isDark ? ABOUT_BLUE.dark : ABOUT_BLUE.light
+  const blueText     = getReadableTextColor(blueColor)
+  const greenColor   = isDark ? ABOUT_GREEN.dark : ABOUT_GREEN.light
+  const orangeColor  = isDark ? ABOUT_ORANGE.dark : ABOUT_ORANGE.light
+  const orangeText   = getReadableTextColor(orangeColor)
+  const neutralColor = isDark ? ABOUT_NEUTRAL.dark : ABOUT_NEUTRAL.light
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
@@ -68,46 +77,54 @@ export function AboutPage() {
 
           <h1 className="abh-page-title mb-3">About Us</h1>
 
+          {/* Divider now sits directly under the title, before the tagline */}
+          <div className="abh-divider mx-auto mb-3" />
+
           <p className="abh-tagline max-w-xl mx-auto">
             A local business built on community, trust, and real help — right here in Kgotsong.
           </p>
 
-          <div className="abh-divider mx-auto" />
+          {/* Stats strip — border-only blue at rest, fills solid blue with
+              white text on hover (matches Start Here CTA's border→fill
+              pattern from hero-section.tsx). */}
+          <div
+            className={cn(
+              "mt-10 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x rounded-[14px] overflow-hidden shadow-lg transition-colors duration-200 border-2",
+              statsHovered ? "divide-white/25" : "divide-zinc-200 dark:divide-zinc-700"
+            )}
+            style={{
+              backgroundColor: statsHovered ? blueColor : "transparent",
+              borderColor: blueColor,
+            }}
+            onMouseEnter={() => setStatsHovered(true)}
+            onMouseLeave={() => setStatsHovered(false)}
+          >
+            {[
+              { value: BIZ.hubCount,     label: "Service Hubs"  },
+              { value: BIZ.serviceCount, label: "Services"      },
+              { value: "Since 2023",     label: "Est. Kgotsong" },
+            ].map((s, i) => (
+              <div
+                key={i}
+                className="flex flex-col items-center justify-center py-5 px-3 transition-colors duration-200 cursor-default"
+              >
+                <p
+                  className="font-sans font-black text-xl leading-none transition-colors duration-200"
+                  style={{ color: statsHovered ? blueText : blueColor }}
+                >
+                  {s.value}
+                </p>
+                <p
+                  className="text-[0.62rem] font-medium uppercase tracking-widest mt-1.5 text-center transition-colors duration-200"
+                  style={{ color: statsHovered ? `${blueText}b3` : `${blueColor}b3` }}
+                >
+                  {s.label}
+                </p>
+              </div>
+            ))}
+          </div>
 
-          {/* Stats strip — solid pill matching the View Services / Search+Surprise
-              button proportions (rounded-[14px], shadow-lg, font-black). Now
-              uses About's dedicated teal pair (theme-aware) so this strip
-              matches PageEdgeGlow's "/about" color and the Navbar's About
-              indicator exactly, in both light and dark mode. Text color is
-              computed per-color rather than assumed, since the dark-mode
-              teal is light enough to need dark text for contrast. */}
-<div
-  className="mt-10 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x rounded-[14px] overflow-hidden shadow-lg transition-colors duration-300"
-  style={{ backgroundColor: tealColor, borderColor: `${tealText}25` }}
->
-  {[
-    { value: BIZ.hubCount,     label: "Service Hubs"  },
-    { value: BIZ.serviceCount, label: "Services"      },
-    { value: "Since 2023",     label: "Est. Kgotsong" },
-  ].map((s, i) => (
-    <div
-      key={i}
-      className="flex flex-col items-center justify-center py-5 px-3 transition-colors duration-200 cursor-default"
-      style={{ ["--hover-bg" as any]: `${tealText}10` }}
-      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = `${tealText}10` }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent" }}
-    >
-      <p className="font-sans font-black text-xl leading-none" style={{ color: tealText }}>
-        {s.value}
-      </p>
-      <p className="text-[0.62rem] font-medium uppercase tracking-widest mt-1.5 text-center" style={{ color: `${tealText}b3` }}>
-        {s.label}
-      </p>
-    </div>
-  ))}
-</div>
-</div>
-  
+        </div>
       </section>
 
       {/* ── Story ── */}
@@ -128,13 +145,13 @@ export function AboutPage() {
           {/* Two-column — values + overview card, stretched to equal height */}
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-stretch">
 
-            {/* Values list */}
+            {/* Values list — icons are GREEN */}
             <ul className="flex flex-col justify-between gap-0" aria-label="Our values">
               {ABOUT_VALUES.map((item, index) => (
                 <li key={index} className="flex gap-4 items-start group">
                   <div
                     className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-110"
-                    style={{ backgroundColor: `${tealColor}15`, color: tealColor }}
+                    style={{ backgroundColor: `${greenColor}15`, color: greenColor }}
                     aria-hidden="true"
                   >
                     {renderIcon(item.iconName, "w-5 h-5")}
@@ -149,7 +166,7 @@ export function AboutPage() {
               ))}
             </ul>
 
-            {/* Business overview card — full height to match values column */}
+            {/* Business overview card — header icon is BLUE */}
             <div
               className="rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-7 shadow-sm flex flex-col"
               aria-label="Business overview"
@@ -158,7 +175,7 @@ export function AboutPage() {
               <div className="flex items-center gap-3 mb-7 pb-6 border-b border-zinc-100 dark:border-zinc-800">
                 <div
                   className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: `${tealColor}15`, color: tealColor }}
+                  style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
                 >
                   <UsersThree size={20} weight="fill" />
                 </div>
@@ -172,7 +189,7 @@ export function AboutPage() {
                 </div>
               </div>
 
-              {/* 2×2 stat grid — equal sizing, grows to fill card */}
+              {/* 2×2 stat grid — kept neutral, not part of the blue/green/orange set */}
               <div className="grid grid-cols-2 gap-3 flex-1">
                 {[
                   { value: BIZ.hubCount,      label: "Hubs"              },
@@ -224,7 +241,7 @@ export function AboutPage() {
             <div className="mt-6 h-px bg-zinc-200 dark:bg-zinc-800 max-w-[120px] mx-auto" />
           </div>
 
-          {/* 4-card grid — equal height, equal padding */}
+          {/* 4-card grid — neutral at rest, BLUE fill + border on hover */}
           <ul
             className="grid grid-cols-1 sm:grid-cols-3 gap-5"
             aria-label="Standards"
@@ -245,7 +262,7 @@ export function AboutPage() {
                       ? "shadow-lg -translate-y-1.5"
                       : "border-zinc-200 dark:border-zinc-800 shadow-[0_1px_6px_rgba(0,0,0,0.05)] dark:shadow-[0_1px_6px_rgba(0,0,0,0.2)]"
                   )}
-                  style={isHovered ? { borderColor: tealColor } : undefined}
+                  style={isHovered ? { borderColor: blueColor } : undefined}
                 >
                   <div
                     className={cn(
@@ -254,7 +271,7 @@ export function AboutPage() {
                         ? "text-white border-transparent scale-110"
                         : "bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800"
                     )}
-                    style={isHovered ? { backgroundColor: tealColor, color: tealText } : { color: tealColor }}
+                    style={isHovered ? { backgroundColor: blueColor, color: blueText } : { color: neutralColor }}
                     aria-hidden="true"
                   >
                     {renderIcon(item.iconName, "w-5 h-5")}
@@ -277,20 +294,21 @@ export function AboutPage() {
         className="relative overflow-hidden px-4 md:px-8 py-16 md:py-20 text-center"
         aria-labelledby="mission-title"
       >
-        {/* Subtle gradient wash */}
+        {/* Subtle gradient wash — updated to the blue→green→orange hierarchy */}
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div
             className="absolute inset-0 opacity-[0.04] dark:opacity-[0.07]"
             style={{
-              background: `linear-gradient(135deg, ${tealColor} 0%, ${BRAND.green} 50%, ${BRAND.orange} 100%)`,
+              background: `linear-gradient(135deg, ${blueColor} 0%, ${greenColor} 50%, ${orangeColor} 100%)`,
             }}
           />
         </div>
 
         <div className="relative max-w-[680px] mx-auto flex flex-col items-center">
+          {/* Badge — BLUE, not orange (orange reserved for the CTA only) */}
           <span
             className="inline-block text-[0.65rem] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-6"
-            style={{ backgroundColor: `${tealColor}12`, color: tealColor }}
+            style={{ backgroundColor: `${blueColor}12`, color: blueColor }}
           >
             Our Mission
           </span>
@@ -307,10 +325,11 @@ export function AboutPage() {
             brought to people who need them most, in a community that deserves better access.
           </p>
 
+          {/* CTA — the ONLY orange element on this page */}
           <a
             href="/services"
             className="inline-flex items-center gap-2.5 px-8 py-4 rounded-[14px] font-black text-sm transition-all duration-300 active:scale-95 hover:-translate-y-0.5 shadow-lg"
-            style={{ backgroundColor: tealColor, color: tealText }}
+            style={{ backgroundColor: orangeColor, color: orangeText }}
           >
             See All Services
             <ArrowRight size={16} weight="bold" />
@@ -320,4 +339,4 @@ export function AboutPage() {
 
     </div>
   )
-                } 
+}
