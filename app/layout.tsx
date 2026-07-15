@@ -137,7 +137,7 @@ export default function RootLayout({
           defaultTheme="light"
           enableSystem
           disableTransitionOnChange={false}
-        ></ThemeProvider>
+        >
           <LocalBusinessJsonLd />
           <InstanceGuardProvider>
             {children}
@@ -169,4 +169,4 @@ export default function RootLayout({
       </body>
     </html>
   )
-        }
+} 
