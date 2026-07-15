@@ -113,7 +113,7 @@ function naturalServiceLabel(name: string, sectionTitle: string) {
 // ─── Brand loader ─────────────────────────────────────────────────────────────
 // Three dots in brand order (blue, green, orange), pulsing in sequence so
 // one "grows" at a time rather than all three moving in lockstep — reads as
-// a wave passing through the trio. Replaces the old single-path SVG spinner.
+// a wave passing through the trio.
 function AbhLoader({ size = 28 }: { size?: number }) {
   const dot = Math.max(6, Math.round(size * 0.32))
   const colors = [BRAND.blue, BRAND.green, BRAND.orange]
@@ -258,12 +258,12 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
   const wrapRef   = useRef<HTMLDivElement>(null)
   const index     = useMemo(buildSearchIndex, [])
 
-  // Brand-blue fill with an inner shadow + light-blue stroke, so the bar
-  // reads as "pressed in" rather than a flat color block. Was brand green;
-  // switched to blue as the page's new dominant color.
-  const fillColor  = BRAND.blue
-  const hoverColor = BRAND.blueMid
-  const priceColor = isDark ? BRAND.lightOrange : BRAND.orangeDark
+  // Stroke, not fill — transparent/white background with a blue border,
+  // blue text/icon. Was a solid blue fill; switched per request so the bar
+  // reads as an outlined field rather than a filled button.
+  const strokeColor = isDark ? BRAND.lightBlue : BRAND.blue
+  const blueIcon     = isDark ? BRAND.lightBlue : BRAND.blue
+  const priceColor  = isDark ? BRAND.lightOrange : BRAND.orangeDark
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -291,7 +291,8 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
       <MagnifyingGlass
         size={18}
         weight="bold"
-        className="absolute left-4 top-1/2 -translate-y-1/2 text-white/80 pointer-events-none"
+        className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"
+        style={{ color: strokeColor }}
       />
       <input
         type="text"
@@ -299,20 +300,21 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
         onChange={e => setQuery(e.target.value)}
         onFocus={() => setFocused(true)}
         placeholder="Search"
-        className="w-full pl-11 pr-10 py-4 rounded-[14px] font-sans font-black text-base text-white placeholder:text-white/70 transition-all duration-300 outline-none text-center focus:text-left focus:scale-[0.99]"
+        className="w-full pl-11 pr-10 py-4 rounded-[14px] font-sans font-black text-base bg-white dark:bg-zinc-950 placeholder:font-medium placeholder:text-zinc-400 dark:placeholder:text-zinc-500 transition-all duration-300 outline-none text-center focus:text-left focus:scale-[0.99]"
         style={{
-          backgroundColor: fillColor,
-          border: `1.5px solid ${BRAND.lightBlue}`,
-          boxShadow: `0 10px 25px -6px rgba(30,111,168,0.35), inset 0 2px 5px rgba(0,0,0,0.25)`,
+          color: strokeColor,
+          border: `2px solid ${strokeColor}`,
+          boxShadow: focused ? `0 0 0 3px ${strokeColor}22` : "none",
         }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = hoverColor }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = fillColor }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = `${strokeColor}0d` }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "" }}
       />
       {query && (
         <button
           onClick={() => setQuery("")}
           aria-label="Clear search"
-          className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+          className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center transition-colors"
+          style={{ backgroundColor: `${strokeColor}18`, color: strokeColor }}
         >
           <X size={12} weight="bold" />
         </button>
@@ -321,26 +323,22 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
         <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-xl overflow-hidden z-30 animate-in fade-in zoom-in-95 duration-150">
           {results.length > 0 ? (
             <div className="max-h-[320px] overflow-y-auto p-2">
-              {results.map((s, idx) => {
-                const colors = HUB_COLORS[s.hubId as HubKey]
-                const accent = isDark ? colors.accentDark : colors.accentLight
-                return (
-                  <button
-                    key={`${s.hubId}-${s.name}-${idx}`}
-                    onClick={() => pick(s)}
-                    className="w-full flex items-center gap-3 p-3 rounded-[10px] hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left"
-                  >
-                    <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${accent}15`, color: accent }}>
-                      <HubIcon id={s.hubId} size={18} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{s.name}</p>
-                      <p className="text-[0.65rem] font-bold uppercase tracking-wider text-zinc-400 truncate">{s.sectionTitle} · {HUBS[s.hubId].title}</p>
-                    </div>
-                    <span className="text-xs font-black shrink-0" style={{ color: priceColor }}>{s.price}</span>
-                  </button>
-                )
-              })}
+              {results.map((s, idx) => (
+                <button
+                  key={`${s.hubId}-${s.name}-${idx}`}
+                  onClick={() => pick(s)}
+                  className="w-full flex items-center gap-3 p-3 rounded-[10px] hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left"
+                >
+                  <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${blueIcon}15`, color: blueIcon }}>
+                    <HubIcon id={s.hubId} size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{s.name}</p>
+                    <p className="text-[0.65rem] font-bold uppercase tracking-wider text-zinc-400 truncate">{s.sectionTitle} · {HUBS[s.hubId].title}</p>
+                  </div>
+                  <span className="text-xs font-black shrink-0" style={{ color: priceColor }}>{s.price}</span>
+                </button>
+              ))}
             </div>
           ) : (
             <div className="p-5 text-center">
@@ -382,22 +380,16 @@ function HubModal({
   if (!hubId) return null
   const hub    = HUBS[hubId]
   const colors = HUB_COLORS[hubId as HubKey]
-  // Icon border stays hub-specific — the one place per-hub color survives
-  // in this modal now that everything else (card panel, tabs, prices) has
-  // moved to the shared blue/green/orange page scheme.
-  const iconAccent = isDark ? colors.accentDark : colors.accentLight
+  // Icon is now uniformly blue (was per-hub) — hub identity instead comes
+  // through the "Available Services" label and the close button below.
+  const blueColor = isDark ? BRAND.lightBlue : BRAND.blue
+  const hubColor  = isDark ? colors.accentDark : colors.accentLight
 
-  // The tab+description panel is now a solid BLUE card (was per-hub accent) —
-  // blue is the page's dominant/structural color. blueMid is used in dark
-  // mode instead of the brighter BRAND.blue so it doesn't glare against a
-  // dark surrounding page.
+  // Tab+description panel stays solid blue (dominant page color, unchanged).
   const panelBg   = isDark ? BRAND.blueMid : BRAND.blue
   const cardText  = getContrastText(panelBg)
-  // Active tab text nudged to a green that's guaranteed readable against
-  // the blue panel — green marks the "highlighted/selected" state.
   const activeTabColor = ensureAccessible(isDark ? BRAND.lightGreen : BRAND.green, panelBg, 4.5)
   const priceColor = isDark ? BRAND.lightOrange : BRAND.orangeDark
-  const labelBlue  = isDark ? BRAND.lightBlue : BRAND.blue
 
   return (
     <div className="fixed inset-0 z-[10100] flex items-center justify-center p-4 animate-in fade-in duration-300">
@@ -415,21 +407,24 @@ function HubModal({
       >
 
         {/* Header */}
-        <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center" style={{ backgroundColor: `${iconAccent}05` }}>
+        <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center" style={{ backgroundColor: `${blueColor}05` }}>
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 md:w-14 md:h-14 rounded-[14px] flex items-center justify-center shadow-lg bg-zinc-100 dark:bg-zinc-800" style={{ border: `2px solid ${iconAccent}` }}>
-              <HubIcon id={hubId} size={28} color={iconAccent} />
+            <div className="w-12 h-12 md:w-14 md:h-14 rounded-[14px] flex items-center justify-center shadow-lg bg-zinc-100 dark:bg-zinc-800" style={{ border: `2px solid ${blueColor}` }}>
+              <HubIcon id={hubId} size={28} color={blueColor} />
             </div>
             <div>
               <h2 className="abh-card-heading text-xl md:text-2xl">{hub.title}</h2>
-              <p className="abh-label mt-0.5" style={{ color: labelBlue }}>{hub.sections.reduce((sum, s) => sum + s.items.length, 0)} Available Services</p>
+              {/* Label carries the hub's own color — the icon above is now
+                  uniformly blue, so this is one of the spots hub identity
+                  still comes through in the header. */}
+              <p className="abh-label mt-0.5" style={{ color: hubColor }}>{hub.sections.reduce((sum, s) => sum + s.items.length, 0)} Available Services</p>
             </div>
           </div>
           <button
             onClick={onClose}
             aria-label="Close"
             className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-            style={{ backgroundColor: `${labelBlue}15`, color: labelBlue }}
+            style={{ backgroundColor: `${hubColor}15`, color: hubColor }}
           >
             <X size={20} weight="bold" />
           </button>
@@ -715,11 +710,13 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
 
   if (!svc) return null
 
-  // Everything in this modal now uses the shared blue/green/orange scheme —
-  // no more per-hub accent here (that only survives on hub icons elsewhere).
+  // Everything in this modal uses the shared blue/green/orange scheme,
+  // except the close button, which takes this service's own hub color.
   const blueColor   = isDark ? BRAND.lightBlue  : BRAND.blue
   const greenColor  = isDark ? BRAND.lightGreen : BRAND.green
   const orangeColor = isDark ? BRAND.lightOrange : BRAND.orangeDark
+  const hubColors   = HUB_COLORS[svc.hubId as HubKey]
+  const hubColor    = isDark ? hubColors.accentDark : hubColors.accentLight
 
   const hubTitle     = HUBS[svc.hubId]?.title || svc.sectionTitle
   const naturalLabel = naturalServiceLabel(svc.name, svc.sectionTitle)
@@ -840,11 +837,13 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                   Copied!
                 </span>
               )}
+              {/* Close button — this service's own hub color, unlike the
+                  rest of the modal (blue/green/orange shared scheme). */}
               <button
                 onClick={onClose}
                 aria-label="Close"
                 className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
-                style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
+                style={{ backgroundColor: `${hubColor}15`, color: hubColor }}
               >
                 <X size={16} weight="bold" />
               </button>
@@ -1061,8 +1060,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
 }
 
 // ─── Notice Banner ────────────────────────────────────────────────────────────
-// Blue = ℹ️ info/update notice (not a warning) — recolored from orange since
-// this banner announces a schedule/pricing update, not something urgent.
+// Blue = ℹ️ info/update notice (not a warning).
 function NoticeBanner() {
   return (
     <div className="relative mx-auto w-full max-w-md mb-10 rounded-[14px] border border-[#1E6FA8]/20 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
@@ -1082,8 +1080,7 @@ function NoticeBanner() {
         }
 
 // ─── Closing tagline ──────────────────────────────────────────────────────────
-// No more gradients anywhere on the page — solid blue wash + solid blue top
-// bar, replacing the old blue→green→orange gradient.
+// No gradients anywhere on the page — solid blue wash + solid blue top bar.
 function ClosingTagline() {
   return (
     <div className="relative mt-2 mb-4 overflow-hidden rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-6 py-10 md:py-12 text-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
@@ -1195,21 +1192,22 @@ export function ServicesPage() {
         </div>
 
         {/* Hub cards — horizontal stack on desktop, wide on desktop (max 1248px).
-            Default state is neutral (title, border, shadow all plain grey/
-            black) — only the icon swatch and a thin underline beneath it
-            carry that hub's color. Hover brings the hub's color back for
-            border, shadow glow, and title text, via CSS custom properties
-            (--hub-accent / --hub-shadow) so Tailwind's arbitrary-value hover
-            classes can reference a per-card dynamic color. */}
+            Icon is uniformly blue now. Only the thin underline beneath the
+            icon carries that hub's own color in the resting state. Hover
+            brings the hub's color back for border, shadow glow, title text,
+            AND now "explore" + its divider too — via CSS custom properties
+            (--hub-accent / --hub-shadow) for the hover-only bits, and direct
+            per-hub `accent` for explore/divider which are hub-colored even
+            at rest. */}
         <div className="flex flex-col md:grid md:grid-cols-5 gap-5 md:gap-4 pb-2 w-full">
           {HUB_ORDER.map((hubId) => {
             const hub    = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
             const accent = isDark ? colors.accentDark : colors.accentLight
             const cardBg = isDark ? "#09090b" : "#ffffff"
-            const greenBase = isDark ? BRAND.lightGreen : BRAND.green
-            const exploreColor = ensureAccessible(greenBase, cardBg, 4.5)
-            const dividerColor = `${greenBase}40`
+            const blueIcon = isDark ? BRAND.lightBlue : BRAND.blue
+            const exploreColor = ensureAccessible(accent, cardBg, 4.5)
+            const dividerColor = `${accent}40`
             return (
               <button
                 key={hubId}
@@ -1219,12 +1217,12 @@ export function ServicesPage() {
               >
                 <div
                   className="w-14 h-14 md:w-16 md:h-16 rounded-[14px] flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 shadow-md"
-                  style={{ backgroundColor: `${accent}12`, color: accent }}
+                  style={{ backgroundColor: `${blueIcon}12`, color: blueIcon }}
                 >
                   <HubIcon id={hubId} size={32} />
                 </div>
-                {/* Subtle hub-colored underline beneath the icon — the only
-                    hub-specific color visible in the card's default state. */}
+                {/* Thin hub-colored underline beneath the icon — the one
+                    hub-specific cue visible in the card's resting state. */}
                 <div className="w-8 h-0.5 rounded-full mb-3" style={{ backgroundColor: `${accent}50` }} />
                 <h3 className="font-sans font-black text-lg md:text-xl text-zinc-900 dark:text-zinc-50 mb-2 group-hover:text-[var(--hub-accent)] transition-colors">
                   {hub.title}
@@ -1285,4 +1283,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-                                                                } 
+        } 
