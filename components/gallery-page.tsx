@@ -20,12 +20,8 @@ const ROW_ORDER: { id: HubId; label: string; short: string }[] = [
   { id: "tech",     label: "Tech Hub",      short: "Tech" },
 ]
 
-// Hubs that support before/after
 const BA_HUBS: HubId[] = ["design", "tech"]
 
-// Matches the "Service Needed" dropdown options on /contact (FORM_HUBS keys
-// in contact-page.tsx) so the "Inquire about this" CTA can deep-link
-// straight into a prefilled service selection.
 function hubLabelFor(hub: string): string {
   return ROW_ORDER.find(r => r.id === hub)?.label ?? ""
 }
@@ -79,9 +75,6 @@ function useGalleryBackStack(
     return () => window.removeEventListener("popstate", onPop)
   }, [zoomIndex, selectedProject, setZoomIndex, setSelectedProject])
 
-  // FIX #2 — closeProject now correctly closes zoom first before collapsing
-  // the project layer, so the hardware back button doesn't skip the zoom
-  // history entry and collapse both layers at once.
   const closeZoom = useCallback(() => {
     if (zoomPushed.current) {
       zoomPushed.current = false
@@ -93,7 +86,6 @@ function useGalleryBackStack(
 
   const closeProject = useCallback(() => {
     if (zoomIndex !== null) {
-      // Close the zoom layer first; project stays open.
       if (zoomPushed.current) {
         zoomPushed.current = false
         window.history.back()
@@ -164,8 +156,6 @@ function BeforeAfterSlider({ before, after, accent }: { before: string; after: s
   const containerRef = useRef<HTMLDivElement>(null)
   const [revealed, setRevealed] = useState(false)
 
-  // FIX #5 — RAF loop only re-schedules itself while the handle is still
-  // moving, rather than running unconditionally at 60 fps forever.
   useEffect(() => {
     let rafId: number
     const animate = () => {
@@ -244,8 +234,6 @@ function BeforeAfterSlider({ before, after, accent }: { before: string; after: s
 }
 
 // ─── Zoom overlay ─────────────────────────────────────────────────────────────
-// FIX #10 — accepts a `title` prop so the zoomed image gets a meaningful
-// alt string instead of a generic "Zoomed image N".
 function ZoomOverlay({ images, startIndex, onClose, title }: {
   images: string[]
   startIndex: number
@@ -256,10 +244,6 @@ function ZoomOverlay({ images, startIndex, onClose, title }: {
   const touchStartX     = useRef(0)
   const touchStartY     = useRef(0)
 
-  // FIX #1 — use functional updaters inside the keydown listener so it
-  // never captures a stale `idx` value. Previously, ArrowLeft/Right stopped
-  // working after the first image change because the listener closed over
-  // the initial idx = 0.
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
       if (e.key === "Escape")     onClose()
@@ -333,7 +317,12 @@ function ZoomOverlay({ images, startIndex, onClose, title }: {
 }
 
 // ─── Share / copy-link button ─────────────────────────────────────────────────
+// Now uses a uniform brand-blue tint (like Services' icon chrome) instead of
+// neutral zinc — the copied checkmark stays green as a semantic success cue.
 function ShareButton({ url, title }: { url: string; title: string }) {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
+  const blueColor = isDark ? BRAND.lightBlue : BRAND.blue
   const [shared, setShared] = useState(false)
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>()
 
@@ -364,7 +353,8 @@ function ShareButton({ url, title }: { url: string; title: string }) {
     <button
       onClick={handleShare}
       aria-label="Share this project"
-      className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 shrink-0 transition-colors"
+      className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors hover:opacity-80"
+      style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
     >
       {shared ? <Check size={16} weight="bold" className="text-green-500" /> : canNativeShare ? <ShareNetwork size={16} weight="bold" /> : <LinkSimple size={16} weight="bold" />}
     </button>
@@ -372,26 +362,27 @@ function ShareButton({ url, title }: { url: string; title: string }) {
 }
 
 // ─── Like (heart) button ──────────────────────────────────────────────────────
-// FIX #11 — aria-pressed is present unconditionally on both context variants.
-// WCAG NOTE: the "liked" red uses a light/dark pair (red-600 / red-400)
-// instead of a single hardcoded hex. red-600 hits 4.83:1 on white, and
-// red-400 hits ~7.2:1 on the zinc-950 dark-mode panel.
+// Header-context chrome is now blue-tinted (matches ShareButton); card-context
+// (overlaid on a photo thumbnail) is left as-is since it's a photo overlay,
+// not chrome UI. The heart itself still turns red when liked either way.
 function LikeButton({ liked, onToggle, context = "header" }: {
   liked: boolean
   onToggle: (e: React.MouseEvent) => void
   context?: "card" | "header"
 }) {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
+  const blueColor = isDark ? BRAND.lightBlue : BRAND.blue
   return (
     <button
       onClick={onToggle}
       aria-label={liked ? "Unlike this project" : "Like this project"}
       aria-pressed={liked}
       className={cn(
-        "w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-90",
-        context === "card"
-          ? "bg-black/40 hover:bg-black/60 backdrop-blur-sm"
-          : "bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+        "w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-90 hover:opacity-80",
+        context === "card" && "bg-black/40 hover:bg-black/60 backdrop-blur-sm"
       )}
+      style={context === "header" ? { backgroundColor: `${blueColor}15`, color: blueColor } : undefined}
     >
       <Heart
         key={liked ? "liked" : "unliked"}
@@ -407,6 +398,9 @@ function LikeButton({ liked, onToggle, context = "header" }: {
 }
 
 // ─── Project header ───────────────────────────────────────────────────────────
+// Close button now takes the project's own hub color (accent) instead of
+// neutral zinc — mirrors the Services modal pattern where every other icon
+// goes blue but the close control keeps hub identity.
 function ProjectHeader({ project, accent, hasBA, shareUrl, liked, onToggleLike, onClose }: {
   project: ProjectData; accent: string; hasBA: boolean; shareUrl: string
   liked: boolean; onToggleLike: () => void; onClose: () => void
@@ -436,7 +430,12 @@ function ProjectHeader({ project, accent, hasBA, shareUrl, liked, onToggleLike, 
       <div className="flex items-center gap-2 shrink-0 ml-3">
         <LikeButton liked={liked} onToggle={(e) => { e.stopPropagation(); onToggleLike() }} context="header" />
         <ShareButton url={shareUrl} title={project.title} />
-        <button onClick={onClose} className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="w-9 h-9 rounded-full flex items-center justify-center transition-colors hover:opacity-80"
+          style={{ backgroundColor: `${accent}15`, color: accent }}
+        >
           <X size={18} weight="bold" />
         </button>
       </div>
@@ -548,25 +547,32 @@ function ProjectImageSection({
 }
 
 // ─── Project details panel ────────────────────────────────────────────────────
+// Section headings + the "What we did" checkmarks now use brand blue (was the
+// project's hub accent). Inquire button border/text switched to blue too, to
+// match. The `accent` prop is still received (used elsewhere by the parent
+// tree) but is no longer read inside this component.
 function ProjectDetailsPanel({ project, accent, onClose }: { project: ProjectData; accent: string; onClose: () => void }) {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
+  const blueColor = isDark ? BRAND.lightBlue : BRAND.blue
   return (
     <div className="space-y-6 md:space-y-8">
       <section>
-        <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>The Goal</h4>
+        <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: blueColor }}>The Goal</h4>
         <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.clientGoal}</p>
       </section>
       <section>
-        <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>What we did</h4>
+        <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: blueColor }}>What we did</h4>
         <ul className="space-y-2">
           {project.whatWeDid.map((item, i) => (
             <li key={i} className="flex items-start gap-2.5 text-sm text-zinc-600 dark:text-zinc-300 font-medium">
-              <Check size={14} weight="bold" className="mt-1 shrink-0" style={{ color: accent }} />{item}
+              <Check size={14} weight="bold" className="mt-1 shrink-0" style={{ color: blueColor }} />{item}
             </li>
           ))}
         </ul>
       </section>
       <section>
-        <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: accent }}>The Result</h4>
+        <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: blueColor }}>The Result</h4>
         <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.result}</p>
       </section>
 
@@ -584,7 +590,7 @@ function ProjectDetailsPanel({ project, accent, onClose }: { project: ProjectDat
         <Link
           href={buildInquireHref(project)}
           className="flex items-center justify-center gap-2 w-full py-3.5 rounded-[14px] text-sm font-bold border-2 transition-transform active:scale-[0.98]"
-          style={{ borderColor: accent, color: accent }}
+          style={{ borderColor: blueColor, color: blueColor }}
         >
           <EnvelopeSimple size={16} weight="bold" />
           Inquire about this
@@ -645,8 +651,6 @@ function ProjectViewerModal({
     onNavigate(siblings[i])
   }, [hasSiblings, currentIdx, siblings, onNavigate])
 
-  // FIX #6 — both callback refs are now listed in deps so the effect always
-  // captures the latest versions rather than stale closures.
   useEffect(() => {
     if (!project || zoomIndex !== null) return
     const fn = (e: KeyboardEvent) => {
@@ -730,8 +734,6 @@ function ProjectViewerModal({
         </div>
       </div>
 
-      {/* FIX #10 — title prop passed through so ZoomOverlay can build a
-          meaningful alt string for the zoomed image. */}
       {zoomIndex !== null && !comparing && (
         <ZoomOverlay
           images={allImages}
@@ -754,8 +756,6 @@ function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }:
   const isDragging  = useRef(false)
   const startX      = useRef(0)
   const scrollStart = useRef(0)
-  // FIX #3 — track whether the mouse actually moved a meaningful distance so
-  // releasing after a drag doesn't fire onSelect on the card underneath.
   const dragMoved   = useRef(false)
 
   const onScroll = useCallback(() => {
@@ -798,8 +798,6 @@ function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }:
       >
         {projects.map((project) => (
           <div key={project.id} className="shrink-0 w-full snap-center px-4 md:px-6" style={{ scrollSnapAlign: "center" }}>
-            {/* FIX #3 — guard the click: only open the project if the mouse
-                didn't move far enough to count as a drag. */}
             <div
               className="rounded-[16px] overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xl cursor-pointer group transition-transform duration-300 active:scale-[0.98]"
               onClick={() => { if (!dragMoved.current) onSelect(project) }}
@@ -837,8 +835,6 @@ function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }:
           <button onClick={() => scrollTo(activeIdx + 1)} disabled={activeIdx === projects.length - 1} className="absolute right-1 md:right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/90 dark:bg-zinc-900/90 shadow-lg flex items-center justify-center text-zinc-700 dark:text-white disabled:opacity-0 transition-all hover:scale-105 active:scale-95"><CaretRight size={20} weight="bold" /></button>
         </>
       )}
-      {/* FIX #9 — dot buttons now have aria-label so screen readers
-          announce something meaningful instead of just "button". */}
       {projects.length > 1 && (
         <div className="flex justify-center gap-2 mt-4">
           {projects.map((_, idx) => (
@@ -939,8 +935,6 @@ function ProjectsPopover({
       </button>
 
       {open && (
-        // FIX #8 — listbox/option ARIA roles so screen readers announce
-        // this as a proper selector rather than a generic region of buttons.
         <div
           role="listbox"
           aria-label={`Projects in this hub`}
@@ -960,8 +954,6 @@ function ProjectsPopover({
                 onClick={() => { onSelect(p); closePopover() }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left group/item"
               >
-                {/* FIX #7 — use next/image instead of <img> so Next.js can
-                    optimise format, size, and lazy-loading for popover thumbs. */}
                 <div className="relative w-8 h-8 rounded-[8px] shrink-0 overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900">
                   {p.image ? (
                     <Image src={p.image} alt={p.title} fill sizes="32px" className="object-cover" />
@@ -985,9 +977,6 @@ function ProjectsPopover({
 }
 
 // ─── Hub filter dropdown ──────────────────────────────────────────────────────
-// FIX #4 — the open useEffect now also clears pushedRef when the dropdown
-// closes without a back gesture (e.g. selecting an option), preventing a
-// double-pop on the next open/close cycle.
 function FilterDropdown({
   activeFilter, onSelect, getAccent,
 }: {
@@ -1023,8 +1012,6 @@ function FilterDropdown({
       pushedRef.current = true
     }
     if (!open && pushedRef.current) {
-      // Closed without a back gesture (option selected / outside click
-      // already handled by closeDropdown). Clear so next open starts fresh.
       pushedRef.current = false
     }
   }, [open])
@@ -1062,7 +1049,6 @@ function FilterDropdown({
       </button>
 
       {open && (
-        // FIX #8 — listbox/option ARIA roles on the filter menu too.
         <div
           role="listbox"
           aria-label="Filter by hub"
@@ -1170,13 +1156,6 @@ function GalleryPageInner() {
     window.history.replaceState(window.history.state, "", url)
   }, [selectedProject, pathname])
 
-  // FIX #15 — scroll-lock now uses a data attribute on <html> instead of
-  // imperative body.style mutations, which is more robust when concurrent
-  // renders or unmounts could otherwise leave the body in a broken state.
-  // Add this to your global CSS:
-  //   html[data-scroll-locked] body { overflow: hidden; }
-  // (or keep the existing body.style approach — both are valid; this is the
-  //  safer pattern for concurrent React)
   useEffect(() => {
     if (!selectedProject) return
     const scrollY = window.scrollY
@@ -1209,9 +1188,6 @@ function GalleryPageInner() {
     p => (activeFilter === "all" || p.hub === activeFilter) && matchesSearch(p)
   ).length
 
-  // FIX #17 — surpriseFlash and active:scale-95 competed on the same button.
-  // The flash is now a separate data attribute so the two transitions don't
-  // fight each other. active:scale-95 is removed from the surprise button.
   const handleSurprise = useCallback(() => {
     if (PROJECTS.length === 0) return
     setSurpriseFlash(true)
@@ -1250,9 +1226,6 @@ function GalleryPageInner() {
               weight="bold"
               className="absolute left-4 top-1/2 -translate-y-1/2 text-white pointer-events-none"
             />
-            {/* FIX #16 — removed text-center / focus:text-left which caused a
-                jarring layout jump on iOS. Text is always left-aligned; the
-                left padding optically centres it when the field is short. */}
             <input
               type="text"
               value={searchQuery}
@@ -1273,8 +1246,6 @@ function GalleryPageInner() {
             )}
           </div>
           <div className="w-px bg-white/25 my-2" />
-          {/* FIX #17 — active:scale-95 removed; surpriseFlash drives its own
-              isolated opacity/scale so both transitions don't compete. */}
           <button
             onClick={handleSurprise}
             aria-label="Surprise me with a random project"
@@ -1290,9 +1261,12 @@ function GalleryPageInner() {
 
         <FilterDropdown activeFilter={activeFilter} onSelect={setActiveFilter} getAccent={getAccent} />
 
-        <div className="max-w-2xl mx-auto mb-16 rounded-[14px] border border-brand-orange/20 bg-brand-orange/5 dark:bg-brand-orange/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
-          <div className="w-12 h-12 shrink-0 rounded-[14px] bg-brand-orange/10 flex items-center justify-center text-brand-orange">
-            <Info size={28} weight="fill" />
+        {/* Info banner — switched from brand-orange to brand-blue, matching
+            Services' NoticeBanner: solid-blue icon square, blue-tinted
+            border/background instead of the icon sitting in a tinted chip. */}
+        <div className="max-w-2xl mx-auto mb-16 rounded-[14px] border border-[#1E6FA8]/20 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+          <div className="w-12 h-12 shrink-0 rounded-[14px] bg-[#1E6FA8] flex items-center justify-center">
+            <Info size={26} weight="fill" color="#fff" />
           </div>
           <div className="flex-1 min-w-0 pt-0.5">
             <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-snug">
@@ -1391,5 +1365,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-}
- 
+      } 
