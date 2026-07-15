@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Nunito, DM_Sans, Geist_Mono } from 'next/font/google'
+import { Jost, Inter, JetBrains_Mono } from 'next/font/google'
 import Script from 'next/script'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Analytics } from '@vercel/analytics/next'
@@ -20,19 +20,22 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://v0-apexbytes-hub-w
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-3FJ8QET6RE'
 
 // ─── Fonts ───────────────────────────────────────────────────────────
-const nunito = Nunito({
+// Jost — Futura-style geometric sans, used for headlines/impact text
+const jost = Jost({
   subsets:  ['latin'],
-  variable: '--font-nunito',
+  variable: '--font-heading',
   display:  'swap',
 })
 
-const dmSans = DM_Sans({
+// Inter — Helvetica-style workhorse, used for body copy & data
+const inter = Inter({
   subsets:  ['latin'],
-  variable: '--font-dm-sans',
+  variable: '--font-body',
   display:  'swap',
 })
 
-const geistMono = Geist_Mono({
+// JetBrains Mono — monospace for code/prices
+const jetbrainsMono = JetBrains_Mono({
   subsets:  ['latin'],
   variable: '--font-mono',
   display:  'swap',
@@ -113,7 +116,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${nunito.variable} ${dmSans.variable} ${geistMono.variable}`}
+      className={`${jost.variable} ${inter.variable} ${jetbrainsMono.variable}`}
     >
       <body className="font-sans antialiased min-h-screen bg-white dark:bg-background text-zinc-900 dark:text-zinc-100 transition-colors duration-300">
         {/* Skip to main content — visible only on keyboard focus */}
@@ -162,4 +165,4 @@ export default function RootLayout({
       </body>
     </html>
   )
-} 
+        } 
