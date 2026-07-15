@@ -735,6 +735,10 @@ function ProjectViewerModal({
 }
 
 // ─── Unified swipe carousel ───────────────────────────────────────────────────
+// Cards now pick up the project's hub color on hover — border, glow shadow,
+// and title text all tint via CSS custom properties (--hub-accent /
+// --hub-shadow), same pattern as the Services hub cards. Base state stays
+// neutral (white title, zinc border) so the hover feels like a reveal.
 function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }: {
   projects: ProjectData[]; accent: string; onSelect: (p: ProjectData) => void
   likedIds: Set<string>; onToggleLike: (id: string) => void
@@ -787,7 +791,8 @@ function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }:
         {projects.map((project) => (
           <div key={project.id} className="shrink-0 w-full snap-center px-4 md:px-6" style={{ scrollSnapAlign: "center" }}>
             <div
-              className="rounded-[16px] overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xl cursor-pointer group transition-transform duration-300 active:scale-[0.98]"
+              style={{ '--hub-accent': accent, '--hub-shadow': `${accent}55` } as any}
+              className="group rounded-[16px] overflow-hidden border-2 border-zinc-100 dark:border-zinc-800 hover:border-[var(--hub-accent)] bg-white dark:bg-zinc-950 shadow-xl hover:shadow-[0_16px_36px_-10px_var(--hub-shadow)] cursor-pointer transition-all duration-300 ease-out active:scale-[0.98]"
               onClick={() => { if (!dragMoved.current) onSelect(project) }}
             >
               <div className="relative aspect-[16/9] md:aspect-[16/8] bg-zinc-100 dark:bg-zinc-900">
@@ -808,7 +813,7 @@ function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }:
                 )}
                 <div className="absolute bottom-5 left-5 right-5">
                   <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/60 mb-1">{project.tag}</p>
-                  <h3 className="text-white font-black text-xl md:text-2xl leading-tight">{project.title}</h3>
+                  <h3 className="text-white font-black text-xl md:text-2xl leading-tight transition-colors duration-300 group-hover:text-[var(--hub-accent)]">{project.title}</h3>
                   <p className="text-white/70 text-xs font-medium mt-1 line-clamp-1">{project.shortDesc}</p>
                 </div>
               </div>
@@ -965,9 +970,10 @@ function ProjectsPopover({
 }
 
 // ─── Hub filter dropdown ──────────────────────────────────────────────────────
-// Redesigned as a centered "keycap" pill button — layered box-shadow gives it
-// a 3D raised look at rest, and both pressing it (active:) and having the
-// menu open compress the shadow down to read as physically pushed in.
+// Centered "keycap" pill — idle label now reads "Select a Hub" instead of
+// "All hubs" (the "All hubs" option still exists inside the opened list).
+// Content is centered via justify-center + text-center. Shadow transitions
+// smoothed to duration-300/ease-out throughout.
 function FilterDropdown({
   activeFilter, onSelect, getAccent,
 }: {
@@ -1025,26 +1031,28 @@ function FilterDropdown({
     { id: "all", label: "All hubs" },
     ...ROW_ORDER.map(r => ({ id: r.id, label: r.label })),
   ]
-  const current       = options.find(o => o.id === activeFilter)
   const currentAccent = activeFilter !== "all" ? getAccent(activeFilter) : undefined
-  const pillColor      = currentAccent ?? blueColor
+  const idleLabel      = "Select a Hub"
+  const displayedLabel = activeFilter === "all" ? idleLabel : (options.find(o => o.id === activeFilter)?.label ?? idleLabel)
+  const pillColor       = currentAccent ?? blueColor
 
   return (
     <div ref={ref} className="relative flex justify-center mb-10">
       <button
         onClick={() => (open ? closeDropdown() : setOpen(true))}
         aria-expanded={open}
-        className="inline-flex items-center gap-2.5 px-6 py-3 rounded-full bg-white dark:bg-zinc-950 font-sans font-black text-sm transition-all duration-150 active:translate-y-[3px]"
+        className="inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-full bg-white dark:bg-zinc-950 font-sans font-black text-sm text-center transition-all duration-300 ease-out active:translate-y-[3px]"
         style={{
           boxShadow: open
             ? `0 2px 0 ${pillColor}70, 0 3px 10px rgba(0,0,0,0.2)`
             : `0 5px 0 ${pillColor}70, 0 12px 24px -8px rgba(0,0,0,0.3)`,
           transform: open ? "translateY(3px)" : "translateY(0)",
+          transitionProperty: "box-shadow, transform",
         }}
       >
         {currentAccent && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: currentAccent }} />}
         <span style={{ color: currentAccent ?? undefined }} className={!currentAccent ? "text-zinc-800 dark:text-zinc-100" : undefined}>
-          {current?.label ?? "All hubs"}
+          {displayedLabel}
         </span>
         <CaretDown size={14} weight="bold" className={cn("transition-transform duration-200 shrink-0", open && "rotate-180")} style={{ color: currentAccent ?? blueColor }} />
       </button>
@@ -1096,11 +1104,27 @@ function EmptyHubState({ label, query }: { label: string; query?: string }) {
   )
 }
 
+// ─── Closing tagline ──────────────────────────────────────────────────────────
+// Same visual language as the Services page's ClosingTagline (solid blue
+// wash + top bar), with copy written for the gallery/portfolio context.
+function GalleryClosingTagline() {
+  return (
+    <div className="relative mt-4 mb-4 overflow-hidden rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-6 py-10 md:py-12 text-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
+      <div className="absolute inset-x-0 top-0 h-1 bg-[#1E6FA8]" />
+      <p className="abh-eyebrow text-zinc-400 dark:text-zinc-500 mb-3">Like what you see?</p>
+      <p className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 leading-snug max-w-2xl mx-auto">
+        Your project could be our next favourite. Let's bring it to life at Apexbytes Hub.
+      </p>
+    </div>
+  )
+}
+
 const LIKES_STORAGE_KEY = "apexbytes-gallery-likes"
 
 function GalleryPageInner() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
+  const blueColor = isDark ? BRAND.lightBlue : BRAND.blue
   const searchParams = useSearchParams()
   const pathname      = usePathname()
   const [activeFilter,    setActiveFilter]    = useState<HubId | "all">("all")
@@ -1216,19 +1240,19 @@ function GalleryPageInner() {
           <div className="abh-divider" />
         </div>
 
-        {/* Search + Surprise me — now stroke style (white/transparent fill,
-            orange 2px border) instead of solid orange, with pressable
-            hover/press feedback (lift + shadow on hover, scale on press). */}
+        {/* Search + Surprise me — now blue stroke, matching Services'
+            InlineSearchBar (transparent/white fill, 2px blue border, blue
+            text/icon, blue hover tint). Shadow smoothed to duration-300. */}
         <div
-          className="flex items-stretch max-w-md mx-auto mb-6 rounded-[14px] bg-white dark:bg-zinc-950 border-2 overflow-hidden transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5"
-          style={{ borderColor: BRAND.orange }}
+          className="flex items-stretch max-w-md mx-auto mb-6 rounded-[14px] bg-white dark:bg-zinc-950 border-2 overflow-hidden transition-all duration-300 ease-out shadow-md hover:shadow-lg hover:-translate-y-0.5"
+          style={{ borderColor: blueColor }}
         >
           <div className="relative flex-1 basis-1/2">
             <MagnifyingGlass
               size={16}
               weight="bold"
               className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"
-              style={{ color: BRAND.orange }}
+              style={{ color: blueColor }}
             />
             <input
               type="text"
@@ -1238,30 +1262,30 @@ function GalleryPageInner() {
               onBlur={() => setSearchFocused(false)}
               placeholder={searchFocused ? "Search" : "Search Project"}
               className="w-full pl-10 pr-9 py-4 bg-transparent font-sans font-black text-base outline-none text-left placeholder:opacity-50"
-              style={{ color: BRAND.orange }}
+              style={{ color: blueColor }}
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
                 aria-label="Clear search"
                 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center transition-all active:scale-90"
-                style={{ backgroundColor: `${BRAND.orange}18`, color: BRAND.orange }}
+                style={{ backgroundColor: `${blueColor}18`, color: blueColor }}
               >
                 <X size={11} weight="bold" />
               </button>
             )}
           </div>
-          <div className="w-px my-2" style={{ backgroundColor: `${BRAND.orange}35` }} />
+          <div className="w-px my-2" style={{ backgroundColor: `${blueColor}35` }} />
           <button
             onClick={handleSurprise}
             aria-label="Surprise me with a random project"
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = `${BRAND.orange}0d` }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = `${blueColor}0d` }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "" }}
             className={cn(
               "flex-1 basis-1/2 flex items-center justify-center gap-1.5 px-3.5 py-4 font-sans font-black text-base whitespace-nowrap transition-all duration-200 active:scale-95 group/surprise",
               surpriseFlash && "scale-90 opacity-60"
             )}
-            style={{ color: BRAND.orange }}
+            style={{ color: blueColor }}
           >
             <Shuffle size={14} weight="bold" className="transition-transform duration-300 group-hover/surprise:rotate-180" />
             Surprise me
@@ -1302,9 +1326,9 @@ function GalleryPageInner() {
               if (projects.length === 0) {
                 if (activeFilter !== row.id) return null
                 return (
-                  <div key={row.id} className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm p-5 md:p-7">
+                  <div key={row.id} className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm transition-shadow duration-300 ease-out p-5 md:p-7">
                     <div className="flex items-center gap-4 mb-6">
-                      <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: accent }} />
+                      <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: blueColor }} />
                       <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
                     </div>
                     <EmptyHubState label={row.label} query={searchLower ? searchQuery.trim() : undefined} />
@@ -1313,9 +1337,9 @@ function GalleryPageInner() {
               }
 
               return (
-                <div key={row.id} className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm p-5 md:p-7">
+                <div key={row.id} className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm transition-shadow duration-300 ease-out p-5 md:p-7">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: accent }} />
+                    <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: blueColor }} />
                     <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
                     <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
                   </div>
@@ -1325,6 +1349,8 @@ function GalleryPageInner() {
             })}
           </div>
         )}
+
+        <GalleryClosingTagline />
       </div>
 
       <ProjectViewerModal
@@ -1371,4 +1397,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-        } 
+                                               } 
