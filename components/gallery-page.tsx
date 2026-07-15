@@ -317,8 +317,6 @@ function ZoomOverlay({ images, startIndex, onClose, title }: {
 }
 
 // ─── Share / copy-link button ─────────────────────────────────────────────────
-// Now uses a uniform brand-blue tint (like Services' icon chrome) instead of
-// neutral zinc — the copied checkmark stays green as a semantic success cue.
 function ShareButton({ url, title }: { url: string; title: string }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
@@ -362,9 +360,6 @@ function ShareButton({ url, title }: { url: string; title: string }) {
 }
 
 // ─── Like (heart) button ──────────────────────────────────────────────────────
-// Header-context chrome is now blue-tinted (matches ShareButton); card-context
-// (overlaid on a photo thumbnail) is left as-is since it's a photo overlay,
-// not chrome UI. The heart itself still turns red when liked either way.
 function LikeButton({ liked, onToggle, context = "header" }: {
   liked: boolean
   onToggle: (e: React.MouseEvent) => void
@@ -398,9 +393,6 @@ function LikeButton({ liked, onToggle, context = "header" }: {
 }
 
 // ─── Project header ───────────────────────────────────────────────────────────
-// Close button now takes the project's own hub color (accent) instead of
-// neutral zinc — mirrors the Services modal pattern where every other icon
-// goes blue but the close control keeps hub identity.
 function ProjectHeader({ project, accent, hasBA, shareUrl, liked, onToggleLike, onClose }: {
   project: ProjectData; accent: string; hasBA: boolean; shareUrl: string
   liked: boolean; onToggleLike: () => void; onClose: () => void
@@ -547,10 +539,6 @@ function ProjectImageSection({
 }
 
 // ─── Project details panel ────────────────────────────────────────────────────
-// Section headings + the "What we did" checkmarks now use brand blue (was the
-// project's hub accent). Inquire button border/text switched to blue too, to
-// match. The `accent` prop is still received (used elsewhere by the parent
-// tree) but is no longer read inside this component.
 function ProjectDetailsPanel({ project, accent, onClose }: { project: ProjectData; accent: string; onClose: () => void }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
@@ -977,6 +965,9 @@ function ProjectsPopover({
 }
 
 // ─── Hub filter dropdown ──────────────────────────────────────────────────────
+// Redesigned as a centered "keycap" pill button — layered box-shadow gives it
+// a 3D raised look at rest, and both pressing it (active:) and having the
+// menu open compress the shadow down to read as physically pushed in.
 function FilterDropdown({
   activeFilter, onSelect, getAccent,
 }: {
@@ -984,6 +975,9 @@ function FilterDropdown({
   onSelect: (f: HubId | "all") => void
   getAccent: (id: HubId) => string
 }) {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
+  const blueColor = isDark ? BRAND.lightBlue : BRAND.blue
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const pushedRef = useRef(false)
@@ -1033,26 +1027,33 @@ function FilterDropdown({
   ]
   const current       = options.find(o => o.id === activeFilter)
   const currentAccent = activeFilter !== "all" ? getAccent(activeFilter) : undefined
+  const pillColor      = currentAccent ?? blueColor
 
   return (
-    <div ref={ref} className="relative max-w-md mx-auto mb-10">
+    <div ref={ref} className="relative flex justify-center mb-10">
       <button
         onClick={() => (open ? closeDropdown() : setOpen(true))}
         aria-expanded={open}
-        className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-[14px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] transition-colors"
+        className="inline-flex items-center gap-2.5 px-6 py-3 rounded-full bg-white dark:bg-zinc-950 font-sans font-black text-sm transition-all duration-150 active:translate-y-[3px]"
+        style={{
+          boxShadow: open
+            ? `0 2px 0 ${pillColor}70, 0 3px 10px rgba(0,0,0,0.2)`
+            : `0 5px 0 ${pillColor}70, 0 12px 24px -8px rgba(0,0,0,0.3)`,
+          transform: open ? "translateY(3px)" : "translateY(0)",
+        }}
       >
-        <span className="flex items-center gap-2 text-sm font-bold text-zinc-800 dark:text-zinc-200">
-          {currentAccent && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: currentAccent }} />}
-          <span style={currentAccent ? { color: currentAccent } : undefined}>{current?.label ?? "All hubs"}</span>
+        {currentAccent && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: currentAccent }} />}
+        <span style={{ color: currentAccent ?? undefined }} className={!currentAccent ? "text-zinc-800 dark:text-zinc-100" : undefined}>
+          {current?.label ?? "All hubs"}
         </span>
-        <CaretDown size={14} weight="bold" className={cn("text-zinc-400 transition-transform duration-200 shrink-0", open && "rotate-180")} />
+        <CaretDown size={14} weight="bold" className={cn("transition-transform duration-200 shrink-0", open && "rotate-180")} style={{ color: currentAccent ?? blueColor }} />
       </button>
 
       {open && (
         <div
           role="listbox"
           aria-label="Filter by hub"
-          className="absolute left-0 right-0 top-full mt-2 z-30 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+          className="absolute left-1/2 -translate-x-1/2 top-full mt-3 z-30 w-64 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         >
           <div className="p-2 max-h-[320px] overflow-y-auto">
             {options.map(opt => {
@@ -1215,16 +1216,19 @@ function GalleryPageInner() {
           <div className="abh-divider" />
         </div>
 
-        {/* Search + Surprise me */}
+        {/* Search + Surprise me — now stroke style (white/transparent fill,
+            orange 2px border) instead of solid orange, with pressable
+            hover/press feedback (lift + shadow on hover, scale on press). */}
         <div
-          className="flex items-stretch max-w-md mx-auto mb-6 rounded-[14px] shadow-lg overflow-hidden transition-colors duration-300"
-          style={{ backgroundColor: BRAND.orange }}
+          className="flex items-stretch max-w-md mx-auto mb-6 rounded-[14px] bg-white dark:bg-zinc-950 border-2 overflow-hidden transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5"
+          style={{ borderColor: BRAND.orange }}
         >
           <div className="relative flex-1 basis-1/2">
             <MagnifyingGlass
               size={16}
               weight="bold"
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-white pointer-events-none"
+              className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"
+              style={{ color: BRAND.orange }}
             />
             <input
               type="text"
@@ -1233,26 +1237,31 @@ function GalleryPageInner() {
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
               placeholder={searchFocused ? "Search" : "Search Project"}
-              className="w-full pl-10 pr-9 py-4 bg-transparent font-sans font-black text-base text-white placeholder:text-white/80 outline-none text-left"
+              className="w-full pl-10 pr-9 py-4 bg-transparent font-sans font-black text-base outline-none text-left placeholder:opacity-50"
+              style={{ color: BRAND.orange }}
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
                 aria-label="Clear search"
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center transition-all active:scale-90"
+                style={{ backgroundColor: `${BRAND.orange}18`, color: BRAND.orange }}
               >
                 <X size={11} weight="bold" />
               </button>
             )}
           </div>
-          <div className="w-px bg-white/25 my-2" />
+          <div className="w-px my-2" style={{ backgroundColor: `${BRAND.orange}35` }} />
           <button
             onClick={handleSurprise}
             aria-label="Surprise me with a random project"
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = `${BRAND.orange}0d` }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "" }}
             className={cn(
-              "flex-1 basis-1/2 flex items-center justify-center gap-1.5 px-3.5 py-4 font-sans font-black text-base text-white whitespace-nowrap transition-all duration-200 hover:bg-white/10 group/surprise",
+              "flex-1 basis-1/2 flex items-center justify-center gap-1.5 px-3.5 py-4 font-sans font-black text-base whitespace-nowrap transition-all duration-200 active:scale-95 group/surprise",
               surpriseFlash && "scale-90 opacity-60"
             )}
+            style={{ color: BRAND.orange }}
           >
             <Shuffle size={14} weight="bold" className="transition-transform duration-300 group-hover/surprise:rotate-180" />
             Surprise me
@@ -1261,9 +1270,6 @@ function GalleryPageInner() {
 
         <FilterDropdown activeFilter={activeFilter} onSelect={setActiveFilter} getAccent={getAccent} />
 
-        {/* Info banner — switched from brand-orange to brand-blue, matching
-            Services' NoticeBanner: solid-blue icon square, blue-tinted
-            border/background instead of the icon sitting in a tinted chip. */}
         <div className="max-w-2xl mx-auto mb-16 rounded-[14px] border border-[#1E6FA8]/20 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
           <div className="w-12 h-12 shrink-0 rounded-[14px] bg-[#1E6FA8] flex items-center justify-center">
             <Info size={26} weight="fill" color="#fff" />
@@ -1288,7 +1294,7 @@ function GalleryPageInner() {
             </button>
           </div>
         ) : (
-          <div className="space-y-20">
+          <div className="space-y-8">
             {filteredRows.map(row => {
               const accent = getAccent(row.id)
               const projects = PROJECTS.filter(p => p.hub === row.id && matchesSearch(p))
@@ -1296,8 +1302,8 @@ function GalleryPageInner() {
               if (projects.length === 0) {
                 if (activeFilter !== row.id) return null
                 return (
-                  <div key={row.id}>
-                    <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
+                  <div key={row.id} className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm p-5 md:p-7">
+                    <div className="flex items-center gap-4 mb-6">
                       <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: accent }} />
                       <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
                     </div>
@@ -1307,8 +1313,8 @@ function GalleryPageInner() {
               }
 
               return (
-                <div key={row.id}>
-                  <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
+                <div key={row.id} className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm p-5 md:p-7">
+                  <div className="flex items-center gap-4 mb-6">
                     <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: accent }} />
                     <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
                     <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
@@ -1365,4 +1371,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-      } 
+        } 
