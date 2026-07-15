@@ -113,8 +113,12 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
 
 /* ── Tailwind theme mapping ── */
 @theme inline {
-  --font-sans: 'Nunito', 'DM Sans', sans-serif;
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  /* font-sans = default/base font (Inter, via next/font --font-body variable from layout.tsx) */
+  --font-sans: var(--font-body), 'Inter Fallback', sans-serif;
+  /* font-heading = display/impact font (Jost, via next/font --font-heading variable) */
+  --font-heading: var(--font-heading), 'Jost Fallback', sans-serif;
+  /* font-mono = JetBrains Mono, via next/font --font-mono variable */
+  --font-mono: var(--font-mono), 'JetBrains Mono Fallback', monospace;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -223,28 +227,30 @@ button, a, [role="button"] {
 /* ── Component system ── */
 @layer components {
 
+  /* Headings — Jost (display/impact) */
   .abh-page-title {
-    @apply font-sans font-black text-3xl md:text-4xl tracking-tight leading-tight text-center;
+    @apply font-heading font-black text-3xl md:text-4xl tracking-tight leading-tight text-center;
     color: var(--brand-blue-dark);
   }
   .dark .abh-page-title { color: var(--brand-light-blue); }
 
   .abh-section-heading {
-    @apply font-sans font-black text-xl md:text-2xl tracking-tight leading-snug;
+    @apply font-heading font-black text-xl md:text-2xl tracking-tight leading-snug;
     color: var(--foreground);
   }
 
   .abh-card-heading {
-    @apply font-sans font-black text-sm tracking-tight leading-snug;
+    @apply font-heading font-black text-sm tracking-tight leading-snug;
     color: var(--card-foreground);
   }
 
   .abh-eyebrow {
-    @apply font-sans font-black text-[0.65rem] uppercase tracking-widest;
+    @apply font-heading font-black text-[0.65rem] uppercase tracking-widest;
     color: var(--brand-blue-text);
   }
   .dark .abh-eyebrow { color: var(--brand-light-blue); }
 
+  /* Body copy — Inter (readable) */
   .abh-body {
     @apply font-sans font-medium text-sm md:text-base leading-relaxed;
     color: var(--muted-foreground);
@@ -256,7 +262,7 @@ button, a, [role="button"] {
   }
 
   .abh-label {
-    @apply font-sans font-black text-[0.65rem] uppercase tracking-widest;
+    @apply font-heading font-black text-[0.65rem] uppercase tracking-widest;
     color: var(--muted-foreground);
   }
 
@@ -266,11 +272,11 @@ button, a, [role="button"] {
   }
 
   .abh-price {
-    @apply font-sans font-black text-[1.1rem] leading-none;
+    @apply font-heading font-black text-[1.1rem] leading-none;
   }
 
   .abh-btn-label {
-    @apply font-sans font-black text-sm tracking-wide;
+    @apply font-heading font-black text-sm tracking-wide;
   }
 
   .abh-page-header {
@@ -289,20 +295,20 @@ button, a, [role="button"] {
   }
 
   .abh-wa-btn {
-    @apply flex items-center justify-center gap-2 font-black text-sm rounded-[14px] px-6 py-3 transition-all duration-200 active:scale-95 hover:-translate-y-0.5;
+    @apply font-heading flex items-center justify-center gap-2 font-black text-sm rounded-[14px] px-6 py-3 transition-all duration-200 active:scale-95 hover:-translate-y-0.5;
     background: var(--brand-whatsapp);
     color: var(--brand-whatsapp-text);
   }
   .abh-wa-btn:hover { background: var(--brand-whatsapp-dark); }
 
   .abh-btn-primary {
-    @apply inline-flex items-center justify-center gap-2 font-black text-sm text-white rounded-[14px] px-6 py-3 transition-all duration-200 active:scale-95 hover:-translate-y-0.5 shadow-sm;
+    @apply font-heading inline-flex items-center justify-center gap-2 font-black text-sm text-white rounded-[14px] px-6 py-3 transition-all duration-200 active:scale-95 hover:-translate-y-0.5 shadow-sm;
     background: var(--brand-blue);
   }
 
   .abh-btn-cta {
-    @apply inline-flex items-center justify-center gap-3 font-black text-sm text-white rounded-[14px] px-6 py-4 transition-all duration-300 active:scale-95;
+    @apply font-heading inline-flex items-center justify-center gap-3 font-black text-sm text-white rounded-[14px] px-6 py-4 transition-all duration-300 active:scale-95;
     background: var(--brand-orange);
   }
   .abh-btn-cta:hover { background: var(--brand-orange-dark); }
-     } 
+                      } 
