@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useTheme } from "next-themes"
 import {
   Target,
   Heart,
@@ -19,20 +20,14 @@ import { BRAND, BIZ, ABOUT_VALUES, ABOUT_STANDARDS } from "@/lib/brand"
 // Color hierarchy for this page (per site-wide rule: blue dominant, green
 // less, orange least — reserved for highlights/CTAs only):
 // - BLUE:   stats strip, icon chips, card headers, Standards border on hover
-// - GREEN:  Values list icons (rest), AND now the hover-accent color for
-//           Standards' icon chip + the stats strip's fill (see below)
-// - ORANGE: the final "See All Services" CTA button only
-//
-// FIX: both BLUE and ORANGE are now fixed single values instead of
-// light/dark theme pairs — no longer swapping to a lighter pastel in dark
-// mode. Orange changed from orangeDark/lightOrange to orangeBrown, a
-// deliberately more muted middle tone (neither the deep/dark accessible
-// variant nor the brighter default).
+// - GREEN:  Values list icons (rest), AND the hover-accent for Standards'
+//           icon chip + the stats strip's fill
+// - ORANGE: the final "See All Services" CTA button only — now orangeDark,
+//           a middle shade (was orangeBrown, which read as too dark/muted)
 const ABOUT_BLUE   = BRAND.blue
 const ABOUT_GREEN  = BRAND.green
-const ABOUT_ORANGE = BRAND.orangeBrown
-// Neutral used for Standards cards at rest — only picks up an accent on
-// hover, so color reads as a deliberate highlight rather than a flat default.
+const ABOUT_ORANGE = BRAND.orangeDark
+// Neutral used for Standards cards at rest — only picks up green on hover.
 const ABOUT_NEUTRAL = { light: BRAND.dark100, dark: BRAND.techGreyDark }
 
 function renderIcon(iconName: string, className: string) {
@@ -65,18 +60,20 @@ export function AboutPage() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
   const [statsHovered, setStatsHovered] = useState(false)
 
+  // FIX: this was a hardcoded useState(false) that never actually updated —
+  // in dark mode, neutralColor stayed pinned to the LIGHT-mode value
+  // (BRAND.dark100, near-black), rendering as dark icon on a dark
+  // (zinc-900) card background: invisible. Restored real useTheme().
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+  const isDark = mounted && resolvedTheme === "dark"
+
   const blueColor    = ABOUT_BLUE
-  const blueText     = getReadableTextColor(blueColor)
   const greenColor   = ABOUT_GREEN
   const greenText    = getReadableTextColor(greenColor)
   const orangeColor  = ABOUT_ORANGE
   const orangeText   = getReadableTextColor(orangeColor)
-  // Neutral still needs the theme, so this one stays resolvedTheme-based —
-  // isolated to its own tiny check rather than pulling in useTheme for the
-  // whole component now that blue/orange are fixed.
-  const [isDark, setIsDark] = useState(false)
-  // (kept for the neutral icon color below; see note near ABOUT_NEUTRAL)
-
   const neutralColor = isDark ? ABOUT_NEUTRAL.dark : ABOUT_NEUTRAL.light
 
   return (
@@ -92,15 +89,9 @@ export function AboutPage() {
             A local business built on community, trust, and real help — right here in Kgotsong.
           </p>
 
-          {/* Divider moved back below the tagline, matching the title →
-              tagline → divider order used on Services/Gallery. */}
           <div className="abh-divider mx-auto mt-3" />
 
-          {/* Stats strip — border-only blue at rest. On hover, fill is now
-              GREEN (was blue) while the border itself stays blue, matching
-              "icon bg green on hover, otherwise things blue as they are"
-              applied here: the border/structural blue never changes, only
-              the accent fill does. */}
+          {/* Stats strip — border-only blue at rest, GREEN fill on hover */}
           <div
             className={cn(
               "mt-10 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x rounded-[14px] overflow-hidden shadow-lg transition-colors duration-200 border-2",
@@ -255,9 +246,12 @@ export function AboutPage() {
             <div className="mt-6 h-px bg-zinc-200 dark:bg-zinc-800 max-w-[120px] mx-auto" />
           </div>
 
-          {/* 4-card grid — neutral at rest, border goes BLUE on hover
-              (unchanged — border stays "blue as they are"), but the icon
-              chip fill now goes GREEN on hover instead of blue. */}
+          {/* 4-card grid — neutral at rest, border goes BLUE on hover, icon
+              chip fill goes GREEN on hover. FIX: rest-state icon chip now
+              has an actual tinted background (${neutralColor}15) instead of
+              a plain bg-white/zinc-900 with no fill — that's what made the
+              icon invisible against a dark card in dark mode, since the
+              (broken) neutralColor was rendering near-black-on-near-black. */}
           <ul
             className="grid grid-cols-1 sm:grid-cols-3 gap-5"
             aria-label="Standards"
@@ -283,11 +277,13 @@ export function AboutPage() {
                   <div
                     className={cn(
                       "w-11 h-11 rounded-[12px] flex items-center justify-center mb-5 transition-all duration-300 border shrink-0",
-                      isHovered
-                        ? "text-white border-transparent scale-110"
-                        : "bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800"
+                      isHovered ? "text-white border-transparent scale-110" : "border-transparent"
                     )}
-                    style={isHovered ? { backgroundColor: greenColor, color: greenText } : { color: neutralColor }}
+                    style={
+                      isHovered
+                        ? { backgroundColor: greenColor, color: greenText }
+                        : { backgroundColor: `${neutralColor}15`, color: neutralColor }
+                    }
                     aria-hidden="true"
                   >
                     {renderIcon(item.iconName, "w-5 h-5")}
@@ -341,8 +337,7 @@ export function AboutPage() {
             brought to people who need them most, in a community that deserves better access.
           </p>
 
-          {/* CTA — the ONLY orange element on this page, now the more
-              muted orangeBrown fixed in both themes. */}
+          {/* CTA — the ONLY orange element on this page, now orangeDark */}
           <a
             href="/services"
             className="inline-flex items-center gap-2.5 px-8 py-4 rounded-[14px] font-black text-sm transition-all duration-300 active:scale-95 hover:-translate-y-0.5 shadow-lg"
@@ -356,4 +351,4 @@ export function AboutPage() {
 
     </div>
   )
-                                 } 
+      } 
