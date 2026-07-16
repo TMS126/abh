@@ -8,6 +8,10 @@ import { BRAND, BIZ, WA, FAQS, CONTACT_LINKS, HOURS } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 import { BusinessStatusFull } from "@/components/business-status"
 
+// NOTE: FORM_HUBS intentionally left untouched — these are each hub's own
+// established brand color used site-wide (Design Hub = orange, Document
+// Hub = green, etc.), not a decorative choice for this page. Changing
+// them here would desync the dropdown from HUB_COLORS everywhere else.
 const FORM_HUBS: Record<string, { light: string; dark: string }> = {
   "Print Hub":                  { light: BRAND.blue,      dark: "#A9D6F2" },
   "Document Hub":               { light: BRAND.green,     dark: "#CDEB9F" },
@@ -259,7 +263,9 @@ function ContactPageInner() {
           {/* Left column — flex-col + justify-between fills full height */}
           <div className="flex flex-col justify-between gap-6">
 
-            <div>
+            {/* "Get In Touch" — now centered, matching the heading style
+                used by the FAQ section below it. */}
+            <div className="text-center">
               <h2 className="abh-section-heading mb-1">Get In Touch</h2>
               <p className="abh-body">WhatsApp, call, email or visit us in {BIZ.location}.</p>
             </div>
@@ -308,8 +314,10 @@ function ContactPageInner() {
   })}
 </div>
 
-            {/* vCard download — icon chip now uses Contact's grey identity;
-                the Download button itself stays brand blue per request. */}
+            {/* vCard download — icon chip uses Contact's grey identity;
+                button stays brand blue in BOTH states now (previously
+                turned green on success) — keeps blue dominant and green
+                out of a spot that isn't a CTA. */}
             <div className="abh-card p-5 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
                 <div
@@ -326,7 +334,7 @@ function ContactPageInner() {
               <button
                 onClick={handleVCard}
                 className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-[14px] font-medium text-sm text-white transition-all active:scale-95 hover:-translate-y-0.5"
-                style={{ backgroundColor: vcardDone ? BRAND.green : BRAND.blue }}
+                style={{ backgroundColor: BRAND.blue }}
               >
                 <DownloadSimple size={16} weight="bold" />
                 {vcardDone ? "Saved!" : "Download"}
@@ -334,7 +342,10 @@ function ContactPageInner() {
             </div>
 
             {/* Business hours — grows to fill remaining space. Header icon
-                and label now use Contact's grey identity. */}
+                and label use Contact's grey identity. Status dots switched
+                off green/orange: "open" now reads in blue, "closed" reads
+                in a neutral zinc tone rather than orange, so orange is
+                freed up for CTAs only. */}
             <div className="abh-card p-5 flex-1">
               <span
                 className="text-[0.65rem] font-black uppercase tracking-widest flex items-center gap-1.5 mb-3"
@@ -352,11 +363,11 @@ function ContactPageInner() {
                   </p>
                   <p
                     className="flex items-center gap-1.5 text-xs font-medium mt-1"
-                    style={{ color: BRAND.green }}
+                    style={{ color: BRAND.blue }}
                   >
                     <span
                       className="w-1.5 h-1.5 rounded-full shrink-0"
-                      style={{ backgroundColor: BRAND.green }}
+                      style={{ backgroundColor: BRAND.blue }}
                     />
                     Open on public holidays
                   </p>
@@ -368,14 +379,8 @@ function ContactPageInner() {
                   {HOURS.techDesignEservice.lines.map((l) => (
                     <p key={l} className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{l}</p>
                   ))}
-                  <p
-                    className="flex items-center gap-1.5 text-xs font-medium mt-1"
-                    style={{ color: BRAND.orangeDark }}
-                  >
-                    <span
-                      className="w-1.5 h-1.5 rounded-full shrink-0"
-                      style={{ backgroundColor: BRAND.orangeDark }}
-                    />
+                  <p className="flex items-center gap-1.5 text-xs font-medium mt-1 text-zinc-500 dark:text-zinc-400">
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-zinc-400 dark:bg-zinc-500" />
                     Sunday &amp; Public Holidays · Closed
                   </p>
                 </div>
@@ -495,4 +500,5 @@ export function ContactPage() {
       <ContactPageInner />
     </Suspense>
   )
-    } 
+}
+ 
