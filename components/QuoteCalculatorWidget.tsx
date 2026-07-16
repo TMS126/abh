@@ -834,5 +834,4 @@ export function QuoteCalculatorWidget() {
         </div>
       )}
     </>
-  )
-    } 
+  ) 
