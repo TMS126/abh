@@ -27,6 +27,10 @@ function StripCard({ item }: { item: any }) {
 
   const color = isDark ? BRAND.lightBlue : BRAND.blue
   const fillBlue = BRAND.blue
+  // Icon chip's hover color — only this changes to green now. Card fill,
+  // title, description, and everything else stays exactly the same blue
+  // treatment as before.
+  const iconHoverBg = BRAND.green
 
   return (
     <div
@@ -51,7 +55,7 @@ function StripCard({ item }: { item: any }) {
         <div
           className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 mb-5 transition-colors duration-300"
           style={{
-            backgroundColor: hovered ? "rgba(255,255,255,0.2)" : `${color}15`,
+            backgroundColor: hovered ? iconHoverBg : `${color}15`,
             color: hovered ? "#ffffff" : color,
           }}
         >
@@ -160,4 +164,4 @@ export function CtaBar({
       </div>
     </section>
   )
-    } 
+          } 
