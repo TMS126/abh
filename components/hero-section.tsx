@@ -159,8 +159,14 @@ const HUBS_DATA = [
       <Globe size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: Globe,
-    colorLight: BRAND.teal,
-    colorDark:  BRAND.tealLight,
+    // FIX (recurring): BRAND.teal / BRAND.tealLight still don't exist in
+    // lib/brand.ts — this was undefined again, which crashes the moment
+    // this tab is selected (colorFor's result flows straight into
+    // ensureAccessible/relativeLuminance). Restored to the same
+    // blueMid/lightBlue pairing E-Service already uses everywhere else
+    // (FORM_HUBS, HUB_COLORS, navbar's MOBILE_NAV_COLORS).
+    colorLight: BRAND.blueMid,
+    colorDark:  BRAND.lightBlue,
     services: [
       { name: "SASSA Status Check",         price: "R20"  },
       { name: "SASSA SRD Application",      price: "R40"  },
@@ -250,9 +256,23 @@ export function HeroSection() {
   const isDark    = mounted && resolvedTheme === "dark"
   const active    = HUBS_DATA[activeHub]
 
-  const CTA_COLOR      = isDark ? BRAND.lightBlue : BRAND.blue
+  // Button stroke — now fixed to BRAND.blue in BOTH themes ("primary blue
+  // stroke"), no longer theme-swapped. Fill (used on hover/mobile) stays
+  // the same primary blue too, for visual consistency with the border.
+  const STROKE_COLOR   = BRAND.blue
   const CTA_FILL_COLOR = BRAND.blue
-  const ARROW_COLOR = isDark ? BRAND.lightOrange : BRAND.orange
+
+  // Text/arrow at REST (border-only state, sitting directly on the page
+  // background) need their own theme-aware color for contrast, since a
+  // fixed primary blue reads fine on white but is too low-contrast on the
+  // near-black dark-mode background. lightBlue is the same pastel already
+  // used everywhere else in the app for "blue text on dark backgrounds".
+  // Both text and arrow now share this single value (previously the arrow
+  // had its own separate fixed orange, unrelated to the text's contrast
+  // logic) and are driven via CSS custom properties + Tailwind classes
+  // rather than inline styles, so the hover/mobile "turn white" state can
+  // actually override them via normal CSS specificity.
+  const REST_COLOR = isDark ? BRAND.lightBlue : BRAND.blue
 
   const cardText      = "#FFFFFF"
   const cardTextSoft  = "rgba(255,255,255,0.82)"
@@ -262,11 +282,6 @@ export function HeroSection() {
   const hubColor  = isDark ? active.colorDark : active.colorLight
   const nameColor = ensureAccessible(hubColor, neutralCardBgHex, 4.5)
 
-  // Background watermark icon — picked once at random per page load,
-  // desktop only. Rotation reduced (was -16deg, now -6deg — "don't tilt
-  // too much"). Reflection swapped for a soft blurred shadow ellipse
-  // beneath it — drop-shadow + floating shadow reads as 3D without the
-  // glossy mirrored look.
   const [pageWatermarkHub, setPageWatermarkHub] = useState<typeof HUBS_DATA[number] | null>(null)
   useEffect(() => {
     setPageWatermarkHub(HUBS_DATA[Math.floor(Math.random() * HUBS_DATA.length)])
@@ -365,10 +380,6 @@ export function HeroSection() {
 
         <div className="relative w-full flex justify-center items-center mb-8">
 
-          {/* Random per-page-load hub icon — desktop only, brand blue,
-              gentle rotation, drop shadow, slow float, with a soft
-              blurred shadow ellipse underneath instead of a mirrored
-              reflection (keeps it looking floating/3D, not glossy). */}
           <div
             aria-hidden="true"
             className="hidden md:flex absolute inset-y-0 -right-[10%] items-center justify-center pointer-events-none select-none z-0"
@@ -402,33 +413,39 @@ export function HeroSection() {
           <div
             aria-hidden="true"
             className="absolute w-[220px] h-[80px] rounded-full blur-2xl pointer-events-none abh-cta-glow"
-            style={{ backgroundColor: CTA_COLOR }}
+            style={{ backgroundColor: STROKE_COLOR }}
           />
 
+          {/* Start Here — border is now a fixed primary blue (STROKE_COLOR)
+              in both themes. Text and arrow read from the SAME --rest CSS
+              variable via Tailwind's arbitrary-value color utilities
+              instead of inline style="color", so the group-hover:text-white
+              (desktop) and the mobile-always-white classes can properly
+              override them through normal CSS cascade/specificity — an
+              inline style color would otherwise always win over a class,
+              which is why the arrow previously couldn't share the hover
+              behavior the text already had. */}
           <button
             ref={ctaBtnRef}
             onClick={handleCtaClick}
+            style={{
+              borderColor: STROKE_COLOR,
+              ["--rest" as any]: REST_COLOR,
+            }}
             className="group relative z-30 inline-flex items-center gap-3 px-10 py-5 rounded-[14px] font-sans font-black text-lg overflow-hidden border-2 transition-all duration-150 active:duration-75 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.94] shadow-md hover:shadow-xl active:shadow-sm animate-in fade-in duration-500"
-            style={{ borderColor: CTA_COLOR, color: CTA_COLOR }}
           >
             <span
               aria-hidden="true"
               className="absolute inset-0 origin-bottom scale-y-100 md:scale-y-0 transition-transform duration-150 ease-out md:group-hover:scale-y-100 md:group-active:scale-y-100"
               style={{ backgroundColor: CTA_FILL_COLOR }}
             />
-            <span
-              className="relative z-10"
-              style={{ color: "inherit" }}
-            >
-              <span className="text-white md:text-inherit md:group-hover:text-white md:group-active:text-white transition-colors duration-150">
-                Start Here
-              </span>
+            <span className="relative z-10 text-white md:text-[color:var(--rest)] md:group-hover:text-white md:group-active:text-white transition-colors duration-150">
+              Start Here
             </span>
             <ArrowRight
               weight="bold"
-              className="relative z-10 w-6 h-6 transition-transform duration-150 group-hover:translate-x-1.5"
-              style={{ color: ARROW_COLOR }}
               aria-hidden="true"
+              className="relative z-10 w-6 h-6 transition-all duration-150 group-hover:translate-x-1.5 text-white md:text-[color:var(--rest)] md:group-hover:text-white md:group-active:text-white"
             />
           </button>
         </div>
@@ -675,4 +692,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-        } 
+} 
