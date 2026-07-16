@@ -17,17 +17,99 @@ import {
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, ABOUT_VALUES, ABOUT_STANDARDS } from "@/lib/brand"
 
-// Color hierarchy for this page (per site-wide rule: blue dominant, green
-// less, orange least — reserved for highlights/CTAs only):
-// - BLUE:   stats strip, icon chips, card headers, Standards border on hover
-// - GREEN:  Values list icons (rest), AND the hover-accent for Standards'
-//           icon chip + the stats strip's fill
-// - ORANGE: the final "See All Services" CTA button only — now orangeDark,
-//           a middle shade (was orangeBrown, which read as too dark/muted)
+// ─── Contrast-nudging helpers ─────────────────────────────────────────────────
+// Same technique used elsewhere in the app: preserves the requested hue,
+// only nudges lightness as far as needed to clear a real contrast check
+// against a GIVEN background — rather than assuming a fixed brand color
+// always reads fine regardless of what's behind it. Needed here because
+// BRAND.blue/BRAND.green are medium-dark hues that read fine on the WHITE
+// page background but are low-contrast against the DARK navy page
+// background (#0D1B2A) used in dark mode.
+function hexToRgb(hex: string) {
+  const clean = hex.replace("#", "")
+  const full = clean.length === 3 ? clean.split("").map(c => c + c).join("") : clean
+  const bigint = parseInt(full, 16)
+  return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 }
+}
+function relativeLuminance({ r, g, b }: { r: number; g: number; b: number }) {
+  const [rs, gs, bs] = [r, g, b].map(c => {
+    const s = c / 255
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+  })
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs
+}
+function contrastRatio(hexA: string, hexB: string) {
+  const lA = relativeLuminance(hexToRgb(hexA))
+  const lB = relativeLuminance(hexToRgb(hexB))
+  const [lighter, darker] = lA > lB ? [lA, lB] : [lB, lA]
+  return (lighter + 0.05) / (darker + 0.05)
+}
+function rgbToHex({ r, g, b }: { r: number; g: number; b: number }) {
+  return "#" + [r, g, b].map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("")
+}
+function rgbToHsl({ r, g, b }: { r: number; g: number; b: number }) {
+  const rn = r / 255, gn = g / 255, bn = b / 255
+  const max = Math.max(rn, gn, bn), min = Math.min(rn, gn, bn)
+  let h = 0
+  const l = (max + min) / 2
+  let s = 0
+  if (max !== min) {
+    const d = max - min
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+    switch (max) {
+      case rn: h = (gn - bn) / d + (gn < bn ? 6 : 0); break
+      case gn: h = (bn - rn) / d + 2; break
+      case bn: h = (rn - gn) / d + 4; break
+    }
+    h /= 6
+  }
+  return { h: h * 360, s: s * 100, l: l * 100 }
+}
+function hslToRgb(h: number, s: number, l: number) {
+  const hn = h / 360, sn = s / 100, ln = l / 100
+  let r: number, g: number, b: number
+  if (sn === 0) {
+    r = g = b = ln
+  } else {
+    const hue2rgb = (p: number, q: number, t: number) => {
+      let tt = t
+      if (tt < 0) tt += 1
+      if (tt > 1) tt -= 1
+      if (tt < 1 / 6) return p + (q - p) * 6 * tt
+      if (tt < 1 / 2) return q
+      if (tt < 2 / 3) return p + (q - p) * (2 / 3 - tt) * 6
+      return p
+    }
+    const q = ln < 0.5 ? ln * (1 + sn) : ln + sn - ln * sn
+    const p = 2 * ln - q
+    r = hue2rgb(p, q, hn + 1 / 3); g = hue2rgb(p, q, hn); b = hue2rgb(p, q, hn - 1 / 3)
+  }
+  return { r: r * 255, g: g * 255, b: b * 255 }
+}
+function ensureAccessible(hex: string, bgHex: string, minRatio = 4.5) {
+  if (contrastRatio(hex, bgHex) >= minRatio) return hex
+  const hsl = rgbToHsl(hexToRgb(hex))
+  const bgLum = relativeLuminance(hexToRgb(bgHex))
+  const goingDarker = bgLum > 0.5
+  let l = hsl.l
+  for (let i = 0; i < 45; i++) {
+    l += goingDarker ? -2 : 2
+    l = Math.max(0, Math.min(100, l))
+    const candidate = rgbToHex(hslToRgb(hsl.h, hsl.s, l))
+    if (contrastRatio(candidate, bgHex) >= minRatio) return candidate
+    if (l <= 0 || l >= 100) break
+  }
+  return goingDarker ? "#1a1a1a" : "#fafafa"
+}
+
+// Actual page background hexes (from globals.css :root / .dark), used as
+// the bgHex target for the contrast nudge above.
+const PAGE_BG_LIGHT = "#FFFFFF"
+const PAGE_BG_DARK  = "#0D1B2A"
+
 const ABOUT_BLUE   = BRAND.blue
 const ABOUT_GREEN  = BRAND.green
 const ABOUT_ORANGE = BRAND.orangeDark
-// Neutral used for Standards cards at rest — only picks up green on hover.
 const ABOUT_NEUTRAL = { light: BRAND.dark100, dark: BRAND.techGreyDark }
 
 function renderIcon(iconName: string, className: string) {
@@ -42,8 +124,6 @@ function renderIcon(iconName: string, className: string) {
   }
 }
 
-// Picks white or near-black text against a given background hex, based on
-// actual WCAG relative luminance.
 function getReadableTextColor(hex: string): string {
   const clean = hex.replace("#", "")
   const r = parseInt(clean.substring(0, 2), 16) / 255
@@ -60,14 +140,11 @@ export function AboutPage() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
   const [statsHovered, setStatsHovered] = useState(false)
 
-  // FIX: this was a hardcoded useState(false) that never actually updated —
-  // in dark mode, neutralColor stayed pinned to the LIGHT-mode value
-  // (BRAND.dark100, near-black), rendering as dark icon on a dark
-  // (zinc-900) card background: invisible. Restored real useTheme().
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
   const isDark = mounted && resolvedTheme === "dark"
+  const pageBg = isDark ? PAGE_BG_DARK : PAGE_BG_LIGHT
 
   const blueColor    = ABOUT_BLUE
   const greenColor   = ABOUT_GREEN
@@ -75,6 +152,12 @@ export function AboutPage() {
   const orangeColor  = ABOUT_ORANGE
   const orangeText   = getReadableTextColor(orangeColor)
   const neutralColor = isDark ? ABOUT_NEUTRAL.dark : ABOUT_NEUTRAL.light
+
+  // Contrast-safe versions of blue/green used specifically where they sit
+  // directly on the page background (stats numbers/labels, the new
+  // divider) rather than as a solid fill with computed text-on-top.
+  const blueOnPage  = ensureAccessible(blueColor, pageBg, 4.5)
+  const greenOnPage = ensureAccessible(greenColor, pageBg, 4.5)
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
@@ -89,18 +172,23 @@ export function AboutPage() {
             A local business built on community, trust, and real help — right here in Kgotsong.
           </p>
 
-          <div className="abh-divider mx-auto mt-3" />
-
-          {/* Stats strip — border-only blue at rest, GREEN fill on hover */}
+          {/* Divider — replaced the shared abh-divider class (which relies
+              on var(--border): a muted blue-grey at 1px, effectively
+              invisible against the dark navy background) with an explicit,
+              visible divider using the same contrast-safe blue as the
+              stats text, at 2px with a touch of glow. */}
           <div
-            className={cn(
-              "mt-10 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x rounded-[14px] overflow-hidden shadow-lg transition-colors duration-200 border-2",
-              statsHovered ? "divide-white/25" : "divide-zinc-200 dark:divide-zinc-700"
-            )}
-            style={{
-              backgroundColor: statsHovered ? greenColor : "transparent",
-              borderColor: blueColor,
-            }}
+            className="mt-4 mb-2 h-[2px] w-16 rounded-full"
+            style={{ backgroundColor: blueOnPage, boxShadow: `0 0 8px ${blueOnPage}80` }}
+            aria-hidden="true"
+          />
+
+          {/* Stats strip — border-only blue, ALWAYS. On hover, only the
+              NUMBER/LABEL text switches to green — the strip's background
+              and border stay exactly as they are, no fill sweep anymore. */}
+          <div
+            className="mt-8 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x divide-zinc-200 dark:divide-zinc-700 rounded-[14px] overflow-hidden shadow-lg border-2"
+            style={{ borderColor: blueColor }}
             onMouseEnter={() => setStatsHovered(true)}
             onMouseLeave={() => setStatsHovered(false)}
           >
@@ -115,13 +203,13 @@ export function AboutPage() {
               >
                 <p
                   className="font-sans font-black text-xl leading-none transition-colors duration-200"
-                  style={{ color: statsHovered ? greenText : blueColor }}
+                  style={{ color: statsHovered ? greenOnPage : blueOnPage }}
                 >
                   {s.value}
                 </p>
                 <p
                   className="text-[0.62rem] font-medium uppercase tracking-widest mt-1.5 text-center transition-colors duration-200"
-                  style={{ color: statsHovered ? `${greenText}b3` : `${blueColor}b3` }}
+                  style={{ color: statsHovered ? `${greenOnPage}cc` : `${blueOnPage}cc` }}
                 >
                   {s.label}
                 </p>
@@ -247,11 +335,7 @@ export function AboutPage() {
           </div>
 
           {/* 4-card grid — neutral at rest, border goes BLUE on hover, icon
-              chip fill goes GREEN on hover. FIX: rest-state icon chip now
-              has an actual tinted background (${neutralColor}15) instead of
-              a plain bg-white/zinc-900 with no fill — that's what made the
-              icon invisible against a dark card in dark mode, since the
-              (broken) neutralColor was rendering near-black-on-near-black. */}
+              chip fill goes GREEN on hover. */}
           <ul
             className="grid grid-cols-1 sm:grid-cols-3 gap-5"
             aria-label="Standards"
@@ -337,7 +421,7 @@ export function AboutPage() {
             brought to people who need them most, in a community that deserves better access.
           </p>
 
-          {/* CTA — the ONLY orange element on this page, now orangeDark */}
+          {/* CTA — the ONLY orange element on this page */}
           <a
             href="/services"
             className="inline-flex items-center gap-2.5 px-8 py-4 rounded-[14px] font-black text-sm transition-all duration-300 active:scale-95 hover:-translate-y-0.5 shadow-lg"
