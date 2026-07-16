@@ -34,6 +34,30 @@ function buildInquireHref(project: ProjectData): string {
   return `/contact?${params.toString()}`
 }
 
+// Tiny synthesized "click" — no audio asset needed. Used for the Select-Hub
+// pill so pressing it gives real tactile feedback. Wrapped in try/catch:
+// some browsers block AudioContext until a user gesture has happened
+// elsewhere on the page, and this must never throw or block the click.
+function playClickSound() {
+  try {
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+    if (!AudioCtx) return
+    const ctx  = new AudioCtx()
+    const osc  = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.type = "sine"
+    osc.frequency.setValueAtTime(680, ctx.currentTime)
+    gain.gain.setValueAtTime(0.08, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.09)
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.start()
+    osc.stop(ctx.currentTime + 0.09)
+  } catch {
+    // Audio blocked/unavailable — fail silently, never block the click.
+  }
+}
+
 // ─── Back-button modal stack ──────────────────────────────────────────────────
 function useGalleryBackStack(
   selectedProject: ProjectData | null,
@@ -398,7 +422,7 @@ function ProjectHeader({ project, accent, hasBA, shareUrl, liked, onToggleLike, 
   liked: boolean; onToggleLike: () => void; onClose: () => void
 }) {
   return (
-    <div className="flex justify-between items-start mb-6 shrink-0">
+    <div className="flex justify-between items-start mb-6">
       <div>
         <span className="text-[0.65rem] font-bold px-2.5 py-1 rounded-[14px] mb-3 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>{project.tag}</span>
         {hasBA && (
@@ -485,7 +509,11 @@ function ProjectImageSection({
             onTouchStart={onImageTouchStart}
             onTouchEnd={onImageTouchEnd}
           >
-            <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="(max-width: 768px) 100vw, 55vw" className="object-cover transition-opacity duration-300" priority={activeImg === 0} />
+            {/* object-contain (was object-cover) — shows the whole image
+                centered rather than cropping it to fill the frame. Matters
+                most for portrait documents like CVs viewed in this
+                landscape-ish pane; nothing gets cut off anymore. */}
+            <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="(max-width: 768px) 100vw, 55vw" className="object-contain transition-opacity duration-300" priority={activeImg === 0} />
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 pointer-events-none">
               <div className="bg-black/40 backdrop-blur-sm rounded-full p-2.5"><ArrowsOut size={18} weight="bold" className="text-white" /></div>
             </div>
@@ -538,8 +566,12 @@ function ProjectImageSection({
   )
 }
 
-// ─── Project details panel ────────────────────────────────────────────────────
-function ProjectDetailsPanel({ project, accent, onClose }: { project: ProjectData; accent: string; onClose: () => void }) {
+// ─── Project details BODY — Goal / What we did / Result only. ─────────────────
+// Split out of the old combined "ProjectDetailsPanel" so this piece can be
+// the ONLY scrollable region inside the viewer's right-hand panel, with the
+// header pinned above it and the CTA buttons pinned below it (see
+// ProjectViewerModal for the surrounding flex layout).
+function ProjectDetailsBody({ project }: { project: ProjectData }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
   const blueColor = isDark ? BRAND.lightBlue : BRAND.blue
@@ -563,27 +595,35 @@ function ProjectDetailsPanel({ project, accent, onClose }: { project: ProjectDat
         <h4 className="text-[0.65rem] font-black uppercase tracking-widest mb-3" style={{ color: blueColor }}>The Result</h4>
         <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">{project.result}</p>
       </section>
+    </div>
+  )
+}
 
-      <div className="space-y-2.5">
-        <a
-          href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(`Hi ${BIZ.name}! I saw "${project.title}" in your gallery and I'd like something similar.`)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={onClose}
-          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-[14px] text-sm font-bold text-white shadow-lg transition-transform active:scale-[0.98]"
-          style={{ backgroundColor: "#25D366" }}
-        >
-          Get a project like this
-        </a>
-        <Link
-          href={buildInquireHref(project)}
-          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-[14px] text-sm font-bold border-2 transition-transform active:scale-[0.98]"
-          style={{ borderColor: blueColor, color: blueColor }}
-        >
-          <EnvelopeSimple size={16} weight="bold" />
-          Inquire about this
-        </Link>
-      </div>
+// ─── Project CTAs — pinned footer, split out of the old combined panel ────────
+function ProjectCTAs({ project, onClose }: { project: ProjectData; onClose: () => void }) {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
+  const blueColor = isDark ? BRAND.lightBlue : BRAND.blue
+  return (
+    <div className="space-y-2.5">
+      <a
+        href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(`Hi ${BIZ.name}! I saw "${project.title}" in your gallery and I'd like something similar.`)}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={onClose}
+        className="flex items-center justify-center gap-2 w-full py-3.5 rounded-[14px] text-sm font-bold text-white shadow-lg transition-transform active:scale-[0.98]"
+        style={{ backgroundColor: "#25D366" }}
+      >
+        Get a project like this
+      </a>
+      <Link
+        href={buildInquireHref(project)}
+        className="flex items-center justify-center gap-2 w-full py-3.5 rounded-[14px] text-sm font-bold border-2 transition-transform active:scale-[0.98]"
+        style={{ borderColor: blueColor, color: blueColor }}
+      >
+        <EnvelopeSimple size={16} weight="bold" />
+        Inquire about this
+      </Link>
     </div>
   )
 }
@@ -689,36 +729,62 @@ function ProjectViewerModal({
           siblingPosition={siblingPosition}
         />
 
+        {/* Right panel — now three independent flex regions instead of one
+            big scrollable column: a pinned header, a pinned CTA footer, and
+            ONLY the middle (Goal / What We Did / Result) actually scrolls.
+            Previously the whole panel scrolled together, so the title and
+            the "Get a project like this" buttons disappeared as soon as you
+            scrolled past them. */}
         <div
-          ref={detailsRef}
-          onScroll={handleDetailsScroll}
-          className={cn("relative flex flex-col border-zinc-100 dark:border-zinc-800 overflow-y-auto overscroll-contain", "h-[60%] border-t md:h-auto md:border-t-0 md:border-l md:w-[380px]", "p-6 md:p-8")}
+          className={cn(
+            "relative flex flex-col border-zinc-100 dark:border-zinc-800",
+            "h-[60%] border-t md:h-auto md:border-t-0 md:border-l md:w-[380px]"
+          )}
         >
-          <div className="sticky top-0 h-0 z-20 pointer-events-none" aria-hidden>
+          {/* Pinned header — title, tag, like/share/close */}
+          <div className="shrink-0 px-6 md:px-8 pt-6 md:pt-8 relative z-20 bg-white dark:bg-zinc-950">
+            <ProjectHeader
+              project={project}
+              accent={accent}
+              hasBA={hasBA}
+              shareUrl={shareUrl}
+              liked={likedIds.has(project.id)}
+              onToggleLike={() => onToggleLike(project.id)}
+              onClose={onClose}
+            />
+          </div>
+
+          {/* Scroll-shadow indicator — sits right at the header/scroll
+              boundary, fades in as the middle section scrolls under it. */}
+          <div className="relative h-0 z-10 pointer-events-none" aria-hidden>
             <div
-              className="absolute -inset-x-6 md:-inset-x-8 -top-6 md:-top-8 h-14 md:h-16"
+              className="absolute -inset-x-6 md:-inset-x-8 -top-px h-5"
               style={{
                 opacity: shadowOpacity,
                 transition: "opacity 60ms linear",
-                background: "linear-gradient(to bottom, rgba(0,0,0,0.26) 0%, rgba(0,0,0,0.13) 35%, rgba(0,0,0,0.045) 65%, rgba(0,0,0,0) 100%)",
+                background: "linear-gradient(to bottom, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0) 100%)",
               }}
             />
           </div>
-          <ProjectHeader
-            project={project}
-            accent={accent}
-            hasBA={hasBA}
-            shareUrl={shareUrl}
-            liked={likedIds.has(project.id)}
-            onToggleLike={() => onToggleLike(project.id)}
-            onClose={onClose}
-          />
-          <ProjectDetailsPanel project={project} accent={accent} onClose={onClose} />
-          {hasSiblings && (
-            <p className="hidden md:block text-[0.65rem] font-medium text-zinc-400 text-center mt-6">
-              Use ← → to browse other {hubLabelFor(project.hub)} projects
-            </p>
-          )}
+
+          {/* ONLY this region scrolls */}
+          <div
+            ref={detailsRef}
+            onScroll={handleDetailsScroll}
+            className="flex-1 overflow-y-auto overscroll-contain px-6 md:px-8 pb-6"
+          >
+            <ProjectDetailsBody project={project} />
+            {hasSiblings && (
+              <p className="hidden md:block text-[0.65rem] font-medium text-zinc-400 text-center mt-6">
+                Use ← → to browse other {hubLabelFor(project.hub)} projects
+              </p>
+            )}
+          </div>
+
+          {/* Pinned CTA footer */}
+          <div className="shrink-0 px-6 md:px-8 pt-4 pb-6 md:pb-8 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 relative z-20">
+            <ProjectCTAs project={project} onClose={onClose} />
+          </div>
         </div>
       </div>
 
@@ -737,8 +803,9 @@ function ProjectViewerModal({
 // ─── Unified swipe carousel ───────────────────────────────────────────────────
 // Cards now pick up the project's hub color on hover — border, glow shadow,
 // and title text all tint via CSS custom properties (--hub-accent /
-// --hub-shadow), same pattern as the Services hub cards. Base state stays
-// neutral (white title, zinc border) so the hover feels like a reveal.
+// --hub-shadow), same pattern as the Services hub cards. Cards also now sit
+// under a permanent deep, layered shadow (not just on hover) plus a hover
+// lift, for a "floating above the page" 3D feel rather than a flat card.
 function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }: {
   projects: ProjectData[]; accent: string; onSelect: (p: ProjectData) => void
   likedIds: Set<string>; onToggleLike: (id: string) => void
@@ -792,12 +859,37 @@ function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }:
           <div key={project.id} className="shrink-0 w-full snap-center px-4 md:px-6" style={{ scrollSnapAlign: "center" }}>
             <div
               style={{ '--hub-accent': accent, '--hub-shadow': `${accent}55` } as any}
-              className="group rounded-[16px] overflow-hidden border-2 border-zinc-100 dark:border-zinc-800 hover:border-[var(--hub-accent)] bg-white dark:bg-zinc-950 shadow-xl hover:shadow-[0_16px_36px_-10px_var(--hub-shadow)] cursor-pointer transition-all duration-300 ease-out active:scale-[0.98]"
+              className={cn(
+                "group rounded-[16px] overflow-hidden border-2 border-zinc-100 dark:border-zinc-800 hover:border-[var(--hub-accent)]",
+                "bg-white dark:bg-zinc-950 cursor-pointer will-change-transform",
+                "transition-all duration-300 ease-out active:scale-[0.98] hover:-translate-y-1.5"
+              )}
+              style={{
+                boxShadow: "0 30px 60px -20px rgba(0,0,0,0.55), 0 10px 24px -12px rgba(0,0,0,0.35)",
+                '--hub-accent': accent,
+                '--hub-shadow': `${accent}55`,
+              } as any}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.boxShadow = `0 36px 70px -16px ${accent}55, 0 14px 30px -10px rgba(0,0,0,0.4)`
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.boxShadow = "0 30px 60px -20px rgba(0,0,0,0.55), 0 10px 24px -12px rgba(0,0,0,0.35)"
+              }}
               onClick={() => { if (!dragMoved.current) onSelect(project) }}
             >
               <div className="relative aspect-[16/9] md:aspect-[16/8] bg-zinc-100 dark:bg-zinc-900">
                 <SafeImage src={project.image} alt={project.title} accent={accent} fill sizes="(max-width: 768px) 100vw, 800px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                {/* Bottom fade — was a flat black-to-transparent wash that
+                    could look like a solid block over busy photos. Now a
+                    proper multi-stop gradient anchored at the bottom, so
+                    the title/tag text stays readable without hiding more
+                    of the image than necessary. */}
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: "linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.6) 22%, rgba(0,0,0,0.22) 48%, rgba(0,0,0,0) 75%)",
+                  }}
+                />
                 <div className="absolute top-4 left-4 z-10">
                   <LikeButton
                     liked={likedIds.has(project.id)}
@@ -918,7 +1010,9 @@ function ProjectsPopover({
       <button
         onClick={handleToggleClick}
         className={cn(
-          "text-xs font-bold px-3 py-1 rounded-full transition-opacity duration-200",
+          // rounded-full → rounded-[14px], matching the rest of the site's
+          // pill/badge radius instead of a fully round chip.
+          "text-xs font-bold px-3 py-1 rounded-[14px] transition-opacity duration-200",
           "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:scale-105",
           open && "opacity-0 pointer-events-none"
         )}
@@ -970,10 +1064,16 @@ function ProjectsPopover({
 }
 
 // ─── Hub filter dropdown ──────────────────────────────────────────────────────
-// Centered "keycap" pill — idle label now reads "Select a Hub" instead of
-// "All hubs" (the "All hubs" option still exists inside the opened list).
-// Content is centered via justify-center + text-center. Shadow transitions
-// smoothed to duration-300/ease-out throughout.
+// Centered "keycap" pill. Outside-close now uses a real full-screen backdrop
+// (same pattern as the modals elsewhere in this file) instead of a
+// document-level "mousedown" listener. The old listener raced against the
+// option buttons' own onClick on touch devices — sometimes the dropdown
+// would start closing on the SAME tap that was supposed to pick a hub,
+// eating that tap and requiring a second one. A backdrop can't race like
+// that: taps on it only ever close the dropdown and never reach anything
+// underneath, and taps on the option buttons (rendered above the backdrop)
+// always register on the first press. The toggle button also now plays a
+// short synthesized click on press.
 function FilterDropdown({
   activeFilter, onSelect, getAccent,
 }: {
@@ -985,7 +1085,6 @@ function FilterDropdown({
   const isDark = resolvedTheme === "dark"
   const blueColor = isDark ? BRAND.lightBlue : BRAND.blue
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
   const pushedRef = useRef(false)
 
   const closeDropdown = useCallback(() => {
@@ -996,15 +1095,6 @@ function FilterDropdown({
       setOpen(false)
     }
   }, [])
-
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) closeDropdown()
-    }
-    document.addEventListener("mousedown", handler)
-    return () => document.removeEventListener("mousedown", handler)
-  }, [open, closeDropdown])
 
   useEffect(() => {
     if (open && !pushedRef.current) {
@@ -1027,6 +1117,15 @@ function FilterDropdown({
     return () => window.removeEventListener("popstate", onPop)
   }, [])
 
+  const handleToggleClick = () => {
+    playClickSound()
+    if (open) {
+      closeDropdown()
+    } else {
+      setOpen(true)
+    }
+  }
+
   const options: { id: HubId | "all"; label: string }[] = [
     { id: "all", label: "All hubs" },
     ...ROW_ORDER.map(r => ({ id: r.id, label: r.label })),
@@ -1037,11 +1136,11 @@ function FilterDropdown({
   const pillColor       = currentAccent ?? blueColor
 
   return (
-    <div ref={ref} className="relative flex justify-center mb-10">
+    <div className="relative flex justify-center mb-10">
       <button
-        onClick={() => (open ? closeDropdown() : setOpen(true))}
+        onClick={handleToggleClick}
         aria-expanded={open}
-        className="inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-full bg-white dark:bg-zinc-950 font-sans font-black text-sm text-center transition-all duration-300 ease-out active:translate-y-[3px]"
+        className="relative z-30 inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-full bg-white dark:bg-zinc-950 font-sans font-black text-sm text-center transition-all duration-300 ease-out active:translate-y-[3px]"
         style={{
           boxShadow: open
             ? `0 2px 0 ${pillColor}70, 0 3px 10px rgba(0,0,0,0.2)`
@@ -1058,34 +1157,45 @@ function FilterDropdown({
       </button>
 
       {open && (
-        <div
-          role="listbox"
-          aria-label="Filter by hub"
-          className="absolute left-1/2 -translate-x-1/2 top-full mt-3 z-30 w-64 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
-        >
-          <div className="p-2 max-h-[320px] overflow-y-auto">
-            {options.map(opt => {
-              const accent   = opt.id !== "all" ? getAccent(opt.id as HubId) : undefined
-              const isActive = activeFilter === opt.id
-              return (
-                <button
-                  key={opt.id}
-                  role="option"
-                  aria-selected={isActive}
-                  onClick={() => { onSelect(opt.id); closeDropdown() }}
-                  className={cn(
-                    "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-left text-sm font-bold transition-colors",
-                    isActive ? "bg-zinc-50 dark:bg-zinc-900" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
-                  )}
-                >
-                  {accent && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: accent }} />}
-                  <span className="text-zinc-800 dark:text-zinc-200" style={accent ? { color: accent } : undefined}>{opt.label}</span>
-                  {isActive && <Check size={14} weight="bold" className="ml-auto shrink-0" style={{ color: accent }} />}
-                </button>
-              )
-            })}
+        <>
+          {/* Full-screen backdrop — captures every outside tap so it can
+              only ever close the dropdown, never also trigger whatever's
+              underneath. Sits below the dropdown list (z-20) but above
+              everything else on the page. */}
+          <div
+            className="fixed inset-0 z-20"
+            onClick={closeDropdown}
+            aria-hidden="true"
+          />
+          <div
+            role="listbox"
+            aria-label="Filter by hub"
+            className="absolute left-1/2 -translate-x-1/2 top-full mt-3 z-30 w-64 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+          >
+            <div className="p-2 max-h-[320px] overflow-y-auto">
+              {options.map(opt => {
+                const accent   = opt.id !== "all" ? getAccent(opt.id as HubId) : undefined
+                const isActive = activeFilter === opt.id
+                return (
+                  <button
+                    key={opt.id}
+                    role="option"
+                    aria-selected={isActive}
+                    onClick={() => { onSelect(opt.id); closeDropdown() }}
+                    className={cn(
+                      "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-left text-sm font-bold transition-colors",
+                      isActive ? "bg-zinc-50 dark:bg-zinc-900" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                    )}
+                  >
+                    {accent && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: accent }} />}
+                    <span className="text-zinc-800 dark:text-zinc-200" style={accent ? { color: accent } : undefined}>{opt.label}</span>
+                    {isActive && <Check size={14} weight="bold" className="ml-auto shrink-0" style={{ color: accent }} />}
+                  </button>
+                )
+              })}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   )
@@ -1105,8 +1215,6 @@ function EmptyHubState({ label, query }: { label: string; query?: string }) {
 }
 
 // ─── Closing tagline ──────────────────────────────────────────────────────────
-// Same visual language as the Services page's ClosingTagline (solid blue
-// wash + top bar), with copy written for the gallery/portfolio context.
 function GalleryClosingTagline() {
   return (
     <div className="relative mt-4 mb-4 overflow-hidden rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-6 py-10 md:py-12 text-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
@@ -1240,9 +1348,6 @@ function GalleryPageInner() {
           <div className="abh-divider" />
         </div>
 
-        {/* Search + Surprise me — now blue stroke, matching Services'
-            InlineSearchBar (transparent/white fill, 2px blue border, blue
-            text/icon, blue hover tint). Shadow smoothed to duration-300. */}
         <div
           className="flex items-stretch max-w-md mx-auto mb-6 rounded-[14px] bg-white dark:bg-zinc-950 border-2 overflow-hidden transition-all duration-300 ease-out shadow-md hover:shadow-lg hover:-translate-y-0.5"
           style={{ borderColor: blueColor }}
@@ -1327,8 +1432,14 @@ function GalleryPageInner() {
                 if (activeFilter !== row.id) return null
                 return (
                   <div key={row.id} className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm transition-shadow duration-300 ease-out p-5 md:p-7">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: blueColor }} />
+                    {/* px-4 md:px-6 added so the vertical bar + hub name +
+                        project-count pill line up with the carousel image's
+                        left/right edges below (the carousel adds that same
+                        inset on its own slide wrapper, so without matching
+                        it here the header sat flush against the card's own
+                        padding while the image sat further in). */}
+                    <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
+                      <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: "#1E6FA8" }} />
                       <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
                     </div>
                     <EmptyHubState label={row.label} query={searchLower ? searchQuery.trim() : undefined} />
@@ -1338,8 +1449,11 @@ function GalleryPageInner() {
 
               return (
                 <div key={row.id} className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm transition-shadow duration-300 ease-out p-5 md:p-7">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: blueColor }} />
+                  <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
+                    {/* Vertical bar now fixed brand blue (#1E6FA8), same as
+                        the notice icon and closing-tagline top bar, instead
+                        of the theme-adaptive blueColor. */}
+                    <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: "#1E6FA8" }} />
                     <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
                     <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
                   </div>
@@ -1397,4 +1511,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-                                               } 
+        } 
