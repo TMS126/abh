@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, type ChangeEvent, type RefObject } from "react"
 import { useSearchParams } from "next/navigation"
-import { motion, AnimatePresence, useDragControls, type PanInfo } from "framer-motion"
+import { motion, AnimatePresence, type PanInfo } from "framer-motion"
 import {
   X, Printer, FileText, PaintBrush, Globe, Desktop,
   PaperPlaneTilt, Megaphone, MagnifyingGlass,
@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey, BIZ, BRAND } from "@/lib/brand"
 import { ensureAccessible, getContrastText } from "@/lib/color"
 import { trackEvent } from "@/lib/analytics"
-import { HUBS, HubId } from "@/lib/data"
+import { HUBS, HubId, TURNAROUND, TURNAROUND_OVERRIDE, TURNAROUND_DISCLAIMER } from "@/lib/data"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
@@ -259,8 +259,7 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
   const index     = useMemo(buildSearchIndex, [])
 
   // Stroke, not fill — transparent/white background with a blue border,
-  // blue text/icon. Was a solid blue fill; switched per request so the bar
-  // reads as an outlined field rather than a filled button.
+  // blue text/icon.
   const strokeColor = isDark ? BRAND.lightBlue : BRAND.blue
   const blueIcon     = isDark ? BRAND.lightBlue : BRAND.blue
   const priceColor  = isDark ? BRAND.lightOrange : BRAND.orangeDark
@@ -380,12 +379,9 @@ function HubModal({
   if (!hubId) return null
   const hub    = HUBS[hubId]
   const colors = HUB_COLORS[hubId as HubKey]
-  // Icon is now uniformly blue (was per-hub) — hub identity instead comes
-  // through the "Available Services" label and the close button below.
   const blueColor = isDark ? BRAND.lightBlue : BRAND.blue
   const hubColor  = isDark ? colors.accentDark : colors.accentLight
 
-  // Tab+description panel stays solid blue (dominant page color, unchanged).
   const panelBg   = isDark ? BRAND.blueMid : BRAND.blue
   const cardText  = getContrastText(panelBg)
   const activeTabColor = ensureAccessible(isDark ? BRAND.lightGreen : BRAND.green, panelBg, 4.5)
@@ -393,9 +389,6 @@ function HubModal({
 
   return (
     <div className="fixed inset-0 z-[10100] flex items-center justify-center p-4 animate-in fade-in duration-300">
-      {/* backdrop-blur-sm (was -md) — lighter blur, cheaper to composite,
-          especially since this backdrop can be visible at the same time as
-          the ServiceDetailModal's own overlay when both are stacked. */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm overscroll-contain" onClick={onClose} />
       <div
         ref={containerRef}
@@ -414,9 +407,6 @@ function HubModal({
             </div>
             <div>
               <h2 className="abh-card-heading text-xl md:text-2xl">{hub.title}</h2>
-              {/* Label carries the hub's own color — the icon above is now
-                  uniformly blue, so this is one of the spots hub identity
-                  still comes through in the header. */}
               <p className="abh-label mt-0.5" style={{ color: hubColor }}>{hub.sections.reduce((sum, s) => sum + s.items.length, 0)} Available Services</p>
             </div>
           </div>
@@ -433,10 +423,6 @@ function HubModal({
         {/* Body */}
         <div className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-8">
 
-          {/* Section tabs + description — fused into one solid blue card so
-              switching tabs feels like updating one shape rather than two
-              separate pieces. Falls back to plain neutral pills (old
-              behavior) if every section is collapsed (openSectionIdx null). */}
           {openSectionIdx !== null && hub.sections[openSectionIdx] ? (
             <div
               className="rounded-[14px] p-4 md:p-5 mb-5 transition-colors duration-300"
@@ -465,9 +451,6 @@ function HubModal({
               </div>
               {hub.sections[openSectionIdx].desc && (
                 <div key={openSectionIdx} className="animate-in fade-in duration-300">
-                  {/* Divider separating the tab pills above from the
-                      description below — colored off cardText so it stays
-                      visible against the blue panel in both themes. */}
                   <div className="h-px w-full mb-4" style={{ backgroundColor: `${cardText}25` }} />
                   <p
                     className="text-[0.82rem] font-semibold leading-relaxed"
@@ -521,61 +504,12 @@ function HubModal({
 
 // ─── Service Detail Modal ─────────────────────────────────────────────────────
 type Tab = "bring" | "about"
+type SheetState = "default" | "expanded"
 
-// Hubs whose services are handled entirely online/remotely — no physical
-// item ever needs to be dropped off, so the "Bring" pill reads oddly there.
 const REMOTE_HUBS: HubId[] = ["design", "eservice"]
 function isRemoteHub(hubId: HubId) {
   return REMOTE_HUBS.includes(hubId)
 }
-
-// Turnaround estimates — researched realistic times for South African retail
-// and government services. Keyed by section title; item-level overrides below.
-const TURNAROUND: Record<string, string> = {
-  // Print Hub
-  "Printing":            "15–30 mins",
-  "Copying":             "10–20 mins",
-  "Photo Printing":      "20–40 mins",
-  "Scanning":            "10–15 mins",
-  "Laminating":          "10–20 mins",
-  // Docu Hub
-  "Typing + Printing":   "1–3 hours",
-  "CV Services":         "24–48 hours",
-  "Other Documents":     "2–4 hours",
-  // Design Hub
-  "Logos":               "2–3 days",
-  "Business Cards":      "1–2 days",
-  "Flyers & Posters":    "1–2 days",
-  "Social Media":        "24–48 hours",
-  "Invitations":         "1–2 days",
-  "Revisions":           "2–6 hours",
-  // E-Service Hub
-  "SASSA":               "24 hours",
-  "SARS":                "24 hours",
-  "PSIRA":               "1–2 days",
-  "Online Applications": "24 hours",
-  "Email Services":      "15–30 mins",
-  "Business Services":   "1–2 days",
-  "Digital Setup":       "2–4 hours",
-  // Tech Hub
-  "Software":            "1–3 hours",
-  "Hardware":            "1–2 days",
-  "Support":             "2–6 hours",
-  "Windows & Office":    "2–4 hours",
-}
-
-// Item-level overrides for services that differ from their section's estimate
-const TURNAROUND_OVERRIDE: Record<string, string> = {
-  "Premium Logo":              "3–5 days",
-  "Standard Logo":             "2–3 days",
-  "Video":                     "3–5 days",
-  "Tax Return / VAT / PAYE":   "2–3 days",
-  "CSD Registration":          "1–2 days",
-  "UIF Claims":                "2–3 days",
-}
-
-const TURNAROUND_DISCLAIMER =
-  "Turnaround times are estimates based on standard volume. Factors such as load shedding, third-party system downtime (SARS/SASSA/PSIRA), or complex revision requests may affect final delivery. We appreciate your patience as we ensure the highest quality for your work."
 
 // Spring tuned for a native-feeling sheet: snappy but not bouncy.
 const SHEET_TRANSITION = { type: "spring" as const, damping: 32, stiffness: 340 }
@@ -584,6 +518,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
   const [tab,         setTab]         = useState<Tab>("bring")
+  const [sheetState,  setSheetState]  = useState<SheetState>("default")
   const [file,        setFile]        = useState<File | null>(null)
   const [uploadPhase, setUploadPhase] = useState<"idle" | "uploading" | "done" | "error">("idle")
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -594,23 +529,19 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   const [addedToQuote, setAddedToQuote] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const dragControls = useDragControls()
 
   useEffect(() => {
-    setTab("bring"); setAddedToQuote(false)
+    setTab("bring"); setAddedToQuote(false); setSheetState("default")
     setFile(null); setFileUrl(null)
     setUploadPhase("idle"); setUploadErr(null); setUploadProgress(0)
     setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null })
     if (fileRef.current) fileRef.current.value = ""
   }, [svc?.name])
 
-  // Revoke any outstanding object URL when the modal unmounts, so we don't
-  // leak memory if the person navigates away mid-preview.
   useEffect(() => {
     return () => { if (previewUrl) URL.revokeObjectURL(previewUrl) }
   }, [previewUrl])
 
-  // Escape key closes the modal, mirroring the gallery page's overlay behavior.
   useEffect(() => {
     if (!svc) return
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
@@ -664,7 +595,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     const f = e.target.files?.[0]
     if (!f) return
 
-    // Block explicit/dangerous file types
     if (BLOCKED_MIME_TYPES.has(f.type) || BLOCKED_EXTENSIONS.test(f.name)) {
       setUploadErr("That file type isn't allowed. Please send a document, image, or PDF only.")
       setUploadPhase("error")
@@ -680,8 +610,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     setFile(f)
     setUploadErr(null)
 
-    // Local thumbnail preview for images only — separate from the Cloudinary
-    // upload, so it appears instantly rather than waiting on the network.
     setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null })
     if (f.type.startsWith("image/")) {
       setPreviewUrl(URL.createObjectURL(f))
@@ -697,21 +625,29 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     if (fileRef.current) fileRef.current.value = ""
   }
 
-  // Swipe-to-close: dragConstraints={{top:0,bottom:0}} means the sheet can't
-  // be dragged away from its resting position except elastically (see
-  // dragElastic below). If the release point/velocity clears the threshold
-  // we close; otherwise framer-motion springs it back to 0 on its own —
-  // no manual "snap back" code needed.
+  // Two-snap-point drag: touching anywhere on the card can drag it. From
+  // "default" height, dragging up past the threshold expands to near-full-
+  // screen; from "expanded", dragging down past a smaller threshold returns
+  // to "default"; dragging down further/faster from "default" closes. `y`
+  // always animates back to 0 after release — the actual rest height is
+  // driven by `sheetState` (see the style on the outer motion.div below),
+  // not by a lingering drag offset.
   const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    if (info.offset.y > 120 || info.velocity.y > 600) {
-      onClose()
+    const offsetY = info.offset.y
+    const velocityY = info.velocity.y
+
+    if (sheetState === "expanded") {
+      if (offsetY > 160 || velocityY > 700) { onClose(); return }
+      if (offsetY > 60 || velocityY > 300) { setSheetState("default"); return }
+      return
     }
+
+    if (offsetY > 120 || velocityY > 600) { onClose(); return }
+    if (offsetY < -60 || velocityY < -400) { setSheetState("expanded"); return }
   }
 
   if (!svc) return null
 
-  // Everything in this modal uses the shared blue/green/orange scheme,
-  // except the close button, which takes this service's own hub color.
   const blueColor   = isDark ? BRAND.lightBlue  : BRAND.blue
   const greenColor  = isDark ? BRAND.lightGreen : BRAND.green
   const orangeColor = isDark ? BRAND.lightOrange : BRAND.orangeDark
@@ -761,9 +697,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   const desc = isRemote ? remoteizeText(descRaw) : descRaw
   return (
     <div className="fixed inset-0 z-[10200] flex items-end justify-center">
-      {/* No backdrop-blur here — backdrop-filter is one of the most GPU-expensive
-          effects on mobile, and was the actual source of the slide-up lag (not
-          RAM). Slightly darker opacity keeps the same dimmed feel without it. */}
       <motion.div
         className="absolute inset-0 bg-black/50 overscroll-contain"
         onClick={onClose}
@@ -773,12 +706,12 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
         transition={{ duration: 0.2 }}
       />
 
-      {/* True bottom sheet — same max-w-2xl cap as HubModal with a small
-          horizontal gutter, driven by framer-motion (compositor-animated
-          transform) instead of CSS keyframes. will-change-transform pre-
-          promotes this to its own GPU layer before the drag/spring starts.
-          Drag only initiates from the handle below, so scrolling inside the
-          tab content never fights the sheet. */}
+      {/* Two-snap-point bottom sheet — drag from anywhere on the card
+          (touching anywhere, not just a handle) to close, expand, or
+          collapse. Height is fixed per sheetState (68dvh default, ~full
+          screen expanded) rather than content-hugging, which is what makes
+          the transition between the two states animate smoothly via the
+          CSS `transition: height` below, alongside framer's drag/y spring. */}
       <motion.div
         ref={containerRef}
         tabIndex={-1}
@@ -786,27 +719,24 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
         aria-modal="true"
         aria-label={svc.name}
         drag="y"
-        dragControls={dragControls}
-        dragListener={false}
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={{ top: 0, bottom: 0.55 }}
+        dragConstraints={{ top: -60, bottom: 0 }}
+        dragElastic={{ top: 0.4, bottom: 0.55 }}
         onDragEnd={handleDragEnd}
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={SHEET_TRANSITION}
-        style={{ boxShadow: "0 -16px 44px -10px rgba(0,0,0,0.35), 0 -6px 18px -6px rgba(0,0,0,0.25)" }}
-        className="relative w-full max-w-2xl mx-3 sm:mx-6 rounded-t-[20px] overflow-hidden bg-white dark:bg-zinc-950 border border-b-0 border-zinc-100 dark:border-zinc-800 max-h-[88dvh] flex flex-col outline-none will-change-transform"
+        style={{
+          height: sheetState === "expanded" ? "calc(100dvh - env(safe-area-inset-top) - 12px)" : "68dvh",
+          transition: "height 300ms ease-out",
+          boxShadow: "0 -16px 44px -10px rgba(0,0,0,0.35), 0 -6px 18px -6px rgba(0,0,0,0.25)",
+        }}
+        className="relative w-full max-w-2xl mx-3 sm:mx-6 rounded-t-[20px] overflow-hidden bg-white dark:bg-zinc-950 border border-b-0 border-zinc-100 dark:border-zinc-800 flex flex-col outline-none will-change-transform cursor-grab active:cursor-grabbing"
       >
-        {/* Drag handle — decorative/visual affordance only; the X button
-            below is the real accessible close control, so this is hidden
-            from screen readers rather than announced as an interactive
-            element with no keyboard equivalent. */}
-        <div
-          aria-hidden="true"
-          className="w-full flex justify-center pt-3 pb-1.5 cursor-grab active:cursor-grabbing touch-none shrink-0"
-          onPointerDown={(e) => dragControls.start(e)}
-        >
+        {/* Drag handle — now purely a visual affordance (dragging works
+            from anywhere on the card), hidden from screen readers since
+            the X button is the real accessible close control. */}
+        <div aria-hidden="true" className="w-full flex justify-center pt-3 pb-1.5 shrink-0">
           <div className="w-10 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700" />
         </div>
 
@@ -837,8 +767,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                   Copied!
                 </span>
               )}
-              {/* Close button — this service's own hub color, unlike the
-                  rest of the modal (blue/green/orange shared scheme). */}
               <button
                 onClick={onClose}
                 aria-label="Close"
@@ -884,8 +812,12 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
           </div>
         </div>
 
-        {/* Tab content */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 min-h-0">
+        {/* Tab content — scrolling disabled (overflow-hidden, not
+            overflow-y-auto) so touch gestures started here always drag the
+            sheet instead of fighting a nested scroll. Content that doesn't
+            fit is simply clipped; expanding the sheet upward gives more
+            room to see it. */}
+        <div className="flex-1 overflow-hidden px-6 py-5 min-h-0">
           {tab === "bring" && (
             <div className="animate-in fade-in slide-in-from-left-2 duration-200">
               <ol className="space-y-3">
@@ -901,8 +833,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                   </li>
                 ))}
               </ol>
-              {/* Disclaimer box — inset shadow only, no background fill, so it
-                  reads as a subtly recessed note rather than a filled card. */}
               <div
                 className="mt-5 rounded-[14px] p-4"
                 style={{ boxShadow: `inset 0 1px 4px ${blueColor}35, inset 0 0 0 1px ${blueColor}20` }}
@@ -935,7 +865,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             className="hidden"
           />
 
-          {/* Idle — attach button + accepted formats + privacy note */}
           {uploadPhase === "idle" && (
             <div className="space-y-2">
               <button
@@ -959,7 +888,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </div>
           )}
 
-          {/* Uploading — brand loader + live percentage from XHR progress */}
           {uploadPhase === "uploading" && (
             <div className="flex items-center gap-3 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-zinc-50 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400">
               <AbhLoader size={28} />
@@ -968,20 +896,45 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </div>
           )}
 
-          {/* Done — thumbnail (images only) + filename */}
+          {/* Done — a distinct checkmark badge (not just green fill) marks
+              successful upload: a small circular badge overlaid on the
+              thumbnail (or a standalone file icon if no preview), plus an
+              explicit "Uploaded" label. Green is still used as one signal,
+              but the badge shape + text carry the meaning too — not color
+              alone. Border/wash is blue (page's dominant color) instead of
+              solid green fill. */}
           {uploadPhase === "done" && file && (
-            <div className="flex items-center justify-between gap-2 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200/50 dark:border-green-800/30">
+            <div
+              className="flex items-center justify-between gap-2 w-full px-4 py-3 rounded-[14px] text-sm font-bold border"
+              style={{ borderColor: `${blueColor}35`, backgroundColor: `${blueColor}08` }}
+            >
               <span className="flex items-center gap-2.5 min-w-0">
-                {previewUrl ? (
-                  <img
-                    src={previewUrl}
-                    alt=""
-                    className="w-8 h-8 rounded-[8px] object-cover shrink-0 border border-green-200/60 dark:border-green-800/40"
-                  />
-                ) : (
-                  <CheckCircle size={17} weight="fill" className="shrink-0" />
-                )}
-                <span className="truncate">{file.name}</span>
+                <span className="relative shrink-0">
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt=""
+                      className="w-9 h-9 rounded-[8px] object-cover shrink-0 border border-zinc-200 dark:border-zinc-700"
+                    />
+                  ) : (
+                    <div
+                      className="w-9 h-9 rounded-[8px] flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
+                    >
+                      <Paperclip size={16} weight="bold" />
+                    </div>
+                  )}
+                  <span
+                    className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-950"
+                    style={{ backgroundColor: greenColor }}
+                  >
+                    <CheckCircle size={10} weight="fill" color="#fff" />
+                  </span>
+                </span>
+                <span className="flex flex-col min-w-0">
+                  <span className="text-[0.6rem] font-black uppercase tracking-widest" style={{ color: greenColor }}>Uploaded</span>
+                  <span className="truncate text-zinc-700 dark:text-zinc-300 text-[0.8rem]">{file.name}</span>
+                </span>
               </span>
               <button type="button" onClick={clearFile} aria-label="Remove file" className="shrink-0 opacity-60 hover:opacity-100 transition-opacity">
                 <X size={15} weight="bold" />
@@ -989,7 +942,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </div>
           )}
 
-          {/* Error */}
           {uploadPhase === "error" && (
             <div className="space-y-2">
               <div className="flex items-start gap-2 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200/50 dark:border-red-800/30">
@@ -1007,9 +959,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </div>
           )}
 
-          {/* + Add to Quote — green highlight, fires abh:add-to-quote (the
-              QuoteCalculatorWidget listens) and its own GA4 event since it's
-              a stronger buying signal than just opening a service's sheet. */}
           <button
             type="button"
             onClick={() => {
@@ -1034,9 +983,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             {addedToQuote ? "✓ Added to Quote" : "+ Add to Quote"}
           </button>
 
-          {/* WhatsApp CTA — kept WhatsApp's own brand green (#25D366), since
-              that's instantly recognizable as a WhatsApp action, separate
-              from our own green highlight color used just above. */}
           <a
             href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waMessage)}`}
             target="_blank"
@@ -1060,7 +1006,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
 }
 
 // ─── Notice Banner ────────────────────────────────────────────────────────────
-// Blue = ℹ️ info/update notice (not a warning).
 function NoticeBanner() {
   return (
     <div className="relative mx-auto w-full max-w-md mb-10 rounded-[14px] border border-[#1E6FA8]/20 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
@@ -1080,7 +1025,6 @@ function NoticeBanner() {
         }
 
 // ─── Closing tagline ──────────────────────────────────────────────────────────
-// No gradients anywhere on the page — solid blue wash + solid blue top bar.
 function ClosingTagline() {
   return (
     <div className="relative mt-2 mb-4 overflow-hidden rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-6 py-10 md:py-12 text-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
@@ -1103,10 +1047,6 @@ export function ServicesPage() {
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
   const [showBackToTop,   setShowBackToTop]   = useState(false)
 
-  // Central place a service becomes "selected" from any entry point (hub
-  // card list, inline search, or the floating search widget's window
-  // event below) — single spot to fire the view_service GA4 event instead
-  // of duplicating the trackEvent call at each call site.
   const handleSelectService = (svc: SelectedService) => {
     trackEvent("view_service", {
       hub_id: svc.hubId,
@@ -1121,20 +1061,12 @@ export function ServicesPage() {
     setActiveHub(hubId)
   }
 
-  // Reveal the Back to Top button once the person has scrolled well past
-  // the inline search bar near the top of the page.
   useEffect(() => {
     const onScroll = () => setShowBackToTop(window.scrollY > 600)
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
-  // The floating search is now a global root-layout widget (see
-  // components/floating-search-widget.tsx) so it can sit in the same FAB
-  // stack as the Quote Calculator and WhatsApp widgets. It has no direct
-  // access to this page's state, so it dispatches a window event when a
-  // result is tapped, and we open the existing ServiceDetailModal here —
-  // routed through handleSelectService so this entry point is tracked too.
   useEffect(() => {
     const handler = (e: Event) => {
       const svc = (e as CustomEvent<SelectedService>).detail
@@ -1144,16 +1076,13 @@ export function ServicesPage() {
     return () => window.removeEventListener("abh:selectService", handler)
   }, [])
 
-  // Deep-link via ?hub=
   useEffect(() => {
     const hubParam = searchParams.get("hub")
     if (hubParam && HUB_ORDER.includes(hubParam as HubId)) setActiveHub(hubParam as HubId)
   }, [searchParams])
 
-  // Back button closes modals one at a time
   useModalBackStack(activeHub, setActiveHub, selectedService, setSelectedService)
 
-  // Scroll lock while any modal is open
   useEffect(() => {
     const isOpen = !!(activeHub || selectedService)
     if (!isOpen) return
@@ -1181,8 +1110,6 @@ export function ServicesPage() {
           <div className="abh-divider mx-auto" />
         </div>
 
-        {/* Inline search — id is used by the FloatingSearchWidget (root layout)
-            to know when this bar has scrolled out of view */}
         <div id="abh-inline-search" className="w-full mb-10 flex justify-center">
           <InlineSearchBar onSelect={handleSelectService} />
         </div>
@@ -1191,14 +1118,6 @@ export function ServicesPage() {
           <NoticeBanner />
         </div>
 
-        {/* Hub cards — horizontal stack on desktop, wide on desktop (max 1248px).
-            Icon is uniformly blue now. Only the thin underline beneath the
-            icon carries that hub's own color in the resting state. Hover
-            brings the hub's color back for border, shadow glow, title text,
-            AND now "explore" + its divider too — via CSS custom properties
-            (--hub-accent / --hub-shadow) for the hover-only bits, and direct
-            per-hub `accent` for explore/divider which are hub-colored even
-            at rest. */}
         <div className="flex flex-col md:grid md:grid-cols-5 gap-5 md:gap-4 pb-2 w-full">
           {HUB_ORDER.map((hubId) => {
             const hub    = HUBS[hubId]
@@ -1221,13 +1140,10 @@ export function ServicesPage() {
                 >
                   <HubIcon id={hubId} size={32} />
                 </div>
-                {/* Thin hub-colored underline beneath the icon — the one
-                    hub-specific cue visible in the card's resting state. */}
                 <div className="w-8 h-0.5 rounded-full mb-3" style={{ backgroundColor: `${accent}50` }} />
                 <h3 className="font-sans font-black text-lg md:text-xl text-zinc-900 dark:text-zinc-50 mb-2 group-hover:text-[var(--hub-accent)] transition-colors">
                   {hub.title}
                 </h3><p className="abh-body text-[0.82rem] line-clamp-2 mb-5">{hub.desc}</p>
-                {/* 3 service previews — natural language, subtle, slightly larger than before but never bold */}
                 <div className="flex flex-col items-center gap-1 mb-5">
                   {hub.previews.map((hint, i) => (
                     <span key={i} className="text-[0.72rem] font-medium text-zinc-400 dark:text-zinc-500 tracking-wide">
@@ -1247,7 +1163,6 @@ export function ServicesPage() {
           })}
         </div>
 
-        {/* Catchy closing line, right below the hub cards grid */}
         <div className="w-full">
           <ClosingTagline />
         </div>
@@ -1269,8 +1184,6 @@ export function ServicesPage() {
         )}
       </AnimatePresence>
 
-      {/* Back to Top — left side, so it never collides with the WhatsApp /
-          Quote Calculator / Search FAB stack anchored on the right. */}
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         aria-label="Back to top"
