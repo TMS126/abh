@@ -130,7 +130,7 @@ export const HUBS: Record<HubId, Hub> = {
         { name: 'Status Check', price: 'R20', description: `We log into the SASSA portal or use the official channels to check the current status of your grant or application — whether it's approved, pending, declined, or under review. You'll know exactly where things stand before you leave.`, requirements: ['Bring your ID document', 'Bring your SASSA reference number or application number if you have one'] },
         { name: 'Update Details', price: 'R40', description: `Changed your phone number, address, or personal details? We update your SASSA profile on the official system so your account stays current and payments or communications don't get disrupted.`, requirements: ['Bring your ID document', 'Bring proof of the new details (e.g. new address, new phone number)', 'Bring your SASSA reference number'] },
         { name: 'Reapplication', price: 'R40', description: `If your grant lapsed, was cancelled, or you've been asked to reapply, we complete the full reapplication process on your behalf through the correct SASSA channels — correctly the first time.`, requirements: ['Bring your ID document', 'Bring proof of previous application or rejection letter if available', 'Bring proof of income/affidavit of unemployment if required'] },
-        { name: 'SRD Application', price: 'R40', description: `We submit your Social Relief of Distress (R350) grant application through the official SASSA SRD portal. We fill in all required details, verify your information, and confirm submission so you have proof it went through.`, requirements: ['Bring your ID document', 'Have your active cellphone number ready (for OTP/SMS)', 'Bring proof of bank account details if applying for bank payment'] },
+        { name: 'SRD Application', price: 'R40', description: `We submit your Social Relief of Distress (R370) grant application through the official SASSA SRD portal. We fill in all required details, verify your information, and confirm submission so you have proof it went through.`, requirements: ['Bring your ID document', 'Have your active cellphone number ready (for OTP/SMS)', 'Bring proof of bank account details if applying for bank payment'] },
         { name: 'Appeal', price: 'R40', description: `Declined for a grant you believe you qualify for? We submit a formal appeal on your behalf through the correct SASSA appeal process, ensuring your reasons are clearly stated and your supporting documents are attached.`, requirements: ['Bring your ID document', 'Bring the rejection/decline letter or SMS notification', 'Bring any supporting documents for your appeal'] },
         { name: 'Banking Update', price: 'R50', description: `Need your SASSA grant paid into a different bank account? We update your banking details on the SASSA system so your next payment goes to the right place — avoiding delays or missed payments.`, requirements: ['Bring your ID document', 'Bring your bank account details or bank confirmation letter', 'Bring your SASSA reference number'] },
         { name: 'Grant Application', price: 'R80', description: `Applying for a formal SASSA grant — such as the Child Support Grant, Older Persons Grant, or Disability Grant? We complete the full application with all required supporting documents and submit it correctly.`, requirements: ['Bring your ID document', "Bring supporting documents (e.g. child's birth certificate, disability assessment, proof of income)", 'Have your active cellphone number ready for OTP/SMS confirmations'] },
@@ -213,6 +213,70 @@ export const HUBS: Record<HubId, Hub> = {
     ],
   },
 }
+
+// ─── Turnaround times ────────────────────────────────────────────────────────
+// Keyed by section title (shared across hubs where titles repeat, e.g.
+// "Scanning"/"Laminating" under Docu Hub). Item-level overrides below for
+// services that differ from their section's default estimate.
+//
+// Print/Docu/Design figures verified against realistic South African provider
+// research (July 2026). SASSA/SARS/E-Service figures represent ApexbytesHub's
+// own submission turnaround only — actual government processing afterward is
+// separate, much longer (SASSA SRD alone typically runs 7–14+ business days
+// end-to-end), and outside our control — see each hub's `turnaround` field
+// above, which already carries that disclaimer to clients.
+//
+// KNOWN INCONSISTENCY: "Logos" section default below (5–10 working days) is
+// now longer than the Standard/Premium Logo item-level overrides further
+// down (2–3 / 3–5 days). Only the Basic Logo tier falls through to the
+// section default, so as written a Basic Logo would show as slower than a
+// Standard or Premium one. Needs a decision on what Standard/Premium should
+// actually say before this reads correctly.
+export const TURNAROUND: Record<string, string> = {
+  // Print Hub
+  "Printing":            "15–30 mins",
+  "Copying":             "10–20 mins",
+  "Photo Printing":      "1–3 working days",
+  "Scanning":            "10–15 mins",
+  "Laminating":          "10–20 mins",
+  // Docu Hub
+  "Typing + Printing":   "1–3 hours",
+  "CV Services":         "24–48 hours",
+  "Other Documents":     "2–4 hours",
+  // Design Hub
+  "Logos":               "5–10 working days",
+  "Business Cards":      "1–2 days",
+  "Flyers & Posters":    "1–2 days",
+  "Social Media":        "24–48 hours",
+  "Invitations":         "1–2 days",
+  "Revisions":           "2–6 hours",
+  // E-Service Hub
+  "SASSA":               "24 hours",
+  "SARS":                "24 hours",
+  "PSIRA":               "1–2 days",
+  "Online Applications": "24 hours",
+  "Email Services":      "15–30 mins",
+  "Business Services":   "1–2 days",
+  "Digital Setup":       "2–4 hours",
+  // Tech Hub
+  "Software":            "1–3 hours",
+  "Hardware":            "1–2 days",
+  "Support":             "2–6 hours",
+  "Windows & Office":    "2–4 hours",
+}
+
+// Item-level overrides for services that differ from their section's estimate
+export const TURNAROUND_OVERRIDE: Record<string, string> = {
+  "Premium Logo":              "3–5 days",
+  "Standard Logo":             "2–3 days",
+  "Video":                     "3–5 days",
+  "Tax Return / VAT / PAYE":   "2–3 days",
+  "CSD Registration":          "1–2 days",
+  "UIF Claims":                "2–3 days",
+}
+
+export const TURNAROUND_DISCLAIMER =
+  "Turnaround times are estimates based on standard volume. Factors such as load shedding, third-party system downtime (SARS/SASSA/PSIRA), or complex revision requests may affect final delivery. We appreciate your patience as we ensure the highest quality for your work."
 
 // ─── PROJECTS (Portfolio) ─────────────────────────────────────────────────────
 export const PROJECTS = [
