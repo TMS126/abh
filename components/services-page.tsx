@@ -6,12 +6,12 @@ import {
   X, Printer, FileText, PaintBrush, Globe, Desktop,
   Megaphone, MagnifyingGlass,
   Paperclip, CheckCircle, WarningCircle, ShieldCheck,
-  ShareNetwork, ArrowUp, Info,
+  ShareNetwork, ArrowUp, Info, Clock,
 } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey, BIZ } from "@/lib/brand"
-import { HUBS, HubId } from "@/lib/data"
+import { HUBS, HubId, TURNAROUND, HUB_DISCLAIMERS, ‎TURNAROUND_OVERRIDE} from "@/lib/data"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
@@ -27,18 +27,8 @@ const HUB_PREVIEWS: Record<HubId, [string, string, string]> = {
 // Hubs where the turnaround disclaimer actually applies — load-shedding,
 // third-party system downtime, and complex revisions are realistic risks
 // for Print (physical queue/equipment), E-Service (SASSA/SARS/PSIRA
-// systems), and Design (revision-heavy work). Doc and Tech aren't
-// affected by the same factors, so the disclaimer stays hidden there
-// instead of appearing on every hub regardless of relevance.
+// systems), and Design (revision-heavy work).
 const DISCLAIMER_RELEVANT_HUBS: HubId[] = ["print", "eservice", "design"]
-
-// Wording checked against real precedent: SARS eFiling has had repeated,
-// public, multi-hour outages during peak filing periods (including at the
-// start of the 2026 filing season), and SASSA/SARS system strain under
-// high traffic is a well-documented recurring issue — so this isn't
-// generic boilerplate, it reflects genuine risk on these systems.
-const TURNAROUND_DISCLAIMER =
-  "Turnaround times are estimates based on standard volume, not a guarantee. Government platforms (SARS eFiling, SASSA, PSIRA) experience real, recurring outages and slowdowns — especially during peak periods like tax filing season — which are entirely outside our control. Load-shedding and complex or multi-round revision requests can also extend completion time beyond the estimate shown. We'll always keep you updated if a delay comes up on our end or theirs."
 
 const CLD_CLOUD  = "dk30vh3ft"
 const CLD_PRESET = "apexbyteshub"
@@ -67,11 +57,6 @@ const NOTICE = {
 }
 
 // ─── Lightweight local analytics stub ──────────────────────────────────────
-// Restores the event-tracking call sites from the previous version without
-// re-introducing a dependency on "@/lib/analytics", which may not exist in
-// this project. Fires a window CustomEvent (so any real analytics wiring
-// elsewhere can listen for "abh:track") and logs in dev — swap the body for
-// a real analytics import any time without touching any call site below.
 function trackEvent(name: string, payload: Record<string, unknown> = {}) {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("abh:track", { detail: { name, ...payload } }))
@@ -221,14 +206,9 @@ function ensureAccessible(hex: string, bgHex: string, minRatio = 4.5) {
   return goingDarker ? "#1a1a1a" : "#fafafa"
 }
 
-/** Picks whichever of near-black/near-white reads best on a solid `hex` background. */
-function getContrastText(hex: string) {
-  const whiteRatio = contrastRatio(hex, "#ffffff")
-  const blackRatio = contrastRatio(hex, "#1a1a1a")
-  return whiteRatio >= blackRatio ? "#ffffff" : "#1a1a1a"
-}
-
 // ─── Brand loader ─────────────────────────────────────────────────────────────
+// Gradient stroke removed (per "remove gradient all over my website") —
+// now a plain solid brand-blue stroke, same chase animation.
 const ABH_LOADER_PATH =
   "M50,4 C68,4 82,10 90,26 C97,40 96,60 88,74 C80,88 64,96 50,96 " +
   "C34,96 18,90 10,74 C3,60 4,40 12,24 C20,10 34,4 50,4 Z"
@@ -248,13 +228,6 @@ function AbhLoader({ size = 28 }: { size?: number }) {
         .abh-loader-dash { animation: abh-loader-dash 1.5s ease-in-out infinite; }
       `}</style>
       <svg viewBox="0 0 100 100" width={size} height={size} className="block" aria-hidden="true">
-        <defs>
-          <linearGradient id="abh-loader-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%"   stopColor="#1E6FA8" />
-            <stop offset="50%"  stopColor="#6FBF1A" />
-            <stop offset="100%" stopColor="#F4A261" />
-          </linearGradient>
-        </defs>
         <path
           d={ABH_LOADER_PATH}
           fill="none"
@@ -266,7 +239,7 @@ function AbhLoader({ size = 28 }: { size?: number }) {
         <path
           d={ABH_LOADER_PATH}
           fill="none"
-          stroke="url(#abh-loader-grad)"
+          stroke="#1E6FA8"
           strokeWidth="7"
           strokeLinecap="round"
           pathLength={100}
@@ -280,7 +253,7 @@ function AbhLoader({ size = 28 }: { size?: number }) {
 // ─── Searchable service type ──────────────────────────────────────────────────
 interface SearchableService {
   hubId: HubId; sectionTitle: string; name: string
-  price: string; description: string; requirements: string[]
+  price: string; description: string; requirements: string[]; turnaround?: string
 }
 
 function buildSearchIndex(): SearchableService[] {
@@ -293,6 +266,7 @@ function buildSearchIndex(): SearchableService[] {
           name: item.name, price: item.price,
           description: item.description,
           requirements: item.requirements,
+          turnaround: (item as any).turnaround,
         })
       })
     })
@@ -303,7 +277,7 @@ function buildSearchIndex(): SearchableService[] {
 // ─── Selected service type ────────────────────────────────────────────────────
 interface SelectedService {
   name: string; price: string; hubId: HubId
-  sectionTitle: string; requirements: string[]; desc?: string
+  sectionTitle: string; requirements: string[]; desc?: string; turnaround?: string
 }
 
 // ─── Back-button modal stack ──────────────────────────────────────────────────
@@ -347,10 +321,6 @@ function useModalBackStack(
 }
 
 // ─── Focus trap ────────────────────────────────────────────────────────────
-// Keeps Tab/Shift+Tab cycling inside a modal while it's open, moves focus
-// into it on open, and restores focus to whatever triggered it once it
-// closes — restored from the previous version for keyboard/screen-reader
-// users.
 function useFocusTrap(active: boolean, containerRef: React.RefObject<HTMLElement>) {
   const previouslyFocused = useRef<HTMLElement | null>(null)
 
@@ -410,7 +380,7 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
   }, [])
 
   const pick = (s: SearchableService) => {
-    onSelect({ name: s.name, price: s.price, hubId: s.hubId, sectionTitle: s.sectionTitle, requirements: s.requirements, desc: s.description })
+    onSelect({ name: s.name, price: s.price, hubId: s.hubId, sectionTitle: s.sectionTitle, requirements: s.requirements, desc: s.description, turnaround: s.turnaround })
     setQuery(""); setFocused(false)
   }
 
@@ -502,12 +472,12 @@ function HubModal({
   if (!hubId) return null
   const hub    = HUBS[hubId]
   const colors = HUB_COLORS[hubId as HubKey]
-  // Real per-hub color, restored — was flattened to a shared grey/white
-  // (tagText/tagTextDark) in the live version, so every hub card looked
-  // the same color regardless of which hub it was.
   const accent      = isDark ? colors.accentDark : colors.accentLight
   const solidAccent = colors.accentLight
   const showDisclaimerTrigger = DISCLAIMER_RELEVANT_HUBS.includes(hubId)
+
+  const activeSection = openSectionIdx !== null ? hub.sections[openSectionIdx] : null
+  const activeSectionDesc = (activeSection as any)?.description as string | undefined
 
   return (
     <div className="fixed inset-0 z-[10100] flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -567,8 +537,31 @@ function HubModal({
             })}
           </div>
 
-          {/* Dynamic per-hub disclaimer trigger — only shown where the
-              turnaround factors genuinely apply. */}
+          {/* Dynamic per-section description box — sits directly under the
+              pills, swaps content whenever a different pill is active.
+              Sourced entirely from section.description in lib/data (no
+              fabricated fallback text) — only renders when that field is
+              present for the active section. Shadow uses the hub's own
+              accent color rather than a flat black blur, so it stays
+              visible as an actual shadow in both light AND dark mode
+              (a plain black box-shadow nearly disappears against a dark
+              card background). */}
+          {activeSectionDesc && (
+            <div
+              key={openSectionIdx}
+              className="mb-5 rounded-[12px] p-4 border animate-in fade-in slide-in-from-top-1 duration-200"
+              style={{
+                borderColor: `${accent}25`,
+                backgroundColor: `${accent}08`,
+                boxShadow: `0 8px 22px -6px ${accent}45, 0 3px 10px -2px rgba(0,0,0,0.2)`,
+              }}
+            >
+              <p className="text-[0.82rem] leading-relaxed text-zinc-600 dark:text-zinc-300">
+                {activeSectionDesc}
+              </p>
+            </div>
+          )}
+
           {showDisclaimerTrigger && (
             <div className="flex justify-center mb-5">
               <button
@@ -582,18 +575,19 @@ function HubModal({
             </div>
           )}
 
-          {openSectionIdx !== null && hub.sections[openSectionIdx] && (
+          {activeSection && (
             <div
-              key={openSectionIdx}
+              key={`items-${openSectionIdx}`}
               className="rounded-[14px] bg-zinc-50 dark:bg-zinc-900/50 shadow-sm p-3 md:p-4 grid grid-cols-1 gap-2 animate-in fade-in duration-200"
             >
-              {hub.sections[openSectionIdx].items.map((item, iIdx) => (
+              {activeSection.items.map((item, iIdx) => (
                 <button
                   key={iIdx}
                   onClick={() => onSelectService({
                     name: item.name, price: item.price, hubId,
-                    sectionTitle: hub.sections[openSectionIdx!].title,
+                    sectionTitle: activeSection.title,
                     requirements: item.requirements, desc: item.description,
+                    turnaround: (item as any).turnaround,
                   })}
                   className="flex items-center justify-between p-3.5 md:p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-transparent transition-all"
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = accent }}
@@ -789,9 +783,11 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     ? svc.requirements
     : ["Just bring your file, document or USB — we'll take care of the rest."]
 
-  const desc = svc.desc?.trim()
-    ? svc.desc
-    : `${naturalLabel} is one of our ${hubTitle} services. We handle everything professionally so you don't have to worry about a thing.`
+  // FIX: no longer synthesizes a fabricated description when svc.desc is
+  // missing — description content now comes from lib/data only, per
+  // request. When absent, the About tab shows a plain neutral empty-state
+  // message instead (UI chrome, not invented business copy).
+  const desc = svc.desc?.trim() || null
 
   return (
     <div className="fixed inset-0 z-[10200] flex items-end md:items-center justify-center p-0 md:p-4">
@@ -806,7 +802,8 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
         aria-modal="true"
         aria-label={svc.name}
         className={cn(
-          "relative w-full max-w-sm bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none",
+          // Width increased: max-w-sm → max-w-md
+          "relative w-full max-w-md bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none",
           "rounded-t-[20px] md:rounded-[14px]",
           "animate-in slide-in-from-bottom-2 md:zoom-in-95 fade-in duration-180 ease-out"
         )}
@@ -816,7 +813,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
         </div>
 
         {/* Header */}
-        <div className="px-6 pt-6 pb-0 flex-shrink-0">
+        <div className="px-6 pt-6 pb-5 flex-shrink-0">
           <div className="flex justify-between items-start mb-4">
             <div className="flex-1 min-w-0 pr-3">
               <span
@@ -853,10 +850,26 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </div>
           </div>
 
-          {/* Price */}
-          <div className="mb-5">
+          {/* Divider — header row / price */}
+          <div className="h-px bg-zinc-100 dark:bg-zinc-800 mb-4" />
+
+          {/* Price + turnaround pill (turnaround comes straight from
+              item.turnaround in lib/data — only rendered when present) */}
+          <div className="flex items-center gap-3 mb-4">
             <span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
+            {svc.turnaround && (
+              <span
+                className="flex items-center gap-1 text-[0.68rem] font-bold px-2.5 py-1 rounded-full"
+                style={{ backgroundColor: `${accent}12`, color: accent }}
+              >
+                <Clock size={12} weight="bold" />
+                {svc.turnaround}
+              </span>
+            )}
           </div>
+
+          {/* Divider — price / tabs */}
+          <div className="h-px bg-zinc-100 dark:bg-zinc-800 mb-4" />
 
           {/* Tabs */}
           <div className="flex gap-2">
@@ -878,7 +891,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
         </div>
 
         {/* Tab content */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 min-h-0">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 min-h-0 border-t border-zinc-100 dark:border-zinc-800">
           {tab === "bring" && (
             <div className="animate-in fade-in duration-150">
               <ol className="space-y-3">
@@ -901,7 +914,11 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
           )}
           {tab === "about" && (
             <div className="animate-in fade-in duration-150">
-              <p className="abh-body text-[0.84rem]">{desc}</p>
+              {desc ? (
+                <p className="abh-body text-[0.84rem]">{desc}</p>
+              ) : (
+                <p className="abh-muted text-[0.84rem]">No description available for this service yet.</p>
+              )}
               <p className="abh-muted mt-5">
                 Have questions? Switch to the{" "}
                 <span className="font-black" style={{ color: accent }}>What to Bring</span> tab or chat with us directly.
@@ -910,8 +927,9 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
           )}
         </div>
 
-        {/* Footer — upload + Add to Quote + CTA */}
-        <div className="px-6 pb-6 pt-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
+        {/* Footer — upload + Add to Quote + CTA, with dividers between
+            each distinct action so the stack doesn't read as one block */}
+        <div className="px-6 pb-6 pt-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800 space-y-4">
 
           <input
             ref={fileRef}
@@ -952,9 +970,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </div>
           )}
 
-          {/* Restored badge-style "done" state — checkmark badge overlaid
-              on the thumbnail plus an explicit "Uploaded" label, using the
-              hub's own accent instead of a flat green fill. */}
           {uploadPhase === "done" && file && (
             <div
               className="flex items-center justify-between gap-2 w-full px-4 py-3 rounded-[14px] text-sm font-bold border"
@@ -1011,8 +1026,8 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </div>
           )}
 
-          {/* Add to Quote — restored, dispatches the same window event as
-              before so the Quote Calculator FAB widget can pick it up. */}
+          <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
+
           <button
             type="button"
             onClick={() => {
@@ -1036,6 +1051,8 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
           >
             {addedToQuote ? "✓ Added to Quote" : "+ Add to Quote"}
           </button>
+
+          <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
 
           {/* WhatsApp CTA */}
           <a
@@ -1080,10 +1097,12 @@ function NoticeBanner() {
 }
 
 // ─── Closing tagline ──────────────────────────────────────────────────────────
+// Gradients removed per "remove gradient all over my website" — top bar and
+// background wash are now flat, solid brand blue at low opacity.
 function ClosingTagline() {
   return (
-    <div className="relative mt-2 mb-4 overflow-hidden rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-gradient-to-br from-[#1E6FA8]/5 via-white to-[#6FBF1A]/5 dark:from-[#1E6FA8]/10 dark:via-zinc-950 dark:to-[#6FBF1A]/10 px-6 py-10 md:py-12 text-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#1E6FA8] via-[#6FBF1A] to-[#F4A261]" />
+    <div className="relative mt-2 mb-4 overflow-hidden rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-6 py-10 md:py-12 text-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
+      <div className="absolute inset-x-0 top-0 h-1 bg-[#1E6FA8]" />
       <p className="abh-eyebrow text-zinc-400 dark:text-zinc-500 mb-3">Why ApexbytesHub</p>
       <p className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 leading-snug max-w-2xl mx-auto">
         From your first CV to your next big idea — one hub does it all, right here in Bothaville.
@@ -1250,4 +1269,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-} 
+      }
