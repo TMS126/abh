@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useRef, useCallback, type ChangeEvent } from "react"
+import { useState, useEffect, useMemo, useRef, type ChangeEvent } from "react"
 import { useSearchParams } from "next/navigation"
 import {
   X, Printer, FileText, PaintBrush, Globe, Desktop,
@@ -10,13 +10,12 @@ import {
 } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
-import { HUB_COLORS, HubKey, BIZ} from "@/lib/brand"
+import { HUB_COLORS, HubKey, BIZ } from "@/lib/brand"
 import { HUBS, HubId } from "@/lib/data"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
-// Three natural-language service hints shown on each hub card
 const HUB_PREVIEWS: Record<HubId, [string, string, string]> = {
   print:    ["Print Documents", "Copy Pages", "Photo Prints"],
   doc:      ["Build CVs", "Laminate Docs", "Type Letters"],
@@ -32,8 +31,14 @@ const HUB_PREVIEWS: Record<HubId, [string, string, string]> = {
 // affected by the same factors, so the disclaimer stays hidden there
 // instead of appearing on every hub regardless of relevance.
 const DISCLAIMER_RELEVANT_HUBS: HubId[] = ["print", "eservice", "design"]
+
+// Wording checked against real precedent: SARS eFiling has had repeated,
+// public, multi-hour outages during peak filing periods (including at the
+// start of the 2026 filing season), and SASSA/SARS system strain under
+// high traffic is a well-documented recurring issue — so this isn't
+// generic boilerplate, it reflects genuine risk on these systems.
 const TURNAROUND_DISCLAIMER =
-  "Turnaround times are estimates based on standard volume. Factors such as load-shedding, third-party system downtime (SARS, SASSA, or PSIRA), or complex revision requests may extend completion time beyond the estimate shown."
+  "Turnaround times are estimates based on standard volume, not a guarantee. Government platforms (SARS eFiling, SASSA, PSIRA) experience real, recurring outages and slowdowns — especially during peak periods like tax filing season — which are entirely outside our control. Load-shedding and complex or multi-round revision requests can also extend completion time beyond the estimate shown. We'll always keep you updated if a delay comes up on our end or theirs."
 
 const CLD_CLOUD  = "dk30vh3ft"
 const CLD_PRESET = "apexbyteshub"
@@ -61,13 +66,27 @@ const NOTICE = {
   textAfter: ". Minor price adjustments have also been made across some services. We appreciate your continued support and will keep you updated as we grow.",
 }
 
+// ─── Lightweight local analytics stub ──────────────────────────────────────
+// Restores the event-tracking call sites from the previous version without
+// re-introducing a dependency on "@/lib/analytics", which may not exist in
+// this project. Fires a window CustomEvent (so any real analytics wiring
+// elsewhere can listen for "abh:track") and logs in dev — swap the body for
+// a real analytics import any time without touching any call site below.
+function trackEvent(name: string, payload: Record<string, unknown> = {}) {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("abh:track", { detail: { name, ...payload } }))
+  }
+  if (process.env.NODE_ENV !== "production") {
+    // eslint-disable-next-line no-console
+    console.debug("[track]", name, payload)
+  }
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function getCldUrl(file: File) {
   return `https://api.cloudinary.com/v1_1/${CLD_CLOUD}/${file.type.startsWith("image/") ? "image" : "raw"}/upload`
 }
 
-// Turns ".pdf,.jpg,.jpeg,.png,.doc,.docx" into "PDF, JPG, JPEG, PNG, DOC, DOCX"
-// for a friendly hint under the attach button.
 function formatAcceptHint(accept: string) {
   return accept
     .split(",")
@@ -202,6 +221,13 @@ function ensureAccessible(hex: string, bgHex: string, minRatio = 4.5) {
   return goingDarker ? "#1a1a1a" : "#fafafa"
 }
 
+/** Picks whichever of near-black/near-white reads best on a solid `hex` background. */
+function getContrastText(hex: string) {
+  const whiteRatio = contrastRatio(hex, "#ffffff")
+  const blackRatio = contrastRatio(hex, "#1a1a1a")
+  return whiteRatio >= blackRatio ? "#ffffff" : "#1a1a1a"
+}
+
 // ─── Brand loader ─────────────────────────────────────────────────────────────
 const ABH_LOADER_PATH =
   "M50,4 C68,4 82,10 90,26 C97,40 96,60 88,74 C80,88 64,96 50,96 " +
@@ -320,6 +346,44 @@ function useModalBackStack(
   }, [activeHub, selectedService, setActiveHub, setSelectedService])
 }
 
+// ─── Focus trap ────────────────────────────────────────────────────────────
+// Keeps Tab/Shift+Tab cycling inside a modal while it's open, moves focus
+// into it on open, and restores focus to whatever triggered it once it
+// closes — restored from the previous version for keyboard/screen-reader
+// users.
+function useFocusTrap(active: boolean, containerRef: React.RefObject<HTMLElement>) {
+  const previouslyFocused = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    if (!active) return
+    previouslyFocused.current = document.activeElement as HTMLElement
+    containerRef.current?.focus()
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Tab" || !containerRef.current) return
+      const focusable = containerRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      if (focusable.length === 0) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown)
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown)
+      previouslyFocused.current?.focus?.()
+    }
+  }, [active, containerRef])
+}
+
 // ─── Inline search bar ────────────────────────────────────────────────────────
 function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => void }) {
   const { resolvedTheme } = useTheme()
@@ -375,7 +439,7 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
             <div className="max-h-[320px] overflow-y-auto p-2">
               {results.map((s, idx) => {
                 const colors = HUB_COLORS[s.hubId as HubKey]
-                const accent = isDark ? colors.tagTextDark : colors.tagText
+                const accent = isDark ? colors.accentDark : colors.accentLight
                 return (
                   <button
                     key={`${s.hubId}-${s.name}-${idx}`}
@@ -418,10 +482,10 @@ function HubModal({
   const isDark = resolvedTheme === "dark"
   const [openSectionIdx, setOpenSectionIdx] = useState<number | null>(0)
   const [disclaimerOpen, setDisclaimerOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => { setOpenSectionIdx(0); setDisclaimerOpen(false) }, [hubId])
 
-  // Escape key closes the modal, mirroring the gallery page's overlay behavior.
   useEffect(() => {
     if (!hubId) return
     const onKey = (e: KeyboardEvent) => {
@@ -433,20 +497,29 @@ function HubModal({
     return () => window.removeEventListener("keydown", onKey)
   }, [hubId, onClose, disclaimerOpen])
 
+  useFocusTrap(!!hubId, containerRef)
+
   if (!hubId) return null
-  const hub         = HUBS[hubId]
-  const colors      = HUB_COLORS[hubId as HubKey]
-  const accent      = isDark ? colors.tagTextDark : colors.tagText
-  const solidAccent = colors.tagText
+  const hub    = HUBS[hubId]
+  const colors = HUB_COLORS[hubId as HubKey]
+  // Real per-hub color, restored — was flattened to a shared grey/white
+  // (tagText/tagTextDark) in the live version, so every hub card looked
+  // the same color regardless of which hub it was.
+  const accent      = isDark ? colors.accentDark : colors.accentLight
+  const solidAccent = colors.accentLight
   const showDisclaimerTrigger = DISCLAIMER_RELEVANT_HUBS.includes(hubId)
 
   return (
     <div className="fixed inset-0 z-[10100] flex items-center justify-center p-4 animate-in fade-in duration-200">
-      {/* Lightweight overlay — backdrop-blur removed (was backdrop-blur-md),
-          just a plain dim layer, so opening this modal doesn't pay for a
-          GPU-expensive blur animating at the same time as the panel scale. */}
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-250 border border-zinc-100 dark:border-zinc-800">
+      <div
+        ref={containerRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={hub.title}
+        className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-250 border border-zinc-100 dark:border-zinc-800 outline-none"
+      >
 
         {/* Header */}
         <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center" style={{ backgroundColor: `${accent}05` }}>
@@ -456,11 +529,12 @@ function HubModal({
             </div>
             <div>
               <h2 className="abh-card-heading text-xl md:text-2xl">{hub.title}</h2>
-              <p className="abh-label mt-0.5">{hub.sections.reduce((sum, s) => sum + s.items.length, 0)} Available Services</p>
+              <p className="abh-label mt-0.5" style={{ color: accent }}>{hub.sections.reduce((sum, s) => sum + s.items.length, 0)} Available Services</p>
             </div>
           </div>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
             style={{ backgroundColor: `${accent}15`, color: accent }}
           >
@@ -470,10 +544,6 @@ function HubModal({
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-8">
-          {/* Section pills — now centered (flex + justify-center) instead of
-              inline-flex, which only ever shrank to content width and sat
-              left-aligned. Active pill gets a bold, colored shadow instead
-              of the flat shadow-sm it had before. */}
           <div className="flex flex-wrap justify-center gap-2 mb-5">
             {hub.sections.map((section, sIdx) => {
               const isOpen = openSectionIdx === sIdx
@@ -497,10 +567,8 @@ function HubModal({
             })}
           </div>
 
-          {/* View Disclaimer — only on hubs where turnaround factors
-              (load-shedding, third-party system downtime, revisions)
-              genuinely apply, not shown on every hub by default. Tapping
-              opens a small centered popup with a deep, floating shadow. */}
+          {/* Dynamic per-hub disclaimer trigger — only shown where the
+              turnaround factors genuinely apply. */}
           {showDisclaimerTrigger && (
             <div className="flex justify-center mb-5">
               <button
@@ -528,16 +596,6 @@ function HubModal({
                     requirements: item.requirements, desc: item.description,
                   })}
                   className="flex items-center justify-between p-3.5 md:p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-transparent transition-all"
-                  style={{ borderColor: "var(--tw-border-opacity, transparent)" }}
-                  // FIX: previously used hover:border-[#1E6FA8] dark:hover:border-[#A9D6F2] —
-                  // a hardcoded blue, not this hub's own color. Worse, in dark
-                  // mode the base dark:border-zinc-800 class shared identical
-                  // CSS specificity with the dark:hover: variant, so whichever
-                  // Tailwind happened to generate later in the stylesheet won —
-                  // silently killing the hover color half the time. Inline
-                  // style always wins over any class regardless of cascade
-                  // order, so this is a permanent fix, not a patch, and it now
-                  // uses the ACTIVE hub's own accent color.
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = accent }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = "transparent" }}
                 >
@@ -550,8 +608,6 @@ function HubModal({
         </div>
       </div>
 
-      {/* Disclaimer popup — lightweight (no blur), deep/dramatic box-shadow
-          so it reads as floating above everything else, fast fade+scale. */}
       {disclaimerOpen && (
         <div
           className="fixed inset-0 z-[10250] flex items-center justify-center p-4 animate-in fade-in duration-150"
@@ -567,6 +623,7 @@ function HubModal({
               <h4 className="font-sans font-black text-sm text-zinc-800 dark:text-zinc-100">Turnaround Disclaimer</h4>
               <button
                 onClick={() => setDisclaimerOpen(false)}
+                aria-label="Close disclaimer"
                 className="w-7 h-7 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-500 shrink-0"
               >
                 <X size={14} weight="bold" />
@@ -583,10 +640,6 @@ function HubModal({
 }
 
 // ─── Service Detail Modal ─────────────────────────────────────────────────────
-// Now a bottom sheet (matches the reference screenshots — drag handle,
-// rounded top corners, slides up) instead of a centered popup. Animation
-// is deliberately fast (150–200ms) and blur-free on the backdrop, since
-// this is the modal that gets opened/closed most frequently.
 type Tab = "bring" | "about"
 
 function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onClose: () => void }) {
@@ -600,29 +653,30 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   const [uploadErr,   setUploadErr]   = useState<string | null>(null)
   const [previewUrl,  setPreviewUrl]  = useState<string | null>(null)
   const [shareCopied, setShareCopied] = useState(false)
+  const [addedToQuote, setAddedToQuote] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    setTab("bring")
+    setTab("bring"); setAddedToQuote(false)
     setFile(null); setFileUrl(null)
     setUploadPhase("idle"); setUploadErr(null); setUploadProgress(0)
     setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null })
     if (fileRef.current) fileRef.current.value = ""
   }, [svc?.name])
 
-  // Revoke any outstanding object URL when the modal unmounts, so we don't
-  // leak memory if the person navigates away mid-preview.
   useEffect(() => {
     return () => { if (previewUrl) URL.revokeObjectURL(previewUrl) }
   }, [previewUrl])
 
-  // Escape key closes the modal, mirroring the gallery page's overlay behavior.
   useEffect(() => {
     if (!svc) return
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [svc, onClose])
+
+  useFocusTrap(!!svc, containerRef)
 
   const doUpload = (f: File) => {
     setUploadPhase("uploading")
@@ -668,7 +722,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     const f = e.target.files?.[0]
     if (!f) return
 
-    // Block explicit/dangerous file types
     if (BLOCKED_MIME_TYPES.has(f.type) || BLOCKED_EXTENSIONS.test(f.name)) {
       setUploadErr("That file type isn't allowed. Please send a document, image, or PDF only.")
       setUploadPhase("error")
@@ -684,8 +737,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     setFile(f)
     setUploadErr(null)
 
-    // Local thumbnail preview for images only — separate from the Cloudinary
-    // upload, so it appears instantly rather than waiting on the network.
     setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null })
     if (f.type.startsWith("image/")) {
       setPreviewUrl(URL.createObjectURL(f))
@@ -703,8 +754,9 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
 
   if (!svc) return null
 
-  const colors       = HUB_COLORS[svc.hubId as HubKey]
-  const accent       = isDark ? colors.tagTextDark : colors.tagText
+  const colors  = HUB_COLORS[svc.hubId as HubKey]
+  const accent  = isDark ? colors.accentDark : colors.accentLight
+
   const hubTitle     = HUBS[svc.hubId]?.title || svc.sectionTitle
   const naturalLabel = naturalServiceLabel(svc.name, svc.sectionTitle)
   const acceptHint   = formatAcceptHint(HUB_ACCEPT[svc.hubId])
@@ -743,22 +795,22 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
 
   return (
     <div className="fixed inset-0 z-[10200] flex items-end md:items-center justify-center p-0 md:p-4">
-      {/* Backdrop — no blur (was bg-black/40 backdrop-blur-sm before in
-          earlier iterations); plain dim layer only, and duration cut to
-          120ms so opening this modal never feels like it's "catching up"
-          to the tap that triggered it. */}
       <div
         className="absolute inset-0 bg-black/45 animate-in fade-in duration-120"
         onClick={onClose}
       />
       <div
+        ref={containerRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={svc.name}
         className={cn(
-          "relative w-full max-w-sm bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col",
+          "relative w-full max-w-sm bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none",
           "rounded-t-[20px] md:rounded-[14px]",
           "animate-in slide-in-from-bottom-2 md:zoom-in-95 fade-in duration-180 ease-out"
         )}
       >
-        {/* Drag handle, bottom-sheet only */}
         <div className="md:hidden flex justify-center pt-2.5 pb-0.5 shrink-0">
           <div className="w-9 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700" />
         </div>
@@ -792,6 +844,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
               )}
               <button
                 onClick={onClose}
+                aria-label="Close"
                 className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
                 style={{ backgroundColor: `${accent}15`, color: accent }}
               >
@@ -857,7 +910,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
           )}
         </div>
 
-        {/* Footer — upload + CTA */}
+        {/* Footer — upload + Add to Quote + CTA */}
         <div className="px-6 pb-6 pt-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
 
           <input
@@ -868,7 +921,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             className="hidden"
           />
 
-          {/* Idle — attach button + accepted formats + privacy note */}
           {uploadPhase === "idle" && (
             <div className="space-y-2">
               <button
@@ -892,7 +944,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </div>
           )}
 
-          {/* Uploading — brand loader + live percentage from XHR progress */}
           {uploadPhase === "uploading" && (
             <div className="flex items-center gap-3 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-zinc-50 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400">
               <AbhLoader size={28} />
@@ -901,20 +952,41 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </div>
           )}
 
-          {/* Done — thumbnail (images only) + filename */}
+          {/* Restored badge-style "done" state — checkmark badge overlaid
+              on the thumbnail plus an explicit "Uploaded" label, using the
+              hub's own accent instead of a flat green fill. */}
           {uploadPhase === "done" && file && (
-            <div className="flex items-center justify-between gap-2 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200/50 dark:border-green-800/30">
+            <div
+              className="flex items-center justify-between gap-2 w-full px-4 py-3 rounded-[14px] text-sm font-bold border"
+              style={{ borderColor: `${accent}35`, backgroundColor: `${accent}08` }}
+            >
               <span className="flex items-center gap-2.5 min-w-0">
-                {previewUrl ? (
-                  <img
-                    src={previewUrl}
-                    alt=""
-                    className="w-8 h-8 rounded-[8px] object-cover shrink-0 border border-green-200/60 dark:border-green-800/40"
-                  />
-                ) : (
-                  <CheckCircle size={17} weight="fill" className="shrink-0" />
-                )}
-                <span className="truncate">{file.name}</span>
+                <span className="relative shrink-0">
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt=""
+                      className="w-9 h-9 rounded-[8px] object-cover shrink-0 border border-zinc-200 dark:border-zinc-700"
+                    />
+                  ) : (
+                    <div
+                      className="w-9 h-9 rounded-[8px] flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: `${accent}15`, color: accent }}
+                    >
+                      <Paperclip size={16} weight="bold" />
+                    </div>
+                  )}
+                  <span
+                    className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-950"
+                    style={{ backgroundColor: "#22c55e" }}
+                  >
+                    <CheckCircle size={10} weight="fill" color="#fff" />
+                  </span>
+                </span>
+                <span className="flex flex-col min-w-0">
+                  <span className="text-[0.6rem] font-black uppercase tracking-widest text-green-600 dark:text-green-400">Uploaded</span>
+                  <span className="truncate text-zinc-700 dark:text-zinc-300 text-[0.8rem]">{file.name}</span>
+                </span>
               </span>
               <button type="button" onClick={clearFile} aria-label="Remove file" className="shrink-0 opacity-60 hover:opacity-100 transition-opacity">
                 <X size={15} weight="bold" />
@@ -922,7 +994,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </div>
           )}
 
-          {/* Error */}
           {uploadPhase === "error" && (
             <div className="space-y-2">
               <div className="flex items-start gap-2 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200/50 dark:border-red-800/30">
@@ -940,11 +1011,44 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </div>
           )}
 
+          {/* Add to Quote — restored, dispatches the same window event as
+              before so the Quote Calculator FAB widget can pick it up. */}
+          <button
+            type="button"
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent("abh:add-to-quote", {
+                detail: { hubId: svc.hubId, sectionTitle: svc.sectionTitle, name: svc.name, price: svc.price }
+              }))
+              trackEvent("add_to_quote", {
+                hub_id: svc.hubId,
+                service_name: svc.name,
+                section_title: svc.sectionTitle,
+                price: svc.price,
+              })
+              setAddedToQuote(true)
+              setTimeout(() => setAddedToQuote(false), 2200)
+            }}
+            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-[14px] font-bold text-sm border-2 transition-all duration-200 active:scale-95"
+            style={addedToQuote
+              ? { borderColor: "#22c55e", backgroundColor: "#22c55e10", color: "#16a34a" }
+              : { borderColor: `${accent}35`, color: accent, backgroundColor: "transparent" }
+            }
+          >
+            {addedToQuote ? "✓ Added to Quote" : "+ Add to Quote"}
+          </button>
+
           {/* WhatsApp CTA */}
           <a
             href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waMessage)}`}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackEvent("request_whatsapp", {
+              hub_id: svc.hubId,
+              service_name: svc.name,
+              section_title: svc.sectionTitle,
+              price: svc.price,
+              had_file_attached: uploadPhase === "done",
+            })}
             className="flex items-center justify-center gap-2 w-full px-4 py-4 rounded-[14px] font-black text-sm text-white text-center transition-all active:scale-95 shadow-[0_4px_14px_rgba(37,211,102,0.3)] hover:-translate-y-0.5"
             style={{ backgroundColor: "#25D366" }}
           >
@@ -973,7 +1077,7 @@ function NoticeBanner() {
       </div>
     </div>
   )
-        }
+}
 
 // ─── Closing tagline ──────────────────────────────────────────────────────────
 function ClosingTagline() {
@@ -997,46 +1101,44 @@ export function ServicesPage() {
   const [activeHub,       setActiveHub]       = useState<HubId | null>(null)
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
   const [showBackToTop,   setShowBackToTop]   = useState(false)
-  // Hub-card hover — tracked via state + inline styles rather than
-  // CSS hover/group-hover classes, so each card reliably reflects its OWN
-  // hub color on hover in BOTH themes. The previous hover:text-[#1E6FA8]
-  // dark:hover:text-[#A9D6F2] was a single fixed blue for every card
-  // regardless of which hub it was — Design's card hovering blue instead
-  // of orange, etc. This also sidesteps any hover/dark: specificity ties.
-  const [hoveredMainHub, setHoveredMainHub] = useState<HubId | null>(null)
+  const [hoveredMainHub,  setHoveredMainHub]  = useState<HubId | null>(null)
 
-  // Reveal the Back to Top button once the person has scrolled well past
-  // the inline search bar near the top of the page.
+  const handleSelectService = (svc: SelectedService) => {
+    trackEvent("view_service", {
+      hub_id: svc.hubId,
+      service_name: svc.name,
+      section_title: svc.sectionTitle,
+    })
+    setSelectedService(svc)
+  }
+
+  const handleOpenHub = (hubId: HubId) => {
+    trackEvent("view_hub", { hub_id: hubId, hub_name: HUBS[hubId].title })
+    setActiveHub(hubId)
+  }
+
   useEffect(() => {
     const onScroll = () => setShowBackToTop(window.scrollY > 600)
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
-  // The floating search is now a global root-layout widget (see
-  // components/floating-search-widget.tsx) so it can sit in the same FAB
-  // stack as the Quote Calculator and WhatsApp widgets. It has no direct
-  // access to this page's state, so it dispatches a window event when a
-  // result is tapped, and we open the existing ServiceDetailModal here.
   useEffect(() => {
     const handler = (e: Event) => {
       const svc = (e as CustomEvent<SelectedService>).detail
-      if (svc) setSelectedService(svc)
+      if (svc) handleSelectService(svc)
     }
     window.addEventListener("abh:selectService", handler)
     return () => window.removeEventListener("abh:selectService", handler)
-  }, [setSelectedService])
+  }, [])
 
-  // Deep-link via ?hub=
   useEffect(() => {
     const hubParam = searchParams.get("hub")
     if (hubParam && HUB_ORDER.includes(hubParam as HubId)) setActiveHub(hubParam as HubId)
   }, [searchParams])
 
-  // Back button closes modals one at a time
   useModalBackStack(activeHub, setActiveHub, selectedService, setSelectedService)
 
-  // Scroll lock while any modal is open
   useEffect(() => {
     const isOpen = !!(activeHub || selectedService)
     if (!isOpen) return
@@ -1064,28 +1166,25 @@ export function ServicesPage() {
           <div className="abh-divider mx-auto" />
         </div>
 
-        {/* Inline search — id is used by the FloatingSearchWidget (root layout)
-            to know when this bar has scrolled out of view */}
         <div id="abh-inline-search" className="w-full mb-10 flex justify-center">
-          <InlineSearchBar onSelect={setSelectedService} />
+          <InlineSearchBar onSelect={handleSelectService} />
         </div>
 
         <div className="w-full">
           <NoticeBanner />
         </div>
 
-        {/* Hub cards — horizontal stack on desktop, wide on desktop (max 1248px) */}
+        {/* Hub cards */}
         <div className="flex flex-col md:grid md:grid-cols-5 gap-5 md:gap-4 pb-2 w-full">
           {HUB_ORDER.map((hubId) => {
             const hub    = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
-            const accent = isDark ? colors.tagTextDark : colors.tagText
-            const cardBg = isDark ? "#09090b" : "#ffffff"
+            const accent = isDark ? colors.accentDark : colors.accentLight
             const isHovered = hoveredMainHub === hubId
             return (
               <button
                 key={hubId}
-                onClick={() => setActiveHub(hubId)}
+                onClick={() => handleOpenHub(hubId)}
                 onMouseEnter={() => setHoveredMainHub(hubId)}
                 onMouseLeave={() => setHoveredMainHub(null)}
                 className="group flex flex-col items-center p-6 md:p-7 rounded-[14px] border bg-white dark:bg-zinc-950 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 text-center w-full h-full"
@@ -1105,9 +1204,6 @@ export function ServicesPage() {
                 </h3>
                 <p className="abh-body text-[0.82rem] line-clamp-2 mb-5">{hub.tagline}</p>
 
-                {/* 3 service previews — now in a subtle container (bg +
-                    border) instead of bare stacked text, so they read as a
-                    distinct little "at a glance" group on the card. */}
                 <div className="flex flex-col items-center gap-1 mb-5 px-3 py-2.5 rounded-[10px] bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-100 dark:border-zinc-800/60 w-full">
                   {HUB_PREVIEWS[hubId].map((hint, i) => (
                     <span key={i} className="text-[0.72rem] font-medium text-zinc-500 dark:text-zinc-400 tracking-wide">
@@ -1116,9 +1212,6 @@ export function ServicesPage() {
                   ))}
                 </div>
 
-                {/* "explore items" — neutral pill, no paper-plane icon,
-                    color no longer tied to the hub accent (was jarring
-                    against the now-neutral preview container above it). */}
                 <div className="mt-auto flex flex-col items-center gap-1.5">
                   <span className="inline-flex items-center px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 text-[0.7rem] font-black lowercase tracking-widest">
                     explore items
@@ -1130,7 +1223,6 @@ export function ServicesPage() {
           })}
         </div>
 
-        {/* Catchy closing line, right below the hub cards grid */}
         <div className="w-full">
           <ClosingTagline />
         </div>
@@ -1139,15 +1231,13 @@ export function ServicesPage() {
       <HubModal
         hubId={activeHub}
         onClose={() => setActiveHub(null)}
-        onSelectService={setSelectedService}
+        onSelectService={handleSelectService}
       />
       <ServiceDetailModal
         svc={selectedService}
         onClose={() => setSelectedService(null)}
       />
 
-      {/* Back to Top — left side, so it never collides with the WhatsApp /
-          Quote Calculator / Search FAB stack anchored on the right. */}
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         aria-label="Back to top"
@@ -1160,4 +1250,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-    } 
+} 
