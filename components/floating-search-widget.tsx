@@ -341,7 +341,7 @@ export function FloatingSearchWidget() {
           <button
             onClick={() => (isOpen ? handleClose() : setIsOpen(true))}
             className="relative w-14 h-14 rounded-full shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
-            style={{ backgroundColor: accentColor, color: fabIconColor }}
+            style={{ backgroundColor: accentColor, color: fabIconColor, boxShadow: `0 8px 24px ${accentColor}55, 0 4px 10px rgba(0,0,0,0.25)` }}
             aria-label={isOpen ? "Close search" : "Search services"}
           >
             {isOpen ? <X size={22} weight="bold" /> : <MagnifyingGlass size={24} weight="bold" />}
@@ -472,4 +472,5 @@ export function FloatingSearchWidget() {
       )}
     </>
   )
-      } 
+}
+ 
