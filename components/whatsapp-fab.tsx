@@ -620,10 +620,12 @@ export function WhatsAppFAB() {
           was landing it directly on top of the compose bar's send
           button (both at bottom-24/right-4 simultaneously). The panel's
           own header X already closes it, so the FAB now simply fades
-          out completely whenever the panel is open. */}
+          out completely whenever the panel is open.
+          right-4 md:right-6 now matches Search + Calculator FABs so all
+          three line up on the same right edge at desktop widths. */}
       <div
         className={cn(
-          "fixed z-[9992] right-4 bottom-6 group/wa",
+          "fixed z-[9992] right-4 md:right-6 bottom-6 group/wa",
           "transition-all duration-200 ease-out motion-reduce:transition-none transform-gpu",
           !visible && "opacity-0 pointer-events-none",
           isOpen || (scrolled && !isOpen) || isOtherOpen
@@ -646,7 +648,7 @@ export function WhatsAppFAB() {
             onClick={() => setIsOpen(o => !o)}
             aria-label={isOpen ? "Close WhatsApp chat" : `Chat with ${BIZ.name} on WhatsApp`}
             className="relative w-14 h-14 rounded-full text-white shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
-            style={{ backgroundColor: "#25D366" }}
+            style={{ backgroundColor: "#25D366", boxShadow: "0 8px 24px rgba(37,211,102,0.45), 0 4px 10px rgba(0,0,0,0.25)" }}
           >
             <span className="absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-20 pointer-events-none" />
             <WhatsappLogo size={28} weight="fill" />
@@ -656,3 +658,4 @@ export function WhatsAppFAB() {
     </>
   )
 }
+ 
