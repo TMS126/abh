@@ -12,11 +12,6 @@ const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
 const HOME_BLUE = { light: BRAND.blue, dark: BRAND.lightBlue }
 
-// Picks white or near-black based on actual WCAG relative luminance of the
-// given background hex, rather than assuming "white always works." In
-// dark mode fabColor resolves to BRAND.lightBlue (#A9D6F2) — a pale blue
-// that white icons/text fail against, which is exactly the bug this
-// fixes. Same helper already used in Navbar / AboutPage / Search widget.
 function getReadableTextColor(hex: string): string {
   const clean = hex.replace("#", "")
   const r = parseInt(clean.substring(0, 2), 16) / 255
@@ -84,6 +79,21 @@ function getBulkHint(id: string, name: string, qty: number, effRate: number, bas
   return discounted ? "Best bulk rate applied" : null
 }
 
+// Whether ANY item under this hub qualifies for bulk pricing — used to
+// show a bulk badge on the hub row itself, before it's even expanded.
+function itemHasBulk(hubId: HubId, sectionTitle: string, itemName: string): boolean {
+  const itemId = `${hubId}-${sectionTitle}-${itemName}`
+  return !!BULK_TIERS[itemId] || isScanItem(itemName)
+}
+function hubHasBulk(hubId: HubId): boolean {
+  return HUBS[hubId].sections.some(section =>
+    section.items.some(item => itemHasBulk(hubId, section.title, item.name))
+  )
+}
+function sectionHasBulk(hubId: HubId, sectionTitle: string, items: { name: string }[]): boolean {
+  return items.some(item => itemHasBulk(hubId, sectionTitle, item.name))
+}
+
 function HubIcon({ id, size = 16, color }: { id: HubId; size?: number; color?: string }) {
   const p = { size, weight: "fill" as const, color: color ?? "currentColor", "aria-hidden": true }
   switch (id) {
@@ -113,12 +123,16 @@ interface SavedQuote {
 const STORAGE_KEY        = "apexbytes-quote-cart"
 const STORAGE_KEY_SAVED  = "apexbytes-saved-quotes"
 
+// Blur removed from every surface here for faster rendering — replaced
+// with plain, more-opaque fills (dim instead of frost) so panels still
+// read as distinct from the page behind them without the GPU cost of a
+// backdrop-filter animating in/out on every open/close.
 const GLASS = {
-  panel: "bg-white/70 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/40 dark:border-white/10",
-  section: "bg-white/60 dark:bg-white/5 border border-white/60 dark:border-white/10",
-  item: "bg-white/80 dark:bg-white/[0.06] border border-white/70 dark:border-white/[0.08]",
-  pill: "bg-zinc-100/80 dark:bg-white/[0.08] border border-white/60 dark:border-white/10",
-  btn: "bg-zinc-100/70 dark:bg-white/[0.07] border border-white/60 dark:border-white/10",
+  panel:   "bg-white/95 dark:bg-zinc-900/95 border border-zinc-100 dark:border-white/10",
+  section: "bg-zinc-50 dark:bg-white/[0.04] border border-zinc-100 dark:border-white/10",
+  item:    "bg-white dark:bg-white/[0.05] border border-zinc-100 dark:border-white/[0.08]",
+  pill:    "bg-zinc-100 dark:bg-white/[0.08] border border-zinc-100 dark:border-white/10",
+  btn:     "bg-zinc-100 dark:bg-white/[0.07] border border-zinc-100 dark:border-white/10",
 } as const
 
 function quoteTotals(items: CartItem[]) {
@@ -151,10 +165,6 @@ export function QuoteCalculatorWidget() {
   const [saveNameDraft, setSaveNameDraft] = useState("")
   const [showSavedList, setShowSavedList] = useState(false)
 
-  // Mini-bar expand/collapse — the pill next to the FAB (see the FAB +
-  // mini-bar block below) slides out SIDEWAYS from this flag instead of
-  // stacking vertically above the FAB. Collapsed by default; opened by
-  // tapping the item-count badge on the FAB.
   const [miniExpanded, setMiniExpanded] = useState(false)
 
   const pressState = useRef<Record<string, { timeout?: ReturnType<typeof setTimeout>; interval?: ReturnType<typeof setInterval>; longPressed?: boolean }>>({})
@@ -192,8 +202,6 @@ export function QuoteCalculatorWidget() {
     return () => { document.body.style.overflow = "" }
   }, [isOpen])
 
-  // Auto-collapse the sideways mini pill once the full panel opens or the
-  // cart empties out — nothing left to show a total for.
   useEffect(() => {
     if (isOpen || cart.length === 0) setMiniExpanded(false)
   }, [isOpen, cart.length])
@@ -236,14 +244,19 @@ export function QuoteCalculatorWidget() {
     }
   }, [])
 
-  const getAccent     = (id: HubId) => { const c = HUB_COLORS[id as HubKey]; return isDark ? c.tagTextDark : c.tagText }
-  const getSolid      = (id: HubId) => HUB_COLORS[id as HubKey].tagText
-  const titleAccent   = isDark ? HUB_COLORS.design.tagTextDark : HUB_COLORS.design.tagText
+  // Restored to each hub's REAL accent pair (accentLight/accentDark)
+  // instead of tagText/tagTextDark, which is a flat shared grey/white
+  // across every hub — using it here would have made "show hub colors"
+  // impossible to fulfill, since every hub would render identically.
+  const getAccent     = (id: HubId) => { const c = HUB_COLORS[id as HubKey]; return isDark ? c.accentDark : c.accentLight }
+  const getSolid      = (id: HubId) => HUB_COLORS[id as HubKey].accentLight
+  const titleAccent   = isDark ? HUB_COLORS.design.accentDark : HUB_COLORS.design.accentLight
   const fabColor      = isDark ? HOME_BLUE.dark : HOME_BLUE.light
-  // Icon/text color for anything sitting ON TOP of fabColor — computed
-  // from its real luminance instead of assumed white, so it stays legible
-  // even though fabColor swaps to a pale light-blue in dark mode.
   const fabTextColor  = useMemo(() => getReadableTextColor(fabColor), [fabColor])
+
+  // Distinct hub ids currently represented in the cart — drives the small
+  // colored dots shown inside the expanded mini pill.
+  const hubsInCart = useMemo(() => Array.from(new Set(cart.map(i => i.hubId))), [cart])
 
   const addItem = (hubId: HubId, sectionTitle: string, name: string, price: string) => {
     const { amount, unit } = parsePrice(price)
@@ -428,43 +441,53 @@ export function QuoteCalculatorWidget() {
     <>
       <span className="sr-only" role="status" aria-live="polite">{announce}</span>
 
+      {/* Overlay — blur removed (was backdrop-blur-sm), dim bumped up to
+          compensate so the panel still reads clearly above the page. */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-[9989] bg-black/30 backdrop-blur-sm transition-opacity duration-200 ease-out motion-reduce:transition-none"
+          className="fixed inset-0 z-[9989] bg-black/45 transition-opacity duration-200 ease-out motion-reduce:transition-none"
           onClick={() => setIsOpen(false)}
           aria-hidden="true"
         />
       )}
 
       {/* ── FAB + mini-bar ────────────────────────────────────────────────
-          Redesigned to expand SIDEWAYS (to the left) at the same height
-          as the FAB, instead of stacking a pill above it. Stacking used
-          to push the pill up into the Search FAB's slot and overlap it.
-          Collapsed: just the FAB with its item-count badge. Tapping the
-          badge expands the pill to show the price total; tapping the
-          pill itself opens the full quote. right-4 md:right-6 matches
-          the WhatsApp + Search FABs so all three line up on desktop. ── */}
+          Gap between the mini pill and the FAB removed entirely — the pill
+          now tucks flush against the FAB (small negative margin) instead
+          of floating away from it with visible space in between. */}
       <div
         className={cn(
-          "fixed z-[9992] right-4 md:right-6 bottom-[5.5rem] flex items-center justify-end gap-2 group/calc",
+          "fixed z-[9992] right-4 md:right-6 bottom-[5.5rem] flex items-center justify-end group/calc",
           "transition-all duration-200 ease-out motion-reduce:transition-none transform-gpu",
           fabVisible
             ? "opacity-100 scale-100 pointer-events-auto"
             : "opacity-0 pointer-events-none scale-90"
         )}
       >
-        {/* Expanding mini pill — slides out to the LEFT of the FAB, same
-            row, same bottom offset, so it never takes vertical space and
-            can never collide with the Search FAB above it. */}
+        {/* Mini pill — now also shows a small colored dot per hub present
+            in the cart, so at a glance you can see WHICH hubs you've
+            added items from before opening the full panel. */}
         <button
           onClick={() => setIsOpen(true)}
           className={cn(
-            "flex items-center gap-2 pl-3 pr-3.5 py-2 rounded-full shadow-lg bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 active:scale-95 transition-all duration-200 ease-out origin-right motion-reduce:transition-none transform-gpu overflow-hidden whitespace-nowrap",
+            "-mr-3 flex items-center gap-2 pl-3 pr-3.5 py-2 rounded-full shadow-lg bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 active:scale-95 transition-all duration-250 ease-out origin-right motion-reduce:transition-none transform-gpu overflow-hidden whitespace-nowrap",
             showMiniBar && miniExpanded
-              ? "opacity-100 max-w-[200px] scale-100"
+              ? "opacity-100 max-w-[220px] scale-100"
               : "opacity-0 max-w-0 scale-95 pl-0 pr-0 pointer-events-none"
           )}
         >
+          {hubsInCart.length > 0 && (
+            <span className="flex items-center gap-1 shrink-0">
+              {hubsInCart.map(hubId => (
+                <span
+                  key={hubId}
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ backgroundColor: getAccent(hubId) }}
+                  aria-hidden="true"
+                />
+              ))}
+            </span>
+          )}
           <span className="text-xs font-black text-zinc-700 dark:text-zinc-200">R{total}</span>
           <span className="text-[0.6rem] font-bold uppercase tracking-widest text-zinc-400">View quote</span>
         </button>
@@ -485,9 +508,6 @@ export function QuoteCalculatorWidget() {
             Quote
           </span>
 
-          {/* FAB — icon color computed from fabColor's luminance instead
-              of hardcoded text-white, plus a colored standout shadow so
-              it lifts off the page instead of blending into it. */}
           <button
             onClick={() => setIsOpen(o => !o)}
             className="relative w-14 h-14 rounded-full shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
@@ -497,9 +517,6 @@ export function QuoteCalculatorWidget() {
             {isOpen ? <X size={22} weight="bold" /> : <Calculator size={26} weight="fill" />}
           </button>
 
-          {/* Badge doubles as the expand/collapse toggle for the mini
-              pill — tap the count to reveal the price, tap again (or
-              open the panel) to collapse it back. */}
           {!isOpen && itemCount > 0 && (
             <button
               onClick={(e) => { e.stopPropagation(); setMiniExpanded(v => !v) }}
@@ -516,16 +533,15 @@ export function QuoteCalculatorWidget() {
       {isOpen && (
         <div
           className={cn(
-            "fixed bottom-24 right-4 left-4 md:left-auto md:right-6 z-[9991] md:w-[400px] max-h-[75vh] rounded-[20px] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200 ease-out motion-reduce:animate-none transform-gpu",
+            "fixed bottom-24 right-4 left-4 md:left-auto md:right-6 z-[9991] md:w-[400px] max-h-[75vh] rounded-[20px] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-220 ease-out motion-reduce:animate-none transform-gpu",
             GLASS.panel
           )}
-          style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.3)" }}
+          style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}
         >
-          <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent pointer-events-none" />
+          <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-zinc-200 dark:via-white/20 to-transparent pointer-events-none" />
 
           <div
-            className="flex items-center justify-between px-5 py-4 shrink-0 border-b border-white/20 dark:border-white/10"
-            style={{ background: "linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 100%)" }}
+            className="flex items-center justify-between px-5 py-4 shrink-0 border-b border-zinc-100 dark:border-white/10"
           >
             <h3 className="font-sans font-black text-lg" style={{ color: titleAccent }}>Quotation Calculator</h3>
             <button
@@ -551,7 +567,7 @@ export function QuoteCalculatorWidget() {
             )}
 
             {cart.length > 0 && (
-              <div className="p-4 border-b border-white/20 dark:border-white/10 space-y-2">
+              <div className="p-4 border-b border-zinc-100 dark:border-white/10 space-y-2">
                 <div className="flex items-center justify-between mb-1 gap-2">
                   <span className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400">
                     Your Quote · {itemCount} item{itemCount === 1 ? "" : "s"}
@@ -568,7 +584,7 @@ export function QuoteCalculatorWidget() {
                 </div>
 
                 {showSaveForm && (
-                  <div className="flex items-center gap-2 p-2 rounded-[12px] bg-white/70 dark:bg-white/5 border border-white/60 dark:border-white/10 animate-in fade-in slide-in-from-top-1 duration-150">
+                  <div className="flex items-center gap-2 p-2 rounded-[12px] bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/10 animate-in fade-in slide-in-from-top-1 duration-150">
                     <input
                       autoFocus
                       value={saveNameDraft}
@@ -577,8 +593,6 @@ export function QuoteCalculatorWidget() {
                       placeholder="Name this quote (optional)"
                       className="flex-1 min-w-0 px-2.5 py-1.5 rounded-[8px] bg-white dark:bg-zinc-900 text-xs font-medium text-zinc-800 dark:text-zinc-200 outline-none border border-zinc-100 dark:border-zinc-800"
                     />
-                    {/* Save button — text color computed instead of
-                        hardcoded white. */}
                     <button
                       onClick={confirmSaveQuote}
                       className="shrink-0 px-3 py-1.5 rounded-[8px] text-xs font-black"
@@ -681,8 +695,6 @@ export function QuoteCalculatorWidget() {
                               <p className="text-[0.62rem] font-medium text-zinc-400">{t.count} item{t.count === 1 ? "" : "s"} · R{t.total}</p>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
-                              {/* Load button — text color computed
-                                  instead of hardcoded white. */}
                               <button onClick={() => loadSavedQuote(q)} className="px-2.5 py-1 rounded-[8px] text-[0.65rem] font-black" style={{ backgroundColor: fabColor, color: fabTextColor }}>Load</button>
                               <button onClick={() => deleteSavedQuote(q.id)} className="w-6 h-6 rounded-full flex items-center justify-center text-zinc-400 hover:text-red-500 transition-colors"><Trash size={12} weight="bold" /></button>
                             </div>
@@ -703,12 +715,13 @@ export function QuoteCalculatorWidget() {
                 const solidAccent = getSolid(hubId)
                 const isHubOpen = openHub === hubId
                 const subtotal = hubSubtotal(hubId)
+                const hubBulk = hubHasBulk(hubId)
 
                 return (
                   <div key={hubId} className={cn("rounded-[14px] overflow-hidden", GLASS.section)}>
                     <button
                       onClick={() => setOpenHub(isHubOpen ? null : hubId)}
-                      className="w-full flex items-center gap-3 p-3 text-left hover:bg-white/20 dark:hover:bg-white/5 transition-colors duration-150"
+                      className="w-full flex items-center gap-3 p-3 text-left hover:bg-zinc-100/70 dark:hover:bg-white/5 transition-colors duration-150"
                     >
                       <div
                         className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0"
@@ -716,8 +729,18 @@ export function QuoteCalculatorWidget() {
                       >
                         <HubIcon id={hubId} />
                       </div>
+                      {/* Hub title now always carries its own accent color
+                          (was flat zinc-800 before), and shows a bulk
+                          badge right next to the name whenever any item
+                          under this hub qualifies — visible before the
+                          hub is even opened. */}
                       <span className="flex-1 min-w-0">
-                        <span className="block text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{hub.title}</span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="text-xs font-black truncate" style={{ color: accent }}>{hub.title}</span>
+                          {hubBulk && (
+                            <SealPercent size={12} weight="fill" style={{ color: accent }} className="shrink-0" aria-label="Bulk pricing available" />
+                          )}
+                        </span>
                         {subtotal && (
                           <span className="block text-[0.62rem] font-bold mt-0.5" style={{ color: accent }}>
                             {subtotal.count} item{subtotal.count === 1 ? "" : "s"} · R{subtotal.total}
@@ -738,28 +761,37 @@ export function QuoteCalculatorWidget() {
                       )}
                     >
                       <div className="overflow-hidden">
-                        <div className="border-t border-white/20 dark:border-white/10">
+                        <div className="border-t border-zinc-100 dark:border-white/10">
                           {hub.sections.map((section, sIdx) => {
                             const isSectionOpen = openSections[hubId] === sIdx
+                            const sectionBulk = sectionHasBulk(hubId, section.title, section.items)
 
                             return (
                               <div
                                 key={sIdx}
-                                className={cn(sIdx > 0 && "border-t border-white/15 dark:border-white/[0.07]")}
+                                className={cn(sIdx > 0 && "border-t border-zinc-100 dark:border-white/[0.07]")}
                               >
                                 <button
                                   onClick={() => toggleSection(hubId, sIdx)}
-                                  className="w-full flex items-center justify-between px-3 py-2 transition-colors duration-150 hover:bg-white/20 dark:hover:bg-white/5"
+                                  className="w-full flex items-center justify-between px-3 py-2 transition-colors duration-150 hover:bg-zinc-100/70 dark:hover:bg-white/5"
                                 >
-                                  <span
-                                    className="text-[0.65rem] font-black uppercase tracking-[0.15em] px-2.5 py-1 rounded-full transition-colors duration-200"
-                                    style={
-                                      isSectionOpen
-                                        ? { backgroundColor: solidAccent, color: "#fff" }
-                                        : { backgroundColor: `${accent}18`, color: accent }
-                                    }
-                                  >
-                                    {section.title}
+                                  {/* Section pill — bulk badge now shown
+                                      here too, before expanding, matching
+                                      the hub-row treatment above. */}
+                                  <span className="flex items-center gap-1.5">
+                                    <span
+                                      className="text-[0.65rem] font-black uppercase tracking-[0.15em] px-2.5 py-1 rounded-full transition-colors duration-200"
+                                      style={
+                                        isSectionOpen
+                                          ? { backgroundColor: solidAccent, color: "#fff" }
+                                          : { backgroundColor: `${accent}18`, color: accent }
+                                      }
+                                    >
+                                      {section.title}
+                                    </span>
+                                    {sectionBulk && (
+                                      <SealPercent size={11} weight="fill" style={{ color: accent }} aria-label="Bulk pricing available" />
+                                    )}
                                   </span>
                                   <CaretDown
                                     size={12}
@@ -822,8 +854,7 @@ export function QuoteCalculatorWidget() {
 
           {cart.length > 0 && (
             <div
-              className="px-4 pb-4 pt-3 shrink-0 border-t border-white/20 dark:border-white/10 space-y-3"
-              style={{ background: "linear-gradient(to top, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 100%)" }}
+              className="px-4 pb-4 pt-3 shrink-0 border-t border-zinc-100 dark:border-white/10 space-y-3"
             >
               {totalSavings > 0 && (
                 <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-emerald-600 dark:text-emerald-400">
@@ -858,5 +889,4 @@ export function QuoteCalculatorWidget() {
       )}
     </>
   )
-}
- 
+} 
