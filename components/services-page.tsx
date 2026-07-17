@@ -12,7 +12,7 @@ import {
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey, BIZ } from "@/lib/brand"
-import { HUBS, HubId, TURNAROUND, TURNAROUND_OVERRIDE, TURNAROUND_DISCLAIMER } from "@/lib/data"
+import { HUBS, HubId, HUB_DISCLAIMERS, TURNAROUND, TURNAROUND_OVERRIDE } from "@/lib/data"
 
 
 // ─── Constants ────────────────────────────────────────────────────────────────
