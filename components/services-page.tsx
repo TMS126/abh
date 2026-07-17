@@ -1,26 +1,39 @@
 "use client"
 
-import { useState, useEffect, useMemo, useRef, type ChangeEvent, type RefObject } from "react"
+import { useState, useEffect, useMemo, useRef, useCallback, type ChangeEvent } from "react"
 import { useSearchParams } from "next/navigation"
-import { motion, AnimatePresence, type PanInfo } from "framer-motion"
 import {
   X, Printer, FileText, PaintBrush, Globe, Desktop,
-  PaperPlaneTilt, Megaphone, MagnifyingGlass,
+  Megaphone, MagnifyingGlass,
   Paperclip, CheckCircle, WarningCircle, ShieldCheck,
-  ShareNetwork, ArrowUp,
+  ShareNetwork, ArrowUp, Info,
 } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
-import { HUB_COLORS, HubKey, BIZ, BRAND } from "@/lib/brand"
-import { ensureAccessible, getContrastText } from "@/lib/color"
-import { trackEvent } from "@/lib/analytics"
-import { HUBS, HubId, TURNAROUND, TURNAROUND_OVERRIDE, TURNAROUND_DISCLAIMER } from "@/lib/data"
+import { HUB_COLORS, HubKey, BIZ} from "@/lib/brand"
+import { HUBS, HubId } from "@/lib/data"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
 // Three natural-language service hints shown on each hub card
+const HUB_PREVIEWS: Record<HubId, [string, string, string]> = {
+  print:    ["Print Documents", "Copy Pages", "Photo Prints"],
+  doc:      ["Build CVs", "Laminate Docs", "Type Letters"],
+  design:   ["Design Logos", "Make Flyers", "Social Posts"],
+  eservice: ["SASSA Help", "SARS eFiling", "UIF Claims"],
+  tech:     ["Install Windows", "Remove Viruses", "Fix Laptops"],
+}
 
+// Hubs where the turnaround disclaimer actually applies — load-shedding,
+// third-party system downtime, and complex revisions are realistic risks
+// for Print (physical queue/equipment), E-Service (SASSA/SARS/PSIRA
+// systems), and Design (revision-heavy work). Doc and Tech aren't
+// affected by the same factors, so the disclaimer stays hidden there
+// instead of appearing on every hub regardless of relevance.
+const DISCLAIMER_RELEVANT_HUBS: HubId[] = ["print", "eservice", "design"]
+const TURNAROUND_DISCLAIMER =
+  "Turnaround times are estimates based on standard volume. Factors such as load-shedding, third-party system downtime (SARS, SASSA, or PSIRA), or complex revision requests may extend completion time beyond the estimate shown."
 
 const CLD_CLOUD  = "dk30vh3ft"
 const CLD_PRESET = "apexbyteshub"
@@ -88,17 +101,7 @@ const PREFIX_SECTIONS: Record<string, string> = {
 function cleanText(s: string) {
   return s.replace(/\s*\/\s*/g, " or ").replace(/\s*\+\s*/g, " and ").replace(/\s*&\s*/g, " and ")
 }
-// Swaps the verb "bring" for "provide" anywhere it appears, case-preserved.
-// Used to make requirement/description text read naturally for hubs that are
-// fully remote (Design, eService) without needing to rewrite every sentence
-// in data.ts by hand.
-function remoteizeText(text: string) {
-  return text.replace(/\bbring\b/gi, (match) => {
-    if (match === "Bring") return "Provide"
-    if (match === "BRING") return "PROVIDE"
-    return "provide"
-  })
-}
+
 function naturalServiceLabel(name: string, sectionTitle: string) {
   const cleanName = cleanText(name)
   if (SUFFIX_SECTIONS[sectionTitle]) return `${cleanName} ${SUFFIX_SECTIONS[sectionTitle]}`
@@ -110,34 +113,140 @@ function naturalServiceLabel(name: string, sectionTitle: string) {
   return cleanName
 }
 
+// ─── WCAG contrast helpers ──────────────────────────────────────────────────
+function hexToRgb(hex: string) {
+  const clean = hex.replace("#", "")
+  const full = clean.length === 3 ? clean.split("").map(c => c + c).join("") : clean
+  const bigint = parseInt(full, 16)
+  return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 }
+}
+
+function relativeLuminance({ r, g, b }: { r: number; g: number; b: number }) {
+  const [rs, gs, bs] = [r, g, b].map(c => {
+    const s = c / 255
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+  })
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs
+}
+
+function contrastRatio(hexA: string, hexB: string) {
+  const lA = relativeLuminance(hexToRgb(hexA))
+  const lB = relativeLuminance(hexToRgb(hexB))
+  const [lighter, darker] = lA > lB ? [lA, lB] : [lB, lA]
+  return (lighter + 0.05) / (darker + 0.05)
+}
+
+function rgbToHex({ r, g, b }: { r: number; g: number; b: number }) {
+  return "#" + [r, g, b]
+    .map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0"))
+    .join("")
+}
+
+function rgbToHsl({ r, g, b }: { r: number; g: number; b: number }) {
+  const rn = r / 255, gn = g / 255, bn = b / 255
+  const max = Math.max(rn, gn, bn), min = Math.min(rn, gn, bn)
+  let h = 0
+  const l = (max + min) / 2
+  let s = 0
+  if (max !== min) {
+    const d = max - min
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+    switch (max) {
+      case rn: h = (gn - bn) / d + (gn < bn ? 6 : 0); break
+      case gn: h = (bn - rn) / d + 2; break
+      case bn: h = (rn - gn) / d + 4; break
+    }
+    h /= 6
+  }
+  return { h: h * 360, s: s * 100, l: l * 100 }
+}
+
+function hslToRgb(h: number, s: number, l: number) {
+  const hn = h / 360, sn = s / 100, ln = l / 100
+  let r: number, g: number, b: number
+  if (sn === 0) {
+    r = g = b = ln
+  } else {
+    const hue2rgb = (p: number, q: number, t: number) => {
+      let tt = t
+      if (tt < 0) tt += 1
+      if (tt > 1) tt -= 1
+      if (tt < 1 / 6) return p + (q - p) * 6 * tt
+      if (tt < 1 / 2) return q
+      if (tt < 2 / 3) return p + (q - p) * (2 / 3 - tt) * 6
+      return p
+    }
+    const q = ln < 0.5 ? ln * (1 + sn) : ln + sn - ln * sn
+    const p = 2 * ln - q
+    r = hue2rgb(p, q, hn + 1 / 3)
+    g = hue2rgb(p, q, hn)
+    b = hue2rgb(p, q, hn - 1 / 3)
+  }
+  return { r: r * 255, g: g * 255, b: b * 255 }
+}
+
+/** Nudges `hex` darker/lighter (preserving hue) until it hits `minRatio` contrast against `bgHex`. */
+function ensureAccessible(hex: string, bgHex: string, minRatio = 4.5) {
+  if (contrastRatio(hex, bgHex) >= minRatio) return hex
+  const hsl = rgbToHsl(hexToRgb(hex))
+  const bgLum = relativeLuminance(hexToRgb(bgHex))
+  const goingDarker = bgLum > 0.5
+  let l = hsl.l
+  for (let i = 0; i < 45; i++) {
+    l += goingDarker ? -2 : 2
+    l = Math.max(0, Math.min(100, l))
+    const candidate = rgbToHex(hslToRgb(hsl.h, hsl.s, l))
+    if (contrastRatio(candidate, bgHex) >= minRatio) return candidate
+    if (l <= 0 || l >= 100) break
+  }
+  return goingDarker ? "#1a1a1a" : "#fafafa"
+}
+
 // ─── Brand loader ─────────────────────────────────────────────────────────────
-// Three dots in brand order (blue, green, orange), pulsing in sequence so
-// one "grows" at a time rather than all three moving in lockstep — reads as
-// a wave passing through the trio.
+const ABH_LOADER_PATH =
+  "M50,4 C68,4 82,10 90,26 C97,40 96,60 88,74 C80,88 64,96 50,96 " +
+  "C34,96 18,90 10,74 C3,60 4,40 12,24 C20,10 34,4 50,4 Z"
+
 function AbhLoader({ size = 28 }: { size?: number }) {
-  const dot = Math.max(6, Math.round(size * 0.32))
-  const colors = [BRAND.blue, BRAND.green, BRAND.orange]
   return (
-    <div className="flex items-center gap-1.5" style={{ height: size }}>
+    <div style={{ width: size, height: size }} className="relative shrink-0 abh-loader-spin">
       <style>{`
-        @keyframes abh-dot-grow {
-          0%, 80%, 100% { transform: scale(0.55); opacity: 0.45; }
-          40% { transform: scale(1.2); opacity: 1; }
+        @keyframes abh-loader-rotate { to { transform: rotate(360deg); } }
+        .abh-loader-spin { animation: abh-loader-rotate 2.2s linear infinite; }
+
+        @keyframes abh-loader-dash {
+          0%   { stroke-dasharray: 1, 150;  stroke-dashoffset: 0; }
+          50%  { stroke-dasharray: 46, 150; stroke-dashoffset: -18; }
+          100% { stroke-dasharray: 46, 150; stroke-dashoffset: -63; }
         }
+        .abh-loader-dash { animation: abh-loader-dash 1.5s ease-in-out infinite; }
       `}</style>
-      {colors.map((c, i) => (
-        <span
-          key={i}
-          className="rounded-full shrink-0"
-          style={{
-            width: dot,
-            height: dot,
-            backgroundColor: c,
-            animation: "abh-dot-grow 1.2s ease-in-out infinite",
-            animationDelay: `${i * 0.2}s`,
-          }}
+      <svg viewBox="0 0 100 100" width={size} height={size} className="block" aria-hidden="true">
+        <defs>
+          <linearGradient id="abh-loader-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%"   stopColor="#1E6FA8" />
+            <stop offset="50%"  stopColor="#6FBF1A" />
+            <stop offset="100%" stopColor="#F4A261" />
+          </linearGradient>
+        </defs>
+        <path
+          d={ABH_LOADER_PATH}
+          fill="none"
+          strokeWidth="7"
+          pathLength={100}
+          className="text-zinc-200 dark:text-zinc-700"
+          stroke="currentColor"
         />
-      ))}
+        <path
+          d={ABH_LOADER_PATH}
+          fill="none"
+          stroke="url(#abh-loader-grad)"
+          strokeWidth="7"
+          strokeLinecap="round"
+          pathLength={100}
+          className="abh-loader-dash"
+        />
+      </svg>
     </div>
   )
 }
@@ -211,44 +320,6 @@ function useModalBackStack(
   }, [activeHub, selectedService, setActiveHub, setSelectedService])
 }
 
-// ─── Focus trap ────────────────────────────────────────────────────────────
-// Keeps Tab/Shift+Tab cycling inside the modal while it's open, moves focus
-// into the modal on open, and restores focus to whatever triggered it once
-// the modal closes — needed for keyboard/screen-reader users to not get
-// stuck on, or lose track of, background page content while a modal is up.
-function useFocusTrap(active: boolean, containerRef: RefObject<HTMLElement>) {
-  const previouslyFocused = useRef<HTMLElement | null>(null)
-
-  useEffect(() => {
-    if (!active) return
-    previouslyFocused.current = document.activeElement as HTMLElement
-    containerRef.current?.focus()
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Tab" || !containerRef.current) return
-      const focusable = containerRef.current.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      )
-      if (focusable.length === 0) return
-      const first = focusable[0]
-      const last = focusable[focusable.length - 1]
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault()
-        last.focus()
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault()
-        first.focus()
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown)
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown)
-      previouslyFocused.current?.focus?.()
-    }
-  }, [active, containerRef])
-}
-
 // ─── Inline search bar ────────────────────────────────────────────────────────
 function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => void }) {
   const { resolvedTheme } = useTheme()
@@ -257,12 +328,6 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
   const [focused, setFocused] = useState(false)
   const wrapRef   = useRef<HTMLDivElement>(null)
   const index     = useMemo(buildSearchIndex, [])
-
-  // Stroke, not fill — transparent/white background with a blue border,
-  // blue text/icon.
-  const strokeColor = isDark ? BRAND.lightBlue : BRAND.blue
-  const blueIcon     = isDark ? BRAND.lightBlue : BRAND.blue
-  const priceColor  = isDark ? BRAND.lightOrange : BRAND.orangeDark
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -287,33 +352,19 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
 
   return (
     <div ref={wrapRef} className="relative mx-auto w-full max-w-md">
-      <MagnifyingGlass
-        size={18}
-        weight="bold"
-        className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"
-        style={{ color: strokeColor }}
-      />
+      <MagnifyingGlass size={18} weight="bold" className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
       <input
         type="text"
         value={query}
         onChange={e => setQuery(e.target.value)}
         onFocus={() => setFocused(true)}
         placeholder="Search"
-        className="w-full pl-11 pr-10 py-4 rounded-[14px] font-sans font-black text-base bg-white dark:bg-zinc-950 placeholder:font-medium placeholder:text-zinc-400 dark:placeholder:text-zinc-500 transition-all duration-300 outline-none text-center focus:text-left focus:scale-[0.99]"
-        style={{
-          color: strokeColor,
-          border: `2px solid ${strokeColor}`,
-          boxShadow: focused ? `0 0 0 3px ${strokeColor}22` : "none",
-        }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = `${strokeColor}0d` }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "" }}
+        className="w-full pl-11 pr-10 py-3.5 rounded-[14px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none focus:border-[#1E6FA8] transition-colors text-center focus:text-left"
       />
       {query && (
         <button
           onClick={() => setQuery("")}
-          aria-label="Clear search"
-          className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center transition-colors"
-          style={{ backgroundColor: `${strokeColor}18`, color: strokeColor }}
+          className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600"
         >
           <X size={12} weight="bold" />
         </button>
@@ -322,22 +373,26 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
         <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-xl overflow-hidden z-30 animate-in fade-in zoom-in-95 duration-150">
           {results.length > 0 ? (
             <div className="max-h-[320px] overflow-y-auto p-2">
-              {results.map((s, idx) => (
-                <button
-                  key={`${s.hubId}-${s.name}-${idx}`}
-                  onClick={() => pick(s)}
-                  className="w-full flex items-center gap-3 p-3 rounded-[10px] hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left"
-                >
-                  <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${blueIcon}15`, color: blueIcon }}>
-                    <HubIcon id={s.hubId} size={18} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{s.name}</p>
-                    <p className="text-[0.65rem] font-bold uppercase tracking-wider text-zinc-400 truncate">{s.sectionTitle} · {HUBS[s.hubId].title}</p>
-                  </div>
-                  <span className="text-xs font-black shrink-0" style={{ color: priceColor }}>{s.price}</span>
-                </button>
-              ))}
+              {results.map((s, idx) => {
+                const colors = HUB_COLORS[s.hubId as HubKey]
+                const accent = isDark ? colors.tagTextDark : colors.tagText
+                return (
+                  <button
+                    key={`${s.hubId}-${s.name}-${idx}`}
+                    onClick={() => pick(s)}
+                    className="w-full flex items-center gap-3 p-3 rounded-[10px] hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left"
+                  >
+                    <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${accent}15`, color: accent }}>
+                      <HubIcon id={s.hubId} size={18} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{s.name}</p>
+                      <p className="text-[0.65rem] font-bold uppercase tracking-wider text-zinc-400 truncate">{s.sectionTitle} · {HUBS[s.hubId].title}</p>
+                    </div>
+                    <span className="text-xs font-black shrink-0" style={{ color: accent }}>{s.price}</span>
+                  </button>
+                )
+              })}
             </div>
           ) : (
             <div className="p-5 text-center">
@@ -362,59 +417,52 @@ function HubModal({
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
   const [openSectionIdx, setOpenSectionIdx] = useState<number | null>(0)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [disclaimerOpen, setDisclaimerOpen] = useState(false)
 
-  useEffect(() => { setOpenSectionIdx(0) }, [hubId])
+  useEffect(() => { setOpenSectionIdx(0); setDisclaimerOpen(false) }, [hubId])
 
   // Escape key closes the modal, mirroring the gallery page's overlay behavior.
   useEffect(() => {
     if (!hubId) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return
+      if (disclaimerOpen) { setDisclaimerOpen(false); return }
+      onClose()
+    }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [hubId, onClose])
-
-  useFocusTrap(!!hubId, containerRef)
+  }, [hubId, onClose, disclaimerOpen])
 
   if (!hubId) return null
-  const hub    = HUBS[hubId]
-  const colors = HUB_COLORS[hubId as HubKey]
-  const blueColor = isDark ? BRAND.lightBlue : BRAND.blue
-  const hubColor  = isDark ? colors.accentDark : colors.accentLight
-
-  const panelBg   = isDark ? BRAND.blueMid : BRAND.blue
-  const cardText  = getContrastText(panelBg)
-  const activeTabColor = ensureAccessible(isDark ? BRAND.lightGreen : BRAND.green, panelBg, 4.5)
-  const priceColor = isDark ? BRAND.lightOrange : BRAND.orangeDark
+  const hub         = HUBS[hubId]
+  const colors      = HUB_COLORS[hubId as HubKey]
+  const accent      = isDark ? colors.tagTextDark : colors.tagText
+  const solidAccent = colors.tagText
+  const showDisclaimerTrigger = DISCLAIMER_RELEVANT_HUBS.includes(hubId)
 
   return (
-    <div className="fixed inset-0 z-[10100] flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm overscroll-contain" onClick={onClose} />
-      <div
-        ref={containerRef}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label={hub.title}
-        className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden shadow-2xl flex flex-col max-h-[85dvh] animate-in zoom-in-95 duration-500 border border-zinc-100 dark:border-zinc-800 outline-none"
-      >
+    <div className="fixed inset-0 z-[10100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+      {/* Lightweight overlay — backdrop-blur removed (was backdrop-blur-md),
+          just a plain dim layer, so opening this modal doesn't pay for a
+          GPU-expensive blur animating at the same time as the panel scale. */}
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-250 border border-zinc-100 dark:border-zinc-800">
 
         {/* Header */}
-        <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center" style={{ backgroundColor: `${blueColor}05` }}>
+        <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center" style={{ backgroundColor: `${accent}05` }}>
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 md:w-14 md:h-14 rounded-[14px] flex items-center justify-center shadow-lg bg-zinc-100 dark:bg-zinc-800" style={{ border: `2px solid ${blueColor}` }}>
-              <HubIcon id={hubId} size={28} color={blueColor} />
+            <div className="w-12 h-12 md:w-14 md:h-14 rounded-[14px] flex items-center justify-center shadow-lg bg-zinc-100 dark:bg-zinc-800" style={{ border: `2px solid ${accent}` }}>
+              <HubIcon id={hubId} size={28} color={accent} />
             </div>
             <div>
               <h2 className="abh-card-heading text-xl md:text-2xl">{hub.title}</h2>
-              <p className="abh-label mt-0.5" style={{ color: hubColor }}>{hub.sections.reduce((sum, s) => sum + s.items.length, 0)} Available Services</p>
+              <p className="abh-label mt-0.5">{hub.sections.reduce((sum, s) => sum + s.items.length, 0)} Available Services</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            aria-label="Close"
             className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-            style={{ backgroundColor: `${hubColor}15`, color: hubColor }}
+            style={{ backgroundColor: `${accent}15`, color: accent }}
           >
             <X size={20} weight="bold" />
           </button>
@@ -422,63 +470,54 @@ function HubModal({
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-8">
-
-          {openSectionIdx !== null && hub.sections[openSectionIdx] ? (
-            <div
-              className="rounded-[14px] p-4 md:p-5 mb-5 transition-colors duration-300"
-              style={{
-                backgroundColor: panelBg,
-                boxShadow: `0 14px 28px -8px ${panelBg}66, 0 6px 14px -6px ${panelBg}45`,
-              }}
-            >
-              <div className="flex flex-wrap gap-2 mb-4">
-                {hub.sections.map((section, sIdx) => {
-                  const isOpen = openSectionIdx === sIdx
-                  return (
-                    <button
-                      key={sIdx}
-                      onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)}
-                      className={cn(
-                        "px-3.5 py-1.5 rounded-full text-[0.7rem] font-black tracking-tight whitespace-nowrap transition-all duration-200",
-                        isOpen ? "bg-white/25 dark:bg-black/20" : "bg-black/10 dark:bg-white/10 hover:bg-black/15 dark:hover:bg-white/15"
-                      )}
-                      style={{ color: isOpen ? activeTabColor : cardText, opacity: isOpen ? 1 : 0.65 }}
-                    >
-                      {section.title}
-                    </button>
-                  )
-                })}
-              </div>
-              {hub.sections[openSectionIdx].desc && (
-                <div key={openSectionIdx} className="animate-in fade-in duration-300">
-                  <div className="h-px w-full mb-4" style={{ backgroundColor: `${cardText}25` }} />
-                  <p
-                    className="text-[0.82rem] font-semibold leading-relaxed"
-                    style={{ color: cardText }}
-                  >
-                    {hub.sections[openSectionIdx].desc}
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="inline-flex flex-wrap gap-2 mb-5">
-              {hub.sections.map((section, sIdx) => (
+          {/* Section pills — now centered (flex + justify-center) instead of
+              inline-flex, which only ever shrank to content width and sat
+              left-aligned. Active pill gets a bold, colored shadow instead
+              of the flat shadow-sm it had before. */}
+          <div className="flex flex-wrap justify-center gap-2 mb-5">
+            {hub.sections.map((section, sIdx) => {
+              const isOpen = openSectionIdx === sIdx
+              return (
                 <button
                   key={sIdx}
-                  onClick={() => setOpenSectionIdx(sIdx)}
-                  className="px-3.5 py-1.5 rounded-full text-[0.7rem] font-black tracking-tight whitespace-nowrap transition-all duration-200 bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                  onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-full text-[0.7rem] font-black tracking-tight whitespace-nowrap transition-all duration-200",
+                    isOpen ? "text-white" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                  )}
+                  style={
+                    isOpen
+                      ? { backgroundColor: solidAccent, boxShadow: `0 10px 24px -6px ${solidAccent}90, 0 4px 10px -2px ${solidAccent}70` }
+                      : {}
+                  }
                 >
                   {section.title}
                 </button>
-              ))}
+              )
+            })}
+          </div>
+
+          {/* View Disclaimer — only on hubs where turnaround factors
+              (load-shedding, third-party system downtime, revisions)
+              genuinely apply, not shown on every hub by default. Tapping
+              opens a small centered popup with a deep, floating shadow. */}
+          {showDisclaimerTrigger && (
+            <div className="flex justify-center mb-5">
+              <button
+                type="button"
+                onClick={() => setDisclaimerOpen(true)}
+                className="flex items-center gap-1.5 text-[0.7rem] font-bold text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors underline decoration-dotted underline-offset-4"
+              >
+                <Info size={13} weight="bold" />
+                View turnaround disclaimer
+              </button>
             </div>
           )}
 
           {openSectionIdx !== null && hub.sections[openSectionIdx] && (
             <div
               key={openSectionIdx}
-              className="rounded-[14px] bg-zinc-50 dark:bg-zinc-900/50 shadow-sm p-3 md:p-4 grid grid-cols-1 gap-2 animate-in fade-in zoom-in-95 duration-300"
+              className="rounded-[14px] bg-zinc-50 dark:bg-zinc-900/50 shadow-sm p-3 md:p-4 grid grid-cols-1 gap-2 animate-in fade-in duration-200"
             >
               {hub.sections[openSectionIdx].items.map((item, iIdx) => (
                 <button
@@ -488,37 +527,72 @@ function HubModal({
                     sectionTitle: hub.sections[openSectionIdx!].title,
                     requirements: item.requirements, desc: item.description,
                   })}
-                  className="flex items-center justify-between p-3.5 md:p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:border-[#1E6FA8] dark:hover:border-[#A9D6F2] transition-all"
+                  className="flex items-center justify-between p-3.5 md:p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-transparent transition-all"
+                  style={{ borderColor: "var(--tw-border-opacity, transparent)" }}
+                  // FIX: previously used hover:border-[#1E6FA8] dark:hover:border-[#A9D6F2] —
+                  // a hardcoded blue, not this hub's own color. Worse, in dark
+                  // mode the base dark:border-zinc-800 class shared identical
+                  // CSS specificity with the dark:hover: variant, so whichever
+                  // Tailwind happened to generate later in the stylesheet won —
+                  // silently killing the hover color half the time. Inline
+                  // style always wins over any class regardless of cascade
+                  // order, so this is a permanent fix, not a patch, and it now
+                  // uses the ACTIVE hub's own accent color.
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = accent }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "transparent" }}
                 >
                   <span className="text-[0.84rem] font-black text-zinc-800 dark:text-zinc-200 text-left">{item.name}</span>
-                  <span className="text-[0.84rem] font-black shrink-0 ml-3" style={{ color: priceColor }}>{item.price}</span>
+                  <span className="text-[0.84rem] font-black shrink-0 ml-3" style={{ color: accent }}>{item.price}</span>
                 </button>
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {/* Disclaimer popup — lightweight (no blur), deep/dramatic box-shadow
+          so it reads as floating above everything else, fast fade+scale. */}
+      {disclaimerOpen && (
+        <div
+          className="fixed inset-0 z-[10250] flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={() => setDisclaimerOpen(false)}
+        >
+          <div className="absolute inset-0 bg-black/40" />
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-[16px] p-6 animate-in zoom-in-95 fade-in duration-150"
+            style={{ boxShadow: "0 30px 70px -15px rgba(0,0,0,0.55), 0 12px 30px -10px rgba(0,0,0,0.4)" }}
+          >
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <h4 className="font-sans font-black text-sm text-zinc-800 dark:text-zinc-100">Turnaround Disclaimer</h4>
+              <button
+                onClick={() => setDisclaimerOpen(false)}
+                className="w-7 h-7 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-500 shrink-0"
+              >
+                <X size={14} weight="bold" />
+              </button>
+            </div>
+            <p className="text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+              {TURNAROUND_DISCLAIMER}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 // ─── Service Detail Modal ─────────────────────────────────────────────────────
+// Now a bottom sheet (matches the reference screenshots — drag handle,
+// rounded top corners, slides up) instead of a centered popup. Animation
+// is deliberately fast (150–200ms) and blur-free on the backdrop, since
+// this is the modal that gets opened/closed most frequently.
 type Tab = "bring" | "about"
-type SheetState = "default" | "expanded"
-
-const REMOTE_HUBS: HubId[] = ["design", "eservice"]
-function isRemoteHub(hubId: HubId) {
-  return REMOTE_HUBS.includes(hubId)
-}
-
-// Spring tuned for a native-feeling sheet: snappy but not bouncy.
-const SHEET_TRANSITION = { type: "spring" as const, damping: 32, stiffness: 340 }
 
 function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onClose: () => void }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
   const [tab,         setTab]         = useState<Tab>("bring")
-  const [sheetState,  setSheetState]  = useState<SheetState>("default")
   const [file,        setFile]        = useState<File | null>(null)
   const [uploadPhase, setUploadPhase] = useState<"idle" | "uploading" | "done" | "error">("idle")
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -526,30 +600,29 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
   const [uploadErr,   setUploadErr]   = useState<string | null>(null)
   const [previewUrl,  setPreviewUrl]  = useState<string | null>(null)
   const [shareCopied, setShareCopied] = useState(false)
-  const [addedToQuote, setAddedToQuote] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    setTab("bring"); setAddedToQuote(false); setSheetState("default")
+    setTab("bring")
     setFile(null); setFileUrl(null)
     setUploadPhase("idle"); setUploadErr(null); setUploadProgress(0)
     setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null })
     if (fileRef.current) fileRef.current.value = ""
   }, [svc?.name])
 
+  // Revoke any outstanding object URL when the modal unmounts, so we don't
+  // leak memory if the person navigates away mid-preview.
   useEffect(() => {
     return () => { if (previewUrl) URL.revokeObjectURL(previewUrl) }
   }, [previewUrl])
 
+  // Escape key closes the modal, mirroring the gallery page's overlay behavior.
   useEffect(() => {
     if (!svc) return
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [svc, onClose])
-
-  useFocusTrap(!!svc, containerRef)
 
   const doUpload = (f: File) => {
     setUploadPhase("uploading")
@@ -595,6 +668,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     const f = e.target.files?.[0]
     if (!f) return
 
+    // Block explicit/dangerous file types
     if (BLOCKED_MIME_TYPES.has(f.type) || BLOCKED_EXTENSIONS.test(f.name)) {
       setUploadErr("That file type isn't allowed. Please send a document, image, or PDF only.")
       setUploadPhase("error")
@@ -610,6 +684,8 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     setFile(f)
     setUploadErr(null)
 
+    // Local thumbnail preview for images only — separate from the Cloudinary
+    // upload, so it appears instantly rather than waiting on the network.
     setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null })
     if (f.type.startsWith("image/")) {
       setPreviewUrl(URL.createObjectURL(f))
@@ -625,40 +701,13 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     if (fileRef.current) fileRef.current.value = ""
   }
 
-  // Two-snap-point drag: touching anywhere on the card can drag it. From
-  // "default" height, dragging up past the threshold expands to near-full-
-  // screen; from "expanded", dragging down past a smaller threshold returns
-  // to "default"; dragging down further/faster from "default" closes. `y`
-  // always animates back to 0 after release — the actual rest height is
-  // driven by `sheetState` (see the style on the outer motion.div below),
-  // not by a lingering drag offset.
-  const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const offsetY = info.offset.y
-    const velocityY = info.velocity.y
-
-    if (sheetState === "expanded") {
-      if (offsetY > 160 || velocityY > 700) { onClose(); return }
-      if (offsetY > 60 || velocityY > 300) { setSheetState("default"); return }
-      return
-    }
-
-    if (offsetY > 120 || velocityY > 600) { onClose(); return }
-    if (offsetY < -60 || velocityY < -400) { setSheetState("expanded"); return }
-  }
-
   if (!svc) return null
 
-  const blueColor   = isDark ? BRAND.lightBlue  : BRAND.blue
-  const greenColor  = isDark ? BRAND.lightGreen : BRAND.green
-  const orangeColor = isDark ? BRAND.lightOrange : BRAND.orangeDark
-  const hubColors   = HUB_COLORS[svc.hubId as HubKey]
-  const hubColor    = isDark ? hubColors.accentDark : hubColors.accentLight
-
+  const colors       = HUB_COLORS[svc.hubId as HubKey]
+  const accent       = isDark ? colors.tagTextDark : colors.tagText
   const hubTitle     = HUBS[svc.hubId]?.title || svc.sectionTitle
   const naturalLabel = naturalServiceLabel(svc.name, svc.sectionTitle)
   const acceptHint   = formatAcceptHint(HUB_ACCEPT[svc.hubId])
-  const isRemote     = isRemoteHub(svc.hubId)
-  const bringLabel   = isRemote ? "Provide" : "Bring"
 
   const handleShare = async () => {
     const shareText = `${naturalLabel} — ${svc.price} at ${BIZ.name}`
@@ -684,69 +733,43 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     ? `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). Price shown: ${svc.price}. My file: ${fileUrl}`
     : `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). Price shown: ${svc.price}. Can you assist?`
 
-  const requirements = (svc.requirements?.length
+  const requirements = svc.requirements?.length
     ? svc.requirements
-    : isRemote
-      ? ["Just share (upload) your file or details with us via WhatsApp / Email — we'll take care of the rest."]
-      : ["Just bring your file, document or USB — we'll take care of the rest."]
-  ).map(r => (isRemote ? remoteizeText(r) : r))
+    : ["Just bring your file, document or USB — we'll take care of the rest."]
 
-  const descRaw = svc.desc?.trim()
+  const desc = svc.desc?.trim()
     ? svc.desc
     : `${naturalLabel} is one of our ${hubTitle} services. We handle everything professionally so you don't have to worry about a thing.`
-  const desc = isRemote ? remoteizeText(descRaw) : descRaw
-  return (
-    <div className="fixed inset-0 z-[10200] flex items-end justify-center">
-      <motion.div
-        className="absolute inset-0 bg-black/50 overscroll-contain"
-        onClick={onClose}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-      />
 
-      {/* Two-snap-point bottom sheet — drag from anywhere on the card
-          (touching anywhere, not just a handle) to close, expand, or
-          collapse. Height is fixed per sheetState (68dvh default, ~full
-          screen expanded) rather than content-hugging, which is what makes
-          the transition between the two states animate smoothly via the
-          CSS `transition: height` below, alongside framer's drag/y spring. */}
-      <motion.div
-        ref={containerRef}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label={svc.name}
-        drag="y"
-        dragConstraints={{ top: -60, bottom: 0 }}
-        dragElastic={{ top: 0.4, bottom: 0.55 }}
-        onDragEnd={handleDragEnd}
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        exit={{ y: "100%" }}
-        transition={SHEET_TRANSITION}
-        style={{
-          height: sheetState === "expanded" ? "calc(100dvh - env(safe-area-inset-top) - 12px)" : "68dvh",
-          transition: "height 300ms ease-out",
-          boxShadow: "0 -16px 44px -10px rgba(0,0,0,0.35), 0 -6px 18px -6px rgba(0,0,0,0.25)",
-        }}
-        className="relative w-full max-w-2xl mx-3 sm:mx-6 rounded-t-[20px] overflow-hidden bg-white dark:bg-zinc-950 border border-b-0 border-zinc-100 dark:border-zinc-800 flex flex-col outline-none will-change-transform cursor-grab active:cursor-grabbing"
+  return (
+    <div className="fixed inset-0 z-[10200] flex items-end md:items-center justify-center p-0 md:p-4">
+      {/* Backdrop — no blur (was bg-black/40 backdrop-blur-sm before in
+          earlier iterations); plain dim layer only, and duration cut to
+          120ms so opening this modal never feels like it's "catching up"
+          to the tap that triggered it. */}
+      <div
+        className="absolute inset-0 bg-black/45 animate-in fade-in duration-120"
+        onClick={onClose}
+      />
+      <div
+        className={cn(
+          "relative w-full max-w-sm bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col",
+          "rounded-t-[20px] md:rounded-[14px]",
+          "animate-in slide-in-from-bottom-2 md:zoom-in-95 fade-in duration-180 ease-out"
+        )}
       >
-        {/* Drag handle — now purely a visual affordance (dragging works
-            from anywhere on the card), hidden from screen readers since
-            the X button is the real accessible close control. */}
-        <div aria-hidden="true" className="w-full flex justify-center pt-3 pb-1.5 shrink-0">
-          <div className="w-10 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+        {/* Drag handle, bottom-sheet only */}
+        <div className="md:hidden flex justify-center pt-2.5 pb-0.5 shrink-0">
+          <div className="w-9 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700" />
         </div>
 
         {/* Header */}
-        <div className="px-6 pt-1 pb-0 flex-shrink-0">
+        <div className="px-6 pt-6 pb-0 flex-shrink-0">
           <div className="flex justify-between items-start mb-4">
             <div className="flex-1 min-w-0 pr-3">
               <span
                 className="text-[0.62rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-2.5 inline-block"
-                style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
+                style={{ backgroundColor: `${accent}15`, color: accent }}
               >
                 {cleanText(svc.sectionTitle)}
               </span>
@@ -758,39 +781,28 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                 onClick={handleShare}
                 aria-label="Share this service"
                 className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
+                style={{ backgroundColor: `${accent}15`, color: accent }}
               >
                 <ShareNetwork size={16} weight="bold" />
               </button>
               {shareCopied && (
-                <span className="absolute -bottom-8 right-0 whitespace-nowrap text-[0.62rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full shadow-lg animate-in fade-in zoom-in-95 duration-200">
+                <span className="absolute -bottom-8 right-0 whitespace-nowrap text-[0.62rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full shadow-lg animate-in fade-in zoom-in-95 duration-150">
                   Copied!
                 </span>
               )}
               <button
                 onClick={onClose}
-                aria-label="Close"
                 className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
-                style={{ backgroundColor: `${hubColor}15`, color: hubColor }}
+                style={{ backgroundColor: `${accent}15`, color: accent }}
               >
                 <X size={16} weight="bold" />
               </button>
             </div>
           </div>
 
-          {/* Price + turnaround pill */}
-          <div className="flex items-center gap-3 mb-5 flex-wrap">
-            <span className="text-4xl font-black tracking-tighter" style={{ color: orangeColor }}>{svc.price}</span>
-            <span
-              className="flex items-center gap-1.5 text-[0.65rem] font-bold px-2.5 py-1 rounded-full"
-              style={{ backgroundColor: `${orangeColor}12`, color: orangeColor }}
-            >
-              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M6 3.5V6.25L7.5 7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              {TURNAROUND_OVERRIDE[svc.name] ?? TURNAROUND[svc.sectionTitle] ?? "Same day"}
-            </span>
+          {/* Price */}
+          <div className="mb-5">
+            <span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
           </div>
 
           {/* Tabs */}
@@ -800,32 +812,28 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                 key={t}
                 onClick={() => setTab(t)}
                 className={cn(
-                  "px-3.5 py-1.5 rounded-full text-[0.7rem] font-black uppercase tracking-wider transition-all duration-200",
+                  "px-3.5 py-1.5 rounded-full text-[0.7rem] font-black uppercase tracking-wider transition-all duration-150",
                   tab === t
                     ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
                     : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
                 )}
               >
-                {t === "bring" ? bringLabel : "Description"}
+                {t === "bring" ? "Bring" : "Description"}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Tab content — scrolling disabled (overflow-hidden, not
-            overflow-y-auto) so touch gestures started here always drag the
-            sheet instead of fighting a nested scroll. Content that doesn't
-            fit is simply clipped; expanding the sheet upward gives more
-            room to see it. */}
-        <div className="flex-1 overflow-hidden px-6 py-5 min-h-0">
+        {/* Tab content */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 min-h-0">
           {tab === "bring" && (
-            <div className="animate-in fade-in slide-in-from-left-2 duration-200">
+            <div className="animate-in fade-in duration-150">
               <ol className="space-y-3">
                 {requirements.map((req, idx) => (
                   <li key={idx} className="flex items-start gap-3">
                     <span
                       className={cn("shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[0.7rem] font-black mt-0.5", isDark ? "text-zinc-900" : "text-white")}
-                      style={{ backgroundColor: blueColor }}
+                      style={{ backgroundColor: accent }}
                     >
                       {idx + 1}
                     </span>
@@ -833,22 +841,17 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                   </li>
                 ))}
               </ol>
-              <div
-                className="mt-5 rounded-[14px] p-4"
-                style={{ boxShadow: `inset 0 1px 4px ${blueColor}35, inset 0 0 0 1px ${blueColor}20` }}
-              >
-                <p className="abh-muted !mt-0">
-                  {TURNAROUND_DISCLAIMER}
-                </p>
-              </div>
+              <p className="abh-muted mt-5">
+                Not sure? Don't worry — just WhatsApp us first and we'll guide you step by step.
+              </p>
             </div>
           )}
           {tab === "about" && (
-            <div className="animate-in fade-in slide-in-from-right-2 duration-200">
+            <div className="animate-in fade-in duration-150">
               <p className="abh-body text-[0.84rem]">{desc}</p>
               <p className="abh-muted mt-5">
                 Have questions? Switch to the{" "}
-                <span className="font-black" style={{ color: blueColor }}>{bringLabel}</span> tab or chat with us directly.
+                <span className="font-black" style={{ color: accent }}>What to Bring</span> tab or chat with us directly.
               </p>
             </div>
           )}
@@ -865,13 +868,14 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             className="hidden"
           />
 
+          {/* Idle — attach button + accepted formats + privacy note */}
           {uploadPhase === "idle" && (
             <div className="space-y-2">
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-[14px] font-bold text-sm border-2 border-dashed transition-all active:scale-95 hover:opacity-80"
-                style={{ borderColor: `${blueColor}40`, color: blueColor }}
+                style={{ borderColor: `${accent}40`, color: accent }}
               >
                 <Paperclip size={17} weight="bold" />
                 Attach a file (optional)
@@ -882,59 +886,35 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
               <div className="flex items-start gap-2 px-1">
                 <ShieldCheck size={13} weight="fill" className="text-[#6FBF1A] shrink-0 mt-0.5" />
                 <p className="abh-muted text-[0.67rem] leading-relaxed">
-                  Your file goes directly to Apexbytes Hub only — safe, private, and used only for your order. No explicit or inappropriate content allowed.
+                  Your file goes directly to ApexbytesHub only — safe, private, and used only for your order. No explicit or inappropriate content allowed.
                 </p>
               </div>
             </div>
           )}
 
+          {/* Uploading — brand loader + live percentage from XHR progress */}
           {uploadPhase === "uploading" && (
             <div className="flex items-center gap-3 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-zinc-50 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400">
               <AbhLoader size={28} />
-              <span className="font-black tabular-nums shrink-0" style={{ color: blueColor }}>{uploadProgress}%</span>
+              <span className="font-black tabular-nums shrink-0" style={{ color: accent }}>{uploadProgress}%</span>
               <span className="truncate">Uploading {file?.name}…</span>
             </div>
           )}
 
-          {/* Done — a distinct checkmark badge (not just green fill) marks
-              successful upload: a small circular badge overlaid on the
-              thumbnail (or a standalone file icon if no preview), plus an
-              explicit "Uploaded" label. Green is still used as one signal,
-              but the badge shape + text carry the meaning too — not color
-              alone. Border/wash is blue (page's dominant color) instead of
-              solid green fill. */}
+          {/* Done — thumbnail (images only) + filename */}
           {uploadPhase === "done" && file && (
-            <div
-              className="flex items-center justify-between gap-2 w-full px-4 py-3 rounded-[14px] text-sm font-bold border"
-              style={{ borderColor: `${blueColor}35`, backgroundColor: `${blueColor}08` }}
-            >
+            <div className="flex items-center justify-between gap-2 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200/50 dark:border-green-800/30">
               <span className="flex items-center gap-2.5 min-w-0">
-                <span className="relative shrink-0">
-                  {previewUrl ? (
-                    <img
-                      src={previewUrl}
-                      alt=""
-                      className="w-9 h-9 rounded-[8px] object-cover shrink-0 border border-zinc-200 dark:border-zinc-700"
-                    />
-                  ) : (
-                    <div
-                      className="w-9 h-9 rounded-[8px] flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
-                    >
-                      <Paperclip size={16} weight="bold" />
-                    </div>
-                  )}
-                  <span
-                    className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-950"
-                    style={{ backgroundColor: greenColor }}
-                  >
-                    <CheckCircle size={10} weight="fill" color="#fff" />
-                  </span>
-                </span>
-                <span className="flex flex-col min-w-0">
-                  <span className="text-[0.6rem] font-black uppercase tracking-widest" style={{ color: greenColor }}>Uploaded</span>
-                  <span className="truncate text-zinc-700 dark:text-zinc-300 text-[0.8rem]">{file.name}</span>
-                </span>
+                {previewUrl ? (
+                  <img
+                    src={previewUrl}
+                    alt=""
+                    className="w-8 h-8 rounded-[8px] object-cover shrink-0 border border-green-200/60 dark:border-green-800/40"
+                  />
+                ) : (
+                  <CheckCircle size={17} weight="fill" className="shrink-0" />
+                )}
+                <span className="truncate">{file.name}</span>
               </span>
               <button type="button" onClick={clearFile} aria-label="Remove file" className="shrink-0 opacity-60 hover:opacity-100 transition-opacity">
                 <X size={15} weight="bold" />
@@ -942,6 +922,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </div>
           )}
 
+          {/* Error */}
           {uploadPhase === "error" && (
             <div className="space-y-2">
               <div className="flex items-start gap-2 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200/50 dark:border-red-800/30">
@@ -952,55 +933,25 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
                 type="button"
                 onClick={() => { setUploadPhase("idle"); setUploadErr(null); fileRef.current?.click() }}
                 className="text-xs font-black underline"
-                style={{ color: blueColor }}
+                style={{ color: accent }}
               >
                 Try a different file
               </button>
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={() => {
-              window.dispatchEvent(new CustomEvent("abh:add-to-quote", {
-                detail: { hubId: svc.hubId, sectionTitle: svc.sectionTitle, name: svc.name, price: svc.price }
-              }))
-              trackEvent("add_to_quote", {
-                hub_id: svc.hubId,
-                service_name: svc.name,
-                section_title: svc.sectionTitle,
-                price: svc.price,
-              })
-              setAddedToQuote(true)
-              setTimeout(() => setAddedToQuote(false), 2200)
-            }}
-            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-[14px] font-bold text-sm border-2 transition-all duration-200 active:scale-95"
-            style={addedToQuote
-              ? { borderColor: greenColor, backgroundColor: `${greenColor}10`, color: greenColor }
-              : { borderColor: `${greenColor}35`, color: greenColor, backgroundColor: "transparent" }
-            }
-          >
-            {addedToQuote ? "✓ Added to Quote" : "+ Add to Quote"}
-          </button>
-
+          {/* WhatsApp CTA */}
           <a
             href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waMessage)}`}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => trackEvent("request_whatsapp", {
-              hub_id: svc.hubId,
-              service_name: svc.name,
-              section_title: svc.sectionTitle,
-              price: svc.price,
-              had_file_attached: uploadPhase === "done",
-            })}
             className="flex items-center justify-center gap-2 w-full px-4 py-4 rounded-[14px] font-black text-sm text-white text-center transition-all active:scale-95 shadow-[0_4px_14px_rgba(37,211,102,0.3)] hover:-translate-y-0.5"
             style={{ backgroundColor: "#25D366" }}
           >
             Request {naturalLabel}
           </a>
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }
@@ -1008,12 +959,12 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
 // ─── Notice Banner ────────────────────────────────────────────────────────────
 function NoticeBanner() {
   return (
-    <div className="relative mx-auto w-full max-w-md mb-10 rounded-[14px] border border-[#1E6FA8]/20 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
-      <div className="w-9 h-9 rounded-[10px] bg-[#1E6FA8] flex items-center justify-center shrink-0">
+    <div className="relative mx-auto w-full max-w-md mb-10 rounded-[14px] border border-[#F4A261]/20 bg-[#F4A261]/5 dark:bg-[#F4A261]/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+      <div className="w-9 h-9 rounded-[10px] bg-[#F4A261] flex items-center justify-center shrink-0">
         <Megaphone size={18} weight="fill" color="#fff" />
       </div>
       <div className="flex-1 min-w-0 pt-0.5">
-        <span className="abh-eyebrow text-[#15537D] dark:text-[#A9D6F2] block mb-1">
+        <span className="abh-eyebrow text-[#D9894B] dark:text-[#F4A261] block mb-1">
           Notice to Clients
         </span>
         <p className="abh-body text-[0.84rem]">
@@ -1027,9 +978,9 @@ function NoticeBanner() {
 // ─── Closing tagline ──────────────────────────────────────────────────────────
 function ClosingTagline() {
   return (
-    <div className="relative mt-2 mb-4 overflow-hidden rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-6 py-10 md:py-12 text-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
-      <div className="absolute inset-x-0 top-0 h-1 bg-[#1E6FA8]" />
-      <p className="abh-eyebrow text-zinc-400 dark:text-zinc-500 mb-3">Why Apexbytes Hub</p>
+    <div className="relative mt-2 mb-4 overflow-hidden rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-gradient-to-br from-[#1E6FA8]/5 via-white to-[#6FBF1A]/5 dark:from-[#1E6FA8]/10 dark:via-zinc-950 dark:to-[#6FBF1A]/10 px-6 py-10 md:py-12 text-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#1E6FA8] via-[#6FBF1A] to-[#F4A261]" />
+      <p className="abh-eyebrow text-zinc-400 dark:text-zinc-500 mb-3">Why ApexbytesHub</p>
       <p className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 leading-snug max-w-2xl mx-auto">
         From your first CV to your next big idea — one hub does it all, right here in Bothaville.
       </p>
@@ -1046,43 +997,46 @@ export function ServicesPage() {
   const [activeHub,       setActiveHub]       = useState<HubId | null>(null)
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
   const [showBackToTop,   setShowBackToTop]   = useState(false)
+  // Hub-card hover — tracked via state + inline styles rather than
+  // CSS hover/group-hover classes, so each card reliably reflects its OWN
+  // hub color on hover in BOTH themes. The previous hover:text-[#1E6FA8]
+  // dark:hover:text-[#A9D6F2] was a single fixed blue for every card
+  // regardless of which hub it was — Design's card hovering blue instead
+  // of orange, etc. This also sidesteps any hover/dark: specificity ties.
+  const [hoveredMainHub, setHoveredMainHub] = useState<HubId | null>(null)
 
-  const handleSelectService = (svc: SelectedService) => {
-    trackEvent("view_service", {
-      hub_id: svc.hubId,
-      service_name: svc.name,
-      section_title: svc.sectionTitle,
-    })
-    setSelectedService(svc)
-  }
-
-  const handleOpenHub = (hubId: HubId) => {
-    trackEvent("view_hub", { hub_id: hubId, hub_name: HUBS[hubId].title })
-    setActiveHub(hubId)
-  }
-
+  // Reveal the Back to Top button once the person has scrolled well past
+  // the inline search bar near the top of the page.
   useEffect(() => {
     const onScroll = () => setShowBackToTop(window.scrollY > 600)
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
+  // The floating search is now a global root-layout widget (see
+  // components/floating-search-widget.tsx) so it can sit in the same FAB
+  // stack as the Quote Calculator and WhatsApp widgets. It has no direct
+  // access to this page's state, so it dispatches a window event when a
+  // result is tapped, and we open the existing ServiceDetailModal here.
   useEffect(() => {
     const handler = (e: Event) => {
       const svc = (e as CustomEvent<SelectedService>).detail
-      if (svc) handleSelectService(svc)
+      if (svc) setSelectedService(svc)
     }
     window.addEventListener("abh:selectService", handler)
     return () => window.removeEventListener("abh:selectService", handler)
-  }, [])
+  }, [setSelectedService])
 
+  // Deep-link via ?hub=
   useEffect(() => {
     const hubParam = searchParams.get("hub")
     if (hubParam && HUB_ORDER.includes(hubParam as HubId)) setActiveHub(hubParam as HubId)
   }, [searchParams])
 
+  // Back button closes modals one at a time
   useModalBackStack(activeHub, setActiveHub, selectedService, setSelectedService)
 
+  // Scroll lock while any modal is open
   useEffect(() => {
     const isOpen = !!(activeHub || selectedService)
     if (!isOpen) return
@@ -1110,59 +1064,73 @@ export function ServicesPage() {
           <div className="abh-divider mx-auto" />
         </div>
 
+        {/* Inline search — id is used by the FloatingSearchWidget (root layout)
+            to know when this bar has scrolled out of view */}
         <div id="abh-inline-search" className="w-full mb-10 flex justify-center">
-          <InlineSearchBar onSelect={handleSelectService} />
+          <InlineSearchBar onSelect={setSelectedService} />
         </div>
 
         <div className="w-full">
           <NoticeBanner />
         </div>
 
+        {/* Hub cards — horizontal stack on desktop, wide on desktop (max 1248px) */}
         <div className="flex flex-col md:grid md:grid-cols-5 gap-5 md:gap-4 pb-2 w-full">
           {HUB_ORDER.map((hubId) => {
             const hub    = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
-            const accent = isDark ? colors.accentDark : colors.accentLight
+            const accent = isDark ? colors.tagTextDark : colors.tagText
             const cardBg = isDark ? "#09090b" : "#ffffff"
-            const blueIcon = isDark ? BRAND.lightBlue : BRAND.blue
-            const exploreColor = ensureAccessible(accent, cardBg, 4.5)
-            const dividerColor = `${accent}40`
+            const isHovered = hoveredMainHub === hubId
             return (
               <button
                 key={hubId}
-                onClick={() => handleOpenHub(hubId)}
-                style={{ '--hub-accent': accent, '--hub-shadow': `${accent}55` } as any}
-                className="group flex flex-col items-center p-6 md:p-7 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] hover:border-[var(--hub-accent)] hover:shadow-[0_10px_28px_-6px_var(--hub-shadow)] transition-all duration-300 hover:-translate-y-1.5 text-center w-full h-full"
+                onClick={() => setActiveHub(hubId)}
+                onMouseEnter={() => setHoveredMainHub(hubId)}
+                onMouseLeave={() => setHoveredMainHub(null)}
+                className="group flex flex-col items-center p-6 md:p-7 rounded-[14px] border bg-white dark:bg-zinc-950 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 text-center w-full h-full"
+                style={{ borderColor: isHovered ? accent : undefined }}
               >
                 <div
-                  className="w-14 h-14 md:w-16 md:h-16 rounded-[14px] flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 shadow-md"
-                  style={{ backgroundColor: `${blueIcon}12`, color: blueIcon }}
+                  className="w-14 h-14 md:w-16 md:h-16 rounded-[14px] flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110 shadow-md"
+                  style={{ backgroundColor: `${accent}12`, color: accent }}
                 >
                   <HubIcon id={hubId} size={32} />
                 </div>
-                <div className="w-8 h-0.5 rounded-full mb-3" style={{ backgroundColor: `${accent}50` }} />
-                <h3 className="font-sans font-black text-lg md:text-xl text-zinc-900 dark:text-zinc-50 mb-2 group-hover:text-[var(--hub-accent)] transition-colors">
+                <h3
+                  className="font-sans font-black text-lg md:text-xl text-zinc-900 dark:text-zinc-50 mb-2 transition-colors"
+                  style={{ color: isHovered ? accent : undefined }}
+                >
                   {hub.title}
-                </h3><p className="abh-body text-[0.82rem] line-clamp-2 mb-5">{hub.desc}</p>
-                <div className="flex flex-col items-center gap-1 mb-5">
-                  {hub.previews.map((hint, i) => (
-                    <span key={i} className="text-[0.72rem] font-medium text-zinc-400 dark:text-zinc-500 tracking-wide">
+                </h3>
+                <p className="abh-body text-[0.82rem] line-clamp-2 mb-5">{hub.tagline}</p>
+
+                {/* 3 service previews — now in a subtle container (bg +
+                    border) instead of bare stacked text, so they read as a
+                    distinct little "at a glance" group on the card. */}
+                <div className="flex flex-col items-center gap-1 mb-5 px-3 py-2.5 rounded-[10px] bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-100 dark:border-zinc-800/60 w-full">
+                  {HUB_PREVIEWS[hubId].map((hint, i) => (
+                    <span key={i} className="text-[0.72rem] font-medium text-zinc-500 dark:text-zinc-400 tracking-wide">
                       {hint}
                     </span>
                   ))}
                 </div>
+
+                {/* "explore items" — neutral pill, no paper-plane icon,
+                    color no longer tied to the hub accent (was jarring
+                    against the now-neutral preview container above it). */}
                 <div className="mt-auto flex flex-col items-center gap-1.5">
-                  <div className="flex items-center gap-1.5 text-[0.72rem] font-black lowercase tracking-widest">
-                    <span style={{ color: exploreColor }}>explore</span>
-                    <PaperPlaneTilt size={13} weight="fill" style={{ color: exploreColor }} />
-                  </div>
-                  <div className="h-px w-6 rounded-full" style={{ backgroundColor: dividerColor }} />
+                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 text-[0.7rem] font-black lowercase tracking-widest">
+                    explore items
+                  </span>
+                  <div className="h-px w-6 rounded-full" style={{ backgroundColor: `${accent}30` }} />
                 </div>
               </button>
             )
           })}
         </div>
 
+        {/* Catchy closing line, right below the hub cards grid */}
         <div className="w-full">
           <ClosingTagline />
         </div>
@@ -1171,19 +1139,15 @@ export function ServicesPage() {
       <HubModal
         hubId={activeHub}
         onClose={() => setActiveHub(null)}
-        onSelectService={handleSelectService}
+        onSelectService={setSelectedService}
+      />
+      <ServiceDetailModal
+        svc={selectedService}
+        onClose={() => setSelectedService(null)}
       />
 
-      <AnimatePresence>
-        {selectedService && (
-          <ServiceDetailModal
-            key={selectedService.name}
-            svc={selectedService}
-            onClose={() => setSelectedService(null)}
-          />
-        )}
-      </AnimatePresence>
-
+      {/* Back to Top — left side, so it never collides with the WhatsApp /
+          Quote Calculator / Search FAB stack anchored on the right. */}
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         aria-label="Back to top"
@@ -1196,4 +1160,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-        } 
+    } 
