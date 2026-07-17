@@ -159,12 +159,6 @@ const HUBS_DATA = [
       <Globe size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
     ),
     Icon: Globe,
-    // FIX (recurring): BRAND.teal / BRAND.tealLight still don't exist in
-    // lib/brand.ts — this was undefined again, which crashes the moment
-    // this tab is selected (colorFor's result flows straight into
-    // ensureAccessible/relativeLuminance). Restored to the same
-    // blueMid/lightBlue pairing E-Service already uses everywhere else
-    // (FORM_HUBS, HUB_COLORS, navbar's MOBILE_NAV_COLORS).
     colorLight: BRAND.blueMid,
     colorDark:  BRAND.lightBlue,
     services: [
@@ -219,6 +213,12 @@ export function HeroSection() {
   const [hoveredHub,        setHoveredHub]        = useState<number | null>(null)
   const [canHover,          setCanHover]          = useState(false)
 
+  // Tracks whether the person has explicitly tapped a hub tab yet. Before
+  // that, the giant background graphic shows the ApexbytesHub logo; once
+  // any hub is tapped, that hub's own icon permanently takes the logo's
+  // place for the rest of the visit.
+  const [hubTouched, setHubTouched] = useState(false)
+
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 })
   const [tilting, setTilting] = useState(false)
   const ecoBoxRef = useRef<HTMLDivElement>(null)
@@ -255,23 +255,13 @@ export function HeroSection() {
 
   const isDark    = mounted && resolvedTheme === "dark"
   const active    = HUBS_DATA[activeHub]
+  const ActiveIcon = active.Icon
 
-  // Button stroke — now fixed to BRAND.blue in BOTH themes ("primary blue
-  // stroke"), no longer theme-swapped. Fill (used on hover/mobile) stays
-  // the same primary blue too, for visual consistency with the border.
+  // Button stroke — fixed to BRAND.blue (primary) in both themes, per
+  // "use primary blue color for ApexbytesHub" — no more reference-teal.
   const STROKE_COLOR   = BRAND.blue
   const CTA_FILL_COLOR = BRAND.blue
 
-  // Text/arrow at REST (border-only state, sitting directly on the page
-  // background) need their own theme-aware color for contrast, since a
-  // fixed primary blue reads fine on white but is too low-contrast on the
-  // near-black dark-mode background. lightBlue is the same pastel already
-  // used everywhere else in the app for "blue text on dark backgrounds".
-  // Both text and arrow now share this single value (previously the arrow
-  // had its own separate fixed orange, unrelated to the text's contrast
-  // logic) and are driven via CSS custom properties + Tailwind classes
-  // rather than inline styles, so the hover/mobile "turn white" state can
-  // actually override them via normal CSS specificity.
   const REST_COLOR = isDark ? BRAND.lightBlue : BRAND.blue
 
   const cardText      = "#FFFFFF"
@@ -282,16 +272,11 @@ export function HeroSection() {
   const hubColor  = isDark ? active.colorDark : active.colorLight
   const nameColor = ensureAccessible(hubColor, neutralCardBgHex, 4.5)
 
-  const [pageWatermarkHub, setPageWatermarkHub] = useState<typeof HUBS_DATA[number] | null>(null)
-  useEffect(() => {
-    setPageWatermarkHub(HUBS_DATA[Math.floor(Math.random() * HUBS_DATA.length)])
-  }, [])
-  const RandomWatermarkIcon = pageWatermarkHub?.Icon
-
   const handleNavigate = (path: string) => router.push(path)
 
   const handleSelectHub = (index: number) => {
     setActiveHub(index)
+    setHubTouched(true)
     setSpotlightService(pickRandomService(index))
     const hub = HUBS_DATA[index]
     window.dispatchEvent(
@@ -347,14 +332,6 @@ export function HeroSection() {
         }
         .abh-cta-glow { animation: abh-cta-glow-pulse 3s ease-in-out infinite; }
 
-        @keyframes abh-taskbar-indicator-in {
-          0%   { width: 0px;  opacity: 0; }
-          100% { width: 22px; opacity: 1; }
-        }
-        .abh-taskbar-indicator {
-          animation: abh-taskbar-indicator-in 220ms ease-out forwards;
-        }
-
         @keyframes abh-watermark-float {
           0%, 100% { transform: translateY(0px) rotate(-6deg); }
           50%      { transform: translateY(-16px) rotate(-6deg); }
@@ -380,14 +357,29 @@ export function HeroSection() {
 
         <div className="relative w-full flex justify-center items-center mb-8">
 
+          {/* Giant background graphic — logo by default, permanently
+              swaps to the selected hub's icon once any hub tab is tapped. */}
           <div
             aria-hidden="true"
             className="hidden md:flex absolute inset-y-0 -right-[10%] items-center justify-center pointer-events-none select-none z-0"
           >
-            {RandomWatermarkIcon && (
-              <div className="flex flex-col items-center">
-                <div style={{ animation: "abh-watermark-float 7s ease-in-out infinite" }}>
-                  <RandomWatermarkIcon
+            <div className="flex flex-col items-center">
+              <div style={{ animation: "abh-watermark-float 7s ease-in-out infinite" }}>
+                {!hubTouched ? (
+                  <Image
+                    src="/logo.png"
+                    alt=""
+                    width={520}
+                    height={520}
+                    aria-hidden="true"
+                    style={{
+                      transform: "rotate(-6deg)",
+                      filter: "drop-shadow(0 22px 26px rgba(0,0,0,0.25))",
+                    }}
+                    className="shrink-0 opacity-[0.14] dark:opacity-[0.18] md:w-[620px] md:h-[620px] object-contain"
+                  />
+                ) : (
+                  <ActiveIcon
                     size={520}
                     weight="fill"
                     aria-hidden="true"
@@ -398,16 +390,16 @@ export function HeroSection() {
                     }}
                     className="shrink-0 opacity-[0.14] dark:opacity-[0.18] md:w-[620px] md:h-[620px]"
                   />
-                </div>
-                <div
-                  className="w-44 h-9 md:w-56 md:h-11 rounded-full blur-xl -mt-2"
-                  style={{
-                    backgroundColor: "#000000",
-                    animation: "abh-watermark-shadow-pulse 7s ease-in-out infinite",
-                  }}
-                />
+                )}
               </div>
-            )}
+              <div
+                className="w-44 h-9 md:w-56 md:h-11 rounded-full blur-xl -mt-2"
+                style={{
+                  backgroundColor: "#000000",
+                  animation: "abh-watermark-shadow-pulse 7s ease-in-out infinite",
+                }}
+              />
+            </div>
           </div>
 
           <div
@@ -416,15 +408,8 @@ export function HeroSection() {
             style={{ backgroundColor: STROKE_COLOR }}
           />
 
-          {/* Start Here — border is now a fixed primary blue (STROKE_COLOR)
-              in both themes. Text and arrow read from the SAME --rest CSS
-              variable via Tailwind's arbitrary-value color utilities
-              instead of inline style="color", so the group-hover:text-white
-              (desktop) and the mobile-always-white classes can properly
-              override them through normal CSS cascade/specificity — an
-              inline style color would otherwise always win over a class,
-              which is why the arrow previously couldn't share the hover
-              behavior the text already had. */}
+          {/* Start Here — now a fully-rounded pill (was rounded-[14px]),
+              primary blue border/fill in both themes. */}
           <button
             ref={ctaBtnRef}
             onClick={handleCtaClick}
@@ -432,7 +417,7 @@ export function HeroSection() {
               borderColor: STROKE_COLOR,
               ["--rest" as any]: REST_COLOR,
             }}
-            className="group relative z-30 inline-flex items-center gap-3 px-10 py-5 rounded-[14px] font-sans font-black text-lg overflow-hidden border-2 transition-all duration-150 active:duration-75 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.94] shadow-md hover:shadow-xl active:shadow-sm animate-in fade-in duration-500"
+            className="group relative z-30 inline-flex items-center gap-3 px-10 py-5 rounded-full font-sans font-black text-lg overflow-hidden border-2 transition-all duration-150 active:duration-75 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.94] shadow-md hover:shadow-xl active:shadow-sm animate-in fade-in duration-500"
           >
             <span
               aria-hidden="true"
@@ -506,7 +491,7 @@ export function HeroSection() {
             <div
               role="tablist"
               aria-label="Service hubs"
-              className="flex flex-wrap sm:flex-nowrap justify-center items-stretch gap-3 sm:gap-4 w-full max-w-[420px] mb-6 px-1"
+              className="flex flex-wrap sm:flex-nowrap justify-center items-stretch gap-3 sm:gap-4 w-full max-w-[420px] mb-4 px-1"
             >
               {HUBS_DATA.map((hub, index) => {
                 const isActive  = activeHub === index
@@ -541,16 +526,31 @@ export function HeroSection() {
                     >
                       {hub.icon(isActive)}
                     </span>
-                    <span
-                      aria-hidden="true"
-                      className={cn("block h-[3px] rounded-full", isActive && "abh-taskbar-indicator")}
-                      style={{
-                        width: isActive ? 22 : 0,
-                        backgroundColor: cardText,
-                        opacity: isActive ? 1 : 0,
-                      }}
-                    />
                   </button>
+                )
+              })}
+            </div>
+
+            {/* Dot pagination — replaces the old per-tab underline. Active
+                hub renders as an elongated pill, others as small dots,
+                matching the reference onboarding screen's pagination. */}
+            <div
+              role="tablist"
+              aria-label="Hub pagination"
+              className="flex items-center justify-center gap-1.5 mb-6"
+            >
+              {HUBS_DATA.map((hub, index) => {
+                const isActive = activeHub === index
+                return (
+                  <button
+                    key={hub.id}
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-label={`Go to ${hub.name}`}
+                    onClick={() => handleSelectHub(index)}
+                    className={cn("h-2 rounded-full transition-all duration-300", isActive ? "w-6" : "w-2")}
+                    style={{ backgroundColor: cardText, opacity: isActive ? 1 : 0.35 }}
+                  />
                 )
               })}
             </div>
@@ -692,4 +692,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-} 
+    } 
