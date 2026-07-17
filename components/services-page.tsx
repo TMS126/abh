@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, type ChangeEvent } from "react"
 import { useSearchParams } from "next/navigation"
+import { motion, AnimatePresence, type PanInfo } from "framer-motion"
 import {
   X, Printer, FileText, PaintBrush, Globe, Desktop,
   Megaphone, MagnifyingGlass,
@@ -11,7 +12,7 @@ import {
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey, BIZ } from "@/lib/brand"
-import { HUBS, HubId,Turnaround_Disclaimer,TURNAROUND, HUB_DISCLAIMERS, TURNAROUND_OVERRIDE } from "@/lib/data"
+import { HUBS, HubId, TURNAROUND, TURNAROUND_OVERRIDE, TURNAROUND_DISCLAIMER } from "@/lib/data"
 
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -55,6 +56,14 @@ const NOTICE = {
   text:      "Add-on services will be available from ",
   date:      "15 September 2026",
   textAfter: ". Minor price adjustments have also been made across some services. We appreciate your continued support and will keep you updated as we grow.",
+}
+
+// ─── Turnaround lookup ─────────────────────────────────────────────────────
+// Was previously read off a non-existent `item.turnaround` field (always
+// undefined). Real source of truth is TURNAROUND (by section title) with
+// TURNAROUND_OVERRIDE (by exact item name) taking priority when present.
+function getTurnaround(sectionTitle: string, itemName: string): string {
+  return TURNAROUND_OVERRIDE[itemName] ?? TURNAROUND[sectionTitle] ?? "Same day"
 }
 
 // ─── Lightweight local analytics stub ──────────────────────────────────────
@@ -207,9 +216,16 @@ function ensureAccessible(hex: string, bgHex: string, minRatio = 4.5) {
   return goingDarker ? "#1a1a1a" : "#fafafa"
 }
 
+/** Picks whichever of near-black/near-white reads best on a solid `hex` background —
+ *  used for the "explore items" pill, which now sits directly on each hub's
+ *  own accent color rather than a flat neutral pill. */
+function getContrastText(hex: string) {
+  const whiteRatio = contrastRatio(hex, "#ffffff")
+  const blackRatio = contrastRatio(hex, "#1a1a1a")
+  return whiteRatio >= blackRatio ? "#ffffff" : "#1a1a1a"
+}
+
 // ─── Brand loader ─────────────────────────────────────────────────────────────
-// Gradient stroke removed (per "remove gradient all over my website") —
-// now a plain solid brand-blue stroke, same chase animation.
 const ABH_LOADER_PATH =
   "M50,4 C68,4 82,10 90,26 C97,40 96,60 88,74 C80,88 64,96 50,96 " +
   "C34,96 18,90 10,74 C3,60 4,40 12,24 C20,10 34,4 50,4 Z"
@@ -265,9 +281,9 @@ function buildSearchIndex(): SearchableService[] {
         all.push({
           hubId, sectionTitle: section.title,
           name: item.name, price: item.price,
-          description: item.description,
+          description: item.description ?? "",
           requirements: item.requirements,
-          turnaround: (item as any).turnaround,
+          turnaround: getTurnaround(section.title, item.name),
         })
       })
     })
@@ -478,7 +494,10 @@ function HubModal({
   const showDisclaimerTrigger = DISCLAIMER_RELEVANT_HUBS.includes(hubId)
 
   const activeSection = openSectionIdx !== null ? hub.sections[openSectionIdx] : null
-  const activeSectionDesc = (activeSection as any)?.description as string | undefined
+  // FIX: was reading `.description` (doesn't exist on HubSection — that
+  // field is only on individual ServiceItems). The actual field is `.desc`,
+  // which is why this box never rendered before.
+  const activeSectionDesc = activeSection?.desc
 
   return (
     <div className="fixed inset-0 z-[10100] flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -489,7 +508,14 @@ function HubModal({
         role="dialog"
         aria-modal="true"
         aria-label={hub.title}
-        className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-250 border border-zinc-100 dark:border-zinc-800 outline-none"
+        className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-250 border border-zinc-100 dark:border-zinc-800 outline-none"
+        style={{
+          // Deep, distinctive "pop out" shadow — noticeably heavier than
+          // the flat shadow-2xl this used before, plus a subtle glow in
+          // the hub's own accent color so it reads as a lifted, distinct
+          // layer rather than just another card on the page.
+          boxShadow: `0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4), 0 10px 24px -8px ${accent}50`,
+        }}
       >
 
         {/* Header */}
@@ -538,15 +564,8 @@ function HubModal({
             })}
           </div>
 
-          {/* Dynamic per-section description box — sits directly under the
-              pills, swaps content whenever a different pill is active.
-              Sourced entirely from section.description in lib/data (no
-              fabricated fallback text) — only renders when that field is
-              present for the active section. Shadow uses the hub's own
-              accent color rather than a flat black blur, so it stays
-              visible as an actual shadow in both light AND dark mode
-              (a plain black box-shadow nearly disappears against a dark
-              card background). */}
+          {/* Per-section description — now correctly sourced from
+              section.desc, swaps whenever a different pill is active. */}
           {activeSectionDesc && (
             <div
               key={openSectionIdx}
@@ -588,7 +607,7 @@ function HubModal({
                     name: item.name, price: item.price, hubId,
                     sectionTitle: activeSection.title,
                     requirements: item.requirements, desc: item.description,
-                    turnaround: (item as any).turnaround,
+                    turnaround: getTurnaround(activeSection.title, item.name),
                   })}
                   className="flex items-center justify-between p-3.5 md:p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-transparent transition-all"
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = accent }}
@@ -747,6 +766,13 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     if (fileRef.current) fileRef.current.value = ""
   }
 
+  // Swipe anywhere on the card to close — drag down past the threshold (or
+  // fast enough) dismisses; otherwise it springs back to resting position
+  // on its own via the `animate={{ y: 0 }}` below.
+  const handleDragEnd = (_e: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (info.offset.y > 120 || info.velocity.y > 600) onClose()
+  }
+
   if (!svc) return null
 
   const colors  = HUB_COLORS[svc.hubId as HubKey]
@@ -784,37 +810,45 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     ? svc.requirements
     : ["Just bring your file, document or USB — we'll take care of the rest."]
 
-  // FIX: no longer synthesizes a fabricated description when svc.desc is
-  // missing — description content now comes from lib/data only, per
-  // request. When absent, the About tab shows a plain neutral empty-state
-  // message instead (UI chrome, not invented business copy).
   const desc = svc.desc?.trim() || null
 
   return (
     <div className="fixed inset-0 z-[10200] flex items-end md:items-center justify-center p-0 md:p-4">
-      <div
-        className="absolute inset-0 bg-black/45 animate-in fade-in duration-120"
+      <motion.div
+        className="absolute inset-0 bg-black/45"
         onClick={onClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
       />
-      <div
+      {/* Edge-to-edge on mobile (no max-width cap until md breakpoint,
+          replacing the old max-w-md that left slivers of backdrop visible
+          on wider phones) — wider on desktop too (max-w-lg, up from
+          max-w-md). Drag="y" here (not restricted to a handle) means the
+          whole card can be swiped anywhere to close. */}
+      <motion.div
         ref={containerRef}
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={svc.name}
-        className={cn(
-          // Width increased: max-w-sm → max-w-md
-          "relative w-full max-w-md bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none",
-          "rounded-t-[20px] md:rounded-[14px]",
-          "animate-in slide-in-from-bottom-2 md:zoom-in-95 fade-in duration-180 ease-out"
-        )}
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0.05, bottom: 0.6 }}
+        onDragEnd={handleDragEnd}
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 32, stiffness: 340 }}
+        className="relative w-full md:max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-t-[20px] md:rounded-[14px] cursor-grab active:cursor-grabbing"
       >
-        <div className="md:hidden flex justify-center pt-2.5 pb-0.5 shrink-0">
+        <div className="flex justify-center pt-2.5 pb-0.5 shrink-0">
           <div className="w-9 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700" />
         </div>
 
         {/* Header */}
-        <div className="px-6 pt-6 pb-5 flex-shrink-0">
+        <div className="px-6 pt-4 pb-5 flex-shrink-0">
           <div className="flex justify-between items-start mb-4">
             <div className="flex-1 min-w-0 pr-3">
               <span
@@ -851,12 +885,11 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             </div>
           </div>
 
-          {/* Divider — header row / price */}
           <div className="h-px bg-zinc-100 dark:bg-zinc-800 mb-4" />
 
-          {/* Price + turnaround pill (turnaround comes straight from
-              item.turnaround in lib/data — only rendered when present) */}
-          <div className="flex items-center gap-3 mb-4">
+          {/* Price + turnaround pill — turnaround now actually resolves via
+              getTurnaround() instead of a phantom item field. */}
+          <div className="flex items-center gap-3 mb-1">
             <span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
             {svc.turnaround && (
               <span
@@ -868,31 +901,37 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
               </span>
             )}
           </div>
+        </div>
 
-          {/* Divider — price / tabs */}
-          <div className="h-px bg-zinc-100 dark:bg-zinc-800 mb-4" />
-
-          {/* Tabs */}
-          <div className="flex gap-2">
-            {(["bring", "about"] as Tab[]).map((t) => (
+        {/* Tabs — centered, top-line indicator instead of pills. The
+            active tab gets a solid bar along its top edge in the hub's
+            accent color; inactive tabs are plain neutral text. */}
+        <div className="flex justify-center gap-8 border-t border-zinc-100 dark:border-zinc-800">
+          {(["bring", "about"] as Tab[]).map((t) => {
+            const isActive = tab === t
+            return (
               <button
                 key={t}
                 onClick={() => setTab(t)}
                 className={cn(
-                  "px-3.5 py-1.5 rounded-full text-[0.7rem] font-black uppercase tracking-wider transition-all duration-150",
-                  tab === t
-                    ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
-                    : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                  "relative px-1 pt-3 pb-2.5 text-[0.72rem] font-black uppercase tracking-wider transition-colors",
+                  isActive ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-400 dark:text-zinc-500"
                 )}
               >
+                {isActive && (
+                  <span
+                    className="absolute top-0 left-0 right-0 h-[3px] rounded-full"
+                    style={{ backgroundColor: accent }}
+                  />
+                )}
                 {t === "bring" ? "Bring" : "Description"}
               </button>
-            ))}
-          </div>
+            )
+          })}
         </div>
 
         {/* Tab content */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 min-h-0 border-t border-zinc-100 dark:border-zinc-800">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 min-h-0">
           {tab === "bring" && (
             <div className="animate-in fade-in duration-150">
               <ol className="space-y-3">
@@ -928,8 +967,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
           )}
         </div>
 
-        {/* Footer — upload + Add to Quote + CTA, with dividers between
-            each distinct action so the stack doesn't read as one block */}
+        {/* Footer — upload + Add to Quote + CTA */}
         <div className="px-6 pb-6 pt-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800 space-y-4">
 
           <input
@@ -1073,7 +1111,7 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
             Request {naturalLabel}
           </a>
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }
@@ -1098,8 +1136,6 @@ function NoticeBanner() {
 }
 
 // ─── Closing tagline ──────────────────────────────────────────────────────────
-// Gradients removed per "remove gradient all over my website" — top bar and
-// background wash are now flat, solid brand blue at low opacity.
 function ClosingTagline() {
   return (
     <div className="relative mt-2 mb-4 overflow-hidden rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-6 py-10 md:py-12 text-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
@@ -1194,13 +1230,19 @@ export function ServicesPage() {
           <NoticeBanner />
         </div>
 
-        {/* Hub cards */}
+        {/* Hub cards — icon is neutral grey by default, only takes on the
+            hub's own accent color on hover; the "explore items" pill is
+            hub-colored at rest (not just neutral grey anymore), with its
+            text color auto-picked via getContrastText() to stay WCAG AA
+            readable against whatever that hub's accent hex happens to be. */}
         <div className="flex flex-col md:grid md:grid-cols-5 gap-5 md:gap-4 pb-2 w-full">
           {HUB_ORDER.map((hubId) => {
             const hub    = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
             const accent = isDark ? colors.accentDark : colors.accentLight
             const isHovered = hoveredMainHub === hubId
+            const neutralIconColor = isDark ? "#a1a1aa" : "#71717a" // zinc-400 / zinc-500
+            const pillTextColor = getContrastText(accent)
             return (
               <button
                 key={hubId}
@@ -1212,7 +1254,10 @@ export function ServicesPage() {
               >
                 <div
                   className="w-14 h-14 md:w-16 md:h-16 rounded-[14px] flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110 shadow-md"
-                  style={{ backgroundColor: `${accent}12`, color: accent }}
+                  style={{
+                    backgroundColor: isHovered ? `${accent}12` : (isDark ? "rgba(161,161,170,0.12)" : "rgba(113,113,122,0.08)"),
+                    color: isHovered ? accent : neutralIconColor,
+                  }}
                 >
                   <HubIcon id={hubId} size={32} />
                 </div>
@@ -1222,7 +1267,9 @@ export function ServicesPage() {
                 >
                   {hub.title}
                 </h3>
-                <p className="abh-body text-[0.82rem] line-clamp-2 mb-5">{hub.tagline}</p>
+                {/* FIX: was `{hub.tagline}`, a field that doesn't exist on
+                    Hub — rendered blank. Real field is `hub.desc`. */}
+                <p className="abh-body text-[0.82rem] line-clamp-2 mb-5">{hub.desc}</p>
 
                 <div className="flex flex-col items-center gap-1 mb-5 px-3 py-2.5 rounded-[10px] bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-100 dark:border-zinc-800/60 w-full">
                   {HUB_PREVIEWS[hubId].map((hint, i) => (
@@ -1233,7 +1280,10 @@ export function ServicesPage() {
                 </div>
 
                 <div className="mt-auto flex flex-col items-center gap-1.5">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 text-[0.7rem] font-black lowercase tracking-widest">
+                  <span
+                    className="inline-flex items-center px-3 py-1 rounded-full text-[0.7rem] font-black lowercase tracking-widest"
+                    style={{ backgroundColor: accent, color: pillTextColor }}
+                  >
                     explore items
                   </span>
                   <div className="h-px w-6 rounded-full" style={{ backgroundColor: `${accent}30` }} />
@@ -1253,10 +1303,16 @@ export function ServicesPage() {
         onClose={() => setActiveHub(null)}
         onSelectService={handleSelectService}
       />
-      <ServiceDetailModal
-        svc={selectedService}
-        onClose={() => setSelectedService(null)}
-      />
+
+      <AnimatePresence>
+        {selectedService && (
+          <ServiceDetailModal
+            key={selectedService.name}
+            svc={selectedService}
+            onClose={() => setSelectedService(null)}
+          />
+        )}
+      </AnimatePresence>
 
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
@@ -1270,4 +1326,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-      }
+    } 
