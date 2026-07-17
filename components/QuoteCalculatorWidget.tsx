@@ -151,6 +151,12 @@ export function QuoteCalculatorWidget() {
   const [saveNameDraft, setSaveNameDraft] = useState("")
   const [showSavedList, setShowSavedList] = useState(false)
 
+  // Mini-bar expand/collapse — the pill next to the FAB (see the FAB +
+  // mini-bar block below) slides out SIDEWAYS from this flag instead of
+  // stacking vertically above the FAB. Collapsed by default; opened by
+  // tapping the item-count badge on the FAB.
+  const [miniExpanded, setMiniExpanded] = useState(false)
+
   const pressState = useRef<Record<string, { timeout?: ReturnType<typeof setTimeout>; interval?: ReturnType<typeof setInterval>; longPressed?: boolean }>>({})
 
   useEffect(() => {
@@ -185,6 +191,12 @@ export function QuoteCalculatorWidget() {
     document.body.style.overflow = isOpen ? "hidden" : ""
     return () => { document.body.style.overflow = "" }
   }, [isOpen])
+
+  // Auto-collapse the sideways mini pill once the full panel opens or the
+  // cart empties out — nothing left to show a total for.
+  useEffect(() => {
+    if (isOpen || cart.length === 0) setMiniExpanded(false)
+  }, [isOpen, cart.length])
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -424,37 +436,40 @@ export function QuoteCalculatorWidget() {
         />
       )}
 
-      {/* ── FAB + attached mini-bar ────────────────────────────────────── */}
+      {/* ── FAB + mini-bar ────────────────────────────────────────────────
+          Redesigned to expand SIDEWAYS (to the left) at the same height
+          as the FAB, instead of stacking a pill above it. Stacking used
+          to push the pill up into the Search FAB's slot and overlap it.
+          Collapsed: just the FAB with its item-count badge. Tapping the
+          badge expands the pill to show the price total; tapping the
+          pill itself opens the full quote. right-4 md:right-6 matches
+          the WhatsApp + Search FABs so all three line up on desktop. ── */}
       <div
         className={cn(
-          "fixed z-[9992] right-4 bottom-[5.5rem] flex flex-col items-end gap-2 group/calc",
+          "fixed z-[9992] right-4 md:right-6 bottom-[5.5rem] flex items-center justify-end gap-2 group/calc",
           "transition-all duration-200 ease-out motion-reduce:transition-none transform-gpu",
           fabVisible
             ? "opacity-100 scale-100 pointer-events-auto"
             : "opacity-0 pointer-events-none scale-90"
         )}
       >
-        {/* Mini-total pill — attached directly above the FAB. Badge circle
-            now uses fabTextColor instead of hardcoded white, so it stays
-            readable against the pale light-blue fabColor in dark mode. */}
+        {/* Expanding mini pill — slides out to the LEFT of the FAB, same
+            row, same bottom offset, so it never takes vertical space and
+            can never collide with the Search FAB above it. */}
         <button
           onClick={() => setIsOpen(true)}
           className={cn(
-            "flex items-center gap-2 pl-3 pr-3.5 py-2 rounded-full shadow-lg bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 active:scale-95 transition-all duration-200 ease-out origin-bottom-right motion-reduce:transition-none transform-gpu",
-            showMiniBar ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-90 translate-y-1 pointer-events-none"
+            "flex items-center gap-2 pl-3 pr-3.5 py-2 rounded-full shadow-lg bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 active:scale-95 transition-all duration-200 ease-out origin-right motion-reduce:transition-none transform-gpu overflow-hidden whitespace-nowrap",
+            showMiniBar && miniExpanded
+              ? "opacity-100 max-w-[200px] scale-100"
+              : "opacity-0 max-w-0 scale-95 pl-0 pr-0 pointer-events-none"
           )}
         >
-          <span
-            className="min-w-[18px] h-[18px] px-1 rounded-full text-[0.6rem] font-black flex items-center justify-center"
-            style={{ backgroundColor: fabColor, color: fabTextColor }}
-          >
-            {itemCount}
-          </span>
           <span className="text-xs font-black text-zinc-700 dark:text-zinc-200">R{total}</span>
           <span className="text-[0.6rem] font-bold uppercase tracking-widest text-zinc-400">View quote</span>
         </button>
 
-        <div className="flex items-center justify-end gap-2">
+        <div className="relative flex items-center justify-end gap-2">
           <span
             className={cn(
               "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap pointer-events-none",
@@ -470,22 +485,30 @@ export function QuoteCalculatorWidget() {
             Quote
           </span>
 
-          {/* FAB — icon color now computed from fabColor's luminance
-              instead of hardcoded text-white, fixing the white-on-pale-
-              blue contrast failure in dark mode. */}
+          {/* FAB — icon color computed from fabColor's luminance instead
+              of hardcoded text-white, plus a colored standout shadow so
+              it lifts off the page instead of blending into it. */}
           <button
             onClick={() => setIsOpen(o => !o)}
             className="relative w-14 h-14 rounded-full shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
-            style={{ backgroundColor: fabColor, color: fabTextColor }}
+            style={{ backgroundColor: fabColor, color: fabTextColor, boxShadow: `0 8px 24px ${fabColor}55, 0 4px 10px rgba(0,0,0,0.25)` }}
             aria-label={isOpen ? "Close quotation calculator" : "Open quotation calculator"}
           >
             {isOpen ? <X size={22} weight="bold" /> : <Calculator size={26} weight="fill" />}
-            {!isOpen && itemCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 rounded-full bg-brand-orange text-white text-[0.65rem] font-black flex items-center justify-center border-2 border-white dark:border-zinc-950">
-                {itemCount}
-              </span>
-            )}
           </button>
+
+          {/* Badge doubles as the expand/collapse toggle for the mini
+              pill — tap the count to reveal the price, tap again (or
+              open the panel) to collapse it back. */}
+          {!isOpen && itemCount > 0 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setMiniExpanded(v => !v) }}
+              aria-label={miniExpanded ? "Hide quote total" : "Show quote total"}
+              className="absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 rounded-full bg-brand-orange text-white text-[0.65rem] font-black flex items-center justify-center border-2 border-white dark:border-zinc-950 shadow-md active:scale-90 transition-transform duration-150"
+            >
+              {itemCount}
+            </button>
+          )}
         </div>
       </div>
 
@@ -554,7 +577,7 @@ export function QuoteCalculatorWidget() {
                       placeholder="Name this quote (optional)"
                       className="flex-1 min-w-0 px-2.5 py-1.5 rounded-[8px] bg-white dark:bg-zinc-900 text-xs font-medium text-zinc-800 dark:text-zinc-200 outline-none border border-zinc-100 dark:border-zinc-800"
                     />
-                    {/* Save button — text color now computed instead of
+                    {/* Save button — text color computed instead of
                         hardcoded white. */}
                     <button
                       onClick={confirmSaveQuote}
@@ -658,7 +681,7 @@ export function QuoteCalculatorWidget() {
                               <p className="text-[0.62rem] font-medium text-zinc-400">{t.count} item{t.count === 1 ? "" : "s"} · R{t.total}</p>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
-                              {/* Load button — text color now computed
+                              {/* Load button — text color computed
                                   instead of hardcoded white. */}
                               <button onClick={() => loadSavedQuote(q)} className="px-2.5 py-1 rounded-[8px] text-[0.65rem] font-black" style={{ backgroundColor: fabColor, color: fabTextColor }}>Load</button>
                               <button onClick={() => deleteSavedQuote(q.id)} className="w-6 h-6 rounded-full flex items-center justify-center text-zinc-400 hover:text-red-500 transition-colors"><Trash size={12} weight="bold" /></button>
@@ -834,5 +857,6 @@ export function QuoteCalculatorWidget() {
         </div>
       )}
     </>
-  ) 
+  )
 }
+ 
