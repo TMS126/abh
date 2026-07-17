@@ -219,36 +219,35 @@ export const HUBS: Record<HubId, Hub> = {
 // "Scanning"/"Laminating" under Docu Hub). Item-level overrides below for
 // services that differ from their section's default estimate.
 //
-// Print/Docu/Design figures verified against realistic South African provider
-// research (July 2026). SASSA/SARS/E-Service figures represent ApexbytesHub's
+// Figures verified against realistic South African provider research
+// (July 2026 pass). SASSA/SARS/E-Service figures represent ApexbytesHub's
 // own submission turnaround only — actual government processing afterward is
 // separate, much longer (SASSA SRD alone typically runs 7–14+ business days
 // end-to-end), and outside our control — see each hub's `turnaround` field
 // above, which already carries that disclaimer to clients.
 //
-// KNOWN INCONSISTENCY: "Logos" section default below (5–10 working days) is
-// now longer than the Standard/Premium Logo item-level overrides further
-// down (2–3 / 3–5 days). Only the Basic Logo tier falls through to the
-// section default, so as written a Basic Logo would show as slower than a
-// Standard or Premium one. Needs a decision on what Standard/Premium should
-// actually say before this reads correctly.
+// FIXED (was KNOWN INCONSISTENCY): "Logos" section default is now 2–3 days,
+// matching the Basic Logo tier's actual turnaround — Standard/Premium both
+// override to 3–5 days below, so tiers now read slower in the correct order
+// (Basic fastest, Standard/Premium both longer for the extra concepts/detail).
 export const TURNAROUND: Record<string, string> = {
   // Print Hub
   "Printing":            "15–30 mins",
   "Copying":             "10–20 mins",
-  "Photo Printing":      "1–3 working days",
+  "Photo Printing":      "20–40 mins",
   "Scanning":            "10–15 mins",
   "Laminating":          "10–20 mins",
   // Docu Hub
   "Typing + Printing":   "1–3 hours",
   "CV Services":         "24–48 hours",
-  "Other Documents":     "2–4 hours",
+  "Other Documents":     "1–2 hours",
   // Design Hub
-  "Logos":               "5–10 working days",
+  "Logos":               "2–3 days",
   "Business Cards":      "1–2 days",
   "Flyers & Posters":    "1–2 days",
   "Social Media":        "24–48 hours",
   "Invitations":         "1–2 days",
+  "Business Profile":    "2–4 days",
   "Revisions":           "2–6 hours",
   // E-Service Hub
   "SASSA":               "24 hours",
@@ -267,17 +266,42 @@ export const TURNAROUND: Record<string, string> = {
 
 // Item-level overrides for services that differ from their section's estimate
 export const TURNAROUND_OVERRIDE: Record<string, string> = {
-  "Premium Logo":              "3–5 days",
-  "Standard Logo":             "2–3 days",
-  "Video":                     "3–5 days",
-  "Tax Return / VAT / PAYE":   "2–3 days",
-  "CSD Registration":          "1–2 days",
-  "UIF Claims":                "2–3 days",
+  "Premium Logo":               "3–5 days",
+  "Standard Logo":              "3–5 days",
+  "Cover Letter":                "2–4 hours",
+  "Video":                       "3–5 days",
+  "Tax Return / VAT / PAYE":     "2–3 days",
+  "Good Standing Letter":        "3–5 days",
+  "Google Business Setup":       "2–4 hours",
+  "UIF Registration":            "2–3 days",
+  "UIF Monthly Declaration":     "2–3 days",
+  "UIF Claims":                  "2–3 days",
+  "CSD Registration":            "1–2 days",
+  "Learner's Licence Booking":   "24 hours",
+  "PC Setup":                    "2–4 hours",
+  "PC Cleanup":                  "2–4 hours",
+  "Virus / Malware Removal":     "2–4 hours",
 }
 
 export const TURNAROUND_DISCLAIMER =
   "Turnaround times are estimates based on standard volume. Factors such as load shedding, third-party system downtime (SARS/SASSA/PSIRA), or complex revision requests may affect final delivery. We appreciate your patience as we ensure the highest quality for your work."
 
+// Hub-specific disclaimer variants — not yet wired into services-page.tsx
+// (which currently renders the single flat TURNAROUND_DISCLAIMER above via
+// DISCLAIMER_RELEVANT_HUBS). Kept here, ready to use: swap that component's
+// lookup to HUB_DISCLAIMERS[hubId] to surface the tailored text per hub.
+export const HUB_DISCLAIMERS: Record<HubId, string> = {
+  print:
+    "Please note: Turnaround times are estimates based on standard volume. Factors such as load shedding, large bulk orders, or specialized paper availability may affect final delivery. We appreciate your patience as we ensure the highest print quality for your work.",
+  doc:
+    "Please note: Turnaround times are estimates based on the length and complexity of the document. Factors such as load shedding or the volume of typing required may affect final delivery. We appreciate your patience as we ensure your documents are professional and error-free.",
+  design:
+    "Please note: Turnaround times are estimates based on current design queues. Factors such as the complexity of your design brief, the number of requested revisions, and the creative process may affect final delivery. We appreciate your patience as we craft a high-quality visual identity for your brand.",
+  eservice:
+    "Please note: Turnaround times are estimates based on standard processing. Factors such as third-party system downtime (SARS, SASSA, PSIRA, or CSD), internet connectivity, or government portal delays may affect final delivery. We appreciate your patience as we navigate these external systems to complete your application.",
+  tech:
+    "Please note: Turnaround times are estimates based on the nature of the technical issue. Factors such as hardware part availability, the complexity of the repair/installation, or data backup requirements may affect final delivery. We appreciate your patience as we ensure your technology is secure and fully functional.",
+}
 // ─── PROJECTS (Portfolio) ─────────────────────────────────────────────────────
 export const PROJECTS = [
   {
