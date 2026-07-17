@@ -307,10 +307,13 @@ export function HeroSection() {
     handleNavigate("/services")
   }
 
- return (
+  // DESIGN EXACT COLOR
+  const DESIGN_TEAL = "#00BFA5"
+
+  return (
     <section
-      aria-label="Hero"
-      className="relative min-h-[calc(100vh-var(--nav-h))] w-full flex flex-col items-center justify-center px-4 md:px-8 pt-[calc(var(--nav-h)+56px)] md:pt-[104px] pb-10 md:pb-16 overflow-hidden cursor-default select-none bg-background transition-colors duration-300"
+      aria-label="Welcome to ApexbytesHub"
+      className="relative min-h-[calc(100vh-var(--nav-h))] w-full flex flex-col items-center overflow-hidden cursor-default select-none bg-white transition-colors duration-300"
     >
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <div
@@ -365,275 +368,112 @@ export function HeroSection() {
         }
       `}</style>
 
-      <div className="max-w-[1240px] mx-auto flex flex-col items-center relative z-10 w-full mb-6">
-
-        <div className="w-full max-w-[840px] mx-auto flex flex-col mb-6 md:mb-8">
-          <div className="text-center md:text-left">
-            <h1 className="font-sans font-black text-4xl md:text-6xl lg:text-[4.6rem] tracking-tight text-zinc-900 dark:text-zinc-50 leading-[1.08] mb-4 text-balance transition-colors duration-300">
-              {BIZ.tagline}
-            </h1>
-            <p className="text-sm md:text-base font-medium text-zinc-600 dark:text-zinc-400 max-w-[480px] md:max-w-none mx-auto md:mx-0 leading-relaxed">
-              From printing your documents to navigating government services — we make it simple, fast, and friendly.
-            </p>
-          </div>
+      {/* REFACTORED HERO UI: TOP TEAL SECTION */}
+      <div 
+        className="relative w-full flex-[1.4] flex flex-col items-center justify-center px-6 pt-20 pb-16 rounded-b-[48px] md:rounded-b-[64px] shadow-2xl z-10"
+        style={{ backgroundColor: DESIGN_TEAL }}
+      >
+        <div className="text-center mb-10 md:mb-16">
+          <p className="text-white/90 text-xl md:text-2xl font-medium tracking-tight mb-1">
+            Welcome to
+          </p>
+          <h1 className="text-white text-4xl md:text-6xl font-black tracking-tighter">
+            ApexbytesHub
+          </h1>
         </div>
 
-        <div className="relative w-full flex justify-center items-center mb-8">
-
-          <div
-            aria-hidden="true"
-            className="hidden md:flex absolute inset-y-0 -right-[10%] items-center justify-center pointer-events-none select-none z-0"
-          >
-            {RandomWatermarkIcon && (
-              <div className="flex flex-col items-center">
-                <div style={{ animation: "abh-watermark-float 7s ease-in-out infinite" }}>
-                  <RandomWatermarkIcon
-                    size={520}
-                    weight="fill"
-                    aria-hidden="true"
-                    style={{
-                      color: BRAND.blue,
-                      transform: "rotate(-6deg)",
-                      filter: "drop-shadow(0 22px 26px rgba(0,0,0,0.25))",
-                    }}
-                    className="shrink-0 opacity-[0.14] dark:opacity-[0.18] md:w-[620px] md:h-[620px]"
-                  />
-                </div>
-                <div
-                  className="w-44 h-9 md:w-56 md:h-11 rounded-full blur-xl -mt-2"
-                  style={{
-                    backgroundColor: "#000000",
-                    animation: "abh-watermark-shadow-pulse 7s ease-in-out infinite",
-                  }}
-                />
-              </div>
-            )}
+        <div className="flex-1 flex items-center justify-center w-full max-w-sm">
+          <div className="relative w-48 h-48 md:w-64 md:h-64 flex items-center justify-center">
+            {/* BIG LOGO AREA */}
+            <svg 
+              viewBox="0 0 100 100" 
+              className="w-full h-full text-white drop-shadow-xl" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="6" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            >
+              <path d="M15 85 L50 15 L85 85" />
+              <path d="M30 55 L70 55" />
+              <circle cx="50" cy="50" r="46" strokeWidth="1" strokeDasharray="4 4" className="opacity-20" />
+            </svg>
           </div>
-
-          <div
-            aria-hidden="true"
-            className="absolute w-[220px] h-[80px] rounded-full blur-2xl pointer-events-none abh-cta-glow"
-            style={{ backgroundColor: STROKE_COLOR }}
-          />
-
-          {/* Start Here — border is now a fixed primary blue (STROKE_COLOR)
-              in both themes. Text and arrow read from the SAME --rest CSS
-              variable via Tailwind's arbitrary-value color utilities
-              instead of inline style="color", so the group-hover:text-white
-              (desktop) and the mobile-always-white classes can properly
-              override them through normal CSS cascade/specificity — an
-              inline style color would otherwise always win over a class,
-              which is why the arrow previously couldn't share the hover
-              behavior the text already had. */}
-          <button
-            ref={ctaBtnRef}
-            onClick={handleCtaClick}
-            style={{
-              borderColor: STROKE_COLOR,
-              ["--rest" as any]: REST_COLOR,
-            }}
-            className="group relative z-30 inline-flex items-center gap-3 px-10 py-5 rounded-[14px] font-sans font-black text-lg overflow-hidden border-2 transition-all duration-150 active:duration-75 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.94] shadow-md hover:shadow-xl active:shadow-sm animate-in fade-in duration-500"
-          >
-            <span
-              aria-hidden="true"
-              className="absolute inset-0 origin-bottom scale-y-100 md:scale-y-0 transition-transform duration-150 ease-out md:group-hover:scale-y-100 md:group-active:scale-y-100"
-              style={{ backgroundColor: CTA_FILL_COLOR }}
-            />
-            <span className="relative z-10 text-white md:text-[color:var(--rest)] md:group-hover:text-white md:group-active:text-white transition-colors duration-150">
-              Start Here
-            </span>
-            <ArrowRight
-              weight="bold"
-              aria-hidden="true"
-              className="relative z-10 w-6 h-6 transition-all duration-150 group-hover:translate-x-1.5 text-white md:text-[color:var(--rest)] md:group-hover:text-white md:group-active:text-white"
-            />
-          </button>
         </div>
+      </div>
 
-        <div
-          ref={ecoBoxRef}
-          onMouseMove={handleEcoMouseMove}
-          onMouseLeave={handleEcoMouseLeave}
-          className="relative w-full max-w-[840px] mx-auto rounded-[14px] overflow-hidden"
-          style={{
-            transform: `perspective(1200px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg) scale(${tilting ? 1.012 : 1})`,
-            transformStyle: "preserve-3d",
-            transition: tilting ? "transform 90ms ease-out" : "transform 500ms cubic-bezier(0.16, 1, 0.3, 1)",
-            willChange: "transform",
-            boxShadow:
-              "0 60px 120px -25px rgba(0,0,0,0.65), " +
-              "0 35px 70px -30px rgba(0,0,0,0.75), " +
-              `0 0 100px -15px ${BRAND.blue}70, ` +
-              "inset 0 1px 0 rgba(255,255,255,0.28), " +
-              "inset 0 -44px 60px -30px rgba(0,0,0,0.55)",
-          }}
-        >
-          <div className="absolute inset-0 z-0" aria-hidden="true">
-            <Image
-              src="/storefront.webp"
-              alt=""
-              fill
-              sizes="840px"
-              className="object-cover opacity-90 blur-[1.5px]"
-            />
-            <div className="absolute inset-0 bg-black/45" />
-            <div
-              className="absolute inset-0 pointer-events-none opacity-40 mix-blend-overlay"
-              style={{
-                background: `linear-gradient(${115 + tilt.ry * 3}deg, transparent 35%, rgba(255,255,255,0.5) 50%, transparent 65%)`,
-                transition: tilting ? "background 90ms ease-out" : "background 500ms ease-out",
-              }}
-            />
-          </div>
-
-          <div className="relative z-10 w-full flex flex-col items-center px-6 sm:px-10 md:px-12 pt-8 sm:pt-10 md:pt-12 pb-10 sm:pb-12 md:pb-14">
-
-            <div className="w-full flex flex-col items-center mb-5">
-              <h2
-                className="abh-section-heading mb-2 text-center"
-                style={{ color: cardText }}
-              >
-                Core Hub Ecosystem
-              </h2>
-              <p
-                className="text-sm font-medium text-center"
-                style={{ color: cardTextSoft }}
-              >
-                Tap a hub to see what we actually do there.
-              </p>
-            </div>
-
-            <div
-              role="tablist"
-              aria-label="Service hubs"
-              className="flex flex-wrap sm:flex-nowrap justify-center items-stretch gap-3 sm:gap-4 w-full max-w-[420px] mb-6 px-1"
-            >
-              {HUBS_DATA.map((hub, index) => {
-                const isActive  = activeHub === index
-                const isHovered = hoveredHub === index
-
-                return (
-                  <button
-                    key={hub.id}
-                    role="tab"
-                    aria-selected={isActive}
-                    aria-label={hub.name}
-                    onClick={() => handleSelectHub(index)}
-                    onMouseEnter={() => setHoveredHub(index)}
-                    onMouseLeave={() => setHoveredHub(null)}
-                    className={cn(
-                      "relative flex flex-col items-center justify-center gap-1.5 px-4 sm:px-5 pt-4 pb-2.5 rounded-[14px] transition-all duration-200 flex-1 min-w-[56px]",
-                      isActive && "shadow-md"
-                    )}
-                    style={{
-                      backgroundColor: isActive
-                        ? "rgba(255,255,255,0.18)"
-                        : (isHovered ? "rgba(255,255,255,0.08)" : "transparent"),
-                    }}
-                  >
-                    <span
-                      className="transition-all duration-200 flex"
-                      style={{
-                        color: cardText,
-                        opacity: isActive ? 1 : (isHovered ? 0.85 : 0.45),
-                        transform: isActive ? "translateY(-1px) scale(1.08)" : "none",
-                      }}
-                    >
-                      {hub.icon(isActive)}
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      className={cn("block h-[3px] rounded-full", isActive && "abh-taskbar-indicator")}
-                      style={{
-                        width: isActive ? 22 : 0,
-                        backgroundColor: cardText,
-                        opacity: isActive ? 1 : 0,
-                      }}
-                    />
-                  </button>
-                )
-              })}
-            </div>
-
-            <div
-              className="relative w-full max-w-[420px] h-px mt-1 mb-7"
-              style={{ backgroundColor: "rgba(255,255,255,0.35)" }}
-            >
-              <div
-                className="absolute left-1/2 top-0 -translate-x-1/2"
-                style={{
-                  width: 0,
-                  height: 0,
-                  borderLeft: "7px solid transparent",
-                  borderRight: "7px solid transparent",
-                  borderTop: "9px solid rgba(255,255,255,0.85)",
-                }}
-                aria-hidden="true"
-              />
-            </div>
-
-            <div className="w-full max-w-[420px] flex flex-col items-center text-center">
-              <div className="relative flex flex-col items-center gap-2 rounded-[16px] px-6 py-5 mb-4 bg-white dark:bg-zinc-900 shadow-lg transition-colors duration-200">
-                <p
-                  className="text-[0.65rem] font-black uppercase tracking-widest"
-                  style={{ color: nameColor }}
-                >
-                  {active.name}
-                </p>
-
+      {/* REFACTORED HERO UI: BOTTOM WHITE SECTION */}
+      <div className="flex-1 w-full flex flex-col items-center justify-center gap-8 md:gap-12 px-6 py-10 bg-white">
+        
+        {/* Hub Selection (Preserved logic, adapted style) */}
+        <div className="w-full max-w-[420px] flex flex-col items-center">
+          <div
+            role="tablist"
+            aria-label="Service hubs"
+            className="flex justify-center items-center gap-2 mb-6"
+          >
+            {HUBS_DATA.map((hub, index) => {
+              const isActive = activeHub === index
+              return (
                 <button
-                  key={`${activeHub}-${spotlightService.name}`}
-                  onClick={handleReroll}
-                  aria-label="Show another example price for this hub"
-                  className="flex flex-col items-center gap-1 rounded-[10px] px-2 py-1 transition-opacity hover:opacity-80 active:scale-[0.97] animate-in fade-in duration-200"
+                  key={hub.id}
+                  onClick={() => handleSelectHub(index)}
+                  className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200",
+                    isActive ? "shadow-md" : "opacity-40 hover:opacity-70"
+                  )}
+                  style={{ 
+                    backgroundColor: isActive ? DESIGN_TEAL : "transparent",
+                    color: isActive ? "#FFF" : DESIGN_TEAL,
+                    border: `2px solid ${DESIGN_TEAL}`
+                  }}
                 >
-                  <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-                    {spotlightService.name}
-                  </span>
-                  <span className="text-2xl font-black font-mono text-zinc-900 dark:text-zinc-50">
-                    {spotlightService.price}
-                  </span>
+                  {hub.icon(isActive)}
                 </button>
-              </div>
-
-              <button
-                onClick={() => handleNavigate(`/services?hub=${active.id}`)}
-                className="flex items-center justify-center gap-1.5 text-[0.65rem] font-black tracking-wide transition-opacity hover:opacity-70"
-                style={{ color: cardText }}
-              >
-                View All {active.name} Services
-                <ArrowRight weight="bold" className="w-3 h-3" aria-hidden="true" />
-              </button>
-            </div>
-
-            <div
-              role="marquee"
-              aria-label="Our services"
-              onMouseEnter={() => setMarqueePaused(true)}
-              onMouseLeave={() => setMarqueePaused(false)}
-              onTouchStart={(e) => { e.stopPropagation(); setMarqueePaused(p => !p) }}
-              className="relative w-full mt-8 py-4 overflow-hidden select-none group/marquee"
-            >
-              <div
-                className="flex whitespace-nowrap w-max animate-marquee"
-                style={{ animationPlayState: marqueePaused ? "paused" : "running" }}
-              >
-                {[0, 1].map((copy) => (
-                  <div key={copy} className="flex items-center shrink-0">
-                    {MARQUEE_ITEMS.map((item, idx) => (
-                      <React.Fragment key={idx}>
-                        <span className="inline-flex items-center px-5 font-semibold text-sm transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100" style={{ color: cardTextSoft }}>
-                          {item}
-                        </span>
-                        <span className="font-black text-base leading-none shrink-0" style={{ color: cardText }} aria-hidden="true">•</span>
-                      </React.Fragment>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-
+              )
+            })}
           </div>
+
+          {/* Spotlight Data Preservation */}
+          <div className="bg-zinc-50 rounded-2xl p-4 w-full text-center border border-zinc-100 shadow-sm mb-6">
+            <p className="text-[0.65rem] font-black uppercase tracking-widest mb-1" style={{ color: DESIGN_TEAL }}>
+              {active.name}
+            </p>
+            <div className="flex flex-col items-center">
+              <span className="text-sm font-semibold text-zinc-600">{spotlightService.name}</span>
+              <span className="text-2xl font-black text-zinc-900">{spotlightService.price}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* DESIGN EXACT "let's go" BUTTON */}
+        <button
+          onClick={handleCtaClick}
+          className="group relative flex items-center justify-between w-full max-w-[300px] py-4 px-8 rounded-full border-[2.5px] bg-white transition-all hover:bg-zinc-50 active:scale-[0.97] shadow-sm"
+          style={{ borderColor: DESIGN_TEAL }}
+        >
+          <span className="text-xl font-black tracking-tight" style={{ color: DESIGN_TEAL }}>
+            let&apos;s go
+          </span>
+          <ArrowRight weight="bold" className="w-6 h-6" style={{ color: DESIGN_TEAL }} />
+        </button>
+
+        {/* Pagination Dots */}
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-2 rounded-full" style={{ backgroundColor: DESIGN_TEAL }} />
+          <div className="w-2 h-2 rounded-full opacity-20" style={{ backgroundColor: DESIGN_TEAL }} />
+          <div className="w-2 h-2 rounded-full opacity-20" style={{ backgroundColor: DESIGN_TEAL }} />
+        </div>
+
+        {/* Marquee Preservation */}
+        <div className="w-full overflow-hidden mt-4 opacity-40">
+           <div className="flex whitespace-nowrap animate-marquee">
+              {MARQUEE_ITEMS.map((item, idx) => (
+                <span key={idx} className="mx-4 text-xs font-bold text-zinc-400 uppercase tracking-widest">
+                  {item} •
+                </span>
+              ))}
+           </div>
         </div>
       </div>
     </section>
@@ -692,4 +532,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-} 
+  } 
