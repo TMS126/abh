@@ -1204,7 +1204,7 @@ function GalleryClosingTagline() {
       <div className="absolute inset-x-0 top-0 h-1 bg-[#1E6FA8]" />
       <p className="abh-eyebrow text-zinc-400 dark:text-zinc-500 mb-3">Like what you see?</p>
       <p className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 leading-snug max-w-2xl mx-auto">
-        Your project could be our next favourite. Let's bring it to life at Apexbytes Hub.
+        Your project could be our next favourite. Let's bring it to life at ApexbytesHub.
       </p>
     </div>
   )
