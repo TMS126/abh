@@ -163,7 +163,7 @@ export function TestimonialsSection({
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
-          className="relative w-full max-w-[640px] mx-auto h-[340px] sm:h-[300px] focus:outline-none rounded-[20px] focus-visible:ring-2 focus-visible:ring-offset-4 focus-visible:ring-offset-background"
+          className="relative w-full max-w-[640px] mx-auto h-[400px] sm:h-[380px] focus:outline-none rounded-[20px] focus-visible:ring-2 focus-visible:ring-offset-4 focus-visible:ring-offset-background"
           style={{ ["--tw-ring-color" as any]: colorFor(active) }}
         >
           {reviews.map((r, i) => {
@@ -185,7 +185,7 @@ export function TestimonialsSection({
               >
                 <div
                   onClick={() => !isActive && goTo(i)}
-                  className="h-full rounded-[20px] bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 flex flex-col items-center justify-center text-center px-8 sm:px-12 py-8"
+                  className="h-full rounded-[20px] bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 flex flex-col items-center justify-center text-center px-8 sm:px-12 py-6 overflow-hidden"
                   style={{
                     cursor: isActive ? "default" : "pointer",
                     boxShadow: isActive
@@ -193,14 +193,14 @@ export function TestimonialsSection({
                       : "0 10px 30px -12px rgba(0,0,0,0.15)",
                   }}
                 >
-                  <Quotes size={26} weight="fill" style={{ color: accent }} className="mb-4 opacity-40 shrink-0" />
+                  <Quotes size={22} weight="fill" style={{ color: accent }} className="mb-3 opacity-40 shrink-0" />
 
-                  <p className="text-sm sm:text-base font-medium text-zinc-700 dark:text-zinc-300 leading-relaxed mb-5 line-clamp-4">
+                  <p className="text-sm sm:text-base font-medium text-zinc-700 dark:text-zinc-300 leading-relaxed mb-4 line-clamp-3 max-w-[46ch]">
                     {r.quote}
                   </p>
 
                   <div
-                    className="w-11 h-11 rounded-full flex items-center justify-center text-xs font-black text-white mb-2 shrink-0"
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-black text-white mb-1.5 shrink-0"
                     style={{ backgroundColor: solid }}
                   >
                     {r.initials}
@@ -278,10 +278,10 @@ export function TestimonialsSection({
             className="inline-flex items-center gap-2 text-xs font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
           >
             <WhatsappLogo size={16} weight="fill" style={{ color: "#25D366" }} />
-            Been helped by us? Send us your story on WhatsApp
+            Been helped by us? Send us your story/feedback on WhatsApp
           </a>
         </div>
       </div>
     </section>
   )
-    } 
+      } 
