@@ -79,8 +79,6 @@ function getBulkHint(id: string, name: string, qty: number, effRate: number, bas
   return discounted ? "Best bulk rate applied" : null
 }
 
-// Whether ANY item under this hub qualifies for bulk pricing — used to
-// show a bulk badge on the hub row itself, before it's even expanded.
 function itemHasBulk(hubId: HubId, sectionTitle: string, itemName: string): boolean {
   const itemId = `${hubId}-${sectionTitle}-${itemName}`
   return !!BULK_TIERS[itemId] || isScanItem(itemName)
@@ -123,10 +121,6 @@ interface SavedQuote {
 const STORAGE_KEY        = "apexbytes-quote-cart"
 const STORAGE_KEY_SAVED  = "apexbytes-saved-quotes"
 
-// Blur removed from every surface here for faster rendering — replaced
-// with plain, more-opaque fills (dim instead of frost) so panels still
-// read as distinct from the page behind them without the GPU cost of a
-// backdrop-filter animating in/out on every open/close.
 const GLASS = {
   panel:   "bg-white/95 dark:bg-zinc-900/95 border border-zinc-100 dark:border-white/10",
   section: "bg-zinc-50 dark:bg-white/[0.04] border border-zinc-100 dark:border-white/10",
@@ -216,21 +210,26 @@ export function QuoteCalculatorWidget() {
     return () => window.removeEventListener("abh:add-to-quote", handler)
   }, [])
 
+  // FIX: this effect used to call el.focus() + el.select() on the
+  // quantity <input type="number"> whenever an item was added — which is
+  // exactly what pops the mobile keyboard open every time "Add to Quote"
+  // is tapped, even from elsewhere in the app. Scrolling the row into view
+  // and letting the ring-highlight (applied via isHighlighted below) do
+  // the visual confirmation is enough; focus/select is no longer needed
+  // and has been removed.
   useEffect(() => {
     if (!highlightId) return
     const id = highlightId
     let raf1: number, raf2: number
-    const tryFocus = () => {
+    const tryScroll = () => {
       const el = qtyInputRefs.current[id]
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" })
-        el.focus()
-        el.select()
       } else {
-        raf2 = requestAnimationFrame(tryFocus)
+        raf2 = requestAnimationFrame(tryScroll)
       }
     }
-    raf1 = requestAnimationFrame(tryFocus)
+    raf1 = requestAnimationFrame(tryScroll)
     const clearT = setTimeout(() => setHighlightId(null), 900)
     return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); clearTimeout(clearT) }
   }, [highlightId])
@@ -244,18 +243,12 @@ export function QuoteCalculatorWidget() {
     }
   }, [])
 
-  // Restored to each hub's REAL accent pair (accentLight/accentDark)
-  // instead of tagText/tagTextDark, which is a flat shared grey/white
-  // across every hub — using it here would have made "show hub colors"
-  // impossible to fulfill, since every hub would render identically.
   const getAccent     = (id: HubId) => { const c = HUB_COLORS[id as HubKey]; return isDark ? c.accentDark : c.accentLight }
   const getSolid      = (id: HubId) => HUB_COLORS[id as HubKey].accentLight
   const titleAccent   = isDark ? HUB_COLORS.design.accentDark : HUB_COLORS.design.accentLight
   const fabColor      = isDark ? HOME_BLUE.dark : HOME_BLUE.light
   const fabTextColor  = useMemo(() => getReadableTextColor(fabColor), [fabColor])
 
-  // Distinct hub ids currently represented in the cart — drives the small
-  // colored dots shown inside the expanded mini pill.
   const hubsInCart = useMemo(() => Array.from(new Set(cart.map(i => i.hubId))), [cart])
 
   const addItem = (hubId: HubId, sectionTitle: string, name: string, price: string) => {
@@ -441,8 +434,6 @@ export function QuoteCalculatorWidget() {
     <>
       <span className="sr-only" role="status" aria-live="polite">{announce}</span>
 
-      {/* Overlay — blur removed (was backdrop-blur-sm), dim bumped up to
-          compensate so the panel still reads clearly above the page. */}
       {isOpen && (
         <div
           className="fixed inset-0 z-[9989] bg-black/45 transition-opacity duration-200 ease-out motion-reduce:transition-none"
@@ -451,10 +442,6 @@ export function QuoteCalculatorWidget() {
         />
       )}
 
-      {/* ── FAB + mini-bar ────────────────────────────────────────────────
-          Gap between the mini pill and the FAB removed entirely — the pill
-          now tucks flush against the FAB (small negative margin) instead
-          of floating away from it with visible space in between. */}
       <div
         className={cn(
           "fixed z-[9992] right-4 md:right-6 bottom-[5.5rem] flex items-center justify-end group/calc",
@@ -464,9 +451,6 @@ export function QuoteCalculatorWidget() {
             : "opacity-0 pointer-events-none scale-90"
         )}
       >
-        {/* Mini pill — now also shows a small colored dot per hub present
-            in the cart, so at a glance you can see WHICH hubs you've
-            added items from before opening the full panel. */}
         <button
           onClick={() => setIsOpen(true)}
           className={cn(
@@ -529,7 +513,6 @@ export function QuoteCalculatorWidget() {
         </div>
       </div>
 
-      {/* ── Calculator panel ─────────────────────────────────────────────── */}
       {isOpen && (
         <div
           className={cn(
@@ -729,11 +712,6 @@ export function QuoteCalculatorWidget() {
                       >
                         <HubIcon id={hubId} />
                       </div>
-                      {/* Hub title now always carries its own accent color
-                          (was flat zinc-800 before), and shows a bulk
-                          badge right next to the name whenever any item
-                          under this hub qualifies — visible before the
-                          hub is even opened. */}
                       <span className="flex-1 min-w-0">
                         <span className="flex items-center gap-1.5">
                           <span className="text-xs font-black truncate" style={{ color: accent }}>{hub.title}</span>
@@ -775,9 +753,6 @@ export function QuoteCalculatorWidget() {
                                   onClick={() => toggleSection(hubId, sIdx)}
                                   className="w-full flex items-center justify-between px-3 py-2 transition-colors duration-150 hover:bg-zinc-100/70 dark:hover:bg-white/5"
                                 >
-                                  {/* Section pill — bulk badge now shown
-                                      here too, before expanding, matching
-                                      the hub-row treatment above. */}
                                   <span className="flex items-center gap-1.5">
                                     <span
                                       className="text-[0.65rem] font-black uppercase tracking-[0.15em] px-2.5 py-1 rounded-full transition-colors duration-200"
@@ -889,4 +864,4 @@ export function QuoteCalculatorWidget() {
       )}
     </>
   )
-} 
+      } 
