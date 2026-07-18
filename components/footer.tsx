@@ -483,15 +483,15 @@ function FooterContent() {
             >
               Terms
             </button>
-            <span className="text-zinc-200 dark:text-zinc-700" aria-hidden="true">·</span>
+            
+            {/*<span className="text-zinc-200 dark:text-zinc-700" aria-hidden="true">·</span>
             <Link
               href="/privacy"
               className="text-[0.65rem] font-medium text-zinc-300 dark:text-zinc-500 hover:text-brand-blue transition-colors py-2 px-1"
             >
               Privacy Policy
             </Link>
-          </div>
-
+          </div>*/} 
           <p className="text-[0.65rem] font-medium text-zinc-400 flex items-center justify-center md:justify-end gap-1.5">
             Built with <Heart weight="fill" className="w-3 h-3 text-brand-orange" aria-hidden="true" /> for the Kgotsong community
           </p>
