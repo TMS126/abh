@@ -16,6 +16,7 @@ import {
 } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, ABOUT_VALUES, ABOUT_STANDARDS } from "@/lib/brand"
+import { ScrollBounce } from "@/components/scroll-bounce"
 
 // ─── Contrast-nudging helpers ─────────────────────────────────────────────────
 function hexToRgb(hex: string) {
@@ -104,15 +105,13 @@ const ABOUT_ORANGE = BRAND.orangeDark
 const ABOUT_NEUTRAL = { light: BRAND.dark100, dark: BRAND.techGreyDark }
 
 // ─── Team ──────────────────────────────────────────────────────────────────
-// Real people, initials only. Faith and Macky both help across Print and
-// Docu Hubs (not split by a single hub each). Family relationship is
-// intentionally not stated on the site.
 const TEAM = [
   { initials: "TM", name: "Theji M.", role: "Owner", note: "Runs Everything" },
   { initials: "FK", name: "Faith K.", role: "Print & Docu Hub Assistant", note: "Helps with printing, copying,  laminating & sending emails" },
   { initials: "MM", name: "Macky M.", role: "Print Hub Assistant", note: "Helps with printing, copying, typing services" },
   { initials: "RK", name: "Rethabile K.", role: "Print Hub Assistant", note: "Helps with copying, printing, laminating & sending emails" },
 ] as const
+
 function renderIcon(iconName: string, className: string) {
   switch (iconName) {
     case "Target":       return <Target       weight="fill" className={className} aria-hidden="true" />
@@ -146,52 +145,53 @@ export function AboutPage() {
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
 
-      {/* ── Header — same shared classes/divider as Services page now ── */}
+      {/* ── Header ── */}
       <section className="px-4 md:px-8 pt-[calc(var(--nav-h,74px)+2rem)] pb-8 text-center">
         <div className="max-w-[1248px] mx-auto flex flex-col items-center">
 
-          <h1 className="abh-page-title mb-3">About Us</h1>
+          <ScrollBounce>
+            <h1 className="abh-page-title mb-3">About Us</h1>
+          </ScrollBounce>
 
           <p className="abh-tagline max-w-xl mx-auto">
             A local business built on community, trust, and real help — right here in Kgotsong.
           </p>
 
           <div className="abh-divider mx-auto" />
-        
-          {/* Stats strip — border stays blue always; on hover the whole
-              strip fills solid brand blue with white text (was: green text
-              swap only, no fill). */}
-          <div
-            className="mt-8 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x divide-zinc-200 dark:divide-zinc-700 rounded-[14px] overflow-hidden shadow-lg border-2 transition-colors duration-300"
-            style={{ borderColor: blueColor }}
-            onMouseEnter={() => setStatsHovered(true)}
-            onMouseLeave={() => setStatsHovered(false)}
-          >
-            {[
-              { value: BIZ.hubCount,     label: "Service Hubs"  },
-              { value: BIZ.serviceCount, label: "Services"      },
-              { value: "Since 2023",     label: "Est. Kgotsong" },
-            ].map((s, i) => (
-              <div
-                key={i}
-                className="flex flex-col items-center justify-center py-5 px-3 transition-colors duration-300 cursor-default"
-                style={{ backgroundColor: statsHovered ? blueColor : "transparent" }}
-              >
-                <p
-                  className="font-sans font-black text-xl leading-none transition-colors duration-300"
-                  style={{ color: statsHovered ? "#ffffff" : blueOnPage }}
+
+          <ScrollBounce delay={0.1}>
+            <div
+              className="mt-8 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x divide-zinc-200 dark:divide-zinc-700 rounded-[14px] overflow-hidden shadow-lg border-2 transition-colors duration-300"
+              style={{ borderColor: blueColor }}
+              onMouseEnter={() => setStatsHovered(true)}
+              onMouseLeave={() => setStatsHovered(false)}
+            >
+              {[
+                { value: BIZ.hubCount,     label: "Service Hubs"  },
+                { value: BIZ.serviceCount, label: "Services"      },
+                { value: "Since 2023",     label: "Est. Kgotsong" },
+              ].map((s, i) => (
+                <div
+                  key={i}
+                  className="flex flex-col items-center justify-center py-5 px-3 transition-colors duration-300 cursor-default"
+                  style={{ backgroundColor: statsHovered ? blueColor : "transparent" }}
                 >
-                  {s.value}
-                </p>
-                <p
-                  className="text-[0.62rem] font-medium uppercase tracking-widest mt-1.5 text-center transition-colors duration-300"
-                  style={{ color: statsHovered ? "rgba(255,255,255,0.85)" : `${blueOnPage}cc` }}
-                >
-                  {s.label}
-                </p>
-              </div>
-            ))}
-          </div>
+                  <p
+                    className="font-sans font-black text-xl leading-none transition-colors duration-300"
+                    style={{ color: statsHovered ? "#ffffff" : blueOnPage }}
+                  >
+                    {s.value}
+                  </p>
+                  <p
+                    className="text-[0.62rem] font-medium uppercase tracking-widest mt-1.5 text-center transition-colors duration-300"
+                    style={{ color: statsHovered ? "rgba(255,255,255,0.85)" : `${blueOnPage}cc` }}
+                  >
+                    {s.label}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </ScrollBounce>
 
         </div>
       </section>
@@ -200,145 +200,153 @@ export function AboutPage() {
       <section className="px-4 md:px-8 py-14 md:py-16" aria-label="Our story">
         <div className="max-w-[980px] mx-auto">
 
-          {/* Pull quote + one formal positioning sentence, balancing the
-              warm quote with a structural, credible description of what
-              the business actually is. */}
-          <div className="mb-12 text-center max-w-[720px] mx-auto">
-            <p className="font-sans font-semibold text-lg md:text-xl leading-snug text-zinc-700 dark:text-zinc-300">
-              "Not everyone is tech-savvy — and that's exactly why we're here."
-            </p>
-            <p className="abh-body mt-4 text-sm max-w-lg mx-auto text-center">
-              We started with one goal: make technology, design, and important government services
-              accessible to everyone in Kgotsong — no jargon, no stress, no overcharging.
-            </p>
-            <p className="abh-body mt-4 text-sm max-w-lg mx-auto text-center">
-              {BIZ.name} is a family-run, home-based multi-service business operating under the
-              P.D.D.E.T. framework — Print, Docu, Design, E-Service, and Tech — serving Kgotsong
-              and the greater Bothaville area since {BIZ.yearFounded}.
-            </p>
-          </div>
-
-          {/* 3-column — values + overview card, stretched to equal height */}
-          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-stretch">
-
-          <ul
-  className="grid grid-cols-3 gap-3 sm:gap-4 divide-x divide-zinc-200 dark:divide-zinc-800"
-  aria-label="Our values"
->
-  {ABOUT_VALUES.map((item, index) => (
-    <li key={index} className="flex flex-col items-center text-center gap-3 px-2 sm:px-3 group">
-      <div
-        className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-110"
-        style={{ backgroundColor: `${greenColor}15`, color: greenColor }}
-        aria-hidden="true"
-      >
-        {renderIcon(item.iconName, "w-5 h-5")}
-      </div>
-      <div>
-        <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200 mb-1">
-          {item.title}
-        </h3>
-        <p className="abh-body text-sm">{item.desc}</p>
-      </div>
-    </li>
-  ))}
-</ul>
-
-            <div
-              className="rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-7 shadow-sm flex flex-col"
-              aria-label="Business overview"
-            >
-              <div className="flex items-center gap-3 mb-7 pb-6 border-b border-zinc-100 dark:border-zinc-800">
-                <div
-                  className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
-                >
-                  <UsersThree size={20} weight="fill" />
-                </div>
-                <div>
-                  <p className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200 leading-none">
-                    {BIZ.name}
-                  </p>
-                  <p className="text-[0.62rem] font-medium uppercase tracking-widest text-zinc-400 mt-0.5">
-                    Serving Kgotsong &amp; surrounds
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 flex-1">
-                {[
-                  { value: BIZ.hubCount,      label: "Hubs"              },
-                  { value: BIZ.serviceCount,  label: "Services"          },
-                  { value: <WhatsappLogo weight="fill" className="w-6 h-6" aria-hidden="true" />, label: "WhatsApp Ready"    },
-                  { value: <ShieldCheck  weight="fill" className="w-6 h-6" aria-hidden="true" />, label: "Community Trusted" },
-                ].map((stat, index) => (
-                  <div
-                    key={index}
-                    className="rounded-[12px] p-5 flex flex-col justify-center items-center border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50"
-                  >
-                    <div className="font-black text-xl mb-1 flex items-center justify-center text-zinc-700 dark:text-zinc-300">
-                      {stat.value}
-                    </div>
-                    <p className="text-[0.6rem] font-medium uppercase tracking-widest text-zinc-400 text-center">
-                      {stat.label}
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              <p className="text-[0.72rem] font-medium text-zinc-400 dark:text-zinc-500 mt-6 leading-relaxed text-center">
-                Walk-ins welcome · WhatsApp orders accepted · Same-day service on most requests
+          <ScrollBounce delay={0.15}>
+            <div className="mb-12 text-center max-w-[720px] mx-auto">
+              <p className="font-sans font-semibold text-lg md:text-xl leading-snug text-zinc-700 dark:text-zinc-300">
+                "Not everyone is tech-savvy — and that's exactly why we're here."
+              </p>
+              <p className="abh-body mt-4 text-sm max-w-lg mx-auto text-center">
+                We started with one goal: make technology, design, and important government services
+                accessible to everyone in Kgotsong — no jargon, no stress, no overcharging.
+              </p>
+              <p className="abh-body mt-4 text-sm max-w-lg mx-auto text-center">
+                {BIZ.name} is a family-run, home-based multi-service business operating under the
+                P.D.D.E.T. framework — Print, Docu, Design, E-Service, and Tech — serving Kgotsong
+                and the greater Bothaville area since {BIZ.yearFounded}.
               </p>
             </div>
+          </ScrollBounce>
+
+          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-stretch">
+
+            <ul
+              className="grid grid-cols-3 gap-3 sm:gap-4 divide-x divide-zinc-200 dark:divide-zinc-800"
+              aria-label="Our values"
+            >
+              {ABOUT_VALUES.map((item, index) => (
+                <li key={index} className="flex flex-col items-center text-center gap-3 px-2 sm:px-3 group">
+                  <div
+                    className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-110"
+                    style={{ backgroundColor: `${greenColor}15`, color: greenColor }}
+                    aria-hidden="true"
+                  >
+                    {renderIcon(item.iconName, "w-5 h-5")}
+                  </div>
+                  <div>
+                    <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200 mb-1">
+                      {item.title}
+                    </h3>
+                    <p className="abh-body text-sm">{item.desc}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            <ScrollBounce delay={0.2}>
+              <div
+                className="rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-7 shadow-sm flex flex-col h-full"
+                aria-label="Business overview"
+              >
+                <div className="flex items-center gap-3 mb-7 pb-6 border-b border-zinc-100 dark:border-zinc-800">
+                  <div
+                    className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
+                  >
+                    <UsersThree size={20} weight="fill" />
+                  </div>
+                  <div>
+                    <p className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200 leading-none">
+                      {BIZ.name}
+                    </p>
+                    <p className="text-[0.62rem] font-medium uppercase tracking-widest text-zinc-400 mt-0.5">
+                      Serving Kgotsong &amp; surrounds
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 flex-1">
+                  {[
+                    { value: BIZ.hubCount,      label: "Hubs"              },
+                    { value: BIZ.serviceCount,  label: "Services"          },
+                    { value: <WhatsappLogo weight="fill" className="w-6 h-6" aria-hidden="true" />, label: "WhatsApp Ready"    },
+                    { value: <ShieldCheck  weight="fill" className="w-6 h-6" aria-hidden="true" />, label: "Community Trusted" },
+                  ].map((stat, index) => (
+                    <div
+                      key={index}
+                      className="rounded-[12px] p-5 flex flex-col justify-center items-center border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50"
+                    >
+                      <div className="font-black text-xl mb-1 flex items-center justify-center text-zinc-700 dark:text-zinc-300">
+                        {stat.value}
+                      </div>
+                      <p className="text-[0.6rem] font-medium uppercase tracking-widest text-zinc-400 text-center">
+                        {stat.label}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                <p className="text-[0.72rem] font-medium text-zinc-400 dark:text-zinc-500 mt-6 leading-relaxed text-center">
+                  Walk-ins welcome · WhatsApp orders accepted · Same-day service on most requests
+                </p>
+              </div>
+            </ScrollBounce>
           </div>
         </div>
       </section>
 
-      {/* ── Team ──
-          Vertically stacked, rounded cards with shadows, using the shared
-          `abh-card` border (var(--border)) — the same border style used
-          sitewide — instead of the zinc-specific border this section had
-          before. */}
+      {/* ── Team ── */}
       <section className="px-4 md:px-8 py-14 md:py-16 border-t border-zinc-100 dark:border-zinc-800/60" aria-labelledby="team-title">
         <div className="max-w-[680px] mx-auto">
-          <div className="text-center mb-10">
-            <h2
-              id="team-title"
-              className="font-sans font-black text-2xl md:text-3xl tracking-tight text-zinc-900 dark:text-zinc-50 mb-3"
-            >
-              Who Runs {BIZ.name}
-            </h2>
-            <p className="abh-tagline max-w-md mx-auto text-center">
-              Family-run, hands-on service — every hub staffed by someone who lives right here in Kgotsong.
-            </p>
-          </div>
+          <ScrollBounce>
+            <div className="text-center mb-10">
+              <h2
+                id="team-title"
+                className="font-sans font-black text-2xl md:text-3xl tracking-tight text-zinc-900 dark:text-zinc-50 mb-3"
+              >
+                Who Runs {BIZ.name}
+              </h2>
+              <p className="abh-tagline max-w-md mx-auto text-center">
+                Family-run, hands-on service — every hub staffed by someone who lives right here in Kgotsong.
+              </p>
+            </div>
+          </ScrollBounce>
 
           <ul className="flex flex-col gap-5" aria-label="Team members">
-            {TEAM.map((member) => (
-              <li
-                key={member.initials}
-                className="abh-card p-6 flex items-center text-left gap-4 shadow-md"
-              >
-                <div
-                  className="w-14 h-14 rounded-full flex items-center justify-center font-black text-base shrink-0"
-                  style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
-                  aria-hidden="true"
+            {TEAM.map((member, index) => {
+              const card = (
+                <li
+                  key={member.initials}
+                  className="abh-card p-6 flex items-center text-left gap-4 shadow-md"
                 >
-                  {member.initials}
-                </div>
-                <div>
-                  <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200">
-                    {member.name}
-                  </h3>
-                  <p className="text-[0.65rem] font-black uppercase tracking-widest mt-1" style={{ color: blueColor }}>
-                    {member.role}
-                  </p>
-                  <p className="abh-body text-xs mt-2 leading-relaxed">
-                    {member.note}
-                  </p>
-                </div>
-              </li>
-            ))}
+                  <div
+                    className="w-14 h-14 rounded-full flex items-center justify-center font-black text-base shrink-0"
+                    style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
+                    aria-hidden="true"
+                  >
+                    {member.initials}
+                  </div>
+                  <div>
+                    <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200">
+                      {member.name}
+                    </h3>
+                    <p className="text-[0.65rem] font-black uppercase tracking-widest mt-1" style={{ color: blueColor }}>
+                      {member.role}
+                    </p>
+                    <p className="abh-body text-xs mt-2 leading-relaxed">
+                      {member.note}
+                    </p>
+                  </div>
+                </li>
+              )
+              // TM (index 0) not marked for animation — kept static.
+              return index === 0 ? (
+                card
+              ) : (
+                <ScrollBounce key={member.initials} delay={index * 0.1}>
+                  {card}
+                </ScrollBounce>
+              )
+            })}
           </ul>
         </div>
       </section>
@@ -350,65 +358,65 @@ export function AboutPage() {
       >
         <div className="max-w-[980px] mx-auto">
 
-          <div className="text-center mb-10">
-            <h2
-              id="standards-title"
-              className="font-sans font-black text-2xl md:text-3xl tracking-tight text-zinc-900 dark:text-zinc-50 mb-3"
-            >
-              Our Everyday Toolkit
-            </h2>
-            <p className="abh-tagline max-w-md mx-auto text-center">
-              Professional accuracy, hand-finished local care — how we actually do the work.
-            </p>
-            <div className="mt-6 h-px bg-zinc-200 dark:bg-zinc-800 max-w-[120px] mx-auto" />
-          </div>
+          <ScrollBounce>
+            <div className="text-center mb-10">
+              <h2
+                id="standards-title"
+                className="font-sans font-black text-2xl md:text-3xl tracking-tight text-zinc-900 dark:text-zinc-50 mb-3"
+              >
+                Our Everyday Toolkit
+              </h2>
+              <p className="abh-tagline max-w-md mx-auto text-center">
+                Professional accuracy, hand-finished local care — how we actually do the work.
+              </p>
+              <div className="mt-6 h-px bg-zinc-200 dark:bg-zinc-800 max-w-[120px] mx-auto" />
+            </div>
+          </ScrollBounce>
 
-          {/* 4-card grid — neutral at rest; on hover, border AND icon chip
-              both go solid brand blue with white text/icon (was: border
-              blue + icon chip green — green hover fill removed per request). */}
           <ul
             className="grid grid-cols-1 sm:grid-cols-3 gap-5"
             aria-label="Standards"
           >
-            {ABOUT_STANDARDS.map((item) => {
+            {ABOUT_STANDARDS.map((item, index) => {
               const isHovered = hoveredCard === item.id
               return (
-                <li
-                  key={item.id}
-                  onMouseEnter={() => setHoveredCard(item.id)}
-                  onMouseLeave={() => setHoveredCard(null)}
-                  onFocus={() => setHoveredCard(item.id)}
-                  onBlur={() => setHoveredCard(null)}
-                  tabIndex={0}
-                  className={cn(
-                    "abh-card p-6 flex flex-col h-full outline-none transition-all duration-300 rounded-[14px] bg-white dark:bg-zinc-950 border",
-                    isHovered
-                      ? "shadow-lg -translate-y-1.5"
-                      : "border-zinc-200 dark:border-zinc-800 shadow-[0_1px_6px_rgba(0,0,0,0.05)] dark:shadow-[0_1px_6px_rgba(0,0,0,0.2)]"
-                  )}
-                  style={isHovered ? { borderColor: blueColor } : undefined}
-                >
-                  <div
+                <ScrollBounce key={item.id} delay={index * 0.1}>
+                  <li
+                    onMouseEnter={() => setHoveredCard(item.id)}
+                    onMouseLeave={() => setHoveredCard(null)}
+                    onFocus={() => setHoveredCard(item.id)}
+                    onBlur={() => setHoveredCard(null)}
+                    tabIndex={0}
                     className={cn(
-                      "w-11 h-11 rounded-[12px] flex items-center justify-center mb-5 transition-all duration-300 border shrink-0",
-                      isHovered ? "text-white border-transparent scale-110" : "border-transparent"
-                    )}
-                    style={
+                      "abh-card p-6 flex flex-col h-full outline-none transition-all duration-300 rounded-[14px] bg-white dark:bg-zinc-950 border",
                       isHovered
-                        ? { backgroundColor: blueColor, color: "#ffffff" }
-                        : { backgroundColor: `${neutralColor}15`, color: neutralColor }
-                    }
-                    aria-hidden="true"
+                        ? "shadow-lg -translate-y-1.5"
+                        : "border-zinc-200 dark:border-zinc-800 shadow-[0_1px_6px_rgba(0,0,0,0.05)] dark:shadow-[0_1px_6px_rgba(0,0,0,0.2)]"
+                    )}
+                    style={isHovered ? { borderColor: blueColor } : undefined}
                   >
-                    {renderIcon(item.iconName, "w-5 h-5")}
-                  </div>
-                  <h3 className="font-sans font-semibold text-sm leading-tight mb-2 text-zinc-800 dark:text-zinc-200">
-                    {item.title}
-                  </h3>
-                  <p className="abh-body text-xs leading-relaxed grow">
-                    {item.description}
-                  </p>
-                </li>
+                    <div
+                      className={cn(
+                        "w-11 h-11 rounded-[12px] flex items-center justify-center mb-5 transition-all duration-300 border shrink-0",
+                        isHovered ? "text-white border-transparent scale-110" : "border-transparent"
+                      )}
+                      style={
+                        isHovered
+                          ? { backgroundColor: blueColor, color: "#ffffff" }
+                          : { backgroundColor: `${neutralColor}15`, color: neutralColor }
+                      }
+                      aria-hidden="true"
+                    >
+                      {renderIcon(item.iconName, "w-5 h-5")}
+                    </div>
+                    <h3 className="font-sans font-semibold text-sm leading-tight mb-2 text-zinc-800 dark:text-zinc-200">
+                      {item.title}
+                    </h3>
+                    <p className="abh-body text-xs leading-relaxed grow">
+                      {item.description}
+                    </p>
+                  </li>
+                </ScrollBounce>
               )
             })}
           </ul>
@@ -430,37 +438,44 @@ export function AboutPage() {
         </div>
 
         <div className="relative max-w-[680px] mx-auto flex flex-col items-center">
-          <span
-            className="inline-block text-[0.65rem] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-6"
-            style={{ backgroundColor: `${blueColor}12`, color: blueColor }}
-          >
-            Our Mission
-          </span>
+          <ScrollBounce>
+            <span
+              className="inline-block text-[0.65rem] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-6"
+              style={{ backgroundColor: `${blueColor}12`, color: blueColor }}
+            >
+              Our Mission
+            </span>
+          </ScrollBounce>
 
-          <h2
-            id="mission-title"
-            className="font-sans font-black text-2xl md:text-3xl leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 mb-5"
-          >
-            Bridging the digital gap — one person at a time.
-          </h2>
+          <ScrollBounce delay={0.1}>
+            <h2
+              id="mission-title"
+              className="font-sans font-black text-2xl md:text-3xl leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 mb-5"
+            >
+              Bridging the digital gap — one person at a time.
+            </h2>
+          </ScrollBounce>
 
-          <p className="abh-body max-w-lg mx-auto mb-10 text-center text-sm leading-relaxed">
-            ApexbytesHub is that bridge — printing, design, IT support, and government services
-            brought to people who need them most, in a community that deserves better access.
-          </p>
+          <ScrollBounce delay={0.2}>
+            <p className="abh-body max-w-lg mx-auto mb-10 text-center text-sm leading-relaxed">
+              ApexbytesHub is that bridge — printing, design, IT support, and government services
+              brought to people who need them most, in a community that deserves better access.
+            </p>
+          </ScrollBounce>
 
-          <a
-            href="/services"
-            className="inline-flex items-center gap-2.5 px-8 py-4 rounded-[14px] font-black text-sm transition-all duration-300 active:scale-95 hover:-translate-y-0.5 shadow-lg"
-            style={{ backgroundColor: orangeColor, color: orangeText }}
-          >
-            See All Services
-            <ArrowRight size={16} weight="bold" />
-          </a>
+          <ScrollBounce delay={0.3}>
+            <a
+              href="/services"
+              className="inline-flex items-center gap-2.5 px-8 py-4 rounded-[14px] font-black text-sm transition-all duration-300 active:scale-95 hover:-translate-y-0.5 shadow-lg"
+              style={{ backgroundColor: orangeColor, color: orangeText }}
+            >
+              See All Services
+              <ArrowRight size={16} weight="bold" />
+            </a>
+          </ScrollBounce>
         </div>
       </section>
 
     </div>
   )
-}
- 
+   } 
