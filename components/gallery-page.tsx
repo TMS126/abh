@@ -9,6 +9,7 @@ import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey, BIZ, BRAND } from "@/lib/brand"
 import { PROJECTS, ProjectData } from "@/lib/data"
+import { ScrollBounce } from "@/components/scroll-bounce"
 
 type HubId = "print" | "doc" | "design" | "eservice" | "tech"
 
@@ -22,18 +23,15 @@ const ROW_ORDER: { id: HubId; label: string; short: string }[] = [
 
 const BA_HUBS: HubId[] = ["design", "tech"]
 
-// Short, card-friendly labels for the trust badge — same three clientType
-// values the modal already uses (ProjectHeader), just condensed to fit a
-// small pill on the card itself instead of a full sentence.
 const CLIENT_TYPE_LABEL: Record<string, string> = {
   client:   "Real Client Work",
   sample:   "Representative Example",
   practice: "Practice Project",
 }
 const CLIENT_TYPE_BADGE_BG: Record<string, string> = {
-  client:   "rgba(34,197,94,0.85)",   // green — real client trust signal
-  sample:   "rgba(244,162,97,0.9)",   // orange — matches modal's sample copy color
-  practice: "rgba(63,63,70,0.85)",    // neutral gray
+  client:   "rgba(34,197,94,0.85)",
+  sample:   "rgba(244,162,97,0.9)",
+  practice: "rgba(63,63,70,0.85)",
 }
 
 function hubLabelFor(hub: string): string {
@@ -792,15 +790,18 @@ function ProjectViewerModal({
 }
 
 // ─── Unified swipe carousel ───────────────────────────────────────────────────
-// Shadow fix: the real cause of the rough edge wasn't overflow-hidden on the
-// card — it was the horizontally-scrolling TRACK's own overflow-x-auto
-// clipping the shadow at the track's edge, because the gutter around each
-// card (16–24px) was smaller than the shadow's blur radius (up to 60px).
-// Any ancestor with overflow other than visible clips descendant paint,
-// including box-shadow, so the shadow got hard-cut exactly at that
-// boundary instead of fading out — that's the sharp line you circled.
-// Fixed by widening the gutter (px-6 md:px-8, plus vertical py- room too)
-// and tuning the shadow to actually fit inside the new gutter.
+// SHADOW FIX (real cause): overflow-x-auto on the scrolling track was
+// implicitly forcing overflow-y to 'auto' too — this is a CSS spec quirk,
+// not a bug in this file: when one axis is set to something other than
+// 'visible', the other axis can't stay 'visible' either, so it silently
+// clips. That's what hard-cut the card's box-shadow right at the track's
+// vertical edge (the line you circled). There's no way to keep one axis
+// clipping and the other fully open via overflow properties alone — the
+// only real fix is making sure the shadow never actually exceeds the
+// padding box, so there's nothing left for that forced auto to clip.
+// Slide padding bumped from py-3/py-4 to py-11/py-14 (44–56px), and the
+// hover shadow's reach trimmed slightly, so the shadow's max extent now
+// sits safely inside the padding on both mobile and desktop.
 function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }: {
   projects: ProjectData[]; accent: string; onSelect: (p: ProjectData) => void
   likedIds: Set<string>; onToggleLike: (id: string) => void
@@ -851,19 +852,19 @@ function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }:
         style={{ scrollSnapType: "x mandatory" }}
       >
         {projects.map((project) => (
-          <div key={project.id} className="shrink-0 w-full snap-center px-6 md:px-8 py-3 md:py-4" style={{ scrollSnapAlign: "center" }}>
+          <div key={project.id} className="shrink-0 w-full snap-center px-6 md:px-8 py-11 md:py-14" style={{ scrollSnapAlign: "center" }}>
             <div
               className="group rounded-[16px] cursor-pointer will-change-transform transition-all duration-300 ease-out active:scale-[0.98] hover:-translate-y-1.5"
               style={{
-                boxShadow: "0 18px 34px -14px rgba(0,0,0,0.45), 0 8px 18px -8px rgba(0,0,0,0.3)",
+                boxShadow: "0 16px 30px -14px rgba(0,0,0,0.45), 0 6px 14px -8px rgba(0,0,0,0.3)",
                 ["--hub-accent" as any]: accent,
                 ["--hub-shadow" as any]: `${accent}55`,
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.boxShadow = `0 22px 44px -12px ${accent}55, 0 10px 22px -8px rgba(0,0,0,0.38)`
+                (e.currentTarget as HTMLElement).style.boxShadow = `0 20px 36px -14px ${accent}55, 0 8px 16px -8px rgba(0,0,0,0.35)`
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.boxShadow = "0 18px 34px -14px rgba(0,0,0,0.45), 0 8px 18px -8px rgba(0,0,0,0.3)"
+                (e.currentTarget as HTMLElement).style.boxShadow = "0 16px 30px -14px rgba(0,0,0,0.45), 0 6px 14px -8px rgba(0,0,0,0.3)"
               }}
               onClick={() => { if (!dragMoved.current) onSelect(project) }}
             >
@@ -882,10 +883,6 @@ function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }:
                       onToggle={(e) => { e.stopPropagation(); onToggleLike(project.id) }}
                       context="card"
                     />
-                    {/* Trust badge — visible on the card itself, before
-                        opening. Color-coded so the signal reads at a
-                        glance: green = real client, orange = representative
-                        sample, gray = practice project. */}
                     {project.clientType && (
                       <span
                         className="text-[0.58rem] font-black uppercase tracking-wider px-2.5 py-1 rounded-full text-white shadow-lg backdrop-blur-sm whitespace-nowrap"
@@ -920,7 +917,7 @@ function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }:
         </>
       )}
       {projects.length > 1 && (
-        <div className="flex justify-center gap-2 mt-4">
+        <div className="flex justify-center gap-2 -mt-6">
           {projects.map((_, idx) => (
             <button
               key={idx}
@@ -1271,12 +1268,6 @@ function GalleryPageInner() {
     window.history.replaceState(window.history.state, "", url)
   }, [selectedProject, pathname])
 
-  // Body scroll lock — was setting document.body.style.top but never
-  // actually setting position/overflow, relying on a data-scroll-locked
-  // attribute + matching CSS that isn't defined in this file, so it did
-  // nothing. Switched to the same inline-style lock pattern used
-  // correctly elsewhere in this codebase (Contact page, WhatsApp FAB,
-  // FloatingSearchWidget) — proven to actually stop background scroll.
   useEffect(() => {
     if (!selectedProject) return
     const scrollY = window.scrollY
@@ -1330,71 +1321,79 @@ function GalleryPageInner() {
     <section className="min-h-screen bg-background pt-[calc(var(--nav-h)+2rem)] pb-24 overflow-x-hidden">
       <div className="max-w-[1400px] mx-auto px-4 md:px-8">
 
-        <div className="text-center mb-12">
-          <h1 className="abh-page-title mb-4">Our Portfolio</h1>
-          <p className="abh-tagline max-w-2xl mx-auto">Real results for real clients. Select a category to explore our work in depth.</p>
-          <div className="abh-divider" />
-        </div>
-
-        <div
-          className={cn(
-            "flex items-stretch max-w-md mx-auto mb-6 rounded-[14px] overflow-hidden",
-            "bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800",
-            "shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)]",
-            "transition-colors duration-200 focus-within:border-[#1E6FA8]"
-          )}
-        >
-          <div className="relative flex-1 basis-1/2">
-            <MagnifyingGlass
-              size={16}
-              weight="bold"
-              className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400"
-            />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-              placeholder={searchFocused ? "Search" : "Search Project"}
-              className="w-full pl-10 pr-9 py-3.5 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none text-left"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                aria-label="Clear search"
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-all active:scale-90"
-              >
-                <X size={11} weight="bold" />
-              </button>
-            )}
+        <ScrollBounce>
+          <div className="text-center mb-12">
+            <h1 className="abh-page-title mb-4">Our Portfolio</h1>
+            <p className="abh-tagline max-w-2xl mx-auto">Real results for real clients. Select a category to explore our work in depth.</p>
+            <div className="abh-divider" />
           </div>
-          <div className="w-px my-2 bg-zinc-200 dark:bg-zinc-800" />
-          <button
-            onClick={handleSurprise}
-            aria-label="Surprise me with a random project"
+        </ScrollBounce>
+
+        <ScrollBounce delay={0.06}>
+          <div
             className={cn(
-              "flex-1 basis-1/2 flex items-center justify-center gap-1.5 px-3.5 py-3.5 text-sm font-medium text-zinc-600 dark:text-zinc-300 whitespace-nowrap transition-all duration-200 active:scale-95 group/surprise hover:bg-zinc-50 dark:hover:bg-zinc-900",
-              surpriseFlash && "scale-90 opacity-60"
+              "flex items-stretch max-w-md mx-auto mb-6 rounded-[14px] overflow-hidden",
+              "bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800",
+              "shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)]",
+              "transition-colors duration-200 focus-within:border-[#1E6FA8]"
             )}
           >
-            <Shuffle size={14} weight="bold" className="transition-transform duration-300 group-hover/surprise:rotate-180 text-zinc-400" />
-            Surprise me
-          </button>
-        </div>
-
-        <FilterDropdown activeFilter={activeFilter} onSelect={setActiveFilter} getAccent={getAccent} />
-
-        <div className="max-w-2xl mx-auto mb-16 rounded-[14px] border border-[#1E6FA8]/20 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
-          <div className="w-12 h-12 shrink-0 rounded-[14px] bg-[#1E6FA8] flex items-center justify-center">
-            <Info size={26} weight="fill" color="#fff" />
+            <div className="relative flex-1 basis-1/2">
+              <MagnifyingGlass
+                size={16}
+                weight="bold"
+                className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400"
+              />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+                placeholder={searchFocused ? "Search" : "Search Project"}
+                className="w-full pl-10 pr-9 py-3.5 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none text-left"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Clear search"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-all active:scale-90"
+                >
+                  <X size={11} weight="bold" />
+                </button>
+              )}
+            </div>
+            <div className="w-px my-2 bg-zinc-200 dark:bg-zinc-800" />
+            <button
+              onClick={handleSurprise}
+              aria-label="Surprise me with a random project"
+              className={cn(
+                "flex-1 basis-1/2 flex items-center justify-center gap-1.5 px-3.5 py-3.5 text-sm font-medium text-zinc-600 dark:text-zinc-300 whitespace-nowrap transition-all duration-200 active:scale-95 group/surprise hover:bg-zinc-50 dark:hover:bg-zinc-900",
+                surpriseFlash && "scale-90 opacity-60"
+              )}
+            >
+              <Shuffle size={14} weight="bold" className="transition-transform duration-300 group-hover/surprise:rotate-180 text-zinc-400" />
+              Surprise me
+            </button>
           </div>
-          <div className="flex-1 min-w-0 pt-0.5">
-            <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-snug">
-              We use high-quality sample photos to represent our services, ensuring the professional standard shown is exactly what you receive.
-            </p>
+        </ScrollBounce>
+
+        <ScrollBounce delay={0.1}>
+          <FilterDropdown activeFilter={activeFilter} onSelect={setActiveFilter} getAccent={getAccent} />
+        </ScrollBounce>
+
+        <ScrollBounce delay={0.14}>
+          <div className="max-w-2xl mx-auto mb-16 rounded-[14px] border border-[#1E6FA8]/20 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-5 py-4 flex items-start gap-3">
+            <div className="w-12 h-12 shrink-0 rounded-[14px] bg-[#1E6FA8] flex items-center justify-center">
+              <Info size={26} weight="fill" color="#fff" />
+            </div>
+            <div className="flex-1 min-w-0 pt-0.5">
+              <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-snug">
+                We use high-quality sample photos to represent our services, ensuring the professional standard shown is exactly what you receive.
+              </p>
+            </div>
           </div>
-        </div>
+        </ScrollBounce>
 
         {searchLower && totalMatches === 0 ? (
           <div className="max-w-md mx-auto text-center py-16 px-6">
@@ -1410,38 +1409,44 @@ function GalleryPageInner() {
           </div>
         ) : (
           <div className="space-y-8">
-            {filteredRows.map(row => {
+            {filteredRows.map((row, rowIndex) => {
               const accent = getAccent(row.id)
               const projects = PROJECTS.filter(p => p.hub === row.id && matchesSearch(p))
 
               if (projects.length === 0) {
                 if (activeFilter !== row.id) return null
                 return (
-                  <div key={row.id} className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm transition-shadow duration-300 ease-out p-5 md:p-7">
-                    <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
-                      <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: "#1E6FA8" }} />
-                      <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
+                  <ScrollBounce key={row.id} delay={rowIndex * 0.06}>
+                    <div className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm transition-shadow duration-300 ease-out p-5 md:p-7">
+                      <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
+                        <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: "#1E6FA8" }} />
+                        <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
+                      </div>
+                      <EmptyHubState label={row.label} query={searchLower ? searchQuery.trim() : undefined} />
                     </div>
-                    <EmptyHubState label={row.label} query={searchLower ? searchQuery.trim() : undefined} />
-                  </div>
+                  </ScrollBounce>
                 )
               }
 
               return (
-                <div key={row.id} className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm transition-shadow duration-300 ease-out p-5 md:p-7">
-                  <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
-                    <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: "#1E6FA8" }} />
-                    <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
-                    <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
+                <ScrollBounce key={row.id} delay={rowIndex * 0.06}>
+                  <div className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm transition-shadow duration-300 ease-out p-5 md:p-7">
+                    <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
+                      <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: "#1E6FA8" }} />
+                      <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
+                      <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
+                    </div>
+                    <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} likedIds={likedIds} onToggleLike={toggleLike} />
                   </div>
-                  <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} likedIds={likedIds} onToggleLike={toggleLike} />
-                </div>
+                </ScrollBounce>
               )
             })}
           </div>
         )}
 
-        <GalleryClosingTagline />
+        <ScrollBounce>
+          <GalleryClosingTagline />
+        </ScrollBounce>
       </div>
 
       <ProjectViewerModal
@@ -1488,4 +1493,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-      } 
+  } 
