@@ -157,7 +157,7 @@ export function AboutPage() {
           </p>
 
           <div className="abh-divider mx-auto" />
-        </div>
+        
           {/* Stats strip — border stays blue always; on hover the whole
               strip fills solid brand blue with white text (was: green text
               swap only, no fill). */}
