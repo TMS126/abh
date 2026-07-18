@@ -18,6 +18,7 @@ import {
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, MARQUEE_ITEMS, HUB_COLORS } from "@/lib/brand"
+import { ScrollBounce } from "@/components/scroll-bounce"
 
 // ─── Contrast-nudging helpers ─────────────────────────────────────────────────
 function hexToRgb(hex: string) {
@@ -589,44 +590,46 @@ export function StatsBar() {
 
   return (
     <section aria-label="Key stats" className="px-4 md:px-8 py-8 md:py-10 transition-colors duration-300">
-      <div
-        className="grid grid-cols-3 gap-3 sm:gap-4 w-full max-w-[560px] mx-auto"
-        role="list"
-        aria-label="Key stats"
-      >
-        {stats.map((stat, i) => {
-          const isHov  = hoveredCard === i
-          const Icon   = stat.icon
-          return (
-            <div
-              key={stat.label}
-              role="listitem"
-              onMouseEnter={() => setHoveredCard(i)}
-              onMouseLeave={() => setHoveredCard(null)}
-              onClick={() => setHoveredCard(isHov ? null : i)}
-              aria-label={`${stat.value} ${stat.label}`}
-              className="flex flex-col items-center justify-center gap-1.5 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 py-3.5 sm:py-4 px-3 text-center transition-all duration-200 shadow-sm cursor-pointer"
-              style={{ borderColor: isHov ? stat.color : undefined }}
-            >
+      <ScrollBounce>
+        <div
+          className="grid grid-cols-3 gap-3 sm:gap-4 w-full max-w-[560px] mx-auto"
+          role="list"
+          aria-label="Key stats"
+        >
+          {stats.map((stat, i) => {
+            const isHov  = hoveredCard === i
+            const Icon   = stat.icon
+            return (
               <div
-                className="w-8 h-8 rounded-[14px] flex items-center justify-center mb-0.5 transition-all duration-200"
-                style={{
-                  backgroundColor: isHov ? stat.color : `${stat.color}15`,
-                  color: isHov ? "#ffffff" : stat.color,
-                }}
+                key={stat.label}
+                role="listitem"
+                onMouseEnter={() => setHoveredCard(i)}
+                onMouseLeave={() => setHoveredCard(null)}
+                onClick={() => setHoveredCard(isHov ? null : i)}
+                aria-label={`${stat.value} ${stat.label}`}
+                className="flex flex-col items-center justify-center gap-1.5 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 py-3.5 sm:py-4 px-3 text-center transition-all duration-200 shadow-sm cursor-pointer"
+                style={{ borderColor: isHov ? stat.color : undefined }}
               >
-                <Icon size={16} weight={isHov ? "fill" : "regular"} aria-hidden="true" />
+                <div
+                  className="w-8 h-8 rounded-[14px] flex items-center justify-center mb-0.5 transition-all duration-200"
+                  style={{
+                    backgroundColor: isHov ? stat.color : `${stat.color}15`,
+                    color: isHov ? "#ffffff" : stat.color,
+                  }}
+                >
+                  <Icon size={16} weight={isHov ? "fill" : "regular"} aria-hidden="true" />
+                </div>
+                <div className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
+                  {stat.value}
+                </div>
+                <div className="text-[0.6rem] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+                  {stat.label}
+                </div>
               </div>
-              <div className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
-                {stat.value}
-              </div>
-              <div className="text-[0.6rem] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
-                {stat.label}
-              </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      </ScrollBounce>
     </section>
   )
-    } 
+          } 
