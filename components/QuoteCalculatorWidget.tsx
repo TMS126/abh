@@ -478,19 +478,19 @@ export function QuoteCalculatorWidget() {
 
         <div className="relative flex items-center justify-end gap-2">
           <span
-            className={cn(
-              "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap pointer-events-none",
-              "bg-white dark:bg-zinc-900",
-              "px-2.5 py-1 rounded-full shadow-md border border-zinc-100 dark:border-zinc-800",
-              "transition-all duration-200 ease-out origin-right motion-reduce:transition-none transform-gpu",
-              isOpen
-                ? "opacity-0 scale-x-0"
-                : "opacity-0 scale-x-0 group-hover/calc:opacity-100 group-hover/calc:scale-x-100"
-            )}
-            style={{ color: fabColor }}
-          >
-            Quote
-          </span>
+  className={cn(
+    "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap pointer-events-none overflow-hidden",
+    "bg-white dark:bg-zinc-900",
+    "px-2.5 py-1 rounded-full shadow-md border border-zinc-100 dark:border-zinc-800",
+    "transition-all duration-200 ease-out origin-right motion-reduce:transition-none transform-gpu",
+    isOpen
+      ? "max-w-0 opacity-0 scale-x-0"
+      : "max-w-0 opacity-0 scale-x-0 group-hover/calc:max-w-[100px] group-hover/calc:opacity-100 group-hover/calc:scale-x-100"
+  )}
+  style={{ color: fabColor }}
+>
+  Quote
+</span>
 
           <button
             onClick={() => setIsOpen(o => !o)}
