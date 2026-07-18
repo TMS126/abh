@@ -467,32 +467,35 @@ function FooterContent() {
         </div>
       </div>
 
-      {/* Bottom bar */}
-      <div className="max-w-[1200px] mx-auto border-t border-zinc-100 dark:border-zinc-800 pt-8 px-6 md:px-8 grid grid-cols-1 md:grid-cols-3 items-center gap-4">
-        <p className="text-[0.65rem] font-medium text-zinc-400 text-center md:text-left">
-          © {new Date().getFullYear()} {BIZ.name}. All rights reserved.
-        </p>
+      {/* Bottom bar — its own subtle background strip, closely related to
+          the footer's own background rather than a hard contrast */}
+      <div className="mt-8 bg-zinc-50 dark:bg-zinc-900/40 border-t border-zinc-100 dark:border-zinc-800">
+        <div className="max-w-[1200px] mx-auto pt-8 pb-8 px-6 md:px-8 grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+          <p className="text-[0.65rem] font-medium text-zinc-400 text-center md:text-left">
+            © {new Date().getFullYear()} {BIZ.name}. All rights reserved.
+          </p>
 
-        <div className="flex items-center justify-center gap-4">
-          <button
-            onClick={() => setIsTermsOpen(true)}
-            style={{ fontSize: "0.65rem", lineHeight: "1rem" }}
-            className="font-medium text-zinc-400 hover:text-brand-blue transition-colors"
-          >
-            Terms
-          </button>
-          <span className="text-zinc-200 dark:text-zinc-700" aria-hidden="true">·</span>
-          <Link
-            href="/privacy"
-            className="text-[0.65rem] font-medium text-zinc-400 hover:text-brand-blue transition-colors"
-          >
-            Privacy Policy
-          </Link>
+          <div className="flex items-center justify-center gap-4 relative z-10">
+            <button
+              onClick={() => setIsTermsOpen(true)}
+              style={{ fontSize: "0.65rem", lineHeight: "1rem" }}
+              className="font-medium text-zinc-400 hover:text-brand-blue transition-colors py-2 px-1"
+            >
+              Terms
+            </button>
+            <span className="text-zinc-200 dark:text-zinc-700" aria-hidden="true">·</span>
+            <Link
+              href="/privacy"
+              className="text-[0.65rem] font-medium text-zinc-300 dark:text-zinc-500 hover:text-brand-blue transition-colors py-2 px-1"
+            >
+              Privacy Policy
+            </Link>
+          </div>
+
+          <p className="text-[0.65rem] font-medium text-zinc-400 flex items-center justify-center md:justify-end gap-1.5">
+            Built with <Heart weight="fill" className="w-3 h-3 text-brand-orange" aria-hidden="true" /> for the Kgotsong community
+          </p>
         </div>
-
-        <p className="text-[0.65rem] font-medium text-zinc-400 flex items-center justify-center md:justify-end gap-1.5">
-          Built with <Heart weight="fill" className="w-3 h-3 text-brand-orange" aria-hidden="true" /> for the Kgotsong community
-        </p>
       </div>
 
       <TermsGateModal
@@ -510,4 +513,4 @@ export function Footer() {
       <FooterContent />
     </footer>
   )
-      } 
+       }
