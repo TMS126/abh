@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import {
   ArrowRight,
+  CaretRight,
   PlusCircle,
   Gear,
   Wrench,
@@ -213,10 +214,6 @@ export function HeroSection() {
   const [hoveredHub,        setHoveredHub]        = useState<number | null>(null)
   const [canHover,          setCanHover]          = useState(false)
 
-  // Tracks whether the person has explicitly tapped a hub tab yet. Before
-  // that, the giant background graphic shows the ApexbytesHub logo; once
-  // any hub is tapped, that hub's own icon permanently takes the logo's
-  // place for the rest of the visit.
   const [hubTouched, setHubTouched] = useState(false)
 
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 })
@@ -266,9 +263,11 @@ export function HeroSection() {
   const cardTextSoft  = "rgba(255,255,255,0.82)"
   const cardTextMuted = "rgba(255,255,255,0.55)"
 
-  const neutralCardBgHex = isDark ? "#18181b" : "#ffffff"
+  // Hub name/chevron color on the ecosystem card's own dark bg — no longer
+  // computed against a white card bg (that card is gone), computed against
+  // the ecosystem box's own dark background instead.
   const hubColor  = isDark ? active.colorDark : active.colorLight
-  const nameColor = ensureAccessible(hubColor, neutralCardBgHex, 4.5)
+  const nameColor = ensureAccessible(hubColor, "#0d2436", 4.5)
 
   const handleNavigate = (path: string) => router.push(path)
 
@@ -320,9 +319,6 @@ export function HeroSection() {
 
         <div className="relative w-full flex justify-center items-center mb-8">
 
-          {/* Giant background graphic — logo by default, permanently
-              swaps to the selected hub's icon once any hub tab is tapped.
-              No floating/pulsing animation — stays static. */}
           <div
             aria-hidden="true"
             className="hidden md:flex absolute inset-y-0 -right-[10%] items-center justify-center pointer-events-none select-none z-0"
@@ -355,7 +351,6 @@ export function HeroSection() {
             )}
           </div>
 
-          {/* Start Here — no glow layer behind it anymore. */}
           <button
             ref={ctaBtnRef}
             onClick={handleCtaClick}
@@ -477,8 +472,6 @@ export function HeroSection() {
               })}
             </div>
 
-            {/* Dot pagination — replaces the old per-tab underline. Active
-                hub renders as an elongated pill, others as small dots. */}
             <div
               role="tablist"
               aria-label="Hub pagination"
@@ -500,50 +493,42 @@ export function HeroSection() {
               })}
             </div>
 
-            <div
-              className="relative w-full max-w-[420px] h-px mt-1 mb-7"
-              style={{ backgroundColor: "rgba(255,255,255,0.35)" }}
-            >
-              <div
-                className="absolute left-1/2 top-0 -translate-x-1/2"
-                style={{
-                  width: 0,
-                  height: 0,
-                  borderLeft: "7px solid transparent",
-                  borderRight: "7px solid transparent",
-                  borderTop: "9px solid rgba(255,255,255,0.85)",
-                }}
+            {/* Spotlight — no card anymore. Chevron + underlined hub name
+                + service name/price sit flat on the ecosystem box's own
+                dark background, matching the reference. */}
+            <div className="w-full max-w-[420px] flex flex-col items-center text-center mb-2">
+              <CaretRight
+                size={22}
+                weight="bold"
                 aria-hidden="true"
+                style={{ color: nameColor }}
+                className="mb-1"
               />
-            </div>
 
-            <div className="w-full max-w-[420px] flex flex-col items-center text-center">
-              <div className="relative flex flex-col items-center gap-2 rounded-[16px] px-6 py-5 mb-4 bg-white dark:bg-zinc-900 shadow-lg transition-colors duration-200">
-                <p
-                  className="text-[0.65rem] font-black uppercase tracking-widest"
-                  style={{ color: nameColor }}
-                >
-                  {active.name}
-                </p>
+              <p
+                className="text-[0.8rem] font-black uppercase tracking-widest pb-2 mb-3 border-b-2 inline-block"
+                style={{ color: nameColor, borderColor: nameColor }}
+              >
+                {active.name}
+              </p>
 
-                <button
-                  key={`${activeHub}-${spotlightService.name}`}
-                  onClick={handleReroll}
-                  aria-label="Show another example price for this hub"
-                  className="flex flex-col items-center gap-1 rounded-[10px] px-2 py-1 transition-opacity hover:opacity-80 active:scale-[0.97] animate-in fade-in duration-200"
-                >
-                  <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-                    {spotlightService.name}
-                  </span>
-                  <span className="text-2xl font-black font-mono text-zinc-900 dark:text-zinc-50">
-                    {spotlightService.price}
-                  </span>
-                </button>
-              </div>
+              <button
+                key={`${activeHub}-${spotlightService.name}`}
+                onClick={handleReroll}
+                aria-label="Show another example price for this hub"
+                className="flex flex-col items-center gap-1 rounded-[10px] px-2 py-1 transition-opacity hover:opacity-80 active:scale-[0.97] animate-in fade-in duration-200"
+              >
+                <span className="text-sm font-semibold" style={{ color: cardText }}>
+                  {spotlightService.name}
+                </span>
+                <span className="text-2xl font-black font-mono" style={{ color: cardText }}>
+                  {spotlightService.price}
+                </span>
+              </button>
 
               <button
                 onClick={() => handleNavigate(`/services?hub=${active.id}`)}
-                className="flex items-center justify-center gap-1.5 text-[0.65rem] font-black tracking-wide transition-opacity hover:opacity-70"
+                className="flex items-center justify-center gap-1.5 text-[0.65rem] font-black tracking-wide mt-4 transition-opacity hover:opacity-70"
                 style={{ color: cardText }}
               >
                 View All {active.name} Services
@@ -637,4 +622,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-      } 
+  } 
