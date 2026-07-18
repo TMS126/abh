@@ -18,13 +18,6 @@ import { cn } from "@/lib/utils"
 import { BRAND, BIZ, ABOUT_VALUES, ABOUT_STANDARDS } from "@/lib/brand"
 
 // ─── Contrast-nudging helpers ─────────────────────────────────────────────────
-// Same technique used elsewhere in the app: preserves the requested hue,
-// only nudges lightness as far as needed to clear a real contrast check
-// against a GIVEN background — rather than assuming a fixed brand color
-// always reads fine regardless of what's behind it. Needed here because
-// BRAND.blue/BRAND.green are medium-dark hues that read fine on the WHITE
-// page background but are low-contrast against the DARK navy page
-// background (#0D1B2A) used in dark mode.
 function hexToRgb(hex: string) {
   const clean = hex.replace("#", "")
   const full = clean.length === 3 ? clean.split("").map(c => c + c).join("") : clean
@@ -102,8 +95,6 @@ function ensureAccessible(hex: string, bgHex: string, minRatio = 4.5) {
   return goingDarker ? "#1a1a1a" : "#fafafa"
 }
 
-// Actual page background hexes (from globals.css :root / .dark), used as
-// the bgHex target for the contrast nudge above.
 const PAGE_BG_LIGHT = "#FFFFFF"
 const PAGE_BG_DARK  = "#0D1B2A"
 
@@ -111,6 +102,16 @@ const ABOUT_BLUE   = BRAND.blue
 const ABOUT_GREEN  = BRAND.green
 const ABOUT_ORANGE = BRAND.orangeDark
 const ABOUT_NEUTRAL = { light: BRAND.dark100, dark: BRAND.techGreyDark }
+
+// ─── Team ──────────────────────────────────────────────────────────────────
+// Real people, initials only for now (per request). Roles assigned based on
+// which hubs each person actually helps run — Print and Docu are staffed by
+// family; Design, E-Service, and Tech are run by Theji solo.
+const TEAM = [
+  { initials: "TM", name: "Theji Meje",  role: "Founder & Operator", note: "Runs Design, E-Service, and Tech Hubs" },
+  { initials: "FK", name: "Faith K.",    role: "Print Hub Assistant", note: "Sister — helps with printing, copying & photo prints" },
+  { initials: "MM", name: "Macky M.",    role: "Docu Hub Assistant",  note: "Mother — helps with typing, CVs & document services" },
+] as const
 
 function renderIcon(iconName: string, className: string) {
   switch (iconName) {
@@ -124,18 +125,6 @@ function renderIcon(iconName: string, className: string) {
   }
 }
 
-function getReadableTextColor(hex: string): string {
-  const clean = hex.replace("#", "")
-  const r = parseInt(clean.substring(0, 2), 16) / 255
-  const g = parseInt(clean.substring(2, 4), 16) / 255
-  const b = parseInt(clean.substring(4, 6), 16) / 255
-  const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4))
-  const luminance = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
-  const contrastWhite = 1.05 / (luminance + 0.05)
-  const contrastDark  = (luminance + 0.05) / 0.062
-  return contrastWhite >= contrastDark ? "#ffffff" : "#18181b"
-}
-
 export function AboutPage() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
   const [statsHovered, setStatsHovered] = useState(false)
@@ -147,22 +136,17 @@ export function AboutPage() {
   const pageBg = isDark ? PAGE_BG_DARK : PAGE_BG_LIGHT
 
   const blueColor    = ABOUT_BLUE
-  const greenColor   = ABOUT_GREEN
-  const greenText    = getReadableTextColor(greenColor)
   const orangeColor  = ABOUT_ORANGE
-  const orangeText   = getReadableTextColor(orangeColor)
+  const orangeText   = "#ffffff"
+  const greenColor   = ABOUT_GREEN
   const neutralColor = isDark ? ABOUT_NEUTRAL.dark : ABOUT_NEUTRAL.light
 
-  // Contrast-safe versions of blue/green used specifically where they sit
-  // directly on the page background (stats numbers/labels, the new
-  // divider) rather than as a solid fill with computed text-on-top.
-  const blueOnPage  = ensureAccessible(blueColor, pageBg, 4.5)
-  const greenOnPage = ensureAccessible(greenColor, pageBg, 4.5)
+  const blueOnPage = ensureAccessible(blueColor, pageBg, 4.5)
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
 
-      {/* ── Header ── */}
+      {/* ── Header — same shared classes/divider as Services page now ── */}
       <section className="px-4 md:px-8 pt-[calc(var(--nav-h,74px)+2rem)] pb-8 text-center">
         <div className="max-w-[1248px] mx-auto flex flex-col items-center">
 
@@ -172,22 +156,13 @@ export function AboutPage() {
             A local business built on community, trust, and real help — right here in Kgotsong.
           </p>
 
-          {/* Divider — replaced the shared abh-divider class (which relies
-              on var(--border): a muted blue-grey at 1px, effectively
-              invisible against the dark navy background) with an explicit,
-              visible divider using the same contrast-safe blue as the
-              stats text, at 2px with a touch of glow. */}
-          <div
-            className="mt-4 mb-2 h-[2px] w-16 rounded-full"
-            style={{ backgroundColor: blueOnPage, boxShadow: `0 0 8px ${blueOnPage}80` }}
-            aria-hidden="true"
-          />
+          <div className="abh-divider" />
 
-          {/* Stats strip — border-only blue, ALWAYS. On hover, only the
-              NUMBER/LABEL text switches to green — the strip's background
-              and border stay exactly as they are, no fill sweep anymore. */}
+          {/* Stats strip — border stays blue always; on hover the whole
+              strip fills solid brand blue with white text (was: green text
+              swap only, no fill). */}
           <div
-            className="mt-8 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x divide-zinc-200 dark:divide-zinc-700 rounded-[14px] overflow-hidden shadow-lg border-2"
+            className="mt-8 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x divide-zinc-200 dark:divide-zinc-700 rounded-[14px] overflow-hidden shadow-lg border-2 transition-colors duration-300"
             style={{ borderColor: blueColor }}
             onMouseEnter={() => setStatsHovered(true)}
             onMouseLeave={() => setStatsHovered(false)}
@@ -199,17 +174,18 @@ export function AboutPage() {
             ].map((s, i) => (
               <div
                 key={i}
-                className="flex flex-col items-center justify-center py-5 px-3 transition-colors duration-200 cursor-default"
+                className="flex flex-col items-center justify-center py-5 px-3 transition-colors duration-300 cursor-default"
+                style={{ backgroundColor: statsHovered ? blueColor : "transparent" }}
               >
                 <p
-                  className="font-sans font-black text-xl leading-none transition-colors duration-200"
-                  style={{ color: statsHovered ? greenOnPage : blueOnPage }}
+                  className="font-sans font-black text-xl leading-none transition-colors duration-300"
+                  style={{ color: statsHovered ? "#ffffff" : blueOnPage }}
                 >
                   {s.value}
                 </p>
                 <p
-                  className="text-[0.62rem] font-medium uppercase tracking-widest mt-1.5 text-center transition-colors duration-200"
-                  style={{ color: statsHovered ? `${greenOnPage}cc` : `${blueOnPage}cc` }}
+                  className="text-[0.62rem] font-medium uppercase tracking-widest mt-1.5 text-center transition-colors duration-300"
+                  style={{ color: statsHovered ? "rgba(255,255,255,0.85)" : `${blueOnPage}cc` }}
                 >
                   {s.label}
                 </p>
@@ -224,7 +200,9 @@ export function AboutPage() {
       <section className="px-4 md:px-8 py-14 md:py-16" aria-label="Our story">
         <div className="max-w-[980px] mx-auto">
 
-          {/* Pull quote — centered */}
+          {/* Pull quote + one formal positioning sentence, balancing the
+              warm quote with a structural, credible description of what
+              the business actually is. */}
           <div className="mb-12 text-center max-w-[720px] mx-auto">
             <p className="font-sans font-semibold text-lg md:text-xl leading-snug text-zinc-700 dark:text-zinc-300">
               "Not everyone is tech-savvy — and that's exactly why we're here."
@@ -233,12 +211,16 @@ export function AboutPage() {
               We started with one goal: make technology, design, and important government services
               accessible to everyone in Kgotsong — no jargon, no stress, no overcharging.
             </p>
+            <p className="abh-body mt-4 text-sm max-w-lg mx-auto text-center">
+              {BIZ.name} is a family-run, home-based multi-service business operating under the
+              P.D.D.E.T. framework — Print, Docu, Design, E-Service, and Tech — serving Kgotsong
+              and the greater Bothaville area since {BIZ.yearFounded}.
+            </p>
           </div>
 
           {/* Two-column — values + overview card, stretched to equal height */}
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-stretch">
 
-            {/* Values list — icons are GREEN */}
             <ul className="flex flex-col justify-between gap-0" aria-label="Our values">
               {ABOUT_VALUES.map((item, index) => (
                 <li key={index} className="flex gap-4 items-start group">
@@ -259,12 +241,10 @@ export function AboutPage() {
               ))}
             </ul>
 
-            {/* Business overview card — header icon is BLUE */}
             <div
               className="rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-7 shadow-sm flex flex-col"
               aria-label="Business overview"
             >
-              {/* Card header */}
               <div className="flex items-center gap-3 mb-7 pb-6 border-b border-zinc-100 dark:border-zinc-800">
                 <div
                   className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
@@ -282,7 +262,6 @@ export function AboutPage() {
                 </div>
               </div>
 
-              {/* 2×2 stat grid — kept neutral, not part of the blue/green/orange set */}
               <div className="grid grid-cols-2 gap-3 flex-1">
                 {[
                   { value: BIZ.hubCount,      label: "Hubs"              },
@@ -304,12 +283,56 @@ export function AboutPage() {
                 ))}
               </div>
 
-              {/* Footer note */}
               <p className="text-[0.72rem] font-medium text-zinc-400 dark:text-zinc-500 mt-6 leading-relaxed text-center">
                 Walk-ins welcome · WhatsApp orders accepted · Same-day service on most requests
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ── Team ── */}
+      <section className="px-4 md:px-8 py-14 md:py-16 border-t border-zinc-100 dark:border-zinc-800/60" aria-labelledby="team-title">
+        <div className="max-w-[980px] mx-auto">
+          <div className="text-center mb-10">
+            <h2
+              id="team-title"
+              className="font-sans font-black text-2xl md:text-3xl tracking-tight text-zinc-900 dark:text-zinc-50 mb-3"
+            >
+              Who Runs {BIZ.name}
+            </h2>
+            <p className="abh-tagline max-w-md mx-auto text-center">
+              Family-run, hands-on service — every hub staffed by someone who lives right here in Kgotsong.
+            </p>
+          </div>
+
+          <ul className="grid grid-cols-1 sm:grid-cols-3 gap-5" aria-label="Team members">
+            {TEAM.map((member) => (
+              <li
+                key={member.initials}
+                className="abh-card p-6 flex flex-col items-center text-center gap-3 rounded-[14px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800"
+              >
+                <div
+                  className="w-14 h-14 rounded-full flex items-center justify-center font-black text-base shrink-0"
+                  style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
+                  aria-hidden="true"
+                >
+                  {member.initials}
+                </div>
+                <div>
+                  <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200">
+                    {member.name}
+                  </h3>
+                  <p className="text-[0.65rem] font-black uppercase tracking-widest mt-1" style={{ color: blueColor }}>
+                    {member.role}
+                  </p>
+                  <p className="abh-body text-xs mt-2 leading-relaxed">
+                    {member.note}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -320,7 +343,6 @@ export function AboutPage() {
       >
         <div className="max-w-[980px] mx-auto">
 
-          {/* Section heading — centered */}
           <div className="text-center mb-10">
             <h2
               id="standards-title"
@@ -334,8 +356,9 @@ export function AboutPage() {
             <div className="mt-6 h-px bg-zinc-200 dark:bg-zinc-800 max-w-[120px] mx-auto" />
           </div>
 
-          {/* 4-card grid — neutral at rest, border goes BLUE on hover, icon
-              chip fill goes GREEN on hover. */}
+          {/* 4-card grid — neutral at rest; on hover, border AND icon chip
+              both go solid brand blue with white text/icon (was: border
+              blue + icon chip green — green hover fill removed per request). */}
           <ul
             className="grid grid-cols-1 sm:grid-cols-3 gap-5"
             aria-label="Standards"
@@ -365,7 +388,7 @@ export function AboutPage() {
                     )}
                     style={
                       isHovered
-                        ? { backgroundColor: greenColor, color: greenText }
+                        ? { backgroundColor: blueColor, color: "#ffffff" }
                         : { backgroundColor: `${neutralColor}15`, color: neutralColor }
                     }
                     aria-hidden="true"
@@ -390,7 +413,6 @@ export function AboutPage() {
         className="relative overflow-hidden px-4 md:px-8 py-16 md:py-20 text-center"
         aria-labelledby="mission-title"
       >
-        {/* Subtle gradient wash — updated to the blue→green→orange hierarchy */}
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div
             className="absolute inset-0 opacity-[0.04] dark:opacity-[0.07]"
@@ -401,7 +423,6 @@ export function AboutPage() {
         </div>
 
         <div className="relative max-w-[680px] mx-auto flex flex-col items-center">
-          {/* Badge — BLUE, not orange (orange reserved for the CTA only) */}
           <span
             className="inline-block text-[0.65rem] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-6"
             style={{ backgroundColor: `${blueColor}12`, color: blueColor }}
@@ -421,7 +442,6 @@ export function AboutPage() {
             brought to people who need them most, in a community that deserves better access.
           </p>
 
-          {/* CTA — the ONLY orange element on this page */}
           <a
             href="/services"
             className="inline-flex items-center gap-2.5 px-8 py-4 rounded-[14px] font-black text-sm transition-all duration-300 active:scale-95 hover:-translate-y-0.5 shadow-lg"
@@ -435,4 +455,4 @@ export function AboutPage() {
 
     </div>
   )
-      } 
+                    } 
