@@ -1373,7 +1373,7 @@ function GalleryPageInner() {
               )}
             >
               <Shuffle size={14} weight="bold" className="transition-transform duration-300 group-hover/surprise:rotate-180 text-zinc-400" />
-              Surprise me
+              Pick a project
             </button>
           </div>
         </ScrollBounce>
@@ -1429,16 +1429,16 @@ function GalleryPageInner() {
               }
 
               return (
-                <ScrollBounce key={row.id} delay={rowIndex * 0.06}>
-                  <div className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm transition-shadow duration-300 ease-out p-5 md:p-7">
-                    <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
-                      <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: "#1E6FA8" }} />
-                      <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
-                      <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
-                    </div>
-                    <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} likedIds={likedIds} onToggleLike={toggleLike} />
-                  </div>
-                </ScrollBounce>
+               <div className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm p-5 md:p-7">
+  <ScrollBounce delay={rowIndex * 0.06}>
+    <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
+      <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: "#1E6FA8" }} />
+      <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
+      <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
+    </div>
+  </ScrollBounce>
+  <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} likedIds={likedIds} onToggleLike={toggleLike} />
+</div>
               )
             })}
           </div>
