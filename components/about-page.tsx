@@ -108,11 +108,11 @@ const ABOUT_NEUTRAL = { light: BRAND.dark100, dark: BRAND.techGreyDark }
 // Docu Hubs (not split by a single hub each). Family relationship is
 // intentionally not stated on the site.
 const TEAM = [
-  { initials: "TM", name: "Theji M.", role: "Owner", note: "Runs Design, E-Service, and Tech Hubs" },
-  { initials: "FK", name: "Faith K.", role: "Print & Docu Hub Assistant", note: "Helps with printing, copying, typing, CVs & document services" },
-  { initials: "MM", name: "Macky M.", role: "Print & Docu Hub Assistant", note: "Helps with printing, copying, typing, CVs & document services" },
+  { initials: "TM", name: "Theji M.", role: "Owner", note: "Runs Everything" },
+  { initials: "FK", name: "Faith K.", role: "Print & Docu Hub Assistant", note: "Helps with printing, copying,  laminating & sending emails" },
+  { initials: "MM", name: "Macky M.", role: "Print Hub Assistant", note: "Helps with printing, copying, typing services" },
+  { initials: "RK", name: "Rethabile K.", role: "Print Hub Assistant", note: "Helps with copying, printing, laminating & sending emails" },
 ] as const
-
 function renderIcon(iconName: string, className: string) {
   switch (iconName) {
     case "Target":       return <Target       weight="fill" className={className} aria-hidden="true" />
@@ -156,8 +156,8 @@ export function AboutPage() {
             A local business built on community, trust, and real help — right here in Kgotsong.
           </p>
 
-          <div className="abh-divider" />
-
+          <div className="abh-divider mx-auto" />
+        </div>
           {/* Stats strip — border stays blue always; on hover the whole
               strip fills solid brand blue with white text (was: green text
               swap only, no fill). */}
