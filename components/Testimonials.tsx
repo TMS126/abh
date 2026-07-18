@@ -25,50 +25,34 @@ interface Review {
   quote: string
 }
 
-// ─── PLACEHOLDER REVIEWS ───────────────────────────────────────────────────────
-// Sample content only — swap these out for real client quotes whenever
-// they're ready. Keep the shape (name, initials, hubId, serviceUsed, rating,
-// quote) the same and everything below will render correctly.
+// ─── REAL CLIENT REVIEWS ───────────────────────────────────────────────────────
+// Sourced from real WhatsApp client conversations, lightly expanded into full
+// sentences and anonymized to first name only. Add new ones here as they come
+// in — keep the shape (name, initials, hubId, serviceUsed, rating, quote).
 export const SAMPLE_REVIEWS: Review[] = [
   {
-    name: "Lerato M.",
-    initials: "LM",
+    name: "Sethembiso",
+    initials: "SM",
     hubId: "doc",
-    serviceUsed: "CV from Scratch",
+    serviceUsed: "CV Writing & Design",
     rating: 5,
-    quote: "I had never had a proper CV before. They built mine from nothing and I got called for an interview the same week. Patient and explained everything.",
+    quote: "They got my CV finished quickly and made sure it was ready before I even needed it. My mother called to say thank you for the great work — I'm really happy with how it turned out.",
   },
   {
-    name: "Sipho K.",
-    initials: "SK",
-    hubId: "eservice",
-    serviceUsed: "SASSA SRD Application",
+    name: "Tseleng",
+    initials: "TL",
+    hubId: "doc",
+    serviceUsed: "CV Printing",
     rating: 5,
-    quote: "I tried doing the SASSA application myself online and kept getting stuck. They sorted it out in minutes and explained what went wrong before.",
+    quote: "Quick and easy — my CV was printed and ready with no fuss at all. Thanks a lot for the help!",
   },
   {
-    name: "Naledi T.",
-    initials: "NT",
-    hubId: "design",
-    serviceUsed: "Standard Logo",
+    name: "Phumzile",
+    initials: "PS",
+    hubId: "doc",
+    serviceUsed: "CV Job Seeker Package",
     rating: 5,
-    quote: "Gave them a rough idea for my business and they came back with a logo that actually looks professional. Fast turnaround too.",
-  },
-  {
-    name: "Thabo R.",
-    initials: "TR",
-    hubId: "print",
-    serviceUsed: "Colour Flyer Printing",
-    rating: 4,
-    quote: "Printed my flyers same day, good quality and fair pricing for bulk. Will be back for my next event.",
-  },
-  {
-    name: "Bongiwe N.",
-    initials: "BN",
-    hubId: "tech",
-    serviceUsed: "Virus / Malware Removal",
-    rating: 5,
-    quote: "My laptop was almost unusable from all the pop-ups. They cleaned it up and it runs like new. Very honest about what was actually wrong.",
+    quote: "The job seeker package came out sharp, exactly what I needed. Really happy with it, thank you!",
   },
 ]
 
@@ -155,5 +139,4 @@ export function TestimonialsSection({
       </div>
     </section>
   )
-}
- 
+} 
