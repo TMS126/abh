@@ -398,7 +398,7 @@ export function HeroSection() {
   aria-hidden="true"
   style={{ backgroundColor: BRAND.blueDark }}
 />
-          </div>
+      
 
           <div className="relative z-10 w-full flex flex-col items-center px-6 sm:px-10 md:px-12 pt-8 sm:pt-10 md:pt-12 pb-10 sm:pb-12 md:pb-14">
 
