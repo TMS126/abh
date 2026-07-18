@@ -13,6 +13,7 @@ import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey, BIZ } from "@/lib/brand"
 import { HUBS, HubId, HUB_DISCLAIMERS, TURNAROUND, TURNAROUND_OVERRIDE } from "@/lib/data"
+import { ScrollBounce } from "@/components/scroll-bounce"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
@@ -330,7 +331,6 @@ function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService) => voi
 }
 
 // ─── Hub Modal ────────────────────────────────────────────────────────────────
-// CHANGE 1: Hub-specific disclaimers rendered inline — no toggle, no default
 function HubModal({ hubId, onClose, onSelectService }: {
   hubId: HubId | null; onClose: () => void; onSelectService: (svc: SelectedService) => void
 }) {
@@ -356,7 +356,6 @@ function HubModal({ hubId, onClose, onSelectService }: {
   const accent      = isDark ? colors.accentDark : colors.accentLight
   const solidAccent = colors.accentLight
 
-  // CHANGE 1: per-hub disclaimer sourced directly from HUB_DISCLAIMERS
   const hubDisclaimer = HUB_DISCLAIMERS[hubId]
 
   const activeSection     = openSectionIdx !== null ? hub.sections[openSectionIdx] : null
@@ -374,7 +373,6 @@ function HubModal({ hubId, onClose, onSelectService }: {
         className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-250 border border-zinc-100 dark:border-zinc-800 outline-none"
         style={{ boxShadow: `0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4), 0 10px 24px -8px ${accent}50` }}
       >
-        {/* Header */}
         <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center" style={{ backgroundColor: `${accent}05` }}>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 md:w-14 md:h-14 rounded-[14px] flex items-center justify-center shadow-lg bg-zinc-100 dark:bg-zinc-800" style={{ border: `2px solid ${accent}` }}>
@@ -397,10 +395,8 @@ function HubModal({ hubId, onClose, onSelectService }: {
           </button>
         </div>
 
-        {/* Body */}
         <div className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-8">
 
-          {/* Section pills */}
           <div className="flex flex-wrap justify-center gap-2 mb-5">
             {hub.sections.map((section, sIdx) => {
               const isOpen = openSectionIdx === sIdx
@@ -420,7 +416,6 @@ function HubModal({ hubId, onClose, onSelectService }: {
             })}
           </div>
 
-          {/* Section description */}
           {activeSectionDesc && (
             <div
               key={openSectionIdx}
@@ -431,7 +426,6 @@ function HubModal({ hubId, onClose, onSelectService }: {
             </div>
           )}
 
-          {/* Service items */}
           {activeSection && (
             <div key={`items-${openSectionIdx}`} className="rounded-[14px] bg-zinc-50 dark:bg-zinc-900/50 shadow-sm p-3 md:p-4 grid grid-cols-1 gap-2 animate-in fade-in duration-200">
               {activeSection.items.map((item, iIdx) => (
@@ -454,7 +448,6 @@ function HubModal({ hubId, onClose, onSelectService }: {
             </div>
           )}
 
-          {/* CHANGE 1: Hub-specific disclaimer — inline, no toggle button */}
           {hubDisclaimer && (
             <div className="mt-6 flex items-start gap-2">
               <Info size={13} weight="bold" className="text-zinc-400 dark:text-zinc-500 shrink-0 mt-0.5" />
@@ -550,10 +543,8 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
     if (fileRef.current) fileRef.current.value = ""
   }
 
-  // CHANGE 2: swipe UP = keep open (no action), swipe DOWN = close
   const handleDragEnd = (_e: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (info.offset.y > 120 || info.velocity.y > 600) onClose()
-    // upward swipe: do nothing — sheet stays open
   }
 
   if (!svc) return null
@@ -603,19 +594,16 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
         aria-label={svc.name}
         drag="y"
         dragConstraints={{ top: 0, bottom: 0 }}
-        // CHANGE 2: no elastic resistance upward — only downward drag is allowed
         dragElastic={{ top: 0, bottom: 0.6 }}
         onDragEnd={handleDragEnd}
         initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 32, stiffness: 340 }}
         className="relative w-full md:max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-t-[20px] md:rounded-[14px] cursor-grab active:cursor-grabbing"
       >
-        {/* Drag handle */}
         <div className="flex justify-center pt-2.5 pb-0.5 shrink-0" aria-hidden="true">
           <div className="w-9 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700" />
         </div>
 
-        {/* Header */}
         <div className="px-6 pt-4 pb-5 flex-shrink-0">
           <div className="flex justify-between items-start mb-4">
             <div className="flex-1 min-w-0 pr-3">
@@ -663,7 +651,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="flex justify-center gap-8 border-t border-zinc-100 dark:border-zinc-800">
           {(["bring", "about"] as Tab[]).map((t) => {
             const isActive = tab === t
@@ -682,7 +669,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
           })}
         </div>
 
-        {/* Tab content */}
         <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 min-h-0">
           {tab === "bring" && (
             <div className="animate-in fade-in duration-150">
@@ -712,7 +698,6 @@ function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onC
           )}
         </div>
 
-        {/* Footer */}
         <div className="px-6 pb-6 pt-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800 space-y-4">
           <input ref={fileRef} type="file" accept={HUB_ACCEPT[svc.hubId]} onChange={handleFilePick} className="hidden" />
 
@@ -905,75 +890,83 @@ export function ServicesPage() {
       <div className="max-w-[1248px] mx-auto px-4 md:px-8 flex flex-col items-center">
 
         {/* Hero */}
-        <div className="pt-[calc(var(--nav-h,74px)+2rem)] pb-8 text-center w-full">
-          <h1 className="abh-page-title mb-3">Our Service Hubs</h1>
-          <p className="abh-tagline max-w-xl mx-auto">Explore our ecosystem. Tap a hub to view all available services and instant pricing.</p>
-          <div className="abh-divider mx-auto" />
-        </div>
+        <ScrollBounce className="w-full">
+          <div className="pt-[calc(var(--nav-h,74px)+2rem)] pb-8 text-center w-full">
+            <h1 className="abh-page-title mb-3">Our Service Hubs</h1>
+            <p className="abh-tagline max-w-xl mx-auto">Explore our ecosystem. Tap a hub to view all available services and instant pricing.</p>
+            <div className="abh-divider mx-auto" />
+          </div>
+        </ScrollBounce>
 
-        <div id="abh-inline-search" className="w-full mb-10 flex justify-center">
-          <InlineSearchBar onSelect={handleSelectService} />
-        </div>
+        <ScrollBounce delay={0.08} className="w-full mb-10 flex justify-center">
+          <div id="abh-inline-search" className="w-full flex justify-center">
+            <InlineSearchBar onSelect={handleSelectService} />
+          </div>
+        </ScrollBounce>
 
-        <div className="w-full"><NoticeBanner /></div>
+        <ScrollBounce delay={0.14} className="w-full">
+          <div className="w-full"><NoticeBanner /></div>
+        </ScrollBounce>
 
         {/* Hub cards */}
         <div className="flex flex-col md:grid md:grid-cols-5 gap-5 md:gap-4 pb-2 w-full">
-          {HUB_ORDER.map((hubId) => {
+          {HUB_ORDER.map((hubId, index) => {
             const hub      = HUBS[hubId]
             const colors   = HUB_COLORS[hubId as HubKey]
             const accent   = isDark ? colors.accentDark : colors.accentLight
             const isHovered = hoveredMainHub === hubId
             const neutralIconColor = isDark ? "#a1a1aa" : "#71717a"
             return (
-              <button
-                key={hubId}
-                onClick={() => handleOpenHub(hubId)}
-                onMouseEnter={() => setHoveredMainHub(hubId)}
-                onMouseLeave={() => setHoveredMainHub(null)}
-                className="group flex flex-col items-center p-6 md:p-7 rounded-[14px] border bg-white dark:bg-zinc-950 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 text-center w-full h-full"
-                style={{ borderColor: isHovered ? accent : undefined }}
-              >
-                {/* Icon */}
-                <div
-                  className="w-14 h-14 md:w-16 md:h-16 rounded-[14px] flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110 shadow-md"
-                  style={{
-                    backgroundColor: isHovered ? `${accent}12` : (isDark ? "rgba(161,161,170,0.12)" : "rgba(113,113,122,0.08)"),
-                    color: isHovered ? accent : neutralIconColor,
-                  }}
+              <ScrollBounce key={hubId} delay={index * 0.08}>
+                <button
+                  onClick={() => handleOpenHub(hubId)}
+                  onMouseEnter={() => setHoveredMainHub(hubId)}
+                  onMouseLeave={() => setHoveredMainHub(null)}
+                  className="group flex flex-col items-center p-6 md:p-7 rounded-[14px] border bg-white dark:bg-zinc-950 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 text-center w-full h-full"
+                  style={{ borderColor: isHovered ? accent : undefined }}
                 >
-                  <HubIcon id={hubId} size={32} />
-                </div>
+                  {/* Icon */}
+                  <div
+                    className="w-14 h-14 md:w-16 md:h-16 rounded-[14px] flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110 shadow-md"
+                    style={{
+                      backgroundColor: isHovered ? `${accent}12` : (isDark ? "rgba(161,161,170,0.12)" : "rgba(113,113,122,0.08)"),
+                      color: isHovered ? accent : neutralIconColor,
+                    }}
+                  >
+                    <HubIcon id={hubId} size={32} />
+                  </div>
 
-                {/* Title */}
-                <h3
-                  className="font-sans font-black text-lg md:text-xl text-zinc-900 dark:text-zinc-50 mb-2 transition-colors"
-                  style={{ color: isHovered ? accent : undefined }}
-                >
-                  {hub.title}
-                </h3>
+                  {/* Title */}
+                  <h3
+                    className="font-sans font-black text-lg md:text-xl text-zinc-900 dark:text-zinc-50 mb-2 transition-colors"
+                    style={{ color: isHovered ? accent : undefined }}
+                  >
+                    {hub.title}
+                  </h3>
 
-                {/* CHANGE 3: decorative underline beneath title — hub accent color, no pill, no text */}
-                <div
-                  className="h-[3px] w-10 rounded-full mb-4 transition-all duration-300"
-                  style={{ backgroundColor: accent }}
-                />
+                  <div
+                    className="h-[3px] w-10 rounded-full mb-4 transition-all duration-300"
+                    style={{ backgroundColor: accent }}
+                  />
 
-                {/* Description */}
-                <p className="abh-body text-[0.82rem] line-clamp-2 mb-5">{hub.desc}</p>
+                  {/* Description */}
+                  <p className="abh-body text-[0.82rem] line-clamp-2 mb-5">{hub.desc}</p>
 
-                {/* Preview hints */}
-                <div className="flex flex-col items-center gap-1 mb-5 px-3 py-2.5 rounded-[10px] bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-100 dark:border-zinc-800/60 w-full">
-                  {HUB_PREVIEWS[hubId].map((hint, i) => (
-                    <span key={i} className="text-[0.72rem] font-medium text-zinc-500 dark:text-zinc-400 tracking-wide">{hint}</span>
-                  ))}
-                </div>
-              </button>
+                  {/* Preview hints */}
+                  <div className="flex flex-col items-center gap-1 mb-5 px-3 py-2.5 rounded-[10px] bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-100 dark:border-zinc-800/60 w-full">
+                    {HUB_PREVIEWS[hubId].map((hint, i) => (
+                      <span key={i} className="text-[0.72rem] font-medium text-zinc-500 dark:text-zinc-400 tracking-wide">{hint}</span>
+                    ))}
+                  </div>
+                </button>
+              </ScrollBounce>
             )
           })}
         </div>
 
-        <div className="w-full"><ClosingTagline /></div>
+        <ScrollBounce className="w-full">
+          <div className="w-full"><ClosingTagline /></div>
+        </ScrollBounce>
       </div>
 
       <HubModal hubId={activeHub} onClose={() => setActiveHub(null)} onSelectService={handleSelectService} />
@@ -996,4 +989,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-}  
+}
