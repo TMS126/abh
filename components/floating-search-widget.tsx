@@ -324,19 +324,19 @@ export function FloatingSearchWidget() {
       >
         <div className="flex items-center justify-end gap-2">
           {/* Slide-out label — only ever shown while closed */}
-          <span
-            className={cn(
-              "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap pointer-events-none",
-              "bg-white dark:bg-zinc-900 px-2.5 py-1 rounded-full shadow-md border border-zinc-100 dark:border-zinc-800",
-              "transition-all duration-200 ease-out origin-right motion-reduce:transition-none transform-gpu",
-              isOpen
-                ? "opacity-0 scale-x-0"
-                : "opacity-0 scale-x-0 group-hover/search:opacity-100 group-hover/search:scale-x-100"
-            )}
-            style={{ color: accentColor }}
-          >
-            Search
-          </span>
+         <span
+  className={cn(
+    "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap pointer-events-none overflow-hidden",
+    "bg-white dark:bg-zinc-900 px-2.5 py-1 rounded-full shadow-md border border-zinc-100 dark:border-zinc-800",
+    "transition-all duration-200 ease-out origin-right motion-reduce:transition-none transform-gpu",
+    isOpen
+      ? "max-w-0 opacity-0 scale-x-0"
+      : "max-w-0 opacity-0 scale-x-0 group-hover/search:max-w-[100px] group-hover/search:opacity-100 group-hover/search:scale-x-100"
+  )}
+  style={{ color: accentColor }}
+>
+  Search
+</span>
 
           <button
             onClick={() => (isOpen ? handleClose() : setIsOpen(true))}
