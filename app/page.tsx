@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/navbar"
 import { HeroSection, StatsBar } from "@/components/hero-section"
+import { TestimonialsSection } from "@/components/testimonials-section"
 import { StripSection, CtaBar } from "@/components/strip-section"
 import { Footer } from "@/components/footer"
 import { BIZ } from "@/lib/brand"
@@ -12,6 +13,7 @@ export default function HomeRoute() {
         <div className="animate-fade-up">
           <HeroSection />
           <StatsBar />
+          <TestimonialsSection />
           <StripSection />
           <CtaBar
             title="Ready to get started?"
