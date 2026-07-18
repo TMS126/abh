@@ -219,6 +219,7 @@ export function HeroSection() {
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 })
   const [tilting, setTilting] = useState(false)
   const ecoBoxRef = useRef<HTMLDivElement>(null)
+  const touchStartX = useRef<number | null>(null)
 
   const handleEcoMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!canHover || !ecoBoxRef.current) return
@@ -235,6 +236,22 @@ export function HeroSection() {
   const handleEcoMouseLeave = () => {
     setTilt({ rx: 0, ry: 0 })
     setTilting(false)
+  }
+
+  const handleEcoTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    touchStartX.current = e.touches[0].clientX
+  }
+
+  const handleEcoTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (touchStartX.current === null) return
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current
+    const SWIPE_THRESHOLD = 40
+    if (Math.abs(deltaX) > SWIPE_THRESHOLD) {
+      const dir = deltaX < 0 ? 1 : -1
+      const nextIndex = (activeHub + dir + HUBS_DATA.length) % HUBS_DATA.length
+      handleSelectHub(nextIndex)
+    }
+    touchStartX.current = null
   }
 
   const ctaBtnRef      = useRef<HTMLButtonElement>(null)
@@ -380,6 +397,8 @@ export function HeroSection() {
           ref={ecoBoxRef}
           onMouseMove={handleEcoMouseMove}
           onMouseLeave={handleEcoMouseLeave}
+          onTouchStart={handleEcoTouchStart}
+          onTouchEnd={handleEcoTouchEnd}
           className="relative w-full max-w-[840px] mx-auto rounded-[14px] overflow-hidden"
           style={{
             transform: `perspective(1200px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg) scale(${tilting ? 1.012 : 1})`,
@@ -610,4 +629,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-  } 
+    } 
