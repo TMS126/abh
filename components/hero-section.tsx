@@ -257,8 +257,6 @@ export function HeroSection() {
   const active    = HUBS_DATA[activeHub]
   const ActiveIcon = active.Icon
 
-  // Button stroke — fixed to BRAND.blue (primary) in both themes, per
-  // "use primary blue color for ApexbytesHub" — no more reference-teal.
   const STROKE_COLOR   = BRAND.blue
   const CTA_FILL_COLOR = BRAND.blue
 
@@ -307,41 +305,6 @@ export function HeroSection() {
         />
       </div>
 
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
-        <div
-          className="absolute left-1/2 top-[8%] -translate-x-1/2 w-[140vw] md:w-[90vw] max-w-[1400px] aspect-[16/10] opacity-[0.14] dark:opacity-[0.18] blur-3xl"
-          style={{
-            backgroundColor: BRAND.blue,
-            animation: "abh-blob-morph 18s ease-in-out infinite",
-          }}
-        />
-      </div>
-
-      <style>{`
-        @keyframes abh-blob-morph {
-          0%   { border-radius: 42% 58% 65% 35% / 45% 40% 60% 55%; }
-          25%  { border-radius: 60% 40% 35% 65% / 55% 65% 35% 45%; }
-          50%  { border-radius: 35% 65% 50% 50% / 60% 35% 65% 40%; }
-          75%  { border-radius: 65% 35% 45% 55% / 40% 55% 45% 60%; }
-          100% { border-radius: 42% 58% 65% 35% / 45% 40% 60% 55%; }
-        }
-
-        @keyframes abh-cta-glow-pulse {
-          0%, 100% { opacity: 0.35; transform: scale(0.95); }
-          50%      { opacity: 0.6;  transform: scale(1.15); }
-        }
-        .abh-cta-glow { animation: abh-cta-glow-pulse 3s ease-in-out infinite; }
-
-        @keyframes abh-watermark-float {
-          0%, 100% { transform: translateY(0px) rotate(-6deg); }
-          50%      { transform: translateY(-16px) rotate(-6deg); }
-        }
-        @keyframes abh-watermark-shadow-pulse {
-          0%, 100% { transform: scaleX(1);   opacity: 0.22; }
-          50%      { transform: scaleX(0.82); opacity: 0.14; }
-        }
-      `}</style>
-
       <div className="max-w-[1240px] mx-auto flex flex-col items-center relative z-10 w-full mb-6">
 
         <div className="w-full max-w-[840px] mx-auto flex flex-col mb-6 md:mb-8">
@@ -358,58 +321,41 @@ export function HeroSection() {
         <div className="relative w-full flex justify-center items-center mb-8">
 
           {/* Giant background graphic — logo by default, permanently
-              swaps to the selected hub's icon once any hub tab is tapped. */}
+              swaps to the selected hub's icon once any hub tab is tapped.
+              No floating/pulsing animation — stays static. */}
           <div
             aria-hidden="true"
             className="hidden md:flex absolute inset-y-0 -right-[10%] items-center justify-center pointer-events-none select-none z-0"
           >
-            <div className="flex flex-col items-center">
-              <div style={{ animation: "abh-watermark-float 7s ease-in-out infinite" }}>
-                {!hubTouched ? (
-                  <Image
-                    src="/logo.png"
-                    alt=""
-                    width={520}
-                    height={520}
-                    aria-hidden="true"
-                    style={{
-                      transform: "rotate(-6deg)",
-                      filter: "drop-shadow(0 22px 26px rgba(0,0,0,0.25))",
-                    }}
-                    className="shrink-0 opacity-[0.14] dark:opacity-[0.18] md:w-[620px] md:h-[620px] object-contain"
-                  />
-                ) : (
-                  <ActiveIcon
-                    size={520}
-                    weight="fill"
-                    aria-hidden="true"
-                    style={{
-                      color: BRAND.blue,
-                      transform: "rotate(-6deg)",
-                      filter: "drop-shadow(0 22px 26px rgba(0,0,0,0.25))",
-                    }}
-                    className="shrink-0 opacity-[0.14] dark:opacity-[0.18] md:w-[620px] md:h-[620px]"
-                  />
-                )}
-              </div>
-              <div
-                className="w-44 h-9 md:w-56 md:h-11 rounded-full blur-xl -mt-2"
+            {!hubTouched ? (
+              <Image
+                src="/logo.png"
+                alt=""
+                width={520}
+                height={520}
+                aria-hidden="true"
                 style={{
-                  backgroundColor: "#000000",
-                  animation: "abh-watermark-shadow-pulse 7s ease-in-out infinite",
+                  transform: "rotate(-6deg)",
+                  filter: "drop-shadow(0 22px 26px rgba(0,0,0,0.25))",
                 }}
+                className="shrink-0 opacity-[0.14] dark:opacity-[0.18] md:w-[620px] md:h-[620px] object-contain"
               />
-            </div>
+            ) : (
+              <ActiveIcon
+                size={520}
+                weight="fill"
+                aria-hidden="true"
+                style={{
+                  color: BRAND.blue,
+                  transform: "rotate(-6deg)",
+                  filter: "drop-shadow(0 22px 26px rgba(0,0,0,0.25))",
+                }}
+                className="shrink-0 opacity-[0.14] dark:opacity-[0.18] md:w-[620px] md:h-[620px]"
+              />
+            )}
           </div>
 
-          <div
-            aria-hidden="true"
-            className="absolute w-[220px] h-[80px] rounded-full blur-2xl pointer-events-none abh-cta-glow"
-            style={{ backgroundColor: STROKE_COLOR }}
-          />
-
-          {/* Start Here — now a fully-rounded pill (was rounded-[14px]),
-              primary blue border/fill in both themes. */}
+          {/* Start Here — no glow layer behind it anymore. */}
           <button
             ref={ctaBtnRef}
             onClick={handleCtaClick}
@@ -532,8 +478,7 @@ export function HeroSection() {
             </div>
 
             {/* Dot pagination — replaces the old per-tab underline. Active
-                hub renders as an elongated pill, others as small dots,
-                matching the reference onboarding screen's pagination. */}
+                hub renders as an elongated pill, others as small dots. */}
             <div
               role="tablist"
               aria-label="Hub pagination"
@@ -692,4 +637,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-    } 
+      } 
