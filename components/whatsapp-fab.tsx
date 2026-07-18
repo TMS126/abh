@@ -635,15 +635,14 @@ export function WhatsAppFAB() {
       >
         <div className="flex items-center justify-end gap-2">
           <span className={cn(
-            "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap pointer-events-none",
-            "bg-white dark:bg-zinc-900 text-[#25D366]",
-            "px-2.5 py-1 rounded-full shadow-md border border-zinc-100 dark:border-zinc-800",
-            "transition-all duration-200 ease-out origin-right motion-reduce:transition-none transform-gpu",
-            "opacity-0 scale-x-0 group-hover/wa:opacity-100 group-hover/wa:scale-x-100"
-          )}>
-            Chat
-          </span>
-
+  "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap pointer-events-none overflow-hidden",
+  "bg-white dark:bg-zinc-900 text-[#25D366]",
+  "px-2.5 py-1 rounded-full shadow-md border border-zinc-100 dark:border-zinc-800",
+  "transition-all duration-200 ease-out origin-right motion-reduce:transition-none transform-gpu",
+  "max-w-0 group-hover/wa:max-w-[100px] opacity-0 scale-x-0 group-hover/wa:opacity-100 group-hover/wa:scale-x-100"
+)}>
+  Chat
+</span>
           <button
             onClick={() => setIsOpen(o => !o)}
             aria-label={isOpen ? "Close WhatsApp chat" : `Chat with ${BIZ.name} on WhatsApp`}
