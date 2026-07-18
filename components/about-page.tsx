@@ -104,13 +104,13 @@ const ABOUT_ORANGE = BRAND.orangeDark
 const ABOUT_NEUTRAL = { light: BRAND.dark100, dark: BRAND.techGreyDark }
 
 // ─── Team ──────────────────────────────────────────────────────────────────
-// Real people, initials only for now (per request). Roles assigned based on
-// which hubs each person actually helps run — Print and Docu are staffed by
-// family; Design, E-Service, and Tech are run by Theji solo.
+// Real people, initials only. Faith and Macky both help across Print and
+// Docu Hubs (not split by a single hub each). Family relationship is
+// intentionally not stated on the site.
 const TEAM = [
-  { initials: "TM", name: "Theji Meje",  role: "Founder & Operator", note: "Runs Design, E-Service, and Tech Hubs" },
-  { initials: "FK", name: "Faith K.",    role: "Print Hub Assistant", note: "Sister — helps with printing, copying & photo prints" },
-  { initials: "MM", name: "Macky M.",    role: "Docu Hub Assistant",  note: "Mother — helps with typing, CVs & document services" },
+  { initials: "TM", name: "Theji M.", role: "Owner", note: "Runs Design, E-Service, and Tech Hubs" },
+  { initials: "FK", name: "Faith K.", role: "Print & Docu Hub Assistant", note: "Helps with printing, copying, typing, CVs & document services" },
+  { initials: "MM", name: "Macky M.", role: "Print & Docu Hub Assistant", note: "Helps with printing, copying, typing, CVs & document services" },
 ] as const
 
 function renderIcon(iconName: string, className: string) {
@@ -291,9 +291,13 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* ── Team ── */}
+      {/* ── Team ──
+          Vertically stacked, rounded cards with shadows, using the shared
+          `abh-card` border (var(--border)) — the same border style used
+          sitewide — instead of the zinc-specific border this section had
+          before. */}
       <section className="px-4 md:px-8 py-14 md:py-16 border-t border-zinc-100 dark:border-zinc-800/60" aria-labelledby="team-title">
-        <div className="max-w-[980px] mx-auto">
+        <div className="max-w-[680px] mx-auto">
           <div className="text-center mb-10">
             <h2
               id="team-title"
@@ -306,11 +310,11 @@ export function AboutPage() {
             </p>
           </div>
 
-          <ul className="grid grid-cols-1 sm:grid-cols-3 gap-5" aria-label="Team members">
+          <ul className="flex flex-col gap-5" aria-label="Team members">
             {TEAM.map((member) => (
               <li
                 key={member.initials}
-                className="abh-card p-6 flex flex-col items-center text-center gap-3 rounded-[14px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800"
+                className="abh-card p-6 flex items-center text-left gap-4 shadow-md"
               >
                 <div
                   className="w-14 h-14 rounded-full flex items-center justify-center font-black text-base shrink-0"
@@ -455,4 +459,5 @@ export function AboutPage() {
 
     </div>
   )
-                    } 
+}
+ 
