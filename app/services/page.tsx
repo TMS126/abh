@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import { ServicesPage } from "@/components/services-page"
 import { CtaBar } from "@/components/strip-section"
 import { Navbar } from "@/components/navbar"
+import { TestimonialsSection } from "@/components/testimonials-section"
 import { Footer } from "@/components/footer"
 import { WhatsappLogo } from "@phosphor-icons/react"
 
@@ -19,6 +20,7 @@ export default function ServicesRoute() {
         <Suspense fallback={null}>
           <ServicesPage />
         </Suspense>
+          <TestimonialsSection/>
         <CtaBar
           title="Not sure what you need?"
           description="Just WhatsApp us and we'll guide you in the right direction."
