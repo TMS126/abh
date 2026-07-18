@@ -393,23 +393,11 @@ export function HeroSection() {
               "inset 0 1px 0 rgba(255,255,255,0.28), " +
               "inset 0 -44px 60px -30px rgba(0,0,0,0.55)",
           }}
-        >
-          <div className="absolute inset-0 z-0" aria-hidden="true">
-            <Image
-              src="/storefront.webp"
-              alt=""
-              fill
-              sizes="840px"
-              className="object-cover opacity-90 blur-[1.5px]"
-            />
-            <div className="absolute inset-0 bg-black/45" />
-            <div
-              className="absolute inset-0 pointer-events-none opacity-40 mix-blend-overlay"
-              style={{
-                background: `linear-gradient(${115 + tilt.ry * 3}deg, transparent 35%, rgba(255,255,255,0.5) 50%, transparent 65%)`,
-                transition: tilting ? "background 90ms ease-out" : "background 500ms ease-out",
-              }}
-            />
+        ><div
+  className="absolute inset-0 z-0"
+  aria-hidden="true"
+  style={{ backgroundColor: BRAND.blueDark }}
+/>
           </div>
 
           <div className="relative z-10 w-full flex flex-col items-center px-6 sm:px-10 md:px-12 pt-8 sm:pt-10 md:pt-12 pb-10 sm:pb-12 md:pb-14">
