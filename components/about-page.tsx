@@ -219,28 +219,31 @@ export function AboutPage() {
 
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-stretch">
 
-            <ul
-              className="grid grid-cols-3 gap-3 sm:gap-4 divide-x divide-zinc-200 dark:divide-zinc-800"
-              aria-label="Our values"
-            >
-              {ABOUT_VALUES.map((item, index) => (
-                <li key={index} className="flex flex-col items-center text-center gap-3 px-2 sm:px-3 group">
-                  <div
-                    className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-110"
-                    style={{ backgroundColor: `${greenColor}15`, color: greenColor }}
-                    aria-hidden="true"
-                  >
-                    {renderIcon(item.iconName, "w-5 h-5")}
-                  </div>
-                  <div>
-                    <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200 mb-1">
-                      {item.title}
-                    </h3>
-                    <p className="abh-body text-sm">{item.desc}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
+           <ul
+  className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+  aria-label="Our values"
+>
+  {ABOUT_VALUES.map((item, index) => (
+    <li
+      key={index}
+      className="abh-card rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm p-5 flex flex-col items-center text-center gap-3"
+    >
+      <div
+        className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
+        style={{ backgroundColor: `${greenColor}15`, color: greenColor }}
+        aria-hidden="true"
+      >
+        {renderIcon(item.iconName, "w-5 h-5")}
+      </div>
+      <div>
+        <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200 mb-1">
+          {item.title}
+        </h3>
+        <p className="abh-body text-sm">{item.desc}</p>
+      </div>
+    </li>
+  ))}
+</ul>
 
             <ScrollBounce delay={0.2}>
               <div
