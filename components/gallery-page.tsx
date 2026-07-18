@@ -22,6 +22,20 @@ const ROW_ORDER: { id: HubId; label: string; short: string }[] = [
 
 const BA_HUBS: HubId[] = ["design", "tech"]
 
+// Short, card-friendly labels for the trust badge — same three clientType
+// values the modal already uses (ProjectHeader), just condensed to fit a
+// small pill on the card itself instead of a full sentence.
+const CLIENT_TYPE_LABEL: Record<string, string> = {
+  client:   "Real Client Work",
+  sample:   "Representative Example",
+  practice: "Practice Project",
+}
+const CLIENT_TYPE_BADGE_BG: Record<string, string> = {
+  client:   "rgba(34,197,94,0.85)",   // green — real client trust signal
+  sample:   "rgba(244,162,97,0.9)",   // orange — matches modal's sample copy color
+  practice: "rgba(63,63,70,0.85)",    // neutral gray
+}
+
 function hubLabelFor(hub: string): string {
   return ROW_ORDER.find(r => r.id === hub)?.label ?? ""
 }
@@ -778,14 +792,15 @@ function ProjectViewerModal({
 }
 
 // ─── Unified swipe carousel ───────────────────────────────────────────────────
-// Cards now use TWO nested shells instead of one:
-//   - outer shell: carries the shadow, lift, and press feedback — NO
-//     overflow-hidden, so the shadow renders as a full smooth halo
-//   - inner shell: carries overflow-hidden, the border, and the image —
-//     this is what clips content to the rounded corners
-// Previously both jobs lived on the same element, and overflow-hidden
-// silently clipped the box-shadow, leaving only a stray rough-looking
-// sliver of shadow down one side instead of an even glow all around.
+// Shadow fix: the real cause of the rough edge wasn't overflow-hidden on the
+// card — it was the horizontally-scrolling TRACK's own overflow-x-auto
+// clipping the shadow at the track's edge, because the gutter around each
+// card (16–24px) was smaller than the shadow's blur radius (up to 60px).
+// Any ancestor with overflow other than visible clips descendant paint,
+// including box-shadow, so the shadow got hard-cut exactly at that
+// boundary instead of fading out — that's the sharp line you circled.
+// Fixed by widening the gutter (px-6 md:px-8, plus vertical py- room too)
+// and tuning the shadow to actually fit inside the new gutter.
 function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }: {
   projects: ProjectData[]; accent: string; onSelect: (p: ProjectData) => void
   likedIds: Set<string>; onToggleLike: (id: string) => void
@@ -836,24 +851,22 @@ function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }:
         style={{ scrollSnapType: "x mandatory" }}
       >
         {projects.map((project) => (
-          <div key={project.id} className="shrink-0 w-full snap-center px-4 md:px-6" style={{ scrollSnapAlign: "center" }}>
-            {/* Outer shell — shadow + lift + press only, no overflow-hidden */}
+          <div key={project.id} className="shrink-0 w-full snap-center px-6 md:px-8 py-3 md:py-4" style={{ scrollSnapAlign: "center" }}>
             <div
               className="group rounded-[16px] cursor-pointer will-change-transform transition-all duration-300 ease-out active:scale-[0.98] hover:-translate-y-1.5"
               style={{
-                boxShadow: "0 30px 60px -20px rgba(0,0,0,0.55), 0 10px 24px -12px rgba(0,0,0,0.35)",
+                boxShadow: "0 18px 34px -14px rgba(0,0,0,0.45), 0 8px 18px -8px rgba(0,0,0,0.3)",
                 ["--hub-accent" as any]: accent,
                 ["--hub-shadow" as any]: `${accent}55`,
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.boxShadow = `0 36px 70px -16px ${accent}55, 0 14px 30px -10px rgba(0,0,0,0.4)`
+                (e.currentTarget as HTMLElement).style.boxShadow = `0 22px 44px -12px ${accent}55, 0 10px 22px -8px rgba(0,0,0,0.38)`
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.boxShadow = "0 30px 60px -20px rgba(0,0,0,0.55), 0 10px 24px -12px rgba(0,0,0,0.35)"
+                (e.currentTarget as HTMLElement).style.boxShadow = "0 18px 34px -14px rgba(0,0,0,0.45), 0 8px 18px -8px rgba(0,0,0,0.3)"
               }}
               onClick={() => { if (!dragMoved.current) onSelect(project) }}
             >
-              {/* Inner shell — overflow-hidden, border, and the actual image */}
               <div className="relative rounded-[16px] overflow-hidden border-2 border-zinc-100 dark:border-zinc-800 group-hover:border-[var(--hub-accent)] bg-white dark:bg-zinc-950 transition-colors duration-300">
                 <div className="relative aspect-[16/9] md:aspect-[16/8] bg-zinc-100 dark:bg-zinc-900">
                   <SafeImage src={project.image} alt={project.title} accent={accent} fill sizes="(max-width: 768px) 100vw, 800px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
@@ -863,12 +876,24 @@ function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }:
                       background: "linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.6) 22%, rgba(0,0,0,0.22) 48%, rgba(0,0,0,0) 75%)",
                     }}
                   />
-                  <div className="absolute top-4 left-4 z-10">
+                  <div className="absolute top-4 left-4 z-10 flex flex-col items-start gap-2">
                     <LikeButton
                       liked={likedIds.has(project.id)}
                       onToggle={(e) => { e.stopPropagation(); onToggleLike(project.id) }}
                       context="card"
                     />
+                    {/* Trust badge — visible on the card itself, before
+                        opening. Color-coded so the signal reads at a
+                        glance: green = real client, orange = representative
+                        sample, gray = practice project. */}
+                    {project.clientType && (
+                      <span
+                        className="text-[0.58rem] font-black uppercase tracking-wider px-2.5 py-1 rounded-full text-white shadow-lg backdrop-blur-sm whitespace-nowrap"
+                        style={{ backgroundColor: CLIENT_TYPE_BADGE_BG[project.clientType] }}
+                      >
+                        {CLIENT_TYPE_LABEL[project.clientType]}
+                      </span>
+                    )}
                   </div>
                   {BA_HUBS.includes(project.hub as HubId) && !!(project as any).beforeImage && !!(project as any).afterImage && (
                     <div className="absolute top-4 right-4 flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.6rem] font-black uppercase tracking-wider text-white shadow-lg" style={{ backgroundColor: `${accent}dd`, backdropFilter: "blur(6px)" }}>
@@ -1036,11 +1061,6 @@ function ProjectsPopover({
 }
 
 // ─── Hub filter dropdown ──────────────────────────────────────────────────────
-// Toggle button restyled from a hard "keycap" 3D shadow (colored bottom
-// ledge + translateY press) to a calm, ambient soft shadow with a gentle
-// scale-down press, matching the rest of the site's formal tone. Outside
-// taps still close via a full-screen backdrop (single-press select, no
-// double-tap race).
 function FilterDropdown({
   activeFilter, onSelect, getAccent,
 }: {
@@ -1251,14 +1271,20 @@ function GalleryPageInner() {
     window.history.replaceState(window.history.state, "", url)
   }, [selectedProject, pathname])
 
+  // Body scroll lock — was setting document.body.style.top but never
+  // actually setting position/overflow, relying on a data-scroll-locked
+  // attribute + matching CSS that isn't defined in this file, so it did
+  // nothing. Switched to the same inline-style lock pattern used
+  // correctly elsewhere in this codebase (Contact page, WhatsApp FAB,
+  // FloatingSearchWidget) — proven to actually stop background scroll.
   useEffect(() => {
     if (!selectedProject) return
     const scrollY = window.scrollY
-    document.documentElement.dataset.scrollLocked = "true"
-    document.body.style.top = `-${scrollY}px`
+    const { style } = document.body
+    style.position = "fixed"; style.top = `-${scrollY}px`
+    style.left = "0"; style.right = "0"; style.width = "100%"; style.overflow = "hidden"
     return () => {
-      delete document.documentElement.dataset.scrollLocked
-      document.body.style.top = ""
+      style.position = ""; style.top = ""; style.left = ""; style.right = ""; style.width = ""; style.overflow = ""
       window.scrollTo(0, scrollY)
     }
   }, [selectedProject])
@@ -1310,11 +1336,6 @@ function GalleryPageInner() {
           <div className="abh-divider" />
         </div>
 
-        {/* Search + Surprise — restyled to match the Services page's
-            InlineSearchBar: neutral white/zinc surface, thin zinc border,
-            soft ambient shadow, medium-weight zinc text, blue reserved
-            for the focus state only, instead of the previous bold
-            all-blue treatment. */}
         <div
           className={cn(
             "flex items-stretch max-w-md mx-auto mb-6 rounded-[14px] overflow-hidden",
@@ -1467,4 +1488,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-} 
+      } 
