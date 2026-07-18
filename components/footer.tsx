@@ -483,7 +483,8 @@ function FooterContent() {
             >
               Terms
             </button>
-            
+          </div>
+          
           <p className="text-[0.65rem] font-medium text-zinc-400 flex items-center justify-center md:justify-end gap-1.5">
             Built with <Heart weight="fill" className="w-3 h-3 text-brand-orange" aria-hidden="true" /> for the Kgotsong community
           </p>
