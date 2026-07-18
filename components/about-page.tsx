@@ -219,38 +219,38 @@ export function AboutPage() {
 
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-stretch">
 
-           <ul
-  className="flex flex-col gap-4"
-  aria-label="Our values"
->
-  {ABOUT_VALUES.map((item, index) => (
-    <li
-      key={index}
-      className="abh-card rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm p-5 flex flex-row items-center text-left gap-4"
-    >
-      <div
-        className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
-        style={{ backgroundColor: `${greenColor}15`, color: greenColor }}
-        aria-hidden="true"
+  <ul
+    className="flex flex-col gap-4 h-full"
+    aria-label="Our values"
+  >
+    {ABOUT_VALUES.map((item, index) => (
+      <li
+        key={index}
+        className="abh-card rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm p-5 flex flex-row items-center text-left gap-4 flex-1"
       >
-        {renderIcon(item.iconName, "w-5 h-5")}
-      </div>
-      <div>
-        <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200 mb-1">
-          {item.title}
-        </h3>
-        <p className="abh-body text-sm">{item.desc}</p>
-      </div>
-    </li>
-  ))}
-</ul>
+        <div
+          className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
+          style={{ backgroundColor: `${greenColor}15`, color: greenColor }}
+          aria-hidden="true"
+        >
+          {renderIcon(item.iconName, "w-5 h-5")}
+        </div>
+        <div>
+          <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200 mb-1">
+            {item.title}
+          </h3>
+          <p className="abh-body text-sm">{item.desc}</p>
+        </div>
+      </li>
+    ))}
+  </ul>
 
-            <ScrollBounce delay={0.2}>
-              <div
-                className="rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-7 shadow-sm flex flex-col h-full"
-                aria-label="Business overview"
-              >
-                <div className="flex items-center gap-3 mb-7 pb-6 border-b border-zinc-100 dark:border-zinc-800">
+  <ScrollBounce delay={0.2}>
+    <div
+      className="rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-7 shadow-sm flex flex-col h-full"
+      aria-label="Business overview" >
+
+      <div className="flex items-center gap-3 mb-7 pb-6 border-b border-zinc-100 dark:border-zinc-800">
                   <div
                     className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
                     style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
