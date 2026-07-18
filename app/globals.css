@@ -289,9 +289,20 @@ button, a, [role="button"] {
     border-color: var(--border);
   }
 
+  /* FIX: was `background: var(--border)` at 1px — in dark mode --border
+     (#243648) sits almost flush against the page's dark navy background
+     (#0D1B2A), making this divider effectively invisible. Now a solid
+     2px brand-blue line (light-blue in dark mode) with a soft glow, so it
+     reads clearly in both themes. Affects every page using .abh-divider,
+     not just one — this was a shared bug, not a per-page styling choice. */
   .abh-divider {
-    @apply mt-6 h-px max-w-[160px] mx-auto;
-    background: var(--border);
+    @apply mt-6 h-[2px] max-w-[160px] mx-auto rounded-full;
+    background: var(--brand-blue);
+    box-shadow: 0 0 8px rgba(30, 111, 168, 0.5);
+  }
+  .dark .abh-divider {
+    background: var(--brand-light-blue);
+    box-shadow: 0 0 8px rgba(169, 214, 242, 0.5);
   }
 
   .abh-wa-btn {
@@ -311,4 +322,4 @@ button, a, [role="button"] {
     background: var(--brand-orange);
   }
   .abh-btn-cta:hover { background: var(--brand-orange-dark); }
-                      } 
+   } 
