@@ -27,7 +27,6 @@ interface Review {
   quote: string
 }
 
-// ─── REAL CLIENT REVIEWS ───────────────────────────────────────────────────────
 export const SAMPLE_REVIEWS: Review[] = [
   {
     name: "Sethembiso",
@@ -115,7 +114,6 @@ export function TestimonialsSection({
   }
   const solidFor = (i: number) => HUB_COLORS[reviews[i].hubId as HubKey].tagText
 
-  // Card geometry per slot offset from active (-2..-1, 0, 1..2)
   const slotStyle = (offset: number): React.CSSProperties => {
     const abs = Math.abs(offset)
     if (abs === 0) {
@@ -167,7 +165,7 @@ export function TestimonialsSection({
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
-            className="relative w-full max-w-[640px] mx-auto h-[400px] sm:h-[380px] focus:outline-none rounded-[20px] focus-visible:ring-2 focus-visible:ring-offset-4 focus-visible:ring-offset-background"
+            className="relative w-full max-w-[640px] mx-auto h-[440px] sm:h-[420px] focus:outline-none rounded-[20px] focus-visible:ring-2 focus-visible:ring-offset-4 focus-visible:ring-offset-background"
             style={{ ["--tw-ring-color" as any]: colorFor(active) }}
           >
             {reviews.map((r, i) => {
@@ -199,7 +197,7 @@ export function TestimonialsSection({
                   >
                     <Quotes size={22} weight="fill" style={{ color: accent }} className="mb-3 opacity-40 shrink-0" />
 
-                    <p className="text-sm sm:text-base font-medium text-zinc-700 dark:text-zinc-300 leading-relaxed mb-4 line-clamp-3 max-w-[46ch]">
+                    <p className="text-sm sm:text-base font-medium text-zinc-700 dark:text-zinc-300 leading-relaxed mb-4 max-w-[46ch]">
                       {r.quote}
                     </p>
 
@@ -228,7 +226,6 @@ export function TestimonialsSection({
               )
             })}
 
-            {/* Desktop arrows */}
             <button
               onClick={prev}
               aria-label="Previous testimonial"
@@ -248,7 +245,6 @@ export function TestimonialsSection({
           </div>
         </ScrollBounce>
 
-        {/* Dots */}
         <div role="tablist" aria-label="Choose testimonial" className="flex items-center justify-center gap-2 mt-6">
           {reviews.map((_, i) => {
             const isActive = i === active
@@ -276,7 +272,6 @@ export function TestimonialsSection({
           })}
         </div>
 
-        {/* Ask */}
         <div className="flex justify-center mt-8">
           <a
             href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}`}
@@ -289,4 +284,4 @@ export function TestimonialsSection({
       </div>
     </section>
   )
-                                                                                   } 
+                  } 
