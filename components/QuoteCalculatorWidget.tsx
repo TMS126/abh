@@ -350,7 +350,7 @@ export function QuoteCalculatorWidget() {
       const qty = item.qty || 1
       const effRate = getEffectiveRate(item.id, item.name, qty, item.unitPrice)
       const qtyLabel = item.unit ? `${qty} ${item.unit}${qty > 1 ? "s" : ""}` : `x${qty}`
-      const label = `${getDisplayName(item.sectionTitle, item.name)} - ${item.sectionTitle}`
+      const label = `${getDisplayName(item.sectionTitle, item.name)} - ${item.sectionTitle} (${HUBS[item.hubId].title})`
       msg += `• ${label} — ${qtyLabel} @ R${effRate} = R${effRate * qty}\n`
     })
     msg += `\nTotal: R${t.total}`
@@ -385,9 +385,13 @@ export function QuoteCalculatorWidget() {
       const effRate = getEffectiveRate(item.id, item.name, qty, item.unitPrice)
       const displayName = getDisplayName(item.sectionTitle, item.name)
       const fullLabel = `${displayName} - ${item.sectionTitle}`
+      const hubLabel = HUBS[item.hubId].title
       const qtyLabel = item.unit ? `${qty} ${item.unit}${qty > 1 ? "s" : ""}` : `x${qty}`
       return `<tr>
-        <td style="padding:8px 10px;border-bottom:1px solid #eee;">${fullLabel}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #eee;">
+          ${fullLabel}
+          <span style="display:block;font-size:10px;color:#a1a1aa;margin-top:2px;">${hubLabel}</span>
+        </td>
         <td style="padding:8px 10px;border-bottom:1px solid #eee;text-align:center;">${qtyLabel}</td>
         <td style="padding:8px 10px;border-bottom:1px solid #eee;text-align:right;">R${effRate}</td>
         <td style="padding:8px 10px;border-bottom:1px solid #eee;text-align:right;font-weight:700;">R${effRate * qty}</td>
@@ -588,6 +592,7 @@ export function QuoteCalculatorWidget() {
                   const discounted = effRate < item.unitPrice
                   const hint = getBulkHint(item.id, item.name, qty, effRate, item.unitPrice)
                   const displayName = `${getDisplayName(item.sectionTitle, item.name)} - ${item.sectionTitle}`
+                  const hubLabel = HUBS[item.hubId].title
                   const accent = getAccent(item.hubId)
                   const isHighlighted = highlightId === item.id
                   return (
@@ -601,7 +606,10 @@ export function QuoteCalculatorWidget() {
                       style={isHighlighted ? { ["--tw-ring-color" as any]: accent } : undefined}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{displayName}</p>
+                        <div className="min-w-0">
+                          <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{displayName}</p>
+                          <p className="text-[0.62rem] font-bold mt-0.5" style={{ color: accent }}>{hubLabel}</p>
+                        </div>
                         <button onClick={() => removeItem(item.id)} className="text-zinc-400 hover:text-red-500 shrink-0 transition-colors duration-150"><Trash size={14} weight="bold" /></button>
                       </div>
                       <div className="flex items-center gap-2 text-xs">
@@ -859,4 +867,4 @@ export function QuoteCalculatorWidget() {
       )}
     </>
   )
-                                                                                 } 
+    } 
