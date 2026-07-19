@@ -1136,6 +1136,95 @@ function FilterDropdown({
             onClick={closeDropdown}
             aria-hidden="true"
           />
+function FilterDropdown({
+  activeFilter, onSelect, getAccent,
+}: {
+  activeFilter: HubId | "all"
+  onSelect: (f: HubId | "all") => void
+  getAccent: (id: HubId) => string
+}) {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
+  const blueColor = isDark ? BRAND.lightBlue : BRAND.blue
+  const [open, setOpen] = useState(false)
+  const pushedRef = useRef(false)
+
+  const closeDropdown = useCallback(() => {
+    if (pushedRef.current) {
+      pushedRef.current = false
+      window.history.back()
+    } else {
+      setOpen(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (open && !pushedRef.current) {
+      window.history.pushState({ filterDropdown: true }, "")
+      pushedRef.current = true
+    }
+    if (!open && pushedRef.current) {
+      pushedRef.current = false
+    }
+  }, [open])
+
+  useEffect(() => {
+    const onPop = () => {
+      if (pushedRef.current) {
+        pushedRef.current = false
+        setOpen(false)
+      }
+    }
+    window.addEventListener("popstate", onPop)
+    return () => window.removeEventListener("popstate", onPop)
+  }, [])
+
+  const handleToggleClick = () => {
+    playClickSound()
+    if (open) {
+      closeDropdown()
+    } else {
+      setOpen(true)
+    }
+  }
+
+  const options: { id: HubId | "all"; label: string }[] = [
+    { id: "all", label: "All hubs" },
+    ...ROW_ORDER.map(r => ({ id: r.id, label: r.label })),
+  ]
+  const currentAccent = activeFilter !== "all" ? getAccent(activeFilter) : undefined
+  const idleLabel      = "Select a Hub"
+  const displayedLabel = activeFilter === "all" ? idleLabel : (options.find(o => o.id === activeFilter)?.label ?? idleLabel)
+
+  return (
+    <div className="relative flex justify-center mb-10 z-40">
+      <button
+        onClick={handleToggleClick}
+        aria-expanded={open}
+        className={cn(
+          "relative z-40 inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-full",
+          "bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800",
+          "font-sans font-bold text-sm text-center",
+          "shadow-[0_4px_16px_-4px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.4)]",
+          "hover:shadow-[0_6px_20px_-4px_rgba(0,0,0,0.2)] dark:hover:shadow-[0_6px_20px_-4px_rgba(0,0,0,0.5)]",
+          "transition-all duration-300 ease-out active:scale-[0.97]"
+        )}
+        style={currentAccent ? { borderColor: `${currentAccent}45` } : undefined}
+      >
+        {currentAccent && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: currentAccent }} />}
+        <span style={{ color: currentAccent ?? undefined }} className={!currentAccent ? "text-zinc-800 dark:text-zinc-100" : undefined}>
+          {displayedLabel}
+        </span>
+        <CaretDown size={14} weight="bold" className={cn("transition-transform duration-200 shrink-0", open && "rotate-180")} style={{ color: currentAccent ?? blueColor }} />
+      </button>
+
+      {open && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={closeDropdown}
+            aria-hidden="true"
+          />
           <AnimatePresence>
             <motion.div
               role="listbox"
@@ -1144,7 +1233,8 @@ function FilterDropdown({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.94 }}
               transition={{ type: "spring", stiffness: 280, damping: 22, mass: 0.6 }}
-              className="absolute left-1/2 -translate-x-1/2 top-full mt-3 z-30 w-72 bg-white dark:bg-zinc-950 rounded-[20px] border border-zinc-100 dark:border-zinc-800 shadow-2xl p-3"
+              className="absolute left-1/2 -translate-x-1/2 top-full mt-3 z-50 w-72 rounded-[20px] border border-zinc-100 dark:border-zinc-800 shadow-2xl p-3"
+              style={{ backgroundColor: isDark ? "#09090b" : "#ffffff", isolation: "isolate" }}
             >
               <div className="flex flex-wrap gap-2 justify-center">
                 {options.map(opt => {
@@ -1157,15 +1247,16 @@ function FilterDropdown({
                       aria-selected={isActive}
                       onClick={() => { onSelect(opt.id); closeDropdown() }}
                       className={cn(
-                        "flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition-all duration-150 active:scale-95 border",
-                        isActive
-                          ? "text-white border-transparent"
-                          : "bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 border-zinc-100 dark:border-zinc-800"
+                        "flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition-all duration-150 active:scale-95 border shrink-0"
                       )}
                       style={
                         isActive
-                          ? { backgroundColor: accent ?? blueColor }
-                          : accent ? { color: accent } : undefined
+                          ? { backgroundColor: accent ?? blueColor, color: "#ffffff", borderColor: "transparent" }
+                          : {
+                              backgroundColor: isDark ? "#18181b" : "#f4f4f5",
+                              color: accent ?? (isDark ? "#e4e4e7" : "#3f3f46"),
+                              borderColor: isDark ? "#27272a" : "#e4e4e7",
+                            }
                       }
                     >
                       {accent && !isActive && (
@@ -1183,7 +1274,7 @@ function FilterDropdown({
       )}
     </div>
   )
-}
+          }
 
 // ─── Empty hub state ──────────────────────────────────────────────────────────
 function EmptyHubState({ label, query }: { label: string; query?: string }) {
