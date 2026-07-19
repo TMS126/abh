@@ -210,13 +210,6 @@ export function QuoteCalculatorWidget() {
     return () => window.removeEventListener("abh:add-to-quote", handler)
   }, [])
 
-  // FIX: this effect used to call el.focus() + el.select() on the
-  // quantity <input type="number"> whenever an item was added — which is
-  // exactly what pops the mobile keyboard open every time "Add to Quote"
-  // is tapped, even from elsewhere in the app. Scrolling the row into view
-  // and letting the ring-highlight (applied via isHighlighted below) do
-  // the visual confirmation is enough; focus/select is no longer needed
-  // and has been removed.
   useEffect(() => {
     if (!highlightId) return
     const id = highlightId
@@ -357,7 +350,8 @@ export function QuoteCalculatorWidget() {
       const qty = item.qty || 1
       const effRate = getEffectiveRate(item.id, item.name, qty, item.unitPrice)
       const qtyLabel = item.unit ? `${qty} ${item.unit}${qty > 1 ? "s" : ""}` : `x${qty}`
-      msg += `• ${getDisplayName(item.sectionTitle, item.name)} — ${qtyLabel} @ R${effRate} = R${effRate * qty}\n`
+      const label = `${getDisplayName(item.sectionTitle, item.name)} - ${item.sectionTitle}`
+      msg += `• ${label} — ${qtyLabel} @ R${effRate} = R${effRate * qty}\n`
     })
     msg += `\nTotal: R${t.total}`
     if (t.savings > 0) msg += ` (saved R${t.savings} with bulk pricing)`
@@ -540,7 +534,7 @@ export function QuoteCalculatorWidget() {
 
             {undoStack && (
               <div className="mx-4 mt-4 flex items-center justify-between gap-3 p-3 rounded-[12px] bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-lg animate-in fade-in slide-in-from-top-1 duration-200">
-                <span className="text-xs font-bold truncate">{getDisplayName(undoStack.item.sectionTitle, undoStack.item.name)} removed</span>
+                <span className="text-xs font-bold truncate">{getDisplayName(undoStack.item.sectionTitle, undoStack.item.name)} - {undoStack.item.sectionTitle} removed</span>
                 <button
                   onClick={undoRemove}
                   className="shrink-0 flex items-center gap-1.5 text-xs font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/15 dark:bg-black/10 hover:bg-white/25 dark:hover:bg-black/20 transition-colors"
@@ -593,7 +587,7 @@ export function QuoteCalculatorWidget() {
                   const lineTotal = effRate * qty
                   const discounted = effRate < item.unitPrice
                   const hint = getBulkHint(item.id, item.name, qty, effRate, item.unitPrice)
-                  const displayName = getDisplayName(item.sectionTitle, item.name)
+                  const displayName = `${getDisplayName(item.sectionTitle, item.name)} - ${item.sectionTitle}`
                   const accent = getAccent(item.hubId)
                   const isHighlighted = highlightId === item.id
                   return (
@@ -865,4 +859,4 @@ export function QuoteCalculatorWidget() {
       )}
     </>
   )
-      } 
+                                                                                 } 
