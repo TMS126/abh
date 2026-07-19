@@ -6,6 +6,7 @@ import Link from "next/link"
 import { X, Check, Info, CaretLeft, CaretRight, CaretDown, Image as ImageIcon, ArrowsOut, ArrowsLeftRight, LinkSimple, ShareNetwork, EnvelopeSimple, MagnifyingGlass, Shuffle, Heart, ArrowUp } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import Image from "next/image"
+import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey, BIZ, BRAND } from "@/lib/brand"
 import { PROJECTS, ProjectData } from "@/lib/data"
@@ -790,18 +791,6 @@ function ProjectViewerModal({
 }
 
 // ─── Unified swipe carousel ───────────────────────────────────────────────────
-// SHADOW FIX (real cause): overflow-x-auto on the scrolling track was
-// implicitly forcing overflow-y to 'auto' too — this is a CSS spec quirk,
-// not a bug in this file: when one axis is set to something other than
-// 'visible', the other axis can't stay 'visible' either, so it silently
-// clips. That's what hard-cut the card's box-shadow right at the track's
-// vertical edge (the line you circled). There's no way to keep one axis
-// clipping and the other fully open via overflow properties alone — the
-// only real fix is making sure the shadow never actually exceeds the
-// padding box, so there's nothing left for that forced auto to clip.
-// Slide padding bumped from py-3/py-4 to py-11/py-14 (44–56px), and the
-// hover shadow's reach trimmed slightly, so the shadow's max extent now
-// sits safely inside the padding on both mobile and desktop.
 function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }: {
   projects: ProjectData[]; accent: string; onSelect: (p: ProjectData) => void
   likedIds: Set<string>; onToggleLike: (id: string) => void
@@ -1147,34 +1136,49 @@ function FilterDropdown({
             onClick={closeDropdown}
             aria-hidden="true"
           />
-          <div
-            role="listbox"
-            aria-label="Filter by hub"
-            className="absolute left-1/2 -translate-x-1/2 top-full mt-3 z-30 w-64 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
-          >
-            <div className="p-2 max-h-[320px] overflow-y-auto">
-              {options.map(opt => {
-                const accent   = opt.id !== "all" ? getAccent(opt.id as HubId) : undefined
-                const isActive = activeFilter === opt.id
-                return (
-                  <button
-                    key={opt.id}
-                    role="option"
-                    aria-selected={isActive}
-                    onClick={() => { onSelect(opt.id); closeDropdown() }}
-                    className={cn(
-                      "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-left text-sm font-bold transition-colors",
-                      isActive ? "bg-zinc-50 dark:bg-zinc-900" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
-                    )}
-                  >
-                    {accent && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: accent }} />}
-                    <span className="text-zinc-800 dark:text-zinc-200" style={accent ? { color: accent } : undefined}>{opt.label}</span>
-                    {isActive && <Check size={14} weight="bold" className="ml-auto shrink-0" style={{ color: accent }} />}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+          <AnimatePresence>
+            <motion.div
+              role="listbox"
+              aria-label="Filter by hub"
+              initial={{ opacity: 0, y: -14, scale: 0.92 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.94 }}
+              transition={{ type: "spring", stiffness: 280, damping: 22, mass: 0.6 }}
+              className="absolute left-1/2 -translate-x-1/2 top-full mt-3 z-30 w-72 bg-white dark:bg-zinc-950 rounded-[20px] border border-zinc-100 dark:border-zinc-800 shadow-2xl p-3"
+            >
+              <div className="flex flex-wrap gap-2 justify-center">
+                {options.map(opt => {
+                  const accent   = opt.id !== "all" ? getAccent(opt.id as HubId) : undefined
+                  const isActive = activeFilter === opt.id
+                  return (
+                    <button
+                      key={opt.id}
+                      role="option"
+                      aria-selected={isActive}
+                      onClick={() => { onSelect(opt.id); closeDropdown() }}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition-all duration-150 active:scale-95 border",
+                        isActive
+                          ? "text-white border-transparent"
+                          : "bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 border-zinc-100 dark:border-zinc-800"
+                      )}
+                      style={
+                        isActive
+                          ? { backgroundColor: accent ?? blueColor }
+                          : accent ? { color: accent } : undefined
+                      }
+                    >
+                      {accent && !isActive && (
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: accent }} />
+                      )}
+                      {opt.label}
+                      {isActive && <Check size={12} weight="bold" />}
+                    </button>
+                  )
+                })}
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </>
       )}
     </div>
@@ -1201,7 +1205,7 @@ function GalleryClosingTagline() {
       <div className="absolute inset-x-0 top-0 h-1 bg-[#1E6FA8]" />
       <p className="abh-eyebrow text-zinc-400 dark:text-zinc-500 mb-3">Like what you see?</p>
       <p className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 leading-snug max-w-2xl mx-auto">
-        Your project could be our next favourite. Let's bring it to life at ApexbytesHub.
+        Your project could be our next favourite. Let's bring it to life at {BIZ.name} 
       </p>
     </div>
   )
@@ -1429,16 +1433,16 @@ function GalleryPageInner() {
               }
 
               return (
-               <div className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm p-5 md:p-7">
-  <ScrollBounce delay={rowIndex * 0.06}>
-    <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
-      <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: "#1E6FA8" }} />
-      <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
-      <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
-    </div>
-  </ScrollBounce>
-  <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} likedIds={likedIds} onToggleLike={toggleLike} />
-</div>
+                <ScrollBounce key={row.id} delay={rowIndex * 0.06}>
+                  <div className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm p-5 md:p-7">
+                    <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
+                      <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: "#1E6FA8" }} />
+                      <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
+                      <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
+                    </div>
+                    <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} likedIds={likedIds} onToggleLike={toggleLike} />
+                  </div>
+                </ScrollBounce>
               )
             })}
           </div>
@@ -1493,4 +1497,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-  } 
+        } 
