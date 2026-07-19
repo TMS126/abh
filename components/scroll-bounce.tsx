@@ -14,18 +14,18 @@ export function ScrollBounce({ children, className, delay = 0 }: ScrollBouncePro
     <motion.div
       className={className}
       style={{ willChange: "transform, opacity" }}
-      initial={{ opacity: 0, y: 46, scale: 0.94 }}
+      initial={{ opacity: 0, y: 20, scale: 0.98 }}
       whileInView={{ opacity: 1, y: 0, scale: 1 }}
       viewport={{ once: true, amount: 0.2, margin: "0px 0px -80px 0px" }}
       transition={{
         type: "spring",
-        stiffness: 180,
-        damping: 12,
-        mass: 0.9,
+        stiffness: 220,
+        damping: 22,
+        mass: 0.6,
         delay,
       }}
     >
       {children}
     </motion.div>
   )
-} 
+}
