@@ -390,13 +390,10 @@ export function QuoteCalculatorWidget() {
       const qty = item.qty || 1
       const effRate = getEffectiveRate(item.id, item.name, qty, item.unitPrice)
       const displayName = getDisplayName(item.sectionTitle, item.name)
-      const hubLabel = HUBS[item.hubId].title
+      const fullLabel = `${displayName} - ${item.sectionTitle}`
       const qtyLabel = item.unit ? `${qty} ${item.unit}${qty > 1 ? "s" : ""}` : `x${qty}`
       return `<tr>
-        <td style="padding:8px 10px;border-bottom:1px solid #eee;">
-          ${displayName}
-          <span style="display:block;font-size:10px;color:#71717a;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;margin-top:2px;">${hubLabel}</span>
-        </td>
+        <td style="padding:8px 10px;border-bottom:1px solid #eee;">${fullLabel}</td>
         <td style="padding:8px 10px;border-bottom:1px solid #eee;text-align:center;">${qtyLabel}</td>
         <td style="padding:8px 10px;border-bottom:1px solid #eee;text-align:right;">R${effRate}</td>
         <td style="padding:8px 10px;border-bottom:1px solid #eee;text-align:right;font-weight:700;">R${effRate * qty}</td>
