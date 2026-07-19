@@ -1108,95 +1108,6 @@ function FilterDropdown({
   const displayedLabel = activeFilter === "all" ? idleLabel : (options.find(o => o.id === activeFilter)?.label ?? idleLabel)
 
   return (
-    <div className="relative flex justify-center mb-10">
-      <button
-        onClick={handleToggleClick}
-        aria-expanded={open}
-        className={cn(
-          "relative z-30 inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-full",
-          "bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800",
-          "font-sans font-bold text-sm text-center",
-          "shadow-[0_4px_16px_-4px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.4)]",
-          "hover:shadow-[0_6px_20px_-4px_rgba(0,0,0,0.2)] dark:hover:shadow-[0_6px_20px_-4px_rgba(0,0,0,0.5)]",
-          "transition-all duration-300 ease-out active:scale-[0.97]"
-        )}
-        style={currentAccent ? { borderColor: `${currentAccent}45` } : undefined}
-      >
-        {currentAccent && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: currentAccent }} />}
-        <span style={{ color: currentAccent ?? undefined }} className={!currentAccent ? "text-zinc-800 dark:text-zinc-100" : undefined}>
-          {displayedLabel}
-        </span>
-        <CaretDown size={14} weight="bold" className={cn("transition-transform duration-200 shrink-0", open && "rotate-180")} style={{ color: currentAccent ?? blueColor }} />
-      </button>
-
-      {open && (
-        <>
-          <div
-            className="fixed inset-0 z-20"
-            onClick={closeDropdown}
-            aria-hidden="true"
-          />
-function FilterDropdown({
-  activeFilter, onSelect, getAccent,
-}: {
-  activeFilter: HubId | "all"
-  onSelect: (f: HubId | "all") => void
-  getAccent: (id: HubId) => string
-}) {
-  const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === "dark"
-  const blueColor = isDark ? BRAND.lightBlue : BRAND.blue
-  const [open, setOpen] = useState(false)
-  const pushedRef = useRef(false)
-
-  const closeDropdown = useCallback(() => {
-    if (pushedRef.current) {
-      pushedRef.current = false
-      window.history.back()
-    } else {
-      setOpen(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (open && !pushedRef.current) {
-      window.history.pushState({ filterDropdown: true }, "")
-      pushedRef.current = true
-    }
-    if (!open && pushedRef.current) {
-      pushedRef.current = false
-    }
-  }, [open])
-
-  useEffect(() => {
-    const onPop = () => {
-      if (pushedRef.current) {
-        pushedRef.current = false
-        setOpen(false)
-      }
-    }
-    window.addEventListener("popstate", onPop)
-    return () => window.removeEventListener("popstate", onPop)
-  }, [])
-
-  const handleToggleClick = () => {
-    playClickSound()
-    if (open) {
-      closeDropdown()
-    } else {
-      setOpen(true)
-    }
-  }
-
-  const options: { id: HubId | "all"; label: string }[] = [
-    { id: "all", label: "All hubs" },
-    ...ROW_ORDER.map(r => ({ id: r.id, label: r.label })),
-  ]
-  const currentAccent = activeFilter !== "all" ? getAccent(activeFilter) : undefined
-  const idleLabel      = "Select a Hub"
-  const displayedLabel = activeFilter === "all" ? idleLabel : (options.find(o => o.id === activeFilter)?.label ?? idleLabel)
-
-  return (
     <div className="relative flex justify-center mb-10 z-40">
       <button
         onClick={handleToggleClick}
@@ -1274,7 +1185,7 @@ function FilterDropdown({
       )}
     </div>
   )
-          }
+}
 
 // ─── Empty hub state ──────────────────────────────────────────────────────────
 function EmptyHubState({ label, query }: { label: string; query?: string }) {
@@ -1588,4 +1499,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-        } 
+  }
