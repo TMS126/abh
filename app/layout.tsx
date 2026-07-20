@@ -7,7 +7,7 @@ import { InstanceGuardProvider } from '@/hooks/use-instance-guard'
 import { BIZ, BRAND } from '@/lib/brand'
 import { LocalBusinessJsonLd } from '@/components/ui/json-ld'
 import { FloatingSearchWidget } from '@/components/floating-search-widget'
-import { QuoteCalculatorWidget } from '@/components/QuoteCalculatorWidget'
+import { QuoteCalculatorWidget } from "@/components/quote-calculator"
 import { WhatsAppFAB } from '@/components/whatsapp-fab'
 import './globals.css'
 
