@@ -69,10 +69,11 @@ export function FilterDropdown({
           />
           <AnimatePresence>
             {/*
-              No panel background/border/shadow here — this is just a
-              positioning + spacing wrapper. Each pill below carries its own
-              solid background and shadow, so the group reads as "together"
-              through proximity/gap alone, while staying visually separate.
+              Single lightweight glass panel behind the pill group — one
+              backdrop-blur-md layer only (no stacked/nested blurs, no
+              saturate), so the gaps and corners around the pills no longer
+              let page content bleed through. Each pill still carries its
+              own solid background on top for contrast/legibility.
             */}
             <motion.div
               role="listbox"
@@ -81,54 +82,63 @@ export function FilterDropdown({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.94 }}
               transition={{ type: "spring", stiffness: 280, damping: 22, mass: 0.6 }}
-              className="absolute left-1/2 -translate-x-1/2 top-full mt-3 z-50 w-[calc(100vw-2rem)] max-w-sm flex flex-wrap justify-center gap-2 p-1"
+              className="absolute left-1/2 -translate-x-1/2 top-full mt-3 z-50 w-[calc(100vw-2rem)] max-w-sm"
               style={{ isolation: "isolate" }}
             >
-              {options.map(opt => {
-                const accent   = opt.id !== "all" ? getAccent(opt.id as HubId) : undefined
-                const isActive = activeFilter === opt.id
-                const activeBg = accent ?? blueColor
-                const activeText = getContrastText(activeBg)
+              <div
+                className={cn(
+                  "flex flex-wrap justify-center gap-2 p-2.5 rounded-[24px]",
+                  "bg-white/70 dark:bg-zinc-900/60 backdrop-blur-md",
+                  "border border-white/50 dark:border-white/10",
+                  "shadow-xl dark:shadow-black/40"
+                )}
+              >
+                {options.map(opt => {
+                  const accent   = opt.id !== "all" ? getAccent(opt.id as HubId) : undefined
+                  const isActive = activeFilter === opt.id
+                  const activeBg = accent ?? blueColor
+                  const activeText = getContrastText(activeBg)
 
-                return (
-                  <button
-                    key={opt.id}
-                    role="option"
-                    aria-selected={isActive}
-                    onClick={() => { onSelect(opt.id); closeDropdown() }}
-                    className={cn(
-                      "w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-full",
-                      "text-xs font-bold whitespace-nowrap transition-all duration-150 active:scale-95",
-                      "shadow-[0_2px_10px_-2px_rgba(0,0,0,0.18)] dark:shadow-[0_2px_10px_-2px_rgba(0,0,0,0.5)]",
-                      "hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.24)] dark:hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.6)]"
-                    )}
-                    style={
-                      isActive
-                        ? { backgroundColor: activeBg, color: activeText }
-                        : {
-                            backgroundColor: isDark ? "#18181b" : "#ffffff",
-                            color: accent ?? (isDark ? "#e4e4e7" : "#3f3f46"),
-                          }
-                    }
-                  >
-                    {accent && (
-                      <span
-                        className="w-1.5 h-1.5 rounded-full shrink-0"
-                        style={{
-                          backgroundColor: accent,
-                          boxShadow: isActive ? `0 0 0 1.5px ${activeText}` : undefined,
-                        }}
-                      />
-                    )}
-                    <span className="truncate">{opt.label}</span>
-                    {isActive && <Check size={12} weight="bold" className="shrink-0" />}
-                  </button>
-                )
-              })}
+                  return (
+                    <button
+                      key={opt.id}
+                      role="option"
+                      aria-selected={isActive}
+                      onClick={() => { onSelect(opt.id); closeDropdown() }}
+                      className={cn(
+                        "w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-full",
+                        "text-xs font-bold whitespace-nowrap transition-all duration-150 active:scale-95",
+                        "shadow-[0_2px_10px_-2px_rgba(0,0,0,0.18)] dark:shadow-[0_2px_10px_-2px_rgba(0,0,0,0.5)]",
+                        "hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.24)] dark:hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.6)]"
+                      )}
+                      style={
+                        isActive
+                          ? { backgroundColor: activeBg, color: activeText }
+                          : {
+                              backgroundColor: isDark ? "#18181b" : "#ffffff",
+                              color: accent ?? (isDark ? "#e4e4e7" : "#3f3f46"),
+                            }
+                      }
+                    >
+                      {accent && (
+                        <span
+                          className="w-1.5 h-1.5 rounded-full shrink-0"
+                          style={{
+                            backgroundColor: accent,
+                            boxShadow: isActive ? `0 0 0 1.5px ${activeText}` : undefined,
+                          }}
+                        />
+                      )}
+                      <span className="truncate">{opt.label}</span>
+                      {isActive && <Check size={12} weight="bold" className="shrink-0" />}
+                    </button>
+                  )
+                })}
+              </div>
             </motion.div>
           </AnimatePresence>
         </>
       )}
     </div>
   )
-}
+          } 
