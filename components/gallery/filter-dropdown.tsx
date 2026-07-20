@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { CaretDown, Check } from "@phosphor-icons/react"
+import { CaretDown } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
@@ -30,6 +30,17 @@ export function FilterDropdown({
     } else {
       setOpen(true)
     }
+  }
+
+  // Picking an option always closes the dropdown outright — this uses
+  // setOpen(false) directly rather than closeDropdown(), since
+  // closeDropdown() carries back-button/backdrop dismiss logic that was
+  // behaving like a toggle when reused here (select once = stays open,
+  // select again = closes).
+  const handleSelect = (id: HubId | "all") => {
+    playClickSound()
+    onSelect(id)
+    setOpen(false)
   }
 
   const options: { id: HubId | "all"; label: string }[] = [
@@ -104,9 +115,9 @@ export function FilterDropdown({
                       key={opt.id}
                       role="option"
                       aria-selected={isActive}
-                      onClick={() => { onSelect(opt.id); closeDropdown() }}
+                      onClick={() => handleSelect(opt.id)}
                       className={cn(
-                        "w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-full",
+                        "w-full flex items-center justify-center px-3 py-2.5 rounded-full",
                         "text-xs font-bold whitespace-nowrap transition-all duration-150 active:scale-95",
                         "shadow-[0_2px_10px_-2px_rgba(0,0,0,0.18)] dark:shadow-[0_2px_10px_-2px_rgba(0,0,0,0.5)]",
                         "hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.24)] dark:hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.6)]"
@@ -120,17 +131,7 @@ export function FilterDropdown({
                             }
                       }
                     >
-                      {accent && (
-                        <span
-                          className="w-1.5 h-1.5 rounded-full shrink-0"
-                          style={{
-                            backgroundColor: accent,
-                            boxShadow: isActive ? `0 0 0 1.5px ${activeText}` : undefined,
-                          }}
-                        />
-                      )}
                       <span className="truncate">{opt.label}</span>
-                      {isActive && <Check size={12} weight="bold" className="shrink-0" />}
                     </button>
                   )
                 })}
@@ -141,4 +142,4 @@ export function FilterDropdown({
       )}
     </div>
   )
-          } 
+} 
