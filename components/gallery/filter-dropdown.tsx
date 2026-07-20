@@ -46,13 +46,11 @@ export function FilterDropdown({
         onClick={handleToggleClick}
         aria-expanded={open}
         className={cn(
-          "relative z-40 inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-full",
-          "bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800",
-          "font-sans font-bold text-sm text-center",
-          "shadow-[0_4px_16px_-4px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.4)]",
-          "hover:shadow-[0_6px_20px_-4px_rgba(0,0,0,0.2)] dark:hover:shadow-[0_6px_20px_-4px_rgba(0,0,0,0.5)]",
-          "transition-all duration-300 ease-out active:scale-[0.97]"
-        )}
+                      "flex items-center justify-center gap-1.5 px-3 py-2 rounded-full",
+                      "text-[10px] font-bold whitespace-nowrap transition-all duration-150 active:scale-95",
+                      "shadow-[0_2px_10px_-2px_rgba(0,0,0,0.18)] dark:shadow-[0_2px_10px_-2px_rgba(0,0,0,0.5)]",
+                      "hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.24)] dark:hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.6)]"
+                    )}
         style={currentAccent ? { borderColor: `${currentAccent}45` } : undefined}
       >
         {currentAccent && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: currentAccent }} />}
@@ -83,7 +81,7 @@ export function FilterDropdown({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.94 }}
               transition={{ type: "spring", stiffness: 280, damping: 22, mass: 0.6 }}
-              className="absolute left-1/2 -translate-x-1/2 top-full mt-3 z-50 w-80 grid grid-cols-2 gap-2.5 p-1"
+              className="absolute left-1/2 -translate-x-1/2 top-full mt-3 z-50 w-[calc(100vw-2rem)] max-w-sm flex flex-wrap justify-center gap-2 p-1"
               style={{ isolation: "isolate" }}
             >
               {options.map(opt => {
