@@ -6,67 +6,8 @@ import { useRouter, usePathname } from "next/navigation"
 import { Sun, Moon, X, List } from "@phosphor-icons/react"
 import { NAV_ITEMS, BRAND } from "@/lib/brand"
 import { cn } from "@/lib/utils"
-
-// ==================== CUSTOM HOOKS ====================
-
-function useNavVisibility() {
-  const [navVisible, setNavVisible] = useState(true)
-  const lastScrollY = useRef(0)
-
-  useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY
-      if (y > 80) {
-        setNavVisible(y <= lastScrollY.current)
-      } else {
-        setNavVisible(true)
-      }
-      lastScrollY.current = y
-    }
-
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
-  }, [])
-
-  return navVisible
-}
-
-function useMobileMenu() {
-  const [menuOpen, setMenuOpen] = useState(false)
-
-  useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : ""
-    return () => { document.body.style.overflow = "" }
-  }, [menuOpen])
-
-  return { menuOpen, setMenuOpen }
-}
-
-function useLogoAnimation() {
-  const [isTextExpanded, setIsTextExpanded] = useState(true)
-  const logoTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-
-  const handleLogoMouseEnter = useCallback(() => {
-    if (logoTimeoutRef.current) clearTimeout(logoTimeoutRef.current)
-    setIsTextExpanded(true)
-  }, [])
-
-  const handleLogoMouseLeave = useCallback(() => {
-    if (logoTimeoutRef.current) clearTimeout(logoTimeoutRef.current)
-    logoTimeoutRef.current = setTimeout(() => setIsTextExpanded(false), 1200)
-  }, [])
-
-  useEffect(() => {
-    logoTimeoutRef.current = setTimeout(() => setIsTextExpanded(false), 2670)
-    return () => {
-      if (logoTimeoutRef.current) clearTimeout(logoTimeoutRef.current)
-    }
-  }, [])
-
-  return { isTextExpanded, handleLogoMouseEnter, handleLogoMouseLeave }
-}
-
-// ==================== MAIN NAVBAR ====================
+import { useNavVisibility, useMobileMenu, useLogoAnimation } from "@/hooks/use-navbar"
+import { MobileMenu } from "@/components/navbar/mobile-menu"
 
 export function Navbar() {
   const router = useRouter()
@@ -282,74 +223,13 @@ export function Navbar() {
         </div>
       </header>
 
-      {/* Mobile Menu */}
-      <div
-        className={cn("fixed inset-0 z-[9998] md:hidden transition-opacity duration-300", menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none")}
-      >
-        <div
-          className={cn("absolute -inset-[50%] transition-opacity duration-700", menuOpen ? "opacity-100 animate-[spin_16s_linear_infinite]" : "opacity-0")}
-          style={{ background: "conic-gradient(from 0deg, rgba(30,111,168,0.18), rgba(111,191,26,0.16), rgba(244,162,97,0.16), rgba(30,111,168,0.18))" }}
-        />
-        <div className="absolute inset-0 bg-white/70 dark:bg-zinc-950/80 backdrop-blur-xl" onClick={() => setMenuOpen(false)} />
-
-        <div className="relative z-10 w-full h-full flex flex-col items-center justify-center px-6">
-          <nav className="w-full max-w-[320px] flex flex-col items-center gap-2.5">
-            {NAV_ITEMS.map((item, idx) => {
-              const isActive = pathname === item.path
-
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => navigate(item.path)}
-                  style={{
-                    transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms",
-                    ...(isActive ? { backgroundColor: BRAND.blue, color: "#ffffff" } : {}),
-                  }}
-                  className={cn(
-                    "relative py-3 px-8 rounded-[14px] font-sans text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm overflow-hidden",
-                    isActive ? "font-semibold" : "font-medium text-zinc-700 dark:text-zinc-100 hover:text-brand-blue dark:hover:text-brand-blue bg-transparent",
-                    item.isCta && !isActive && "border-2 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800/60",
-                    menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
-                  )}
-                >
-                  {item.label}
-                  {isActive && (
-                    <span
-                      aria-hidden="true"
-                      className="absolute left-1/2 -translate-x-1/2 bottom-1 w-1.5 h-1.5 rounded-full"
-                      style={{ backgroundColor: BRAND.green }}
-                    />
-                  )}
-                </button>
-              )
-            })}
-          </nav>
-        </div>
-
-        {/* Mobile Logo Watermark */}
-        <div
-          className={cn(
-            "absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center select-none transition-all duration-500 z-10",
-            menuOpen ? "opacity-30" : "opacity-0"
-          )}
-          aria-hidden="true"
-        >
-          <div
-            className="relative w-8 h-8 shrink-0 transition-colors duration-300"
-            style={{
-              backgroundColor: neutralColor,
-              WebkitMaskImage: "url(/logo.png)",
-              maskImage: "url(/logo.png)",
-              WebkitMaskSize: "contain",
-              maskSize: "contain",
-              WebkitMaskRepeat: "no-repeat",
-              maskRepeat: "no-repeat",
-              WebkitMaskPosition: "center",
-              maskPosition: "center",
-            }}
-          />
-        </div>
-      </div>
+      <MobileMenu
+        menuOpen={menuOpen}
+        setMenuOpen={setMenuOpen}
+        pathname={pathname}
+        navigate={navigate}
+        neutralColor={neutralColor}
+      />
     </>
   )
-                               } 
+                }
