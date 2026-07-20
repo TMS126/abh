@@ -181,15 +181,18 @@ function GalleryPageInner() {
                 surpriseFlash && "scale-90 opacity-60"
               )}
             >
-              <Shuffle size={14} weight="bold" className="transition-transform duration-300 group-hover/surprise:rotate-180 text-zinc-400" />
-              Pick a project
+              <Shuffle size={14} weight="bold" className="transition-transform duration-300 group-hover/surprise:rotate-180 text-zinc-400"
+                aria-label="Pick a random project for me"/>
+              Pick for me
             </button>
           </div>
         </ScrollBounce>
 
-        <ScrollBounce delay={0.1}>
-          <FilterDropdown activeFilter={activeFilter} onSelect={setActiveFilter} getAccent={getAccent} />
-        </ScrollBounce>
+        <div className="relative z-50">
+          <ScrollBounce delay={0.1}>
+            <FilterDropdown activeFilter={activeFilter} onSelect={setActiveFilter} getAccent={getAccent} />
+          </ScrollBounce>
+        </div>
 
         <ScrollBounce delay={0.14}>
           <div className="max-w-2xl mx-auto mb-16 rounded-[14px] border border-[#1E6FA8]/20 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-5 py-4 flex items-start gap-3">
