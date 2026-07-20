@@ -66,7 +66,7 @@ function useLogoAnimation() {
   return { isTextExpanded, handleLogoMouseEnter, handleLogoMouseLeave }
 }
 
-// ==================== MAIN COMPONENT ====================
+// ==================== MAIN NAVBAR ====================
 
 export function Navbar() {
   const router = useRouter()
@@ -124,7 +124,7 @@ export function Navbar() {
       <header className="fixed left-0 right-0 top-0 z-[9999] flex justify-center px-4 md:px-8 pt-5 h-[--nav-h] items-center pointer-events-none">
         <div className="relative flex items-center justify-between w-full max-w-[1200px]">
 
-          {/* Logo */}
+          {/* Logo - FIXED */}
           <div
             className={cn(
               pillClass,
@@ -138,23 +138,19 @@ export function Navbar() {
           >
             <div
               className="relative w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-[14px] overflow-hidden transition-colors duration-300"
-              style={{ backgroundColor: neutralColor }}
+              style={{
+                backgroundColor: neutralColor,
+                WebkitMaskImage: "url(/logo.png)",
+                maskImage: "url(/logo.png)",
+                WebkitMaskSize: "contain",
+                maskSize: "contain",
+                WebkitMaskRepeat: "no-repeat",
+                maskRepeat: "no-repeat",
+                WebkitMaskPosition: "center",
+                maskPosition: "center",
+              }}
               aria-hidden="true"
-            >
-              <div
-                className="absolute inset-0"
-                style={{
-                  WebkitMaskImage: "url(/logo.png)",
-                  maskImage: "url(/logo.png)",
-                  WebkitMaskSize: "contain",
-                  maskSize: "contain",
-                  WebkitMaskRepeat: "no-repeat",
-                  maskRepeat: "no-repeat",
-                  WebkitMaskPosition: "center",
-                  maskPosition: "center",
-                }}
-              />
-            </div>
+            />
             <div 
               className="font-sans font-black text-[1.1rem] leading-none tracking-tight transition-all duration-500 overflow-hidden flex items-center" 
               style={{ maxWidth: isTextExpanded ? "180px" : "0px" }}
@@ -330,7 +326,7 @@ export function Navbar() {
           </nav>
         </div>
 
-        {/* Logo Watermark */}
+        {/* Mobile Logo Watermark */}
         <div
           className={cn(
             "absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center select-none transition-all duration-500 z-10",
@@ -356,4 +352,4 @@ export function Navbar() {
       </div>
     </>
   )
-              } 
+                               } 
