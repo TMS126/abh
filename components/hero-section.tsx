@@ -19,7 +19,7 @@ import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, MARQUEE_ITEMS, HUB_COLORS } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
-import { ServicesDashboardModal } from "@/components/services-dashboard-modal"
+
 
 // ─── Contrast-nudging helpers ─────────────────────────────────────────────────
 function hexToRgb(hex: string) {
