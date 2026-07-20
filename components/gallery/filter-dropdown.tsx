@@ -6,22 +6,9 @@ import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { BRAND } from "@/lib/brand"
+import { getContrastText } from "@/lib/color"
 import { ROW_ORDER, HubId, playClickSound } from "@/lib/gallery-helpers"
 import { useBackButtonDismiss } from "@/hooks/use-back-button-dismiss"
-
-// WCAG-compliant text color picker: returns whichever of black/white
-// gives the higher contrast ratio against the given hex background.
-function getReadableTextColor(hexBg: string): string {
-  const hex = hexBg.replace("#", "")
-  const r = parseInt(hex.substring(0, 2), 16) / 255
-  const g = parseInt(hex.substring(2, 4), 16) / 255
-  const b = parseInt(hex.substring(4, 6), 16) / 255
-  const toLin = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4))
-  const L = 0.2126 * toLin(r) + 0.7152 * toLin(g) + 0.0722 * toLin(b)
-  const contrastWithWhite = 1.05 / (L + 0.05)
-  const contrastWithBlack = (L + 0.05) / 0.05
-  return contrastWithWhite >= contrastWithBlack ? "#ffffff" : "#18181b"
-}
 
 export function FilterDropdown({
   activeFilter, onSelect, getAccent,
@@ -84,7 +71,7 @@ export function FilterDropdown({
           />
           <AnimatePresence>
             {/*
-              No panel background/border/shadow here anymore — this is just a
+              No panel background/border/shadow here — this is just a
               positioning + spacing wrapper. Each pill below carries its own
               solid background and shadow, so the group reads as "together"
               through proximity/gap alone, while staying visually separate.
@@ -103,7 +90,7 @@ export function FilterDropdown({
                 const accent   = opt.id !== "all" ? getAccent(opt.id as HubId) : undefined
                 const isActive = activeFilter === opt.id
                 const activeBg = accent ?? blueColor
-                const activeText = getReadableTextColor(activeBg)
+                const activeText = getContrastText(activeBg)
 
                 return (
                   <button
@@ -146,4 +133,4 @@ export function FilterDropdown({
       )}
     </div>
   )
-              }
+}
