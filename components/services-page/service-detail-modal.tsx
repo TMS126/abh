@@ -12,7 +12,7 @@ import { HUBS } from "@/lib/data"
 import { useFocusTrap, AbhLoader } from "./shared"
 import {
   SelectedService, naturalServiceLabel, cleanText, formatAcceptHint,
-  HUB_ACCEPT, CLD_MAX_MB, BLOCKED_MIME_TYPES, BLOCKED_EXTENSIONS, getCldUrl, trackEvent,
+  HUB_ACCEPT, CLD_MAX_MB, CLD_PRESET, BLOCKED_MIME_TYPES, BLOCKED_EXTENSIONS, getCldUrl, trackEvent,
 } from "./lib"
 
 type Tab = "bring" | "about"
@@ -56,7 +56,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
   const doUpload = (f: File) => {
     setUploadPhase("uploading"); setUploadProgress(0)
     const fd = new FormData()
-    fd.append("file", f); fd.append("upload_preset", CLD_PRESET_PLACEHOLDER())
+    fd.append("file", f); fd.append("upload_preset", CLD_PRESET)
     const xhr = new XMLHttpRequest()
     xhr.open("POST", getCldUrl(f))
     xhr.upload.onprogress = (e) => { if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100)) }
@@ -348,4 +348,4 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
       </motion.div>
     </div>
   )
-}
+    } 
