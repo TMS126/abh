@@ -1,6 +1,5 @@
 import { HubId } from "@/lib/brand"
-import { HUBS, TURNAROUND, TURNAROUND_OVERRIDE } from "@/lib/data"
-
+import { HUBS, HubId, TURNAROUND, TURNAROUND_OVERRIDE } from "@/lib/data"
 // ─── Constants ────────────────────────────────────────────────────────────────
 export const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
