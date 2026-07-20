@@ -96,3 +96,16 @@ export function quoteTotals(items: CartItem[]) {
   const count = items.reduce((s, i) => s + (i.qty || 1), 0)
   return { total, savings, count }
 }
+
+// ─── Cart lookup (used by service-detail-modal to show "already in quote") ──
+export function getCartQtyForItem(id: string): number {
+  if (typeof window === "undefined") return 0
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return 0
+    const items: CartItem[] = JSON.parse(raw)
+    return items.find(i => i.id === id)?.qty ?? 0
+  } catch {
+    return 0
+  }
+                            } 
