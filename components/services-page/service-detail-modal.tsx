@@ -14,6 +14,7 @@ import {
   SelectedService, naturalServiceLabel, cleanText, formatAcceptHint,
   HUB_ACCEPT, CLD_MAX_MB, CLD_PRESET, BLOCKED_MIME_TYPES, BLOCKED_EXTENSIONS, getCldUrl, trackEvent,
 } from "./lib"
+import { getCartQtyForItem } from "@/components/quote-calculator/lib"
 
 type Tab = "bring" | "about"
 
@@ -29,6 +30,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
   const [previewUrl,    setPreviewUrl]    = useState<string | null>(null)
   const [shareCopied,   setShareCopied]   = useState(false)
   const [addedToQuote,  setAddedToQuote]  = useState(false)
+  const [quoteQty,      setQuoteQty]      = useState(0)
   const fileRef      = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -38,6 +40,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
     setUploadPhase("idle"); setUploadErr(null); setUploadProgress(0)
     setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null })
     if (fileRef.current) fileRef.current.value = ""
+    if (svc) setQuoteQty(getCartQtyForItem(`${svc.hubId}-${svc.sectionTitle}-${svc.name}`))
   }, [svc?.name])
 
   useEffect(() => {
@@ -322,14 +325,19 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
               window.dispatchEvent(new CustomEvent("abh:add-to-quote", { detail: { hubId: svc.hubId, sectionTitle: svc.sectionTitle, name: svc.name, price: svc.price } }))
               trackEvent("add_to_quote", { hub_id: svc.hubId, service_name: svc.name, section_title: svc.sectionTitle, price: svc.price })
               setAddedToQuote(true); setTimeout(() => setAddedToQuote(false), 2200)
+              setQuoteQty(prev => prev + 1)
             }}
             className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-[14px] font-bold text-sm border-2 transition-all duration-200 active:scale-95"
-            style={addedToQuote
+            style={addedToQuote || quoteQty > 0
               ? { borderColor: "#22c55e", backgroundColor: "#22c55e10", color: "#16a34a" }
               : { borderColor: `${accent}35`, color: accent, backgroundColor: "transparent" }
             }
           >
-            {addedToQuote ? "✓ Added to Quote" : "+ Add to Quote"}
+            {addedToQuote
+              ? "✓ Added to Quote"
+              : quoteQty > 0
+                ? `✓ In Quote · ${quoteQty}`
+                : "+ Add to Quote"}
           </button>
 
           <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
@@ -348,4 +356,4 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
       </motion.div>
     </div>
   )
-    } 
+      } 
