@@ -227,7 +227,7 @@ export function HeroSection() {
     aria-hidden="true"
     style={{ backgroundColor: BRAND.blueDark }}
   />
-        
+
 
             <div className="relative z-10 w-full flex flex-col items-center px-6 sm:px-10 md:px-12 pt-8 sm:pt-10 md:pt-12 pb-10 sm:pb-12 md:pb-14">
 
@@ -352,4 +352,42 @@ export function HeroSection() {
 
               <div
                 role="marquee"
-                aria-label="Our services" 
+                aria-label="Our services"
+                onMouseEnter={() => setMarqueePaused(true)}
+                onMouseLeave={() => setMarqueePaused(false)}
+                onTouchStart={(e) => { e.stopPropagation(); setMarqueePaused(p => !p) }}
+                className="relative w-full mt-8 py-4 overflow-hidden select-none group/marquee"
+              >
+                <div
+                  className="flex whitespace-nowrap w-max animate-marquee"
+                  style={{ animationPlayState: marqueePaused ? "paused" : "running" }}
+                >
+                  {[0, 1].map((copy) => (
+                    <div key={copy} className="flex items-center shrink-0">
+                      {MARQUEE_ITEMS.map((item, idx) => (
+                        <React.Fragment key={idx}>
+                          <span className="inline-flex items-center px-5 font-semibold text-sm transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100" style={{ color: cardTextSoft }}>
+                            {item}
+                          </span>
+                          <span className="font-black text-base leading-none shrink-0" style={{ color: cardText }} aria-hidden="true">•</span>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </ScrollBounce>
+      </div>
+
+      <ServicesDashboardModal
+        isOpen={isServicesOpen}
+        onClose={() => setIsServicesOpen(false)}
+        onNavigate={(page) => handleNavigate(page)}
+      />
+    </section>
+  )
+}
+ 
