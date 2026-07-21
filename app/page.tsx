@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/navbar"
-import { HeroSection, StatsBar } from "@/components/hero-section"
+import { HeroSection } from "@/components/hero-section"
+import { StatsBar } from "@/components/stats-bar"
 import { TestimonialsSection } from "@/components/testimonials-section"
 import { StripSection, CtaBar } from "@/components/strip-section"
 import { Footer } from "@/components/footer"
