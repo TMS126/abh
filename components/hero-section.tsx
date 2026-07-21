@@ -129,7 +129,7 @@ export function HeroSection() {
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center relative z-10 w-full mb-6">
 
-        <div className="w-full max-w-[840px] mx-auto flex flex-col mb-6 md:mb-8">
+        <div className="w-full max-w-[840px] mx-auto flex flex-col mb-10 md:mb-14">
           <div className="text-center md:text-left">
             <p className="abh-eyebrow mb-2">Welcome to ApexbytesHub</p>
             <h1 className="font-sans font-black text-4xl md:text-6xl lg:text-[4.6rem] tracking-tight text-zinc-900 dark:text-zinc-50 leading-[1.08] mb-4 text-balance transition-colors duration-300">
