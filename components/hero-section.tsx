@@ -10,6 +10,7 @@ import { BRAND, BIZ, MARQUEE_ITEMS } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { ensureAccessible } from "@/lib/color-contrast"
 import { HUBS_DATA, pickRandomService } from "@/lib/hero-data"
+import { ClassicTagline } from "@/components/classic-tagline"
 
 // ─── Hero Section ─────────────────────────────────────────────────────────────
 export function HeroSection() {
@@ -129,15 +130,16 @@ export function HeroSection() {
       <div className="max-w-[1240px] mx-auto flex flex-col items-center relative z-10 w-full mb-6">
 
         <div className="w-full max-w-[840px] mx-auto flex flex-col mb-6 md:mb-8">
-          <div className="text-center md:text-left">
-            <h1 className="font-sans font-black text-4xl md:text-6xl lg:text-[4.6rem] tracking-tight text-zinc-900 dark:text-zinc-50 leading-[1.08] mb-4 text-balance transition-colors duration-300">
-              {BIZ.tagline}
-            </h1>
-            <p className="text-sm md:text-base font-medium text-zinc-600 dark:text-zinc-400 max-w-[480px] md:max-w-none mx-auto md:mx-0 leading-relaxed">
-              From printing your documents to navigating government services — we make it simple, fast, and friendly.
-            </p>
-          </div>
-        </div>
+        <div className="text-center md:text-left">
+  <p className="abh-eyebrow mb-2">Welcome to ApexbytesHub</p>
+  <h1 className="font-sans font-black text-4xl md:text-6xl lg:text-[4.6rem] tracking-tight text-zinc-900 dark:text-zinc-50 leading-[1.08] mb-4 text-balance transition-colors duration-300">
+    {BIZ.tagline}
+  </h1>
+  <p className="text-sm md:text-base font-medium text-zinc-600 dark:text-zinc-400 max-w-[480px] md:max-w-none mx-auto md:mx-0 leading-relaxed">
+    From printing your documents to navigating government services — we make it simple, fast, and friendly.
+  </p>
+  <ClassicTagline />
+</div>
 
         <div className="relative w-full flex justify-center items-center mb-8">
 
