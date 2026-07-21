@@ -140,8 +140,8 @@ export function HeroSection() {
   </p>
   <ClassicTagline />
 </div>
-
-        <div className="relative w-full flex justify-center items-center mb-8">
+          
+ <div className="relative w-full flex justify-center items-center mb-8">
 
           <div
             aria-hidden="true"
@@ -383,4 +383,4 @@ export function HeroSection() {
       </div>
     </section>
   )
-                          } 
+} 
