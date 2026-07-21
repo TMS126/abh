@@ -12,6 +12,11 @@ import { ensureAccessible } from "@/lib/color-contrast"
 import { HUBS_DATA, pickRandomService } from "@/lib/hero-data"
 import { ClassicTagline } from "@/components/classic-tagline"
 
+// ─── CTA word cycle ───────────────────────────────────────────────────────────
+const CTA_WORDS = ["Designing", "Printing", "Upgrading"] as const
+type CtaWord = (typeof CTA_WORDS)[number]
+const CTA_CYCLE_MS = 4000
+
 // ─── Hero Section ─────────────────────────────────────────────────────────────
 export function HeroSection() {
   const router = useRouter()
@@ -29,6 +34,12 @@ export function HeroSection() {
   const [tilting, setTilting] = useState(false)
   const ecoBoxRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef<number | null>(null)
+
+  // CTA word cycle state — "Upgrading" doesn't map to one hub, so its arrow
+  // color is re-rolled from {green, e-service, tech} each time it comes up,
+  // giving it some variety instead of a single fixed hue like the other two.
+  const [ctaWordIdx, setCtaWordIdx] = useState(0)
+  const [upgradeColorIdx, setUpgradeColorIdx] = useState(0)
 
   const handleEcoMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!canHover || !ecoBoxRef.current) return
@@ -76,6 +87,20 @@ export function HeroSection() {
     return () => mq.removeEventListener("change", handler)
   }, [])
 
+  // Cycles Designing → Printing → Upgrading → repeat, forever, every 4s.
+  useEffect(() => {
+    const id = setInterval(() => {
+      setCtaWordIdx(prev => {
+        const next = (prev + 1) % CTA_WORDS.length
+        if (CTA_WORDS[next] === "Upgrading") {
+          setUpgradeColorIdx(Math.floor(Math.random() * 3))
+        }
+        return next
+      })
+    }, CTA_CYCLE_MS)
+    return () => clearInterval(id)
+  }, [])
+
   const isDark    = mounted && resolvedTheme === "dark"
   const active    = HUBS_DATA[activeHub]
   const ActiveIcon = active.Icon
@@ -91,6 +116,22 @@ export function HeroSection() {
 
   const hubColor  = isDark ? active.colorDark : active.colorLight
   const nameColor = ensureAccessible(hubColor, "#0d2436", 4.5)
+
+  // Per-word arrow colors — Designing/Printing map to their hub's own
+  // color (matching the Core Hub Ecosystem card below), Upgrading rotates
+  // through green / e-service / tech each time it's shown.
+  const designArrowColor = BRAND.orangeBrown
+  const printArrowColor  = isDark ? BRAND.blue : BRAND.blueDark
+  const upgradeColorOptions = isDark
+    ? [BRAND.greenDeep, BRAND.lightBlue, "#B8CCE0"]
+    : [BRAND.greenDeep, BRAND.blueMid, BRAND.dark100]
+  const upgradeArrowColor = upgradeColorOptions[upgradeColorIdx]
+
+  const activeCtaWord: CtaWord = CTA_WORDS[ctaWordIdx]
+  const activeArrowColor =
+    activeCtaWord === "Designing" ? designArrowColor :
+    activeCtaWord === "Printing"  ? printArrowColor :
+    upgradeArrowColor
 
   const handleNavigate = (path: string) => router.push(path)
 
@@ -131,8 +172,10 @@ export function HeroSection() {
 
         <div className="w-full max-w-[840px] mx-auto flex flex-col mb-10 md:mb-14">
           <div className="text-center md:text-left">
-            <p className="abh-eyebrow mb-2">Welcome to ApexbytesHub</p>
-            <h1 className="font-sans font-black text-4xl md:text-6xl lg:text-[4.6rem] tracking-tight text-zinc-900 dark:text-zinc-50 leading-[1.08] mb-4 text-balance transition-colors duration-300">
+            <p className="font-sans font-black text-3xl md:text-5xl tracking-tight text-zinc-900 dark:text-zinc-50 mb-3 transition-colors duration-300">
+              Welcome to ApexbytesHub
+            </p>
+            <h1 className="font-sans font-bold text-2xl md:text-4xl tracking-tight text-zinc-800 dark:text-zinc-100 leading-[1.15] mb-4 text-balance transition-colors duration-300">
               {BIZ.tagline}
             </h1>
             <p className="text-sm md:text-base font-medium text-zinc-600 dark:text-zinc-400 max-w-[480px] md:max-w-none mx-auto md:mx-0 leading-relaxed">
@@ -183,21 +226,29 @@ export function HeroSection() {
                   borderColor: STROKE_COLOR,
                   ["--rest" as any]: REST_COLOR,
                 }}
-                className="group relative z-30 inline-flex items-center gap-3 px-10 py-5 rounded-full font-sans font-black text-lg overflow-hidden border-2 transition-all duration-150 active:duration-75 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.94] shadow-md hover:shadow-xl active:shadow-sm"
+                className="group relative z-30 inline-flex items-center justify-center gap-3 w-[272px] sm:w-[308px] px-6 py-5 rounded-full font-sans font-black text-lg overflow-hidden border-2 transition-all duration-150 active:duration-75 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.94] shadow-md hover:shadow-xl active:shadow-sm"
               >
                 <span
                   aria-hidden="true"
                   className="absolute inset-0 origin-bottom scale-y-100 md:scale-y-0 transition-transform duration-150 ease-out md:group-hover:scale-y-100 md:group-active:scale-y-100"
                   style={{ backgroundColor: CTA_FILL_COLOR }}
                 />
-                <span className="relative z-10 text-white md:text-[color:var(--rest)] md:group-hover:text-white md:group-active:text-white transition-colors duration-150">
-                  Start Here
+                <span
+                  key={activeCtaWord}
+                  className="relative z-10 text-white md:text-[color:var(--rest)] md:group-hover:text-white md:group-active:text-white transition-colors duration-150 animate-in fade-in duration-300"
+                >
+                  Start {activeCtaWord}
                 </span>
-                <ArrowRight
-                  weight="bold"
+                <span
+                  className="relative z-10 shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full bg-white/95 dark:bg-zinc-50/95 shadow-sm transition-colors duration-300"
                   aria-hidden="true"
-                  className="relative z-10 w-6 h-6 transition-all duration-150 group-hover:translate-x-1.5 text-white md:text-[color:var(--rest)] md:group-hover:text-white md:group-active:text-white"
-                />
+                >
+                  <ArrowRight
+                    weight="bold"
+                    style={{ color: activeArrowColor }}
+                    className="w-4 h-4 transition-all duration-300 group-hover:translate-x-0.5"
+                  />
+                </span>
               </button>
             </ScrollBounce>
           </div>
@@ -384,4 +435,4 @@ export function HeroSection() {
       </div>
     </section>
   )
-                  } 
+      } 
