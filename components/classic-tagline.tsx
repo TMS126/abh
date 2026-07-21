@@ -37,7 +37,7 @@ export function ClassicTagline() {
       onFocus={() => setHovered(true)}
       onBlur={() => setHovered(false)}
       tabIndex={0}
-      className="mt-3 text-[0.7rem] md:text-xs font-black uppercase tracking-[0.15em] cursor-default select-none outline-none"
+      className="mt-3 text-sm md:text-base font-semibold italic tracking-normal cursor-default select-none outline-none"
     >
       {WORDS.map((w, i) => (
         <span
