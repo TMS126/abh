@@ -3,206 +3,14 @@
 import React, { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
-import {
-  ArrowRight,
-  CaretRight,
-  PlusCircle,
-  Gear,
-  Wrench,
-  Printer,
-  FileText,
-  PaintBrush,
-  Globe,
-  Desktop,
-} from "@phosphor-icons/react"
+import { ArrowRight, CaretRight } from "@phosphor-icons/react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
-import { BRAND, BIZ, MARQUEE_ITEMS, HUB_COLORS } from "@/lib/brand"
+import { BRAND, BIZ, MARQUEE_ITEMS } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
-
-// ─── Contrast-nudging helpers ─────────────────────────────────────────────────
-function hexToRgb(hex: string) {
-  const clean = hex.replace("#", "")
-  const full = clean.length === 3 ? clean.split("").map(c => c + c).join("") : clean
-  const bigint = parseInt(full, 16)
-  return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 }
-}
-function relativeLuminance({ r, g, b }: { r: number; g: number; b: number }) {
-  const [rs, gs, bs] = [r, g, b].map(c => {
-    const s = c / 255
-    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
-  })
-  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs
-}
-function contrastRatio(hexA: string, hexB: string) {
-  const lA = relativeLuminance(hexToRgb(hexA))
-  const lB = relativeLuminance(hexToRgb(hexB))
-  const [lighter, darker] = lA > lB ? [lA, lB] : [lB, lA]
-  return (lighter + 0.05) / (darker + 0.05)
-}
-function rgbToHex({ r, g, b }: { r: number; g: number; b: number }) {
-  return "#" + [r, g, b].map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("")
-}
-function rgbToHsl({ r, g, b }: { r: number; g: number; b: number }) {
-  const rn = r / 255, gn = g / 255, bn = b / 255
-  const max = Math.max(rn, gn, bn), min = Math.min(rn, gn, bn)
-  let h = 0
-  const l = (max + min) / 2
-  let s = 0
-  if (max !== min) {
-    const d = max - min
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-    switch (max) {
-      case rn: h = (gn - bn) / d + (gn < bn ? 6 : 0); break
-      case gn: h = (bn - rn) / d + 2; break
-      case bn: h = (rn - gn) / d + 4; break
-    }
-    h /= 6
-  }
-  return { h: h * 360, s: s * 100, l: l * 100 }
-}
-function hslToRgb(h: number, s: number, l: number) {
-  const hn = h / 360, sn = s / 100, ln = l / 100
-  let r: number, g: number, b: number
-  if (sn === 0) {
-    r = g = b = ln
-  } else {
-    const hue2rgb = (p: number, q: number, t: number) => {
-      let tt = t
-      if (tt < 0) tt += 1
-      if (tt > 1) tt -= 1
-      if (tt < 1 / 6) return p + (q - p) * 6 * tt
-      if (tt < 1 / 2) return q
-      if (tt < 2 / 3) return p + (q - p) * (2 / 3 - tt) * 6
-      return p
-    }
-    const q = ln < 0.5 ? ln * (1 + sn) : ln + sn - ln * sn
-    const p = 2 * ln - q
-    r = hue2rgb(p, q, hn + 1 / 3); g = hue2rgb(p, q, hn); b = hue2rgb(p, q, hn - 1 / 3)
-  }
-  return { r: r * 255, g: g * 255, b: b * 255 }
-}
-function ensureAccessible(hex: string, bgHex: string, minRatio = 4.5) {
-  if (contrastRatio(hex, bgHex) >= minRatio) return hex
-  const hsl = rgbToHsl(hexToRgb(hex))
-  const bgLum = relativeLuminance(hexToRgb(bgHex))
-  const goingDarker = bgLum > 0.5
-  let l = hsl.l
-  for (let i = 0; i < 45; i++) {
-    l += goingDarker ? -2 : 2
-    l = Math.max(0, Math.min(100, l))
-    const candidate = rgbToHex(hslToRgb(hsl.h, hsl.s, l))
-    if (contrastRatio(candidate, bgHex) >= minRatio) return candidate
-    if (l <= 0 || l >= 100) break
-  }
-  return goingDarker ? "#1a1a1a" : "#fafafa"
-}
-
-// ─── Hub data ─────────────────────────────────────────────────────────────────
-const HUBS_DATA = [
-  {
-    id: "print",
-    name: "Print Hub",
-    icon: (active: boolean) => (
-      <Printer size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
-    ),
-    Icon: Printer,
-    colorLight: BRAND.blueDark,
-    colorDark:  BRAND.blue,
-    services: [
-      { name: "B&W Print",        price: "R5"  },
-      { name: "Colour Print",     price: "R8"  },
-      { name: "B&W Copy",         price: "R3"  },
-      { name: "Colour Copy",      price: "R5"  },
-      { name: "Photo 4x6 Glossy", price: "R20" },
-      { name: "Photo A4 Glossy",  price: "R40" },
-    ],
-  },
-  {
-    id: "doc",
-    name: "Docu Hub",
-    icon: (active: boolean) => (
-      <FileText size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
-    ),
-    Icon: FileText,
-    colorLight: BRAND.greenDeep,
-    colorDark:  BRAND.greenDeep,
-    services: [
-      { name: "CV from Scratch",    price: "R30" },
-      { name: "CV Upgrade",         price: "R40" },
-      { name: "Cover Letter",       price: "R30" },
-      { name: "Affidavit / Letter", price: "R20" },
-      { name: "Scanning (per page)", price: "R5" },
-      { name: "Laminating A4",      price: "R15" },
-    ],
-  },
-  {
-    id: "design",
-    name: "Design Hub",
-    icon: (active: boolean) => (
-      <PaintBrush size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
-    ),
-    Icon: PaintBrush,
-    colorLight: BRAND.orangeBrown,
-    colorDark:  BRAND.orangeBrown,
-    services: [
-      { name: "Logo (Basic)",       price: "R300" },
-      { name: "Logo (Standard)",    price: "R500" },
-      { name: "Business Card",      price: "R120" },
-      { name: "Flyer (Custom)",     price: "R250" },
-      { name: "Social Media Post",  price: "R80"  },
-      { name: "Invitation (Image)", price: "R150" },
-    ],
-  },
-  {
-    id: "eservice",
-    name: "E-Service Hub",
-    icon: (active: boolean) => (
-      <Globe size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
-    ),
-    Icon: Globe,
-    colorLight: BRAND.blueMid,
-    colorDark:  BRAND.lightBlue,
-    services: [
-      { name: "SASSA Status Check",         price: "R20"  },
-      { name: "SASSA SRD Application",      price: "R40"  },
-      { name: "SASSA Grant Application",    price: "R80"  },
-      { name: "SARS New Taxpayer / eFiling", price: "R70" },
-      { name: "NSFAS Application",          price: "R80"  },
-      { name: "UIF Claims",                 price: "R200" },
-    ],
-  },
-  {
-    id: "tech",
-    name: "Tech Hub",
-    icon: (active: boolean) => (
-      <Desktop size={28} weight={active ? "fill" : "regular"} aria-hidden="true" />
-    ),
-    Icon: Desktop,
-    colorLight: BRAND.dark100,
-    colorDark:  "#B8CCE0",
-    services: [
-      { name: "Software Install",              price: "R80"  },
-      { name: "PC Setup",                      price: "R250" },
-      { name: "Virus Removal",                 price: "R200" },
-      { name: "Windows Install + Activation",  price: "R350" },
-      { name: "Microsoft 365 Setup",           price: "R150" },
-      { name: "Troubleshooting (per hr)",      price: "R150" },
-    ],
-  },
-]
-
-function pickRandomService(hubIndex: number, excludeName?: string) {
-  const list = HUBS_DATA[hubIndex].services
-  if (list.length === 1) return list[0]
-  let next = list[Math.floor(Math.random() * list.length)]
-  let attempts = 0
-  while (next.name === excludeName && attempts < 5) {
-    next = list[Math.floor(Math.random() * list.length)]
-    attempts++
-  }
-  return next
-}
+import { ensureAccessible } from "@/lib/color-contrast"
+import { HUBS_DATA, pickRandomService } from "@/lib/hero-data"
+import { ServicesDashboardModal } from "@/components/services-dashboard-modal"
 
 // ─── Hero Section ─────────────────────────────────────────────────────────────
 export function HeroSection() {
@@ -214,6 +22,7 @@ export function HeroSection() {
   const [spotlightService,  setSpotlightService]  = useState(() => pickRandomService(0))
   const [hoveredHub,        setHoveredHub]        = useState<number | null>(null)
   const [canHover,          setCanHover]          = useState(false)
+  const [isServicesOpen,    setIsServicesOpen]    = useState(false)
 
   const [hubTouched, setHubTouched] = useState(false)
 
@@ -301,7 +110,7 @@ export function HeroSection() {
   }
 
   const handleCtaClick = () => {
-    handleNavigate("/services")
+    setIsServicesOpen(true)
   }
 
  return (
@@ -532,7 +341,7 @@ export function HeroSection() {
                 </button>
 
                 <button
-                  onClick={() => handleNavigate(`/services?hub=${active.id}`)}
+                  onClick={handleCtaClick}
                   className="flex items-center justify-center gap-1.5 text-[0.65rem] font-black tracking-wide mt-4 transition-opacity hover:opacity-70"
                   style={{ color: cardText }}
                 >
@@ -543,90 +352,4 @@ export function HeroSection() {
 
               <div
                 role="marquee"
-                aria-label="Our services"
-                onMouseEnter={() => setMarqueePaused(true)}
-                onMouseLeave={() => setMarqueePaused(false)}
-                onTouchStart={(e) => { e.stopPropagation(); setMarqueePaused(p => !p) }}
-                className="relative w-full mt-8 py-4 overflow-hidden select-none group/marquee"
-              >
-                <div
-                  className="flex whitespace-nowrap w-max animate-marquee"
-                  style={{ animationPlayState: marqueePaused ? "paused" : "running" }}
-                >
-                  {[0, 1].map((copy) => (
-                    <div key={copy} className="flex items-center shrink-0">
-                      {MARQUEE_ITEMS.map((item, idx) => (
-                        <React.Fragment key={idx}>
-                          <span className="inline-flex items-center px-5 font-semibold text-sm transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100" style={{ color: cardTextSoft }}>
-                            {item}
-                          </span>
-                          <span className="font-black text-base leading-none shrink-0" style={{ color: cardText }} aria-hidden="true">•</span>
-                        </React.Fragment>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </ScrollBounce>
-      </div>
-    </section>
-  )
-}
-
-// ─── Stats Bar ────────────────────────────────────────────────────────────────
-export function StatsBar() {
-  const [hoveredCard, setHoveredCard] = useState<number | null>(null)
-
-  const stats = [
-    { icon: PlusCircle, color: BRAND.blue,   value: BIZ.hubCount,    label: "Hubs"        },
-    { icon: Gear,       color: BRAND.green,  value: BIZ.serviceCount, label: "Services"   },
-    { icon: Wrench,     color: BRAND.orange, value: "Fast",           label: "Turnaround" },
-  ]
-
-  return (
-    <section aria-label="Key stats" className="px-4 md:px-8 py-8 md:py-10 transition-colors duration-300">
-      <div
-        className="grid grid-cols-3 gap-3 sm:gap-4 w-full max-w-[560px] mx-auto"
-        role="list"
-        aria-label="Key stats"
-      >
-        {stats.map((stat, i) => {
-          const isHov  = hoveredCard === i
-          const Icon   = stat.icon
-          return (
-            <ScrollBounce key={stat.label} delay={i * 0.08}>
-              <div
-                role="listitem"
-                onMouseEnter={() => setHoveredCard(i)}
-                onMouseLeave={() => setHoveredCard(null)}
-                onClick={() => setHoveredCard(isHov ? null : i)}
-                aria-label={`${stat.value} ${stat.label}`}
-                className="flex flex-col items-center justify-center gap-1.5 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 py-3.5 sm:py-4 px-3 text-center transition-all duration-200 shadow-sm cursor-pointer"
-                style={{ borderColor: isHov ? stat.color : undefined }}
-              >
-                <div
-                  className="w-8 h-8 rounded-[14px] flex items-center justify-center mb-0.5 transition-all duration-200"
-                  style={{
-                    backgroundColor: isHov ? stat.color : `${stat.color}15`,
-                    color: isHov ? "#ffffff" : stat.color,
-                  }}
-                >
-                  <Icon size={16} weight={isHov ? "fill" : "regular"} aria-hidden="true" />
-                </div>
-                <div className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
-                  {stat.value}
-                </div>
-                <div className="text-[0.6rem] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
-                  {stat.label}
-                </div>
-              </div>
-            </ScrollBounce>
-          )
-        })}
-      </div>
-    </section>
-  )
-}  
+                aria-label="Our services" 
