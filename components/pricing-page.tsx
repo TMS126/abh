@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useCallback, useRef } from 'react'
-import { Search, ChevronDown, ChevronUp, FileArrowDown } from '@phosphor-icons/react'
+import { MagnifyingGlass, CaretDown, CaretUp, FileArrowDown } from '@phosphor-icons/react'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { HUBS, type HubId } from '@/lib/data'
@@ -92,7 +92,6 @@ export default function PricingPage() {
         }
       `}</style>
 
-      {/* Hide floating widgets on pricing page */}
       <style>{`
         [data-widget="quote-calculator"],
         [data-widget="whatsapp-fab"] {
@@ -123,7 +122,7 @@ export default function PricingPage() {
               style={{ animationDelay: '0.08s' }}
             >
               <div className="relative flex-1">
-                <Search
+                <MagnifyingGlass
                   className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400"
                   weight="bold"
                 />
@@ -136,7 +135,7 @@ export default function PricingPage() {
                 />
               </div>
 
-              {/* Download button — distinct */}
+              {/* Download button */}
               <button
                 onClick={handleDownload}
                 className="no-print flex items-center gap-2 px-4 py-2.5 rounded-[14px] bg-[#1E6FA8] hover:bg-[#1a5f92] active:scale-95 text-white text-sm font-bold transition-all duration-200 shadow-md shrink-0"
@@ -189,13 +188,12 @@ export default function PricingPage() {
                   const hub    = HUBS[hubId]
                   const colors = HUB_COLORS[hubId as HubKey]
                   const accent = colors.accentLight
-                  const bg     = colors.bgLight ?? `${accent}10`
                   const isOpen = openHubs.has(hubId)
 
                   return (
                     <div
                       key={hubId}
-                      className="rounded-[14px] border overflow-hidden transition-shadow duration-300"
+                      className="rounded-[14px] border border-zinc-200 dark:border-zinc-800 overflow-hidden transition-all duration-300"
                       style={{
                         borderColor: isOpen ? `${accent}50` : undefined,
                         animationDelay: `${0.1 + idx * 0.07}s`,
@@ -204,11 +202,10 @@ export default function PricingPage() {
                       {/* Hub toggle */}
                       <button
                         onClick={() => toggleHub(hubId)}
-                        className="w-full flex items-center justify-between px-4 py-4 bg-white dark:bg-zinc-900 hover:brightness-[0.97] dark:hover:brightness-110 transition-all duration-200 text-left"
+                        className="w-full flex items-center justify-between px-4 py-4 bg-white dark:bg-zinc-900 transition-all duration-200 text-left"
                         style={isOpen ? { backgroundColor: `${accent}08` } : undefined}
                       >
                         <div className="flex items-center gap-3">
-                          {/* Accent bar */}
                           <div
                             className="w-1.5 h-9 rounded-full shrink-0 transition-all duration-300"
                             style={{ backgroundColor: accent }}
@@ -227,8 +224,8 @@ export default function PricingPage() {
                           style={isOpen ? { backgroundColor: `${accent}18` } : undefined}
                         >
                           {isOpen
-                            ? <ChevronUp size={16} weight="bold" style={{ color: accent }} />
-                            : <ChevronDown size={16} weight="bold" className="text-zinc-400" />
+                            ? <CaretUp size={16} weight="bold" style={{ color: accent }} />
+                            : <CaretDown size={16} weight="bold" className="text-zinc-400" />
                           }
                         </div>
                       </button>
@@ -243,9 +240,12 @@ export default function PricingPage() {
                             return (
                               <div
                                 key={section.title}
-                                className={cn('px-4 py-3 bg-white dark:bg-zinc-900', si > 0 ? 'border-t border-zinc-100 dark:border-zinc-800' : '')}
+                                className={cn(
+                                  'px-4 py-3 bg-white dark:bg-zinc-900',
+                                  si > 0 ? 'border-t border-zinc-100 dark:border-zinc-800' : ''
+                                )}
                               >
-                                {/* Section label with accent dot */}
+                                {/* Section label */}
                                 <div className="flex items-center gap-2 mb-2.5">
                                   <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: accent }} />
                                   <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: accent }}>
@@ -299,6 +299,7 @@ export default function PricingPage() {
                 <span className="font-black">⚡ Rush fee:</span> A 50% surcharge applies when same-session or urgent turnaround is required.
               </p>
             </div>
+
           </div>
         </main>
 
@@ -306,4 +307,4 @@ export default function PricingPage() {
       </div>
     </>
   )
-                                  } 
+                                              } 
