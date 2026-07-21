@@ -10,7 +10,6 @@ import { BRAND, BIZ, MARQUEE_ITEMS } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { ensureAccessible } from "@/lib/color-contrast"
 import { HUBS_DATA, pickRandomService } from "@/lib/hero-data"
-import { ServicesDashboardModal } from "@/components/services-dashboard-modal"
 
 // ─── Hero Section ─────────────────────────────────────────────────────────────
 export function HeroSection() {
@@ -22,7 +21,6 @@ export function HeroSection() {
   const [spotlightService,  setSpotlightService]  = useState(() => pickRandomService(0))
   const [hoveredHub,        setHoveredHub]        = useState<number | null>(null)
   const [canHover,          setCanHover]          = useState(false)
-  const [isServicesOpen,    setIsServicesOpen]    = useState(false)
 
   const [hubTouched, setHubTouched] = useState(false)
 
@@ -110,7 +108,7 @@ export function HeroSection() {
   }
 
   const handleCtaClick = () => {
-    setIsServicesOpen(true)
+    handleNavigate("/services")
   }
 
  return (
@@ -341,7 +339,7 @@ export function HeroSection() {
                 </button>
 
                 <button
-                  onClick={handleCtaClick}
+                  onClick={() => handleNavigate(`/services?hub=${active.id}`)}
                   className="flex items-center justify-center gap-1.5 text-[0.65rem] font-black tracking-wide mt-4 transition-opacity hover:opacity-70"
                   style={{ color: cardText }}
                 >
@@ -381,13 +379,6 @@ export function HeroSection() {
           </div>
         </ScrollBounce>
       </div>
-
-      <ServicesDashboardModal
-        isOpen={isServicesOpen}
-        onClose={() => setIsServicesOpen(false)}
-        onNavigate={(page) => handleNavigate(page)}
-      />
     </section>
   )
-}
- 
+                          } 
