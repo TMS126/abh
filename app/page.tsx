@@ -5,7 +5,11 @@ import { TestimonialsSection } from "@/components/testimonials-section"
 import { StripSection, CtaBar } from "@/components/strip-section"
 import { Footer } from "@/components/footer"
 import { BIZ } from "@/lib/brand"
+import PricingPage from '@/components/pricing-page'
 
+export default function Page() {
+  return <PricingPage />
+}
 export default function HomeRoute() {
   return (
     <div className="min-h-screen bg-background">
