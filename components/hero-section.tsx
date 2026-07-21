@@ -16,7 +16,7 @@ import { ClassicTagline } from "@/components/classic-tagline"
 // ─── CTA word cycle ───────────────────────────────────────────────────────────
 const CTA_WORDS = ["Designing", "Printing", "Upgrading"] as const
 type CtaWord = (typeof CTA_WORDS)[number]
-const CTA_CYCLE_MS = 4000
+const CTA_CYCLE_MS = 5500
 
 // ─── Contrast helper for the arrow icon against its own circle bg ─────────────
 function hexToRgbLocal(hex: string) {
@@ -106,7 +106,7 @@ export function HeroSection() {
     return () => mq.removeEventListener("change", handler)
   }, [])
 
-  // Cycles Designing → Printing → Upgrading → repeat, forever, every 4s.
+  // Cycles Designing → Printing → Upgrading → repeat, forever.
   useEffect(() => {
     const id = setInterval(() => {
       setCtaWordIdx(prev => {
@@ -191,10 +191,6 @@ export function HeroSection() {
         <div className="w-full max-w-[840px] mx-auto flex flex-col mb-10 md:mb-14">
           <div className="text-center md:text-left">
 
-            {/* Shared width wrapper — every line inside centers to the same
-                container width, so "Welcome to", "ApexbytesHub", and the
-                headline read as one visually balanced block rather than
-                each sizing to its own natural text width. */}
             <div className="max-w-[280px] sm:max-w-[360px] md:max-w-none mx-auto md:mx-0">
               <p className="font-sans font-black text-3xl md:text-5xl tracking-tight text-zinc-900 dark:text-zinc-50 mb-3 transition-colors duration-300 leading-tight">
                 <span className="block">Welcome to</span>
@@ -252,33 +248,26 @@ export function HeroSection() {
                 ref={ctaBtnRef}
                 onClick={handleCtaClick}
                 style={{ borderColor: STROKE_COLOR }}
-                className="group relative z-30 flex items-center w-[272px] sm:w-[308px] px-6 sm:px-7 py-5 rounded-full font-sans font-black text-lg overflow-hidden border-2 transition-all duration-150 active:duration-75 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.94] shadow-md hover:shadow-xl active:shadow-sm"
+                className="group relative z-30 flex items-center w-[300px] sm:w-[320px] px-5 sm:px-7 py-5 rounded-full font-sans font-black text-base sm:text-lg overflow-hidden border-2 transition-all duration-150 active:duration-75 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.94] shadow-md hover:shadow-xl active:shadow-sm"
               >
-                {/* Fill layer — no permanent fill on any breakpoint now;
-                    only appears on hover/active, matching desktop behavior. */}
                 <span
                   aria-hidden="true"
                   className="absolute inset-0 origin-bottom scale-y-0 transition-transform duration-150 ease-out group-hover:scale-y-100 group-active:scale-y-100"
                   style={{ backgroundColor: CTA_FILL_COLOR }}
                 />
 
-                {/* Left spacer — same size as the arrow circle on the right,
-                    so the center text block is truly centered between two
-                    equal, symmetric edges rather than skewed by the arrow. */}
                 <span className="relative z-10 w-8 h-8 shrink-0" aria-hidden="true" />
 
-                {/* Center content — "Start" is fully static; only the word
-                    after it rolls, slot-machine style, via AnimatePresence. */}
                 <span
-                  className="relative z-10 flex-1 flex items-center justify-center gap-1.5 whitespace-nowrap transition-colors duration-150"
+                  className="relative z-10 flex-1 flex items-center justify-center whitespace-nowrap transition-colors duration-150"
                   style={{ color: REST_COLOR }}
                 >
-                  <span className="group-hover:text-white group-active:text-white transition-colors duration-150">
+                  <span className="mr-2 group-hover:text-white group-active:text-white transition-colors duration-150">
                     Start
                   </span>
                   <span
                     className="relative inline-block h-7 overflow-hidden text-left group-hover:text-white group-active:text-white transition-colors duration-150"
-                    style={{ minWidth: "9ch" }}
+                    style={{ minWidth: "9.5ch" }}
                   >
                     <AnimatePresence mode="popLayout" initial={false}>
                       <motion.span
@@ -286,7 +275,7 @@ export function HeroSection() {
                         initial={{ y: 26, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: -26, opacity: 0 }}
-                        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                        transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
                         className="absolute inset-0 flex items-center"
                       >
                         {activeCtaWord}
@@ -295,8 +284,6 @@ export function HeroSection() {
                   </span>
                 </span>
 
-                {/* Arrow — fixed position, only its own background + icon
-                    color change with the active word. */}
                 <span
                   className="relative z-10 w-8 h-8 shrink-0 inline-flex items-center justify-center rounded-full shadow-sm transition-colors duration-300"
                   style={{ backgroundColor: activeCircleColor }}
@@ -494,4 +481,4 @@ export function HeroSection() {
       </div>
     </section>
   )
-    } 
+                    } 
