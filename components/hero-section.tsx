@@ -17,6 +17,30 @@ const CTA_WORDS = ["Designing", "Printing", "Upgrading"] as const
 type CtaWord = (typeof CTA_WORDS)[number]
 const CTA_CYCLE_MS = 4000
 
+// ─── Contrast helper for the arrow icon against its own circle bg ─────────────
+// Circle bg now cycles through hub colors (some light, some dark), so the
+// arrow icon inside it can't be a fixed white — it needs to flip to dark
+// whenever the circle color is light enough that white would wash out.
+function hexToRgbLocal(hex: string) {
+  const clean = hex.replace("#", "")
+  const full = clean.length === 3 ? clean.split("").map(c => c + c).join("") : clean
+  const bigint = parseInt(full, 16)
+  return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 }
+}
+function relativeLuminanceLocal({ r, g, b }: { r: number; g: number; b: number }) {
+  const [rs, gs, bs] = [r, g, b].map(c => {
+    const s = c / 255
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+  })
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs
+}
+function getArrowIconColor(bgHex: string) {
+  const lum = relativeLuminanceLocal(hexToRgbLocal(bgHex))
+  const contrastWhite = 1.05 / (lum + 0.05)
+  const contrastDark  = (lum + 0.05) / 0.062
+  return contrastWhite >= contrastDark ? "#ffffff" : "#14202b"
+}
+
 // ─── Hero Section ─────────────────────────────────────────────────────────────
 export function HeroSection() {
   const router = useRouter()
@@ -35,9 +59,8 @@ export function HeroSection() {
   const ecoBoxRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef<number | null>(null)
 
-  // CTA word cycle state — "Upgrading" doesn't map to one hub, so its arrow
-  // color is re-rolled from {green, e-service, tech} each time it comes up,
-  // giving it some variety instead of a single fixed hue like the other two.
+  // CTA word cycle state — "Upgrading" doesn't map to one hub, so its circle
+  // color is re-rolled from {green, e-service, tech} each time it comes up.
   const [ctaWordIdx, setCtaWordIdx] = useState(0)
   const [upgradeColorIdx, setUpgradeColorIdx] = useState(0)
 
@@ -117,21 +140,27 @@ export function HeroSection() {
   const hubColor  = isDark ? active.colorDark : active.colorLight
   const nameColor = ensureAccessible(hubColor, "#0d2436", 4.5)
 
-  // Per-word arrow colors — Designing/Printing map to their hub's own
-  // color (matching the Core Hub Ecosystem card below), Upgrading rotates
-  // through green / e-service / tech each time it's shown.
-  const designArrowColor = BRAND.orangeBrown
-  const printArrowColor  = isDark ? BRAND.blue : BRAND.blueDark
+  // Per-word circle colors — Designing/Printing map to their hub's own
+  // color, Upgrading rotates through green / e-service / tech. Each option
+  // is theme-aware (dark variant on light mode, light variant on dark
+  // mode) so the circle itself always reads clearly against the page.
+  const designArrowColor = isDark ? BRAND.orangeBrown : BRAND.orangeBrown
+  const printArrowColor  = isDark ? BRAND.lightBlue : BRAND.blueDark
   const upgradeColorOptions = isDark
     ? [BRAND.greenDeep, BRAND.lightBlue, "#B8CCE0"]
     : [BRAND.greenDeep, BRAND.blueMid, BRAND.dark100]
   const upgradeArrowColor = upgradeColorOptions[upgradeColorIdx]
 
   const activeCtaWord: CtaWord = CTA_WORDS[ctaWordIdx]
-  const activeArrowColor =
+  const activeCircleColor =
     activeCtaWord === "Designing" ? designArrowColor :
     activeCtaWord === "Printing"  ? printArrowColor :
     upgradeArrowColor
+
+  // Arrow icon color is computed from the circle's own color, not assumed
+  // — so a light circle (e.g. the lighter e-service teal) gets a dark
+  // icon, and a dark circle gets a light icon, in either theme.
+  const activeArrowIconColor = getArrowIconColor(activeCircleColor)
 
   const handleNavigate = (path: string) => router.push(path)
 
@@ -173,7 +202,8 @@ export function HeroSection() {
         <div className="w-full max-w-[840px] mx-auto flex flex-col mb-10 md:mb-14">
           <div className="text-center md:text-left">
             <p className="font-sans font-black text-3xl md:text-5xl tracking-tight text-zinc-900 dark:text-zinc-50 mb-3 transition-colors duration-300">
-              Welcome to ApexbytesHub
+              <span className="block md:inline">Welcome to</span>{" "}
+              <span className="block md:inline">ApexbytesHub</span>
             </p>
             <h1 className="font-sans font-bold text-2xl md:text-4xl tracking-tight text-zinc-800 dark:text-zinc-100 leading-[1.15] mb-4 text-balance transition-colors duration-300">
               {BIZ.tagline}
@@ -181,7 +211,9 @@ export function HeroSection() {
             <p className="text-sm md:text-base font-medium text-zinc-600 dark:text-zinc-400 max-w-[480px] md:max-w-none mx-auto md:mx-0 leading-relaxed">
               From printing your documents to navigating government services — we make it simple, fast, and friendly.
             </p>
-            <ClassicTagline />
+            <div className="mb-8 md:mb-10">
+              <ClassicTagline />
+            </div>
           </div>
 
           <div className="relative w-full flex justify-center items-center mb-8">
@@ -226,26 +258,33 @@ export function HeroSection() {
                   borderColor: STROKE_COLOR,
                   ["--rest" as any]: REST_COLOR,
                 }}
-                className="group relative z-30 inline-flex items-center justify-center gap-3 w-[272px] sm:w-[308px] px-6 py-5 rounded-full font-sans font-black text-lg overflow-hidden border-2 transition-all duration-150 active:duration-75 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.94] shadow-md hover:shadow-xl active:shadow-sm"
+                className="group relative z-30 flex items-center justify-center w-[272px] sm:w-[308px] px-6 py-5 rounded-full font-sans font-black text-lg overflow-hidden border-2 transition-all duration-150 active:duration-75 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.94] shadow-md hover:shadow-xl active:shadow-sm"
               >
                 <span
                   aria-hidden="true"
                   className="absolute inset-0 origin-bottom scale-y-100 md:scale-y-0 transition-transform duration-150 ease-out md:group-hover:scale-y-100 md:group-active:scale-y-100"
                   style={{ backgroundColor: CTA_FILL_COLOR }}
                 />
-                <span
-                  key={activeCtaWord}
-                  className="relative z-10 text-white md:text-[color:var(--rest)] md:group-hover:text-white md:group-active:text-white transition-colors duration-150 animate-in fade-in duration-300"
-                >
-                  Start {activeCtaWord}
+
+                {/* Text block — padded on the right so it never collides with
+                    the arrow, which is pinned separately and never moves. */}
+                <span className="relative z-10 pr-11 sm:pr-12 text-white md:text-[color:var(--rest)] md:group-hover:text-white md:group-active:text-white transition-colors duration-150 whitespace-nowrap">
+                  Start{" "}
+                  <span key={activeCtaWord} className="inline-block animate-in fade-in duration-300">
+                    {activeCtaWord}
+                  </span>
                 </span>
+
+                {/* Arrow — fixed at the same spot on the button at all times;
+                    only its background color and icon color change. */}
                 <span
-                  className="relative z-10 shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full bg-white/95 dark:bg-zinc-50/95 shadow-sm transition-colors duration-300"
+                  className="absolute right-5 sm:right-6 top-1/2 -translate-y-1/2 z-10 shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full shadow-sm transition-colors duration-300"
+                  style={{ backgroundColor: activeCircleColor }}
                   aria-hidden="true"
                 >
                   <ArrowRight
                     weight="bold"
-                    style={{ color: activeArrowColor }}
+                    style={{ color: activeArrowIconColor }}
                     className="w-4 h-4 transition-all duration-300 group-hover:translate-x-0.5"
                   />
                 </span>
@@ -435,4 +474,4 @@ export function HeroSection() {
       </div>
     </section>
   )
-      } 
+      }
