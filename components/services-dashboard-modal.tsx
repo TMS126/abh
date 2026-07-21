@@ -12,7 +12,6 @@ interface ServicesDashboardModalProps {
 
 export function ServicesDashboardModal({ isOpen, onClose, onNavigate }: ServicesDashboardModalProps) {
   
-  // Prevent background scrolling on the underlying page when the dashboard is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden"
@@ -31,16 +30,13 @@ export function ServicesDashboardModal({ isOpen, onClose, onNavigate }: Services
       className="fixed inset-0 z-[9999] flex items-center justify-center p-0 sm:p-4 md:p-6"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      {/* Darkened blur backdrop backdrop */}
       <div 
         className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity duration-300 animate-in fade-in"
         onClick={onClose}
       />
 
-      {/* Main Dashboard Panel Layer */}
       <div className="relative z-10 bg-background w-full h-full sm:h-[85vh] sm:max-w-[1140px] sm:rounded-[28px] shadow-[0_32px_80px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-bottom-10 duration-300 ease-out">
         
-        {/* Floating Close Button */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 z-50 w-[36px] h-[36px] rounded-full bg-black/20 text-white backdrop-blur-sm flex items-center justify-center hover:bg-black/40 active:scale-90 transition-all duration-200 shadow-md"
@@ -49,11 +45,10 @@ export function ServicesDashboardModal({ isOpen, onClose, onNavigate }: Services
           <X className="w-4 h-4" weight="bold" />
         </button>
 
-        {/* Scrollable Container Wrapper injecting your exact high-fidelity UI layout */}
         <div className="flex-1 overflow-y-auto pb-12 scrollbar-none">
           <ServicesPage 
             onNavigate={(page) => {
-              onClose() // Automatically close container upon deep redirect actions
+              onClose()
               onNavigate(page)
             }} 
           />
@@ -61,4 +56,4 @@ export function ServicesDashboardModal({ isOpen, onClose, onNavigate }: Services
       </div>
     </div>
   )
-}
+} 
