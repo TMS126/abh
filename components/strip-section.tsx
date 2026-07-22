@@ -39,7 +39,7 @@ function StripCard({ item }: { item: any }) {
       className={cn(
         "relative rounded-[14px] border p-6 transition-all duration-300 group overflow-hidden",
         "border-zinc-100 dark:border-zinc-800",
-        "shadow-sm hover:-translate-y-1 hover:shadow-lg"
+        "abh-shadow-card hover:-translate-y-1"
       )}
       style={{ backgroundColor: hovered ? fillBlue : undefined }}
     >
@@ -155,4 +155,4 @@ export function CtaBar({
       </ScrollBounce>
     </section>
   )
-            }
+            } 
