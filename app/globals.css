@@ -353,7 +353,12 @@ button, a, [role="button"] {
   .abh-shadow-project-card:hover {
     box-shadow: 0 20px 36px -14px var(--hub-shadow, rgba(0, 0, 0, 0.45)), 0 8px 16px -8px rgba(0, 0, 0, 0.35);
   }
-
+/* Overlay/lightbox image shadow — backdrop is already near-black, so a
+     dark shadow is invisible regardless of alpha. Uses a subtle light glow
+     instead to separate the image from the black backdrop. */
+  .abh-shadow-zoom-image {
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 50px rgba(255, 255, 255, 0.05);
+  }
   /* FIX: was `background: var(--border)` at 1px — in dark mode --border
      (#243648) sits almost flush against the page's dark navy background
      (#0D1B2A), making this divider effectively invisible. Now a solid
