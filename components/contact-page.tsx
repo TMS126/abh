@@ -268,14 +268,14 @@ function ContactPageInner() {
     return (
       <ScrollBounce key={c.title} delay={index * 0.08}>
         <a
-          href={c.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group flex flex-col items-center justify-center text-center gap-2 p-4 h-full min-h-[104px] abh-card border-transparent transition-all duration-200 active:scale-[0.97]"
-          style={{ borderColor: "transparent" }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = dotColor }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "transparent" }}
-        >
+  href={c.href}
+  target="_blank"
+  rel="noopener noreferrer"
+  className="group flex flex-col items-center justify-center text-center gap-2 p-4 h-full min-h-[104px] abh-card abh-shadow-contact-card border-transparent transition-all duration-200 active:scale-[0.97]"
+  style={{ borderColor: "transparent" }}
+  onMouseEnter={(e) => { e.currentTarget.style.borderColor = dotColor }}
+  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "transparent" }}
+>
           <span
             className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 transition-colors duration-200 text-zinc-400 dark:text-zinc-500 bg-zinc-50 dark:bg-zinc-900"
             style={{ ["--icon-color" as any]: dotColor }}
