@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from 'next/font/google'
 import Script from 'next/script'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import { InstanceGuardProvider } from '@/hooks/use-instance-guard'
 import { BIZ, BRAND } from '@/lib/brand'
 import { LocalBusinessJsonLd } from '@/components/ui/json-ld'
@@ -146,7 +147,12 @@ export default function RootLayout({
           <QuoteCalculatorWidget />
           <WhatsAppFAB />
         </ThemeProvider>
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        {process.env.NODE_ENV === 'production' && (
+          <>
+            <Analytics />
+            <SpeedInsights />
+          </>
+        )}
 
         {/* GA4 — production only, same gating as Vercel Analytics above,
             so local/dev testing doesn't pollute real traffic data. */}
