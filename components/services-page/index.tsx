@@ -139,7 +139,7 @@ export function ServicesPage() {
                   onClick={() => handleOpenHub(hubId)}
                   onMouseEnter={() => setHoveredMainHub(hubId)}
                   onMouseLeave={() => setHoveredMainHub(null)}
-                  className="group flex flex-col items-center p-6 md:p-7 rounded-[14px] border bg-white dark:bg-zinc-950 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 text-center w-full h-full"
+                  className="group abh-shadow-card flex flex-col items-center p-6 md:p-7 rounded-[14px] border bg-white dark:bg-zinc-950 transition-all duration-300 hover:-translate-y-1.5 text-center w-full h-full"
                   style={{ borderColor: isHovered ? accent : undefined }}
                 >
                   {/* Icon */}
@@ -206,4 +206,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-}
+                                             } 
