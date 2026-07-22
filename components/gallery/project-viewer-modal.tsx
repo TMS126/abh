@@ -275,7 +275,12 @@ export function ProjectViewerModal({
 
   if (!project) return null
 
-  const accent    = isDark ? HUB_COLORS[project.hub as HubKey].tagTextDark : HUB_COLORS[project.hub as HubKey].tagText
+  // FIX: was reading HUB_COLORS[...].tagText / .tagTextDark — those two
+  // fields are identical grey/white across every hub (see brand.ts), so
+  // this modal's accent was never actually hub-specific. Same bug found
+  // and fixed earlier in gallery-page.tsx's getAccent(). Now reads
+  // accentLight/accentDark, which genuinely differ per hub.
+  const accent    = isDark ? HUB_COLORS[project.hub as HubKey].accentDark : HUB_COLORS[project.hub as HubKey].accentLight
   const allImages = project.images?.length > 0 ? project.images : [project.image]
   const hasBA     = BA_HUBS.includes(project.hub as HubId) && !!(project as any).beforeImage && !!(project as any).afterImage
   const beforeImg = (project as any).beforeImage as string | undefined
@@ -288,7 +293,7 @@ export function ProjectViewerModal({
       <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
 
       <div className={cn(
-        "relative w-full bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800",
+        "relative w-full abh-shadow-modal bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800",
         "rounded-t-[20px] md:rounded-[14px]",
         "flex flex-col md:flex-row",
         "h-[95vh] md:h-[85vh] md:max-w-5xl md:overflow-hidden",
@@ -371,4 +376,4 @@ export function ProjectViewerModal({
       )}
     </div>
   )
-}
+          } 
