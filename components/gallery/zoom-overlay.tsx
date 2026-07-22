@@ -55,7 +55,7 @@ export function ZoomOverlay({ images, startIndex, onClose, title }: {
           key={idx}
           src={images[idx]}
           alt={`${title} — image ${idx + 1} of ${images.length}`}
-          className="max-w-full max-h-[90dvh] object-contain rounded-[14px] shadow-2xl select-none animate-in zoom-in-95 duration-200"
+          className="max-w-full max-h-[90dvh] object-contain rounded-[14px] abh-shadow-zoom-image select-none animate-in zoom-in-95 duration-200"
           draggable={false}
           onClick={onClose}
         />
@@ -83,4 +83,4 @@ export function ZoomOverlay({ images, startIndex, onClose, title }: {
       )}
     </div>
   )
-}
+      }
