@@ -13,7 +13,7 @@ export function ImagePlaceholder({ accent, label }: { accent: string; label?: st
     >
       <div className="absolute w-48 h-48 rounded-full opacity-10" style={{ border: `2px solid ${accent}`, top: "10%", right: "-10%" }} />
       <div className="absolute w-28 h-28 rounded-full opacity-10" style={{ border: `2px solid ${accent}`, bottom: "5%", left: "-5%" }} />
-      <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner" style={{ backgroundColor: `${accent}20`, border: `1.5px solid ${accent}30` }}>
+      <div className="w-14 h-14 rounded-2xl flex items-center justify-center abh-shadow-icon-inset" style={{ backgroundColor: `${accent}20`, border: `1.5px solid ${accent}30` }}>
         <ImageIcon size={26} weight="thin" style={{ color: accent }} />
       </div>
       <p className="text-xs font-bold tracking-wider uppercase opacity-60" style={{ color: accent }}>{label ?? "No image"}</p>
