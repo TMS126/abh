@@ -103,7 +103,7 @@ export function HubModal({ hubId, onClose, onSelectService }: {
           )}
 
           {activeSection && (
-            <div key={`items-${openSectionIdx}`} className="rounded-[14px] bg-zinc-50 dark:bg-zinc-900/50 shadow-sm p-3 md:p-4 grid grid-cols-1 gap-2 animate-in fade-in duration-200">
+            <div key={`items-${openSectionIdx}`} className="abh-shadow-nested-group rounded-[14px] bg-zinc-50 dark:bg-zinc-900/50 p-3 md:p-4 grid grid-cols-1 gap-2 animate-in fade-in duration-200">
               {activeSection.items.map((item, iIdx) => (
                 <button
                   key={iIdx}
@@ -113,7 +113,7 @@ export function HubModal({ hubId, onClose, onSelectService }: {
                     requirements: item.requirements, desc: item.description,
                     turnaround: getTurnaround(activeSection.title, item.name),
                   })}
-                  className="flex items-center justify-between p-3.5 md:p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-transparent transition-all"
+                  className="abh-shadow-nested-item flex items-center justify-between p-3.5 md:p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-transparent transition-all"
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = accent }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = "transparent" }}
                 >
@@ -136,4 +136,4 @@ export function HubModal({ hubId, onClose, onSelectService }: {
       </div>
     </div>
   )
-}
+        } 
