@@ -145,56 +145,27 @@ export function AboutPage() {
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
 
-{/* ── Header ── */}
-<section className="px-4 md:px-8 pt-[calc(var(--nav-h,74px)+2rem)] pb-8 text-center">
-  <div className="max-w-[1248px] mx-auto flex flex-col items-center">
+      {/* ── Header ── */}
+      <section className="px-4 md:px-8 pt-[calc(var(--nav-h,74px)+2rem)] pb-8 text-center">
+        <div className="max-w-[1248px] mx-auto flex flex-col items-center">
 
-    <ScrollBounce>
-      <h1 className="abh-page-title mb-3">About Us</h1>
-    </ScrollBounce>
+          <ScrollBounce>
+            <h1 className="abh-page-title mb-3">About Us</h1>
+          </ScrollBounce>
 
-    <p className="abh-tagline max-w-xl mx-auto">
-      A local business built on community, trust, and real help — right here in Kgotsong.
-    </p>
+          <p className="abh-tagline max-w-xl mx-auto">
+            A local business built on community, trust, and real help — right here in Kgotsong.
+          </p>
 
-    <div className="abh-divider mx-auto" />
+          <div className="abh-divider mx-auto" />
 
-    <ScrollBounce delay={0.1}>
-      <div
-        className="mt-8 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x divide-zinc-200 dark:divide-zinc-700 rounded-[14px] overflow-hidden shadow-lg border-2 transition-colors duration-300"
-        style={{ borderColor: blueColor }}
-        onMouseEnter={() => setStatsHovered(true)}
-        onMouseLeave={() => setStatsHovered(false)}
-      >
-        {[
-          { value: BIZ.hubCount,     label: "Service Hubs"  },
-          { value: BIZ.serviceCount, label: "Services"      },
-          { value: "Since 2023",     label: "Est. Kgotsong" },
-        ].map((s, i) => (
-          <div
-            key={i}
-            className="flex flex-col items-center justify-center py-5 px-3 transition-colors duration-300 cursor-default"
-            style={{ backgroundColor: statsHovered ? blueColor : "transparent" }}
-          >
-            <p
-              className="font-sans font-black text-xl leading-none transition-colors duration-300"
-              style={{ color: statsHovered ? "#ffffff" : blueOnPage }}
+          <ScrollBounce delay={0.1}>
+            <div
+              className="mt-8 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x divide-zinc-200 dark:divide-zinc-700 rounded-[14px] overflow-hidden shadow-lg border-2 transition-colors duration-300"
+              style={{ borderColor: blueColor }}
+              onMouseEnter={() => setStatsHovered(true)}
+              onMouseLeave={() => setStatsHovered(false)}
             >
-              {s.value}
-            </p>
-            <p
-              className="text-[0.62rem] font-medium uppercase tracking-widest mt-1.5 text-center transition-colors duration-300"
-              style={{ color: statsHovered ? "rgba(255,255,255,0.85)" : `${blueOnPage}cc` }}
-            >
-              {s.label}
-            </p>
-          </div>
-        ))}
-      </div>
-    </ScrollBounce>
-
-  </div>
-</section>
               {[
                 { value: BIZ.hubCount,     label: "Service Hubs"  },
                 { value: BIZ.serviceCount, label: "Services"      },
@@ -248,38 +219,39 @@ export function AboutPage() {
 
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-stretch">
 
-  <ul
-    className="flex flex-col gap-4 h-full"
-    aria-label="Our values"
-  >
-    {ABOUT_VALUES.map((item, index) => (
-      <li
-        key={index}
-        className="abh-card abh-shadow-elevated rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-5 flex flex-row items-center text-left gap-4 flex-1"
-      >
-        <div
-          className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
-          style={{ backgroundColor: `${greenColor}15`, color: greenColor }}
-          aria-hidden="true"
-        >
-          {renderIcon(item.iconName, "w-5 h-5")}
-        </div>
-        <div>
-          <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200 mb-1">
-            {item.title}
-          </h3>
-          <p className="abh-body text-sm">{item.desc}</p>
-        </div>
-      </li>
-    ))}
-  </ul>
+            <ul
+              className="flex flex-col gap-4 h-full"
+              aria-label="Our values"
+            >
+              {ABOUT_VALUES.map((item, index) => (
+                <li
+                  key={index}
+                  className="abh-card abh-shadow-elevated rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-5 flex flex-row items-center text-left gap-4 flex-1"
+                >
+                  <div
+                    className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: `${greenColor}15`, color: greenColor }}
+                    aria-hidden="true"
+                  >
+                    {renderIcon(item.iconName, "w-5 h-5")}
+                  </div>
+                  <div>
+                    <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200 mb-1">
+                      {item.title}
+                    </h3>
+                    <p className="abh-body text-sm">{item.desc}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
 
-  <ScrollBounce delay={0.2}>
-    <div
-      className="abh-shadow-elevated rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-7 flex flex-col h-full"
-      aria-label="Business overview" >
+            <ScrollBounce delay={0.2}>
+              <div
+                className="abh-shadow-elevated rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-7 flex flex-col h-full"
+                aria-label="Business overview"
+              >
 
-      <div className="flex items-center gap-3 mb-7 pb-6 border-b border-zinc-100 dark:border-zinc-800">
+                <div className="flex items-center gap-3 mb-7 pb-6 border-b border-zinc-100 dark:border-zinc-800">
                   <div
                     className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
                     style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
@@ -510,4 +482,4 @@ export function AboutPage() {
 
     </div>
   )
-}
+} 
