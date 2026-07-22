@@ -85,7 +85,7 @@ export function ProjectsPopover({
         <div
           role="listbox"
           aria-label={`Projects in this hub`}
-          className="absolute right-0 top-0 z-50 w-64 bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+          className="absolute right-0 top-0 z-50 w-64 abh-shadow-popover bg-white dark:bg-zinc-950 rounded-[14px] border border-zinc-100 dark:border-zinc-800 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         >
           <div className="px-4 py-3 cursor-pointer" onClick={closePopover}>
             <span className="text-[0.65rem] font-black" style={{ color: accent }}>
@@ -121,4 +121,4 @@ export function ProjectsPopover({
       )}
     </div>
   )
-}
+                      } 
