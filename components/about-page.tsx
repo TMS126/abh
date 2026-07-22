@@ -157,7 +157,7 @@ export function AboutPage() {
             A local business built on community, trust, and real help — right here in Kgotsong.
           </p>
 
-          <div className="abh-divider mx-auto" />
+          <div className="abh-divider" />
 
           <ScrollBounce delay={0.1}>
             <div
@@ -342,7 +342,6 @@ export function AboutPage() {
                   </div>
                 </li>
               )
-              // TM (index 0) not marked for animation — kept static.
               return index === 0 ? (
                 card
               ) : (
