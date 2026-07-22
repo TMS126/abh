@@ -145,8 +145,8 @@ export function AboutPage() {
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
 
-      {/* ── Header ── */}
-      <section className="px-4 md:px-8 pt-[calc(var(--nav-h,74px)+2rem)] pb-8 text-center">
+{/* ── Header ── */}
+<section className="px-4 md:px-8 pt-[calc(var(--nav-h,74px)+2rem)] pb-8 text-center">
   <div className="max-w-[1248px] mx-auto flex flex-col items-center">
 
     <ScrollBounce>
@@ -166,8 +166,33 @@ export function AboutPage() {
         onMouseEnter={() => setStatsHovered(true)}
         onMouseLeave={() => setStatsHovered(false)}
       >
+        {[
+          { value: BIZ.hubCount,     label: "Service Hubs"  },
+          { value: BIZ.serviceCount, label: "Services"      },
+          { value: "Since 2023",     label: "Est. Kgotsong" },
+        ].map((s, i) => (
+          <div
+            key={i}
+            className="flex flex-col items-center justify-center py-5 px-3 transition-colors duration-300 cursor-default"
+            style={{ backgroundColor: statsHovered ? blueColor : "transparent" }}
+          >
+            <p
+              className="font-sans font-black text-xl leading-none transition-colors duration-300"
+              style={{ color: statsHovered ? "#ffffff" : blueOnPage }}
+            >
+              {s.value}
+            </p>
+            <p
+              className="text-[0.62rem] font-medium uppercase tracking-widest mt-1.5 text-center transition-colors duration-300"
+              style={{ color: statsHovered ? "rgba(255,255,255,0.85)" : `${blueOnPage}cc` }}
+            >
+              {s.label}
+            </p>
+          </div>
+        ))}
       </div>
     </ScrollBounce>
+
   </div>
 </section>
               {[
