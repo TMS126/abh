@@ -226,7 +226,7 @@ export function AboutPage() {
     {ABOUT_VALUES.map((item, index) => (
       <li
         key={index}
-        className="abh-card rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm p-5 flex flex-row items-center text-left gap-4 flex-1"
+        className="abh-card abh-shadow-elevated rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-5 flex flex-row items-center text-left gap-4 flex-1"
       >
         <div
           className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
@@ -247,7 +247,7 @@ export function AboutPage() {
 
   <ScrollBounce delay={0.2}>
     <div
-      className="rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-7 shadow-sm flex flex-col h-full"
+      className="abh-shadow-elevated rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-7 flex flex-col h-full"
       aria-label="Business overview" >
 
       <div className="flex items-center gap-3 mb-7 pb-6 border-b border-zinc-100 dark:border-zinc-800">
@@ -481,4 +481,4 @@ export function AboutPage() {
 
     </div>
   )
-   } 
+}
