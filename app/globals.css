@@ -359,6 +359,21 @@ button, a, [role="button"] {
   .abh-shadow-zoom-image {
     box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 50px rgba(255, 255, 255, 0.05);
   }
+
+   /* Named equivalents of Tailwind's built-in shadow/xl/inner utilities —
+     same visual values, just brought under the abh- naming convention so
+     every shadow in the codebase is named and centralized, not a mix of
+     custom classes and framework defaults. */
+  .abh-shadow-badge {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  }
+  .abh-shadow-icon-inset {
+    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+  }
+  .abh-shadow-handle {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  }
+   
   /* FIX: was `background: var(--border)` at 1px — in dark mode --border
      (#243648) sits almost flush against the page's dark navy background
      (#0D1B2A), making this divider effectively invisible. Now a solid
