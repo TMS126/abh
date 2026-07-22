@@ -323,6 +323,37 @@ button, a, [role="button"] {
     box-shadow: 0 1px 8px -1px rgba(0, 0, 0, 0.35);
   }
 
+  /* Full-screen modal shadow — shared dark, layered base. Optional per-modal
+     accent glow layered on top via the --modal-glow custom property, which
+     any component can set inline (e.g. HubModal sets it to an accent-tinted
+     color; components that don't set it just get transparent = no glow). */
+  .abh-shadow-modal {
+    box-shadow:
+      0 45px 100px -20px rgba(0, 0, 0, 0.55),
+      0 20px 48px -14px rgba(0, 0, 0, 0.4),
+      0 10px 24px -8px var(--modal-glow, transparent);
+  }
+
+  /* Small floating popover/dropdown panel shadow, both themes */
+  .abh-shadow-popover {
+    box-shadow: 0 20px 44px -12px rgba(0, 0, 0, 0.22);
+  }
+  .dark .abh-shadow-popover {
+    box-shadow: 0 20px 44px -12px rgba(0, 0, 0, 0.65);
+  }
+
+  /* Gallery project carousel card — resting shadow + accent-tinted hover glow
+     via the --hub-shadow custom property set inline per-project by the
+     component (already-set CSS var, just now actually consumed by CSS
+     instead of being duplicated in a JS onMouseEnter handler). */
+  .abh-shadow-project-card {
+    box-shadow: 0 16px 30px -14px rgba(0, 0, 0, 0.45), 0 6px 14px -8px rgba(0, 0, 0, 0.3);
+    transition: box-shadow 0.3s ease;
+  }
+  .abh-shadow-project-card:hover {
+    box-shadow: 0 20px 36px -14px var(--hub-shadow, rgba(0, 0, 0, 0.45)), 0 8px 16px -8px rgba(0, 0, 0, 0.35);
+  }
+
   /* FIX: was `background: var(--border)` at 1px — in dark mode --border
      (#243648) sits almost flush against the page's dark navy background
      (#0D1B2A), making this divider effectively invisible. Now a solid
