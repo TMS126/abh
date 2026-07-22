@@ -165,7 +165,7 @@ export default function PricingPage() {
                     {results.map((r, i) => (
                       <div
                         key={i}
-                        className="flex items-center justify-between gap-3 px-4 py-3 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm"
+                        className="flex items-center justify-between gap-3 px-4 py-3 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-[0_1px_6px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.5)]"
                         style={{ animationDelay: `${i * 0.03}s` }}
                       >
                         <div className="min-w-0">
@@ -193,7 +193,7 @@ export default function PricingPage() {
                   return (
                     <div
                       key={hubId}
-                      className="rounded-[14px] border border-zinc-200 dark:border-zinc-800 overflow-hidden transition-all duration-300"
+                      className="rounded-[14px] border border-zinc-200 dark:border-zinc-800 overflow-hidden transition-all duration-300 shadow-[0_1px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.55)]"
                       style={{
                         borderColor: isOpen ? `${accent}50` : undefined,
                         animationDelay: `${0.1 + idx * 0.07}s`,
@@ -307,4 +307,4 @@ export default function PricingPage() {
       </div>
     </>
   )
-                                              } 
+                                    } 
