@@ -147,25 +147,29 @@ export function AboutPage() {
 
       {/* ── Header ── */}
       <section className="px-4 md:px-8 pt-[calc(var(--nav-h,74px)+2rem)] pb-8 text-center">
-        <div className="max-w-[1248px] mx-auto flex flex-col items-center">
+  <div className="max-w-[1248px] mx-auto flex flex-col items-center">
 
-          <ScrollBounce>
-            <h1 className="abh-page-title mb-3">About Us</h1>
-          </ScrollBounce>
+    <ScrollBounce>
+      <h1 className="abh-page-title mb-3">About Us</h1>
+    </ScrollBounce>
 
-          <p className="abh-tagline max-w-xl mx-auto">
-            A local business built on community, trust, and real help — right here in Kgotsong.
-          </p>
+    <p className="abh-tagline max-w-xl mx-auto">
+      A local business built on community, trust, and real help — right here in Kgotsong.
+    </p>
 
-          <div className="abh-divider mx-auto" />
+    <div className="abh-divider mx-auto" />
 
-          <ScrollBounce delay={0.1}>
-            <div
-              className="mt-8 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x divide-zinc-200 dark:divide-zinc-700 rounded-[14px] overflow-hidden shadow-lg border-2 transition-colors duration-300"
-              style={{ borderColor: blueColor }}
-              onMouseEnter={() => setStatsHovered(true)}
-              onMouseLeave={() => setStatsHovered(false)}
-            >
+    <ScrollBounce delay={0.1}>
+      <div
+        className="mt-8 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x divide-zinc-200 dark:divide-zinc-700 rounded-[14px] overflow-hidden shadow-lg border-2 transition-colors duration-300"
+        style={{ borderColor: blueColor }}
+        onMouseEnter={() => setStatsHovered(true)}
+        onMouseLeave={() => setStatsHovered(false)}
+      >
+      </div>
+    </ScrollBounce>
+  </div>
+</section>
               {[
                 { value: BIZ.hubCount,     label: "Service Hubs"  },
                 { value: BIZ.serviceCount, label: "Services"      },
