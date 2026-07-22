@@ -20,6 +20,13 @@ import { LikeButton } from "./like-share-buttons"
 // py-3/py-4 to py-11/py-14 (44–56px), and the hover shadow's reach
 // trimmed slightly, so the shadow's max extent now sits safely inside
 // the padding on both mobile and desktop.
+//
+// SINGLE SOURCE OF TRUTH: resting + hover shadow values now live in
+// .abh-shadow-project-card (globals.css). The hover glow tint still needs
+// to be per-hub-color dynamic, so it's passed via the --hub-shadow CSS
+// custom property (was already being set here but never actually used —
+// the old onMouseEnter/onMouseLeave handlers duplicated the same values
+// as inline JS instead of letting the CSS class's :hover rule read the var).
 export function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }: {
   projects: ProjectData[]; accent: string; onSelect: (p: ProjectData) => void
   likedIds: Set<string>; onToggleLike: (id: string) => void
@@ -72,17 +79,10 @@ export function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggle
         {projects.map((project) => (
           <div key={project.id} className="shrink-0 w-full snap-center px-6 md:px-8 py-11 md:py-14" style={{ scrollSnapAlign: "center" }}>
             <div
-              className="group rounded-[16px] cursor-pointer will-change-transform transition-all duration-300 ease-out active:scale-[0.98] hover:-translate-y-1.5"
+              className="group abh-shadow-project-card rounded-[16px] cursor-pointer will-change-transform transition-all duration-300 ease-out active:scale-[0.98] hover:-translate-y-1.5"
               style={{
-                boxShadow: "0 16px 30px -14px rgba(0,0,0,0.45), 0 6px 14px -8px rgba(0,0,0,0.3)",
                 ["--hub-accent" as any]: accent,
                 ["--hub-shadow" as any]: `${accent}55`,
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.boxShadow = `0 20px 36px -14px ${accent}55, 0 8px 16px -8px rgba(0,0,0,0.35)`
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.boxShadow = "0 16px 30px -14px rgba(0,0,0,0.45), 0 6px 14px -8px rgba(0,0,0,0.3)"
               }}
               onClick={() => { if (!dragMoved.current) onSelect(project) }}
             >
@@ -149,4 +149,4 @@ export function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggle
       )}
     </div>
   )
-}
+      } 
