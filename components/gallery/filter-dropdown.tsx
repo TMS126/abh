@@ -32,11 +32,6 @@ export function FilterDropdown({
     }
   }
 
-  // Picking an option always closes the dropdown outright — this uses
-  // setOpen(false) directly rather than closeDropdown(), since
-  // closeDropdown() carries back-button/backdrop dismiss logic that was
-  // behaving like a toggle when reused here (select once = stays open,
-  // select again = closes).
   const handleSelect = (id: HubId | "all") => {
     playClickSound()
     onSelect(id)
@@ -59,10 +54,23 @@ export function FilterDropdown({
         className={cn(
                       "flex items-center justify-center gap-1.5 px-3 py-2 rounded-full",
                       "text-[10px] font-bold whitespace-nowrap transition-all duration-150 active:scale-95",
-                      "shadow-[0_2px_10px_-2px_rgba(0,0,0,0.18)] dark:shadow-[0_2px_10px_-2px_rgba(0,0,0,0.5)]",
-                      "hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.24)] dark:hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.6)]"
+                      // Stronger dual-layer shadow — a deeper black shadow plus a faint
+                      // light-alpha edge in dark mode, since a black shadow alone barely
+                      // reads against the dark navy page background (same fix pattern
+                      // used on the contact cards and about page cards earlier).
+                      "shadow-[0_2px_10px_-2px_rgba(0,0,0,0.18)] dark:shadow-[0_4px_18px_-3px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.06)]",
+                      "hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.24)] dark:hover:shadow-[0_6px_22px_-3px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.1)]",
+                      // Suppress the default browser focus outline on this button and
+                      // replace it with a contained ring — the global :focus-visible
+                      // outline (outline-offset: 3px) can render as a stray blinking
+                      // vertical bar on some Android browsers (Samsung Internet) when
+                      // tapped on a small rounded-full pill.
+                      "outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                     )}
-        style={currentAccent ? { borderColor: `${currentAccent}45` } : undefined}
+        style={{
+          borderColor: currentAccent ? `${currentAccent}45` : undefined,
+          ["--tw-ring-color" as any]: currentAccent ?? blueColor,
+        }}
       >
         {currentAccent && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: currentAccent }} />}
         <span style={{ color: currentAccent ?? undefined }} className={!currentAccent ? "text-zinc-800 dark:text-zinc-100" : undefined}>
@@ -79,13 +87,6 @@ export function FilterDropdown({
             aria-hidden="true"
           />
           <AnimatePresence>
-            {/*
-              Single lightweight glass panel behind the pill group — one
-              backdrop-blur-md layer only (no stacked/nested blurs, no
-              saturate), so the gaps and corners around the pills no longer
-              let page content bleed through. Each pill still carries its
-              own solid background on top for contrast/legibility.
-            */}
             <motion.div
               role="listbox"
               aria-label="Filter by hub"
@@ -120,14 +121,16 @@ export function FilterDropdown({
                         "w-full flex items-center justify-center px-3 py-2.5 rounded-full",
                         "text-xs font-bold whitespace-nowrap transition-all duration-150 active:scale-95",
                         "shadow-[0_2px_10px_-2px_rgba(0,0,0,0.18)] dark:shadow-[0_2px_10px_-2px_rgba(0,0,0,0.5)]",
-                        "hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.24)] dark:hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.6)]"
+                        "hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.24)] dark:hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.6)]",
+                        "outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                       )}
                       style={
                         isActive
-                          ? { backgroundColor: activeBg, color: activeText }
+                          ? { backgroundColor: activeBg, color: activeText, ["--tw-ring-color" as any]: activeBg }
                           : {
                               backgroundColor: isDark ? "#18181b" : "#ffffff",
                               color: accent ?? (isDark ? "#e4e4e7" : "#3f3f46"),
+                              ["--tw-ring-color" as any]: accent ?? blueColor,
                             }
                       }
                     >
