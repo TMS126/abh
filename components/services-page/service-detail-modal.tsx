@@ -219,9 +219,9 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                   onClick={() => setTab(t)}
                   className={cn(
                     "flex-1 py-2.5 rounded-[14px] text-[0.72rem] font-black uppercase tracking-wider transition-all duration-200",
-                    isActive ? "text-white" : "text-zinc-500 dark:text-zinc-400"
+                    !isActive && "text-zinc-500 dark:text-zinc-400"
                   )}
-                  style={isActive ? { backgroundColor: accent } : undefined}
+                  style={isActive ? { backgroundColor: accent, color: getContrastText(accent) } : undefined}
                 >
                   {t === "bring" ? "Bring" : "Description"}
                 </button>
