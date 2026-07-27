@@ -152,8 +152,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         dragElastic={{ top: 0, bottom: 0.6 }}
         onDragEnd={handleDragEnd}
         initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 32, stiffness: 340 }}
-        className="relative w-full md:max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-t-[20px] md:rounded-[14px] cursor-grab active:cursor-grabbing"
+        transition={{ type: "tween", duration: 0.22, ease: [0.32, 0.72, 0, 1] }} className="relative w-full md:max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-t-[20px] md:rounded-[14px] cursor-grab active:cursor-grabbing"
       >
         <div className="flex justify-center pt-2.5 pb-0.5 shrink-0" aria-hidden="true">
           <div className="w-9 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700" />
