@@ -42,7 +42,11 @@ export function ZoomOverlay({ images, startIndex, onClose, title }: {
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      <button onClick={onClose} className="absolute top-5 right-5 z-10 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors active:scale-90">
+      <button
+        onClick={onClose}
+        aria-label="Close image viewer"
+        className="absolute top-5 right-5 z-10 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors active:scale-90"
+      >
         <X size={18} weight="bold" />
       </button>
       {images.length > 1 && (
@@ -64,12 +68,14 @@ export function ZoomOverlay({ images, startIndex, onClose, title }: {
         <>
           <button
             onClick={() => setIdx(i => (i - 1 + images.length) % images.length)}
+            aria-label="Previous image"
             className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors active:scale-90"
           >
             <CaretLeft size={18} weight="bold" />
           </button>
           <button
             onClick={() => setIdx(i => (i + 1) % images.length)}
+            aria-label="Next image"
             className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors active:scale-90"
           >
             <CaretRight size={18} weight="bold" />
@@ -83,4 +89,4 @@ export function ZoomOverlay({ images, startIndex, onClose, title }: {
       )}
     </div>
   )
-} 
+  }
