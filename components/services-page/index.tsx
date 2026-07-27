@@ -142,15 +142,15 @@ export function ServicesPage() {
           </div>
         </ScrollBounce>
 
-        {/* Inline search */}
-        <ScrollBounce delay={0.08} className="w-full mb-10 flex justify-center">
+        {/* Inline search — raised above the notice banner's own stacking context so its dropdown never gets painted over */}
+        <ScrollBounce delay={0.08} className="relative z-40 w-full mb-10 flex justify-center">
           <div id="abh-inline-search" className="w-full flex justify-center">
             <InlineSearchBar onSelect={handleSelectService} />
           </div>
         </ScrollBounce>
 
         {/* Notice */}
-        <ScrollBounce delay={0.14} className="w-full">
+        <ScrollBounce delay={0.14} className="relative z-0 w-full">
           <div className="w-full"><NoticeBanner /></div>
         </ScrollBounce>
 
@@ -256,4 +256,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-        } 
+    } 
