@@ -73,11 +73,6 @@ function GalleryPageInner() {
   }, [searchParams])
 
   useEffect(() => {
-    const url = selectedProject ? `${pathname}?project=${selectedProject.id}` : pathname
-    window.history.replaceState(window.history.state, "", url)
-  }, [selectedProject, pathname])
-
-  useEffect(() => {
     if (!selectedProject) return
     const scrollY = window.scrollY
     const { style } = document.body
