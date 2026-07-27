@@ -158,9 +158,12 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           <div className="w-9 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700" />
         </div>
 
-        <div className="px-6 pt-4 pb-5 flex-shrink-0 text-center">
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex-1 min-w-0 pr-3">
+        <div className="px-6 pt-4 pb-5 flex-shrink-0">
+          <div className="flex items-start mb-4">
+            {/* Invisible spacer mirroring the icon group's width so the center block is truly centered */}
+            <div className="w-[72px] shrink-0" aria-hidden="true" />
+
+            <div className="flex-1 min-w-0 text-center">
               <span
                 className="text-[0.62rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-2.5 inline-block"
                 style={{ backgroundColor: `${accent}15`, color: accent }}
@@ -169,7 +172,8 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
               </span>
               <h3 className="abh-card-heading text-[1.1rem] leading-tight">{svc.name}</h3>
             </div>
-            <div className="flex items-center gap-2 shrink-0 relative">
+
+            <div className="flex items-center justify-end gap-2 shrink-0 relative w-[72px]">
               <button
                 type="button" onClick={handleShare} aria-label="Share this service"
                 className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
