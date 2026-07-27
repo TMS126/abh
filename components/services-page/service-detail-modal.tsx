@@ -13,6 +13,7 @@ import { useFocusTrap, AbhLoader } from "./shared"
 import {
   SelectedService, naturalServiceLabel, cleanText, formatAcceptHint,
   HUB_ACCEPT, CLD_MAX_MB, CLD_PRESET, BLOCKED_MIME_TYPES, BLOCKED_EXTENSIONS, getCldUrl, trackEvent,
+  getContrastText,
 } from "./lib"
 import { getCartQtyForItem } from "@/components/quote-calculator/lib"
 
