@@ -112,19 +112,18 @@ function ProjectImageSection({
                 opens up on the sides once the container shrinks. Fades in
                 smoothly as scrollProgress increases. */}
             {isMobile && (
-              <img
-                src={allImages[activeImg]}
-                alt=""
-                aria-hidden="true"
-                className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl pointer-events-none transition-opacity duration-300"
-                style={{ opacity: scrollProgress * 0.85 }}
-              />
-            )}
+  <img
+    src={allImages[activeImg]}
+    alt=""
+    aria-hidden="true"
+    className="absolute inset-0 w-full h-full object-cover scale-125 blur-3xl pointer-events-none transition-opacity duration-300"
+    style={{ opacity: scrollProgress * 0.85 }}
+  />
+)}
 
-            <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="(max-width: 768px) 100vw, 55vw" className="relative object-contain transition-opacity duration-300" priority={activeImg === 0} />
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 pointer-events-none">
-              <div className="bg-black/40 backdrop-blur-sm rounded-full p-2.5"><ArrowsOut size={18} weight="bold" className="text-white" /></div>
-            </div>
+<div className="absolute inset-0 scale-105">
+  <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="(max-width: 768px) 100vw, 55vw" className="relative object-contain transition-opacity duration-300" priority={activeImg === 0} />
+</div>
 
             {/* Floating controls — each wrapped in its own guaranteed-dark
                 circular backdrop, independent of whatever styling
