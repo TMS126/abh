@@ -232,12 +232,11 @@ export function ServicesPage() {
       />
 
       <AnimatePresence>
+        {activeHub && (
+          <HubModal key="hub-modal" hubId={activeHub} onClose={() => setActiveHub(null)} onSelectService={handleSelectService} />
+        )}
         {selectedService && (
-          <ServiceDetailModal
-            key={selectedService.name}
-            svc={selectedService}
-            onClose={() => setSelectedService(null)}
-          />
+          <ServiceDetailModal key={selectedService.name} svc={selectedService} onClose={() => setSelectedService(null)} />
         )}
       </AnimatePresence>
 
