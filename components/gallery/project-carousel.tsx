@@ -8,25 +8,6 @@ import { BA_HUBS, CLIENT_TYPE_BADGE_BG, CLIENT_TYPE_LABEL, HubId } from "@/lib/g
 import { SafeImage } from "./safe-image"
 import { LikeButton } from "./like-share-buttons"
 
-// SHADOW FIX (real cause): overflow-x-auto on the scrolling track was
-// implicitly forcing overflow-y to 'auto' too — this is a CSS spec quirk,
-// not a bug in this file: when one axis is set to something other than
-// 'visible', the other axis can't stay 'visible' either, so it silently
-// clips. That's what hard-cut the card's box-shadow right at the track's
-// vertical edge. There's no way to keep one axis clipping and the other
-// fully open via overflow properties alone — the only real fix is making
-// sure the shadow never actually exceeds the padding box, so there's
-// nothing left for that forced auto to clip. Slide padding bumped from
-// py-3/py-4 to py-11/py-14 (44–56px), and the hover shadow's reach
-// trimmed slightly, so the shadow's max extent now sits safely inside
-// the padding on both mobile and desktop.
-//
-// SINGLE SOURCE OF TRUTH: resting + hover shadow values now live in
-// .abh-shadow-project-card (globals.css). The hover glow tint still needs
-// to be per-hub-color dynamic, so it's passed via the --hub-shadow CSS
-// custom property (was already being set here but never actually used —
-// the old onMouseEnter/onMouseLeave handlers duplicated the same values
-// as inline JS instead of letting the CSS class's :hover rule read the var).
 export function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }: {
   projects: ProjectData[]; accent: string; onSelect: (p: ProjectData) => void
   likedIds: Set<string>; onToggleLike: (id: string) => void
@@ -95,20 +76,12 @@ export function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggle
                       background: "linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.6) 22%, rgba(0,0,0,0.22) 48%, rgba(0,0,0,0) 75%)",
                     }}
                   />
-                  <div className="absolute top-4 left-4 z-10 flex flex-col items-start gap-2">
+                  <div className="absolute top-4 left-4 z-10">
                     <LikeButton
                       liked={likedIds.has(project.id)}
                       onToggle={(e) => { e.stopPropagation(); onToggleLike(project.id) }}
                       context="card"
                     />
-                    {project.clientType && (
-                      <span
-                        className="text-[0.58rem] font-black uppercase tracking-wider px-2.5 py-1 rounded-full text-white shadow-lg backdrop-blur-sm whitespace-nowrap"
-                        style={{ backgroundColor: CLIENT_TYPE_BADGE_BG[project.clientType] }}
-                      >
-                        {CLIENT_TYPE_LABEL[project.clientType]}
-                      </span>
-                    )}
                   </div>
                   {BA_HUBS.includes(project.hub as HubId) && !!(project as any).beforeImage && !!(project as any).afterImage && (
                     <div className="absolute top-4 right-4 flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.6rem] font-black uppercase tracking-wider text-white shadow-lg" style={{ backgroundColor: `${accent}dd`, backdropFilter: "blur(6px)" }}>
@@ -116,10 +89,19 @@ export function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggle
                       Before &amp; After
                     </div>
                   )}
-                  <div className="absolute bottom-5 left-5 right-5">
-                    <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/60 mb-1">{project.tag}</p>
-                    <h3 className="text-white font-black text-xl md:text-2xl leading-tight transition-colors duration-300 group-hover:text-[var(--hub-accent)]">{project.title}</h3>
-                    <p className="text-white/70 text-xs font-medium mt-1 line-clamp-1">{project.shortDesc}</p>
+                  <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="text-white font-black text-xl md:text-2xl leading-tight transition-colors duration-300 group-hover:text-[var(--hub-accent)]">{project.title}</h3>
+                      <p className="text-white/70 text-xs font-medium mt-1 line-clamp-1">{project.shortDesc}</p>
+                    </div>
+                    {project.clientType && (
+                      <span
+                        className="shrink-0 text-[0.58rem] font-black uppercase tracking-wider px-2.5 py-1 rounded-full text-white shadow-lg backdrop-blur-sm whitespace-nowrap"
+                        style={{ backgroundColor: CLIENT_TYPE_BADGE_BG[project.clientType] }}
+                      >
+                        {CLIENT_TYPE_LABEL[project.clientType]}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -149,4 +131,4 @@ export function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggle
       )}
     </div>
   )
-      } 
+} 
