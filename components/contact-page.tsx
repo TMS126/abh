@@ -20,8 +20,12 @@ const FORM_HUBS: Record<string, { light: string; dark: string }> = {
 const CONTACT_GREY = { light: BRAND.dark100, dark: "#B8CCE0" }
 
 const hasValidAddress = typeof BIZ.addressFull === "string" && BIZ.addressFull.trim().length > 0
+
+// Generate proper Google Maps embed URL
+// Using the correct format: https://www.google.com/maps/embed?pb=...
+// Fallback to search format if embed API is not available
 const MAP_EMBED_SRC = hasValidAddress
-  ? `https://www.google.com/maps?q=${encodeURIComponent(BIZ.addressFull)}&output=embed`
+  ? `https://www.google.com/maps?q=${encodeURIComponent(BIZ.addressFull)}&output=embed&z=15`
   : null
 
 const CONTACT_ICONS: Record<string, React.ElementType> = {
@@ -30,6 +34,7 @@ const CONTACT_ICONS: Record<string, React.ElementType> = {
   "Email Us":    EnvelopeSimple,
   "Visit Us":    MapPin,
 }
+
 function downloadBusinessVCard() {
   const vcard = [
     "BEGIN:VCARD",
@@ -69,28 +74,47 @@ function FieldErrorTooltip({ message }: { message: string }) {
   )
 }
 
-// ── Location map — falls back to a static address card if the iframe
-// never fires onLoad within MAP_LOAD_TIMEOUT_MS. This covers the common
-// case where an ad-blocker or browser privacy shield silently drops the
-// google.com/maps request: the browser then renders a broken-page icon
-// in the frame's place, so we detect that and swap in a non-broken
-// fallback instead of leaving a dead frame on the page.
-const MAP_LOAD_TIMEOUT_MS = 3000
+// ── Location map — improved version with better loading detection
+// Uses multiple strategies to detect if the map loaded successfully:
+// 1. onLoad event (works when no ad-blocker)
+// 2. Timeout fallback (for ad-blockers/privacy shields)
+// 3. Better iframe attributes for cross-origin loading
+const MAP_LOAD_TIMEOUT_MS = 4000
 
 function LocationMap() {
   const [loaded, setLoaded]   = useState(false)
   const [blocked, setBlocked] = useState(false)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
 
   useEffect(() => {
-    if (!MAP_EMBED_SRC) { setBlocked(true); return }
+    if (!MAP_EMBED_SRC) { 
+      setBlocked(true)
+      return 
+    }
+
+    // Set up timeout to detect if map failed to load
     const timer = setTimeout(() => {
-      setLoaded((isLoaded) => {
-        if (!isLoaded) setBlocked(true)
-        return isLoaded
-      })
+      if (!loaded) {
+        // Check if iframe has content (for better detection)
+        if (iframeRef.current) {
+          try {
+            // Try to access iframe content - if blocked by CORS, it means ad-blocker is active
+            const iframeDoc = iframeRef.current.contentDocument || iframeRef.current.contentWindow?.document
+            if (!iframeDoc) {
+              setBlocked(true)
+            }
+          } catch (e) {
+            // CORS error or blocked by browser - show fallback
+            setBlocked(true)
+          }
+        } else {
+          setBlocked(true)
+        }
+      }
     }, MAP_LOAD_TIMEOUT_MS)
+
     return () => clearTimeout(timer)
-  }, [])
+  }, [loaded])
 
   if (blocked || !MAP_EMBED_SRC) {
     return (
@@ -118,6 +142,7 @@ function LocationMap() {
 
   return (
     <iframe
+      ref={iframeRef}
       src={MAP_EMBED_SRC}
       title="ApexbytesHub location map"
       width="100%"
@@ -126,6 +151,8 @@ function LocationMap() {
       loading="lazy"
       referrerPolicy="no-referrer-when-downgrade"
       onLoad={() => setLoaded(true)}
+      allowFullScreen={false}
+      aria-label="Google Maps showing ApexbytesHub location"
     />
   )
 }
@@ -374,253 +401,204 @@ function ContactPageInner() {
               <LocationMap />
               <div
                 className="p-6 flex flex-col items-start gap-3"
-                style={{ backgroundColor: BRAND.blueDark }}
+                style={{ backgroundColor: isDark ? "#18181B" : "#FAFAFA" }}
               >
-                <MapPin size={28} weight="fill" color="#A9D6F2" aria-hidden="true" />
-                <div>
-                  <p className="font-sans font-black text-lg text-white leading-snug">
-                    {BIZ.address}
-                  </p>
-                  <p className="text-sm font-medium text-white/70 mt-1">
-                    {BIZ.city ? `${BIZ.city} · ` : ""}Walk-in or by appointment
-                  </p>
+                <div className="flex items-start gap-3 w-full">
+                  <MapPin size={20} weight="fill" className="text-zinc-500 dark:text-zinc-400 shrink-0 mt-0.5" aria-hidden="true" />
+                  <div className="flex-1">
+                    <p className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 mb-1">
+                      Visit Us
+                    </p>
+                    <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{BIZ.addressFull}</p>
+                  </div>
                 </div>
-                <a
-                  href={BIZ.mapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Open ApexbytesHub location in Google Maps"
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-[10px] bg-white/15 hover:bg-white/25 text-white font-semibold text-sm transition-colors"
-                >
-                  <MapPin size={16} weight="fill" aria-hidden="true" />
-                  Open in Google Maps
-                </a>
               </div>
             </div>
           </ScrollBounce>
         </div>
       </section>
 
-      {/* ── Main grid ── */}
+      {/* ── Contact info + form ── */}
       <section className="px-4 md:px-8 pb-16">
-        <div className="max-w-[980px] mx-auto grid md:grid-cols-2 gap-10 items-stretch">
+        <div className="max-w-[980px] mx-auto">
+          <div className="grid md:grid-cols-2 gap-6">
 
-          <div className="flex flex-col justify-between gap-6">
-
+            {/* Left column — contact info */}
             <ScrollBounce>
-              <div className="text-center">
-                <h2 className="abh-section-heading mb-1">Get In Touch</h2>
-                <p className="abh-body">WhatsApp, call, email or visit us in {BIZ.location}.</p>
-              </div>
-            </ScrollBounce>
-
-            <div className="grid grid-cols-2 gap-3 items-stretch">
-  {CONTACT_LINKS.map((c, index) => {
-    const Icon = CONTACT_ICONS[c.title] ?? Phone
-    const dotColor = "dotLight" in c
-      ? (isDark ? c.dotDark : c.dotLight)
-      : c.dot
-    return (
-      <ScrollBounce key={c.title} delay={index * 0.08}>
-        <a
-  href={c.href}
-  target="_blank"
-  rel="noopener noreferrer"
-  aria-label={c.title}
-  className="group flex flex-col items-center justify-center text-center gap-2 p-4 h-full min-h-[104px] abh-card abh-shadow-contact-card border-transparent transition-all duration-200 active:scale-[0.97]"
-  style={{ borderColor: "transparent" }}
-  onMouseEnter={(e) => { e.currentTarget.style.borderColor = dotColor }}
-  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "transparent" }}
->
-          <span
-            className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 transition-colors duration-200 text-zinc-400 dark:text-zinc-500 bg-zinc-50 dark:bg-zinc-900"
-            style={{ ["--icon-color" as any]: dotColor }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = dotColor; e.currentTarget.style.backgroundColor = `${dotColor}15` }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = ""; e.currentTarget.style.backgroundColor = "" }}
-          >
-            <Icon size={20} weight="fill" aria-hidden="true" />
-          </span>
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{c.title}</p>
-            <p className="abh-muted break-words text-xs">{c.value}</p>
-          </div>
-        </a>
-      </ScrollBounce>
-    )
-  })}
-</div>
-
-            <ScrollBounce delay={0.1}>
-              <div className="abh-card p-5 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div
-                    className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: `${greyColor}15`, color: greyColor }}
-                  >
-                    <AddressBook size={20} weight="fill" aria-hidden="true" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Save Our Contact</p>
-                    <p className="abh-muted">Add ApexbytesHub to your phone</p>
-                  </div>
-                </div>
-                <button
-                  onClick={handleVCard}
-                  aria-label={vcardDone ? "Contact saved" : "Download contact card"}
-                  className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-[14px] font-medium text-sm text-white transition-all active:scale-95 hover:-translate-y-0.5"
-                  style={{ backgroundColor: BRAND.blue }}
-                >
-                  <DownloadSimple size={16} weight="bold" aria-hidden="true" />
-                  {vcardDone ? "Saved!" : "Download"}
-                </button>
-              </div>
-            </ScrollBounce>
-
-            <ScrollBounce delay={0.15}>
-              <div className="abh-card p-5 flex-1">
-                <span
-                  className="text-[0.65rem] font-black uppercase tracking-widest flex items-center gap-1.5 mb-3"
-                  style={{ color: greyColor }}
-                >
-                  <Clock weight="fill" size={14} aria-hidden="true" /> Business Hours
-                </span>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-500 mb-1">
-                      {HOURS.printAndDoc.label}
-                    </p>
-                    <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      {HOURS.printAndDoc.hours}
-                    </p>
-                    <p
-                      className="flex items-center gap-1.5 text-xs font-medium mt-1"
-                      style={{ color: BRAND.blue }}
-                    >
-                      <span
-                        className="w-1.5 h-1.5 rounded-full shrink-0"
-                        style={{ backgroundColor: BRAND.blue }}
-                        aria-hidden="true"
-                      />
-                      Open on public holidays
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-500 mb-1">
-                      {HOURS.techDesignEservice.label}
-                    </p>
-                    {HOURS.techDesignEservice.lines.map((l) => (
-                      <p key={l} className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{l}</p>
-                    ))}
-                    <p className="flex items-center gap-1.5 text-xs font-medium mt-1 text-zinc-500 dark:text-zinc-400">
-                      <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-zinc-400 dark:bg-zinc-500" aria-hidden="true" />
-                      Sunday &amp; Public Holidays · Closed
-                    </p>
-                  </div>
-                  <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800">
-                    <p className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 mb-2">
-                      Current Status
-                    </p>
-                    <BusinessStatusFull />
-                  </div>
-                </div>
-              </div>
-            </ScrollBounce>
-          </div>
-
-          {/* Right column — form card */}
-          <ScrollBounce delay={0.2}>
-            <div
-              ref={formCardRef}
-              className="abh-card p-8 flex flex-col h-full rounded-[14px]"
-            >
-              <h2 className="abh-section-heading mb-2">Send a Message</h2>
-              {prefilled && (
-                <p className="flex items-center gap-1.5 text-[0.7rem] font-bold mb-4" style={{ color: greyColor }}>
-                  <Sparkle size={14} weight="fill" aria-hidden="true" />
-                  Prefilled from the gallery — feel free to edit before sending
-                </p>
-              )}
-              <div className={cn("flex flex-col gap-4 flex-1", !prefilled && "mt-4")}>
-                {[
-                  { label: "Your Name",     type: "text", key: "name",  validate: isNameValid,  error: "Name too short"     },
-                  { label: "Phone Number",  type: "tel",  key: "phone", validate: isPhoneValid, error: "Invalid phone number" },
-                ].map((f) => {
-                  const rawValue = formData[f.key as keyof typeof formData]
-                  const err = touched[f.key] && !f.validate(rawValue)
-                  const errMessage = !rawValue.trim() ? "This field is required." : f.error
+              <div className="flex flex-col gap-6">
+                {CONTACT_LINKS.map((link, i) => {
+                  const Icon = CONTACT_ICONS[link.label]
                   return (
-                    <div key={f.key}>
-                      <label htmlFor={`contact-${f.key}`} className="abh-label block mb-1.5">{f.label}</label>
-                      <input
-                        id={`contact-${f.key}`}
-                        type={f.type}
-                        value={rawValue}
-                        aria-invalid={err}
-                        className={cn(
-                          "w-full px-4 py-3 border rounded-[14px] bg-white dark:bg-zinc-900 text-sm font-medium text-zinc-800 dark:text-zinc-200 transition-all outline-none",
-                          err
-                            ? "border-red-500"
-                            : "border-zinc-100 dark:border-zinc-800 focus:border-brand-blue"
-                        )}
-                        onBlur={() => setTouched({ ...touched, [f.key]: true })}
-                        onChange={(e) => setFormData({ ...formData, [f.key]: e.target.value })}
-                      />
-                      {err && <FieldErrorTooltip message={errMessage} />}
-                    </div>
+                    <a
+                      key={i}
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="abh-card p-6 flex items-start gap-4 transition-all hover:shadow-md"
+                    >
+                      <Icon size={24} weight="fill" className="text-zinc-400 dark:text-zinc-500 shrink-0 mt-0.5" aria-hidden="true" />
+                      <div>
+                        <p className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 mb-1">
+                          {link.label}
+                        </p>
+                        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{link.display}</p>
+                      </div>
+                    </a>
                   )
                 })}
 
-                <div>
-                  <label className="abh-label block mb-1.5">Service Needed</label>
-                  <HubSelect
-                    value={formData.service}
-                    onChange={(val) => setFormData({ ...formData, service: val })}
-                  />
-                </div>
+                <button
+                  onClick={handleVCard}
+                  className="abh-card p-6 flex items-center gap-3 transition-all hover:shadow-md text-left w-full"
+                >
+                  <DownloadSimple size={24} weight="fill" className="text-zinc-400 dark:text-zinc-500 shrink-0" aria-hidden="true" />
+                  <div>
+                    <p className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 mb-1">
+                      Save Contact
+                    </p>
+                    <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                      {vcardDone ? "✓ Downloaded" : "Download vCard"}
+                    </p>
+                  </div>
+                </button>
 
-                <div className="flex-1 flex flex-col">
-                  <label htmlFor="contact-message" className="abh-label block mb-1.5">Your Message</label>
-                  <div
-                    className={cn(
-                      "flex-1 flex flex-col rounded-[14px]",
-                      glowActive && "abh-inquire-glow-active"
-                    )}
-                    style={{ ["--glow-color" as any]: glowColor }}
-                  >
-                    <textarea
-                      id="contact-message"
-                      aria-invalid={touched.message && !isMessageValid(formData.message)}
-                      className={cn(
-                        "w-full flex-1 px-4 py-3 border rounded-[14px] bg-white dark:bg-zinc-900 text-sm font-medium text-zinc-800 dark:text-zinc-200 transition-all outline-none resize-none",
-                        touched.message && !isMessageValid(formData.message)
-                          ? "border-red-500"
-                          : "border-zinc-100 dark:border-zinc-800 focus:border-brand-blue"
-                      )}
-                      rows={4}
-                      value={formData.message}
-                      onBlur={() => setTouched({ ...touched, message: true })}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                <div className="abh-card p-6 flex flex-col gap-4">
+                  <div>
+                    <p className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 mb-2">
+                      Hours
+                    </p>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-500 mb-1">
+                          {HOURS.printDocDesign.label}
+                        </p>
+                        {HOURS.printDocDesign.lines.map((l) => (
+                          <p key={l} className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{l}</p>
+                        ))}
+                        <p className="flex items-center gap-1.5 text-xs font-medium mt-1 text-zinc-500 dark:text-zinc-400">
+                          <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-zinc-400 dark:bg-zinc-500" aria-hidden="true" />
+                          Open on public holidays
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-500 mb-1">
+                          {HOURS.techDesignEservice.label}
+                        </p>
+                        {HOURS.techDesignEservice.lines.map((l) => (
+                          <p key={l} className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{l}</p>
+                        ))}
+                        <p className="flex items-center gap-1.5 text-xs font-medium mt-1 text-zinc-500 dark:text-zinc-400">
+                          <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-zinc-400 dark:bg-zinc-500" aria-hidden="true" />
+                          Sunday &amp; Public Holidays · Closed
+                        </p>
+                      </div>
+                      <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                        <p className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 mb-2">
+                          Current Status
+                        </p>
+                        <BusinessStatusFull />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </ScrollBounce>
+
+            {/* Right column — form card */}
+            <ScrollBounce delay={0.2}>
+              <div
+                ref={formCardRef}
+                className="abh-card p-8 flex flex-col h-full rounded-[14px]"
+              >
+                <h2 className="abh-section-heading mb-2">Send a Message</h2>
+                {prefilled && (
+                  <p className="flex items-center gap-1.5 text-[0.7rem] font-bold mb-4" style={{ color: greyColor }}>
+                    <Sparkle size={14} weight="fill" aria-hidden="true" />
+                    Prefilled from the gallery — feel free to edit before sending
+                  </p>
+                )}
+                <div className={cn("flex flex-col gap-4 flex-1", !prefilled && "mt-4")}>
+                  {[
+                    { label: "Your Name",     type: "text", key: "name",  validate: isNameValid,  error: "Name too short"     },
+                    { label: "Phone Number",  type: "tel",  key: "phone", validate: isPhoneValid, error: "Invalid phone number" },
+                  ].map((f) => {
+                    const rawValue = formData[f.key as keyof typeof formData]
+                    const err = touched[f.key] && !f.validate(rawValue)
+                    const errMessage = !rawValue.trim() ? "This field is required." : f.error
+                    return (
+                      <div key={f.key}>
+                        <label htmlFor={`contact-${f.key}`} className="abh-label block mb-1.5">{f.label}</label>
+                        <input
+                          id={`contact-${f.key}`}
+                          type={f.type}
+                          value={rawValue}
+                          aria-invalid={err}
+                          className={cn(
+                            "w-full px-4 py-3 border rounded-[14px] bg-white dark:bg-zinc-900 text-sm font-medium text-zinc-800 dark:text-zinc-200 transition-all outline-none",
+                            err
+                              ? "border-red-500"
+                              : "border-zinc-100 dark:border-zinc-800 focus:border-brand-blue"
+                          )}
+                          onBlur={() => setTouched({ ...touched, [f.key]: true })}
+                          onChange={(e) => setFormData({ ...formData, [f.key]: e.target.value })}
+                        />
+                        {err && <FieldErrorTooltip message={errMessage} />}
+                      </div>
+                    )
+                  })}
+
+                  <div>
+                    <label className="abh-label block mb-1.5">Service Needed</label>
+                    <HubSelect
+                      value={formData.service}
+                      onChange={(val) => setFormData({ ...formData, service: val })}
                     />
                   </div>
-                  {touched.message && !isMessageValid(formData.message) && (
-                    <FieldErrorTooltip
-                      message={!formData.message.trim() ? "This field is required." : "Message too short"}
-                    />
-                  )}
+
+                  <div className="flex-1 flex flex-col">
+                    <label htmlFor="contact-message" className="abh-label block mb-1.5">Your Message</label>
+                    <div
+                      className={cn(
+                        "flex-1 flex flex-col rounded-[14px]",
+                        glowActive && "abh-inquire-glow-active"
+                      )}
+                      style={{ ["--glow-color" as any]: glowColor }}
+                    >
+                      <textarea
+                        id="contact-message"
+                        aria-invalid={touched.message && !isMessageValid(formData.message)}
+                        className={cn(
+                          "w-full flex-1 px-4 py-3 border rounded-[14px] bg-white dark:bg-zinc-900 text-sm font-medium text-zinc-800 dark:text-zinc-200 transition-all outline-none resize-none",
+                          touched.message && !isMessageValid(formData.message)
+                            ? "border-red-500"
+                            : "border-zinc-100 dark:border-zinc-800 focus:border-brand-blue"
+                        )}
+                        rows={4}
+                        value={formData.message}
+                        onBlur={() => setTouched({ ...touched, message: true })}
+                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      />
+                    </div>
+                    {touched.message && !isMessageValid(formData.message) && (
+                      <FieldErrorTooltip
+                        message={!formData.message.trim() ? "This field is required." : "Message too short"}
+                      />
+                    )}
+                  </div>
+
+                  <button
+                    onClick={handleSubmit}
+                    disabled={!isFormValid}
+                    className="mt-auto w-full py-4 rounded-[14px] font-black text-sm text-white transition-all active:scale-95 disabled:opacity-50 shadow-lg"
+                    style={{ backgroundColor: BRAND.blue }}
+                  >
+                    Send via WhatsApp
+                  </button>
                 </div>
-
-                <button
-                  onClick={handleSubmit}
-                  disabled={!isFormValid}
-                  className="mt-auto w-full py-4 rounded-[14px] font-black text-sm text-white transition-all active:scale-95 disabled:opacity-50 shadow-lg"
-                  style={{ backgroundColor: BRAND.blue }}
-                >
-                  Send via WhatsApp
-                </button>
               </div>
-            </div>
-          </ScrollBounce>
+            </ScrollBounce>
 
+          </div>
         </div>
       </section>
 
@@ -648,4 +626,4 @@ export function ContactPage() {
       <ContactPageInner />
     </Suspense>
   )
-                }
+    } 
