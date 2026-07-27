@@ -12,11 +12,30 @@ export function useGalleryBackStack(
   const projectPushed = useRef(false)
   const zoomPushed = useRef(false)
 
+  // Pushes a history entry when a project is freshly selected. Checks the
+  // ACTUAL URL (not just component state) before pushing — if the URL
+  // already carries this project's id, we're hydrating from an existing
+  // history entry (deep link, or landing back here via the browser's own
+  // back/forward button after a remount), not a brand-new selection. In
+  // that case we just mark it as "already accounted for" instead of
+  // pushing a duplicate entry, which is what was previously causing the
+  // stack to grow every time someone navigated away and came back.
   useEffect(() => {
-    if (selectedProject && !projectPushed.current) {
-      window.history.pushState({ abModal: "project" }, "")
+    if (!selectedProject) return
+    if (projectPushed.current) return
+
+    const current = new URLSearchParams(window.location.search).get("project")
+    if (current === selectedProject.id) {
       projectPushed.current = true
+      return
     }
+
+    window.history.pushState(
+      { abModal: "project" },
+      "",
+      `${window.location.pathname}?project=${selectedProject.id}`
+    )
+    projectPushed.current = true
   }, [selectedProject])
 
   useEffect(() => {
@@ -71,4 +90,4 @@ export function useGalleryBackStack(
   }, [zoomIndex, setZoomIndex, setSelectedProject])
 
   return { closeProject, closeZoom }
-}
+} 
