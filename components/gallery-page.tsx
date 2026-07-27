@@ -72,6 +72,17 @@ function GalleryPageInner() {
     }
   }, [searchParams])
 
+  // Reads ?hub=<id> (e.g. from HubModal's "View in Gallery" link) and sets
+  // the active filter to just that hub — same validation approach as the
+  // project-id lookup above, checked against ROW_ORDER so an unknown/typo'd
+  // hub id in the URL is silently ignored rather than crashing the filter.
+  useEffect(() => {
+    const hubParam = searchParams.get("hub")
+    if (!hubParam) return
+    const isValidHub = ROW_ORDER.some(r => r.id === hubParam)
+    if (isValidHub) setActiveFilter(hubParam as HubId)
+  }, [searchParams])
+
   useEffect(() => {
     if (!selectedProject) return
     const scrollY = window.scrollY
@@ -300,4 +311,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-    }
+  } 
