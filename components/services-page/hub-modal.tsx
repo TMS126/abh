@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { motion, type PanInfo } from "framer-motion"
 import { X, Info } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { HUB_COLORS, HubKey } from "@/lib/brand"
@@ -27,6 +28,10 @@ export function HubModal({ hubId, onClose, onSelectService }: {
 
   useFocusTrap(!!hubId, containerRef)
 
+  const handleDragEnd = (_e: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (info.offset.y > 120 || info.velocity.y > 600) onClose()
+  }
+
   if (!hubId) return null
   const hub         = HUBS[hubId]
   const colors      = HUB_COLORS[hubId as HubKey]
@@ -39,18 +44,33 @@ export function HubModal({ hubId, onClose, onSelectService }: {
   const activeSectionDesc = activeSection?.desc
 
   return (
-    <div className="fixed inset-0 z-[10100] flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div
+    <div className="fixed inset-0 z-[10100] flex items-end md:items-center justify-center p-0 md:p-4">
+      <motion.div
+        className="absolute inset-0 bg-black/60"
+        onClick={onClose}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+      />
+      <motion.div
         ref={containerRef}
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={hub.title}
-        className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 rounded-[14px] overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-250 border border-zinc-100 dark:border-zinc-800 outline-none"
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.6 }}
+        onDragEnd={handleDragEnd}
+        initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 32, stiffness: 340 }}
+        className="relative w-full md:max-w-2xl bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-t-[20px] md:rounded-[14px] cursor-grab active:cursor-grabbing"
         style={{ boxShadow: `0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4), 0 10px 24px -8px ${accent}50` }}
       >
-        <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center" style={{ backgroundColor: `${accent}05` }}>
+        <div className="flex justify-center pt-2.5 pb-0.5 shrink-0" aria-hidden="true">
+          <div className="w-9 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+        </div>
+
+        <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center shrink-0" style={{ backgroundColor: `${accent}05` }}>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 md:w-14 md:h-14 rounded-[14px] flex items-center justify-center shadow-lg bg-zinc-100 dark:bg-zinc-800" style={{ border: `2px solid ${accent}` }}>
               <HubIcon id={hubId} size={28} color={accent} />
@@ -133,7 +153,7 @@ export function HubModal({ hubId, onClose, onSelectService }: {
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
   )
-        } 
+                } 
