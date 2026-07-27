@@ -153,6 +153,8 @@ export const BIZ = {
   email: "apexbytesza@gmail.com",
   address: "5878 Mpumalanga Section, Kgotsong, Bothaville",
   addressFull: "5878 Mpumalanga Section, Kgotsong, Bothaville, Free State, 9660",
+  lat: -27.3790123,
+  lng: 26.6599691,
   mapsUrl: "https://maps.app.goo.gl/v25Le9SfmCBfTh616?g_st=ac",
   founder: "Theji Meje",
   year: "2026",
@@ -217,7 +219,6 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "services", label: "Services", path: "/services" },
   { id: "gallery", label: "Gallery", path: "/gallery" },
   { id: "about", label: "About", path: "/about" },
-  { id: "pricing", label: "Pricing", path: "/pricing", isCta: false },
   { id: "contact", label: "Contact", path: "/contact", isCta: true },
 ] as const
 
@@ -384,6 +385,5 @@ export const FOOTER_NAV = [
   { label: "Services", path: "/services" },
   { label: "Gallery", path: "/gallery" },
   { label: "About", path: "/about" },
-  { label: "Pricing", path: "/pricing" },
   { label: "Contact", path: "/contact" },
 ] as const 
