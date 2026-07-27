@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import Link from "next/link"
 import { motion, type PanInfo } from "framer-motion"
-import { X, Info } from "@phosphor-icons/react"
+import { X, Info, ArrowSquareOut } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { HUB_COLORS, HubKey } from "@/lib/brand"
 import { HUBS, HubId, HUB_DISCLAIMERS } from "@/lib/data"
@@ -69,26 +70,45 @@ export function HubModal({ hubId, onClose, onSelectService }: {
           <div className="w-9 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700" />
         </div>
 
-        <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center shrink-0" style={{ backgroundColor: `${accent}05` }}>
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 md:w-14 md:h-14 rounded-[14px] flex items-center justify-center shadow-lg bg-zinc-100 dark:bg-zinc-800" style={{ border: `2px solid ${accent}` }}>
+        <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center shrink-0 gap-3" style={{ backgroundColor: `${accent}05` }}>
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="w-12 h-12 md:w-14 md:h-14 rounded-[14px] flex items-center justify-center shadow-lg bg-zinc-100 dark:bg-zinc-800 shrink-0" style={{ border: `2px solid ${accent}` }}>
               <HubIcon id={hubId} size={28} color={accent} />
             </div>
-            <div>
-              <h2 className="abh-card-heading text-xl md:text-2xl">{hub.title}</h2>
+            <div className="min-w-0">
+              <h2 className="abh-card-heading text-xl md:text-2xl truncate">{hub.title}</h2>
               <p className="abh-label mt-0.5" style={{ color: accent }}>
                 {hub.sections.reduce((sum, s) => sum + s.items.length, 0)} Available Services
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-            style={{ backgroundColor: `${accent}15`, color: accent }}
-          >
-            <X size={20} weight="bold" />
-          </button>
+
+          <div className="flex items-center gap-3 shrink-0">
+            {/* View in Gallery — bordered pill, same footprint as the
+                section-tab pills below (px-3.5 py-1.5, rounded-full,
+                text-[0.7rem] font-black). Border-only at rest in the
+                hub's own accent; fills solid accent with white text and
+                icon on hover. */}
+            <Link
+              href={`/gallery?hub=${hubId}`}
+              className="group/gallerylink flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[0.7rem] font-black tracking-tight whitespace-nowrap border-2 transition-all duration-200 hover:text-white"
+              style={{ borderColor: accent, color: accent, ["--hover-bg" as any]: solidAccent }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = solidAccent }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent" }}
+            >
+              View in Gallery
+              <ArrowSquareOut size={12} weight="bold" />
+            </Link>
+
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
+              style={{ backgroundColor: `${accent}15`, color: accent }}
+            >
+              <X size={20} weight="bold" />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-8">
