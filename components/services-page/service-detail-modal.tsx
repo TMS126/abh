@@ -159,7 +159,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           <div className="w-9 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700" />
         </div>
 
-        <div className="px-6 pt-4 pb-5 flex-shrink-0">
+        <div className="px-6 pt-4 pb-5 flex-shrink-0 text-center">
           <div className="flex justify-between items-start mb-4">
             <div className="flex-1 min-w-0 pr-3">
               <span
@@ -195,7 +195,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
 
           <div className="h-px bg-zinc-100 dark:bg-zinc-800 mb-4" />
 
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex items-center justify-center gap-3 mb-1">
             <span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
             {svc.turnaround && (
               <span className="flex items-center gap-1 text-[0.68rem] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: `${accent}12`, color: accent }}>
@@ -206,30 +206,33 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           </div>
         </div>
 
-        <div className="flex justify-center gap-8 border-t border-zinc-100 dark:border-zinc-800">
-          {(["bring", "about"] as Tab[]).map((t) => {
-            const isActive = tab === t
-            return (
-              <button
-                key={t} onClick={() => setTab(t)}
-                className={cn(
-                  "relative px-1 pt-3 pb-2.5 text-[0.72rem] font-black uppercase tracking-wider transition-colors",
-                  isActive ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-400 dark:text-zinc-500"
-                )}
-              >
-                {isActive && <span className="absolute top-0 left-0 right-0 h-[3px] rounded-full" style={{ backgroundColor: accent }} />}
-                {t === "bring" ? "Bring" : "Description"}
-              </button>
-            )
-          })}
+        <div className="px-6 pt-1">
+          <div className="flex items-center gap-1 p-1 rounded-[14px] bg-zinc-100 dark:bg-zinc-900">
+            {(["bring", "about"] as Tab[]).map((t) => {
+              const isActive = tab === t
+              return (
+                <button
+                  key={t}
+                  onClick={() => setTab(t)}
+                  className={cn(
+                    "flex-1 py-2.5 rounded-[14px] text-[0.72rem] font-black uppercase tracking-wider transition-all duration-200",
+                    isActive ? "text-white" : "text-zinc-500 dark:text-zinc-400"
+                  )}
+                  style={isActive ? { backgroundColor: accent } : undefined}
+                >
+                  {t === "bring" ? "Bring" : "Description"}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 min-h-0">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 min-h-0 text-center">
           {tab === "bring" && (
-            <div className="animate-in fade-in duration-150">
-              <ol className="space-y-3">
+            <div className="animate-in fade-in duration-150 flex flex-col items-center">
+              <ol className="space-y-3 inline-flex flex-col items-start">
                 {requirements.map((req, idx) => (
-                  <li key={idx} className="flex items-start gap-3">
+                  <li key={idx} className="flex items-start gap-3 text-left">
                     <span className={cn("shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[0.7rem] font-black mt-0.5", isDark ? "text-zinc-900" : "text-white")} style={{ backgroundColor: accent }}>
                       {idx + 1}
                     </span>
@@ -276,7 +279,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
 
           {uploadPhase === "uploading" && (
             <div className="flex items-center gap-3 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-zinc-50 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400">
-              <AbhLoader size={28} />
+              <AbhLoader size={28} color={accent} />
               <span className="font-black tabular-nums shrink-0" style={{ color: accent }}>{uploadProgress}%</span>
               <span className="truncate">Uploading {file?.name}…</span>
             </div>
