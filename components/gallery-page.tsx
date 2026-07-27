@@ -300,4 +300,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-}
+    }
