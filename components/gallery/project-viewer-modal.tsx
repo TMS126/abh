@@ -13,8 +13,24 @@ import { BeforeAfterSlider } from "./before-after-slider"
 import { ZoomOverlay } from "./zoom-overlay"
 import { LikeButton, ShareButton } from "./like-share-buttons"
 
-function ProjectHeader({ project, accent, hasBA, liked }: {
-  project: ProjectData; accent: string; hasBA: boolean; liked: boolean
+// Tracks the (max-width: 767px) breakpoint — the swipe-to-shrink image
+// behavior below is mobile-only, since on desktop the image and details
+// panel sit side by side rather than stacked, so there's nothing to
+// "shrink out of the way" there.
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)")
+    setIsMobile(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener("change", handler)
+    return () => mq.removeEventListener("change", handler)
+  }, [])
+  return isMobile
+}
+
+function ProjectHeader({ project, hasBA, accent }: {
+  project: ProjectData; hasBA: boolean; accent: string
 }) {
   return (
     <div className="mb-6">
@@ -32,12 +48,6 @@ function ProjectHeader({ project, accent, hasBA, liked }: {
           {project.clientType === "sample" && "Representative example — reflects our work, not an actual client project"}
         </p>
       )}
-      {liked && (
-        <p className="flex items-center gap-1 text-[0.68rem] font-bold text-red-600 dark:text-red-400 mt-2 animate-in fade-in duration-300">
-          <Heart size={11} weight="fill" />
-          You liked this
-        </p>
-      )}
     </div>
   )
 }
@@ -45,6 +55,7 @@ function ProjectHeader({ project, accent, hasBA, liked }: {
 function ProjectImageSection({
   project, accent, activeImg, setActiveImg, comparing, setComparing, onZoom, hasBA, beforeImg, afterImg, allImages,
   hasSiblings, onPrevProject, onNextProject, siblingPosition, liked, onToggleLike, shareUrl, onClose,
+  isMobile, scrollProgress,
 }: {
   project: ProjectData; accent: string
   activeImg: number; setActiveImg: (i: number) => void
@@ -55,6 +66,7 @@ function ProjectImageSection({
   hasSiblings: boolean; onPrevProject: () => void; onNextProject: () => void
   siblingPosition?: string
   liked: boolean; onToggleLike: () => void; shareUrl: string; onClose: () => void
+  isMobile: boolean; scrollProgress: number
 }) {
   const touchStartX = useRef(0)
   const touchStartY = useRef(0)
@@ -78,8 +90,19 @@ function ProjectImageSection({
     onZoom(activeImg)
   }
 
+  // Shrink the image container as the details panel is swiped/scrolled
+  // up — full-size (42% of modal height) at rest, down to a small
+  // "stuck" strip (16%) at full scroll. Only applied on mobile, where
+  // image sits stacked above the scrolling text.
+  const IMG_HEIGHT_FULL = 42
+  const IMG_HEIGHT_MIN  = 16
+  const imgHeightPct = IMG_HEIGHT_FULL - scrollProgress * (IMG_HEIGHT_FULL - IMG_HEIGHT_MIN)
+
   return (
-    <div className="h-[42%] md:h-auto md:flex-1 flex flex-col overflow-hidden bg-zinc-900 relative">
+    <div
+      className="md:h-auto md:flex-1 flex flex-col overflow-hidden bg-zinc-900 relative transition-[height] duration-300 ease-out"
+      style={isMobile ? { height: `${imgHeightPct}%` } : undefined}
+    >
       {comparing && hasBA ? (
         <div className="relative flex-1">
           <BeforeAfterSlider before={beforeImg!} after={afterImg!} accent={accent} />
@@ -92,16 +115,29 @@ function ProjectImageSection({
             onTouchStart={onImageTouchStart}
             onTouchEnd={onImageTouchEnd}
           >
-            <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="(max-width: 768px) 100vw, 55vw" className="object-contain transition-opacity duration-300" priority={activeImg === 0} />
+            {/* Blurred backdrop of the same image — only visible once the
+                container has shrunk and the contained image no longer
+                fills the width, so the sides don't show flat black. */}
+            {isMobile && (
+              <img
+                src={allImages[activeImg]}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl pointer-events-none"
+                style={{ opacity: scrollProgress * 0.85 }}
+              />
+            )}
+
+            <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="(max-width: 768px) 100vw, 55vw" className="relative object-contain transition-opacity duration-300" priority={activeImg === 0} />
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 pointer-events-none">
               <div className="bg-black/40 backdrop-blur-sm rounded-full p-2.5"><ArrowsOut size={18} weight="bold" className="text-white" /></div>
             </div>
 
-            {/* Floating controls over the image — close, like, share */}
+            {/* Floating controls — like top-left, share + close together top-right */}
+            <div className="absolute top-3 left-3 z-20" onClick={(e) => e.stopPropagation()}>
+              <LikeButton liked={liked} onToggle={(e) => { e.stopPropagation(); onToggleLike() }} context="header" />
+            </div>
             <div className="absolute top-3 right-3 z-20 flex items-center gap-2">
-              <div onClick={(e) => e.stopPropagation()}>
-                <LikeButton liked={liked} onToggle={(e) => { e.stopPropagation(); onToggleLike() }} context="header" />
-              </div>
               <div onClick={(e) => e.stopPropagation()}>
                 <ShareButton url={shareUrl} title={project.title} />
               </div>
@@ -139,7 +175,7 @@ function ProjectImageSection({
             )}
           </div>
           {allImages.length > 1 && (
-            <div className="flex gap-2 px-3 py-2.5 overflow-x-auto no-scrollbar shrink-0 border-t border-white/10">
+            <div className="flex justify-center gap-2 px-3 py-2.5 overflow-x-auto no-scrollbar shrink-0 border-t border-white/10">
               {allImages.map((img, idx) => (
                 <button key={idx} onClick={() => setActiveImg(idx)}
                   className={cn("relative shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-[8px] overflow-hidden border-2 transition-all", activeImg === idx ? "scale-105" : "border-transparent opacity-50 hover:opacity-80")}
@@ -189,20 +225,20 @@ function ProjectDetailsBody({ project, accent }: { project: ProjectData; accent:
 
 function ProjectCTAs({ project, onClose, accent }: { project: ProjectData; onClose: () => void; accent: string }) {
   return (
-    <div className="space-y-2.5">
+    <div className="grid grid-cols-2 gap-2.5">
       <a
         href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(`Hi ${BIZ.name}! I saw "${project.title}" in your gallery and I'd like something similar.`)}`}
         target="_blank"
         rel="noopener noreferrer"
         onClick={onClose}
-        className="flex items-center justify-center gap-2 w-full py-4 rounded-full text-sm font-black text-white shadow-lg transition-transform active:scale-[0.98]"
+        className="flex items-center justify-center gap-1.5 py-4 rounded-[14px] text-sm font-black text-white shadow-lg transition-transform active:scale-[0.98] text-center"
         style={{ backgroundColor: accent }}
       >
         Get a project like this
       </a>
       <Link
         href={buildInquireHref(project)}
-        className="flex items-center justify-center gap-2 w-full py-4 rounded-full text-sm font-black border-2 transition-transform active:scale-[0.98]"
+        className="flex items-center justify-center gap-1.5 py-4 rounded-[14px] text-sm font-black border-2 transition-transform active:scale-[0.98] text-center"
         style={{ borderColor: accent, color: accent }}
       >
         <EnvelopeSimple size={16} weight="bold" />
@@ -228,23 +264,28 @@ export function ProjectViewerModal({
 }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
+  const isMobile = useIsMobile()
   const [activeImg,  setActiveImg]  = useState(0)
   const [comparing,  setComparing]  = useState(false)
   const [shadowOpacity, setShadowOpacity] = useState(0)
+  const [scrollProgress, setScrollProgress] = useState(0)
   const detailsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setActiveImg(0)
     setComparing(false)
     setShadowOpacity(0)
+    setScrollProgress(0)
     if (detailsRef.current) detailsRef.current.scrollTop = 0
   }, [project?.id])
 
   const SHADOW_FADE_DISTANCE = 40
+  const SHRINK_SCROLL_DISTANCE = 140
   const handleDetailsScroll = () => {
     if (!detailsRef.current) return
-    const ratio = Math.min(detailsRef.current.scrollTop / SHADOW_FADE_DISTANCE, 1)
-    setShadowOpacity(ratio)
+    const top = detailsRef.current.scrollTop
+    setShadowOpacity(Math.min(top / SHADOW_FADE_DISTANCE, 1))
+    setScrollProgress(Math.min(top / SHRINK_SCROLL_DISTANCE, 1))
   }
 
   const currentIdx = project ? siblings.findIndex(p => p.id === project.id) : -1
@@ -314,21 +355,18 @@ export function ProjectViewerModal({
           onToggleLike={() => onToggleLike(project.id)}
           shareUrl={shareUrl}
           onClose={onClose}
+          isMobile={isMobile}
+          scrollProgress={scrollProgress}
         />
 
         <div
           className={cn(
             "relative flex flex-col border-zinc-100 dark:border-zinc-800",
-            "h-[58%] border-t md:h-auto md:border-t-0 md:border-l md:w-[380px]"
+            "flex-1 border-t md:h-auto md:flex-none md:border-t-0 md:border-l md:w-[380px]"
           )}
         >
           <div className="shrink-0 px-6 md:px-8 pt-6 md:pt-8 relative z-20 bg-white dark:bg-zinc-950">
-            <ProjectHeader
-              project={project}
-              accent={accent}
-              hasBA={hasBA}
-              liked={likedIds.has(project.id)}
-            />
+            <ProjectHeader project={project} accent={accent} hasBA={hasBA} />
           </div>
 
           <div className="relative h-0 z-10 pointer-events-none" aria-hidden>
