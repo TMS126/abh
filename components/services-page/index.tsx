@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useState, useEffect, useRef } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { AnimatePresence } from "framer-motion"
 import { Megaphone, ArrowUp } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
@@ -52,6 +52,8 @@ export function ServicesPage() {
   const { resolvedTheme } = useTheme()
   const isDark       = resolvedTheme === "dark"
   const searchParams = useSearchParams()
+  const router       = useRouter()
+  const consumedHubParam = useRef<string | null>(null)
 
   const [activeHub,       setActiveHub]       = useState<HubId | null>(null)
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
@@ -89,11 +91,16 @@ export function ServicesPage() {
     return () => window.removeEventListener("abh:selectService", handler)
   }, [])
 
-  // Deep-link via ?hub= query param
+  // Deep-link via ?hub= query param — consumed once, then stripped from the
+  // URL immediately so it can't reopen the hub on a back-nav or fresh visit.
   useEffect(() => {
     const hubParam = searchParams.get("hub")
-    if (hubParam && HUB_ORDER.includes(hubParam as HubId)) setActiveHub(hubParam as HubId)
-  }, [searchParams])
+    if (hubParam && HUB_ORDER.includes(hubParam as HubId) && consumedHubParam.current !== hubParam) {
+      consumedHubParam.current = hubParam
+      setActiveHub(hubParam as HubId)
+      router.replace("/services", { scroll: false })
+    }
+  }, [searchParams, router])
 
   useModalBackStack(activeHub, setActiveHub, selectedService, setSelectedService)
 
@@ -224,13 +231,7 @@ export function ServicesPage() {
         </ScrollBounce>
       </div>
 
-      {/* Modals */}
-      <HubModal
-        hubId={activeHub}
-        onClose={() => setActiveHub(null)}
-        onSelectService={handleSelectService}
-      />
-
+      {/* Modals — single guarded render each, inside AnimatePresence for exit animations */}
       <AnimatePresence>
         {activeHub && (
           <HubModal key="hub-modal" hubId={activeHub} onClose={() => setActiveHub(null)} onSelectService={handleSelectService} />
@@ -255,4 +256,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-      } 
+        } 
