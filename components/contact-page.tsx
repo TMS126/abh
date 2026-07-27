@@ -19,6 +19,11 @@ const FORM_HUBS: Record<string, { light: string; dark: string }> = {
 }
 const CONTACT_GREY = { light: BRAND.dark100, dark: "#B8CCE0" }
 
+// Basic Google Maps embed — no API key required. Built from the same
+// BIZ.addressFull used everywhere else, so it can't drift out of sync
+// with the address shown in text.
+const MAP_EMBED_SRC = `https://www.google.com/maps?q=${encodeURIComponent(BIZ.addressFull)}&output=embed`
+
 const CONTACT_ICONS: Record<string, React.ElementType> = {
   "WhatsApp Us": WhatsappLogo,
   "Call Us":     Phone,
@@ -50,6 +55,25 @@ function downloadBusinessVCard() {
   URL.revokeObjectURL(url)
 }
 
+// Flat, solid-color error tooltip — replaces reliance on the browser's own
+// native validation bubble (which renders with a gradient/shadow style
+// that varies by device and browser, e.g. the Android Chrome screenshot).
+// This always looks identical everywhere. role="alert" so screen readers
+// announce it the moment it appears.
+function FieldErrorTooltip({ message }: { message: string }) {
+  return (
+    <div className="relative mt-2 inline-block" role="alert">
+      <span
+        className="absolute -top-[5px] left-4 w-2.5 h-2.5 rotate-45 bg-red-600"
+        aria-hidden="true"
+      />
+      <span className="relative block bg-red-600 text-white text-[0.7rem] font-bold px-3 py-1.5 rounded-[6px]">
+        {message}
+      </span>
+    </div>
+  )
+}
+
 function FAQAccordion() {
   const [openIndex, setOpenIndex] = useState<number | null>(0)
   const { resolvedTheme } = useTheme()
@@ -77,6 +101,7 @@ function FAQAccordion() {
                 <div className="abh-card overflow-hidden">
                   <button
                     onClick={() => setOpenIndex(isOpen ? null : index)}
+                    aria-expanded={isOpen}
                     className="w-full px-5 py-4 text-left flex items-center justify-between gap-4 text-[0.84rem] font-semibold text-zinc-800 dark:text-zinc-200 transition-colors"
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = greyColor }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "" }}
@@ -84,6 +109,7 @@ function FAQAccordion() {
                     <span className="leading-snug">{faq.question}</span>
                     <CaretDown
                       weight="bold"
+                      aria-hidden="true"
                       className={cn(
                         "w-4 h-4 shrink-0 text-zinc-500 transition-transform duration-300",
                         isOpen ? "rotate-180" : "rotate-0"
@@ -138,6 +164,9 @@ function HubSelect({ value, onChange }: { value: string; onChange: (val: string)
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-label="Select a service hub"
         className="w-full px-4 py-3 border rounded-[14px] bg-white dark:bg-background text-[0.84rem] font-semibold transition-all flex items-center justify-between gap-3 border-zinc-100 dark:border-zinc-800"
         style={{
           borderColor: value ? activeColor : (isOpen ? BRAND.blue : undefined),
@@ -147,6 +176,7 @@ function HubSelect({ value, onChange }: { value: string; onChange: (val: string)
         <span>{value || "Select a hub"}</span>
         <CaretDown
           weight="bold"
+          aria-hidden="true"
           className={cn(
             "w-4 h-4 shrink-0 transition-transform duration-300",
             isOpen ? "rotate-180" : "rotate-0"
@@ -154,19 +184,21 @@ function HubSelect({ value, onChange }: { value: string; onChange: (val: string)
         />
       </button>
       {isOpen && (
-        <div className="absolute z-50 mt-1.5 w-full bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-[14px] shadow-xl overflow-hidden">
+        <div role="listbox" className="absolute z-50 mt-1.5 w-full bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-[14px] shadow-xl overflow-hidden">
           {options.map((opt) => {
             const color = colorFor(opt)
             return (
               <button
                 key={opt}
                 type="button"
+                role="option"
+                aria-selected={value === opt}
                 onClick={() => { onChange(opt); setIsOpen(false) }}
                 className="w-full px-4 py-3 text-left text-[0.84rem] font-semibold flex items-center gap-3 text-zinc-800 dark:text-zinc-200 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900"
                 onMouseEnter={(e) => { e.currentTarget.style.color = color }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = "inherit" }}
               >
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} aria-hidden="true" />
                 <span>{opt}</span>
               </button>
             )
@@ -205,10 +237,11 @@ function ContactPageInner() {
     setPrefilled(true)
   }, [searchParams])
 
-  // Arriving from a gallery "Inquire" link — scroll the form into view and
-  // pulse its border twice in the matching hub's color, then stop. Waits
-  // for `mounted` so the dark/light accent color is resolved correctly
-  // before the glow fires.
+  // Arriving from a gallery "Inquire" link is the ONLY path that sets
+  // `prefilled` to true (see effect above — it only fires when the page
+  // loads with a ?service=/?message= query param). The glow below is
+  // gated on that same flag, so it can never trigger from a normal visit,
+  // a page refresh without those params, or navigating here any other way.
   useEffect(() => {
     if (!prefilled || !mounted) return
     const id = requestAnimationFrame(() => {
@@ -282,6 +315,49 @@ function ContactPageInner() {
         </div>
       </section>
 
+      {/* ── Map + address ── */}
+      <section className="px-4 md:px-8 pb-10" aria-label="Our location">
+        <div className="max-w-[980px] mx-auto">
+          <ScrollBounce>
+            <div className="rounded-[14px] overflow-hidden shadow-sm border border-zinc-100 dark:border-zinc-800">
+              <iframe
+                src={MAP_EMBED_SRC}
+                title="ApexbytesHub location map"
+                width="100%"
+                height="260"
+                style={{ border: 0, display: "block" }}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+              <div
+                className="p-6 flex flex-col items-start gap-3"
+                style={{ backgroundColor: BRAND.blueDark }}
+              >
+                <MapPin size={28} weight="fill" color="#A9D6F2" aria-hidden="true" />
+                <div>
+                  <p className="font-sans font-black text-lg text-white leading-snug">
+                    {BIZ.address}
+                  </p>
+                  <p className="text-sm font-medium text-white/70 mt-1">
+                    {BIZ.city ? `${BIZ.city} · ` : ""}Walk-in or by appointment
+                  </p>
+                </div>
+                <a
+                  href={BIZ.mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Open ApexbytesHub location in Google Maps"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-[10px] bg-white/15 hover:bg-white/25 text-white font-semibold text-sm transition-colors"
+                >
+                  <MapPin size={16} weight="fill" aria-hidden="true" />
+                  Open in Google Maps
+                </a>
+              </div>
+            </div>
+          </ScrollBounce>
+        </div>
+      </section>
+
       {/* ── Main grid ── */}
       <section className="px-4 md:px-8 pb-16">
         <div className="max-w-[980px] mx-auto grid md:grid-cols-2 gap-10 items-stretch">
@@ -307,6 +383,7 @@ function ContactPageInner() {
   href={c.href}
   target="_blank"
   rel="noopener noreferrer"
+  aria-label={c.title}
   className="group flex flex-col items-center justify-center text-center gap-2 p-4 h-full min-h-[104px] abh-card abh-shadow-contact-card border-transparent transition-all duration-200 active:scale-[0.97]"
   style={{ borderColor: "transparent" }}
   onMouseEnter={(e) => { e.currentTarget.style.borderColor = dotColor }}
@@ -337,7 +414,7 @@ function ContactPageInner() {
                     className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
                     style={{ backgroundColor: `${greyColor}15`, color: greyColor }}
                   >
-                    <AddressBook size={20} weight="fill" />
+                    <AddressBook size={20} weight="fill" aria-hidden="true" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Save Our Contact</p>
@@ -346,10 +423,11 @@ function ContactPageInner() {
                 </div>
                 <button
                   onClick={handleVCard}
+                  aria-label={vcardDone ? "Contact saved" : "Download contact card"}
                   className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-[14px] font-medium text-sm text-white transition-all active:scale-95 hover:-translate-y-0.5"
                   style={{ backgroundColor: BRAND.blue }}
                 >
-                  <DownloadSimple size={16} weight="bold" />
+                  <DownloadSimple size={16} weight="bold" aria-hidden="true" />
                   {vcardDone ? "Saved!" : "Download"}
                 </button>
               </div>
@@ -361,7 +439,7 @@ function ContactPageInner() {
                   className="text-[0.65rem] font-black uppercase tracking-widest flex items-center gap-1.5 mb-3"
                   style={{ color: greyColor }}
                 >
-                  <Clock weight="fill" size={14} /> Business Hours
+                  <Clock weight="fill" size={14} aria-hidden="true" /> Business Hours
                 </span>
                 <div className="space-y-3">
                   <div>
@@ -378,6 +456,7 @@ function ContactPageInner() {
                       <span
                         className="w-1.5 h-1.5 rounded-full shrink-0"
                         style={{ backgroundColor: BRAND.blue }}
+                        aria-hidden="true"
                       />
                       Open on public holidays
                     </p>
@@ -390,7 +469,7 @@ function ContactPageInner() {
                       <p key={l} className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{l}</p>
                     ))}
                     <p className="flex items-center gap-1.5 text-xs font-medium mt-1 text-zinc-500 dark:text-zinc-400">
-                      <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-zinc-400 dark:bg-zinc-500" />
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-zinc-400 dark:bg-zinc-500" aria-hidden="true" />
                       Sunday &amp; Public Holidays · Closed
                     </p>
                   </div>
@@ -409,16 +488,12 @@ function ContactPageInner() {
           <ScrollBounce delay={0.2}>
             <div
               ref={formCardRef}
-              className={cn(
-                "abh-card p-8 flex flex-col h-full rounded-[14px]",
-                glowActive && "abh-inquire-glow-active"
-              )}
-              style={{ ["--glow-color" as any]: glowColor }}
+              className="abh-card p-8 flex flex-col h-full rounded-[14px]"
             >
               <h2 className="abh-section-heading mb-2">Send a Message</h2>
               {prefilled && (
                 <p className="flex items-center gap-1.5 text-[0.7rem] font-bold mb-4" style={{ color: greyColor }}>
-                  <Sparkle size={14} weight="fill" />
+                  <Sparkle size={14} weight="fill" aria-hidden="true" />
                   Prefilled from the gallery — feel free to edit before sending
                 </p>
               )}
@@ -427,13 +502,17 @@ function ContactPageInner() {
                   { label: "Your Name",     type: "text", key: "name",  validate: isNameValid,  error: "Name too short"     },
                   { label: "Phone Number",  type: "tel",  key: "phone", validate: isPhoneValid, error: "Invalid phone number" },
                 ].map((f) => {
-                  const err = touched[f.key] && !f.validate(formData[f.key as keyof typeof formData])
+                  const rawValue = formData[f.key as keyof typeof formData]
+                  const err = touched[f.key] && !f.validate(rawValue)
+                  const errMessage = !rawValue.trim() ? "This field is required." : f.error
                   return (
                     <div key={f.key}>
-                      <label className="abh-label block mb-1.5">{f.label}</label>
+                      <label htmlFor={`contact-${f.key}`} className="abh-label block mb-1.5">{f.label}</label>
                       <input
+                        id={`contact-${f.key}`}
                         type={f.type}
-                        value={formData[f.key as keyof typeof formData]}
+                        value={rawValue}
+                        aria-invalid={err}
                         className={cn(
                           "w-full px-4 py-3 border rounded-[14px] bg-white dark:bg-zinc-900 text-sm font-medium text-zinc-800 dark:text-zinc-200 transition-all outline-none",
                           err
@@ -443,11 +522,7 @@ function ContactPageInner() {
                         onBlur={() => setTouched({ ...touched, [f.key]: true })}
                         onChange={(e) => setFormData({ ...formData, [f.key]: e.target.value })}
                       />
-                      {err && (
-                        <p className="text-[0.65rem] font-black text-red-500 mt-1 uppercase tracking-widest">
-                          {f.error}
-                        </p>
-                      )}
+                      {err && <FieldErrorTooltip message={errMessage} />}
                     </div>
                   )
                 })}
@@ -460,20 +535,38 @@ function ContactPageInner() {
                   />
                 </div>
 
+                {/* Glow now wraps ONLY the message textarea, not the whole
+                    card — narrows the highlight to exactly the field a
+                    gallery visitor is most likely to want to check/edit. */}
                 <div className="flex-1 flex flex-col">
-                  <label className="abh-label block mb-1.5">Your Message</label>
-                  <textarea
+                  <label htmlFor="contact-message" className="abh-label block mb-1.5">Your Message</label>
+                  <div
                     className={cn(
-                      "w-full flex-1 px-4 py-3 border rounded-[14px] bg-white dark:bg-zinc-900 text-sm font-medium text-zinc-800 dark:text-zinc-200 transition-all outline-none resize-none",
-                      touched.message && !isMessageValid(formData.message)
-                        ? "border-red-500"
-                        : "border-zinc-100 dark:border-zinc-800 focus:border-brand-blue"
+                      "flex-1 flex flex-col rounded-[14px]",
+                      glowActive && "abh-inquire-glow-active"
                     )}
-                    rows={4}
-                    value={formData.message}
-                    onBlur={() => setTouched({ ...touched, message: true })}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  />
+                    style={{ ["--glow-color" as any]: glowColor }}
+                  >
+                    <textarea
+                      id="contact-message"
+                      aria-invalid={touched.message && !isMessageValid(formData.message)}
+                      className={cn(
+                        "w-full flex-1 px-4 py-3 border rounded-[14px] bg-white dark:bg-zinc-900 text-sm font-medium text-zinc-800 dark:text-zinc-200 transition-all outline-none resize-none",
+                        touched.message && !isMessageValid(formData.message)
+                          ? "border-red-500"
+                          : "border-zinc-100 dark:border-zinc-800 focus:border-brand-blue"
+                      )}
+                      rows={4}
+                      value={formData.message}
+                      onBlur={() => setTouched({ ...touched, message: true })}
+                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    />
+                  </div>
+                  {touched.message && !isMessageValid(formData.message) && (
+                    <FieldErrorTooltip
+                      message={!formData.message.trim() ? "This field is required." : "Message too short"}
+                    />
+                  )}
                 </div>
 
                 <button
