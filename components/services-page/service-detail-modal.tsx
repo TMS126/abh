@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, type ChangeEvent } from "react"
-import { motion, type PanInfo } from "framer-motion"
+import { motion } from "framer-motion"
 import {
   X, Paperclip, CheckCircle, WarningCircle, ShieldCheck, ShareNetwork, Clock,
 } from "@phosphor-icons/react"
@@ -9,7 +9,7 @@ import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey, BIZ } from "@/lib/brand"
 import { HUBS } from "@/lib/data"
-import { useFocusTrap, AbhLoader } from "./shared"
+import { useFocusTrap, AbhLoader, DragHandle, shouldDismissOnDrag } from "./shared"
 import {
   SelectedService, naturalServiceLabel, cleanText, formatAcceptHint,
   HUB_ACCEPT, CLD_MAX_MB, CLD_PRESET, BLOCKED_MIME_TYPES, BLOCKED_EXTENSIONS, getCldUrl, trackEvent,
@@ -47,13 +47,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
   useEffect(() => {
     return () => { if (previewUrl) URL.revokeObjectURL(previewUrl) }
   }, [previewUrl])
-
-  useEffect(() => {
-    if (!svc) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [svc, onClose])
 
   useFocusTrap(!!svc, containerRef)
 
@@ -99,12 +92,14 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
     if (fileRef.current) fileRef.current.value = ""
   }
 
-  const handleDragEnd = (_e: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    if (info.offset.y > 120 || info.velocity.y > 600) onClose()
-  }
-
   if (!svc) return null
 
+  // NOTE: `svc.hubId as HubKey` — HubId and HubKey are the same alias
+  // (see lib/data.ts: `export type HubId = HubKey`), so this cast is very
+  // likely redundant, same as the ones removed elsewhere in this pass.
+  // Left as-is here because SelectedService's declared field type lives in
+  // ./lib, which wasn't available to verify — if `hubId` is already typed
+  // as HubId/HubKey there, this cast can be dropped safely.
   const colors      = HUB_COLORS[svc.hubId as HubKey]
   const accent      = isDark ? colors.accentDark : colors.accentLight
   const hubTitle    = HUBS[svc.hubId]?.title || svc.sectionTitle
@@ -151,17 +146,14 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         drag="y"
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={{ top: 0, bottom: 0.6 }}
-        onDragEnd={handleDragEnd}
+        onDragEnd={(_e, info) => { if (shouldDismissOnDrag(info)) onClose() }}
         initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
         transition={{ type: "tween", duration: 0.22, ease: [0.32, 0.72, 0, 1] }} className="relative w-full md:max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-t-[20px] md:rounded-[14px] cursor-grab active:cursor-grabbing"
       >
-        <div className="flex justify-center pt-2.5 pb-0.5 shrink-0" aria-hidden="true">
-          <div className="w-9 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700" />
-        </div>
+        <DragHandle />
 
         <div className="px-6 pt-4 pb-5 flex-shrink-0">
           <div className="flex items-start mb-4">
-            {/* Invisible spacer mirroring the icon group's width so the center block is truly centered */}
             <div className="w-[72px] shrink-0" aria-hidden="true" />
 
             <div className="flex-1 min-w-0 text-center">
@@ -180,7 +172,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                 className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
                 style={{ backgroundColor: `${accent}15`, color: accent }}
               >
-                <ShareNetwork size={16} weight="bold" />
+                <ShareNetwork size={16} weight="bold" aria-hidden="true" />
               </button>
               {shareCopied && (
                 <span className="absolute -bottom-8 right-0 whitespace-nowrap text-[0.62rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full shadow-lg animate-in fade-in zoom-in-95 duration-150">
@@ -192,7 +184,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                 className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
                 style={{ backgroundColor: `${accent}15`, color: accent }}
               >
-                <X size={16} weight="bold" />
+                <X size={16} weight="bold" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -203,7 +195,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
             <span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
             {svc.turnaround && (
               <span className="flex items-center gap-1 text-[0.68rem] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: `${accent}12`, color: accent }}>
-                <Clock size={12} weight="bold" />
+                <Clock size={12} weight="bold" aria-hidden="true" />
                 {svc.turnaround}
               </span>
             )}
@@ -211,12 +203,14 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         </div>
 
         <div className="px-6 pt-1">
-          <div className="flex items-center gap-1 p-1 rounded-[14px] bg-zinc-100 dark:bg-zinc-900">
+          <div role="tablist" aria-label="Service info sections" className="flex items-center gap-1 p-1 rounded-[14px] bg-zinc-100 dark:bg-zinc-900">
             {(["bring", "about"] as Tab[]).map((t) => {
               const isActive = tab === t
               return (
                 <button
                   key={t}
+                  role="tab"
+                  aria-selected={isActive}
                   onClick={() => setTab(t)}
                   className={cn(
                     "flex-1 py-2.5 rounded-[14px] text-[0.72rem] font-black uppercase tracking-wider transition-all duration-200",
@@ -270,12 +264,12 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                 className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-[14px] font-bold text-sm border-2 border-dashed transition-all active:scale-95 hover:opacity-80"
                 style={{ borderColor: `${accent}40`, color: accent }}
               >
-                <Paperclip size={17} weight="bold" />
+                <Paperclip size={17} weight="bold" aria-hidden="true" />
                 Attach a file (optional)
               </button>
               <p className="text-[0.65rem] font-medium text-zinc-400 dark:text-zinc-500 text-center px-1">Accepts: {acceptHint}</p>
               <div className="flex items-start gap-2 px-1">
-                <ShieldCheck size={13} weight="fill" className="text-[#6FBF1A] shrink-0 mt-0.5" />
+                <ShieldCheck size={13} weight="fill" aria-hidden="true" className="text-[#6FBF1A] shrink-0 mt-0.5" />
                 <p className="abh-muted text-[0.67rem] leading-relaxed">Your file goes directly to ApexbytesHub only — safe, private, and used only for your order. No explicit or inappropriate content allowed.</p>
               </div>
             </div>
@@ -295,10 +289,10 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                 <span className="relative shrink-0">
                   {previewUrl
                     ? <img src={previewUrl} alt="" className="w-9 h-9 rounded-[8px] object-cover shrink-0 border border-zinc-200 dark:border-zinc-700" />
-                    : <div className="w-9 h-9 rounded-[8px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${accent}15`, color: accent }}><Paperclip size={16} weight="bold" /></div>
+                    : <div className="w-9 h-9 rounded-[8px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${accent}15`, color: accent }}><Paperclip size={16} weight="bold" aria-hidden="true" /></div>
                   }
                   <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-950" style={{ backgroundColor: "#22c55e" }}>
-                    <CheckCircle size={10} weight="fill" color="#fff" />
+                    <CheckCircle size={10} weight="fill" color="#fff" aria-hidden="true" />
                   </span>
                 </span>
                 <span className="flex flex-col min-w-0">
@@ -307,7 +301,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                 </span>
               </span>
               <button type="button" onClick={clearFile} aria-label="Remove file" className="shrink-0 opacity-60 hover:opacity-100 transition-opacity">
-                <X size={15} weight="bold" />
+                <X size={15} weight="bold" aria-hidden="true" />
               </button>
             </div>
           )}
@@ -315,7 +309,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           {uploadPhase === "error" && (
             <div className="space-y-2">
               <div className="flex items-start gap-2 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200/50 dark:border-red-800/30">
-                <WarningCircle size={17} weight="fill" className="shrink-0 mt-0.5" />
+                <WarningCircle size={17} weight="fill" aria-hidden="true" className="shrink-0 mt-0.5" />
                 <span className="leading-snug font-medium">{uploadErr}</span>
               </div>
               <button type="button" onClick={() => { setUploadPhase("idle"); setUploadErr(null); fileRef.current?.click() }} className="text-xs font-black underline" style={{ color: accent }}>
