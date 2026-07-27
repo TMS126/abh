@@ -12,7 +12,7 @@ import { SafeImage } from "./safe-image"
 import { BeforeAfterSlider } from "./before-after-slider"
 import { ZoomOverlay } from "./zoom-overlay"
 import { LikeButton, ShareButton } from "./like-share-buttons"
-
+import { getContrastText } from "./lib"
 // Tracks the (max-width: 767px) breakpoint — the swipe-to-shrink image
 // behavior below is mobile-only, since on desktop the image and details
 // panel sit side by side rather than stacked, so there's nothing to
