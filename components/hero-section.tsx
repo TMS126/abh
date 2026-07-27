@@ -3,20 +3,13 @@
 import React, { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
-import { motion, AnimatePresence } from "framer-motion"
 import { ArrowRight, CaretRight } from "@phosphor-icons/react"
-import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, MARQUEE_ITEMS } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { ensureAccessible } from "@/lib/color-contrast"
 import { HUBS_DATA, pickRandomService } from "@/lib/hero-data"
 import { ClassicTagline } from "@/components/classic-tagline"
-
-// ─── CTA word cycle ───────────────────────────────────────────────────────────
-const CTA_WORDS = ["Designing", "Printing", "Upgrading"] as const
-type CtaWord = (typeof CTA_WORDS)[number]
-const CTA_CYCLE_MS = 5500
 
 // ─── Contrast helper for the arrow icon against its own circle bg ─────────────
 function hexToRgbLocal(hex: string) {
@@ -47,35 +40,13 @@ export function HeroSection() {
   const [activeHub,         setActiveHub]         = useState<number>(0)
   const [marqueePaused,     setMarqueePaused]     = useState(false)
   const [spotlightService,  setSpotlightService]  = useState(() => pickRandomService(0))
-  const [hoveredHub,        setHoveredHub]        = useState<number | null>(null)
-  const [canHover,          setCanHover]          = useState(false)
-
   const [hubTouched, setHubTouched] = useState(false)
 
-  const [tilt, setTilt] = useState({ rx: 0, ry: 0 })
-  const [tilting, setTilting] = useState(false)
   const ecoBoxRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef<number | null>(null)
+  const ctaBtnRef = useRef<HTMLButtonElement>(null)
 
-  const [ctaWordIdx, setCtaWordIdx] = useState(0)
-  const [upgradeColorIdx, setUpgradeColorIdx] = useState(0)
-
-  const handleEcoMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!canHover || !ecoBoxRef.current) return
-    const rect = ecoBoxRef.current.getBoundingClientRect()
-    const px = (e.clientX - rect.left) / rect.width
-    const py = (e.clientY - rect.top) / rect.height
-    const MAX_TILT = 5
-    setTilt({
-      ry: (px - 0.5) * MAX_TILT * 2,
-      rx: (0.5 - py) * MAX_TILT * 2,
-    })
-    setTilting(true)
-  }
-  const handleEcoMouseLeave = () => {
-    setTilt({ rx: 0, ry: 0 })
-    setTilting(false)
-  }
+  React.useEffect(() => { setMounted(true) }, [])
 
   const handleEcoTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     touchStartX.current = e.touches[0].clientX
@@ -93,62 +64,23 @@ export function HeroSection() {
     touchStartX.current = null
   }
 
-  const ctaBtnRef      = useRef<HTMLButtonElement>(null)
-
-  React.useEffect(() => { setMounted(true) }, [])
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return
-    const mq = window.matchMedia("(hover: hover) and (pointer: fine)")
-    setCanHover(mq.matches)
-    const handler = (e: MediaQueryListEvent) => setCanHover(e.matches)
-    mq.addEventListener("change", handler)
-    return () => mq.removeEventListener("change", handler)
-  }, [])
-
-  // Cycles Designing → Printing → Upgrading → repeat, forever.
-  useEffect(() => {
-    const id = setInterval(() => {
-      setCtaWordIdx(prev => {
-        const next = (prev + 1) % CTA_WORDS.length
-        if (CTA_WORDS[next] === "Upgrading") {
-          setUpgradeColorIdx(Math.floor(Math.random() * 3))
-        }
-        return next
-      })
-    }, CTA_CYCLE_MS)
-    return () => clearInterval(id)
-  }, [])
-
   const isDark    = mounted && resolvedTheme === "dark"
   const active    = HUBS_DATA[activeHub]
-  const ActiveIcon = active.Icon
 
   const STROKE_COLOR   = BRAND.blue
   const CTA_FILL_COLOR = BRAND.blue
+  const REST_COLOR     = isDark ? BRAND.lightBlue : BRAND.blue
 
-  const REST_COLOR = isDark ? BRAND.lightBlue : BRAND.blue
-
-  const cardText      = "#FFFFFF"
-  const cardTextSoft  = "rgba(255,255,255,0.82)"
-  const cardTextMuted = "rgba(255,255,255,0.55)"
+  // Card is now a plain light/dark surface instead of a fixed dark-navy panel
+  const cardBg         = isDark ? "#18181b" : "#ffffff"
+  const cardText       = isDark ? "#fafafa" : "#18181b"
+  const cardTextSoft   = isDark ? "rgba(250,250,250,0.72)" : "rgba(24,24,27,0.65)"
+  const cardTextMuted  = isDark ? "rgba(250,250,250,0.45)" : "rgba(24,24,27,0.4)"
 
   const hubColor  = isDark ? active.colorDark : active.colorLight
-  const nameColor = ensureAccessible(hubColor, "#0d2436", 4.5)
+  const nameColor = ensureAccessible(hubColor, cardBg, 4.5)
 
-  const designArrowColor = BRAND.orangeBrown
-  const printArrowColor  = isDark ? BRAND.lightBlue : BRAND.blueDark
-  const upgradeColorOptions = isDark
-    ? [BRAND.greenDeep, BRAND.lightBlue, "#B8CCE0"]
-    : [BRAND.greenDeep, BRAND.blueMid, BRAND.dark100]
-  const upgradeArrowColor = upgradeColorOptions[upgradeColorIdx]
-
-  const activeCtaWord: CtaWord = CTA_WORDS[ctaWordIdx]
-  const activeCircleColor =
-    activeCtaWord === "Designing" ? designArrowColor :
-    activeCtaWord === "Printing"  ? printArrowColor :
-    upgradeArrowColor
-
+  const activeCircleColor = CTA_FILL_COLOR
   const activeArrowIconColor = getArrowIconColor(activeCircleColor)
 
   const handleNavigate = (path: string) => router.push(path)
@@ -216,7 +148,7 @@ export function HeroSection() {
               className="hidden md:flex absolute inset-y-0 -right-[10%] items-center justify-center pointer-events-none select-none z-0"
             >
               {!hubTouched ? (
-                <Image
+                <img
                   src="/logo.png"
                   alt=""
                   width={520}
@@ -229,7 +161,7 @@ export function HeroSection() {
                   className="shrink-0 opacity-[0.14] dark:opacity-[0.18] md:w-[620px] md:h-[620px] object-contain"
                 />
               ) : (
-                <ActiveIcon
+                <active.Icon
                   size={520}
                   weight="fill"
                   aria-hidden="true"
@@ -262,30 +194,13 @@ export function HeroSection() {
                   className="relative z-10 flex-1 flex items-center justify-center whitespace-nowrap transition-colors duration-150"
                   style={{ color: REST_COLOR }}
                 >
-                  <span className="mr-2 group-hover:text-white group-active:text-white transition-colors duration-150">
-                    Start
-                  </span>
-                  <span
-                    className="relative inline-block h-7 overflow-hidden text-left group-hover:text-white group-active:text-white transition-colors duration-150"
-                    style={{ minWidth: "9.5ch" }}
-                  >
-                    <AnimatePresence mode="popLayout" initial={false}>
-                      <motion.span
-                        key={activeCtaWord}
-                        initial={{ y: 26, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: -26, opacity: 0 }}
-                        transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
-                        className="absolute inset-0 flex items-center"
-                      >
-                        {activeCtaWord}
-                      </motion.span>
-                    </AnimatePresence>
+                  <span className="group-hover:text-white group-active:text-white transition-colors duration-150">
+                    Start Here
                   </span>
                 </span>
 
                 <span
-                  className="relative z-10 w-8 h-8 shrink-0 inline-flex items-center justify-center rounded-full shadow-sm transition-colors duration-300"
+                  className="relative z-10 w-8 h-8 shrink-0 inline-flex items-center justify-center rounded-full shadow-sm"
                   style={{ backgroundColor: activeCircleColor }}
                   aria-hidden="true"
                 >
@@ -300,180 +215,155 @@ export function HeroSection() {
           </div>
 
           <ScrollBounce delay={0.1} className="w-full max-w-[840px] mx-auto">
-            <div
-              ref={ecoBoxRef}
-              onMouseMove={handleEcoMouseMove}
-              onMouseLeave={handleEcoMouseLeave}
-              onTouchStart={handleEcoTouchStart}
-              onTouchEnd={handleEcoTouchEnd}
-              className="relative w-full rounded-[14px] overflow-hidden"
-              style={{
-                transform: `perspective(1200px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg) scale(${tilting ? 1.012 : 1})`,
-                transformStyle: "preserve-3d",
-                transition: tilting ? "transform 90ms ease-out" : "transform 500ms cubic-bezier(0.16, 1, 0.3, 1)",
-                willChange: "transform",
-                boxShadow:
-                  "0 60px 120px -25px rgba(0,0,0,0.65), " +
-                  "0 35px 70px -30px rgba(0,0,0,0.75), " +
-                  `0 0 100px -15px ${BRAND.blue}70, ` +
-                  "inset 0 1px 0 rgba(255,255,255,0.28), " +
-                  "inset 0 -44px 60px -30px rgba(0,0,0,0.55)",
-              }}
-            >
+            <div className="relative w-full">
+              {/* Decorative soft blur peeking behind the card's top edge */}
               <div
-                className="absolute inset-0 z-0"
                 aria-hidden="true"
-                style={{ backgroundColor: BRAND.blueDark }}
+                className="absolute -top-6 left-1/4 w-40 h-24 rounded-full blur-3xl opacity-40 pointer-events-none"
+                style={{ background: `linear-gradient(90deg, ${BRAND.blue}, ${BRAND.green}, ${BRAND.orange})` }}
               />
 
-              <div className="relative z-10 w-full flex flex-col items-center px-6 sm:px-10 md:px-12 pt-8 sm:pt-10 md:pt-12 pb-10 sm:pb-12 md:pb-14">
+              <div
+                ref={ecoBoxRef}
+                onTouchStart={handleEcoTouchStart}
+                onTouchEnd={handleEcoTouchEnd}
+                className="relative z-10 w-full rounded-[14px] overflow-hidden border border-zinc-100 dark:border-zinc-800 shadow-xl"
+                style={{ backgroundColor: cardBg }}
+              >
+                <div className="relative z-10 w-full flex flex-col items-center px-6 sm:px-10 md:px-12 pt-8 sm:pt-10 md:pt-12 pb-10 sm:pb-12 md:pb-14">
 
-                <div className="w-full flex flex-col items-center mb-5">
-                  <h2
-                    className="abh-section-heading mb-2 text-center"
-                    style={{ color: cardText }}
-                  >
-                    Core Hub Ecosystem
-                  </h2>
-                  <p
-                    className="text-sm font-medium text-center"
-                    style={{ color: cardTextSoft }}
-                  >
-                    Tap a hub to see what we actually do there.
-                  </p>
-                </div>
-
-                <div
-                  role="tablist"
-                  aria-label="Service hubs"
-                  className="flex flex-wrap sm:flex-nowrap justify-center items-stretch gap-3 sm:gap-4 w-full max-w-[420px] mb-4 px-1"
-                >
-                  {HUBS_DATA.map((hub, index) => {
-                    const isActive  = activeHub === index
-                    const isHovered = hoveredHub === index
-
-                    return (
-                      <button
-                        key={hub.id}
-                        role="tab"
-                        aria-selected={isActive}
-                        aria-label={hub.name}
-                        onClick={() => handleSelectHub(index)}
-                        onMouseEnter={() => setHoveredHub(index)}
-                        onMouseLeave={() => setHoveredHub(null)}
-                        className={cn(
-  "relative flex flex-col items-center justify-center gap-1.5 px-4 sm:px-5 pt-4 pb-2.5 rounded-[14px] transition-all duration-200 flex-1 min-w-[56px]",
-  isActive && "shadow-[0_2px_8px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.55)]"
-)}
-                        style={{
-                          backgroundColor: isActive
-                            ? "rgba(255,255,255,0.18)"
-                            : (isHovered ? "rgba(255,255,255,0.08)" : "transparent"),
-                        }}
-                      >
-                        <span
-                          className="transition-all duration-200 flex"
-                          style={{
-                            color: cardText,
-                            opacity: isActive ? 1 : (isHovered ? 0.85 : 0.45),
-                            transform: isActive ? "translateY(-1px) scale(1.08)" : "none",
-                          }}
-                        >
-                          {hub.icon(isActive)}
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
-
-                <div
-                  role="tablist"
-                  aria-label="Hub pagination"
-                  className="flex items-center justify-center gap-1.5 mb-6"
-                >
-                  {HUBS_DATA.map((hub, index) => {
-                    const isActive = activeHub === index
-                    return (
-                      <button
-                        key={hub.id}
-                        role="tab"
-                        aria-selected={isActive}
-                        aria-label={`Go to ${hub.name}`}
-                        onClick={() => handleSelectHub(index)}
-                        className={cn("h-2 rounded-full transition-all duration-300", isActive ? "w-6" : "w-2")}
-                        style={{ backgroundColor: cardText, opacity: isActive ? 1 : 0.35 }}
-                      />
-                    )
-                  })}
-                </div>
-
-                <div className="w-full max-w-[420px] flex flex-col items-center text-center mb-2">
-                  <CaretRight
-                    size={22}
-                    weight="bold"
-                    aria-hidden="true"
-                    style={{ color: nameColor }}
-                    className="mb-1"
-                  />
-
-                  <p
-                    className="text-[0.8rem] font-black uppercase tracking-widest pb-2 mb-3 border-b-2 inline-block"
-                    style={{ color: nameColor, borderColor: nameColor }}
-                  >
-                    {active.name}
-                  </p>
-
-                  <button
-                    key={`${activeHub}-${spotlightService.name}`}
-                    onClick={handleReroll}
-                    aria-label="Show another example price for this hub"
-                    className="flex flex-col items-center gap-1 rounded-[10px] px-2 py-1 transition-opacity hover:opacity-80 active:scale-[0.97] animate-in fade-in duration-200"
-                  >
-                    <span className="text-sm font-semibold" style={{ color: cardText }}>
-                      {spotlightService.name}
-                    </span>
-                    <span className="text-2xl font-black font-mono" style={{ color: cardText }}>
-                      {spotlightService.price}
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => handleNavigate(`/services?hub=${active.id}`)}
-                    className="flex items-center justify-center gap-1.5 text-[0.65rem] font-black tracking-wide mt-4 transition-opacity hover:opacity-70"
-                    style={{ color: cardText }}
-                  >
-                    View All {active.name} Services
-                    <ArrowRight weight="bold" className="w-3 h-3" aria-hidden="true" />
-                  </button>
-                </div>
-
-                <div
-                  role="marquee"
-                  aria-label="Our services"
-                  onMouseEnter={() => setMarqueePaused(true)}
-                  onMouseLeave={() => setMarqueePaused(false)}
-                  onTouchStart={(e) => { e.stopPropagation(); setMarqueePaused(p => !p) }}
-                  className="relative w-full mt-8 py-4 overflow-hidden select-none group/marquee"
-                >
-                  <div
-                    className="flex whitespace-nowrap w-max animate-marquee"
-                    style={{ animationPlayState: marqueePaused ? "paused" : "running" }}
-                  >
-                    {[0, 1].map((copy) => (
-                      <div key={copy} className="flex items-center shrink-0">
-                        {MARQUEE_ITEMS.map((item, idx) => (
-                          <React.Fragment key={idx}>
-                            <span className="inline-flex items-center px-5 font-semibold text-sm transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100" style={{ color: cardTextSoft }}>
-                              {item}
-                            </span>
-                            <span className="font-black text-base leading-none shrink-0" style={{ color: cardText }} aria-hidden="true">•</span>
-                          </React.Fragment>
-                        ))}
-                      </div>
-                    ))}
+                  <div className="w-full flex flex-col items-center mb-6">
+                    <h2
+                      className="abh-section-heading text-center"
+                      style={{ color: cardText }}
+                    >
+                      Core Hub Ecosystem
+                    </h2>
                   </div>
-                </div>
 
+                  <div
+                    role="tablist"
+                    aria-label="Service hubs"
+                    className="flex flex-wrap sm:flex-nowrap justify-center items-stretch gap-3 sm:gap-4 w-full max-w-[420px] mb-4 px-1"
+                  >
+                    {HUBS_DATA.map((hub, index) => {
+                      const isActive = activeHub === index
+                      const hubAccent = isDark ? hub.colorDark : hub.colorLight
+
+                      return (
+                        <button
+                          key={hub.id}
+                          role="tab"
+                          aria-selected={isActive}
+                          aria-label={hub.name}
+                          onClick={() => handleSelectHub(index)}
+                          className="relative flex flex-col items-center justify-center gap-1.5 px-4 sm:px-5 pt-4 pb-2.5 rounded-[14px] transition-transform duration-150 flex-1 min-w-[56px] active:scale-95"
+                        >
+                          <span
+                            className="flex"
+                            style={{ color: isActive ? hubAccent : (isDark ? "rgba(250,250,250,0.5)" : "rgba(24,24,27,0.45)") }}
+                          >
+                            {hub.icon(isActive)}
+                          </span>
+                          <span
+                            className="h-[2px] w-5 rounded-full transition-all duration-200"
+                            style={{ backgroundColor: isActive ? hubAccent : "transparent" }}
+                          />
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  <div
+                    role="tablist"
+                    aria-label="Hub pagination"
+                    className="flex items-center justify-center gap-2 mb-6"
+                  >
+                    {HUBS_DATA.map((hub, index) => {
+                      const isActive = activeHub === index
+                      const hubAccent = isDark ? hub.colorDark : hub.colorLight
+                      return (
+                        <button
+                          key={hub.id}
+                          role="tab"
+                          aria-selected={isActive}
+                          aria-label={`Go to ${hub.name}`}
+                          onClick={() => handleSelectHub(index)}
+                          className={cn("h-3 rounded-full transition-all duration-300", isActive ? "w-9" : "w-3")}
+                          style={{ backgroundColor: isActive ? hubAccent : (isDark ? "rgba(250,250,250,0.25)" : "rgba(24,24,27,0.2)") }}
+                        />
+                      )
+                    })}
+                  </div>
+
+                  <div className="w-full max-w-[420px] flex flex-col items-center text-center mb-2">
+                    <CaretRight
+                      size={22}
+                      weight="bold"
+                      aria-hidden="true"
+                      style={{ color: nameColor }}
+                      className="mb-1"
+                    />
+
+                    <p
+                      className="text-[0.8rem] font-black uppercase tracking-widest pb-2 mb-3 border-b-2 inline-block"
+                      style={{ color: nameColor, borderColor: nameColor }}
+                    >
+                      {active.name}
+                    </p>
+
+                    <button
+                      key={`${activeHub}-${spotlightService.name}`}
+                      onClick={handleReroll}
+                      aria-label="Show another example price for this hub"
+                      className="flex flex-col items-center gap-1 rounded-[10px] px-2 py-1 transition-opacity hover:opacity-80 active:scale-[0.97] animate-in fade-in duration-200"
+                    >
+                      <span className="text-sm font-semibold" style={{ color: cardText }}>
+                        {spotlightService.name}
+                      </span>
+                      <span className="text-2xl font-black font-mono" style={{ color: cardText }}>
+                        {spotlightService.price}
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => handleNavigate(`/services?hub=${active.id}`)}
+                      className="flex items-center justify-center gap-1.5 text-[0.65rem] font-black tracking-wide mt-4 transition-opacity hover:opacity-70"
+                      style={{ color: cardTextSoft }}
+                    >
+                      View All {active.name} Services
+                      <ArrowRight weight="bold" className="w-3 h-3" aria-hidden="true" />
+                    </button>
+                  </div>
+
+                  <div
+                    role="marquee"
+                    aria-label="Our services"
+                    onMouseEnter={() => setMarqueePaused(true)}
+                    onMouseLeave={() => setMarqueePaused(false)}
+                    onTouchStart={(e) => { e.stopPropagation(); setMarqueePaused(p => !p) }}
+                    className="relative w-full mt-8 py-4 overflow-hidden select-none group/marquee"
+                  >
+                    <div
+                      className="flex whitespace-nowrap w-max animate-marquee"
+                      style={{ animationPlayState: marqueePaused ? "paused" : "running" }}
+                    >
+                      {[0, 1].map((copy) => (
+                        <div key={copy} className="flex items-center shrink-0">
+                          {MARQUEE_ITEMS.map((item, idx) => (
+                            <React.Fragment key={idx}>
+                              <span className="inline-flex items-center px-5 font-semibold text-sm transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100" style={{ color: cardTextSoft }}>
+                                {item}
+                              </span>
+                              <span className="font-black text-base leading-none shrink-0" style={{ color: cardTextMuted }} aria-hidden="true">•</span>
+                            </React.Fragment>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
               </div>
             </div>
           </ScrollBounce>
@@ -481,4 +371,4 @@ export function HeroSection() {
       </div>
     </section>
   )
-                    } 
+              } 
