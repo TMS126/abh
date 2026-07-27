@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import { motion, type PanInfo } from "framer-motion"
+import { motion } from "framer-motion"
 import { X, Info, ArrowSquareOut } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
-import { HUB_COLORS, HubKey } from "@/lib/brand"
+import { HUB_COLORS } from "@/lib/brand"
 import { HUBS, HubId, HUB_DISCLAIMERS } from "@/lib/data"
-import { HubIcon, useFocusTrap } from "./shared"
+import { HubIcon, useFocusTrap, DragHandle, shouldDismissOnDrag } from "./shared"
 import { getTurnaround, SelectedService } from "./lib"
 
 export function HubModal({ hubId, onClose, onSelectService }: {
@@ -20,22 +20,11 @@ export function HubModal({ hubId, onClose, onSelectService }: {
 
   useEffect(() => { setOpenSectionIdx(0) }, [hubId])
 
-  useEffect(() => {
-    if (!hubId) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [hubId, onClose])
-
   useFocusTrap(!!hubId, containerRef)
-
-  const handleDragEnd = (_e: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    if (info.offset.y > 120 || info.velocity.y > 600) onClose()
-  }
 
   if (!hubId) return null
   const hub         = HUBS[hubId]
-  const colors      = HUB_COLORS[hubId as HubKey]
+  const colors      = HUB_COLORS[hubId]
   const accent      = isDark ? colors.accentDark : colors.accentLight
   const solidAccent = colors.accentLight
 
@@ -61,14 +50,12 @@ export function HubModal({ hubId, onClose, onSelectService }: {
         drag="y"
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={{ top: 0, bottom: 0.6 }}
-        onDragEnd={handleDragEnd}
+        onDragEnd={(_e, info) => { if (shouldDismissOnDrag(info)) onClose() }}
         initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
         transition={{ type: "tween", duration: 0.22, ease: [0.32, 0.72, 0, 1] }}   className="relative w-full md:max-w-2xl bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-t-[20px] md:rounded-[14px] cursor-grab active:cursor-grabbing"
         style={{ boxShadow: `0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4), 0 10px 24px -8px ${accent}50` }}
       >
-        <div className="flex justify-center pt-2.5 pb-0.5 shrink-0" aria-hidden="true">
-          <div className="w-9 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700" />
-        </div>
+        <DragHandle />
 
         <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center shrink-0 gap-3" style={{ backgroundColor: `${accent}05` }}>
           <div className="flex items-center gap-4 min-w-0">
@@ -84,20 +71,15 @@ export function HubModal({ hubId, onClose, onSelectService }: {
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            {/* View in Gallery — bordered pill, same footprint as the
-                section-tab pills below (px-3.5 py-1.5, rounded-full,
-                text-[0.7rem] font-black). Border-only at rest in the
-                hub's own accent; fills solid accent with white text and
-                icon on hover. */}
             <Link
               href={`/gallery?hub=${hubId}`}
               className="group/gallerylink flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[0.7rem] font-black tracking-tight whitespace-nowrap border-2 transition-all duration-200 hover:text-white"
-              style={{ borderColor: accent, color: accent, ["--hover-bg" as any]: solidAccent }}
+              style={{ borderColor: accent, color: accent }}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = solidAccent }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent" }}
             >
               View in Gallery
-              <ArrowSquareOut size={12} weight="bold" />
+              <ArrowSquareOut size={12} weight="bold" aria-hidden="true" />
             </Link>
 
             <button
@@ -106,19 +88,21 @@ export function HubModal({ hubId, onClose, onSelectService }: {
               className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
               style={{ backgroundColor: `${accent}15`, color: accent }}
             >
-              <X size={20} weight="bold" />
+              <X size={20} weight="bold" aria-hidden="true" />
             </button>
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-8">
 
-          <div className="flex flex-wrap justify-center gap-2 mb-5">
+          <div role="tablist" aria-label="Service categories" className="flex flex-wrap justify-center gap-2 mb-5">
             {hub.sections.map((section, sIdx) => {
               const isOpen = openSectionIdx === sIdx
               return (
                 <button
                   key={sIdx}
+                  role="tab"
+                  aria-selected={isOpen}
                   onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)}
                   className={`px-3.5 py-1.5 rounded-full text-[0.7rem] font-black tracking-tight whitespace-nowrap transition-all duration-200 ${
                     isOpen ? "text-white" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
@@ -165,7 +149,7 @@ export function HubModal({ hubId, onClose, onSelectService }: {
 
           {hubDisclaimer && (
             <div className="mt-6 flex items-start gap-2">
-              <Info size={13} weight="bold" className="text-zinc-400 dark:text-zinc-500 shrink-0 mt-0.5" />
+              <Info size={13} weight="bold" aria-hidden="true" className="text-zinc-400 dark:text-zinc-500 shrink-0 mt-0.5" />
               <p className="text-[0.72rem] font-medium text-zinc-400 dark:text-zinc-500 leading-relaxed">
                 {hubDisclaimer}
               </p>
@@ -175,4 +159,4 @@ export function HubModal({ hubId, onClose, onSelectService }: {
       </motion.div>
     </div>
   )
-                } 
+      } 
