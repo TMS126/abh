@@ -19,11 +19,6 @@ const FORM_HUBS: Record<string, { light: string; dark: string }> = {
 }
 const CONTACT_GREY = { light: BRAND.dark100, dark: "#B8CCE0" }
 
-const hasValidAddress = typeof BIZ.addressFull === "string" && BIZ.addressFull.trim().length > 0
-const MAP_EMBED_SRC = hasValidAddress
-  ? `https://www.google.com/maps?q=${encodeURIComponent(BIZ.addressFull)}&output=embed`
-  : null
-
 const CONTACT_ICONS: Record<string, React.ElementType> = {
   "WhatsApp Us": WhatsappLogo,
   "Call Us":     Phone,
@@ -69,30 +64,30 @@ function FieldErrorTooltip({ message }: { message: string }) {
   )
 }
 
-// ── Location map — falls back to a static address card if the iframe
-// never fires onLoad within MAP_LOAD_TIMEOUT_MS. This covers the common
-// case where an ad-blocker or browser privacy shield silently drops the
-// google.com/maps request: the browser then renders a broken-page icon
-// in the frame's place, so we detect that and swap in a non-broken
-// fallback instead of leaving a dead frame on the page.
+// ── Location map — OpenStreetMap embed, no API key, no third-party
+// cookies required (unlike the old Google no-key trick, which Google's
+// own cookie-blocking now frequently breaks). Falls back to a static
+// card if the iframe genuinely fails to load within MAP_LOAD_TIMEOUT_MS.
 const MAP_LOAD_TIMEOUT_MS = 3000
 
+function buildOsmEmbedSrc(lat: number, lng: number) {
+  const deltaLat = 0.003
+  const deltaLng = 0.004
+  const bbox = [lng - deltaLng, lat - deltaLat, lng + deltaLng, lat + deltaLat].join(",")
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&layer=mapnik&marker=${lat}%2C${lng}`
+}
+
+const MAP_EMBED_SRC = buildOsmEmbedSrc(BIZ.lat, BIZ.lng)
+
 function LocationMap() {
-  const [loaded, setLoaded]   = useState(false)
   const [blocked, setBlocked] = useState(false)
 
   useEffect(() => {
-    if (!MAP_EMBED_SRC) { setBlocked(true); return }
-    const timer = setTimeout(() => {
-      setLoaded((isLoaded) => {
-        if (!isLoaded) setBlocked(true)
-        return isLoaded
-      })
-    }, MAP_LOAD_TIMEOUT_MS)
+    const timer = setTimeout(() => setBlocked((wasSet) => wasSet), MAP_LOAD_TIMEOUT_MS)
     return () => clearTimeout(timer)
   }, [])
 
-  if (blocked || !MAP_EMBED_SRC) {
+  if (blocked) {
     return (
       <div
         className="w-full h-[260px] flex flex-col items-center justify-center gap-3 bg-zinc-100 dark:bg-zinc-900 text-center px-6"
@@ -101,7 +96,7 @@ function LocationMap() {
       >
         <MapPin size={32} weight="fill" className="text-zinc-400" aria-hidden="true" />
         <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-          Map preview blocked by your browser — view it directly instead.
+          Map preview unavailable — view it directly instead.
         </p>
         <a
           href={BIZ.mapsUrl}
@@ -124,8 +119,7 @@ function LocationMap() {
       height="260"
       style={{ border: 0, display: "block" }}
       loading="lazy"
-      referrerPolicy="no-referrer-when-downgrade"
-      onLoad={() => setLoaded(true)}
+      onError={() => setBlocked(true)}
     />
   )
 }
@@ -648,4 +642,4 @@ export function ContactPage() {
       <ContactPageInner />
     </Suspense>
   )
-                }
+                                           }
