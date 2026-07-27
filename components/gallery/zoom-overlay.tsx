@@ -42,11 +42,11 @@ export function ZoomOverlay({ images, startIndex, onClose, title }: {
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      <button onClick={onClose} className="absolute top-5 right-5 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors active:scale-90">
+      <button onClick={onClose} className="absolute top-5 right-5 z-10 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors active:scale-90">
         <X size={18} weight="bold" />
       </button>
       {images.length > 1 && (
-        <div className="absolute top-5 left-1/2 -translate-x-1/2 z-10 px-3 py-1 rounded-full bg-white/10 text-white text-[0.7rem] font-bold tracking-widest">
+        <div className="absolute top-5 left-1/2 -translate-x-1/2 z-10 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white text-[0.7rem] font-bold tracking-widest">
           {idx + 1} / {images.length}
         </div>
       )}
@@ -64,13 +64,13 @@ export function ZoomOverlay({ images, startIndex, onClose, title }: {
         <>
           <button
             onClick={() => setIdx(i => (i - 1 + images.length) % images.length)}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors active:scale-90"
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors active:scale-90"
           >
             <CaretLeft size={18} weight="bold" />
           </button>
           <button
             onClick={() => setIdx(i => (i + 1) % images.length)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors active:scale-90"
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors active:scale-90"
           >
             <CaretRight size={18} weight="bold" />
           </button>
@@ -83,4 +83,4 @@ export function ZoomOverlay({ images, startIndex, onClose, title }: {
       )}
     </div>
   )
-      }
+} 
