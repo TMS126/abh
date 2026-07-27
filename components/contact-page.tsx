@@ -187,6 +187,8 @@ function ContactPageInner() {
   const [touched,   setTouched]   = useState<Record<string, boolean>>({})
   const [vcardDone, setVcardDone] = useState(false)
   const [prefilled, setPrefilled] = useState(false)
+  const [glowActive, setGlowActive] = useState(false)
+  const formCardRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -202,6 +204,27 @@ function ContactPageInner() {
     }))
     setPrefilled(true)
   }, [searchParams])
+
+  // Arriving from a gallery "Inquire" link — scroll the form into view and
+  // pulse its border twice in the matching hub's color, then stop. Waits
+  // for `mounted` so the dark/light accent color is resolved correctly
+  // before the glow fires.
+  useEffect(() => {
+    if (!prefilled || !mounted) return
+    const id = requestAnimationFrame(() => {
+      formCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      setGlowActive(true)
+    })
+    const stopTimer = setTimeout(() => setGlowActive(false), 2600)
+    return () => {
+      cancelAnimationFrame(id)
+      clearTimeout(stopTimer)
+    }
+  }, [prefilled, mounted])
+
+  const glowColor = formData.service && FORM_HUBS[formData.service]
+    ? (isDark ? FORM_HUBS[formData.service].dark : FORM_HUBS[formData.service].light)
+    : BRAND.blue
 
   const isNameValid    = (val: string) => val.trim().length >= 2
   const isPhoneValid   = (val: string) => /^[0-9+\s-]{10,15}$/.test(val.trim())
@@ -232,6 +255,19 @@ function ContactPageInner() {
 
   return (
     <div className="min-h-screen bg-background">
+
+      <style>{`
+        @keyframes abh-inquire-glow {
+          0%   { box-shadow: 0 0 0 0 transparent; }
+          15%  { box-shadow: 0 0 0 2px var(--glow-color), 0 0 22px 3px var(--glow-color); }
+          40%  { box-shadow: 0 0 0 0 transparent; }
+          55%  { box-shadow: 0 0 0 2px var(--glow-color), 0 0 22px 3px var(--glow-color); }
+          80%, 100% { box-shadow: 0 0 0 0 transparent; }
+        }
+        .abh-inquire-glow-active {
+          animation: abh-inquire-glow 2.4s ease-in-out 1;
+        }
+      `}</style>
 
       {/* ── Hero ── */}
       <section className="px-4 md:px-8 pt-[calc(var(--nav-h)+2rem)] pb-8">
@@ -371,7 +407,14 @@ function ContactPageInner() {
 
           {/* Right column — form card */}
           <ScrollBounce delay={0.2}>
-            <div className="abh-card p-8 flex flex-col h-full">
+            <div
+              ref={formCardRef}
+              className={cn(
+                "abh-card p-8 flex flex-col h-full rounded-[14px]",
+                glowActive && "abh-inquire-glow-active"
+              )}
+              style={{ ["--glow-color" as any]: glowColor }}
+            >
               <h2 className="abh-section-heading mb-2">Send a Message</h2>
               {prefilled && (
                 <p className="flex items-center gap-1.5 text-[0.7rem] font-bold mb-4" style={{ color: greyColor }}>
@@ -472,4 +515,4 @@ export function ContactPage() {
       <ContactPageInner />
     </Suspense>
   )
-                    } 
+                  } 
