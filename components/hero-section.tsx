@@ -39,18 +39,19 @@ const HUB_IMAGES: Record<string, string> = {
   tech:     "/5_TECH_HUB_white.webp",
 }
 
-// Five fixed POSITION slots (straightened — no rotation, per request), each
-// giving its tile enough breathing room from its neighbors while still
-// overlapping like the reference screenshot. WHICH hub lands in which slot,
-// and each slot's exact size within its own range, is randomized on every
-// mount (see shuffle effect below) — the slot geometry itself never
-// changes, only the assignment and size jitter do.
+// Five slots, respaced into a loose diamond/cross so every tile's
+// top-right corner (where its name pill sits) stays clear of the tile
+// stacked on top of it. Previous layout crammed two slots into the same
+// bottom-center zone (bottom:14%/left:6% and bottom:0%/left:36%), so one
+// tile's pill ended up directly underneath the other — not actually
+// missing, just fully covered. Container height bumped too so nothing
+// clips at the bottom edge on mobile.
 const COLLAGE_SLOTS: { top?: string; bottom?: string; left?: string; right?: string; z: number; baseWidth: number }[] = [
-  { top: "0%",    left: "0%",  z: 10, baseWidth: 46 },
-  { top: "2%",    right: "2%", z: 20, baseWidth: 42 },
-  { bottom: "14%", left: "6%", z: 30, baseWidth: 40 },
-  { bottom: "0%",  left: "36%", z: 40, baseWidth: 38 },
-  { bottom: "2%",  right: "6%", z: 50, baseWidth: 44 },
+  { top: "0%",   left: "2%",  z: 10, baseWidth: 40 },
+  { top: "2%",   right: "0%", z: 20, baseWidth: 38 },
+  { top: "36%",  left: "16%", z: 30, baseWidth: 38 },
+  { top: "32%",  right: "12%", z: 40, baseWidth: 40 },
+  { bottom: "0%", left: "28%", z: 50, baseWidth: 38 },
 ]
 
 function pillLabel(hubName: string) {
@@ -67,10 +68,6 @@ function shuffleArray<T>(arr: T[]): T[] {
   return a
 }
 
-// Builds one randomized tile arrangement: shuffles which hub sits in which
-// slot, and jitters each slot's width a few points around its base size —
-// this is what makes the collage look slightly different every time the
-// page is visited, without ever changing the underlying slot geometry.
 function buildArrangement() {
   const shuffledHubs = shuffleArray(HUBS_DATA)
   return COLLAGE_SLOTS.map((slot, i) => ({
@@ -87,9 +84,6 @@ export function HeroSection() {
   const [mounted, setMounted] = useState(false)
   const [marqueePaused, setMarqueePaused] = useState(false)
 
-  // Arrangement starts as a stable, unshuffled default (matches server
-  // render) and is randomized client-side after mount — avoids a
-  // hydration mismatch while still re-shuffling on every real page visit.
   const [arrangement, setArrangement] = useState(() =>
     COLLAGE_SLOTS.map((slot, i) => ({ hub: HUBS_DATA[i], slot, width: slot.baseWidth }))
   )
@@ -130,16 +124,10 @@ export function HeroSection() {
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center relative z-10 w-full mb-6">
 
-        {/* ── Two-column layout on desktop: title + subtitle + CTA on the
-            left, collage on the right. Stacks (text above collage) on
-            mobile automatically via grid's natural DOM order. ── */}
         <div className="w-full max-w-[1100px] mx-auto grid md:grid-cols-2 gap-10 md:gap-16 items-center mb-10 md:mb-14">
 
           {/* Left column — text + CTA */}
           <div className="text-center md:text-left">
-            {/* "Welcome to ApexbytesHub" line removed per request. Title is
-                now bigger and states what the business actually does,
-                rather than just a name/tagline pairing. */}
             <h1 className="font-sans font-black text-4xl sm:text-5xl md:text-6xl tracking-tight text-zinc-900 dark:text-zinc-50 leading-[1.05] mb-4 text-balance transition-colors duration-300">
               Printing, Design, Documents &amp; Tech — All in One Place
             </h1>
@@ -157,7 +145,7 @@ export function HeroSection() {
                 ref={ctaBtnRef}
                 onClick={handleCtaClick}
                 style={{ borderColor: STROKE_COLOR }}
-                className="group relative z-30 flex items-center w-[300px] sm:w-[320px] mx-auto md:mx-0 px-5 sm:px-7 py-5 rounded-full font-sans font-black text-base sm:text-lg overflow-hidden border-2 transition-all duration-150 active:duration-75 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.94] shadow-[0_4px_14px_rgba(0,0,0,0.12)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.6)] hover:shadow-[0_10px_28px_rgba(0,0,0,0.18)] dark:hover:shadow-[0_12px_36px_rgba(0,0,0,0.7)] active:shadow-[0_2px_8px_rgba(0,0,0,0.1)] dark:active:shadow-[0_2px_10px_rgba(0,0,0,0.5)]"
+                className="group relative z-30 flex items-center w-[300px] sm:w-[320px] mx-auto md:mx-0 px-5 sm:px-7 py-5 rounded-full font-sans font-black overflow-hidden border-2 transition-all duration-150 active:duration-75 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.94] shadow-[0_4px_14px_rgba(0,0,0,0.12)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.6)] hover:shadow-[0_10px_28px_rgba(0,0,0,0.18)] dark:hover:shadow-[0_12px_36px_rgba(0,0,0,0.7)] active:shadow-[0_2px_8px_rgba(0,0,0,0.1)] dark:active:shadow-[0_2px_10px_rgba(0,0,0,0.5)]"
                 >
                <span
                   aria-hidden="true"
@@ -171,7 +159,10 @@ export function HeroSection() {
                   className="relative z-10 flex-1 flex items-center justify-center whitespace-nowrap transition-colors duration-150"
                   style={{ color: REST_COLOR }}
                 >
-                  <span className="group-hover:text-white group-active:text-white transition-colors duration-150">
+                  {/* Font bump lives ONLY here — the button's own box,
+                      padding, and width above are untouched, so the pill
+                      stays the same size while just the label reads bigger. */}
+                  <span className="group-hover:text-white group-active:text-white transition-colors duration-150 text-lg sm:text-xl">
                     Explore Hubs
                   </span>
                 </span>
@@ -191,13 +182,11 @@ export function HeroSection() {
             </ScrollBounce>
           </div>
 
-          {/* Right column — hub photo collage. Straightened (no rotation),
-              bigger container, subtler shadow, wider slot spacing so all
-              five tiles stay clearly visible while still overlapping.
-              Arrangement (which hub/size per slot) reshuffles on every
-              mount — see the effect above. */}
+          {/* Right column — hub photo collage. Height bumped a bit on every
+              breakpoint to give the new, more spread-out slot layout room
+              to breathe without any tile crowding the container edge. */}
           <ScrollBounce delay={0.1} className="w-full">
-            <div className="relative w-full h-[380px] sm:h-[440px] md:h-[520px]">
+            <div className="relative w-full h-[420px] sm:h-[480px] md:h-[560px]">
               {arrangement.map(({ hub, slot, width }) => {
                 const hubAccent = isDark ? hub.colorDark : hub.colorLight
                 return (
@@ -232,14 +221,17 @@ export function HeroSection() {
 
         </div>
 
-        {/* ── Marquee — unchanged, sits below the two-column area ── */}
+        {/* ── Marquee — width bumped from max-w-[840px] to max-w-[1240px]
+            to match the section's own outer content width. Adjust this
+            number if testimonials actually uses a different container
+            width — I don't have that file to confirm the exact value. ── */}
         <div
           role="marquee"
           aria-label="Our services"
           onMouseEnter={() => setMarqueePaused(true)}
           onMouseLeave={() => setMarqueePaused(false)}
           onTouchStart={(e) => { e.stopPropagation(); setMarqueePaused(p => !p) }}
-          className="relative w-full max-w-[840px] py-4 overflow-hidden select-none group/marquee rounded-[14px] bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800"
+          className="relative w-full max-w-[1240px] py-4 overflow-hidden select-none group/marquee rounded-[14px] bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800"
         >
           <div
             className="flex whitespace-nowrap w-max animate-marquee"
