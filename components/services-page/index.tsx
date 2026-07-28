@@ -13,11 +13,8 @@ import { useModalBackStack, HubIcon } from "./shared"
 import { InlineSearchBar } from "./search-bar"
 import { HubModal } from "./hub-modal"
 import { ServiceDetailModal } from "./service-detail-modal"
-import { HUB_ORDER, HUB_PREVIEWS, NOTICE, trackEvent, SelectedService } from "./lib"
+import { HUB_ORDER, HUB_PREVIEWS, NOTICE, trackEvent, SelectedService, getContrastText } from "./lib"
 
-// Same asset paths already used in the Hero collage — reused here rather
-// than duplicated art, since this page didn't have per-hub photography
-// wired in before.
 const HUB_IMAGES: Record<HubId, string> = {
   print:    "/1_PRINT_HUB_white.webp",
   doc:      "/2_DOCUMENT_HUB_white.webp",
@@ -70,11 +67,25 @@ export function ServicesPage() {
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
   const [showBackToTop,   setShowBackToTop]   = useState(false)
   const [hoveredMainHub,  setHoveredMainHub]  = useState<HubId | null>(null)
-  // Brief 3D flip on the desktop card's thumbnail when "View more" is
-  // pressed, so opening the modal feels connected to the press instead of
-  // instant. Purely visual — the modal opens right after the animation.
+
+  // Desktop "View more" flip (unchanged from before)
   const [spinningHub,     setSpinningHub]     = useState<HubId | null>(null)
   const spinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Mobile: tapping the card body (anywhere except Explore) just toggles a
+  // "pressed" highlight — standing in for :hover on a device that has none.
+  // It does NOT open anything. Only the Explore button opens the modal.
+  const [tappedHub, setTappedHub] = useState<HubId | null>(null)
+
+  // Mobile: pressing Explore slides the whole page content out — left if
+  // the card's image was on the right, right if the image was on the left —
+  // and only opens the modal once that slide finishes. While ANY modal is
+  // open (desktop or mobile), the page content is fully hidden (opacity-0 +
+  // pointer-events-none), not just covered by the modal's own backdrop.
+  const [exitDir, setExitDir] = useState<"left" | "right" | null>(null)
+  const slideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const isModalOpen = !!(activeHub || selectedService)
 
   const handleSelectService = (svc: SelectedService) => {
     trackEvent("view_service", {
@@ -101,8 +112,27 @@ export function ServicesPage() {
     }, 420)
   }
 
+  const handleMobileExploreClick = (e: React.MouseEvent, hubId: HubId, imageRight: boolean) => {
+    e.stopPropagation()
+    const dir = imageRight ? "left" : "right"
+    if (slideTimeoutRef.current) clearTimeout(slideTimeoutRef.current)
+    setExitDir(dir)
+    slideTimeoutRef.current = setTimeout(() => {
+      handleOpenHub(hubId)
+      setExitDir(null)
+      slideTimeoutRef.current = null
+    }, 300)
+  }
+
+  const handleCardBodyTap = (hubId: HubId) => {
+    setTappedHub(prev => (prev === hubId ? null : hubId))
+  }
+
   useEffect(() => {
-    return () => { if (spinTimeoutRef.current) clearTimeout(spinTimeoutRef.current) }
+    return () => {
+      if (spinTimeoutRef.current) clearTimeout(spinTimeoutRef.current)
+      if (slideTimeoutRef.current) clearTimeout(slideTimeoutRef.current)
+    }
   }, [])
 
   // Back-to-top visibility
@@ -122,8 +152,7 @@ export function ServicesPage() {
     return () => window.removeEventListener("abh:selectService", handler)
   }, [])
 
-  // Deep-link via ?hub= query param — consumed once, then stripped from the
-  // URL immediately so it can't reopen the hub on a back-nav or fresh visit.
+  // Deep-link via ?hub= query param
   useEffect(() => {
     const hubParam = searchParams.get("hub")
     if (hubParam && HUB_ORDER.includes(hubParam as HubId) && consumedHubParam.current !== hubParam) {
@@ -137,8 +166,7 @@ export function ServicesPage() {
 
   // Scroll lock while any modal is open
   useEffect(() => {
-    const isOpen = !!(activeHub || selectedService)
-    if (!isOpen) return
+    if (!isModalOpen) return
     const scrollY = window.scrollY
     const { style } = document.body
     style.position = "fixed"
@@ -156,12 +184,10 @@ export function ServicesPage() {
       style.overflow = ""
       window.scrollTo(0, scrollY)
     }
-  }, [activeHub, selectedService])
+  }, [isModalOpen])
 
   return (
-    <section className="min-h-screen bg-white dark:bg-[#081428] transition-colors duration-300 pb-24">
-      {/* Keyframes for the desktop "View more" flip — same inline-<style>
-          pattern already used elsewhere in this codebase (e.g. AbhLoader). */}
+    <section className="min-h-screen bg-white dark:bg-[#081428] transition-colors duration-300 pb-24 overflow-x-hidden">
       <style>{`
         @keyframes abh-card-spin {
           from { transform: rotateY(0deg) scale(1); }
@@ -171,7 +197,19 @@ export function ServicesPage() {
         .abh-card-spin { animation: abh-card-spin 0.42s ease-in-out; }
       `}</style>
 
-      <div className="max-w-[1248px] mx-auto px-4 md:px-8 flex flex-col items-center">
+      {/* Page content wrapper — this is what slides out on mobile Explore
+          press, and what goes fully invisible (not just covered) while any
+          modal/submodal is open. */}
+      <div
+        className="max-w-[1248px] mx-auto px-4 md:px-8 flex flex-col items-center"
+        style={{
+          transform: exitDir === "left" ? "translateX(-100%)" : exitDir === "right" ? "translateX(100%)" : "translateX(0)",
+          transition: exitDir ? "transform 300ms cubic-bezier(0.4,0,0.2,1)" : "opacity 200ms ease",
+          opacity: isModalOpen ? 0 : 1,
+          pointerEvents: isModalOpen ? "none" : "auto",
+        }}
+        aria-hidden={isModalOpen}
+      >
 
         {/* Hero */}
         <ScrollBounce className="w-full">
@@ -184,21 +222,17 @@ export function ServicesPage() {
           </div>
         </ScrollBounce>
 
-        {/* Inline search — raised above the notice banner's own stacking context so its dropdown never gets painted over */}
         <ScrollBounce delay={0.08} className="relative z-40 w-full mb-10 flex justify-center">
           <div id="abh-inline-search" className="w-full flex justify-center">
             <InlineSearchBar onSelect={handleSelectService} />
           </div>
         </ScrollBounce>
 
-        {/* Notice */}
         <ScrollBounce delay={0.14} className="relative z-0 w-full">
           <div className="w-full"><NoticeBanner /></div>
         </ScrollBounce>
 
-        {/* ── Hub cards — DESKTOP: card-grid layout, image on top, outlined
-            "View more" CTA, hover-spotlight zoom with an accent ring
-            (matches the reference screenshot's selected-card treatment). ── */}
+        {/* ── DESKTOP cards — unchanged from before ── */}
         <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-5 gap-5 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub       = HUBS[hubId]
@@ -217,11 +251,7 @@ export function ServicesPage() {
                   )}
                   style={{ borderColor: isHovered ? accent : "transparent" }}
                 >
-                  {/* Thumbnail */}
-                  <div
-                    className="relative w-full aspect-[4/3] overflow-hidden bg-zinc-100 dark:bg-zinc-900"
-                    style={{ perspective: "800px" }}
-                  >
+                  <div className="relative w-full aspect-[4/3] overflow-hidden bg-zinc-100 dark:bg-zinc-900" style={{ perspective: "800px" }}>
                     <img
                       src={HUB_IMAGES[hubId]}
                       alt={`${hub.title} example`}
@@ -233,7 +263,6 @@ export function ServicesPage() {
                     />
                   </div>
 
-                  {/* Body */}
                   <div className="flex flex-col gap-2 p-4">
                     <h3
                       className="font-sans font-black text-[0.95rem] leading-tight transition-colors"
@@ -242,8 +271,6 @@ export function ServicesPage() {
                       {hub.title}
                     </h3>
 
-                    {/* Preview hints — stand in for the reference's star
-                        rating row, since these hubs don't carry ratings. */}
                     <div className="flex flex-wrap gap-x-2 gap-y-0.5">
                       {HUB_PREVIEWS[hubId].map((hint, i) => (
                         <span key={i} className="text-[0.66rem] font-medium text-zinc-400 dark:text-zinc-500">
@@ -272,28 +299,47 @@ export function ServicesPage() {
           })}
         </div>
 
-        {/* ── Hub cards — MOBILE: alternating blob-image rows, tap
-            anywhere on the card to open. ── */}
+        {/* ── MOBILE cards ──
+            - Wrapper is now a plain <div>, not a <button> — a button can't
+              legally contain another button (the Explore CTA), and only
+              Explore is allowed to open anything now anyway.
+            - Tapping the card body toggles `tappedHub` — a hover-style
+              highlight only, no navigation.
+            - Explore is its own button, stops propagation, and drives the
+              slide-then-open sequence.
+            - Image corners are now a uniform rounded-[14px] (was a mixed
+              40px/14px "blob" shape).
+            - Explore's text/icon color now comes from getContrastText(accent)
+              instead of being hardcoded white, so it stays readable against
+              every hub's accent color, light or dark. */}
         <div className="flex md:hidden flex-col gap-6 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub        = HUBS[hubId]
             const colors     = HUB_COLORS[hubId as HubKey]
             const accent     = isDark ? colors.accentDark : colors.accentLight
             const imageRight = index % 2 === 0
+            const isPressed  = tappedHub === hubId
+            const exploreTextColor = getContrastText(accent)
 
             return (
               <ScrollBounce key={hubId} delay={index * 0.08}>
-                <button
-                  onClick={() => handleOpenHub(hubId)}
-                  aria-label={`Open ${hub.title}`}
+                <div
+                  onClick={() => handleCardBodyTap(hubId)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${hub.title} preview`}
                   className={cn(
-                    "group flex items-center gap-4 w-full p-4 rounded-[20px] bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-100 dark:border-zinc-800 abh-shadow-card text-left transition-all duration-200 active:scale-[0.98]",
-                    imageRight ? "flex-row" : "flex-row-reverse"
+                    "group flex items-center gap-4 w-full p-4 rounded-[20px] border abh-shadow-card text-left transition-all duration-200 cursor-pointer",
+                    imageRight ? "flex-row" : "flex-row-reverse",
+                    isPressed
+                      ? "scale-[1.01] bg-white dark:bg-zinc-950"
+                      : "bg-zinc-50 dark:bg-zinc-900/60 border-zinc-100 dark:border-zinc-800"
                   )}
+                  style={isPressed ? { borderColor: accent } : undefined}
                 >
-                  {/* Blob-shaped thumbnail */}
+                  {/* Thumbnail — uniform 14px radius on every corner */}
                   <div
-                    className="relative w-24 h-24 shrink-0 overflow-hidden rounded-tl-[40px] rounded-br-[40px] rounded-tr-[14px] rounded-bl-[14px] border-2"
+                    className="relative w-24 h-24 shrink-0 overflow-hidden rounded-[14px] border-2"
                     style={{ borderColor: `${accent}30` }}
                   >
                     <img
@@ -303,7 +349,6 @@ export function ServicesPage() {
                     />
                   </div>
 
-                  {/* Text */}
                   <div className={cn("flex-1 min-w-0", imageRight ? "text-left" : "text-right")}>
                     <h3 className="font-sans font-black text-[0.98rem] text-zinc-900 dark:text-zinc-50 leading-tight mb-1">
                       {hub.title}
@@ -311,30 +356,29 @@ export function ServicesPage() {
                     <p className="abh-body text-[0.76rem] line-clamp-2 leading-snug mb-2">
                       {hub.desc}
                     </p>
-                    <span
+                    <button
+                      onClick={(e) => handleMobileExploreClick(e, hubId, imageRight)}
                       className={cn(
-                        "inline-flex items-center gap-1 text-[0.7rem] font-black px-3 py-1.5 rounded-full text-white",
+                        "inline-flex items-center gap-1 text-[0.7rem] font-black px-3 py-1.5 rounded-full transition-transform active:scale-95",
                         imageRight ? "flex-row" : "flex-row-reverse"
                       )}
-                      style={{ backgroundColor: accent }}
+                      style={{ backgroundColor: accent, color: exploreTextColor }}
                     >
                       Explore
                       <ArrowRight size={12} weight="bold" className={imageRight ? "" : "rotate-180"} />
-                    </span>
+                    </button>
                   </div>
-                </button>
+                </div>
               </ScrollBounce>
             )
           })}
         </div>
 
-        {/* Closing tagline */}
         <ScrollBounce className="w-full">
           <div className="w-full"><ClosingTagline /></div>
         </ScrollBounce>
       </div>
 
-      {/* Modals — single guarded render each, inside AnimatePresence for exit animations */}
       <AnimatePresence>
         {activeHub && (
           <HubModal key="hub-modal" hubId={activeHub} onClose={() => setActiveHub(null)} onSelectService={handleSelectService} />
@@ -344,13 +388,12 @@ export function ServicesPage() {
         )}
       </AnimatePresence>
 
-      {/* Back to top */}
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         aria-label="Back to top"
         className={cn(
           "fixed bottom-6 left-4 z-[9990] w-12 h-12 rounded-full bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-lg flex items-center justify-center transition-all duration-300 active:scale-95 hover:scale-105",
-          showBackToTop
+          showBackToTop && !isModalOpen
             ? "opacity-100 translate-y-0 pointer-events-auto"
             : "opacity-0 translate-y-4 pointer-events-none"
         )}
