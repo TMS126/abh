@@ -3,12 +3,10 @@
 import React, { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
-import { ArrowRight, CaretRight } from "@phosphor-icons/react"
-import { cn } from "@/lib/utils"
+import { ArrowRight } from "@phosphor-icons/react"
 import { BRAND, BIZ, MARQUEE_ITEMS } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
-import { ensureAccessible } from "@/lib/color-contrast"
-import { HUBS_DATA, pickRandomService } from "@/lib/hero-data"
+import { HUBS_DATA } from "@/lib/hero-data"
 import { ClassicTagline } from "@/components/classic-tagline"
 
 // ─── Contrast helper for the arrow icon against its own circle bg ─────────────
@@ -32,76 +30,52 @@ function getArrowIconColor(bgHex: string) {
   return contrastWhite >= contrastDark ? "#ffffff" : "#14202b"
 }
 
+// ─── Hub photo collage data ────────────────────────────────────────────────
+// Filenames match what's coming to /public. Each tile also carries its own
+// position/size/rotation/z so the cascade can be tuned per-tile without
+// touching the render logic below.
+const HUB_IMAGES: Record<string, string> = {
+  print:    "/1_PRINT_HUB_white.webp",
+  doc:      "/2_DOCUMENT_HUB_white.webp",
+  design:   "/3_DESIGN_HUB_white.webp",
+  eservice: "/4_APPLICATIONS_HUB_white.webp",
+  tech:     "/5_TECH_HUB_white.webp",
+}
+
+const COLLAGE_LAYOUT: Record<string, { top?: string; bottom?: string; left?: string; right?: string; width: string; rotate: string; z: number }> = {
+  tech:     { top: "0%",    left: "2%",   width: "48%", rotate: "-4deg", z: 10 },
+  doc:      { top: "4%",    right: "0%",  width: "44%", rotate: "3deg",  z: 20 },
+  design:   { bottom: "6%", left: "0%",   width: "40%", rotate: "-3deg", z: 30 },
+  eservice: { bottom: "0%", left: "30%",  width: "38%", rotate: "4deg",  z: 40 },
+  print:    { bottom: "2%", right: "4%",  width: "46%", rotate: "-2deg", z: 50 },
+}
+
+function pillLabel(hubName: string) {
+  return hubName.replace(/\s*Hub$/i, "").toUpperCase()
+}
+
 // ─── Hero Section ─────────────────────────────────────────────────────────────
 export function HeroSection() {
   const router = useRouter()
   const { resolvedTheme } = useTheme()
-  const [mounted,           setMounted]           = useState(false)
-  const [activeHub,         setActiveHub]         = useState<number>(0)
-  const [marqueePaused,     setMarqueePaused]     = useState(false)
-  const [spotlightService,  setSpotlightService]  = useState(() => pickRandomService(0))
-  const [hubTouched, setHubTouched] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const [marqueePaused, setMarqueePaused] = useState(false)
 
-  const ecoBoxRef = useRef<HTMLDivElement>(null)
-  const touchStartX = useRef<number | null>(null)
   const ctaBtnRef = useRef<HTMLButtonElement>(null)
 
   React.useEffect(() => { setMounted(true) }, [])
 
-  const handleEcoTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    touchStartX.current = e.touches[0].clientX
-  }
-
-  const handleEcoTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (touchStartX.current === null) return
-    const deltaX = e.changedTouches[0].clientX - touchStartX.current
-    const SWIPE_THRESHOLD = 40
-    if (Math.abs(deltaX) > SWIPE_THRESHOLD) {
-      const dir = deltaX < 0 ? 1 : -1
-      const nextIndex = (activeHub + dir + HUBS_DATA.length) % HUBS_DATA.length
-      handleSelectHub(nextIndex)
-    }
-    touchStartX.current = null
-  }
-
-  const isDark    = mounted && resolvedTheme === "dark"
-  const active    = HUBS_DATA[activeHub]
+  const isDark = mounted && resolvedTheme === "dark"
 
   const STROKE_COLOR   = BRAND.blue
   const CTA_FILL_COLOR = BRAND.blue
   const REST_COLOR     = isDark ? BRAND.lightBlue : BRAND.blue
 
-  // Card is now a plain light/dark surface instead of a fixed dark-navy panel
-  const cardBg         = isDark ? "#18181b" : "#ffffff"
-  const cardText       = isDark ? "#fafafa" : "#18181b"
-  const cardTextSoft   = isDark ? "rgba(250,250,250,0.72)" : "rgba(24,24,27,0.65)"
-  const cardTextMuted  = isDark ? "rgba(250,250,250,0.45)" : "rgba(24,24,27,0.4)"
-
-  const hubColor  = isDark ? active.colorDark : active.colorLight
-  const nameColor = ensureAccessible(hubColor, cardBg, 4.5)
-
-  const activeCircleColor = CTA_FILL_COLOR
+  const activeCircleColor    = CTA_FILL_COLOR
   const activeArrowIconColor = getArrowIconColor(activeCircleColor)
 
   const handleNavigate = (path: string) => router.push(path)
-
-  const handleSelectHub = (index: number) => {
-    setActiveHub(index)
-    setHubTouched(true)
-    setSpotlightService(pickRandomService(index))
-    const hub = HUBS_DATA[index]
-    window.dispatchEvent(
-      new CustomEvent("abh:heroHubSelect", { detail: { light: hub.colorLight, dark: hub.colorDark } })
-    )
-  }
-
-  const handleReroll = () => {
-    setSpotlightService(prev => pickRandomService(activeHub, prev.name))
-  }
-
-  const handleCtaClick = () => {
-    handleNavigate("/services")
-  }
+  const handleCtaClick = () => handleNavigate("/services")
 
   return (
     <section
@@ -141,40 +115,7 @@ export function HeroSection() {
             </div>
           </div>
 
-          <div className="relative w-full flex justify-center items-center mb-8">
-
-            <div
-              aria-hidden="true"
-              className="hidden md:flex absolute inset-y-0 -right-[10%] items-center justify-center pointer-events-none select-none z-0"
-            >
-              {!hubTouched ? (
-                <img
-                  src="/logo.png"
-                  alt=""
-                  width={520}
-                  height={520}
-                  aria-hidden="true"
-                  style={{
-                    transform: "rotate(-6deg)",
-                    filter: "drop-shadow(0 22px 26px rgba(0,0,0,0.25))",
-                  }}
-                  className="shrink-0 opacity-[0.14] dark:opacity-[0.18] md:w-[620px] md:h-[620px] object-contain"
-                />
-              ) : (
-                <active.Icon
-                  size={520}
-                  weight="fill"
-                  aria-hidden="true"
-                  style={{
-                    color: BRAND.blue,
-                    transform: "rotate(-6deg)",
-                    filter: "drop-shadow(0 22px 26px rgba(0,0,0,0.25))",
-                  }}
-                  className="shrink-0 opacity-[0.14] dark:opacity-[0.18] md:w-[620px] md:h-[620px]"
-                />
-              )}
-            </div>
-
+          <div className="relative w-full flex justify-center items-center mb-10 md:mb-14">
             <ScrollBounce>
               <button
                 ref={ctaBtnRef}
@@ -195,7 +136,7 @@ export function HeroSection() {
                   style={{ color: REST_COLOR }}
                 >
                   <span className="group-hover:text-white group-active:text-white transition-colors duration-150">
-                    Start Here
+                    Explore Hubs
                   </span>
                 </span>
 
@@ -214,161 +155,76 @@ export function HeroSection() {
             </ScrollBounce>
           </div>
 
-          <ScrollBounce delay={0.1} className="w-full max-w-[840px] mx-auto">
-            <div className="relative w-full">
-              {/* Decorative soft blur peeking behind the card's top edge */}
-              <div
-                aria-hidden="true"
-                className="absolute -top-6 left-1/4 w-40 h-24 rounded-full blur-3xl opacity-40 pointer-events-none"
-                style={{ background: `linear-gradient(90deg, ${BRAND.blue}, ${BRAND.green}, ${BRAND.orange})` }}
-              />
-
-              <div
-                ref={ecoBoxRef}
-                onTouchStart={handleEcoTouchStart}
-                onTouchEnd={handleEcoTouchEnd}
-                className="relative z-10 w-full rounded-[14px] overflow-hidden border border-zinc-100 dark:border-zinc-800 shadow-xl"
-                style={{ backgroundColor: cardBg }}
-              >
-                <div className="relative z-10 w-full flex flex-col items-center px-6 sm:px-10 md:px-12 pt-8 sm:pt-10 md:pt-12 pb-10 sm:pb-12 md:pb-14">
-
-                  <div className="w-full flex flex-col items-center mb-6">
-                    <h2
-                      className="abh-section-heading text-center"
-                      style={{ color: cardText }}
-                    >
-                      Core Hub Ecosystem
-                    </h2>
-                  </div>
-
+          {/* ── Hub photo collage — 5 overlapping images, each tagged with
+              its hub name in a pill that fills with that hub's own color
+              only on hover. Replaces the old Core Hub Ecosystem card. ── */}
+          <ScrollBounce delay={0.1} className="w-full max-w-[560px] mx-auto">
+            <div className="relative w-full h-[340px] sm:h-[400px] md:h-[440px] mb-12 md:mb-16">
+              {HUBS_DATA.map((hub) => {
+                const layout = COLLAGE_LAYOUT[hub.id]
+                if (!layout) return null
+                const hubAccent = isDark ? hub.colorDark : hub.colorLight
+                return (
                   <div
-                    role="tablist"
-                    aria-label="Service hubs"
-                    className="flex flex-wrap sm:flex-nowrap justify-center items-stretch gap-3 sm:gap-4 w-full max-w-[420px] mb-4 px-1"
+                    key={hub.id}
+                    className="group/tile absolute aspect-square rounded-2xl overflow-hidden border-4 border-white dark:border-zinc-900 shadow-xl transition-transform duration-300 hover:z-[60] hover:scale-[1.03]"
+                    style={{
+                      top: layout.top,
+                      bottom: layout.bottom,
+                      left: layout.left,
+                      right: layout.right,
+                      width: layout.width,
+                      transform: `rotate(${layout.rotate})`,
+                      zIndex: layout.z,
+                      ["--hub-accent" as any]: hubAccent,
+                    }}
                   >
-                    {HUBS_DATA.map((hub, index) => {
-                      const isActive = activeHub === index
-                      const hubAccent = isDark ? hub.colorDark : hub.colorLight
-
-                      return (
-                        <button
-                          key={hub.id}
-                          role="tab"
-                          aria-selected={isActive}
-                          aria-label={hub.name}
-                          onClick={() => handleSelectHub(index)}
-                          className="relative flex flex-col items-center justify-center gap-1.5 px-4 sm:px-5 pt-4 pb-2.5 rounded-[14px] transition-transform duration-150 flex-1 min-w-[56px] active:scale-95"
-                        >
-                          <span
-                            className="flex"
-                            style={{ color: isActive ? hubAccent : (isDark ? "rgba(250,250,250,0.5)" : "rgba(24,24,27,0.45)") }}
-                          >
-                            {hub.icon(isActive)}
-                          </span>
-                          <span
-                            className="h-[2px] w-5 rounded-full transition-all duration-200"
-                            style={{ backgroundColor: isActive ? hubAccent : "transparent" }}
-                          />
-                        </button>
-                      )
-                    })}
-                  </div>
-
-                  <div
-                    role="tablist"
-                    aria-label="Hub pagination"
-                    className="flex items-center justify-center gap-2 mb-6"
-                  >
-                    {HUBS_DATA.map((hub, index) => {
-                      const isActive = activeHub === index
-                      const hubAccent = isDark ? hub.colorDark : hub.colorLight
-                      return (
-                        <button
-                          key={hub.id}
-                          role="tab"
-                          aria-selected={isActive}
-                          aria-label={`Go to ${hub.name}`}
-                          onClick={() => handleSelectHub(index)}
-                          className={cn("h-3 rounded-full transition-all duration-300", isActive ? "w-9" : "w-3")}
-                          style={{ backgroundColor: isActive ? hubAccent : (isDark ? "rgba(250,250,250,0.25)" : "rgba(24,24,27,0.2)") }}
-                        />
-                      )
-                    })}
-                  </div>
-
-                  <div className="w-full max-w-[420px] flex flex-col items-center text-center mb-2">
-                    <CaretRight
-                      size={22}
-                      weight="bold"
-                      aria-hidden="true"
-                      style={{ color: nameColor }}
-                      className="mb-1"
+                    <img
+                      src={HUB_IMAGES[hub.id]}
+                      alt={`${hub.name} example`}
+                      className="w-full h-full object-cover"
                     />
-
-                    <p
-                      className="text-[0.8rem] font-black uppercase tracking-widest pb-2 mb-3 border-b-2 inline-block"
-                      style={{ color: nameColor, borderColor: nameColor }}
+                    <span
+                      className="absolute -top-2 -right-2 px-3 py-1 rounded-full text-[0.6rem] font-black uppercase tracking-widest bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 shadow-md transition-colors duration-200 group-hover/tile:bg-[var(--hub-accent)] group-hover/tile:text-white group-hover/tile:border-transparent"
                     >
-                      {active.name}
-                    </p>
-
-                    <button
-                      key={`${activeHub}-${spotlightService.name}`}
-                      onClick={handleReroll}
-                      aria-label="Show another example price for this hub"
-                      className="flex flex-col items-center gap-1 rounded-[10px] px-2 py-1 transition-opacity hover:opacity-80 active:scale-[0.97] animate-in fade-in duration-200"
-                    >
-                      <span className="text-sm font-semibold" style={{ color: cardText }}>
-                        {spotlightService.name}
-                      </span>
-                      <span className="text-2xl font-black font-mono" style={{ color: cardText }}>
-                        {spotlightService.price}
-                      </span>
-                    </button>
-
-                    <button
-                      onClick={() => handleNavigate(`/services?hub=${active.id}`)}
-                      className="flex items-center justify-center gap-1.5 text-[0.65rem] font-black tracking-wide mt-4 transition-opacity hover:opacity-70"
-                      style={{ color: cardTextSoft }}
-                    >
-                      View All {active.name} Services
-                      <ArrowRight weight="bold" className="w-3 h-3" aria-hidden="true" />
-                    </button>
+                      {pillLabel(hub.name)}
+                    </span>
                   </div>
-
-                  <div
-                    role="marquee"
-                    aria-label="Our services"
-                    onMouseEnter={() => setMarqueePaused(true)}
-                    onMouseLeave={() => setMarqueePaused(false)}
-                    onTouchStart={(e) => { e.stopPropagation(); setMarqueePaused(p => !p) }}
-                    className="relative w-full mt-8 py-4 overflow-hidden select-none group/marquee"
-                  >
-                    <div
-                      className="flex whitespace-nowrap w-max animate-marquee"
-                      style={{ animationPlayState: marqueePaused ? "paused" : "running" }}
-                    >
-                      {[0, 1].map((copy) => (
-                        <div key={copy} className="flex items-center shrink-0">
-                          {MARQUEE_ITEMS.map((item, idx) => (
-                            <React.Fragment key={idx}>
-                              <span className="inline-flex items-center px-5 font-semibold text-sm transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100" style={{ color: cardTextSoft }}>
-                                {item}
-                              </span>
-                              <span className="font-black text-base leading-none shrink-0" style={{ color: cardTextMuted }} aria-hidden="true">•</span>
-                            </React.Fragment>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                </div>
-              </div>
+                )
+              })}
             </div>
           </ScrollBounce>
+
+          {/* ── Marquee — kept, moved out of the (now removed) card ── */}
+          <div
+            role="marquee"
+            aria-label="Our services"
+            onMouseEnter={() => setMarqueePaused(true)}
+            onMouseLeave={() => setMarqueePaused(false)}
+            onTouchStart={(e) => { e.stopPropagation(); setMarqueePaused(p => !p) }}
+            className="relative w-full py-4 overflow-hidden select-none group/marquee rounded-[14px] bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800"
+          >
+            <div
+              className="flex whitespace-nowrap w-max animate-marquee"
+              style={{ animationPlayState: marqueePaused ? "paused" : "running" }}
+            >
+              {[0, 1].map((copy) => (
+                <div key={copy} className="flex items-center shrink-0">
+                  {MARQUEE_ITEMS.map((item, idx) => (
+                    <React.Fragment key={idx}>
+                      <span className="inline-flex items-center px-5 font-semibold text-sm text-zinc-600 dark:text-zinc-400 transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100">
+                        {item}
+                      </span>
+                      <span className="font-black text-base leading-none shrink-0 text-zinc-300 dark:text-zinc-600" aria-hidden="true">•</span>
+                    </React.Fragment>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
   )
-              } 
+}
