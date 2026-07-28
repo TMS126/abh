@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { X, Check, CaretLeft, CaretRight, ArrowsOut, ArrowsLeftRight, EnvelopeSimple, Heart } from "@phosphor-icons/react"
+import { X, Check, CaretLeft, CaretRight, ArrowsLeftRight, EnvelopeSimple, WhatsappLogo } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey, BIZ, BRAND } from "@/lib/brand"
@@ -26,18 +26,28 @@ function useIsMobile() {
   return isMobile
 }
 
-function ProjectHeader({ project, hasBA, accent }: {
-  project: ProjectData; hasBA: boolean; accent: string
+function ProjectHeader({ project, hasBA, accent, shrink = 0 }: {
+  project: ProjectData; hasBA: boolean; accent: string; shrink?: number
 }) {
+  // shrink is 0 on desktop (always) and 0→1 on mobile as the details body
+  // is scrolled, freeing up vertical space for content instead of a
+  // fixed-size title eating into it permanently.
+  const titleStyle = shrink > 0 ? { fontSize: `${1.5 - shrink * 0.45}rem` } : undefined
+
   return (
-    <div className="mb-6">
+    <div style={{ marginBottom: shrink > 0 ? `${1.5 - shrink * 0.9}rem` : "1.5rem" }}>
       <span className="text-[0.7rem] font-black uppercase tracking-widest" style={{ color: accent }}>
         {project.tag}
       </span>
       {hasBA && (
         <span className="ml-2 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ backgroundColor: `${accent}20`, color: accent }}>Before &amp; After</span>
       )}
-      <h2 className="font-sans font-black text-2xl md:text-3xl text-zinc-900 dark:text-zinc-50 leading-[1.1] mt-2">{project.title}</h2>
+      <h2
+        className="font-sans font-black text-2xl md:text-3xl text-zinc-900 dark:text-zinc-50 leading-[1.1] mt-2 transition-[font-size] duration-100"
+        style={titleStyle}
+      >
+        {project.title}
+      </h2>
       {project.clientType && (
         <p className={cn("text-[0.72rem] italic mt-2", project.clientType === "sample" ? "text-brand-orange" : "text-zinc-400 dark:text-zinc-500")}>
           {project.clientType === "practice" && "Practice design — portfolio project, not a real client"}
@@ -51,7 +61,7 @@ function ProjectHeader({ project, hasBA, accent }: {
 
 function ProjectImageSection({
   project, accent, activeImg, setActiveImg, comparing, setComparing, onZoom, hasBA, beforeImg, afterImg, allImages,
-  hasSiblings, onPrevProject, onNextProject, siblingPosition, liked, onToggleLike, shareUrl, onClose,
+  hasSiblings, onPrevProject, onNextProject, siblingPosition, liked, onToggleLike, shareUrl,
   isMobile, scrollProgress,
 }: {
   project: ProjectData; accent: string
@@ -62,7 +72,7 @@ function ProjectImageSection({
   allImages: string[]
   hasSiblings: boolean; onPrevProject: () => void; onNextProject: () => void
   siblingPosition?: string
-  liked: boolean; onToggleLike: () => void; shareUrl: string; onClose: () => void
+  liked: boolean; onToggleLike: () => void; shareUrl: string
   isMobile: boolean; scrollProgress: number
 }) {
   const touchStartX = useRef(0)
@@ -108,50 +118,35 @@ function ProjectImageSection({
             onTouchStart={onImageTouchStart}
             onTouchEnd={onImageTouchEnd}
           >
-            {/* Blurred backdrop of the active image, fills the space that
-                opens up on the sides once the container shrinks. Fades in
-                smoothly as scrollProgress increases. */}
             {isMobile && (
-  <img
-    src={allImages[activeImg]}
-    alt=""
-    aria-hidden="true"
-    className="absolute inset-0 w-full h-full object-cover scale-125 blur-3xl pointer-events-none transition-opacity duration-300"
-    style={{ opacity: scrollProgress * 0.85 }}
-  />
-)}
+              <img
+                src={allImages[activeImg]}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 w-full h-full object-cover scale-125 blur-3xl pointer-events-none transition-opacity duration-300"
+                style={{ opacity: scrollProgress * 0.85 }}
+              />
+            )}
 
-<div className="absolute inset-0 scale-105">
-  <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="(max-width: 768px) 100vw, 55vw" className="relative object-contain transition-opacity duration-300" priority={activeImg === 0} />
-</div>
+            <div className="absolute inset-0 scale-105">
+              <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="(max-width: 768px) 100vw, 55vw" className="relative object-contain transition-opacity duration-300" priority={activeImg === 0} />
+            </div>
 
-            {/* Floating controls — each wrapped in its own guaranteed-dark
-                circular backdrop, independent of whatever styling
-                LikeButton/ShareButton apply internally for other contexts.
-                This keeps them visible against bright images (e.g. white
-                document photos), which was the cause of them "disappearing"
-                — they were rendering with light/low-contrast styling meant
-                for a solid header background, not for floating over a photo. */}
+            {/* X button moved out of this cluster — it now lives on the
+                outer modal wrapper, top-right of the whole dialog, not
+                tied to the image specifically. Only Like + Share remain
+                floating over the image itself. */}
             <div
               className="absolute top-3 left-3 z-20 w-9 h-9 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors [&_svg]:text-white"
               onClick={(e) => e.stopPropagation()}
             >
               <LikeButton liked={liked} onToggle={(e) => { e.stopPropagation(); onToggleLike() }} context="header" />
             </div>
-            <div className="absolute top-3 right-3 z-20 flex items-center gap-2">
-              <div
-                className="w-9 h-9 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors [&_svg]:text-white"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <ShareButton url={shareUrl} title={project.title} />
-              </div>
-              <button
-                onClick={(e) => { e.stopPropagation(); onClose() }}
-                aria-label="Close"
-                className="w-9 h-9 rounded-full flex items-center justify-center bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg text-white transition-colors active:scale-90"
-              >
-                <X size={18} weight="bold" />
-              </button>
+            <div
+              className="absolute top-3 right-3 z-20 w-9 h-9 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors [&_svg]:text-white"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ShareButton url={shareUrl} title={project.title} />
             </div>
 
             {hasSiblings && (
@@ -230,41 +225,38 @@ function ProjectDetailsBody({ project, accent }: { project: ProjectData; accent:
 function ProjectCTAs({ project, onClose, accent, activeImage }: {
   project: ProjectData; onClose: () => void; accent: string; activeImage: string
 }) {
-  // Text color computed against the button's own accent background —
-  // fixes "Get a project like this" going near-invisible when accent is
-  // a light color (e.g. light teal in dark mode) and the text defaulted
-  // to white regardless.
   const solidBtnText = getContrastText(accent)
 
   return (
-    <div className="relative rounded-[16px] overflow-hidden p-2.5">
-      {/* Frosted-glass backdrop: blurred active image tinted with the
-          hub's accent color, sitting behind both CTA buttons. */}
+    <div className="relative rounded-[14px] overflow-hidden p-2.5">
       <img
         src={activeImage}
         alt=""
         aria-hidden="true"
         className="absolute inset-0 w-full h-full object-cover blur-xl scale-125 pointer-events-none"
       />
-      <div className="absolute inset-0" style={{ backgroundColor: `${accent}55`, backdropFilter: "blur(6px)" }} />
+      <div className="absolute inset-0 rounded-[14px]" style={{ backgroundColor: `${accent}55`, backdropFilter: "blur(6px)" }} />
 
-      <div className="relative grid grid-cols-2 gap-2.5">
+      {/* Stacked vertically, each button gets its own row — more breathing
+          room than the old side-by-side grid, plus an icon per button. */}
+      <div className="relative flex flex-col gap-2.5">
         <a
           href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(`Hi ${BIZ.name}! I saw "${project.title}" in your gallery and I'd like something similar.`)}`}
           target="_blank"
           rel="noopener noreferrer"
           onClick={onClose}
-          className="flex items-center justify-center gap-1.5 py-4 rounded-[14px] text-sm font-black shadow-lg transition-transform active:scale-[0.98] text-center"
+          className="flex items-center justify-center gap-2 py-4 rounded-[14px] text-sm font-black shadow-lg transition-transform active:scale-[0.98] text-center"
           style={{ backgroundColor: accent, color: solidBtnText }}
         >
+          <WhatsappLogo size={18} weight="fill" aria-hidden="true" />
           Get a project like this
         </a>
         <Link
           href={buildInquireHref(project)}
-          className="flex items-center justify-center gap-1.5 py-4 rounded-[14px] text-sm font-black border-2 bg-white/90 dark:bg-zinc-950/90 transition-transform active:scale-[0.98] text-center"
+          className="flex items-center justify-center gap-2 py-4 rounded-[14px] text-sm font-black border-2 bg-white/90 dark:bg-zinc-950/90 transition-transform active:scale-[0.98] text-center"
           style={{ borderColor: accent, color: accent }}
         >
-          <EnvelopeSimple size={16} weight="bold" />
+          <EnvelopeSimple size={16} weight="bold" aria-hidden="true" />
           Inquire about this
         </Link>
       </div>
@@ -311,6 +303,11 @@ export function ProjectViewerModal({
     setShadowOpacity(Math.min(top / SHADOW_FADE_DISTANCE, 1))
     setScrollProgress(Math.min(top / SHRINK_SCROLL_DISTANCE, 1))
   }
+
+  // Header/footer shrink only kicks in on mobile — desktop's side-by-side
+  // layout already has plenty of room and shouldn't visually shift as the
+  // details column scrolls.
+  const headerFooterShrink = isMobile ? scrollProgress : 0
 
   const currentIdx = project ? siblings.findIndex(p => p.id === project.id) : -1
   const hasSiblings = siblings.length > 1 && currentIdx !== -1
@@ -359,6 +356,17 @@ export function ProjectViewerModal({
         "animate-in slide-in-from-bottom-4 md:zoom-in-95 duration-500",
       )}>
 
+        {/* Close button now lives outside the image entirely — top-right
+            of the whole modal, above both the image and details panel
+            regardless of layout column order. */}
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-3 right-3 z-40 w-9 h-9 rounded-full flex items-center justify-center bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg text-white transition-colors active:scale-90"
+        >
+          <X size={18} weight="bold" />
+        </button>
+
         <ProjectImageSection
           project={project}
           accent={accent}
@@ -378,7 +386,6 @@ export function ProjectViewerModal({
           liked={likedIds.has(project.id)}
           onToggleLike={() => onToggleLike(project.id)}
           shareUrl={shareUrl}
-          onClose={onClose}
           isMobile={isMobile}
           scrollProgress={scrollProgress}
         />
@@ -389,8 +396,11 @@ export function ProjectViewerModal({
             "flex-1 border-t md:h-auto md:flex-none md:border-t-0 md:border-l md:w-[380px]"
           )}
         >
-          <div className="shrink-0 px-6 md:px-8 pt-6 md:pt-8 relative z-20 bg-white dark:bg-zinc-950">
-            <ProjectHeader project={project} accent={accent} hasBA={hasBA} />
+          <div
+            className="shrink-0 px-6 md:px-8 relative z-20 bg-white dark:bg-zinc-950 transition-[padding] duration-100"
+            style={{ paddingTop: `${1.5 - headerFooterShrink * 0.6}rem` }}
+          >
+            <ProjectHeader project={project} accent={accent} hasBA={hasBA} shrink={headerFooterShrink} />
           </div>
 
           <div className="relative h-0 z-10 pointer-events-none" aria-hidden>
@@ -417,7 +427,13 @@ export function ProjectViewerModal({
             )}
           </div>
 
-          <div className="shrink-0 px-6 md:px-8 pt-4 pb-6 md:pb-8 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 relative z-20">
+          <div
+            className="shrink-0 px-6 md:px-8 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 relative z-20 transition-[padding] duration-100"
+            style={{
+              paddingTop: `${1 - headerFooterShrink * 0.4}rem`,
+              paddingBottom: `${1.5 - headerFooterShrink * 0.6}rem`,
+            }}
+          >
             <ProjectCTAs project={project} onClose={onClose} accent={accent} activeImage={allImages[activeImg]} />
           </div>
         </div>
@@ -433,4 +449,4 @@ export function ProjectViewerModal({
       )}
     </div>
   )
-                } 
+    } 
