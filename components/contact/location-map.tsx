@@ -3,18 +3,30 @@
 // ─────────────────────────────────────────────────────────────────────────
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { MapPin } from "@phosphor-icons/react"
 import { BRAND, BIZ } from "@/lib/brand"
 import { MAP_EMBED_SRC, MAP_LOAD_TIMEOUT_MS } from "@/lib/contact-data"
 
 export function LocationMap() {
   const [blocked, setBlocked] = useState(false)
+  const loadedRef = useRef(false)
 
   useEffect(() => {
-    const timer = setTimeout(() => setBlocked((wasSet) => wasSet), MAP_LOAD_TIMEOUT_MS)
+    // If the iframe hasn't confirmed a successful load by the timeout,
+    // assume it's blocked/failed and switch to the fallback card. The
+    // previous version's updater (`(wasSet) => wasSet`) was a no-op and
+    // never actually flipped this — fixed by setting `true` directly,
+    // and only when loadedRef hasn't already been marked successful.
+    const timer = setTimeout(() => {
+      if (!loadedRef.current) setBlocked(true)
+    }, MAP_LOAD_TIMEOUT_MS)
     return () => clearTimeout(timer)
   }, [])
+
+  const handleLoad = () => {
+    loadedRef.current = true
+  }
 
   if (blocked) {
     return (
@@ -48,6 +60,7 @@ export function LocationMap() {
       height="260"
       style={{ border: 0, display: "block" }}
       loading="lazy"
+      onLoad={handleLoad}
       onError={() => setBlocked(true)}
     />
   )
