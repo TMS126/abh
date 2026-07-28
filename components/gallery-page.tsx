@@ -14,6 +14,7 @@ import { ProjectViewerModal } from "@/components/gallery/project-viewer-modal"
 import { ProjectCarousel } from "@/components/gallery/project-carousel"
 import { ProjectsPopover } from "@/components/gallery/projects-popover"
 import { FilterDropdown } from "@/components/gallery/filter-dropdown"
+import { HubCollectionsGrid } from "@/components/gallery/hub-collections-grid"
 import { EmptyHubState, GalleryClosingTagline } from "@/components/gallery/empty-and-tagline"
 
 const LIKES_STORAGE_KEY = "apexbytes-gallery-likes"
@@ -114,6 +115,12 @@ function GalleryPageInner() {
   const totalMatches = PROJECTS.filter(
     p => (activeFilter === "all" || p.hub === activeFilter) && matchesSearch(p)
   ).length
+
+  // The desktop "collections" overview (3 hub cards + "N more") only makes
+  // sense as a browse-everything entry point — once a search is active or
+  // a specific hub is already selected, the normal filtered rows below are
+  // more useful, so this stays out of the way in both of those cases.
+  const showCollectionsGrid = activeFilter === "all" && !searchLower
 
   const handleSurprise = useCallback(() => {
     if (PROJECTS.length === 0) return
@@ -226,40 +233,54 @@ function GalleryPageInner() {
             </button>
           </div>
         ) : (
-          <div className="space-y-8">
-            {filteredRows.map((row, rowIndex) => {
-              const accent = getAccent(row.id)
-              const projects = PROJECTS.filter(p => p.hub === row.id && matchesSearch(p))
+          <>
+            {/* Desktop "collections" overview — only shown when browsing
+                everything (no filter, no search). Hidden on mobile via the
+                component's own responsive classes, so mobile always falls
+                straight through to the normal row list below. */}
+            {showCollectionsGrid && (
+              <ScrollBounce>
+                <div className="mb-8">
+                  <HubCollectionsGrid isDark={isDark} onSelectHub={setActiveFilter} />
+                </div>
+              </ScrollBounce>
+            )}
 
-              if (projects.length === 0) {
-                if (activeFilter !== row.id) return null
+            <div className={showCollectionsGrid ? "md:hidden space-y-8" : "space-y-8"}>
+              {filteredRows.map((row, rowIndex) => {
+                const accent = getAccent(row.id)
+                const projects = PROJECTS.filter(p => p.hub === row.id && matchesSearch(p))
+
+                if (projects.length === 0) {
+                  if (activeFilter !== row.id) return null
+                  return (
+                    <ScrollBounce key={row.id} delay={rowIndex * 0.06}>
+                      <div className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm transition-shadow duration-300 ease-out p-5 md:p-7">
+                        <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
+                          <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: "#1E6FA8" }} />
+                          <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
+                        </div>
+                        <EmptyHubState label={row.label} query={searchLower ? searchQuery.trim() : undefined} />
+                      </div>
+                    </ScrollBounce>
+                  )
+                }
+
                 return (
                   <ScrollBounce key={row.id} delay={rowIndex * 0.06}>
-                    <div className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm transition-shadow duration-300 ease-out p-5 md:p-7">
+                    <div className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm p-5 md:p-7">
                       <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
                         <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: "#1E6FA8" }} />
                         <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
+                        <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
                       </div>
-                      <EmptyHubState label={row.label} query={searchLower ? searchQuery.trim() : undefined} />
+                      <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} likedIds={likedIds} onToggleLike={toggleLike} />
                     </div>
                   </ScrollBounce>
                 )
-              }
-
-              return (
-                <ScrollBounce key={row.id} delay={rowIndex * 0.06}>
-                  <div className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm p-5 md:p-7">
-                    <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
-                      <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: "#1E6FA8" }} />
-                      <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
-                      <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
-                    </div>
-                    <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} likedIds={likedIds} onToggleLike={toggleLike} />
-                  </div>
-                </ScrollBounce>
-              )
-            })}
-          </div>
+              })}
+            </div>
+          </>
         )}
 
         <ScrollBounce>
@@ -311,4 +332,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-  } 
+        } 
