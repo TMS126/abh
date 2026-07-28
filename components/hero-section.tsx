@@ -31,9 +31,6 @@ function getArrowIconColor(bgHex: string) {
 }
 
 // ─── Hub photo collage data ────────────────────────────────────────────────
-// Filenames match what's coming to /public. Each tile also carries its own
-// position/size/rotation/z so the cascade can be tuned per-tile without
-// touching the render logic below.
 const HUB_IMAGES: Record<string, string> = {
   print:    "/1_PRINT_HUB_white.webp",
   doc:      "/2_DOCUMENT_HUB_white.webp",
@@ -42,16 +39,45 @@ const HUB_IMAGES: Record<string, string> = {
   tech:     "/5_TECH_HUB_white.webp",
 }
 
-const COLLAGE_LAYOUT: Record<string, { top?: string; bottom?: string; left?: string; right?: string; width: string; rotate: string; z: number }> = {
-  tech:     { top: "0%",    left: "2%",   width: "48%", rotate: "-4deg", z: 10 },
-  doc:      { top: "4%",    right: "0%",  width: "44%", rotate: "3deg",  z: 20 },
-  design:   { bottom: "6%", left: "0%",   width: "40%", rotate: "-3deg", z: 30 },
-  eservice: { bottom: "0%", left: "30%",  width: "38%", rotate: "4deg",  z: 40 },
-  print:    { bottom: "2%", right: "4%",  width: "46%", rotate: "-2deg", z: 50 },
-}
+// Five fixed POSITION slots (straightened — no rotation, per request), each
+// giving its tile enough breathing room from its neighbors while still
+// overlapping like the reference screenshot. WHICH hub lands in which slot,
+// and each slot's exact size within its own range, is randomized on every
+// mount (see shuffle effect below) — the slot geometry itself never
+// changes, only the assignment and size jitter do.
+const COLLAGE_SLOTS: { top?: string; bottom?: string; left?: string; right?: string; z: number; baseWidth: number }[] = [
+  { top: "0%",    left: "0%",  z: 10, baseWidth: 46 },
+  { top: "2%",    right: "2%", z: 20, baseWidth: 42 },
+  { bottom: "14%", left: "6%", z: 30, baseWidth: 40 },
+  { bottom: "0%",  left: "36%", z: 40, baseWidth: 38 },
+  { bottom: "2%",  right: "6%", z: 50, baseWidth: 44 },
+]
 
 function pillLabel(hubName: string) {
   return hubName.replace(/\s*Hub$/i, "").toUpperCase()
+}
+
+// Fisher–Yates shuffle
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+// Builds one randomized tile arrangement: shuffles which hub sits in which
+// slot, and jitters each slot's width a few points around its base size —
+// this is what makes the collage look slightly different every time the
+// page is visited, without ever changing the underlying slot geometry.
+function buildArrangement() {
+  const shuffledHubs = shuffleArray(HUBS_DATA)
+  return COLLAGE_SLOTS.map((slot, i) => ({
+    hub: shuffledHubs[i],
+    slot,
+    width: slot.baseWidth + (Math.random() * 6 - 3), // ±3% jitter
+  }))
 }
 
 // ─── Hero Section ─────────────────────────────────────────────────────────────
@@ -61,9 +87,19 @@ export function HeroSection() {
   const [mounted, setMounted] = useState(false)
   const [marqueePaused, setMarqueePaused] = useState(false)
 
+  // Arrangement starts as a stable, unshuffled default (matches server
+  // render) and is randomized client-side after mount — avoids a
+  // hydration mismatch while still re-shuffling on every real page visit.
+  const [arrangement, setArrangement] = useState(() =>
+    COLLAGE_SLOTS.map((slot, i) => ({ hub: HUBS_DATA[i], slot, width: slot.baseWidth }))
+  )
+
   const ctaBtnRef = useRef<HTMLButtonElement>(null)
 
-  React.useEffect(() => { setMounted(true) }, [])
+  React.useEffect(() => {
+    setMounted(true)
+    setArrangement(buildArrangement())
+  }, [])
 
   const isDark = mounted && resolvedTheme === "dark"
 
@@ -94,34 +130,34 @@ export function HeroSection() {
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center relative z-10 w-full mb-6">
 
-        <div className="w-full max-w-[840px] mx-auto flex flex-col mb-10 md:mb-14">
+        {/* ── Two-column layout on desktop: title + subtitle + CTA on the
+            left, collage on the right. Stacks (text above collage) on
+            mobile automatically via grid's natural DOM order. ── */}
+        <div className="w-full max-w-[1100px] mx-auto grid md:grid-cols-2 gap-10 md:gap-16 items-center mb-10 md:mb-14">
+
+          {/* Left column — text + CTA */}
           <div className="text-center md:text-left">
+            {/* "Welcome to ApexbytesHub" line removed per request. Title is
+                now bigger and states what the business actually does,
+                rather than just a name/tagline pairing. */}
+            <h1 className="font-sans font-black text-4xl sm:text-5xl md:text-6xl tracking-tight text-zinc-900 dark:text-zinc-50 leading-[1.05] mb-4 text-balance transition-colors duration-300">
+              Printing, Design, Documents &amp; Tech — All in One Place
+            </h1>
 
-            <div className="max-w-[280px] sm:max-w-[360px] md:max-w-none mx-auto md:mx-0">
-              <p className="font-sans font-black text-3xl md:text-5xl tracking-tight text-zinc-900 dark:text-zinc-50 mb-3 transition-colors duration-300 leading-tight">
-                <span className="block">Welcome to</span>
-                <span className="block">ApexbytesHub</span>
-              </p>
-              <h1 className="font-sans font-bold text-2xl md:text-4xl tracking-tight text-zinc-800 dark:text-zinc-100 leading-[1.15] mb-4 text-balance transition-colors duration-300">
-                {BIZ.tagline}
-              </h1>
-            </div>
-
-            <p className="text-sm md:text-base font-medium text-zinc-600 dark:text-zinc-400 max-w-[480px] md:max-w-none mx-auto md:mx-0 leading-relaxed">
-              From printing your documents to navigating government services — we make it simple, fast, and friendly.
+            <p className="text-base md:text-lg font-medium text-zinc-600 dark:text-zinc-400 max-w-[480px] md:max-w-none mx-auto md:mx-0 leading-relaxed mb-6">
+              {BIZ.tagline}
             </p>
+
             <div className="mb-8 md:mb-10">
               <ClassicTagline />
             </div>
-          </div>
 
-          <div className="relative w-full flex justify-center items-center mb-10 md:mb-14">
             <ScrollBounce>
               <button
                 ref={ctaBtnRef}
                 onClick={handleCtaClick}
                 style={{ borderColor: STROKE_COLOR }}
-                className="group relative z-30 flex items-center w-[300px] sm:w-[320px] px-5 sm:px-7 py-5 rounded-full font-sans font-black text-base sm:text-lg overflow-hidden border-2 transition-all duration-150 active:duration-75 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.94] shadow-[0_4px_14px_rgba(0,0,0,0.12)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.6)] hover:shadow-[0_10px_28px_rgba(0,0,0,0.18)] dark:hover:shadow-[0_12px_36px_rgba(0,0,0,0.7)] active:shadow-[0_2px_8px_rgba(0,0,0,0.1)] dark:active:shadow-[0_2px_10px_rgba(0,0,0,0.5)]"
+                className="group relative z-30 flex items-center w-[300px] sm:w-[320px] mx-auto md:mx-0 px-5 sm:px-7 py-5 rounded-full font-sans font-black text-base sm:text-lg overflow-hidden border-2 transition-all duration-150 active:duration-75 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.94] shadow-[0_4px_14px_rgba(0,0,0,0.12)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.6)] hover:shadow-[0_10px_28px_rgba(0,0,0,0.18)] dark:hover:shadow-[0_12px_36px_rgba(0,0,0,0.7)] active:shadow-[0_2px_8px_rgba(0,0,0,0.1)] dark:active:shadow-[0_2px_10px_rgba(0,0,0,0.5)]"
                 >
                <span
                   aria-hidden="true"
@@ -155,27 +191,26 @@ export function HeroSection() {
             </ScrollBounce>
           </div>
 
-          {/* ── Hub photo collage — 5 overlapping images, each tagged with
-              its hub name in a pill that fills with that hub's own color
-              only on hover. Replaces the old Core Hub Ecosystem card. ── */}
-          <ScrollBounce delay={0.1} className="w-full max-w-[560px] mx-auto">
-            <div className="relative w-full h-[340px] sm:h-[400px] md:h-[440px] mb-12 md:mb-16">
-              {HUBS_DATA.map((hub) => {
-                const layout = COLLAGE_LAYOUT[hub.id]
-                if (!layout) return null
+          {/* Right column — hub photo collage. Straightened (no rotation),
+              bigger container, subtler shadow, wider slot spacing so all
+              five tiles stay clearly visible while still overlapping.
+              Arrangement (which hub/size per slot) reshuffles on every
+              mount — see the effect above. */}
+          <ScrollBounce delay={0.1} className="w-full">
+            <div className="relative w-full h-[380px] sm:h-[440px] md:h-[520px]">
+              {arrangement.map(({ hub, slot, width }) => {
                 const hubAccent = isDark ? hub.colorDark : hub.colorLight
                 return (
                   <div
                     key={hub.id}
-                    className="group/tile absolute aspect-square rounded-2xl overflow-hidden border-4 border-white dark:border-zinc-900 shadow-xl transition-transform duration-300 hover:z-[60] hover:scale-[1.03]"
+                    className="group/tile absolute aspect-square rounded-2xl overflow-hidden border-4 border-white dark:border-zinc-900 shadow-[0_6px_18px_rgba(0,0,0,0.10)] dark:shadow-[0_6px_18px_rgba(0,0,0,0.35)] transition-transform duration-300 hover:z-[60] hover:scale-[1.03]"
                     style={{
-                      top: layout.top,
-                      bottom: layout.bottom,
-                      left: layout.left,
-                      right: layout.right,
-                      width: layout.width,
-                      transform: `rotate(${layout.rotate})`,
-                      zIndex: layout.z,
+                      top: slot.top,
+                      bottom: slot.bottom,
+                      left: slot.left,
+                      right: slot.right,
+                      width: `${width}%`,
+                      zIndex: slot.z,
                       ["--hub-accent" as any]: hubAccent,
                     }}
                   >
@@ -195,35 +230,36 @@ export function HeroSection() {
             </div>
           </ScrollBounce>
 
-          {/* ── Marquee — kept, moved out of the (now removed) card ── */}
-          <div
-            role="marquee"
-            aria-label="Our services"
-            onMouseEnter={() => setMarqueePaused(true)}
-            onMouseLeave={() => setMarqueePaused(false)}
-            onTouchStart={(e) => { e.stopPropagation(); setMarqueePaused(p => !p) }}
-            className="relative w-full py-4 overflow-hidden select-none group/marquee rounded-[14px] bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800"
-          >
-            <div
-              className="flex whitespace-nowrap w-max animate-marquee"
-              style={{ animationPlayState: marqueePaused ? "paused" : "running" }}
-            >
-              {[0, 1].map((copy) => (
-                <div key={copy} className="flex items-center shrink-0">
-                  {MARQUEE_ITEMS.map((item, idx) => (
-                    <React.Fragment key={idx}>
-                      <span className="inline-flex items-center px-5 font-semibold text-sm text-zinc-600 dark:text-zinc-400 transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100">
-                        {item}
-                      </span>
-                      <span className="font-black text-base leading-none shrink-0 text-zinc-300 dark:text-zinc-600" aria-hidden="true">•</span>
-                    </React.Fragment>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-
         </div>
+
+        {/* ── Marquee — unchanged, sits below the two-column area ── */}
+        <div
+          role="marquee"
+          aria-label="Our services"
+          onMouseEnter={() => setMarqueePaused(true)}
+          onMouseLeave={() => setMarqueePaused(false)}
+          onTouchStart={(e) => { e.stopPropagation(); setMarqueePaused(p => !p) }}
+          className="relative w-full max-w-[840px] py-4 overflow-hidden select-none group/marquee rounded-[14px] bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800"
+        >
+          <div
+            className="flex whitespace-nowrap w-max animate-marquee"
+            style={{ animationPlayState: marqueePaused ? "paused" : "running" }}
+          >
+            {[0, 1].map((copy) => (
+              <div key={copy} className="flex items-center shrink-0">
+                {MARQUEE_ITEMS.map((item, idx) => (
+                  <React.Fragment key={idx}>
+                    <span className="inline-flex items-center px-5 font-semibold text-sm text-zinc-600 dark:text-zinc-400 transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100">
+                      {item}
+                    </span>
+                    <span className="font-black text-base leading-none shrink-0 text-zinc-300 dark:text-zinc-600" aria-hidden="true">•</span>
+                  </React.Fragment>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
     </section>
   )
