@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Sora, Inter, JetBrains_Mono } from 'next/font/google'
+import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google'
 import Script from 'next/script'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Analytics } from '@vercel/analytics/next'
@@ -16,18 +16,16 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://v0-apexbytes-hub-w
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-3FJ8QET6RE'
 
 // ─── Fonts ───────────────────────────────────────────────────────────
-// Sora — Headings / Display: friendly, rounded, modern tech
-// Perfect for "Design. Print. Upgrade." and "Welcome to ApexbytesHub"
-// Inter — Body: best readability on mobile / low-end Androids
-// JetBrains Mono — Stats, prices, code-like elements
-const soraHeading = Sora({
+// Plus Jakarta Sans — headings + body. Clean, premium, 2026 startup look
+// JetBrains Mono — stats / prices
+const jakartaHeading = Plus_Jakarta_Sans({
   subsets: ['latin'],
   weight: ['600', '700', '800'],
   variable: '--font-heading',
   display: 'swap',
 })
 
-const interBody = Inter({
+const jakartaBody = Plus_Jakarta_Sans({
   subsets: ['latin'],
   weight: ['400', '500', '600'],
   variable: '--font-body',
@@ -98,7 +96,6 @@ export const metadata: Metadata = {
   },
 }
 
-// ─── Viewport ──────────────────────────────────────────────────────────
 export const viewport: Viewport = {
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: BRAND.blue },
@@ -108,7 +105,6 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
-// ─── Root Layout ─────────────────────────────────────────────────────────
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -116,10 +112,9 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${soraHeading.variable} ${interBody.variable} ${jetbrainsMono.variable}`}
+      className={`${jakartaHeading.variable} ${jakartaBody.variable} ${jetbrainsMono.variable}`}
     >
       <body className="font-sans antialiased min-h-screen bg-white dark:bg-background text-zinc-900 dark:text-zinc-100 transition-colors duration-300">
-        {/* Skip to main content — visible only on keyboard focus */}
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[99999] focus:px-4 focus:py-2 focus:bg-white focus:text-brand-blue focus:font-bold focus:rounded-lg focus:shadow-lg focus:outline-none"
@@ -142,7 +137,6 @@ export default function RootLayout({
           </>
         )}
 
-        {/* GA4 — production only */}
         {process.env.NODE_ENV === 'production' && (
           <>
             <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} strategy="afterInteractive" />
@@ -159,4 +153,4 @@ export default function RootLayout({
       </body>
     </html>
   )
-}
+} 
