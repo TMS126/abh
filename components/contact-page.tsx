@@ -4,19 +4,31 @@ import { useState, useEffect, useRef, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { useTheme } from "next-themes"
 import { CaretDown, DownloadSimple, AddressBook, Clock, Sparkle, WhatsappLogo, Phone, EnvelopeSimple, MapPin } from "@phosphor-icons/react"
-import { BRAND, BIZ, WA, FAQS, CONTACT_LINKS, HOURS } from "@/lib/brand"
+import { BRAND, BIZ, WA, FAQS, CONTACT_LINKS, HOURS, HUB_COLORS, type HubKey } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 import { BusinessStatusFull } from "@/components/business-status"
 import { ScrollBounce } from "@/components/scroll-bounce"
 
-const FORM_HUBS: Record<string, { light: string; dark: string }> = {
-  "Print Hub":                  { light: BRAND.blue,      dark: "#A9D6F2" },
-  "Document Hub":               { light: BRAND.green,     dark: "#CDEB9F" },
-  "Design Hub":                 { light: BRAND.orangeDark, dark: "#F9D1B0" },
-  "E-Service Hub":              { light: "#15537D",        dark: "#A9D6F2" },
-  "Tech Hub":                   { light: "#333333",        dark: "#B8CCE0" },
- "Not Sure — Help Me Choose":  { light: BRAND.neutral500, dark: "#9A9A9A" },
+// ─── Hub color mapping for the form — now derived from the real HUB_COLORS
+// tokens instead of a second hardcoded set, so it can never drift out of
+// sync and is properly theme-adaptive (accentLight/accentDark swap
+// automatically with light/dark mode, same as everywhere else on the site).
+const FORM_HUB_KEYS: Record<string, HubKey | null> = {
+  "Print Hub":                  "print",
+  "Document Hub":                "doc",
+  "Design Hub":                  "design",
+  "E-Service Hub":               "eservice",
+  "Tech Hub":                    "tech",
+  "Not Sure — Help Me Choose":  null,
 }
+
+function getFormHubColor(opt: string, isDark: boolean): string {
+  const key = FORM_HUB_KEYS[opt]
+  if (!key) return isDark ? BRAND.neutral400 : BRAND.neutral500
+  const c = HUB_COLORS[key]
+  return isDark ? c.accentDark : c.accentLight
+}
+
 const CONTACT_GREY = { light: BRAND.dark100, dark: "#B8CCE0" }
 
 const CONTACT_ICONS: Record<string, React.ElementType> = {
@@ -194,9 +206,8 @@ function HubSelect({ value, onChange }: { value: string; onChange: (val: string)
   const ref                     = useRef<HTMLDivElement>(null)
   const { resolvedTheme }       = useTheme()
   const isDark                  = mounted && resolvedTheme === "dark"
-  const options                 = Object.keys(FORM_HUBS)
-  const colorFor  = (opt: string) => (isDark ? FORM_HUBS[opt].dark : FORM_HUBS[opt].light)
-  const activeColor             = value ? colorFor(value) : undefined
+  const options                 = Object.keys(FORM_HUB_KEYS)
+  const activeColor             = value ? getFormHubColor(value, isDark) : undefined
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -236,7 +247,7 @@ function HubSelect({ value, onChange }: { value: string; onChange: (val: string)
       {isOpen && (
         <div role="listbox" className="absolute z-50 mt-1.5 w-full bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-[14px] shadow-xl overflow-hidden">
           {options.map((opt) => {
-            const color = colorFor(opt)
+            const color = getFormHubColor(opt, isDark)
             return (
               <button
                 key={opt}
@@ -281,7 +292,7 @@ function ContactPageInner() {
 
     setFormData((prev) => ({
       ...prev,
-      service: serviceParam && FORM_HUBS[serviceParam] ? serviceParam : prev.service,
+      service: serviceParam && serviceParam in FORM_HUB_KEYS ? serviceParam : prev.service,
       message: messageParam ?? prev.message,
     }))
     setPrefilled(true)
@@ -300,8 +311,8 @@ function ContactPageInner() {
     }
   }, [prefilled, mounted])
 
-  const glowColor = formData.service && FORM_HUBS[formData.service]
-    ? (isDark ? FORM_HUBS[formData.service].dark : FORM_HUBS[formData.service].light)
+  const glowColor = formData.service
+    ? getFormHubColor(formData.service, isDark)
     : BRAND.blue
 
   const isNameValid    = (val: string) => val.trim().length >= 2
@@ -376,7 +387,7 @@ function ContactPageInner() {
                     {BIZ.address}
                   </p>
                   <p className="text-sm font-medium text-white/70 mt-1">
-                    {BIZ.city ? `${BIZ.city} · ` : ""}Walk-in or by appointment
+                    Walk-in or by appointment
                   </p>
                 </div>
                 <a
@@ -642,4 +653,4 @@ export function ContactPage() {
       <ContactPageInner />
     </Suspense>
   )
-                                           }
+}
