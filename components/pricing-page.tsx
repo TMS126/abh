@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { useTheme } from 'next-themes'
-import { MagnifyingGlass, CaretDown, CaretUp, FileArrowDown } from '@phosphor-icons/react'
+import { MagnifyingGlass, CaretDown, CaretUp, FileArrowDown, DownloadSimple } from '@phosphor-icons/react'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { ScrollBounce } from '@/components/scroll-bounce'
