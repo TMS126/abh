@@ -64,4 +64,4 @@ export function buildOsmEmbedSrc(lat: number, lng: number) {
 }
 
 export const MAP_EMBED_SRC = buildOsmEmbedSrc(BIZ.lat, BIZ.lng)
-export const MAP_LOAD_TIMEOUT_MS = 6000
+export const MAP_LOAD_TIMEOUT_MS = 7000
