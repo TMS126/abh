@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────
-// ContactPage — Hero, map+address, contact grid, form, FAQ
+// ContactPage — Hero, contact grid (3 cards + 1 location card), form, FAQ
 // Wrapped in Suspense because useSearchParams() requires it in Next.js
 // ─────────────────────────────────────────────────────────────────────────
 "use client"
@@ -7,7 +7,7 @@
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { useTheme } from "next-themes"
-import { DownloadSimple, AddressBook, Clock, Sparkle, WhatsappLogo, Phone, EnvelopeSimple, MapPin } from "@phosphor-icons/react"
+import { DownloadSimple, AddressBook, Clock, Sparkle, WhatsappLogo, Phone, EnvelopeSimple } from "@phosphor-icons/react"
 import { BRAND, BIZ, CONTACT_LINKS, HOURS } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 import { BusinessStatusFull } from "@/components/business-status"
@@ -22,8 +22,12 @@ const CONTACT_ICONS: Record<string, React.ElementType> = {
   "WhatsApp Us": WhatsappLogo,
   "Call Us":     Phone,
   "Email Us":    EnvelopeSimple,
-  "Visit Us":    MapPin,
 }
+
+// The location/address info now lives in exactly one place — the
+// LocationMap card below. "Visit Us" is filtered out of this grid so it
+// isn't shown a second (or third) time.
+const GRID_CONTACT_LINKS = CONTACT_LINKS.filter((c) => c.title !== "Visit Us")
 
 function ContactPageInner() {
   const searchParams = useSearchParams()
@@ -133,41 +137,6 @@ function ContactPageInner() {
         </div>
       </section>
 
-      {/* ── Map + address ── */}
-      <section className="px-4 md:px-8 pb-10" aria-label="Our location">
-        <div className="max-w-[980px] mx-auto">
-          <ScrollBounce>
-            <div className="rounded-[14px] overflow-hidden shadow-sm border border-zinc-100 dark:border-zinc-800">
-              <LocationMap />
-              <div
-                className="p-6 flex flex-col items-start gap-3"
-                style={{ backgroundColor: BRAND.blueDark }}
-              >
-                <MapPin size={28} weight="fill" color="#A9D6F2" aria-hidden="true" />
-                <div>
-                  <p className="font-sans font-black text-lg text-white leading-snug">
-                    {BIZ.address}
-                  </p>
-                  <p className="text-sm font-medium text-white/70 mt-1">
-                    Walk-in or by appointment
-                  </p>
-                </div>
-                <a
-                  href={BIZ.mapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Open ApexbytesHub location in Google Maps"
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-[10px] bg-white/15 hover:bg-white/25 text-white font-semibold text-sm transition-colors"
-                >
-                  <MapPin size={16} weight="fill" aria-hidden="true" />
-                  Open in Google Maps
-                </a>
-              </div>
-            </div>
-          </ScrollBounce>
-        </div>
-      </section>
-
       {/* ── Main grid: contact methods + form ── */}
       <section className="px-4 md:px-8 pb-16">
         <div className="max-w-[980px] mx-auto grid md:grid-cols-2 gap-10 items-stretch">
@@ -181,9 +150,9 @@ function ContactPageInner() {
               </div>
             </ScrollBounce>
 
-            {/* ── Contact link cards ── */}
-            <div className="grid grid-cols-2 gap-3 items-stretch">
-              {CONTACT_LINKS.map((c, index) => {
+            {/* ── 3 equal contact link cards: WhatsApp / Call / Email ── */}
+            <div className="grid grid-cols-3 gap-3 items-stretch">
+              {GRID_CONTACT_LINKS.map((c, index) => {
                 const Icon = CONTACT_ICONS[c.title] ?? Phone
                 const dotColor = "dotLight" in c
                   ? (isDark ? c.dotDark : c.dotLight)
@@ -217,6 +186,13 @@ function ContactPageInner() {
                 )
               })}
             </div>
+
+            {/* ── Location card — single instance, sits below the 3 contact cards ── */}
+            <ScrollBounce delay={0.24}>
+              <div className="rounded-[14px] overflow-hidden shadow-sm border border-zinc-100 dark:border-zinc-800">
+                <LocationMap />
+              </div>
+            </ScrollBounce>
 
             {/* ── Save contact card ── */}
             <ScrollBounce delay={0.1}>
