@@ -34,7 +34,10 @@ export function HubModal({ hubId, onClose, onSelectService }: {
   const activeSectionDesc = activeSection?.desc
 
   return (
-    <div className="fixed inset-0 z-[10100] flex items-end md:items-center justify-center p-0 md:p-4">
+    // p-3/p-4 padding on the flex container is what creates the modal's
+    // margin — was p-0 on mobile, which is what let the sheet run edge to
+    // edge like the service modal does.
+    <div className="fixed inset-0 z-[10100] flex items-end md:items-center justify-center p-3 md:p-4">
       <motion.div
         className="absolute inset-0 bg-black/60"
         onClick={onClose}
@@ -52,7 +55,15 @@ export function HubModal({ hubId, onClose, onSelectService }: {
         dragElastic={{ top: 0, bottom: 0.6 }}
         onDragEnd={(_e, info) => { if (shouldDismissOnDrag(info)) onClose() }}
         initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-        transition={{ type: "tween", duration: 0.22, ease: [0.32, 0.72, 0, 1] }}   className="relative w-full md:max-w-2xl bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-t-[20px] md:rounded-[14px] cursor-grab active:cursor-grabbing"
+        transition={{ type: "tween", duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+        // w-full max-w-2xl (was w-full md:max-w-2xl) — capped width at
+        // every breakpoint, not just desktop. rounded-[20px] on all four
+        // corners at all sizes (was rounded-t-[20px] md:rounded-[14px],
+        // i.e. square bottom corners on mobile like a true bottom sheet)
+        // — now that it floats with margin instead of touching the
+        // screen edges, a bottom-sheet's flat bottom corners would look
+        // like a mistake, so it's fully rounded like a card everywhere.
+        className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[20px] cursor-grab active:cursor-grabbing"
         style={{ boxShadow: `0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4), 0 10px 24px -8px ${accent}50` }}
       >
         <DragHandle />
@@ -159,4 +170,4 @@ export function HubModal({ hubId, onClose, onSelectService }: {
       </motion.div>
     </div>
   )
-      } 
+}
