@@ -9,10 +9,6 @@ import { cn } from "@/lib/utils"
 import { BusinessStatusFull } from "@/components/business-status"
 import { ScrollBounce } from "@/components/scroll-bounce"
 
-// ─── Hub color mapping for the form — now derived from the real HUB_COLORS
-// tokens instead of a second hardcoded set, so it can never drift out of
-// sync and is properly theme-adaptive (accentLight/accentDark swap
-// automatically with light/dark mode, same as everywhere else on the site).
 const FORM_HUB_KEYS: Record<string, HubKey | null> = {
   "Print Hub":                  "print",
   "Document Hub":                "doc",
@@ -76,20 +72,17 @@ function FieldErrorTooltip({ message }: { message: string }) {
   )
 }
 
-// ── Location map — OpenStreetMap embed, no API key, no third-party
-// cookies required (unlike the old Google no-key trick, which Google's
-// own cookie-blocking now frequently breaks). Falls back to a static
-// card if the iframe genuinely fails to load within MAP_LOAD_TIMEOUT_MS.
+// ── Location map — Google Maps embed, no API key required via the
+// `output=embed` query param. Uses the actual Google Maps tile styling/
+// labels (roads, POIs, satellite thumbnail) rather than the flatter
+// OpenStreetMap tile look.
 const MAP_LOAD_TIMEOUT_MS = 3000
 
-function buildOsmEmbedSrc(lat: number, lng: number) {
-  const deltaLat = 0.003
-  const deltaLng = 0.004
-  const bbox = [lng - deltaLng, lat - deltaLat, lng + deltaLng, lat + deltaLat].join(",")
-  return `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&layer=mapnik&marker=${lat}%2C${lng}`
+function buildGoogleMapsEmbedSrc(lat: number, lng: number) {
+  return `https://www.google.com/maps?q=${lat},${lng}&z=16&output=embed`
 }
 
-const MAP_EMBED_SRC = buildOsmEmbedSrc(BIZ.lat, BIZ.lng)
+const MAP_EMBED_SRC = buildGoogleMapsEmbedSrc(BIZ.lat, BIZ.lng)
 
 function LocationMap() {
   const [blocked, setBlocked] = useState(false)
@@ -131,6 +124,7 @@ function LocationMap() {
       height="260"
       style={{ border: 0, display: "block" }}
       loading="lazy"
+      referrerPolicy="no-referrer-when-downgrade"
       onError={() => setBlocked(true)}
     />
   )
@@ -653,4 +647,4 @@ export function ContactPage() {
       <ContactPageInner />
     </Suspense>
   )
-}
+                } 
