@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, JetBrains_Mono } from 'next/font/google'
+import { Sora, Inter, JetBrains_Mono } from 'next/font/google'
 import Script from 'next/script'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Analytics } from '@vercel/analytics/next'
@@ -13,43 +13,37 @@ import { WhatsAppFAB } from '@/components/whatsapp-fab'
 import './globals.css'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://v0-apexbytes-hub-website.vercel.app'
-
-// GA4 property for ApexbytesHub — tracks hub/service views, Add to Quote,
-// and WhatsApp request clicks (see lib/analytics.ts + services-page.tsx).
-// Env var takes priority so this can be swapped without a code change.
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-3FJ8QET6RE'
 
 // ─── Fonts ───────────────────────────────────────────────────────────
-// Inter — used for BOTH headings and body copy now (single-font system).
-// Previously Jost handled headings and Inter handled body; Jost has been
-// dropped in favor of Inter everywhere, since Inter is the closest
-// available match to Helvetica (which Google Fonts doesn't host).
-// --font-heading is kept as its own CSS variable (rather than removed)
-// so nothing in globals.css or Tailwind config that references
-// var(--font-heading) needs to change — it just now resolves to Inter
-// instead of Jost.
-const interHeading = Inter({
-  subsets:  ['latin'],
+// Sora — Headings / Display: friendly, rounded, modern tech
+// Perfect for "Design. Print. Upgrade." and "Welcome to ApexbytesHub"
+// Inter — Body: best readability on mobile / low-end Androids
+// JetBrains Mono — Stats, prices, code-like elements
+const soraHeading = Sora({
+  subsets: ['latin'],
+  weight: ['600', '700', '800'],
   variable: '--font-heading',
-  display:  'swap',
+  display: 'swap',
 })
 
 const interBody = Inter({
-  subsets:  ['latin'],
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
   variable: '--font-body',
-  display:  'swap',
+  display: 'swap',
 })
 
-// JetBrains Mono — monospace for code/prices
 const jetbrainsMono = JetBrains_Mono({
-  subsets:  ['latin'],
+  subsets: ['latin'],
+  weight: ['400', '500'],
   variable: '--font-mono',
-  display:  'swap',
+  display: 'swap',
 })
 
 // ─── Metadata ──────────────────────────────────────────────────────────
 export const metadata: Metadata = {
-  title:       `${BIZ.name} — ${BIZ.tagline}`,
+  title: `${BIZ.name} — ${BIZ.tagline}`,
   description: `We make technology and important services accessible to everyone — no jargon, no stress. Right here in ${BIZ.address}.`,
   keywords: [
     'printing Bothaville',
@@ -70,37 +64,37 @@ export const metadata: Metadata = {
   authors: [{ name: BIZ.name }],
   metadataBase: new URL(SITE_URL),
   openGraph: {
-    type:        'website',
-    locale:      'en_ZA',
-    url:         SITE_URL,
-    siteName:    BIZ.name,
-    title:       `${BIZ.name} — ${BIZ.tagline}`,
+    type: 'website',
+    locale: 'en_ZA',
+    url: SITE_URL,
+    siteName: BIZ.name,
+    title: `${BIZ.name} — ${BIZ.tagline}`,
     description: `We make technology and important services accessible to everyone — no jargon, no stress. Printing, CVs, design, SASSA/SARS help, and tech support. Right here in ${BIZ.location}.`,
     images: [
       {
-        url:    '/og-image.png',
-        width:  1200,
+        url: '/og-image.png',
+        width: 1200,
         height: 630,
-        alt:    `${BIZ.name} — your local tech and print partner in Kgotsong, Bothaville`,
+        alt: `${BIZ.name} — your local tech and print partner in Kgotsong, Bothaville`,
       },
     ],
   },
   twitter: {
-    card:        'summary_large_image',
-    title:       `${BIZ.name} — ${BIZ.tagline}`,
+    card: 'summary_large_image',
+    title: `${BIZ.name} — ${BIZ.tagline}`,
     description: `Printing, CVs, design, SASSA/SARS help, and tech support in Kgotsong, Bothaville.`,
-    images:      ['/og-image.png'],
+    images: ['/og-image.png'],
   },
   icons: {
     icon: [
       { url: '/favicon-light-32.png', sizes: '32x32', type: 'image/png', media: '(prefers-color-scheme: light)' },
       { url: '/favicon-light-16.png', sizes: '16x16', type: 'image/png', media: '(prefers-color-scheme: light)' },
-      { url: '/favicon-dark-32.png',  sizes: '32x32', type: 'image/png', media: '(prefers-color-scheme: dark)'  },
-      { url: '/favicon-dark-16.png',  sizes: '16x16', type: 'image/png', media: '(prefers-color-scheme: dark)'  },
+      { url: '/favicon-dark-32.png', sizes: '32x32', type: 'image/png', media: '(prefers-color-scheme: dark)' },
+      { url: '/favicon-dark-16.png', sizes: '16x16', type: 'image/png', media: '(prefers-color-scheme: dark)' },
       { url: '/favicon-1.ico', type: 'image/ico' },
     ],
-    apple:    [{ url: '/apple-icon.png', type: 'image/png' }],
-    shortcut: [{ url: '/logo.png',       type: 'image/png' }],
+    apple: [{ url: '/apple-icon.png', type: 'image/png' }],
+    shortcut: [{ url: '/logo.png', type: 'image/png' }],
   },
 }
 
@@ -108,9 +102,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: BRAND.blue },
-    { media: '(prefers-color-scheme: dark)',  color: '#09090b'  },
+    { media: '(prefers-color-scheme: dark)', color: '#09090b' },
   ],
-  width:        'device-width',
+  width: 'device-width',
   initialScale: 1,
 }
 
@@ -122,7 +116,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${interHeading.variable} ${interBody.variable} ${jetbrainsMono.variable}`}
+      className={`${soraHeading.variable} ${interBody.variable} ${jetbrainsMono.variable}`}
     >
       <body className="font-sans antialiased min-h-screen bg-white dark:bg-background text-zinc-900 dark:text-zinc-100 transition-colors duration-300">
         {/* Skip to main content — visible only on keyboard focus */}
@@ -133,20 +127,14 @@ export default function RootLayout({
           Skip to main content
         </a>
 
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange={false}
-        >
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange={false}>
           <LocalBusinessJsonLd />
-          <InstanceGuardProvider>
-            {children}
-          </InstanceGuardProvider>
+          <InstanceGuardProvider>{children}</InstanceGuardProvider>
           <FloatingSearchWidget />
           <QuoteCalculatorWidget />
           <WhatsAppFAB />
         </ThemeProvider>
+
         {process.env.NODE_ENV === 'production' && (
           <>
             <Analytics />
@@ -154,14 +142,10 @@ export default function RootLayout({
           </>
         )}
 
-        {/* GA4 — production only, same gating as Vercel Analytics above,
-            so local/dev testing doesn't pollute real traffic data. */}
+        {/* GA4 — production only */}
         {process.env.NODE_ENV === 'production' && (
           <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-              strategy="afterInteractive"
-            />
+            <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} strategy="afterInteractive" />
             <Script id="ga4-init" strategy="afterInteractive">
               {`
                 window.dataLayer = window.dataLayer || [];
@@ -175,4 +159,4 @@ export default function RootLayout({
       </body>
     </html>
   )
-} 
+}
