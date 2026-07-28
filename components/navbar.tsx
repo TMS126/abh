@@ -9,6 +9,11 @@ import { cn } from "@/lib/utils"
 import { useNavVisibility, useMobileMenu, useLogoAnimation } from "@/hooks/use-navbar"
 import { MobileMenu } from "@/components/navbar/mobile-menu"
 
+// Hover accent for plain-text nav links — not currently in BRAND under this
+// file's imports, so pinned to the same orange used elsewhere on the site
+// (Design Hub accent / notice banners) rather than guessing a token name.
+const HOVER_ORANGE = "#F4A261"
+
 export function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
@@ -54,7 +59,11 @@ export function Navbar() {
     setTheme(theme === "dark" ? "light" : "dark")
   }
 
-  const pillClass = "bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md py-2 rounded-[14px] border border-gray-200 dark:border-zinc-800 shadow-sm"
+  // Acrylic pill for logo + controls — backdrop-blur only, no visible fill
+  // or border at rest. The frosted-glass effect only becomes visible once
+  // something actually scrolls underneath it; nothing is drawn on top of
+  // an empty background otherwise.
+  const glassPillClass = "backdrop-blur-md py-2 rounded-[14px] pointer-events-auto"
 
   const neutralColor = useMemo(() => {
     return mounted && theme === "dark" ? "#e4e4e7" : "#3f3f46"
@@ -68,7 +77,7 @@ export function Navbar() {
           {/* Logo - FIXED */}
           <div
             className={cn(
-              pillClass,
+              glassPillClass,
               "flex items-center cursor-pointer select-none pointer-events-auto group transition-all duration-300",
               isTextExpanded ? "pl-3 pr-4 gap-2.5" : "px-2.5 gap-0",
               menuOpen || !navVisible ? "opacity-0 -translate-y-20 pointer-events-none" : "opacity-100 translate-y-0 pointer-events-auto"
@@ -108,7 +117,11 @@ export function Navbar() {
             </div>
           </div>
 
-          {/* Desktop Nav */}
+          {/* Desktop Nav — no visible pill/box at rest, just the bare
+              hamburger lines. On hover: hamburger fades out, links fade/
+              scale in staggered (reads as the lines reassembling), plain
+              nav items are bare text that goes orange on hover, and only
+              "Contact" keeps a bordered container. */}
           <div
             ref={desktopNavRef}
             onMouseEnter={() => setDesktopNavOpen(true)}
@@ -119,9 +132,8 @@ export function Navbar() {
             )}
           >
             <div className={cn(
-              pillClass,
-              "flex items-center overflow-hidden transition-[padding] duration-300 ease-out",
-              desktopNavOpen ? "gap-1.5 px-2" : "px-3"
+              "flex items-center py-2 transition-all duration-300 ease-out",
+              desktopNavOpen ? "gap-1 px-1" : "px-2"
             )}>
               <button
                 onClick={() => setDesktopNavOpen(v => !v)}
@@ -129,17 +141,17 @@ export function Navbar() {
                 aria-expanded={desktopNavOpen}
                 className={cn(
                   "relative flex items-center justify-center shrink-0 transition-all duration-200 ease-out",
-                  desktopNavOpen ? "w-0 opacity-0 pointer-events-none" : "w-9 h-9 opacity-100"
+                  desktopNavOpen ? "w-0 opacity-0 scale-75 pointer-events-none" : "w-9 h-9 opacity-100 scale-100"
                 )}
               >
                 <List size={18} weight="bold" style={{ color: neutralColor }} className="transition-colors duration-300" />
               </button>
 
               <div className={cn(
-                "flex items-center gap-1.5 transition-all duration-300 ease-out",
+                "flex items-center gap-1 transition-all duration-300 ease-out",
                 desktopNavOpen ? "opacity-100 translate-x-0 max-w-[600px]" : "opacity-0 -translate-x-2 max-w-0 pointer-events-none"
               )}>
-                {NAV_ITEMS.map((item) => {
+                {NAV_ITEMS.map((item, idx) => {
                   const isActive = pathname === item.path
 
                   if (item.isCta) {
@@ -149,15 +161,17 @@ export function Navbar() {
                         onClick={() => navigate(item.path)}
                         onMouseEnter={() => setContactHovered(true)}
                         onMouseLeave={() => setContactHovered(false)}
-                        style={
-                          contactHovered
-                            ? { backgroundColor: BRAND.green, borderColor: BRAND.green, color: "#ffffff" }
+                        style={{
+                          transitionDelay: desktopNavOpen ? `${idx * 30}ms` : "0ms",
+                          ...(contactHovered
+                            ? { backgroundColor: HOVER_ORANGE, borderColor: HOVER_ORANGE, color: "#ffffff" }
                             : isActive
                             ? { backgroundColor: BRAND.blue, borderColor: BRAND.blue, color: "#ffffff" }
-                            : undefined
-                        }
+                            : {}),
+                        }}
                         className={cn(
-                          "px-4 py-2 rounded-[10px] text-[0.84rem] whitespace-nowrap transition-all duration-200 border-2",
+                          "px-4 py-2 rounded-[10px] text-[0.84rem] whitespace-nowrap border-2 transition-all duration-200",
+                          desktopNavOpen ? "opacity-100 scale-100" : "opacity-0 scale-75",
                           contactHovered || isActive ? "font-black" : "font-medium border-zinc-300 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400"
                         )}
                       >
@@ -170,11 +184,18 @@ export function Navbar() {
                     <button
                       key={item.id}
                       onClick={() => navigate(item.path)}
-                      style={isActive ? { backgroundColor: BRAND.blue, color: "#ffffff" } : undefined}
+                      style={{
+                        transitionDelay: desktopNavOpen ? `${idx * 30}ms` : "0ms",
+                        color: isActive ? HOVER_ORANGE : undefined,
+                      }}
                       className={cn(
-                        "px-4 py-2 rounded-[10px] text-[0.84rem] whitespace-nowrap transition-all duration-200 border-2 border-transparent",
-                        isActive ? "font-black" : "font-medium text-zinc-500 dark:text-zinc-400 hover:text-brand-blue dark:hover:text-brand-blue"
+                        "px-3.5 py-2 text-[0.84rem] whitespace-nowrap bg-transparent border-2 border-transparent transition-all duration-200",
+                        desktopNavOpen ? "opacity-100 scale-100" : "opacity-0 scale-75",
+                        isActive ? "font-black" : "font-medium text-zinc-500 dark:text-zinc-400",
+                        `hover:text-[${HOVER_ORANGE}]`
                       )}
+                      onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.color = HOVER_ORANGE }}
+                      onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.color = "" }}
                     >
                       {item.label}
                     </button>
@@ -184,9 +205,9 @@ export function Navbar() {
             </div>
           </div>
 
-          {/* Controls */}
+          {/* Controls — same acrylic glass treatment as the logo */}
           <div className={cn(
-            pillClass, 
+            glassPillClass, 
             "flex items-center gap-3 pl-3 pr-3 pointer-events-auto ml-4 transition-all duration-300",
             !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100"
           )}>
@@ -232,4 +253,4 @@ export function Navbar() {
       />
     </>
   )
-                }
+}
