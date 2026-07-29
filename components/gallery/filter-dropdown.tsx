@@ -42,107 +42,129 @@ export function FilterDropdown({
     { id: "all", label: "All hubs" },
     ...ROW_ORDER.map(r => ({ id: r.id, label: r.label })),
   ]
-  const currentAccent = activeFilter !== "all" ? getAccent(activeFilter) : undefined
-  const idleLabel      = "Select a Hub"
-  const displayedLabel = activeFilter === "all" ? idleLabel : (options.find(o => o.id === activeFilter)?.label ?? idleLabel)
 
   return (
-    <div className="relative flex justify-center mb-10 z-40">
-      <button
-        onClick={handleToggleClick}
-        aria-expanded={open}
-        className={cn(
-                      "flex items-center justify-center gap-1.5 px-3 py-2 rounded-full",
-                      "text-[10px] font-bold whitespace-nowrap transition-all duration-150 active:scale-95",
-                      // Stronger dual-layer shadow — a deeper black shadow plus a faint
-                      // light-alpha edge in dark mode, since a black shadow alone barely
-                      // reads against the dark navy page background (same fix pattern
-                      // used on the contact cards and about page cards earlier).
-                      "shadow-[0_2px_10px_-2px_rgba(0,0,0,0.18)] dark:shadow-[0_4px_18px_-3px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.06)]",
-                      "hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.24)] dark:hover:shadow-[0_6px_22px_-3px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.1)]",
-                      // Suppress the default browser focus outline on this button and
-                      // replace it with a contained ring — the global :focus-visible
-                      // outline (outline-offset: 3px) can render as a stray blinking
-                      // vertical bar on some Android browsers (Samsung Internet) when
-                      // tapped on a small rounded-full pill.
-                      "outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                    )}
-        style={{
-          borderColor: currentAccent ? `${currentAccent}45` : undefined,
-          ["--tw-ring-color" as any]: currentAccent ?? blueColor,
-        }}
-      >
-        {currentAccent && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: currentAccent }} />}
-        <span style={{ color: currentAccent ?? undefined }} className={!currentAccent ? "text-zinc-800 dark:text-zinc-100" : undefined}>
-          {displayedLabel}
-        </span>
-        <CaretDown size={14} weight="bold" className={cn("transition-transform duration-200 shrink-0", open && "rotate-180")} style={{ color: currentAccent ?? blueColor }} />
-      </button>
+    <>
+      {/* ── Desktop pill row — matches the flat white-pill reference exactly:
+          plain pills, no dropdown, tight horizontal row. Only the active
+          pill picks up its hub color; the rest stay neutral. */}
+      <div className="hidden md:flex justify-center flex-wrap gap-2 mb-10">
+        {options.map(opt => {
+          const accent   = opt.id !== "all" ? getAccent(opt.id as HubId) : undefined
+          const isActive = activeFilter === opt.id
+          const activeBg = accent ?? blueColor
+          const activeText = getContrastText(activeBg)
 
-      {open && (
-        <>
-          <div
-            className="fixed inset-0 z-40"
-            onClick={closeDropdown}
-            aria-hidden="true"
-          />
-          <AnimatePresence>
-            <motion.div
-              role="listbox"
-              aria-label="Filter by hub"
-              initial={{ opacity: 0, y: -14, scale: 0.92 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.94 }}
-              transition={{ type: "spring", stiffness: 280, damping: 22, mass: 0.6 }}
-              className="absolute left-1/2 -translate-x-1/2 top-full mt-3 z-50 w-[calc(100vw-2rem)] max-w-sm"
-              style={{ isolation: "isolate" }}
+          return (
+            <button
+              key={opt.id}
+              onClick={() => handleSelect(opt.id)}
+              aria-pressed={isActive}
+              className={cn(
+                "px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-150 active:scale-95",
+                "shadow-[0_2px_8px_-2px_rgba(0,0,0,0.15)] hover:shadow-[0_4px_12px_-2px_rgba(0,0,0,0.2)]",
+                "outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              )}
+              style={
+                isActive
+                  ? { backgroundColor: activeBg, color: activeText, ["--tw-ring-color" as any]: activeBg }
+                  : {
+                      backgroundColor: isDark ? "#18181b" : "#ffffff",
+                      color: isDark ? "#e4e4e7" : "#3f3f46",
+                      ["--tw-ring-color" as any]: accent ?? blueColor,
+                    }
+              }
             >
-              <div
-                className={cn(
-                  "flex flex-wrap justify-center gap-2 p-2.5 rounded-[24px]",
-                  "bg-white/70 dark:bg-zinc-900/60 backdrop-blur-md",
-                  "border border-white/50 dark:border-white/10",
-                  "shadow-xl dark:shadow-black/40"
-                )}
-              >
-                {options.map(opt => {
-                  const accent   = opt.id !== "all" ? getAccent(opt.id as HubId) : undefined
-                  const isActive = activeFilter === opt.id
-                  const activeBg = accent ?? blueColor
-                  const activeText = getContrastText(activeBg)
+              {opt.label}
+            </button>
+          )
+        })}
+      </div>
 
-                  return (
-                    <button
-                      key={opt.id}
-                      role="option"
-                      aria-selected={isActive}
-                      onClick={() => handleSelect(opt.id)}
-                      className={cn(
-                        "w-full flex items-center justify-center px-3 py-2.5 rounded-full",
-                        "text-xs font-bold whitespace-nowrap transition-all duration-150 active:scale-95",
-                        "shadow-[0_2px_10px_-2px_rgba(0,0,0,0.18)] dark:shadow-[0_2px_10px_-2px_rgba(0,0,0,0.5)]",
-                        "hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.24)] dark:hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.6)]",
-                        "outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                      )}
-                      style={
-                        isActive
-                          ? { backgroundColor: activeBg, color: activeText, ["--tw-ring-color" as any]: activeBg }
-                          : {
-                              backgroundColor: isDark ? "#18181b" : "#ffffff",
-                              color: accent ?? (isDark ? "#e4e4e7" : "#3f3f46"),
-                              ["--tw-ring-color" as any]: accent ?? blueColor,
-                            }
-                      }
-                    >
-                      <span className="truncate">{opt.label}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </>
-      )}
-    </div>
+      {/* ── Mobile dropdown — unchanged from before */}
+      <div className="md:hidden relative flex justify-center mb-10 z-40">
+        <button
+          onClick={handleToggleClick}
+          aria-expanded={open}
+          className={cn(
+            "flex items-center justify-center gap-1.5 px-3 py-2 rounded-full",
+            "text-[10px] font-bold whitespace-nowrap transition-all duration-150 active:scale-95",
+            "shadow-[0_2px_10px_-2px_rgba(0,0,0,0.18)] dark:shadow-[0_4px_18px_-3px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.06)]",
+            "hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.24)] dark:hover:shadow-[0_6px_22px_-3px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.1)]",
+            "outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+          )}
+          style={{
+            ["--tw-ring-color" as any]: activeFilter !== "all" ? getAccent(activeFilter) : blueColor,
+          }}
+        >
+          {activeFilter !== "all" && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getAccent(activeFilter) }} />}
+          <span style={{ color: activeFilter !== "all" ? getAccent(activeFilter) : undefined }} className={activeFilter === "all" ? "text-zinc-800 dark:text-zinc-100" : undefined}>
+            {activeFilter === "all" ? "Select a Hub" : (options.find(o => o.id === activeFilter)?.label ?? "Select a Hub")}
+          </span>
+          <CaretDown size={14} weight="bold" className={cn("transition-transform duration-200 shrink-0", open && "rotate-180")} style={{ color: activeFilter !== "all" ? getAccent(activeFilter) : blueColor }} />
+        </button>
+
+        {open && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={closeDropdown} aria-hidden="true" />
+            <AnimatePresence>
+              <motion.div
+                role="listbox"
+                aria-label="Filter by hub"
+                initial={{ opacity: 0, y: -14, scale: 0.92 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.94 }}
+                transition={{ type: "spring", stiffness: 280, damping: 22, mass: 0.6 }}
+                className="absolute left-1/2 -translate-x-1/2 top-full mt-3 z-50 w-[calc(100vw-2rem)] max-w-sm"
+                style={{ isolation: "isolate" }}
+              >
+                <div
+                  className={cn(
+                    "flex flex-wrap justify-center gap-2 p-2.5 rounded-[24px]",
+                    "bg-white/70 dark:bg-zinc-900/60 backdrop-blur-md",
+                    "border border-white/50 dark:border-white/10",
+                    "shadow-xl dark:shadow-black/40"
+                  )}
+                >
+                  {options.map(opt => {
+                    const accent   = opt.id !== "all" ? getAccent(opt.id as HubId) : undefined
+                    const isActive = activeFilter === opt.id
+                    const activeBg = accent ?? blueColor
+                    const activeText = getContrastText(activeBg)
+
+                    return (
+                      <button
+                        key={opt.id}
+                        role="option"
+                        aria-selected={isActive}
+                        onClick={() => handleSelect(opt.id)}
+                        className={cn(
+                          "w-full flex items-center justify-center px-3 py-2.5 rounded-full",
+                          "text-xs font-bold whitespace-nowrap transition-all duration-150 active:scale-95",
+                          "shadow-[0_2px_10px_-2px_rgba(0,0,0,0.18)] dark:shadow-[0_2px_10px_-2px_rgba(0,0,0,0.5)]",
+                          "hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.24)] dark:hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.6)]",
+                          "outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                        )}
+                        style={
+                          isActive
+                            ? { backgroundColor: activeBg, color: activeText, ["--tw-ring-color" as any]: activeBg }
+                            : {
+                                backgroundColor: isDark ? "#18181b" : "#ffffff",
+                                color: accent ?? (isDark ? "#e4e4e7" : "#3f3f46"),
+                                ["--tw-ring-color" as any]: accent ?? blueColor,
+                              }
+                        }
+                      >
+                        <span className="truncate">{opt.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </>
+        )}
+      </div>
+    </>
   )
-} 
+}
