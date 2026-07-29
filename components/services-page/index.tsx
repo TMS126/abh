@@ -24,11 +24,11 @@ import { HUB_ORDER, HUB_PREVIEWS, NOTICE, trackEvent, SelectedService } from "./
 // differs from its HubId key ("doc") — mapped explicitly below so that
 // mismatch can't silently break the lookup.
 const HUB_ICON_SRC: Record<HubId, string> = {
-  print:    "/print-hub.webp",
-  doc:      "/docu-hub.webp",
-  design:   "/design-hub.webp",
-  eservice: "/eservice-hub.webp",
-  tech:     "/tech-hub.webp",
+  print:    "/print-hub.png",
+  doc:      "/docu-hub.png",
+  design:   "/design-hub.png",
+  eservice: "/eservice-hub.png",
+  tech:     "/tech-hub.png",
 }
 
 // ─── Notice pill / expanded notification ───────────────────────────────────
