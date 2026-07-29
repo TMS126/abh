@@ -10,8 +10,11 @@ import { HUBS, HubId, HUB_DISCLAIMERS } from "@/lib/data"
 import { HubIcon, useFocusTrap, DragHandle, shouldDismissOnDrag } from "./shared"
 import { getTurnaround, SelectedService } from "./lib"
 
-export function HubModal({ hubId, onClose, onSelectService }: {
-  hubId: HubId | null; onClose: () => void; onSelectService: (svc: SelectedService) => void
+export function HubModal({ hubId, originSide = "right", onClose, onSelectService }: {
+  hubId: HubId | null
+  originSide?: "left" | "right"
+  onClose: () => void
+  onSelectService: (svc: SelectedService) => void
 }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
@@ -33,11 +36,13 @@ export function HubModal({ hubId, onClose, onSelectService }: {
   const activeSection     = openSectionIdx !== null ? hub.sections[openSectionIdx] : null
   const activeSectionDesc = activeSection?.desc
 
+  // Enters from whichever side the triggering card's arrow pointed to —
+  // "120%" (not 100%) guarantees it starts fully off-screen regardless of
+  // the modal's own width at the moment the animation begins.
+  const offscreenX = originSide === "left" ? "-120%" : "120%"
+
   return (
-    // p-3/p-4 padding on the flex container is what creates the modal's
-    // margin — was p-0 on mobile, which is what let the sheet run edge to
-    // edge like the service modal does.
-    <div className="fixed inset-0 z-[10100] flex items-end md:items-center justify-center p-3 md:p-4">
+    <div className="fixed inset-0 z-[10100] flex items-center justify-center p-3 md:p-4">
       <motion.div
         className="absolute inset-0 bg-black/60"
         onClick={onClose}
@@ -54,15 +59,10 @@ export function HubModal({ hubId, onClose, onSelectService }: {
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={{ top: 0, bottom: 0.6 }}
         onDragEnd={(_e, info) => { if (shouldDismissOnDrag(info)) onClose() }}
-        initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-        transition={{ type: "tween", duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
-        // w-full max-w-2xl (was w-full md:max-w-2xl) — capped width at
-        // every breakpoint, not just desktop. rounded-[20px] on all four
-        // corners at all sizes (was rounded-t-[20px] md:rounded-[14px],
-        // i.e. square bottom corners on mobile like a true bottom sheet)
-        // — now that it floats with margin instead of touching the
-        // screen edges, a bottom-sheet's flat bottom corners would look
-        // like a mistake, so it's fully rounded like a card everywhere.
+        initial={{ x: offscreenX, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: offscreenX, opacity: 0 }}
+        transition={{ type: "tween", duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
         className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[20px] cursor-grab active:cursor-grabbing"
         style={{ boxShadow: `0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4), 0 10px 24px -8px ${accent}50` }}
       >
@@ -170,4 +170,4 @@ export function HubModal({ hubId, onClose, onSelectService }: {
       </motion.div>
     </div>
   )
-}
+} 
