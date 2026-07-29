@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { AnimatePresence } from "framer-motion"
+import Image from "next/image"
 import { Megaphone, ArrowUp, ArrowRight, X } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
@@ -14,6 +15,21 @@ import { InlineSearchBar } from "./search-bar"
 import { HubModal } from "./hub-modal"
 import { ServiceDetailModal } from "./service-detail-modal"
 import { HUB_ORDER, HUB_PREVIEWS, NOTICE, trackEvent, SelectedService } from "./lib"
+
+// ─── Hub icon assets — replaces the flat Phosphor icons with the
+// custom-illustrated per-hub images. .webp referenced specifically (the
+// PNG originals run 400-500KB each; the .webp exports are ~25-30KB —
+// roughly 15-20x smaller — so webp is the clear choice for load speed).
+// Filenames match "doc" hub's actual asset name ("docu-hub"), which
+// differs from its HubId key ("doc") — mapped explicitly below so that
+// mismatch can't silently break the lookup.
+const HUB_ICON_SRC: Record<HubId, string> = {
+  print:    "/print-hub.webp",
+  doc:      "/docu-hub.webp",
+  design:   "/design-hub.webp",
+  eservice: "/eservice-hub.webp",
+  tech:     "/tech-hub.webp",
+}
 
 // ─── Notice pill / expanded notification ───────────────────────────────────
 function NoticeNotification() {
@@ -72,39 +88,71 @@ function ClosingTagline() {
 }
 
 // ─── Explore/View-more CTA ──────────────────────────────────────────────────
-function HubCta({ label, accent, pointsRight }: { label: string; accent: string; pointsRight: boolean }) {
+// - showArrow: mobile passes false — no arrow icon on mobile at all.
+// - pointsRight: desktop always passes true (default) so the arrow points
+//   the same way on every card regardless of which side its icon sits on.
+// - alwaysColored: mobile passes true so "Explore" reads in the hub's
+//   accent color at rest, not muted-until-hover like desktop's "View more".
+// - forceUnderline: mobile passes the card's touch-press state, so the
+//   underline animates on touch instead of (unreliable) :hover.
+function HubCta({
+  label, accent, pointsRight = true, showArrow = true, forceUnderline = false, alwaysColored = false,
+}: {
+  label: string; accent: string; pointsRight?: boolean; showArrow?: boolean
+  forceUnderline?: boolean; alwaysColored?: boolean
+}) {
   return (
     <span
-      className="relative inline-flex items-center gap-1 text-[0.78rem] font-black text-zinc-400 dark:text-zinc-500 transition-colors duration-200 group-hover/hubcard:text-[var(--hub-accent)]"
-      style={{ ["--hub-accent" as any]: accent }}
+      className={cn(
+        "relative inline-flex items-center gap-1 text-[0.78rem] font-black transition-colors duration-200",
+        !alwaysColored && "text-zinc-400 dark:text-zinc-500 group-hover/hubcard:text-[var(--hub-accent)]"
+      )}
+      style={{
+        ["--hub-accent" as any]: accent,
+        ...(alwaysColored ? { color: accent } : {}),
+      }}
     >
       <span className="relative">
         {label}
         <span
           aria-hidden="true"
-          className="absolute left-0 bottom-[-2px] h-[2px] w-0 bg-current transition-[width] duration-300 ease-linear group-hover/hubcard:w-full"
+          className={cn(
+            "absolute left-0 bottom-[-2px] h-[2px] bg-current transition-[width] duration-300 ease-linear",
+            forceUnderline ? "w-full" : "w-0 group-hover/hubcard:w-full"
+          )}
         />
       </span>
-      <ArrowRight size={12} weight="bold" aria-hidden="true" className={cn(!pointsRight && "rotate-180")} />
+      {showArrow && (
+        <ArrowRight size={12} weight="bold" aria-hidden="true" className={cn(!pointsRight && "rotate-180")} />
+      )}
     </span>
   )
 }
 
-// ─── Hub icon chip — shared shape for both desktop and mobile cards, with a
-// tinted box-shadow sitting BELOW it (per "shadows below each icon"). ───────
-function HubIconChip({ hubId, accent, size = 64, iconSize = 32 }: { hubId: HubId; accent: string; size?: number; iconSize?: number }) {
+// ─── Hub icon — custom illustration, no background chip, no color tint
+// (the source images already carry their own color). A soft accent-tinted
+// drop-shadow beneath gives the "light hub-color shadow" without boxing
+// the icon in — drop-shadow follows the image's own alpha silhouette
+// rather than a flat rectangle, so it reads as the icon floating rather
+// than sitting in a colored tile. Static at rest; only scales up on
+// hover of the parent card (group/hubcard), never on its own. ──────────────
+function HubIconChip({ hubId, accent, size = 64 }: { hubId: HubId; accent: string; size?: number }) {
   return (
     <div
-      className="shrink-0 rounded-2xl flex items-center justify-center"
-      style={{
-        width: size,
-        height: size,
-        backgroundColor: `${accent}15`,
-        color: accent,
-        boxShadow: `0 10px 20px -8px ${accent}70`,
-      }}
+      className="shrink-0 flex items-center justify-center transition-transform duration-300 ease-out group-hover/hubcard:scale-110"
+      style={{ width: size, height: size }}
     >
-      <HubIcon id={hubId} size={iconSize} color={accent} />
+      <Image
+        src={HUB_ICON_SRC[hubId]}
+        alt=""
+        aria-hidden="true"
+        width={size}
+        height={size}
+        loading="lazy"
+        className="w-full h-full object-contain select-none"
+        style={{ filter: `drop-shadow(0 10px 14px ${accent}60)` }}
+        draggable={false}
+      />
     </div>
   )
 }
@@ -118,6 +166,7 @@ function HubIconChip({ hubId, accent, size = 64, iconSize = 32 }: { hubId: HubId
 // only the "Explore" button does. The card still reacts to touch with a
 // purely visual press/scale effect (via pointer events) so it doesn't feel
 // dead, but tapping empty card space does nothing except that visual dip.
+// That same press state also drives the "Explore" underline animation.
 function MobileHubCard({
   hub, hubId, accent, iconRight, onOpen,
 }: {
@@ -140,7 +189,7 @@ function MobileHubCard({
         pressed && "scale-[0.97]"
       )}
     >
-      <HubIconChip hubId={hubId} accent={accent} size={64} iconSize={30} />
+      <HubIconChip hubId={hubId} accent={accent} size={64} />
 
       <div className={cn("flex-1 min-w-0", iconRight ? "text-left" : "text-right")}>
         <h3 className="font-sans font-black text-[0.98rem] text-zinc-900 dark:text-zinc-50 leading-tight mb-1">
@@ -154,7 +203,13 @@ function MobileHubCard({
             onClick={(e) => { e.stopPropagation(); onOpen() }}
             aria-label={`Open ${hub.title}`}
           >
-            <HubCta label="Explore" accent={accent} pointsRight={iconRight} />
+            <HubCta
+              label="Explore"
+              accent={accent}
+              showArrow={false}
+              alwaysColored
+              forceUnderline={pressed}
+            />
           </button>
         </div>
       </div>
@@ -272,13 +327,10 @@ export function ServicesPage() {
           <NoticeNotification />
         </ScrollBounce>
 
-        {/* ── DESKTOP cards — images replaced with icon chips. Icon/text
-            side alternates per card (index % 2) so cards read as "vice
-            versa" of one another rather than all identical. Only "View
-            more" navigates; the card itself no longer scales/transforms
-            on hover (that was the source of the blurry-on-zoom text/icon
-            issue) — hover only drives the CTA's color + underline via
-            group-hover/hubcard. ── */}
+        {/* ── DESKTOP cards — icon/text side alternates per card (index % 2)
+            so cards read as "vice versa" of one another. Arrow direction
+            no longer follows that alternation — every "View more" arrow
+            points the same way regardless of card layout. ── */}
         <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-5 gap-5 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub    = HUBS[hubId]
@@ -319,22 +371,21 @@ export function ServicesPage() {
                         onClick={() => handleOpenHub(hubId, iconOnRight ? "right" : "left")}
                         aria-label={`Open ${hub.title}`}
                       >
-                        <HubCta label="View more" accent={accent} pointsRight={iconOnRight} />
+                        <HubCta label="View more" accent={accent} />
                       </button>
                     </div>
                   </div>
 
-                  <HubIconChip hubId={hubId} accent={accent} size={64} iconSize={32} />
+                  <HubIconChip hubId={hubId} accent={accent} size={64} />
                 </div>
               </ScrollBounce>
             )
           })}
         </div>
 
-        {/* ── MOBILE cards — same icon-chip treatment, alternating side.
-            Card itself no longer navigates; only "Explore" does (see
-            MobileHubCard). The card still gives touch feedback via a
-            press/scale effect, purely visual. ── */}
+        {/* ── MOBILE cards — same icon treatment, alternating side. Card
+            itself no longer navigates; only "Explore" does (see
+            MobileHubCard). ── */}
         <div className="flex md:hidden flex-col gap-6 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub    = HUBS[hubId]
@@ -390,4 +441,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-      } 
+}
