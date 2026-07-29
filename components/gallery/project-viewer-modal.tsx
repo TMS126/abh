@@ -26,13 +26,14 @@ function useIsMobile() {
   return isMobile
 }
 
-function ProjectHeader({ project, hasBA, accent, shrink = 0 }: {
+function ProjectHeader({
+  project, hasBA, accent, shrink = 0, isMobile, hasSiblings, onPrev, onNext, positionLabel,
+}: {
   project: ProjectData; hasBA: boolean; accent: string; shrink?: number
+  isMobile: boolean; hasSiblings: boolean; onPrev: () => void; onNext: () => void; positionLabel?: string
 }) {
-  // shrink is 0 on desktop (always) and 0→1 on mobile as the details body
-  // is scrolled, freeing up vertical space for content instead of a
-  // fixed-size title eating into it permanently.
   const titleStyle = shrink > 0 ? { fontSize: `${1.5 - shrink * 0.45}rem` } : undefined
+  const showArrows = isMobile && hasSiblings
 
   return (
     <div style={{ marginBottom: shrink > 0 ? `${1.5 - shrink * 0.9}rem` : "1.5rem" }}>
@@ -42,12 +43,40 @@ function ProjectHeader({ project, hasBA, accent, shrink = 0 }: {
       {hasBA && (
         <span className="ml-2 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ backgroundColor: `${accent}20`, color: accent }}>Before &amp; After</span>
       )}
-      <h2
-        className="font-sans font-black text-2xl md:text-3xl text-zinc-900 dark:text-zinc-50 leading-[1.1] mt-2 transition-[font-size] duration-100"
-        style={titleStyle}
-      >
-        {project.title}
-      </h2>
+
+      <div className="flex items-center gap-2 mt-2">
+        {showArrows && (
+          <button
+            onClick={onPrev}
+            aria-label="Previous project"
+            className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+            style={{ backgroundColor: `${accent}15`, color: accent }}
+          >
+            <CaretLeft size={16} weight="bold" />
+          </button>
+        )}
+        <h2
+          className="flex-1 min-w-0 font-sans font-black text-2xl md:text-3xl text-zinc-900 dark:text-zinc-50 leading-[1.1] transition-[font-size] duration-100"
+          style={titleStyle}
+        >
+          {project.title}
+        </h2>
+        {showArrows && (
+          <button
+            onClick={onNext}
+            aria-label="Next project"
+            className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+            style={{ backgroundColor: `${accent}15`, color: accent }}
+          >
+            <CaretRight size={16} weight="bold" />
+          </button>
+        )}
+      </div>
+
+      {showArrows && positionLabel && (
+        <p className="text-[0.68rem] font-bold text-zinc-400 dark:text-zinc-500 mt-1">{positionLabel}</p>
+      )}
+
       {project.clientType && (
         <p className={cn("text-[0.72rem] italic mt-2", project.clientType === "sample" ? "text-brand-orange" : "text-zinc-400 dark:text-zinc-500")}>
           {project.clientType === "practice" && "Practice design — portfolio project, not a real client"}
@@ -62,7 +91,7 @@ function ProjectHeader({ project, hasBA, accent, shrink = 0 }: {
 function ProjectImageSection({
   project, accent, activeImg, setActiveImg, comparing, setComparing, onZoom, hasBA, beforeImg, afterImg, allImages,
   hasSiblings, onPrevProject, onNextProject, siblingPosition, liked, onToggleLike, shareUrl,
-  isMobile, scrollProgress,
+  isMobile, scrollProgress, onClose,
 }: {
   project: ProjectData; accent: string
   activeImg: number; setActiveImg: (i: number) => void
@@ -73,7 +102,7 @@ function ProjectImageSection({
   hasSiblings: boolean; onPrevProject: () => void; onNextProject: () => void
   siblingPosition?: string
   liked: boolean; onToggleLike: () => void; shareUrl: string
-  isMobile: boolean; scrollProgress: number
+  isMobile: boolean; scrollProgress: number; onClose: () => void
 }) {
   const touchStartX = useRef(0)
   const touchStartY = useRef(0)
@@ -132,24 +161,51 @@ function ProjectImageSection({
               <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="(max-width: 768px) 100vw, 55vw" className="relative object-contain transition-opacity duration-300" priority={activeImg === 0} />
             </div>
 
-            {/* X button moved out of this cluster — it now lives on the
-                outer modal wrapper, top-right of the whole dialog, not
-                tied to the image specifically. Only Like + Share remain
-                floating over the image itself. */}
-            <div
-              className="absolute top-3 left-3 z-20 w-9 h-9 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors [&_svg]:text-white"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <LikeButton liked={liked} onToggle={(e) => { e.stopPropagation(); onToggleLike() }} context="header" />
-            </div>
-            <div
-              className="absolute top-3 right-3 z-20 w-9 h-9 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors [&_svg]:text-white"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ShareButton url={shareUrl} title={project.title} />
-            </div>
+            {/* ── Desktop: unchanged — like top-left, share top-right ── */}
+            {!isMobile && (
+              <>
+                <div
+                  className="absolute top-3 left-3 z-20 w-9 h-9 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors [&_svg]:text-white"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <LikeButton liked={liked} onToggle={(e) => { e.stopPropagation(); onToggleLike() }} context="header" />
+                </div>
+                <div
+                  className="absolute top-3 right-3 z-20 w-9 h-9 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors [&_svg]:text-white"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ShareButton url={shareUrl} title={project.title} />
+                </div>
+              </>
+            )}
 
-            {hasSiblings && (
+            {/* ── Mobile: X, Heart, Share stacked vertically, bottom-right of image ── */}
+            {isMobile && (
+              <div className="absolute bottom-3 right-3 z-20 flex flex-col gap-2">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onClose() }}
+                  aria-label="Close"
+                  className="w-9 h-9 rounded-full flex items-center justify-center bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg text-white transition-colors active:scale-90"
+                >
+                  <X size={18} weight="bold" />
+                </button>
+                <div
+                  className="w-9 h-9 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors [&_svg]:text-white"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <LikeButton liked={liked} onToggle={(e) => { e.stopPropagation(); onToggleLike() }} context="header" />
+                </div>
+                <div
+                  className="w-9 h-9 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors [&_svg]:text-white"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ShareButton url={shareUrl} title={project.title} />
+                </div>
+              </div>
+            )}
+
+            {/* ── Desktop keeps its own prev/next-project arrows + position pill on the image; mobile now handles both via the header instead ── */}
+            {!isMobile && hasSiblings && (
               <>
                 <button
                   onClick={(e) => { e.stopPropagation(); onPrevProject() }}
@@ -237,8 +293,6 @@ function ProjectCTAs({ project, onClose, accent, activeImage }: {
       />
       <div className="absolute inset-0 rounded-[14px]" style={{ backgroundColor: `${accent}55`, backdropFilter: "blur(6px)" }} />
 
-      {/* Stacked vertically, each button gets its own row — more breathing
-          room than the old side-by-side grid, plus an icon per button. */}
       <div className="relative flex flex-col gap-2.5">
         <a
           href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(`Hi ${BIZ.name}! I saw "${project.title}" in your gallery and I'd like something similar.`)}`}
@@ -304,9 +358,6 @@ export function ProjectViewerModal({
     setScrollProgress(Math.min(top / SHRINK_SCROLL_DISTANCE, 1))
   }
 
-  // Header/footer shrink only kicks in on mobile — desktop's side-by-side
-  // layout already has plenty of room and shouldn't visually shift as the
-  // details column scrolls.
   const headerFooterShrink = isMobile ? scrollProgress : 0
 
   const currentIdx = project ? siblings.findIndex(p => p.id === project.id) : -1
@@ -343,6 +394,7 @@ export function ProjectViewerModal({
   const afterImg  = (project as any).afterImage  as string | undefined
   const shareUrl  = typeof window !== "undefined" ? `${window.location.origin}${pathname}?project=${project.id}` : `${pathname}?project=${project.id}`
   const siblingPosition = hasSiblings ? `${currentIdx + 1} / ${siblings.length}` : undefined
+  const positionLabel   = hasSiblings ? `Project ${currentIdx + 1} of ${siblings.length}` : undefined
 
   return (
     <div className="fixed inset-0 z-[10200] flex items-end md:items-center justify-center md:p-4 animate-in fade-in duration-300">
@@ -356,16 +408,18 @@ export function ProjectViewerModal({
         "animate-in slide-in-from-bottom-4 md:zoom-in-95 duration-500",
       )}>
 
-        {/* Close button now lives outside the image entirely — top-right
-            of the whole modal, above both the image and details panel
-            regardless of layout column order. */}
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute top-3 right-3 z-40 w-9 h-9 rounded-full flex items-center justify-center bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg text-white transition-colors active:scale-90"
-        >
-          <X size={18} weight="bold" />
-        </button>
+        {/* Desktop-only: X stays top-right of the whole modal. Mobile's X
+            lives in the bottom-right vertical stack over the image instead
+            (see ProjectImageSection), so it isn't duplicated here. */}
+        {!isMobile && (
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="absolute top-3 right-3 z-40 w-9 h-9 rounded-full flex items-center justify-center bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg text-white transition-colors active:scale-90"
+          >
+            <X size={18} weight="bold" />
+          </button>
+        )}
 
         <ProjectImageSection
           project={project}
@@ -388,6 +442,7 @@ export function ProjectViewerModal({
           shareUrl={shareUrl}
           isMobile={isMobile}
           scrollProgress={scrollProgress}
+          onClose={onClose}
         />
 
         <div
@@ -400,7 +455,17 @@ export function ProjectViewerModal({
             className="shrink-0 px-6 md:px-8 relative z-20 bg-white dark:bg-zinc-950 transition-[padding] duration-100"
             style={{ paddingTop: `${1.5 - headerFooterShrink * 0.6}rem` }}
           >
-            <ProjectHeader project={project} accent={accent} hasBA={hasBA} shrink={headerFooterShrink} />
+            <ProjectHeader
+              project={project}
+              accent={accent}
+              hasBA={hasBA}
+              shrink={headerFooterShrink}
+              isMobile={isMobile}
+              hasSiblings={hasSiblings}
+              onPrev={goPrevProject}
+              onNext={goNextProject}
+              positionLabel={positionLabel}
+            />
           </div>
 
           <div className="relative h-0 z-10 pointer-events-none" aria-hidden>
@@ -420,7 +485,7 @@ export function ProjectViewerModal({
             className="flex-1 overflow-y-auto overscroll-contain px-6 md:px-8 pb-6"
           >
             <ProjectDetailsBody project={project} accent={accent} />
-            {hasSiblings && (
+            {hasSiblings && !isMobile && (
               <p className="hidden md:block text-[0.65rem] font-medium text-zinc-400 text-center mt-6">
                 Use ← → to browse other {hubLabelFor(project.hub)} projects
               </p>
@@ -449,4 +514,4 @@ export function ProjectViewerModal({
       )}
     </div>
   )
-    } 
+} 
