@@ -23,13 +23,7 @@ import { HUB_ORDER, HUB_PREVIEWS, NOTICE, trackEvent, SelectedService } from "./
 // Filenames match "doc" hub's actual asset name ("docu-hub"), which
 // differs from its HubId key ("doc") — mapped explicitly below so that
 // mismatch can't silently break the lookup.
-const HUB_ICON_SRC: Record<HubId, string> = {
-  print:    "/print-hub.png",
-  doc:      "/docu-hub.png",
-  design:   "/design-hub.png",
-  eservice: "/eservice-hub.png",
-  tech:     "/tech-hub.png",
-}
+
 
 // ─── Notice pill / expanded notification ───────────────────────────────────
 function NoticeNotification() {
