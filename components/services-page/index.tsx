@@ -15,19 +15,7 @@ import { HubModal } from "./hub-modal"
 import { ServiceDetailModal } from "./service-detail-modal"
 import { HUB_ORDER, HUB_PREVIEWS, NOTICE, trackEvent, SelectedService } from "./lib"
 
-const HUB_IMAGES: Record<HubId, string> = {
-  print:    "/1_PRINT_HUB_white.webp",
-  doc:      "/2_DOCUMENT_HUB_white.webp",
-  design:   "/3_DESIGN_HUB_white.webp",
-  eservice: "/4_APPLICATIONS_HUB_white.webp",
-  tech:     "/5_TECH_HUB_white.webp",
-}
-
 // ─── Notice pill / expanded notification ───────────────────────────────────
-// Collapsed: a small centered pill labeled "Notice" with a mini icon badge
-// (brand blue) representing the notice type sitting on its top-left corner,
-// like a notification-count badge. Tap to expand into the full message;
-// tap the close button on the expanded card to collapse back to the pill.
 function NoticeNotification() {
   const [expanded, setExpanded] = useState(false)
 
@@ -70,8 +58,7 @@ function NoticeNotification() {
   )
 }
 
-// ─── Closing tagline — no background/border container, just a muted
-// divider beneath the text ──────────────────────────────────────────────
+// ─── Closing tagline ────────────────────────────────────────────────────────
 function ClosingTagline() {
   return (
     <div className="mt-2 mb-4 text-center px-6 py-6">
@@ -84,11 +71,7 @@ function ClosingTagline() {
   )
 }
 
-// ─── Explore/View-more CTA — neutral by default, accent-colored on hover.
-// Triggers off the CARD's hover state (group/hubcard), not its own hover,
-// so hovering anywhere on the card animates it. Arrow always sits right
-// after the word (the "e" end of "more"/"Explore"), rotated 180° when the
-// modal opens from the left. ────────────────────────────────────────────
+// ─── Explore/View-more CTA ──────────────────────────────────────────────────
 function HubCta({ label, accent, pointsRight }: { label: string; accent: string; pointsRight: boolean }) {
   return (
     <span
@@ -104,6 +87,78 @@ function HubCta({ label, accent, pointsRight }: { label: string; accent: string;
       </span>
       <ArrowRight size={12} weight="bold" aria-hidden="true" className={cn(!pointsRight && "rotate-180")} />
     </span>
+  )
+}
+
+// ─── Hub icon chip — shared shape for both desktop and mobile cards, with a
+// tinted box-shadow sitting BELOW it (per "shadows below each icon"). ───────
+function HubIconChip({ hubId, accent, size = 64, iconSize = 32 }: { hubId: HubId; accent: string; size?: number; iconSize?: number }) {
+  return (
+    <div
+      className="shrink-0 rounded-2xl flex items-center justify-center"
+      style={{
+        width: size,
+        height: size,
+        backgroundColor: `${accent}15`,
+        color: accent,
+        boxShadow: `0 10px 20px -8px ${accent}70`,
+      }}
+    >
+      <HubIcon id={hubId} size={iconSize} color={accent} />
+    </div>
+  )
+}
+
+// ─── Mobile hub card ─────────────────────────────────────────────────────────
+// Split into its own component (rather than inlined in the .map below)
+// because it needs its own useState for touch/press feedback — hooks can't
+// be called from inside an array .map callback.
+//
+// Per request: on mobile the CARD ITSELF no longer navigates anywhere —
+// only the "Explore" button does. The card still reacts to touch with a
+// purely visual press/scale effect (via pointer events) so it doesn't feel
+// dead, but tapping empty card space does nothing except that visual dip.
+function MobileHubCard({
+  hub, hubId, accent, iconRight, onOpen,
+}: {
+  hub: (typeof HUBS)[HubId]; hubId: HubId; accent: string; iconRight: boolean; onOpen: () => void
+}) {
+  const [pressed, setPressed] = useState(false)
+  const press = {
+    onPointerDown: () => setPressed(true),
+    onPointerUp: () => setPressed(false),
+    onPointerLeave: () => setPressed(false),
+    onPointerCancel: () => setPressed(false),
+  }
+
+  return (
+    <div
+      {...press}
+      className={cn(
+        "group/hubcard flex items-center gap-5 w-full p-4 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 abh-shadow-card transition-transform duration-150 ease-out",
+        iconRight ? "flex-row" : "flex-row-reverse",
+        pressed && "scale-[0.97]"
+      )}
+    >
+      <HubIconChip hubId={hubId} accent={accent} size={64} iconSize={30} />
+
+      <div className={cn("flex-1 min-w-0", iconRight ? "text-left" : "text-right")}>
+        <h3 className="font-sans font-black text-[0.98rem] text-zinc-900 dark:text-zinc-50 leading-tight mb-1">
+          {hub.title}
+        </h3>
+        <p className="abh-body text-[0.76rem] line-clamp-2 leading-snug mb-2">
+          {hub.desc}
+        </p>
+        <div className={cn("inline-flex", !iconRight && "flex-row-reverse")}>
+          <button
+            onClick={(e) => { e.stopPropagation(); onOpen() }}
+            aria-label={`Open ${hub.title}`}
+          >
+            <HubCta label="Explore" accent={accent} pointsRight={iconRight} />
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -217,31 +272,29 @@ export function ServicesPage() {
           <NoticeNotification />
         </ScrollBounce>
 
-        {/* ── DESKTOP cards — only "View more" navigates; hovering
-            anywhere on the card still animates the CTA (group/hubcard).
-            No border-color hover, no whole-card click. transform-gpu +
-            backface-hidden on the scaling elements avoids the blurry
-            text/image that plain CSS scale can cause on hover. ── */}
+        {/* ── DESKTOP cards — images replaced with icon chips. Icon/text
+            side alternates per card (index % 2) so cards read as "vice
+            versa" of one another rather than all identical. Only "View
+            more" navigates; the card itself no longer scales/transforms
+            on hover (that was the source of the blurry-on-zoom text/icon
+            issue) — hover only drives the CTA's color + underline via
+            group-hover/hubcard. ── */}
         <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-5 gap-5 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub    = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
             const accent = isDark ? colors.accentDark : colors.accentLight
+            const iconOnRight = index % 2 === 0
 
             return (
               <ScrollBounce key={hubId} delay={index * 0.06}>
                 <div
-                  className="group/hubcard relative flex flex-col w-full text-left rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-300 ease-out hover:z-20 hover:scale-[1.03] transform-gpu [backface-visibility:hidden]"
+                  className={cn(
+                    "group/hubcard relative flex w-full items-center rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 abh-shadow-card p-5 gap-6",
+                    iconOnRight ? "flex-row" : "flex-row-reverse"
+                  )}
                 >
-                  <div className="relative w-full aspect-[4/3] overflow-hidden bg-zinc-100 dark:bg-zinc-900">
-                    <img
-                      src={HUB_IMAGES[hubId]}
-                      alt={`${hub.title} example`}
-                      className="w-full h-full object-cover grayscale contrast-125 brightness-105 transition-all duration-500 group-hover/hubcard:grayscale-0 group-hover/hubcard:contrast-100 group-hover/hubcard:brightness-100 group-hover/hubcard:scale-105 transform-gpu [backface-visibility:hidden]"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2 p-4">
+                  <div className="flex-1 min-w-0 flex flex-col gap-2">
                     <h3
                       className="font-sans font-black text-[0.95rem] leading-tight transition-colors"
                       style={{ color: accent }}
@@ -263,61 +316,41 @@ export function ServicesPage() {
 
                     <div className="mt-2">
                       <button
-                        onClick={() => handleOpenHub(hubId, "right")}
+                        onClick={() => handleOpenHub(hubId, iconOnRight ? "right" : "left")}
                         aria-label={`Open ${hub.title}`}
                       >
-                        <HubCta label="View more" accent={accent} pointsRight={true} />
+                        <HubCta label="View more" accent={accent} pointsRight={iconOnRight} />
                       </button>
                     </div>
                   </div>
+
+                  <HubIconChip hubId={hubId} accent={accent} size={64} iconSize={32} />
                 </div>
               </ScrollBounce>
             )
           })}
         </div>
 
-        {/* ── MOBILE cards — whole card still opens the modal (exception
-            kept for mobile per request). ── */}
+        {/* ── MOBILE cards — same icon-chip treatment, alternating side.
+            Card itself no longer navigates; only "Explore" does (see
+            MobileHubCard). The card still gives touch feedback via a
+            press/scale effect, purely visual. ── */}
         <div className="flex md:hidden flex-col gap-6 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
-            const hub        = HUBS[hubId]
-            const colors     = HUB_COLORS[hubId as HubKey]
-            const accent     = isDark ? colors.accentDark : colors.accentLight
-            const imageRight = index % 2 === 0
+            const hub    = HUBS[hubId]
+            const colors = HUB_COLORS[hubId as HubKey]
+            const accent = isDark ? colors.accentDark : colors.accentLight
+            const iconRight = index % 2 === 0
 
             return (
               <ScrollBounce key={hubId} delay={index * 0.08}>
-                <button
-                  onClick={() => handleOpenHub(hubId, imageRight ? "right" : "left")}
-                  aria-label={`Open ${hub.title}`}
-                  className={cn(
-                    "group/hubcard flex items-center gap-4 w-full p-4 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 abh-shadow-card text-left transition-all duration-200 active:scale-[0.99]",
-                    imageRight ? "flex-row" : "flex-row-reverse"
-                  )}
-                >
-                  <div
-                    className="relative w-24 h-24 shrink-0 overflow-hidden rounded-[14px] border-2"
-                    style={{ borderColor: `${accent}30` }}
-                  >
-                    <img
-                      src={HUB_IMAGES[hubId]}
-                      alt={`${hub.title} example`}
-                      className="w-full h-full object-cover grayscale contrast-125 brightness-105 transition-all duration-500 group-hover/hubcard:grayscale-0 group-hover/hubcard:contrast-100 group-hover/hubcard:brightness-100 transform-gpu [backface-visibility:hidden]"
-                    />
-                  </div>
-
-                  <div className={cn("flex-1 min-w-0", imageRight ? "text-left" : "text-right")}>
-                    <h3 className="font-sans font-black text-[0.98rem] text-zinc-900 dark:text-zinc-50 leading-tight mb-1">
-                      {hub.title}
-                    </h3>
-                    <p className="abh-body text-[0.76rem] line-clamp-2 leading-snug mb-2">
-                      {hub.desc}
-                    </p>
-                    <div className={cn("inline-flex", !imageRight && "flex-row-reverse")}>
-                      <HubCta label="Explore" accent={accent} pointsRight={imageRight} />
-                    </div>
-                  </div>
-                </button>
+                <MobileHubCard
+                  hub={hub}
+                  hubId={hubId}
+                  accent={accent}
+                  iconRight={iconRight}
+                  onOpen={() => handleOpenHub(hubId, iconRight ? "right" : "left")}
+                />
               </ScrollBounce>
             )
           })}
@@ -357,4 +390,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-}
+      } 
