@@ -10,7 +10,7 @@ import { HUBS, HubId, HUB_DISCLAIMERS } from "@/lib/data"
 import { HubIcon, useFocusTrap, DragHandle, shouldDismissOnDrag } from "./shared"
 import { getTurnaround, SelectedService } from "./lib"
 
-export function HubModal({ hubId, originSide = "right", onClose, onSelectService }: {
+export function HubModal({ hubId, onClose, onSelectService }: {
   hubId: HubId | null
   originSide?: "left" | "right"
   onClose: () => void
@@ -36,11 +36,6 @@ export function HubModal({ hubId, originSide = "right", onClose, onSelectService
   const activeSection     = openSectionIdx !== null ? hub.sections[openSectionIdx] : null
   const activeSectionDesc = activeSection?.desc
 
-  // Enters from whichever side the triggering card's arrow pointed to —
-  // "120%" (not 100%) guarantees it starts fully off-screen regardless of
-  // the modal's own width at the moment the animation begins.
-  const offscreenX = originSide === "left" ? "-120%" : "120%"
-
   return (
     <div className="fixed inset-0 z-[10100] flex items-center justify-center p-3 md:p-4">
       <motion.div
@@ -59,11 +54,11 @@ export function HubModal({ hubId, originSide = "right", onClose, onSelectService
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={{ top: 0, bottom: 0.6 }}
         onDragEnd={(_e, info) => { if (shouldDismissOnDrag(info)) onClose() }}
-        initial={{ x: offscreenX, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        exit={{ x: offscreenX, opacity: 0 }}
+        initial={{ scale: 0.92, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.96, opacity: 0 }}
         transition={{ type: "tween", duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
-        className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[20px] cursor-grab active:cursor-grabbing"
+        className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px] cursor-grab active:cursor-grabbing"
         style={{ boxShadow: `0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4), 0 10px 24px -8px ${accent}50` }}
       >
         <DragHandle />
@@ -129,7 +124,7 @@ export function HubModal({ hubId, originSide = "right", onClose, onSelectService
           {activeSectionDesc && (
             <div
               key={openSectionIdx}
-              className="mb-5 rounded-[12px] p-4 border animate-in fade-in slide-in-from-top-1 duration-200"
+              className="mb-5 rounded-[14px] p-4 border animate-in fade-in slide-in-from-top-1 duration-200"
               style={{ borderColor: `${accent}25`, backgroundColor: `${accent}08`, boxShadow: `0 8px 22px -6px ${accent}45, 0 3px 10px -2px rgba(0,0,0,0.2)` }}
             >
               <p className="text-[0.82rem] leading-relaxed text-zinc-600 dark:text-zinc-300">{activeSectionDesc}</p>
