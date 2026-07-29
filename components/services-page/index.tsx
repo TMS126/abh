@@ -16,21 +16,6 @@ import { HubModal } from "./hub-modal"
 import { ServiceDetailModal } from "./service-detail-modal"
 import { HUB_ORDER, HUB_PREVIEWS, NOTICE, trackEvent, SelectedService } from "./lib"
 
-// ─── Hub icon assets — replaces the flat Phosphor icons with the
-// custom-illustrated per-hub images. .webp referenced specifically (the
-// PNG originals run 400-500KB each; the .webp exports are ~25-30KB —
-// roughly 15-20x smaller — so webp is the clear choice for load speed).
-// Filenames match "doc" hub's actual asset name ("docu-hub"), which
-// differs from its HubId key ("doc") — mapped explicitly below so that
-// mismatch can't silently break the lookup.
-const HUB_ICON_SRC: Record<HubId, string> = {
-  print:    "/print-hub.webp",
-  doc:      "/docu-hub.webp",
-  design:   "/design-hub.webp",
-  eservice: "/eservice-hub.webp",
-  tech:     "/tech-hub.webp",
-}
-
 // ─── Notice pill / expanded notification ───────────────────────────────────
 function NoticeNotification() {
   const [expanded, setExpanded] = useState(false)
@@ -129,34 +114,6 @@ function HubCta({
   )
 }
 
-// ─── Hub icon — custom illustration, no background chip, no color tint
-// (the source images already carry their own color). A soft accent-tinted
-// drop-shadow beneath gives the "light hub-color shadow" without boxing
-// the icon in — drop-shadow follows the image's own alpha silhouette
-// rather than a flat rectangle, so it reads as the icon floating rather
-// than sitting in a colored tile. Static at rest; only scales up on
-// hover of the parent card (group/hubcard), never on its own. ──────────────
-function HubIconChip({ hubId, accent, size = 64 }: { hubId: HubId; accent: string; size?: number }) {
-  return (
-    <div
-      className="shrink-0 flex items-center justify-center transition-transform duration-300 ease-out group-hover/hubcard:scale-110"
-      style={{ width: size, height: size }}
-    >
-      <Image
-        src={HUB_ICON_SRC[hubId]}
-        alt=""
-        aria-hidden="true"
-        width={size}
-        height={size}
-        loading="lazy"
-        className="w-full h-full object-contain select-none"
-        style={{ filter: `drop-shadow(0 10px 14px ${accent}60)` }}
-        draggable={false}
-      />
-    </div>
-  )
-}
-
 // ─── Mobile hub card ─────────────────────────────────────────────────────────
 // Split into its own component (rather than inlined in the .map below)
 // because it needs its own useState for touch/press feedback — hooks can't
@@ -189,8 +146,6 @@ function MobileHubCard({
         pressed && "scale-[0.97]"
       )}
     >
-      <HubIconChip hubId={hubId} accent={accent} size={64} />
-
       <div className={cn("flex-1 min-w-0", iconRight ? "text-left" : "text-right")}>
         <h3 className="font-sans font-black text-[0.98rem] text-zinc-900 dark:text-zinc-50 leading-tight mb-1">
           {hub.title}
@@ -346,7 +301,7 @@ export function ServicesPage() {
                     iconOnRight ? "flex-row" : "flex-row-reverse"
                   )}
                 >
-                  <div className="flex-1 min-w-0 flex flex-col gap-2">
+                  <div className={cn("flex-1 min-w-0", iconOnRight ? "text-left" : "text-right")}>
                     <h3
                       className="font-sans font-black text-[0.95rem] leading-tight transition-colors"
                       style={{ color: accent }}
@@ -375,8 +330,6 @@ export function ServicesPage() {
                       </button>
                     </div>
                   </div>
-
-                  <HubIconChip hubId={hubId} accent={accent} size={64} />
                 </div>
               </ScrollBounce>
             )
@@ -441,4 +394,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-}
+} 
