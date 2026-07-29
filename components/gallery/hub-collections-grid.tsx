@@ -1,99 +1,194 @@
 "use client"
 
-import { useState } from "react"
-import { Image as ImageIcon } from "@phosphor-icons/react"
+import { useEffect, useRef, useState } from "react"
+import { usePathname } from "next/navigation"
+import { ArrowsLeftRight, Image as ImageIcon } from "@phosphor-icons/react"
 import { HUB_COLORS, type HubKey } from "@/lib/brand"
-import { HUBS, PROJECTS, type HubId } from "@/lib/data"
+import { HUBS, PROJECTS, type HubId, type ProjectData } from "@/lib/data"
 import { SafeImage } from "./safe-image"
+import { LikeButton, ShareButton } from "./like-share-buttons"
 
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 const VISIBLE_COUNT = 3
 
+function HubCollectionCard({
+  hubId, projects, accent, isDark, likedIds, onToggleLike, onOpenProject, onSelectHub,
+}: {
+  hubId: HubId
+  projects: ProjectData[]
+  accent: string
+  isDark: boolean
+  likedIds: Set<string>
+  onToggleLike: (id: string) => void
+  onOpenProject: (p: ProjectData) => void
+  onSelectHub: (id: HubId) => void
+}) {
+  const pathname = usePathname()
+  const [projectIdx, setProjectIdx] = useState(0)
+  const [order, setOrder] = useState<number[]>([0, 1, 2])
+  const touchStartX = useRef(0)
+  const touchStartY = useRef(0)
+  const didSwipe = useRef(false)
+
+  const project = projects[projectIdx]
+  const images = project.images?.length ? project.images : [project.image]
+
+  // Reset which image is "big" whenever the active project changes —
+  // otherwise a swap from a previous project could point at an
+  // out-of-range index on a project with fewer images.
+  useEffect(() => {
+    setOrder([0, 1, 2].filter(i => i < images.length))
+  }, [project.id])
+
+  const bigIdx = order[0] ?? 0
+  const thumbIdxs = order.slice(1, 3)
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+    didSwipe.current = false
+  }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (projects.length < 2) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current)
+    if (Math.abs(dx) < 40 || dy > Math.abs(dx)) return
+    didSwipe.current = true
+    setProjectIdx(prev => dx < 0 ? (prev + 1) % projects.length : (prev - 1 + projects.length) % projects.length)
+  }
+  const handleImageClick = () => {
+    if (didSwipe.current) { didSwipe.current = false; return }
+    onOpenProject(project)
+  }
+
+  const swapThumb = (posInOrder: number) => {
+    setOrder(prev => {
+      const next = [...prev]
+      ;[next[0], next[posInOrder]] = [next[posInOrder], next[0]]
+      return next
+    })
+  }
+
+  const shareUrl = typeof window !== "undefined" ? `${window.location.origin}${pathname}?project=${project.id}` : `${pathname}?project=${project.id}`
+
+  return (
+    <div className="rounded-[20px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
+
+      {/* ── Big image — click opens the project modal, swipe changes project ── */}
+      <div
+        className="relative aspect-[4/3] cursor-pointer group"
+        onClick={handleImageClick}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
+        <SafeImage
+          src={images[bigIdx]}
+          alt={project.title}
+          accent={accent}
+          fill
+          sizes="(max-width: 1024px) 33vw, 400px"
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.35) 30%, rgba(0,0,0,0) 60%)" }}
+        />
+
+        {/* Swipe hint — acrylic pill, top of image, only if there's more than one project to swipe to */}
+        {projects.length > 1 && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/25 text-white text-[0.65rem] font-bold">
+            <ArrowsLeftRight size={12} weight="bold" aria-hidden="true" />
+            Swipe for more {HUBS[hubId].title} projects
+          </div>
+        )}
+
+        {/* Heart — title (center) — share */}
+        <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 z-10">
+          <div
+            className="w-8 h-8 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors shrink-0 [&_svg]:text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <LikeButton liked={likedIds.has(project.id)} onToggle={(e) => { e.stopPropagation(); onToggleLike(project.id) }} context="card" />
+          </div>
+          <p className="flex-1 min-w-0 text-center text-white text-sm font-black truncate px-1">
+            {project.title}
+          </p>
+          <div
+            className="w-8 h-8 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors shrink-0 [&_svg]:text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ShareButton url={shareUrl} title={project.title} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Two square thumbnails from THIS project — click to swap into big spot ── */}
+      {thumbIdxs.length > 0 && (
+        <div className="grid grid-cols-2 gap-2 p-3">
+          {thumbIdxs.map((imgIdx, posOffset) => (
+            <button
+              key={imgIdx}
+              onClick={() => swapThumb(posOffset + 1)}
+              aria-label={`View this image large`}
+              className="relative aspect-square rounded-[10px] overflow-hidden"
+            >
+              <SafeImage src={images[imgIdx]} alt={`${project.title} detail`} accent={accent} fill sizes="150px" className="object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ── Footer — hub name + project count, click filters to this hub ── */}
+      <button
+        onClick={() => onSelectHub(hubId)}
+        className="w-full flex items-center justify-between px-4 pb-4 pt-1 text-left"
+      >
+        <h3 className="font-sans font-black text-lg text-zinc-900 dark:text-zinc-50">{HUBS[hubId].title}</h3>
+        <span className="flex items-center gap-1 text-xs font-semibold text-zinc-400 dark:text-zinc-500">
+          <ImageIcon size={14} weight="fill" aria-hidden="true" />
+          {projects.length}
+        </span>
+      </button>
+    </div>
+  )
+}
+
 export function HubCollectionsGrid({
-  isDark, onSelectHub,
+  isDark, onSelectHub, likedIds, onToggleLike, onOpenProject,
 }: {
   isDark: boolean
   onSelectHub: (hubId: HubId) => void
+  likedIds: Set<string>
+  onToggleLike: (id: string) => void
+  onOpenProject: (p: ProjectData) => void
 }) {
   const [expanded, setExpanded] = useState(false)
 
-  const hubCards = HUB_ORDER.map(hubId => {
+  const hubEntries = HUB_ORDER.map(hubId => {
     const hubProjects = PROJECTS.filter(p => p.hub === hubId)
     if (hubProjects.length === 0) return null
-
     const accent = isDark ? HUB_COLORS[hubId as HubKey].accentDark : HUB_COLORS[hubId as HubKey].accentLight
-    const mainImage = hubProjects[0].image
-
-    const seen = new Set([mainImage])
-    const thumbnails: string[] = []
-    for (const p of hubProjects) {
-      const imgs = p.images?.length ? p.images : [p.image]
-      for (const img of imgs) {
-        if (!seen.has(img)) { seen.add(img); thumbnails.push(img) }
-        if (thumbnails.length >= 3) break
-      }
-      if (thumbnails.length >= 3) break
-    }
-
-    return {
-      hubId,
-      title: HUBS[hubId].title,
-      count: hubProjects.length,
-      mainImage,
-      thumbnails,
-      accent,
-    }
+    return { hubId, projects: hubProjects, accent }
   }).filter((h): h is NonNullable<typeof h> => h !== null)
 
-  const visible   = expanded ? hubCards : hubCards.slice(0, VISIBLE_COUNT)
-  const remaining = hubCards.length - VISIBLE_COUNT
+  const visible   = expanded ? hubEntries : hubEntries.slice(0, VISIBLE_COUNT)
+  const remaining = hubEntries.length - VISIBLE_COUNT
 
   return (
     <div className="hidden md:block">
       <div className="grid grid-cols-3 gap-6">
-        {visible.map(hub => (
-          <button
-            key={hub.hubId}
-            onClick={() => onSelectHub(hub.hubId)}
-            aria-label={`View ${hub.title} projects`}
-            className="text-left rounded-[20px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-sm hover:shadow-lg transition-all duration-300 p-3 group"
-          >
-            <div className="relative aspect-[4/3] rounded-[14px] overflow-hidden mb-3">
-              <SafeImage
-                src={hub.mainImage}
-                alt={hub.title}
-                accent={hub.accent}
-                fill
-                sizes="(max-width: 1024px) 33vw, 400px"
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-            </div>
-
-            {hub.thumbnails.length > 0 && (
-              <div className="grid grid-cols-3 gap-2 mb-3">
-                {hub.thumbnails.map((thumb, i) => (
-                  <div key={i} className="relative aspect-square rounded-[10px] overflow-hidden">
-                    <SafeImage
-                      src={thumb}
-                      alt={`${hub.title} example ${i + 1}`}
-                      accent={hub.accent}
-                      fill
-                      sizes="120px"
-                      className="object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="flex items-center justify-between px-1 pb-1">
-              <h3 className="font-sans font-black text-lg text-zinc-900 dark:text-zinc-50">{hub.title}</h3>
-              <span className="flex items-center gap-1 text-xs font-semibold text-zinc-400 dark:text-zinc-500">
-                <ImageIcon size={14} weight="fill" aria-hidden="true" />
-                {hub.count}
-              </span>
-            </div>
-          </button>
+        {visible.map(h => (
+          <HubCollectionCard
+            key={h.hubId}
+            hubId={h.hubId}
+            projects={h.projects}
+            accent={h.accent}
+            isDark={isDark}
+            likedIds={likedIds}
+            onToggleLike={onToggleLike}
+            onOpenProject={onOpenProject}
+            onSelectHub={onSelectHub}
+          />
         ))}
       </div>
 
