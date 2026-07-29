@@ -13,7 +13,7 @@ import { useModalBackStack, HubIcon } from "./shared"
 import { InlineSearchBar } from "./search-bar"
 import { HubModal } from "./hub-modal"
 import { ServiceDetailModal } from "./service-detail-modal"
-import { HUB_ORDER, HUB_PREVIEWS, NOTICE, trackEvent, SelectedService, getContrastText } from "./lib"
+import { HUB_ORDER, HUB_PREVIEWS, NOTICE, trackEvent, SelectedService } from "./lib"
 
 const HUB_IMAGES: Record<HubId, string> = {
   print:    "/1_PRINT_HUB_white.webp",
@@ -55,6 +55,28 @@ function ClosingTagline() {
   )
 }
 
+// ─── Explore/View-more CTA — plain text, arrow always facing the direction
+// the modal will slide in from, underline grows from the OPPOSITE side to
+// meet the arrow, linear timing. ────────────────────────────────────────────
+function HubCta({ label, accent, pointsRight }: { label: string; accent: string; pointsRight: boolean }) {
+  return (
+    <span className="group/cta relative inline-flex items-center gap-1 text-[0.78rem] font-black" style={{ color: accent }}>
+      <span className="relative">
+        {label}
+        <span
+          aria-hidden="true"
+          className={cn(
+            "absolute bottom-[-2px] h-[2px] w-0 transition-[width] duration-300 ease-linear group-hover/cta:w-full",
+            pointsRight ? "left-0" : "right-0"
+          )}
+          style={{ backgroundColor: accent }}
+        />
+      </span>
+      <ArrowRight size={12} weight="bold" aria-hidden="true" className={cn(!pointsRight && "rotate-180")} />
+    </span>
+  )
+}
+
 // ─── Services Page ────────────────────────────────────────────────────────────
 export function ServicesPage() {
   const { resolvedTheme } = useTheme()
@@ -64,26 +86,9 @@ export function ServicesPage() {
   const consumedHubParam = useRef<string | null>(null)
 
   const [activeHub,       setActiveHub]       = useState<HubId | null>(null)
+  const [hubOriginSide,   setHubOriginSide]   = useState<"left" | "right">("right")
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
   const [showBackToTop,   setShowBackToTop]   = useState(false)
-  const [hoveredMainHub,  setHoveredMainHub]  = useState<HubId | null>(null)
-
-  // Desktop "View more" flip (unchanged from before)
-  const [spinningHub,     setSpinningHub]     = useState<HubId | null>(null)
-  const spinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // Mobile: tapping the card body (anywhere except Explore) just toggles a
-  // "pressed" highlight — standing in for :hover on a device that has none.
-  // It does NOT open anything. Only the Explore button opens the modal.
-  const [tappedHub, setTappedHub] = useState<HubId | null>(null)
-
-  // Mobile: pressing Explore slides the whole page content out — left if
-  // the card's image was on the right, right if the image was on the left —
-  // and only opens the modal once that slide finishes. While ANY modal is
-  // open (desktop or mobile), the page content is fully hidden (opacity-0 +
-  // pointer-events-none), not just covered by the modal's own backdrop.
-  const [exitDir, setExitDir] = useState<"left" | "right" | null>(null)
-  const slideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const isModalOpen = !!(activeHub || selectedService)
 
@@ -96,44 +101,14 @@ export function ServicesPage() {
     setSelectedService(svc)
   }
 
-  const handleOpenHub = (hubId: HubId) => {
+  // originSide drives which side the modal slides in from — matches the
+  // direction that hub's CTA arrow points, so the modal appears to emerge
+  // from exactly where the user's eye was just guided.
+  const handleOpenHub = (hubId: HubId, originSide: "left" | "right") => {
     trackEvent("view_hub", { hub_id: hubId, hub_name: HUBS[hubId].title })
+    setHubOriginSide(originSide)
     setActiveHub(hubId)
   }
-
-  const handleViewMoreClick = (e: React.MouseEvent, hubId: HubId) => {
-    e.stopPropagation()
-    if (spinTimeoutRef.current) clearTimeout(spinTimeoutRef.current)
-    setSpinningHub(hubId)
-    spinTimeoutRef.current = setTimeout(() => {
-      handleOpenHub(hubId)
-      setSpinningHub(null)
-      spinTimeoutRef.current = null
-    }, 420)
-  }
-
-  const handleMobileExploreClick = (e: React.MouseEvent, hubId: HubId, imageRight: boolean) => {
-    e.stopPropagation()
-    const dir = imageRight ? "left" : "right"
-    if (slideTimeoutRef.current) clearTimeout(slideTimeoutRef.current)
-    setExitDir(dir)
-    slideTimeoutRef.current = setTimeout(() => {
-      handleOpenHub(hubId)
-      setExitDir(null)
-      slideTimeoutRef.current = null
-    }, 300)
-  }
-
-  const handleCardBodyTap = (hubId: HubId) => {
-    setTappedHub(prev => (prev === hubId ? null : hubId))
-  }
-
-  useEffect(() => {
-    return () => {
-      if (spinTimeoutRef.current) clearTimeout(spinTimeoutRef.current)
-      if (slideTimeoutRef.current) clearTimeout(slideTimeoutRef.current)
-    }
-  }, [])
 
   // Back-to-top visibility
   useEffect(() => {
@@ -157,7 +132,7 @@ export function ServicesPage() {
     const hubParam = searchParams.get("hub")
     if (hubParam && HUB_ORDER.includes(hubParam as HubId) && consumedHubParam.current !== hubParam) {
       consumedHubParam.current = hubParam
-      setActiveHub(hubParam as HubId)
+      handleOpenHub(hubParam as HubId, "right")
       router.replace("/services", { scroll: false })
     }
   }, [searchParams, router])
@@ -188,23 +163,12 @@ export function ServicesPage() {
 
   return (
     <section className="min-h-screen bg-white dark:bg-[#081428] transition-colors duration-300 pb-24 overflow-x-hidden">
-      <style>{`
-        @keyframes abh-card-spin {
-          from { transform: rotateY(0deg) scale(1); }
-          50%  { transform: rotateY(180deg) scale(0.92); }
-          to   { transform: rotateY(360deg) scale(1); }
-        }
-        .abh-card-spin { animation: abh-card-spin 0.42s ease-in-out; }
-      `}</style>
 
-      {/* Page content wrapper — this is what slides out on mobile Explore
-          press, and what goes fully invisible (not just covered) while any
-          modal/submodal is open. */}
+      {/* Page content wrapper — fully hidden (not just covered) while any
+          modal is open. */}
       <div
-        className="max-w-[1248px] mx-auto px-4 md:px-8 flex flex-col items-center"
+        className="max-w-[1248px] mx-auto px-4 md:px-8 flex flex-col items-center transition-opacity duration-200"
         style={{
-          transform: exitDir === "left" ? "translateX(-100%)" : exitDir === "right" ? "translateX(100%)" : "translateX(0)",
-          transition: exitDir ? "transform 300ms cubic-bezier(0.4,0,0.2,1)" : "opacity 200ms ease",
           opacity: isModalOpen ? 0 : 1,
           pointerEvents: isModalOpen ? "none" : "auto",
         }}
@@ -232,41 +196,37 @@ export function ServicesPage() {
           <div className="w-full"><NoticeBanner /></div>
         </ScrollBounce>
 
-        {/* ── DESKTOP cards — unchanged from before ── */}
+        {/* ── DESKTOP cards — whole card opens the modal directly. Arrow
+            always points right (grid has no inherent left/right pairing
+            like the mobile stacked layout), so origin is always "right". ── */}
         <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-5 gap-5 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
-            const hub       = HUBS[hubId]
-            const colors    = HUB_COLORS[hubId as HubKey]
-            const accent    = isDark ? colors.accentDark : colors.accentLight
-            const isHovered = hoveredMainHub === hubId
+            const hub    = HUBS[hubId]
+            const colors = HUB_COLORS[hubId as HubKey]
+            const accent = isDark ? colors.accentDark : colors.accentLight
 
             return (
               <ScrollBounce key={hubId} delay={index * 0.06}>
-                <div
-                  onMouseEnter={() => setHoveredMainHub(hubId)}
-                  onMouseLeave={() => setHoveredMainHub(null)}
-                  className={cn(
-                    "relative flex flex-col rounded-[16px] border-2 bg-white dark:bg-zinc-950 overflow-hidden cursor-default transition-all duration-300 ease-out",
-                    isHovered ? "z-20 scale-[1.06] shadow-2xl" : "z-0 scale-100 abh-shadow-card"
-                  )}
-                  style={{ borderColor: isHovered ? accent : "transparent" }}
+                <button
+                  onClick={() => handleOpenHub(hubId, "right")}
+                  aria-label={`Open ${hub.title}`}
+                  className="group relative flex flex-col w-full text-left rounded-[16px] border-2 border-transparent bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-300 ease-out hover:z-20 hover:scale-[1.06] hover:shadow-2xl"
+                  style={{ ["--hub-accent" as any]: accent }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = accent }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "transparent" }}
                 >
-                  <div className="relative w-full aspect-[4/3] overflow-hidden bg-zinc-100 dark:bg-zinc-900" style={{ perspective: "800px" }}>
+                  <div className="relative w-full aspect-[4/3] overflow-hidden bg-zinc-100 dark:bg-zinc-900">
                     <img
                       src={HUB_IMAGES[hubId]}
                       alt={`${hub.title} example`}
-                      className={cn(
-                        "w-full h-full object-cover transition-transform duration-500",
-                        isHovered && "scale-110",
-                        spinningHub === hubId && "abh-card-spin"
-                      )}
+                      className="w-full h-full object-cover grayscale contrast-125 brightness-105 transition-all duration-500 group-hover:grayscale-0 group-hover:contrast-100 group-hover:brightness-100 group-hover:scale-110"
                     />
                   </div>
 
                   <div className="flex flex-col gap-2 p-4">
                     <h3
                       className="font-sans font-black text-[0.95rem] leading-tight transition-colors"
-                      style={{ color: isHovered ? accent : undefined }}
+                      style={{ color: accent }}
                     >
                       {hub.title}
                     </h3>
@@ -283,61 +243,36 @@ export function ServicesPage() {
                       {hub.desc}
                     </p>
 
-                    <button
-                      onClick={(e) => handleViewMoreClick(e, hubId)}
-                      className="mt-2 w-full px-3 py-2 rounded-[10px] border-2 text-[0.78rem] font-black transition-all duration-200 active:scale-95"
-                      style={{ borderColor: accent, color: accent }}
-                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = `${accent}12` }}
-                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "" }}
-                    >
-                      View more
-                    </button>
+                    <div className="mt-2">
+                      <HubCta label="View more" accent={accent} pointsRight={true} />
+                    </div>
                   </div>
-                </div>
+                </button>
               </ScrollBounce>
             )
           })}
         </div>
 
-        {/* ── MOBILE cards ──
-            - Wrapper is now a plain <div>, not a <button> — a button can't
-              legally contain another button (the Explore CTA), and only
-              Explore is allowed to open anything now anyway.
-            - Tapping the card body toggles `tappedHub` — a hover-style
-              highlight only, no navigation.
-            - Explore is its own button, stops propagation, and drives the
-              slide-then-open sequence.
-            - Image corners are now a uniform rounded-[14px] (was a mixed
-              40px/14px "blob" shape).
-            - Explore's text/icon color now comes from getContrastText(accent)
-              instead of being hardcoded white, so it stays readable against
-              every hub's accent color, light or dark. */}
+        {/* ── MOBILE cards — whole card opens the modal directly. Arrow
+            direction alternates with the image position, and the modal
+            slides in from that same side. ── */}
         <div className="flex md:hidden flex-col gap-6 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub        = HUBS[hubId]
             const colors     = HUB_COLORS[hubId as HubKey]
             const accent     = isDark ? colors.accentDark : colors.accentLight
             const imageRight = index % 2 === 0
-            const isPressed  = tappedHub === hubId
-            const exploreTextColor = getContrastText(accent)
 
             return (
               <ScrollBounce key={hubId} delay={index * 0.08}>
-                <div
-                  onClick={() => handleCardBodyTap(hubId)}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`${hub.title} preview`}
+                <button
+                  onClick={() => handleOpenHub(hubId, imageRight ? "right" : "left")}
+                  aria-label={`Open ${hub.title}`}
                   className={cn(
-                    "group flex items-center gap-4 w-full p-4 rounded-[20px] border abh-shadow-card text-left transition-all duration-200 cursor-pointer",
-                    imageRight ? "flex-row" : "flex-row-reverse",
-                    isPressed
-                      ? "scale-[1.01] bg-white dark:bg-zinc-950"
-                      : "bg-zinc-50 dark:bg-zinc-900/60 border-zinc-100 dark:border-zinc-800"
+                    "group flex items-center gap-4 w-full p-4 rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 abh-shadow-card text-left transition-all duration-200 active:scale-[0.99]",
+                    imageRight ? "flex-row" : "flex-row-reverse"
                   )}
-                  style={isPressed ? { borderColor: accent } : undefined}
                 >
-                  {/* Thumbnail — uniform 14px radius on every corner */}
                   <div
                     className="relative w-24 h-24 shrink-0 overflow-hidden rounded-[14px] border-2"
                     style={{ borderColor: `${accent}30` }}
@@ -345,7 +280,7 @@ export function ServicesPage() {
                     <img
                       src={HUB_IMAGES[hubId]}
                       alt={`${hub.title} example`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover grayscale contrast-125 brightness-105 transition-all duration-500 group-hover:grayscale-0 group-hover:contrast-100 group-hover:brightness-100"
                     />
                   </div>
 
@@ -356,19 +291,11 @@ export function ServicesPage() {
                     <p className="abh-body text-[0.76rem] line-clamp-2 leading-snug mb-2">
                       {hub.desc}
                     </p>
-                    <button
-                      onClick={(e) => handleMobileExploreClick(e, hubId, imageRight)}
-                      className={cn(
-                        "inline-flex items-center gap-1 text-[0.7rem] font-black px-3 py-1.5 rounded-full transition-transform active:scale-95",
-                        imageRight ? "flex-row" : "flex-row-reverse"
-                      )}
-                      style={{ backgroundColor: accent, color: exploreTextColor }}
-                    >
-                      Explore
-                      <ArrowRight size={12} weight="bold" className={imageRight ? "" : "rotate-180"} />
-                    </button>
+                    <div className={cn("inline-flex", !imageRight && "flex-row-reverse")}>
+                      <HubCta label="Explore" accent={accent} pointsRight={imageRight} />
+                    </div>
                   </div>
-                </div>
+                </button>
               </ScrollBounce>
             )
           })}
@@ -381,7 +308,13 @@ export function ServicesPage() {
 
       <AnimatePresence>
         {activeHub && (
-          <HubModal key="hub-modal" hubId={activeHub} onClose={() => setActiveHub(null)} onSelectService={handleSelectService} />
+          <HubModal
+            key="hub-modal"
+            hubId={activeHub}
+            originSide={hubOriginSide}
+            onClose={() => setActiveHub(null)}
+            onSelectService={handleSelectService}
+          />
         )}
         {selectedService && (
           <ServiceDetailModal key={selectedService.name} svc={selectedService} onClose={() => setSelectedService(null)} />
@@ -402,4 +335,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-}
+} 
