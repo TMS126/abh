@@ -241,7 +241,15 @@ function GalleryPageInner() {
             {showCollectionsGrid && (
               <ScrollBounce>
                 <div className="mb-8">
-                  <HubCollectionsGrid isDark={isDark} onSelectHub={setActiveFilter} />
+<HubCollectionsGrid
+  isDark={isDark}
+  onSelectHub={setActiveFilter}
+  likedIds={likedIds}
+  onToggleLike={toggleLike}
+  onOpenProject={setSelectedProject}
+/>
+
+
                 </div>
               </ScrollBounce>
             )}
