@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { AnimatePresence } from "framer-motion"
-import { Megaphone, ArrowUp, ArrowRight } from "@phosphor-icons/react"
+import { Megaphone, ArrowUp, ArrowRight, X } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey } from "@/lib/brand"
@@ -23,14 +23,42 @@ const HUB_IMAGES: Record<HubId, string> = {
   tech:     "/5_TECH_HUB_white.webp",
 }
 
-// ─── Notice Banner ────────────────────────────────────────────────────────────
-function NoticeBanner() {
+// ─── Notice pill / expanded notification ───────────────────────────────────
+// Collapsed: a small centered pill labeled "Notice" with a mini icon badge
+// (brand blue) representing the notice type sitting on its top-left corner,
+// like a notification-count badge. Tap to expand into the full message;
+// tap the close button on the expanded card to collapse back to the pill.
+function NoticeNotification() {
+  const [expanded, setExpanded] = useState(false)
+
+  if (!expanded) {
+    return (
+      <button
+        onClick={() => setExpanded(true)}
+        aria-label="Show notice to clients"
+        className="relative mx-auto mb-10 flex items-center gap-2 pl-4 pr-5 py-2.5 rounded-full text-white font-black text-[0.78rem] tracking-tight shadow-lg transition-transform active:scale-95 hover:-translate-y-0.5 bg-brand-orange"
+      >
+        <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-white dark:bg-zinc-950 border-2 border-white dark:border-zinc-950 flex items-center justify-center shadow-md">
+          <Megaphone size={10} weight="fill" className="text-brand-blue dark:text-brand-light-blue" />
+        </span>
+        Notice
+      </button>
+    )
+  }
+
   return (
     <div className="relative mx-auto w-full max-w-md mb-10 rounded-[14px] border border-brand-orange/20 bg-brand-orange/5 dark:bg-brand-orange/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+      <button
+        onClick={() => setExpanded(false)}
+        aria-label="Collapse notice"
+        className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white/70 dark:bg-black/30 flex items-center justify-center text-zinc-500 hover:text-zinc-800 transition-colors"
+      >
+        <X size={12} weight="bold" />
+      </button>
       <div className="w-9 h-9 rounded-[10px] bg-brand-orange flex items-center justify-center shrink-0">
         <Megaphone size={18} weight="fill" color="#fff" />
       </div>
-      <div className="flex-1 min-w-0 pt-0.5">
+      <div className="flex-1 min-w-0 pt-0.5 pr-6">
         <span className="abh-eyebrow text-brand-orange block mb-1">Notice to Clients</span>
         <p className="abh-body text-[0.84rem]">
           {NOTICE.text}
@@ -42,34 +70,36 @@ function NoticeBanner() {
   )
 }
 
-// ─── Closing tagline ──────────────────────────────────────────────────────────
+// ─── Closing tagline — no background/border container, just a muted
+// divider beneath the text ──────────────────────────────────────────────
 function ClosingTagline() {
   return (
-    <div className="relative mt-2 mb-4 overflow-hidden rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-6 py-10 md:py-12 text-center abh-shadow-card">
-      <div className="absolute inset-x-0 top-0 h-1 bg-[#1E6FA8]" />
+    <div className="mt-2 mb-4 text-center px-6 py-6">
       <p className="abh-eyebrow text-zinc-400 dark:text-zinc-500 mb-3">Why ApexbytesHub</p>
       <p className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 leading-snug max-w-2xl mx-auto">
         From your first CV to your next big idea — one hub does it all, right here in Bothaville.
       </p>
+      <div className="mt-6 h-px bg-zinc-200 dark:bg-zinc-800 max-w-[160px] mx-auto" />
     </div>
   )
 }
 
-// ─── Explore/View-more CTA — plain text, arrow always facing the direction
-// the modal will slide in from, underline grows from the OPPOSITE side to
-// meet the arrow, linear timing. ────────────────────────────────────────────
+// ─── Explore/View-more CTA — neutral by default, accent-colored on hover.
+// Triggers off the CARD's hover state (group/hubcard), not its own hover,
+// so hovering anywhere on the card animates it. Arrow always sits right
+// after the word (the "e" end of "more"/"Explore"), rotated 180° when the
+// modal opens from the left. ────────────────────────────────────────────
 function HubCta({ label, accent, pointsRight }: { label: string; accent: string; pointsRight: boolean }) {
   return (
-    <span className="group/cta relative inline-flex items-center gap-1 text-[0.78rem] font-black" style={{ color: accent }}>
+    <span
+      className="relative inline-flex items-center gap-1 text-[0.78rem] font-black text-zinc-400 dark:text-zinc-500 transition-colors duration-200 group-hover/hubcard:text-[var(--hub-accent)]"
+      style={{ ["--hub-accent" as any]: accent }}
+    >
       <span className="relative">
         {label}
         <span
           aria-hidden="true"
-          className={cn(
-            "absolute bottom-[-2px] h-[2px] w-0 transition-[width] duration-300 ease-linear group-hover/cta:w-full",
-            pointsRight ? "left-0" : "right-0"
-          )}
-          style={{ backgroundColor: accent }}
+          className="absolute left-0 bottom-[-2px] h-[2px] w-0 bg-current transition-[width] duration-300 ease-linear group-hover/hubcard:w-full"
         />
       </span>
       <ArrowRight size={12} weight="bold" aria-hidden="true" className={cn(!pointsRight && "rotate-180")} />
@@ -101,23 +131,18 @@ export function ServicesPage() {
     setSelectedService(svc)
   }
 
-  // originSide drives which side the modal slides in from — matches the
-  // direction that hub's CTA arrow points, so the modal appears to emerge
-  // from exactly where the user's eye was just guided.
   const handleOpenHub = (hubId: HubId, originSide: "left" | "right") => {
     trackEvent("view_hub", { hub_id: hubId, hub_name: HUBS[hubId].title })
     setHubOriginSide(originSide)
     setActiveHub(hubId)
   }
 
-  // Back-to-top visibility
   useEffect(() => {
     const onScroll = () => setShowBackToTop(window.scrollY > 600)
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
-  // Global service-select event (fired by QuoteCalculatorWidget et al.)
   useEffect(() => {
     const handler = (e: Event) => {
       const svc = (e as CustomEvent<SelectedService>).detail
@@ -127,7 +152,6 @@ export function ServicesPage() {
     return () => window.removeEventListener("abh:selectService", handler)
   }, [])
 
-  // Deep-link via ?hub= query param
   useEffect(() => {
     const hubParam = searchParams.get("hub")
     if (hubParam && HUB_ORDER.includes(hubParam as HubId) && consumedHubParam.current !== hubParam) {
@@ -139,7 +163,6 @@ export function ServicesPage() {
 
   useModalBackStack(activeHub, setActiveHub, selectedService, setSelectedService)
 
-  // Scroll lock while any modal is open
   useEffect(() => {
     if (!isModalOpen) return
     const scrollY = window.scrollY
@@ -164,8 +187,6 @@ export function ServicesPage() {
   return (
     <section className="min-h-screen bg-white dark:bg-[#081428] transition-colors duration-300 pb-24 overflow-x-hidden">
 
-      {/* Page content wrapper — fully hidden (not just covered) while any
-          modal is open. */}
       <div
         className="max-w-[1248px] mx-auto px-4 md:px-8 flex flex-col items-center transition-opacity duration-200"
         style={{
@@ -192,13 +213,15 @@ export function ServicesPage() {
           </div>
         </ScrollBounce>
 
-        <ScrollBounce delay={0.14} className="relative z-0 w-full">
-          <div className="w-full"><NoticeBanner /></div>
+        <ScrollBounce delay={0.14} className="relative z-0 w-full flex justify-center">
+          <NoticeNotification />
         </ScrollBounce>
 
-        {/* ── DESKTOP cards — whole card opens the modal directly. Arrow
-            always points right (grid has no inherent left/right pairing
-            like the mobile stacked layout), so origin is always "right". ── */}
+        {/* ── DESKTOP cards — only "View more" navigates; hovering
+            anywhere on the card still animates the CTA (group/hubcard).
+            No border-color hover, no whole-card click. transform-gpu +
+            backface-hidden on the scaling elements avoids the blurry
+            text/image that plain CSS scale can cause on hover. ── */}
         <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-5 gap-5 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub    = HUBS[hubId]
@@ -207,19 +230,14 @@ export function ServicesPage() {
 
             return (
               <ScrollBounce key={hubId} delay={index * 0.06}>
-                <button
-                  onClick={() => handleOpenHub(hubId, "right")}
-                  aria-label={`Open ${hub.title}`}
-                  className="group relative flex flex-col w-full text-left rounded-[16px] border-2 border-transparent bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-300 ease-out hover:z-20 hover:scale-[1.06] hover:shadow-2xl"
-                  style={{ ["--hub-accent" as any]: accent }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = accent }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "transparent" }}
+                <div
+                  className="group/hubcard relative flex flex-col w-full text-left rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-300 ease-out hover:z-20 hover:scale-[1.03] transform-gpu [backface-visibility:hidden]"
                 >
                   <div className="relative w-full aspect-[4/3] overflow-hidden bg-zinc-100 dark:bg-zinc-900">
                     <img
                       src={HUB_IMAGES[hubId]}
                       alt={`${hub.title} example`}
-                      className="w-full h-full object-cover grayscale contrast-125 brightness-105 transition-all duration-500 group-hover:grayscale-0 group-hover:contrast-100 group-hover:brightness-100 group-hover:scale-110"
+                      className="w-full h-full object-cover grayscale contrast-125 brightness-105 transition-all duration-500 group-hover/hubcard:grayscale-0 group-hover/hubcard:contrast-100 group-hover/hubcard:brightness-100 group-hover/hubcard:scale-105 transform-gpu [backface-visibility:hidden]"
                     />
                   </div>
 
@@ -244,18 +262,22 @@ export function ServicesPage() {
                     </p>
 
                     <div className="mt-2">
-                      <HubCta label="View more" accent={accent} pointsRight={true} />
+                      <button
+                        onClick={() => handleOpenHub(hubId, "right")}
+                        aria-label={`Open ${hub.title}`}
+                      >
+                        <HubCta label="View more" accent={accent} pointsRight={true} />
+                      </button>
                     </div>
                   </div>
-                </button>
+                </div>
               </ScrollBounce>
             )
           })}
         </div>
 
-        {/* ── MOBILE cards — whole card opens the modal directly. Arrow
-            direction alternates with the image position, and the modal
-            slides in from that same side. ── */}
+        {/* ── MOBILE cards — whole card still opens the modal (exception
+            kept for mobile per request). ── */}
         <div className="flex md:hidden flex-col gap-6 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub        = HUBS[hubId]
@@ -269,7 +291,7 @@ export function ServicesPage() {
                   onClick={() => handleOpenHub(hubId, imageRight ? "right" : "left")}
                   aria-label={`Open ${hub.title}`}
                   className={cn(
-                    "group flex items-center gap-4 w-full p-4 rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 abh-shadow-card text-left transition-all duration-200 active:scale-[0.99]",
+                    "group/hubcard flex items-center gap-4 w-full p-4 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 abh-shadow-card text-left transition-all duration-200 active:scale-[0.99]",
                     imageRight ? "flex-row" : "flex-row-reverse"
                   )}
                 >
@@ -280,7 +302,7 @@ export function ServicesPage() {
                     <img
                       src={HUB_IMAGES[hubId]}
                       alt={`${hub.title} example`}
-                      className="w-full h-full object-cover grayscale contrast-125 brightness-105 transition-all duration-500 group-hover:grayscale-0 group-hover:contrast-100 group-hover:brightness-100"
+                      className="w-full h-full object-cover grayscale contrast-125 brightness-105 transition-all duration-500 group-hover/hubcard:grayscale-0 group-hover/hubcard:contrast-100 group-hover/hubcard:brightness-100 transform-gpu [backface-visibility:hidden]"
                     />
                   </div>
 
@@ -302,7 +324,7 @@ export function ServicesPage() {
         </div>
 
         <ScrollBounce className="w-full">
-          <div className="w-full"><ClosingTagline /></div>
+          <ClosingTagline />
         </ScrollBounce>
       </div>
 
@@ -335,4 +357,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-} 
+}
