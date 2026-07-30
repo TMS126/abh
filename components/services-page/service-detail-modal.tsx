@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef, type ChangeEvent } from "react"
 import { motion } from "framer-motion"
 import {
-  X, Paperclip, ShoppingCartSimple, Plus, Minus, CheckCircle, WarningCircle, ShieldCheck, ShareNetwork, Clock,
+  X, Paperclip, ShoppingCartSimple, Plus, Minus, CheckCircle, WarningCircle, ShieldCheck, ShareNetwork, Clock, SealPercent,
 } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
@@ -15,7 +15,7 @@ import {
   SelectedService, naturalServiceLabel, cleanText, formatAcceptHint,
   HUB_ACCEPT, CLD_MAX_MB, CLD_PRESET, BLOCKED_MIME_TYPES, BLOCKED_EXTENSIONS, getCldUrl, trackEvent,
 } from "./lib"
-import { getCartQtyForItem } from "@/components/quote-calculator/lib"
+import { getCartQtyForItem, getEffectiveRate, getBulkHint, parsePrice } from "@/components/quote-calculator/lib"
 
 type Tab = "bring" | "about"
 
@@ -101,6 +101,17 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
   const acceptHint  = formatAcceptHint(HUB_ACCEPT[svc.hubId])
   const itemId      = `${svc.hubId}-${svc.sectionTitle}-${svc.name}`
 
+  // ─── Bulk pricing preview — same tier logic the Quote Calculator uses,
+  // so the rate shown here can never drift out of sync with what actually
+  // happens once the item is in the cart. Uses whichever is larger of the
+  // real cart quantity or 1, so someone who hasn't added it yet still sees
+  // an accurate incentive (e.g. "10+ from R3 each") rather than nothing.
+  const { amount: baseUnitPrice, unit: priceUnit } = parsePrice(svc.price)
+  const effectiveQty   = Math.max(quoteQty, 1)
+  const effRate        = getEffectiveRate(itemId, svc.name, effectiveQty, baseUnitPrice)
+  const isBulkDiscount = effRate < baseUnitPrice
+  const bulkHint        = getBulkHint(itemId, svc.name, effectiveQty, effRate, baseUnitPrice)
+
   const handleShare = async () => {
     const shareText = `${naturalLabel} — ${svc.price} at ${BIZ.name}`
     const shareUrl  = typeof window !== "undefined" ? window.location.href : ""
@@ -121,12 +132,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
     setQuoteQty(prev => prev + 1)
   }
 
-  // Stepper +/-, used once the item is already in the quote. Dispatches a
-  // NEW event ("abh:step-quote-qty") separate from "abh:add-to-quote",
-  // since the existing add event always increments by exactly 1 and has
-  // no concept of decrementing. QuoteCalculatorWidget needs a matching
-  // listener added for this to actually update the real cart — see the
-  // follow-up snippet.
   const handleStepQty = (delta: number) => {
     const nextQty = Math.max(0, quoteQty + delta)
     window.dispatchEvent(new CustomEvent("abh:step-quote-qty", { detail: { id: itemId, delta } }))
@@ -147,19 +152,12 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
 
   return (
     <div className="fixed inset-0 z-[10200] flex items-center justify-center p-3 md:p-4">
-      {/* Dim overlay behind this modal — bumped slightly darker (45 → 55)
-          so whatever's underneath (e.g. HubModal, if this was opened from
-          within it) reads as clearly dimmed rather than barely darkened. */}
       <motion.div
         className="absolute inset-0 bg-black/55"
         onClick={onClose}
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
       />
-      {/* Swipe-to-dismiss removed — no more drag props, no more grab
-          cursor, no more DragHandle grip at the top. Only the X button
-          and backdrop click close this modal now. Appearance matches
-          HubModal: centered scale+fade in/out. */}
       <motion.div
         ref={containerRef}
         tabIndex={-1}
@@ -178,8 +176,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
             <div className="w-[72px] shrink-0" aria-hidden="true" />
 
             <div className="flex-1 min-w-0 text-center">
-              {/* Which hub this service belongs to — small icon + label
-                  above the section pill. */}
               <div className="flex items-center justify-center gap-1.5 mb-2">
                 <HubIcon id={svc.hubId} size={12} color={accent} />
                 <span className="text-[0.62rem] font-black uppercase tracking-widest" style={{ color: accent }}>
@@ -248,9 +244,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                   )}
                   style={isActive ? { backgroundColor: accent, color: isDark ? "#0a0a0a" : "#ffffff" } : undefined}
                 >
-                  {/* "Needs" (5 letters) replaces "Bring" as the label —
-                      same length as before, so the tab pair keeps its
-                      current visual balance against "Description". */}
                   {t === "bring" ? "Needs" : "Description"}
                 </button>
               )
@@ -316,13 +309,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                 Add to Quote
               </button>
             ) : (
-              // In-quote state: "Added" + a translucent count pill, with a
-              // minus/plus stepper on either side. Circles are border-only
-              // (not filled) at rest — red border for minus, green for
-              // plus, with a NEUTRAL (theme-aware) icon color, not
-              // red/green on the glyph itself. On desktop hover, the
-              // circle fills solid with its color and the icon swaps to
-              // white for contrast, matching mobile's tap-and-hold look.
               <div
                 className="flex items-center justify-between gap-2 rounded-[14px] border-2 py-2 px-2.5"
                 style={{ borderColor: "#22c55e40", backgroundColor: "#22c55e0d" }}
@@ -355,6 +341,38 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
             )}
           </div>
 
+          {/* Bulk discount panel — sits directly below the Add-to-Quote /
+              stepper row, per request. Shown whenever this item has ANY
+              bulk tier configured (bulkHint isn't null), even before it's
+              in the cart, so someone considering the service can already
+              see the incentive to order more. Once quantity actually
+              crosses a tier, the discounted rate is shown alongside the
+              original price (struck through) so the saving is unmistakable
+              at a glance rather than requiring mental math. */}
+          {bulkHint && (
+            <div
+              className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-[12px] border animate-in fade-in duration-200"
+              style={{ borderColor: `${accent}30`, backgroundColor: `${accent}0a` }}
+            >
+              <SealPercent size={18} weight="fill" style={{ color: accent }} className="shrink-0" aria-hidden="true" />
+              <div className="flex-1 min-w-0 text-left">
+                <p className="text-[0.72rem] font-bold text-zinc-700 dark:text-zinc-300 leading-snug">
+                  {bulkHint}
+                </p>
+                {isBulkDiscount && (
+                  <p className="text-[0.68rem] font-medium text-zinc-400 dark:text-zinc-500 mt-0.5">
+                    <span className="line-through">R{baseUnitPrice}{priceUnit ? `/${priceUnit}` : ""}</span>
+                    {" → "}
+                    <span className="font-black" style={{ color: accent }}>
+                      R{effRate}{priceUnit ? `/${priceUnit}` : ""}
+                    </span>
+                    {" each"}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           {uploadPhase === "idle" && (
             <div className="flex items-start gap-2 px-1">
               <ShieldCheck size={13} weight="fill" aria-hidden="true" className="text-[#6FBF1A] shrink-0 mt-0.5" />
@@ -368,13 +386,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                 <span className="truncate">Uploading {file?.name}…</span>
                 <span className="font-black tabular-nums shrink-0 ml-2 text-zinc-700 dark:text-zinc-200">{uploadProgress}%</span>
               </div>
-              {/* Linear loader in brand colors — blue (0-70%), green
-                  (70-92%), orange (92-100%) — colors are fixed relative to
-                  the FULL track, revealed as the real upload progresses,
-                  rather than scaled to whatever sliver is currently
-                  filled. Achieved by drawing the full gradient underneath
-                  and sliding a track-colored cover over the unfilled
-                  remainder from the right. */}
               <div className="relative w-full h-2 rounded-full overflow-hidden bg-zinc-200 dark:bg-zinc-800">
                 <div
                   className="absolute inset-0"
