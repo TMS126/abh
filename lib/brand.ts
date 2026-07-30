@@ -200,7 +200,7 @@ export type HubKey = "print" | "doc" | "design" | "eservice" | "tech"
 
 export const HUB_NAMES: Record<HubKey, string> = {
   print: "Print Hub",
-  doc: "Document Hub",
+  doc: "Docu Hub",
   design: "Design Hub",
   eservice: "E-Service Hub",
   tech: "Tech Hub",
@@ -217,8 +217,8 @@ export type NavItem = {
 export const NAV_ITEMS: NavItem[] = [
   { id: "home", label: "Home", path: "/" },
   { id: "services", label: "Services", path: "/services" },
-  { id: "pricing", label: "Pricing", path: "/pricing" },
   { id: "gallery", label: "Gallery", path: "/gallery" },
+  { id: "pricing", label: "Pricing", path: "/pricing" },
   { id: "about", label: "About", path: "/about" },
   { id: "contact", label: "Contact", path: "/contact", isCta: true },
 ] as const
@@ -266,7 +266,7 @@ export const STRIP_ITEMS = [
 export const GALLERY_CATEGORIES = [
   { id: "all", label: "All hubs" },
   { id: "print", label: "Print hub" },
-  { id: "doc", label: "Document hub" },
+  { id: "doc", label: "Docu hub" },
   { id: "design", label: "Design hub" },
   { id: "eservice", label: "E-Service hub" },
   { id: "tech", label: "Tech hub" },
@@ -385,7 +385,7 @@ export const FOOTER_NAV = [
   { label: "Home", path: "/" },
   { label: "Services", path: "/services" },
   { label: "Gallery", path: "/gallery" },
-{ label: "Pricing", path: "/pricing" },
+  { label: "Pricing", path: "/pricing" },
   { label: "About", path: "/about" },
   { label: "Contact", path: "/contact" },
 ] as const 
