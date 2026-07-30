@@ -28,7 +28,6 @@ function GalleryPageInner() {
   const [selectedProject, setSelectedProject] = useState<ProjectData | null>(null)
   const [zoomIndex,       setZoomIndex]       = useState<number | null>(null)
   const [searchQuery,     setSearchQuery]     = useState("")
-  const [searchFocused,   setSearchFocused]   = useState(false)
   const [surpriseFlash,   setSurpriseFlash]   = useState(false)
   const [likedIds,        setLikedIds]        = useState<Set<string>>(new Set())
   const [showBackToTop,   setShowBackToTop]   = useState(false)
@@ -73,10 +72,6 @@ function GalleryPageInner() {
     }
   }, [searchParams])
 
-  // Reads ?hub=<id> (e.g. from HubModal's "View in Gallery" link) and sets
-  // the active filter to just that hub — same validation approach as the
-  // project-id lookup above, checked against ROW_ORDER so an unknown/typo'd
-  // hub id in the URL is silently ignored rather than crashing the filter.
   useEffect(() => {
     const hubParam = searchParams.get("hub")
     if (!hubParam) return
@@ -116,10 +111,6 @@ function GalleryPageInner() {
     p => (activeFilter === "all" || p.hub === activeFilter) && matchesSearch(p)
   ).length
 
-  // The desktop "collections" overview (3 hub cards + "N more") only makes
-  // sense as a browse-everything entry point — once a search is active or
-  // a specific hub is already selected, the normal filtered rows below are
-  // more useful, so this stays out of the way in both of those cases.
   const showCollectionsGrid = activeFilter === "all" && !searchLower
 
   const handleSurprise = useCallback(() => {
@@ -151,64 +142,55 @@ function GalleryPageInner() {
           </div>
         </ScrollBounce>
 
+        {/* ── Search — plain underline, matching Services page ── */}
         <ScrollBounce delay={0.06}>
-          <div
-            className={cn(
-              "flex items-stretch max-w-md mx-auto mb-6 rounded-[14px] overflow-hidden",
-              "bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800",
-              "shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)]",
-              "transition-colors duration-200 focus-within:border-[#1E6FA8]"
-            )}
-          >
-            <div className="relative flex-1 basis-1/2">
+          <div className="max-w-md mx-auto mb-2">
+            <div className="relative flex items-center border-b-2 border-zinc-200 dark:border-zinc-800 focus-within:border-zinc-400 dark:focus-within:border-zinc-500 transition-colors duration-200">
               <MagnifyingGlass
                 size={16}
                 weight="bold"
-                className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400"
+                className="absolute left-1 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400"
               />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => setSearchFocused(false)}
-                placeholder={searchFocused ? "Search" : "Search Project"}
-                className="w-full pl-10 pr-9 py-3.5 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none text-left"
+                placeholder="Search Project"
+                className="w-full pl-7 pr-8 py-3 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none text-center"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
                   aria-label="Clear search"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-all active:scale-90"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-all active:scale-90"
                 >
                   <X size={11} weight="bold" />
                 </button>
               )}
             </div>
-            <div className="w-px my-2 bg-zinc-200 dark:bg-zinc-800" />
+          </div>
+        </ScrollBounce>
+
+        {/* ── Pick for me — plain icon+text, no pill/background ── */}
+        <ScrollBounce delay={0.08}>
+          <div className="flex justify-center mb-8">
             <button
               onClick={handleSurprise}
               aria-label="Surprise me with a random project"
               className={cn(
-                "flex-1 basis-1/2 flex items-center justify-center gap-1.5 px-3.5 py-3.5 text-sm font-medium text-zinc-600 dark:text-zinc-300 whitespace-nowrap transition-all duration-200 active:scale-95 group/surprise hover:bg-zinc-50 dark:hover:bg-zinc-900",
+                "flex items-center gap-1.5 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-all duration-200 active:scale-95 group/surprise",
                 surpriseFlash && "scale-90 opacity-60"
               )}
             >
-              <Shuffle size={14} weight="bold" className="transition-transform duration-300 group-hover/surprise:rotate-180 text-zinc-400"
-                aria-label="Pick a random project for me"/>
+              <Shuffle size={14} weight="bold" className="transition-transform duration-300 group-hover/surprise:rotate-180" aria-hidden="true" />
               Pick for me
             </button>
           </div>
         </ScrollBounce>
 
-        <div className="relative z-50">
-          <ScrollBounce delay={0.1}>
-            <FilterDropdown activeFilter={activeFilter} onSelect={setActiveFilter} getAccent={getAccent} />
-          </ScrollBounce>
-        </div>
-
-        <ScrollBounce delay={0.14}>
-          <div className="max-w-2xl mx-auto mb-16 rounded-[14px] border border-[#1E6FA8]/20 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-5 py-4 flex items-start gap-3">
+        {/* ── Notice, then Filter below it ── */}
+        <ScrollBounce delay={0.12}>
+          <div className="max-w-2xl mx-auto mb-8 rounded-[14px] border border-[#1E6FA8]/20 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-5 py-4 flex items-start gap-3">
             <div className="w-12 h-12 shrink-0 rounded-[14px] bg-[#1E6FA8] flex items-center justify-center">
               <Info size={26} weight="fill" color="#fff" />
             </div>
@@ -219,6 +201,12 @@ function GalleryPageInner() {
             </div>
           </div>
         </ScrollBounce>
+
+        <div className="relative z-50">
+          <ScrollBounce delay={0.16}>
+            <FilterDropdown activeFilter={activeFilter} onSelect={setActiveFilter} getAccent={getAccent} />
+          </ScrollBounce>
+        </div>
 
         {searchLower && totalMatches === 0 ? (
           <div className="max-w-md mx-auto text-center py-16 px-6">
@@ -234,27 +222,21 @@ function GalleryPageInner() {
           </div>
         ) : (
           <>
-            {/* Desktop "collections" overview — only shown when browsing
-                everything (no filter, no search). Hidden on mobile via the
-                component's own responsive classes, so mobile always falls
-                straight through to the normal row list below. */}
             {showCollectionsGrid && (
               <ScrollBounce>
                 <div className="mb-8">
-<HubCollectionsGrid
-  isDark={isDark}
-  onSelectHub={setActiveFilter}
-  likedIds={likedIds}
-  onToggleLike={toggleLike}
-  onOpenProject={setSelectedProject}
-/>
-
-
+                  <HubCollectionsGrid
+                    isDark={isDark}
+                    onSelectHub={setActiveFilter}
+                    likedIds={likedIds}
+                    onToggleLike={toggleLike}
+                    onOpenProject={setSelectedProject}
+                  />
                 </div>
               </ScrollBounce>
             )}
 
-            <div className={showCollectionsGrid ? "md:hidden space-y-8" : "space-y-8"}>
+            <div className={showCollectionsGrid ? "md:hidden space-y-8 md:space-y-8" : "space-y-8"}>
               {filteredRows.map((row, rowIndex) => {
                 const accent = getAccent(row.id)
                 const projects = PROJECTS.filter(p => p.hub === row.id && matchesSearch(p))
@@ -263,7 +245,7 @@ function GalleryPageInner() {
                   if (activeFilter !== row.id) return null
                   return (
                     <ScrollBounce key={row.id} delay={rowIndex * 0.06}>
-                      <div className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm transition-shadow duration-300 ease-out p-5 md:p-7">
+                      <div className="md:rounded-[20px] md:border md:border-zinc-100 dark:md:border-zinc-800 md:bg-white dark:md:bg-zinc-950/40 md:shadow-sm p-0 md:p-7 border-t border-zinc-100 dark:border-zinc-800 pt-6 md:border-t-0 md:pt-7 transition-shadow duration-300 ease-out">
                         <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
                           <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: "#1E6FA8" }} />
                           <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
@@ -276,13 +258,15 @@ function GalleryPageInner() {
 
                 return (
                   <ScrollBounce key={row.id} delay={rowIndex * 0.06}>
-                    <div className="rounded-[20px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm p-5 md:p-7">
+                    <div className="md:rounded-[20px] md:border md:border-zinc-100 dark:md:border-zinc-800 md:bg-white dark:md:bg-zinc-950/40 md:shadow-sm p-0 md:p-7 border-t border-zinc-100 dark:border-zinc-800 pt-6 md:border-t-0 md:pt-7 first:border-t-0 first:pt-0 md:first:pt-7">
                       <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
                         <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: "#1E6FA8" }} />
                         <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{row.label}</h2>
                         <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
                       </div>
-                      <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} likedIds={likedIds} onToggleLike={toggleLike} />
+                      <div className="px-4 md:px-0">
+                        <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} likedIds={likedIds} onToggleLike={toggleLike} />
+                      </div>
                     </div>
                   </ScrollBounce>
                 )
@@ -340,4 +324,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-        } 
+} 
