@@ -20,39 +20,44 @@ import { EmptyHubState, GalleryClosingTagline } from "@/components/gallery/empty
 const LIKES_STORAGE_KEY = "apexbytes-gallery-likes"
 
 function NoticePill() {
-  const [hovering, setHovering] = useState(false)
-  const [pinned,   setPinned]   = useState(false)
-  const open = hovering || pinned
+  const [expanded, setExpanded] = useState(false)
+
+  if (!expanded) {
+    return (
+      <button
+        onClick={() => setExpanded(true)}
+        aria-label="Show notice"
+        style={{
+          backgroundColor: "#1E6FA8",
+          boxShadow: "0 10px 28px -8px #1E6FA870, 0 4px 12px -2px rgba(0,0,0,0.25)",
+        }}
+        className="relative flex items-center gap-2 pl-4 pr-5 py-2.5 rounded-full text-white font-black text-[0.78rem] tracking-tight transition-transform active:scale-95 hover:-translate-y-0.5"
+      >
+        <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-white dark:bg-zinc-950 border-2 border-white dark:border-zinc-950 flex items-center justify-center shadow-md">
+          <Info size={10} weight="fill" color="#1E6FA8" />
+        </span>
+        Notice
+      </button>
+    )
+  }
 
   return (
-    <div
-      className={cn(
-        "relative flex items-center rounded-full bg-[#1E6FA8]/10 border border-[#1E6FA8]/20 overflow-hidden transition-[width] duration-500 ease-out",
-        open ? "w-[min(92vw,26rem)]" : "w-10"
-      )}
-      style={{ height: "2.5rem" }}
-      onMouseEnter={() => setHovering(true)}
-      onMouseLeave={() => setHovering(false)}
-    >
+    <div className="relative w-full max-w-md rounded-[14px] border border-[#1E6FA8]/20 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
       <button
-        onClick={() => setPinned(v => !v)}
-        aria-label={open ? "Hide notice" : "Show notice"}
-        aria-expanded={open}
-        className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+        onClick={() => setExpanded(false)}
+        aria-label="Collapse notice"
+        className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white/70 dark:bg-black/30 flex items-center justify-center text-zinc-500 hover:text-zinc-800 transition-colors"
       >
-        <Info size={18} weight="fill" color="#1E6FA8" />
+        <X size={12} weight="bold" />
       </button>
-      <div className={cn("flex items-center gap-2 pr-3 min-w-0 transition-opacity duration-300", open ? "opacity-100 delay-150" : "opacity-0")}>
-        <p className="text-xs font-bold text-[#1E6FA8] leading-snug whitespace-nowrap sm:whitespace-normal">
+      <div className="w-9 h-9 rounded-[10px] bg-[#1E6FA8] flex items-center justify-center shrink-0">
+        <Info size={18} weight="fill" color="#fff" />
+      </div>
+      <div className="flex-1 min-w-0 pt-0.5 pr-6">
+        <span className="abh-eyebrow text-[#1E6FA8] block mb-1">Notice</span>
+        <p className="abh-body text-[0.84rem]">
           We use high-quality sample photos to represent our services — the professional standard shown is exactly what you receive.
         </p>
-        <button
-          onClick={() => { setPinned(false); setHovering(false) }}
-          aria-label="Close notice"
-          className="shrink-0 w-5 h-5 rounded-full bg-[#1E6FA8]/20 flex items-center justify-center"
-        >
-          <X size={10} weight="bold" color="#1E6FA8" />
-        </button>
       </div>
     </div>
   )
@@ -223,12 +228,12 @@ function GalleryPageInner() {
           </div>
         </ScrollBounce>
 
-        {/* ── Notice — icon-only, rolls open on hover/click ── */}
-        <ScrollBounce delay={0.1}>
-          <div className="flex justify-start max-w-2xl mx-auto mb-8 mt-6 pl-1">
-            <NoticePill />
-          </div>
-        </ScrollBounce>
+        {/* ── Notice ── */}
+<ScrollBounce delay={0.1}>
+  <div className="flex justify-center max-w-2xl mx-auto mb-8 mt-6">
+    <NoticePill />
+  </div>
+</ScrollBounce>
 
         <div className="relative z-50">
           <ScrollBounce delay={0.16}>
