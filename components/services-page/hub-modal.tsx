@@ -1,3 +1,4 @@
+// components/services/hub-modal.tsx
 "use client"
 
 import { useState, useEffect, useRef } from "react"
@@ -7,7 +8,7 @@ import { X, Info, ArrowSquareOut } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { HUB_COLORS } from "@/lib/brand"
 import { HUBS, HubId, HUB_DISCLAIMERS } from "@/lib/data"
-import { HubIcon, useFocusTrap, DragHandle, shouldDismissOnDrag } from "./shared"
+import { HubIcon, useFocusTrap } from "./shared"
 import { getTurnaround, SelectedService } from "./lib"
 
 export function HubModal({ hubId, onClose, onSelectService }: {
@@ -44,25 +45,28 @@ export function HubModal({ hubId, onClose, onSelectService }: {
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
       />
+      {/* Swipe-to-dismiss removed — no more drag/dragConstraints/
+          dragElastic/onDragEnd props, no more grab cursor, no more
+          DragHandle grip. This is the same treatment already applied to
+          ServiceDetailModal. Root cause it fixes: on mobile, a vertical
+          drag gesture on this modal could be intercepted by the browser
+          as its native "pull to refresh" instead of the modal's own drag
+          handler — reloading the whole page and wiping all React state,
+          which looked like "refresh closes every modal." Only the X
+          button and backdrop click close this modal now. */}
       <motion.div
         ref={containerRef}
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={hub.title}
-        drag="y"
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={{ top: 0, bottom: 0.6 }}
-        onDragEnd={(_e, info) => { if (shouldDismissOnDrag(info)) onClose() }}
         initial={{ scale: 0.92, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.96, opacity: 0 }}
         transition={{ type: "tween", duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
-        className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px] cursor-grab active:cursor-grabbing"
+        className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px]"
         style={{ boxShadow: `0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4), 0 10px 24px -8px ${accent}50` }}
       >
-        <DragHandle />
-
         <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center shrink-0 gap-3" style={{ backgroundColor: `${accent}05` }}>
           <div className="flex items-center gap-4 min-w-0">
             <div className="w-12 h-12 md:w-14 md:h-14 rounded-[14px] flex items-center justify-center shadow-lg bg-zinc-100 dark:bg-zinc-800 shrink-0" style={{ border: `2px solid ${accent}` }}>
