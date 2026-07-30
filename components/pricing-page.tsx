@@ -18,10 +18,6 @@ import { cn } from '@/lib/utils'
 
 const HUB_ORDER: HubId[] = ['print', 'doc', 'design', 'eservice', 'tech']
 
-// Adobe Acrobat/PDF brand red — used for both PDF download buttons since
-// they represent the FILE FORMAT, not a specific hub. Kept as the one
-// deliberate splash of color outside the neutral chrome. Confirm this
-// hex against Adobe's current brand kit if exactness matters.
 const ADOBE_PDF_RED = '#EC1C24'
 
 function parsePrice(price: string): number {
@@ -29,17 +25,10 @@ function parsePrice(price: string): number {
   return match ? parseInt(match[0]) : 0
 }
 
-// Same custom event the Quote Calculator widget listens for when items
-// are added from inside a Hub Modal — reusing it here means a "+" tap on
-// the Pricing page behaves identically, no separate wiring needed.
 function dispatchAddToQuote(hubId: HubId, sectionTitle: string, name: string, price: string) {
   window.dispatchEvent(new CustomEvent('abh:add-to-quote', { detail: { hubId, sectionTitle, name, price } }))
 }
 
-// Reads the same BULK_TIERS table the Quote Calculator uses to compute
-// its own bulk savings, and turns it into a simple "up to X% off" figure
-// for display here — no cart/qty context needed, just the best available
-// rate vs. the item's base price.
 function bulkDiscountPercent(hubId: HubId, sectionTitle: string, itemName: string, baseAmount: number): number | null {
   if (baseAmount <= 0) return null
   const itemId = `${hubId}-${sectionTitle}-${itemName}`
@@ -84,10 +73,6 @@ export default function PricingPage() {
   const contentRef = useRef<HTMLDivElement>(null)
   const hubRefs = useRef<Partial<Record<HubId, HTMLDivElement | null>>>({})
 
-  // Brief "Added ✓" swap on whichever add-to-quote button was just
-  // tapped — without this the tap gives zero feedback on this page,
-  // since the Quote Calculator FAB (the only other confirmation source)
-  // may be off-screen or unnoticed.
   const [justAdded, setJustAdded] = useState<string | null>(null)
   const addedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -112,9 +97,6 @@ export default function PricingPage() {
     setOpenHubs(allOpen ? new Set() : new Set(HUB_ORDER))
   }, [allOpen])
 
-  // Jump-nav: opens the target hub (if closed) and scrolls its card into
-  // view — lets someone skip straight to a hub instead of scrolling past
-  // whichever ones sit above it.
   const jumpToHub = useCallback((hubId: HubId) => {
     setOpenHubs(prev => {
       if (prev.has(hubId)) return prev
@@ -171,7 +153,6 @@ export default function PricingPage() {
     link.click()
   }, [])
 
-  // Per-hub catalog download — path convention assumed, see note above.
   const handleHubDownload = useCallback((hubId: HubId) => {
     const link = document.createElement('a')
     link.href = `/ApexbytesHub_Pricing_${hubId}.pdf`
@@ -190,8 +171,6 @@ export default function PricingPage() {
         }
       `}</style>
 
-      {/* Only WhatsApp is suppressed on this page — the Quote Calculator
-          stays visible so items added here have somewhere to land. */}
       <style>{`
         [data-widget="whatsapp-fab"] {
           display: none !important;
@@ -218,12 +197,13 @@ export default function PricingPage() {
 
           <div className="max-w-2xl mx-auto px-4 pb-16">
 
-            {/* Search bar — neutral, no per-hub color */}
+            {/* Search — plain underline, no box, matches the InlineSearchBar
+                feel used on the Services page. */}
             <ScrollBounce delay={0.08}>
-              <div className="no-print sticky top-[calc(var(--nav-h,74px)+0.5rem)] z-10 mb-4">
-                <div className="relative">
+              <div className="no-print sticky top-[calc(var(--nav-h,74px)+0.5rem)] z-10 mb-6 bg-background">
+                <div className="relative flex items-center border-b-2 border-zinc-200 dark:border-zinc-800 focus-within:border-zinc-400 dark:focus-within:border-zinc-500 transition-colors duration-200">
                   <MagnifyingGlass
-                    className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none"
+                    className="absolute left-1 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none"
                     weight="bold"
                     aria-hidden="true"
                   />
@@ -234,36 +214,48 @@ export default function PricingPage() {
                     placeholder="Search any service or price…"
                     value={query}
                     onChange={e => setQuery(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 border rounded-[14px] bg-white dark:bg-zinc-900 text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 border-zinc-200 dark:border-zinc-800 outline-none focus:border-zinc-400 dark:focus:border-zinc-600 transition-colors duration-200 shadow-sm"
+                    className="w-full pl-7 pr-1 py-3 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none"
                   />
                 </div>
               </div>
             </ScrollBounce>
 
-            {/* Jump-nav pills — full hub names, no icons, neutral, 14px radius */}
+            {/* Jump-nav — text-only, underline in the hub's own color while
+                that hub is open. Expand/Collapse is its own separate,
+                centered button below, not grouped with the filters. */}
             {results === null && (
               <>
                 <ScrollBounce delay={0.1}>
-                  <div className="no-print flex flex-wrap gap-1.5 mb-3">
-                    {HUB_ORDER.map(hubId => (
-                      <button
-                        key={hubId}
-                        onClick={() => jumpToHub(hubId)}
-                        className="px-3 py-1.5 rounded-[14px] text-[0.7rem] font-bold border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 transition-colors duration-150 active:scale-95 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-700 dark:hover:text-zinc-200"
-                      >
-                        {HUBS[hubId].title}
-                      </button>
-                    ))}
+                  <div className="no-print flex flex-wrap justify-center gap-x-4 gap-y-2 mb-5">
+                    {HUB_ORDER.map(hubId => {
+                      const isOpen = openHubs.has(hubId)
+                      const accent = accentFor(hubId)
+                      return (
+                        <button
+                          key={hubId}
+                          onClick={() => jumpToHub(hubId)}
+                          className="relative pb-1 text-sm font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150"
+                          style={isOpen ? { color: accent } : undefined}
+                        >
+                          {HUBS[hubId].title}
+                          <span
+                            className="absolute left-0 right-0 -bottom-0.5 h-[2px] rounded-full transition-opacity duration-200"
+                            style={{ backgroundColor: accent, opacity: isOpen ? 1 : 0 }}
+                            aria-hidden="true"
+                          />
+                        </button>
+                      )
+                    })}
                   </div>
                 </ScrollBounce>
 
-                {/* Expand/Collapse — its own row below the pills, same 14px radius */}
-                <ScrollBounce delay={0.12}>
-                  <div className="no-print mb-6">
+                <ScrollBounce delay={0.14}>
+                  <div className="no-print flex justify-center mb-8">
                     <button
                       onClick={toggleAll}
-                      className="px-3 py-1.5 rounded-[14px] text-[0.7rem] font-bold border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 transition-colors duration-150 active:scale-95 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-700 dark:hover:text-zinc-200"
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-[14px] text-xs font-bold border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 transition-colors duration-150 active:scale-95 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-700 dark:hover:text-zinc-200"
                     >
+                      {allOpen ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />}
                       {allOpen ? 'Collapse all' : 'Expand all'}
                     </button>
                   </div>
@@ -305,13 +297,8 @@ export default function PricingPage() {
                         const pct = bulkDiscountPercent(r.hubId, r.section, r.name, parsePrice(r.price))
                         return (
                           <div key={i} className="abh-card flex items-center gap-3 px-4 py-3 transition-shadow duration-200 hover:shadow-md">
-                            <div
-                              className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
-                              style={{ backgroundColor: `${r.accent}18`, color: r.accent }}
-                              aria-hidden="true"
-                            >
-                              <HubIcon id={r.hubId} size={18} color={r.accent} />
-                            </div>
+                            {/* Raw icon, no bg fill */}
+                            <HubIcon id={r.hubId} size={20} color={r.accent} />
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-semibold text-zinc-900 dark:text-white truncate flex items-center gap-1.5">
                                 <span className="truncate">{r.name}</span>
@@ -357,40 +344,45 @@ export default function PricingPage() {
                         )}
                         style={{ scrollMarginTop: 'calc(var(--nav-h, 74px) + 4.5rem)' }}
                       >
-                        {/* Hub toggle — icon colored, everything else neutral */}
+                        {/* Hub toggle — raw icon (no bg), previews on the
+                            left; service count right-aligned in a fixed
+                            column so digits line up across every hub row
+                            regardless of how many digits the count has;
+                            chevron sits after it, same fixed gap. */}
                         <button
                           onClick={() => toggleHub(hubId)}
                           aria-expanded={isOpen}
                           aria-controls={`pricing-hub-${hubId}`}
                           className={cn(
-                            "w-full flex items-center justify-between px-4 py-4 transition-colors duration-200 text-left",
+                            "w-full flex items-center justify-between gap-3 px-4 py-4 transition-colors duration-200 text-left",
                             isOpen && "bg-zinc-50 dark:bg-white/[0.03]"
                           )}
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            <div
-                              className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
-                              style={{ backgroundColor: `${accent}18`, color: accent }}
-                              aria-hidden="true"
-                            >
-                              <HubIcon id={hubId} size={18} color={accent} />
-                            </div>
+                            <HubIcon id={hubId} size={20} color={accent} />
                             <div className="min-w-0">
                               <p className="text-sm font-black text-zinc-900 dark:text-zinc-50 truncate">
                                 {hub.title}
                               </p>
                               <p className="text-xs text-zinc-400 mt-0.5 truncate">
                                 {HUB_PREVIEWS[hubId].join(' · ')}
-                                <span className="mx-1.5">·</span>
-                                {serviceCount} service{serviceCount !== 1 ? 's' : ''}
                               </p>
                             </div>
                           </div>
-                          <div className={cn("w-7 h-7 rounded-full flex items-center justify-center transition-colors duration-200 shrink-0", isOpen && "bg-zinc-100 dark:bg-white/10")}>
-                            {isOpen
-                              ? <CaretUp size={16} weight="bold" className="text-zinc-500 dark:text-zinc-400" aria-hidden="true" />
-                              : <CaretDown size={16} weight="bold" className="text-zinc-400" aria-hidden="true" />
-                            }
+
+                          <div className="flex items-center gap-3 shrink-0">
+                            <span
+                              className="w-6 text-right text-sm font-black tabular-nums text-zinc-400 dark:text-zinc-500"
+                              aria-label={`${serviceCount} services`}
+                            >
+                              {serviceCount}
+                            </span>
+                            <div className={cn("w-7 h-7 rounded-full flex items-center justify-center transition-colors duration-200 shrink-0", isOpen && "bg-zinc-100 dark:bg-white/10")}>
+                              {isOpen
+                                ? <CaretUp size={16} weight="bold" className="text-zinc-500 dark:text-zinc-400" aria-hidden="true" />
+                                : <CaretDown size={16} weight="bold" className="text-zinc-400" aria-hidden="true" />
+                              }
+                            </div>
                           </div>
                         </button>
 
@@ -409,10 +401,12 @@ export default function PricingPage() {
                                     si > 0 ? 'border-t border-zinc-100 dark:border-zinc-800' : ''
                                   )}
                                 >
-                                  {/* Section label — colored dot only, neutral text */}
+                                  {/* Section label — bumped up from 11px to
+                                      13px, items below stay at text-sm/14px
+                                      as before (unchanged). */}
                                   <div className="flex items-center gap-2 mb-2.5">
                                     <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: accent }} aria-hidden="true" />
-                                    <p className="text-[11px] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+                                    <p className="text-[0.8125rem] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
                                       {section.title}
                                     </p>
                                   </div>
@@ -451,7 +445,7 @@ export default function PricingPage() {
                               )
                             })}
 
-                            {/* Turnaround footer — neutral */}
+                            {/* Turnaround footer */}
                             <div className="px-4 py-2.5 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-white/[0.02]">
                               <p className="text-xs text-zinc-400">
                                 <span className="font-semibold text-zinc-600 dark:text-zinc-300">Turnaround: </span>
@@ -459,16 +453,16 @@ export default function PricingPage() {
                               </p>
                             </div>
 
-                            {/* Per-hub PDF download — centered, Adobe red */}
-                            <div className="no-print px-4 py-4 flex justify-center border-t border-zinc-100 dark:border-zinc-800">
+                            {/* Per-hub PDF download — icon only */}
+                            <div className="no-print px-4 py-3 flex justify-center border-t border-zinc-100 dark:border-zinc-800">
                               <button
                                 onClick={() => handleHubDownload(hubId)}
                                 aria-label={`Download ${hub.title} price list as PDF`}
-                                className="flex items-center gap-2 px-4 py-2 rounded-[14px] text-xs font-black border transition-all duration-150 active:scale-95 hover:-translate-y-0.5"
-                                style={{ color: ADOBE_PDF_RED, borderColor: `${ADOBE_PDF_RED}35`, backgroundColor: `${ADOBE_PDF_RED}0a` }}
+                                title={`Download ${hub.title} price list as PDF`}
+                                className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150 active:scale-90 hover:scale-110"
+                                style={{ color: ADOBE_PDF_RED }}
                               >
-                                <FilePdf size={16} weight="fill" />
-                                {hub.title} price list (PDF)
+                                <FilePdf size={20} weight="fill" />
                               </button>
                             </div>
                           </div>
@@ -480,24 +474,21 @@ export default function PricingPage() {
               )}
             </div>
 
-            {/* Full catalog PDF download — centered, below all lists */}
+            {/* Full catalog PDF download — icon only */}
             <ScrollBounce delay={0.24}>
               <div className="no-print flex justify-center mt-8">
                 <button
                   onClick={handleDownload}
                   aria-label="Download full pricing catalog as PDF"
-                  className="flex items-center gap-2 px-5 py-3 rounded-[14px] font-black text-sm border transition-all duration-200 active:scale-95 hover:-translate-y-0.5 shadow-sm hover:shadow-md"
+                  title="Download full pricing catalog as PDF"
+                  className="w-11 h-11 rounded-full flex items-center justify-center border transition-all duration-200 active:scale-90 hover:scale-105 shadow-sm hover:shadow-md"
                   style={{ color: ADOBE_PDF_RED, borderColor: `${ADOBE_PDF_RED}35`, backgroundColor: `${ADOBE_PDF_RED}0a` }}
                 >
-                  <FilePdf size={20} weight="fill" />
-                  Download Full Pricing Catalog (PDF)
+                  <FilePdf size={22} weight="fill" />
                 </button>
               </div>
             </ScrollBounce>
 
-            {/* Consolidated notice — rush (orange) + bulk (emerald), the
-                only two semantic callouts on the page, replacing the
-                scattered ⚡ icons that used to sit on hub headers/items. */}
             <ScrollBounce delay={0.3}>
               <div
                 className="mt-6 rounded-[14px] border px-5 py-4 space-y-2"
