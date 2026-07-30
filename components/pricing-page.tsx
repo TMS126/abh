@@ -3,8 +3,8 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import {
-  MagnifyingGlass, CaretDown, CaretUp, DownloadSimple,
-  PlusCircle, Check, Lightning, RowsPlusBottom, Rows,
+  MagnifyingGlass, CaretDown, CaretUp,
+  FilePdf, PlusCircle, Check, Lightning, SealPercent,
 } from '@phosphor-icons/react'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
@@ -13,18 +13,16 @@ import { HUBS, type HubId } from '@/lib/data'
 import { HUB_COLORS, BRAND, BIZ, waLink, type HubKey } from '@/lib/brand'
 import { HUB_PREVIEWS } from '@/components/services-page/lib'
 import { HubIcon } from '@/components/services-page/shared'
-import { itemHasBulk } from '@/components/quote-calculator/lib'
+import { BULK_TIERS, isScanItem, SCAN_BULK_RATE } from '@/components/quote-calculator/lib'
 import { cn } from '@/lib/utils'
 
 const HUB_ORDER: HubId[] = ['print', 'doc', 'design', 'eservice', 'tech']
 
-// Hubs whose turnaround copy explicitly promises same-day service — used
-// to surface an inline "rush fee may apply" hint next to their items,
-// since the page-wide rush notice at the bottom is easy to miss once
-// someone's scrolled past it into a specific hub's price list.
-const RUSH_ELIGIBLE_HUBS: HubId[] = HUB_ORDER.filter(id =>
-  HUBS[id].turnaround.toLowerCase().includes('same-day')
-)
+// Adobe Acrobat/PDF brand red — used for both PDF download buttons since
+// they represent the FILE FORMAT, not a specific hub. Kept as the one
+// deliberate splash of color outside the neutral chrome. Confirm this
+// hex against Adobe's current brand kit if exactness matters.
+const ADOBE_PDF_RED = '#EC1C24'
 
 function parsePrice(price: string): number {
   const match = price.match(/\d+/)
@@ -36,6 +34,36 @@ function parsePrice(price: string): number {
 // the Pricing page behaves identically, no separate wiring needed.
 function dispatchAddToQuote(hubId: HubId, sectionTitle: string, name: string, price: string) {
   window.dispatchEvent(new CustomEvent('abh:add-to-quote', { detail: { hubId, sectionTitle, name, price } }))
+}
+
+// Reads the same BULK_TIERS table the Quote Calculator uses to compute
+// its own bulk savings, and turns it into a simple "up to X% off" figure
+// for display here — no cart/qty context needed, just the best available
+// rate vs. the item's base price.
+function bulkDiscountPercent(hubId: HubId, sectionTitle: string, itemName: string, baseAmount: number): number | null {
+  if (baseAmount <= 0) return null
+  const itemId = `${hubId}-${sectionTitle}-${itemName}`
+  const tiers = BULK_TIERS[itemId]
+  if (tiers && tiers.length > 0) {
+    const bestRate = Math.min(...tiers.map(t => t.rate))
+    return Math.round(((baseAmount - bestRate) / baseAmount) * 100)
+  }
+  if (isScanItem(itemName)) {
+    return Math.round(((baseAmount - SCAN_BULK_RATE) / baseAmount) * 100)
+  }
+  return null
+}
+
+function BulkBadge({ percent }: { percent: number }) {
+  return (
+    <span
+      className="inline-flex items-center gap-0.5 text-[0.62rem] font-black text-emerald-600 dark:text-emerald-400"
+      aria-label={`Up to ${percent}% off with bulk pricing`}
+    >
+      <SealPercent size={11} weight="fill" />
+      {percent}%
+    </span>
+  )
 }
 
 type Result = {
@@ -59,7 +87,7 @@ export default function PricingPage() {
   // Brief "Added ✓" swap on whichever add-to-quote button was just
   // tapped — without this the tap gives zero feedback on this page,
   // since the Quote Calculator FAB (the only other confirmation source)
-  // may be off-screen or the person may not have noticed it appear.
+  // may be off-screen or unnoticed.
   const [justAdded, setJustAdded] = useState<string | null>(null)
   const addedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -143,6 +171,14 @@ export default function PricingPage() {
     link.click()
   }, [])
 
+  // Per-hub catalog download — path convention assumed, see note above.
+  const handleHubDownload = useCallback((hubId: HubId) => {
+    const link = document.createElement('a')
+    link.href = `/ApexbytesHub_Pricing_${hubId}.pdf`
+    link.download = `ApexbytesHub_Pricing_${HUBS[hubId].title.replace(/\s+/g, '_')}.pdf`
+    link.click()
+  }, [])
+
   const noResultsWaLink = waLink(`Hi ${BIZ.name}! I couldn't find "${query}" on your pricing page — is this something you offer?`)
 
   return (
@@ -154,9 +190,8 @@ export default function PricingPage() {
         }
       `}</style>
 
-      {/* Only the WhatsApp FAB is suppressed on this page now — the Quote
-          Calculator stays visible so items added here (via the new + 
-          buttons below) have somewhere visible to land and be reviewed. */}
+      {/* Only WhatsApp is suppressed on this page — the Quote Calculator
+          stays visible so items added here have somewhere to land. */}
       <style>{`
         [data-widget="whatsapp-fab"] {
           display: none !important;
@@ -183,10 +218,10 @@ export default function PricingPage() {
 
           <div className="max-w-2xl mx-auto px-4 pb-16">
 
-            {/* Search + Download bar */}
+            {/* Search bar — neutral, no per-hub color */}
             <ScrollBounce delay={0.08}>
-              <div className="no-print sticky top-[calc(var(--nav-h,74px)+0.5rem)] z-10 mb-4 flex gap-2">
-                <div className="relative flex-1">
+              <div className="no-print sticky top-[calc(var(--nav-h,74px)+0.5rem)] z-10 mb-4">
+                <div className="relative">
                   <MagnifyingGlass
                     className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none"
                     weight="bold"
@@ -199,52 +234,41 @@ export default function PricingPage() {
                     placeholder="Search any service or price…"
                     value={query}
                     onChange={e => setQuery(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 border rounded-[14px] bg-white dark:bg-zinc-900 text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 border-zinc-100 dark:border-zinc-800 outline-none focus:border-brand-blue transition-all duration-200 shadow-sm focus:shadow-md"
+                    className="w-full pl-11 pr-4 py-3 border rounded-[14px] bg-white dark:bg-zinc-900 text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 border-zinc-200 dark:border-zinc-800 outline-none focus:border-zinc-400 dark:focus:border-zinc-600 transition-colors duration-200 shadow-sm"
                   />
                 </div>
-
-                <button
-                  onClick={handleDownload}
-                  aria-label="Download pricing catalog as PDF"
-                  className="no-print shrink-0 flex items-center gap-2 px-4 py-3 rounded-[14px] font-medium text-sm text-white transition-all duration-200 active:scale-95 hover:-translate-y-0.5 shadow-lg hover:shadow-xl"
-                  style={{ backgroundColor: BRAND.blue }}
-                >
-                  <DownloadSimple size={18} weight="bold" aria-hidden="true" />
-                  <span>PDF</span>
-                </button>
               </div>
             </ScrollBounce>
 
-            {/* Jump-nav chips + expand/collapse all — hidden while a
-                search query is active, since results are already flat. */}
+            {/* Jump-nav pills — full hub names, no icons, neutral, 14px radius */}
             {results === null && (
-              <ScrollBounce delay={0.1}>
-                <div className="no-print flex items-center justify-between gap-2 mb-6">
-                  <div className="flex flex-wrap gap-1.5">
-                    {HUB_ORDER.map(hubId => {
-                      const accent = accentFor(hubId)
-                      return (
-                        <button
-                          key={hubId}
-                          onClick={() => jumpToHub(hubId)}
-                          className="flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-full text-[0.7rem] font-black border transition-all duration-150 active:scale-95 hover:-translate-y-0.5"
-                          style={{ borderColor: `${accent}35`, color: accent, backgroundColor: `${accent}0a` }}
-                        >
-                          <HubIcon id={hubId} size={13} color={accent} />
-                          {HUBS[hubId].title.replace(' Hub', '')}
-                        </button>
-                      )
-                    })}
+              <>
+                <ScrollBounce delay={0.1}>
+                  <div className="no-print flex flex-wrap gap-1.5 mb-3">
+                    {HUB_ORDER.map(hubId => (
+                      <button
+                        key={hubId}
+                        onClick={() => jumpToHub(hubId)}
+                        className="px-3 py-1.5 rounded-[14px] text-[0.7rem] font-bold border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 transition-colors duration-150 active:scale-95 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-700 dark:hover:text-zinc-200"
+                      >
+                        {HUBS[hubId].title}
+                      </button>
+                    ))}
                   </div>
-                  <button
-                    onClick={toggleAll}
-                    className="shrink-0 flex items-center gap-1.5 text-[0.7rem] font-bold text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors duration-150"
-                  >
-                    {allOpen ? <Rows size={13} weight="bold" /> : <RowsPlusBottom size={13} weight="bold" />}
-                    {allOpen ? 'Collapse all' : 'Expand all'}
-                  </button>
-                </div>
-              </ScrollBounce>
+                </ScrollBounce>
+
+                {/* Expand/Collapse — its own row below the pills, same 14px radius */}
+                <ScrollBounce delay={0.12}>
+                  <div className="no-print mb-6">
+                    <button
+                      onClick={toggleAll}
+                      className="px-3 py-1.5 rounded-[14px] text-[0.7rem] font-bold border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 transition-colors duration-150 active:scale-95 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-700 dark:hover:text-zinc-200"
+                    >
+                      {allOpen ? 'Collapse all' : 'Expand all'}
+                    </button>
+                  </div>
+                </ScrollBounce>
+              </>
             )}
 
             {/* Content */}
@@ -263,7 +287,7 @@ export default function PricingPage() {
                         href={noResultsWaLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-black text-white transition-all duration-150 active:scale-95 hover:-translate-y-0.5 shadow-md"
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-[14px] text-xs font-black text-white transition-all duration-150 active:scale-95 hover:-translate-y-0.5 shadow-md"
                         style={{ backgroundColor: '#25D366' }}
                       >
                         Can't find it? Ask us on WhatsApp
@@ -278,12 +302,9 @@ export default function PricingPage() {
                       </p>
                       {results.map((r, i) => {
                         const key = `${r.hubId}-${r.section}-${r.name}`
-                        const rushEligible = RUSH_ELIGIBLE_HUBS.includes(r.hubId)
+                        const pct = bulkDiscountPercent(r.hubId, r.section, r.name, parsePrice(r.price))
                         return (
-                          <div
-                            key={i}
-                            className="abh-card flex items-center gap-3 px-4 py-3 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
-                          >
+                          <div key={i} className="abh-card flex items-center gap-3 px-4 py-3 transition-shadow duration-200 hover:shadow-md">
                             <div
                               className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
                               style={{ backgroundColor: `${r.accent}18`, color: r.accent }}
@@ -293,22 +314,8 @@ export default function PricingPage() {
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-semibold text-zinc-900 dark:text-white truncate flex items-center gap-1.5">
-                                {r.name}
-                                {itemHasBulk(r.hubId, r.section, r.name) && (
-                                  <span
-                                    aria-label="Bulk pricing available"
-                                    className="w-1.5 h-1.5 rounded-full shrink-0"
-                                    style={{ backgroundColor: r.accent, opacity: 0.5 }}
-                                  />
-                                )}
-                                {rushEligible && (
-                                  <Lightning
-                                    size={11}
-                                    weight="fill"
-                                    className="shrink-0 text-amber-500"
-                                    aria-label="Rush fee may apply for urgent turnaround"
-                                  />
-                                )}
+                                <span className="truncate">{r.name}</span>
+                                {pct !== null && <BulkBadge percent={pct} />}
                               </p>
                               <p className="text-xs text-zinc-400 mt-0.5">
                                 {r.hubTitle} · {r.section}
@@ -339,57 +346,49 @@ export default function PricingPage() {
                   const accent = accentFor(hubId)
                   const isOpen = openHubs.has(hubId)
                   const serviceCount = hub.sections.reduce((sum, s) => sum + s.items.length, 0)
-                  const rushEligible = RUSH_ELIGIBLE_HUBS.includes(hubId)
 
                   return (
                     <ScrollBounce key={hubId} delay={idx * 0.06}>
                       <div
                         ref={(el) => { hubRefs.current[hubId] = el }}
-                        className="abh-card overflow-hidden transition-all duration-300 hover:shadow-md"
-                        style={{
-                          borderColor: isOpen ? `${accent}50` : undefined,
-                          boxShadow: isOpen ? `0 8px 24px -8px ${accent}30, 0 4px 12px -4px rgba(0,0,0,0.12)` : undefined,
-                          scrollMarginTop: 'calc(var(--nav-h, 74px) + 4.5rem)',
-                        }}
+                        className={cn(
+                          "abh-card overflow-hidden transition-shadow duration-300 hover:shadow-md",
+                          isOpen && "border-zinc-300 dark:border-zinc-700"
+                        )}
+                        style={{ scrollMarginTop: 'calc(var(--nav-h, 74px) + 4.5rem)' }}
                       >
-                        {/* Hub toggle */}
+                        {/* Hub toggle — icon colored, everything else neutral */}
                         <button
                           onClick={() => toggleHub(hubId)}
                           aria-expanded={isOpen}
                           aria-controls={`pricing-hub-${hubId}`}
-                          className="w-full flex items-center justify-between px-4 py-4 transition-all duration-200 text-left"
-                          style={isOpen ? { backgroundColor: `${accent}08` } : undefined}
+                          className={cn(
+                            "w-full flex items-center justify-between px-4 py-4 transition-colors duration-200 text-left",
+                            isOpen && "bg-zinc-50 dark:bg-white/[0.03]"
+                          )}
                         >
                           <div className="flex items-center gap-3 min-w-0">
                             <div
-                              className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 transition-colors duration-300"
+                              className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
                               style={{ backgroundColor: `${accent}18`, color: accent }}
                               aria-hidden="true"
                             >
                               <HubIcon id={hubId} size={18} color={accent} />
                             </div>
                             <div className="min-w-0">
-                              <p className="text-sm font-black text-zinc-900 dark:text-zinc-50 flex items-center gap-1.5 truncate">
+                              <p className="text-sm font-black text-zinc-900 dark:text-zinc-50 truncate">
                                 {hub.title}
-                                {rushEligible && (
-                                  <Lightning size={11} weight="fill" className="shrink-0 text-amber-500" aria-label="Rush service available" />
-                                )}
                               </p>
                               <p className="text-xs text-zinc-400 mt-0.5 truncate">
                                 {HUB_PREVIEWS[hubId].join(' · ')}
                                 <span className="mx-1.5">·</span>
-                                <span className="font-semibold" style={{ color: accent }}>
-                                  {serviceCount} service{serviceCount !== 1 ? 's' : ''}
-                                </span>
+                                {serviceCount} service{serviceCount !== 1 ? 's' : ''}
                               </p>
                             </div>
                           </div>
-                          <div
-                            className="w-7 h-7 rounded-full flex items-center justify-center transition-colors duration-200 shrink-0"
-                            style={isOpen ? { backgroundColor: `${accent}18` } : undefined}
-                          >
+                          <div className={cn("w-7 h-7 rounded-full flex items-center justify-center transition-colors duration-200 shrink-0", isOpen && "bg-zinc-100 dark:bg-white/10")}>
                             {isOpen
-                              ? <CaretUp size={16} weight="bold" style={{ color: accent }} aria-hidden="true" />
+                              ? <CaretUp size={16} weight="bold" className="text-zinc-500 dark:text-zinc-400" aria-hidden="true" />
                               : <CaretDown size={16} weight="bold" className="text-zinc-400" aria-hidden="true" />
                             }
                           </div>
@@ -397,7 +396,7 @@ export default function PricingPage() {
 
                         {/* Hub sections */}
                         {isOpen && (
-                          <div id={`pricing-hub-${hubId}`} className="border-t animate-in fade-in slide-in-from-top-1 duration-200" style={{ borderColor: `${accent}25` }}>
+                          <div id={`pricing-hub-${hubId}`} className="border-t border-zinc-100 dark:border-zinc-800 animate-in fade-in slide-in-from-top-1 duration-200">
                             {hub.sections.map((section, si) => {
                               const sorted = [...section.items].sort(
                                 (a, b) => parsePrice(a.price) - parsePrice(b.price)
@@ -410,17 +409,18 @@ export default function PricingPage() {
                                     si > 0 ? 'border-t border-zinc-100 dark:border-zinc-800' : ''
                                   )}
                                 >
-                                  {/* Section label */}
+                                  {/* Section label — colored dot only, neutral text */}
                                   <div className="flex items-center gap-2 mb-2.5">
                                     <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: accent }} aria-hidden="true" />
-                                    <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: accent }}>
+                                    <p className="text-[11px] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
                                       {section.title}
                                     </p>
                                   </div>
 
-                                  <div className="space-y-1.5">
+                                  <div className="space-y-1">
                                     {sorted.map(item => {
                                       const key = `${hubId}-${section.title}-${item.name}`
+                                      const pct = bulkDiscountPercent(hubId, section.title, item.name, parsePrice(item.price))
                                       return (
                                         <div
                                           key={item.name}
@@ -428,13 +428,7 @@ export default function PricingPage() {
                                         >
                                           <span className="text-sm text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 min-w-0">
                                             <span className="truncate">{item.name}</span>
-                                            {itemHasBulk(hubId, section.title, item.name) && (
-                                              <span
-                                                aria-label="Bulk pricing available"
-                                                className="w-1.5 h-1.5 rounded-full shrink-0"
-                                                style={{ backgroundColor: accent, opacity: 0.5 }}
-                                              />
-                                            )}
+                                            {pct !== null && <BulkBadge percent={pct} />}
                                           </span>
                                           <div className="flex items-center gap-2 shrink-0">
                                             <span className="text-sm font-black" style={{ color: accent }}>{item.price}</span>
@@ -457,15 +451,25 @@ export default function PricingPage() {
                               )
                             })}
 
-                            {/* Turnaround footer */}
-                            <div
-                              className="px-4 py-2.5 border-t"
-                              style={{ borderColor: `${accent}25`, backgroundColor: `${accent}06` }}
-                            >
+                            {/* Turnaround footer — neutral */}
+                            <div className="px-4 py-2.5 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-white/[0.02]">
                               <p className="text-xs text-zinc-400">
-                                <span className="font-semibold" style={{ color: accent }}>Turnaround: </span>
+                                <span className="font-semibold text-zinc-600 dark:text-zinc-300">Turnaround: </span>
                                 {hub.turnaround}
                               </p>
+                            </div>
+
+                            {/* Per-hub PDF download — centered, Adobe red */}
+                            <div className="no-print px-4 py-4 flex justify-center border-t border-zinc-100 dark:border-zinc-800">
+                              <button
+                                onClick={() => handleHubDownload(hubId)}
+                                aria-label={`Download ${hub.title} price list as PDF`}
+                                className="flex items-center gap-2 px-4 py-2 rounded-[14px] text-xs font-black border transition-all duration-150 active:scale-95 hover:-translate-y-0.5"
+                                style={{ color: ADOBE_PDF_RED, borderColor: `${ADOBE_PDF_RED}35`, backgroundColor: `${ADOBE_PDF_RED}0a` }}
+                              >
+                                <FilePdf size={16} weight="fill" />
+                                {hub.title} price list (PDF)
+                              </button>
                             </div>
                           </div>
                         )}
@@ -476,11 +480,36 @@ export default function PricingPage() {
               )}
             </div>
 
-            {/* Rush fee notice */}
+            {/* Full catalog PDF download — centered, below all lists */}
+            <ScrollBounce delay={0.24}>
+              <div className="no-print flex justify-center mt-8">
+                <button
+                  onClick={handleDownload}
+                  aria-label="Download full pricing catalog as PDF"
+                  className="flex items-center gap-2 px-5 py-3 rounded-[14px] font-black text-sm border transition-all duration-200 active:scale-95 hover:-translate-y-0.5 shadow-sm hover:shadow-md"
+                  style={{ color: ADOBE_PDF_RED, borderColor: `${ADOBE_PDF_RED}35`, backgroundColor: `${ADOBE_PDF_RED}0a` }}
+                >
+                  <FilePdf size={20} weight="fill" />
+                  Download Full Pricing Catalog (PDF)
+                </button>
+              </div>
+            </ScrollBounce>
+
+            {/* Consolidated notice — rush (orange) + bulk (emerald), the
+                only two semantic callouts on the page, replacing the
+                scattered ⚡ icons that used to sit on hub headers/items. */}
             <ScrollBounce delay={0.3}>
-              <div className="mt-8 rounded-[14px] border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-900/10 px-5 py-4 transition-shadow duration-200 hover:shadow-sm">
-                <p className="text-xs text-amber-700 dark:text-amber-400">
-                  <span className="font-black">⚡ Rush fee:</span> A 50% surcharge applies when same-session or urgent turnaround is required.
+              <div
+                className="mt-6 rounded-[14px] border px-5 py-4 space-y-2"
+                style={{ borderColor: `${BRAND.orange}35`, backgroundColor: `${BRAND.orange}0a` }}
+              >
+                <p className="text-xs flex items-start gap-1.5" style={{ color: BRAND.orange }}>
+                  <Lightning size={14} weight="fill" className="shrink-0 mt-0.5" />
+                  <span><span className="font-black">Rush fee:</span> A 50% surcharge applies when same-session or urgent turnaround is required.</span>
+                </p>
+                <p className="text-xs flex items-start gap-1.5 text-emerald-600 dark:text-emerald-400">
+                  <SealPercent size={14} weight="fill" className="shrink-0 mt-0.5" />
+                  <span>Look for the % badge next to a service — that's how much bulk pricing can save you.</span>
                 </p>
               </div>
             </ScrollBounce>
