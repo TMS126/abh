@@ -9,7 +9,7 @@ import { useTheme } from "next-themes"
 import { HUB_COLORS } from "@/lib/brand"
 import { HUBS, HubId, HUB_DISCLAIMERS } from "@/lib/data"
 import { HubIcon, useFocusTrap } from "./shared"
-import { getTurnaround, SelectedService } from "./lib"
+import { getTurnaround, SelectedService, sectionHasBulk, itemHasBulk } from "./lib"
 
 export function HubModal({ hubId, onClose, onSelectService }: {
   hubId: HubId | null
@@ -108,18 +108,26 @@ export function HubModal({ hubId, onClose, onSelectService }: {
           <div role="tablist" aria-label="Service categories" className="flex flex-wrap justify-center gap-2 mb-5">
             {hub.sections.map((section, sIdx) => {
               const isOpen = openSectionIdx === sIdx
+              const hasBulk = sectionHasBulk(hubId, section.title, section.items)
               return (
                 <button
                   key={sIdx}
                   role="tab"
                   aria-selected={isOpen}
                   onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)}
-                  className={`px-3.5 py-1.5 rounded-full text-[0.7rem] font-black tracking-tight whitespace-nowrap transition-all duration-200 ${
+                  className={`relative px-3.5 py-1.5 rounded-full text-[0.7rem] font-black tracking-tight whitespace-nowrap transition-all duration-200 ${
                     isOpen ? "text-white" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
                   }`}
                   style={isOpen ? { backgroundColor: solidAccent, boxShadow: `0 10px 24px -6px ${solidAccent}90, 0 4px 10px -2px ${solidAccent}70` } : {}}
                 >
                   {section.title}
+                  {hasBulk && (
+                    <span
+                      aria-label="Bulk pricing available"
+                      className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-zinc-950 animate-pulse"
+                      style={{ backgroundColor: isOpen ? "#fff" : solidAccent }}
+                    />
+                  )}
                 </button>
               )
             })}
@@ -150,7 +158,16 @@ export function HubModal({ hubId, onClose, onSelectService }: {
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = accent }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = "transparent" }}
                 >
-                  <span className="text-[0.84rem] font-black text-zinc-800 dark:text-zinc-200 text-left">{item.name}</span>
+                  <span className="text-[0.84rem] font-black text-zinc-800 dark:text-zinc-200 text-left flex items-center gap-1.5">
+                    {item.name}
+                    {itemHasBulk(hubId, activeSection.title, item.name) && (
+                      <span
+                        aria-label="Bulk pricing available"
+                        className="w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{ backgroundColor: accent, opacity: 0.5 }}
+                      />
+                    )}
+                  </span>
                   <span className="text-[0.84rem] font-black shrink-0 ml-3" style={{ color: accent }}>{item.price}</span>
                 </button>
               ))}
