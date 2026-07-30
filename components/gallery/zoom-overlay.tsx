@@ -3,6 +3,18 @@
 import { useEffect, useRef, useState } from "react"
 import { X, CaretLeft, CaretRight } from "@phosphor-icons/react"
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)")
+    setIsMobile(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener("change", handler)
+    return () => mq.removeEventListener("change", handler)
+  }, [])
+  return isMobile
+}
+
 export function ZoomOverlay({ images, startIndex, onClose, title }: {
   images: string[]
   startIndex: number
@@ -10,6 +22,7 @@ export function ZoomOverlay({ images, startIndex, onClose, title }: {
   title: string
 }) {
   const [idx, setIdx]   = useState(startIndex)
+  const isMobile        = useIsMobile()
   const touchStartX     = useRef(0)
   const touchStartY     = useRef(0)
 
@@ -83,10 +96,19 @@ export function ZoomOverlay({ images, startIndex, onClose, title }: {
         </>
       )}
       {images.length > 1 && (
-        <p className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/40 text-[0.65rem] font-bold uppercase tracking-widest whitespace-nowrap pointer-events-none">
-          Swipe or use arrow keys
-        </p>
+        isMobile ? (
+          <p className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/40 text-[0.65rem] font-bold uppercase tracking-widest whitespace-nowrap pointer-events-none">
+            Swipe or use arrow keys
+          </p>
+        ) : (
+          <button
+            onClick={() => setIdx(i => (i + 1) % images.length)}
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/40 hover:text-white/80 text-[0.65rem] font-bold uppercase tracking-widest whitespace-nowrap transition-colors"
+          >
+            Click to view next image · or use arrow keys
+          </button>
+        )
       )}
     </div>
   )
-  }
+                                        } 
