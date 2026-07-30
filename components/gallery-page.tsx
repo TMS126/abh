@@ -299,9 +299,9 @@ function GalleryPageInner() {
                       <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
                         <div className="w-1.5 h-8 rounded-full hidden md:block" style={{ backgroundColor: "#1E6FA8" }} />
                         <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 hidden md:block">{row.label}</h2>
-                        <div className="hidden md:block">
-                          <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
-                        </div>
+                        <div className="hidden md:block md:ml-auto">
+  <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
+</div>
                       </div>
                       <div className="px-4 md:px-0">
                         <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} likedIds={likedIds} onToggleLike={toggleLike} />
