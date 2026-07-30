@@ -4,13 +4,13 @@
 import { useState, useEffect, useRef, type ChangeEvent } from "react"
 import { motion } from "framer-motion"
 import {
-  X, Paperclip, ShoppingCartSimple, CheckCircle, WarningCircle, ShieldCheck, ShareNetwork, Clock,
+  X, Paperclip, ShoppingCartSimple, Plus, Minus, CheckCircle, WarningCircle, ShieldCheck, ShareNetwork, Clock,
 } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
-import { HUB_COLORS, HubKey, BIZ } from "@/lib/brand"
+import { BRAND, HUB_COLORS, HubKey, BIZ } from "@/lib/brand"
 import { HUBS } from "@/lib/data"
-import { useFocusTrap, AbhLoader, DragHandle, shouldDismissOnDrag } from "./shared"
+import { useFocusTrap, HubIcon } from "./shared"
 import {
   SelectedService, naturalServiceLabel, cleanText, formatAcceptHint,
   HUB_ACCEPT, CLD_MAX_MB, CLD_PRESET, BLOCKED_MIME_TYPES, BLOCKED_EXTENSIONS, getCldUrl, trackEvent,
@@ -99,6 +99,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
   const hubTitle    = HUBS[svc.hubId]?.title || svc.sectionTitle
   const naturalLabel = naturalServiceLabel(svc.name, svc.sectionTitle)
   const acceptHint  = formatAcceptHint(HUB_ACCEPT[svc.hubId])
+  const itemId      = `${svc.hubId}-${svc.sectionTitle}-${svc.name}`
 
   const handleShare = async () => {
     const shareText = `${naturalLabel} — ${svc.price} at ${BIZ.name}`
@@ -120,6 +121,18 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
     setQuoteQty(prev => prev + 1)
   }
 
+  // Stepper +/-, used once the item is already in the quote. Dispatches a
+  // NEW event ("abh:step-quote-qty") separate from "abh:add-to-quote",
+  // since the existing add event always increments by exactly 1 and has
+  // no concept of decrementing. QuoteCalculatorWidget needs a matching
+  // listener added for this to actually update the real cart — see the
+  // follow-up snippet.
+  const handleStepQty = (delta: number) => {
+    const nextQty = Math.max(0, quoteQty + delta)
+    window.dispatchEvent(new CustomEvent("abh:step-quote-qty", { detail: { id: itemId, delta } }))
+    setQuoteQty(nextQty)
+  }
+
   const waMessage = fileUrl
     ? `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). Price shown: ${svc.price}. My file: ${fileUrl}`
     : `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). Price shown: ${svc.price}. Can you assist?`
@@ -129,40 +142,51 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
     : ["Just bring your file, document or USB — we'll take care of the rest."]
 
   const desc = svc.desc?.trim() || null
-  const inQuote = addedToQuote || quoteQty > 0
+  const inQuote = quoteQty > 0
+  const neutralIconColor = isDark ? "#e4e4e7" : "#3f3f46"
 
   return (
     <div className="fixed inset-0 z-[10200] flex items-center justify-center p-3 md:p-4">
+      {/* Dim overlay behind this modal — bumped slightly darker (45 → 55)
+          so whatever's underneath (e.g. HubModal, if this was opened from
+          within it) reads as clearly dimmed rather than barely darkened. */}
       <motion.div
-        className="absolute inset-0 bg-black/45"
+        className="absolute inset-0 bg-black/55"
         onClick={onClose}
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
       />
+      {/* Swipe-to-dismiss removed — no more drag props, no more grab
+          cursor, no more DragHandle grip at the top. Only the X button
+          and backdrop click close this modal now. Appearance matches
+          HubModal: centered scale+fade in/out. */}
       <motion.div
         ref={containerRef}
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={svc.name}
-        drag="y"
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={{ top: 0, bottom: 0.6 }}
-        onDragEnd={(_e, info) => { if (shouldDismissOnDrag(info)) onClose() }}
         initial={{ scale: 0.92, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.96, opacity: 0 }}
         transition={{ type: "tween", duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
-        className="relative w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px] cursor-grab active:cursor-grabbing"
+        className="relative w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px]"
         style={{ boxShadow: `0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4), 0 10px 24px -8px ${accent}50` }}
       >
-        <DragHandle />
-
-        <div className="px-6 pt-4 pb-5 flex-shrink-0">
-          <div className="flex items-start mb-4">
+        <div className="px-6 pt-6 pb-5 flex-shrink-0">
+          <div className="flex items-start mb-2">
             <div className="w-[72px] shrink-0" aria-hidden="true" />
 
             <div className="flex-1 min-w-0 text-center">
+              {/* Which hub this service belongs to — small icon + label
+                  above the section pill. */}
+              <div className="flex items-center justify-center gap-1.5 mb-2">
+                <HubIcon id={svc.hubId} size={12} color={accent} />
+                <span className="text-[0.62rem] font-black uppercase tracking-widest" style={{ color: accent }}>
+                  {hubTitle}
+                </span>
+              </div>
+
               <span
                 className="text-[0.62rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-2.5 inline-block"
                 style={{ backgroundColor: `${accent}15`, color: accent }}
@@ -197,9 +221,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
 
           <div className="h-px bg-zinc-100 dark:bg-zinc-800 mb-4" />
 
-          {/* Price, with the turnaround pill stacked directly beneath it
-              instead of sitting beside it — reads cleaner as a single
-              "price block" rather than two competing pieces of info. */}
           <div className="flex flex-col items-center gap-1.5">
             <span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
             {svc.turnaround && (
@@ -227,7 +248,10 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                   )}
                   style={isActive ? { backgroundColor: accent, color: isDark ? "#0a0a0a" : "#ffffff" } : undefined}
                 >
-                  {t === "bring" ? "Bring" : "Description"}
+                  {/* "Needs" (5 letters) replaces "Bring" as the label —
+                      same length as before, so the tab pair keeps its
+                      current visual balance against "Description". */}
+                  {t === "bring" ? "Needs" : "Description"}
                 </button>
               )
             })}
@@ -257,7 +281,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                 : <p className="abh-muted text-[0.84rem]">No description available for this service yet.</p>
               }
               <p className="abh-muted mt-5">
-                Have questions? Switch to the <span className="font-black" style={{ color: accent }}>What to Bring</span> tab or chat with us directly.
+                Have questions? Switch to the <span className="font-black" style={{ color: accent }}>Needs</span> tab or chat with us directly.
               </p>
             </div>
           )}
@@ -266,10 +290,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         <div className="px-6 pb-6 pt-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
           <input ref={fileRef} type="file" accept={HUB_ACCEPT[svc.hubId]} onChange={handleFilePick} className="hidden" />
 
-          {/* Two compact icon actions side by side, replacing the old
-              stacked full-width "Attach a file" dashed box + separate
-              full-width "Add to Quote" button — same two actions, far
-              less visual weight, easier to scan at a glance. */}
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
@@ -285,18 +305,54 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
               {uploadPhase === "done" ? "Attached" : "Attach File"}
             </button>
 
-            <button
-              type="button"
-              onClick={handleAddToQuote}
-              className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-[14px] font-bold text-[0.7rem] border-2 transition-all active:scale-95"
-              style={inQuote
-                ? { borderColor: "#22c55e", backgroundColor: "#22c55e10", color: "#16a34a" }
-                : { borderColor: `${accent}35`, color: accent, backgroundColor: "transparent" }
-              }
-            >
-              <ShoppingCartSimple size={18} weight="bold" aria-hidden="true" />
-              {inQuote ? `In Quote${quoteQty > 1 ? ` · ${quoteQty}` : ""}` : "Add to Quote"}
-            </button>
+            {!inQuote ? (
+              <button
+                type="button"
+                onClick={handleAddToQuote}
+                className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-[14px] font-bold text-[0.7rem] border-2 transition-all active:scale-95"
+                style={{ borderColor: `${accent}35`, color: accent, backgroundColor: "transparent" }}
+              >
+                <ShoppingCartSimple size={18} weight="bold" aria-hidden="true" />
+                Add to Quote
+              </button>
+            ) : (
+              // In-quote state: "Added" + a translucent count pill, with a
+              // minus/plus stepper on either side. Circles are border-only
+              // (not filled) at rest — red border for minus, green for
+              // plus, with a NEUTRAL (theme-aware) icon color, not
+              // red/green on the glyph itself. On desktop hover, the
+              // circle fills solid with its color and the icon swaps to
+              // white for contrast, matching mobile's tap-and-hold look.
+              <div
+                className="flex items-center justify-between gap-2 rounded-[14px] border-2 py-2 px-2.5"
+                style={{ borderColor: "#22c55e40", backgroundColor: "#22c55e0d" }}
+              >
+                <button
+                  type="button"
+                  onClick={() => handleStepQty(-1)}
+                  aria-label="Remove one from quote"
+                  className="group w-8 h-8 rounded-full border-2 border-red-500 flex items-center justify-center shrink-0 transition-colors duration-150 hover:bg-red-500 active:scale-90"
+                >
+                  <Minus size={14} weight="bold" style={{ color: neutralIconColor }} className="transition-colors duration-150 group-hover:!text-white" />
+                </button>
+
+                <span className="flex items-center gap-1.5 text-[0.78rem] font-black text-green-600 dark:text-green-400">
+                  Added
+                  <span className="text-[0.65rem] font-black px-2 py-0.5 rounded-full bg-green-500/15">
+                    {quoteQty}
+                  </span>
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => handleStepQty(1)}
+                  aria-label="Add one more to quote"
+                  className="group w-8 h-8 rounded-full border-2 border-green-500 flex items-center justify-center shrink-0 transition-colors duration-150 hover:bg-green-500 active:scale-90"
+                >
+                  <Plus size={14} weight="bold" style={{ color: neutralIconColor }} className="transition-colors duration-150 group-hover:!text-white" />
+                </button>
+              </div>
+            )}
           </div>
 
           {uploadPhase === "idle" && (
@@ -307,10 +363,30 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           )}
 
           {uploadPhase === "uploading" && (
-            <div className="flex items-center gap-3 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-zinc-50 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400">
-              <AbhLoader size={24} color={accent} />
-              <span className="font-black tabular-nums shrink-0" style={{ color: accent }}>{uploadProgress}%</span>
-              <span className="truncate">Uploading {file?.name}…</span>
+            <div className="flex flex-col gap-2 w-full px-4 py-3 rounded-[14px] bg-zinc-50 dark:bg-zinc-900">
+              <div className="flex items-center justify-between text-sm font-bold text-zinc-500 dark:text-zinc-400">
+                <span className="truncate">Uploading {file?.name}…</span>
+                <span className="font-black tabular-nums shrink-0 ml-2 text-zinc-700 dark:text-zinc-200">{uploadProgress}%</span>
+              </div>
+              {/* Linear loader in brand colors — blue (0-70%), green
+                  (70-92%), orange (92-100%) — colors are fixed relative to
+                  the FULL track, revealed as the real upload progresses,
+                  rather than scaled to whatever sliver is currently
+                  filled. Achieved by drawing the full gradient underneath
+                  and sliding a track-colored cover over the unfilled
+                  remainder from the right. */}
+              <div className="relative w-full h-2 rounded-full overflow-hidden bg-zinc-200 dark:bg-zinc-800">
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: `linear-gradient(90deg, ${BRAND.blue} 0%, ${BRAND.blue} 70%, ${BRAND.green} 70%, ${BRAND.green} 92%, ${BRAND.orange} 92%, ${BRAND.orange} 100%)`,
+                  }}
+                />
+                <div
+                  className="absolute inset-y-0 right-0 bg-zinc-200 dark:bg-zinc-800 transition-[width] duration-150 ease-out"
+                  style={{ width: `${100 - uploadProgress}%` }}
+                />
+              </div>
             </div>
           )}
 
