@@ -239,7 +239,7 @@ export const TURNAROUND: Record<string, string> = {
   "Laminating":          "10–20 mins",
   // Docu Hub
   "Typing + Printing":   "1–3 hours",
-  "CV Services":         "24–48 hours",
+  "CV Services":         "1–3 hours",
   "Other Documents":     "1–2 hours",
   // Design Hub
   "Logos":               "2–3 days",
@@ -261,7 +261,7 @@ export const TURNAROUND: Record<string, string> = {
   "Software":            "1–3 hours",
   "Hardware":            "1–2 days",
   "Support":             "2–6 hours",
-  "Windows & Office":    "2–4 hours",
+  "Windows & Office":    "2–6 hours",
 }
 
 // Item-level overrides for services that differ from their section's estimate
@@ -278,9 +278,9 @@ export const TURNAROUND_OVERRIDE: Record<string, string> = {
   "UIF Claims":                  "2–3 days",
   "CSD Registration":            "1–2 days",
   "Learner's Licence Booking":   "24 hours",
-  "PC Setup":                    "2–4 hours",
-  "PC Cleanup":                  "2–4 hours",
-  "Virus / Malware Removal":     "2–4 hours",
+  "PC Setup":                    "2–6 hours",
+  "PC Cleanup":                  "2–6 hours",
+  "Virus / Malware Removal":     "2–6 hours",
 }
 
 export const TURNAROUND_DISCLAIMER =
@@ -340,23 +340,23 @@ export const PROJECTS = [
     tools: ["Microsoft Word", "Clean, structured formatting"],
     result: "Client received a complete, professional CV ready for job applications.",
   },
-  {
-  id: "cv-modernization",
-  hub: "doc" as HubId,
-  title: "Professional CV Redesign & Modern Layouts",
-  tag: HUB_NAMES.doc,
-  shortDesc: "Transformed traditional text-heavy CVs into high-impact, modern layouts with clean typography and professional formatting.",
-  image: "/gallery/docu/1000048082.webp",
-  images: ["/cvs1.webp", "/gallery/docu/1000048085.webp"],
-  clientType: "client" as const,
-  clientGoal: "Clients needed to upgrade their outdated CV formats into eye-catching, professionally structured documents to stand out to recruiters.",
-  whatWeDid: [
-    "Redesigned the layout using contemporary sidebar color-blocking",
-    "Integrated professional profile photo elements seamlessly",
-    "Structured contact details, work experience, and education for rapid scanning",
-    "Formatted a dedicated, clean section for professional references",
-    "Delivered sharp, high-contrast premium prints of the final documents"
-  ],
+ // {
+ // id: "cv-modernization",
+ // hub: "doc" as HubId,
+  //title: "Professional CV Redesign & Modern Layouts",
+  //tag: HUB_NAMES.doc,
+ // shortDesc: "Transformed traditional text-heavy CVs into high-impact, modern layouts with clean typography and professional formatting.",
+//  image: "/gallery/docu/1000048082.webp",
+ // images: ["/cvs1.webp", "/gallery/docu/1000048085.webp"],
+  //clientType: "client" as const,
+//  clientGoal: "Clients needed to upgrade their outdated CV formats into eye-catching, professionally structured documents to stand out to recruiters.",
+ // whatWeDid: [
+    //"Redesigned the layout using contemporary sidebar color-blocking",
+ //   "Integrated professional profile photo elements seamlessly",
+   // "Structured contact details, work experience, and education for rapid scanning",
+   // "Formatted a dedicated, clean section for professional references",
+   // "Delivered sharp, high-contrast premium prints of the final documents"
+//  ],
   tools: ["Advanced Document Formatting", "Modern Layout Design Principles"],
   result: "Provided clients with polished, executive-style CVs that elevate their professional presentation and confidence in the job market.",
 },
