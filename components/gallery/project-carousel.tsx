@@ -1,12 +1,13 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { usePathname } from "next/navigation"
 import { CaretLeft, CaretRight, ArrowsLeftRight } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 import { ProjectData } from "@/lib/data"
 import { BA_HUBS, CLIENT_TYPE_BADGE_BG, CLIENT_TYPE_LABEL, HubId, hubLabelFor } from "@/lib/gallery-helpers"
 import { SafeImage } from "./safe-image"
-import { LikeButton } from "./like-share-buttons"
+import { LikeButton, ShareButton } from "./like-share-buttons"
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false)
@@ -20,28 +21,27 @@ function useIsMobile() {
   return isMobile
 }
 
-// ─── Mobile card — image carries everything: solid (not gradient) bars top
-// and bottom hold heart/hub/position and title/client-type. No outer border
-// wrapping the image; the image's own rounded corners are the only frame.
+// ─── Mobile card — hub name (not caps, hub-colored) top-left, project count
+// badge top-right corner, heart+share grouped bottom-right over the image,
+// title/client-type on the solid bottom bar.
 function MobileProjectCard({
   project, accent, onSelect, liked, onToggleLike, position,
 }: {
   project: ProjectData; accent: string; onSelect: (p: ProjectData) => void
   liked: boolean; onToggleLike: (e: React.MouseEvent) => void; position: string
 }) {
+  const pathname = usePathname()
   const hasBA = BA_HUBS.includes(project.hub as HubId) && !!(project as any).beforeImage && !!(project as any).afterImage
+  const shareUrl = typeof window !== "undefined" ? `${window.location.origin}${pathname}?project=${project.id}` : `${pathname}?project=${project.id}`
 
   return (
     <button onClick={() => onSelect(project)} className="w-full text-left">
       <div className="relative aspect-[4/3] rounded-[16px] overflow-hidden">
         <SafeImage src={project.image} alt={project.title} accent={accent} fill sizes="100vw" className="object-cover" />
 
-        {/* Top bar — solid, no gradient */}
+        {/* Top bar — hub name only, not all-caps, hub-colored */}
         <div className="absolute top-0 inset-x-0 flex items-center gap-2 px-3 py-2.5 bg-zinc-950/90">
-          <div onClick={(e) => e.stopPropagation()} className="shrink-0">
-            <LikeButton liked={liked} onToggle={onToggleLike} context="card" />
-          </div>
-          <span className="flex-1 min-w-0 text-white text-[0.68rem] font-black uppercase tracking-wider truncate">
+          <span className="flex-1 min-w-0 text-[0.75rem] font-black truncate" style={{ color: accent }}>
             {hubLabelFor(project.hub)}
           </span>
           {hasBA && (
@@ -53,7 +53,21 @@ function MobileProjectCard({
               B&amp;A
             </span>
           )}
-          <span className="shrink-0 text-white/70 text-[0.62rem] font-bold">{position}</span>
+        </div>
+
+        {/* Position badge — top-right corner */}
+        <div className="absolute top-2.5 right-2.5 px-2 py-1 rounded-full bg-black/40 backdrop-blur-md text-white/80 text-[0.62rem] font-bold">
+          {position}
+        </div>
+
+        {/* Heart + share — grouped, bottom-right, over the image */}
+        <div className="absolute bottom-16 right-2.5 flex flex-col items-center gap-2">
+          <div onClick={(e) => e.stopPropagation()} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center [&_svg]:text-white">
+            <LikeButton liked={liked} onToggle={onToggleLike} context="card" />
+          </div>
+          <div onClick={(e) => e.stopPropagation()} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center [&_svg]:text-white">
+            <ShareButton url={shareUrl} title={project.title} />
+          </div>
         </div>
 
         {/* Bottom bar — solid, title never truncates, wraps freely */}
@@ -67,6 +81,36 @@ function MobileProjectCard({
         </div>
       </div>
     </button>
+  )
+}
+
+// Shows the first project full-size; if more exist, two faint offset layers
+// peek out behind it to hint at a stack. Full browsing of the rest happens
+// via the "N projects" popover already in the row header.
+function StackedMobileCard({
+  projects, accent, onSelect, liked, onToggleLike,
+}: {
+  projects: ProjectData[]; accent: string; onSelect: (p: ProjectData) => void
+  liked: boolean; onToggleLike: (e: React.MouseEvent) => void
+}) {
+  const extra = projects.length - 1
+  return (
+    <div className="relative">
+      {extra > 0 && (
+        <>
+          <div className="absolute inset-x-4 -bottom-2 top-2 rounded-[16px] bg-zinc-300/50 dark:bg-zinc-700/50 -z-20 scale-[0.94]" />
+          <div className="absolute inset-x-2 -bottom-1 top-1 rounded-[16px] bg-zinc-200/70 dark:bg-zinc-800/70 -z-10 scale-[0.97]" />
+        </>
+      )}
+      <MobileProjectCard
+        project={projects[0]}
+        accent={accent}
+        onSelect={onSelect}
+        liked={liked}
+        onToggleLike={onToggleLike}
+        position={`1/${projects.length}`}
+      />
+    </div>
   )
 }
 
@@ -110,19 +154,13 @@ export function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggle
 
   if (isMobile) {
     return (
-      <div className="flex flex-col gap-4">
-        {projects.map((project, idx) => (
-          <MobileProjectCard
-            key={project.id}
-            project={project}
-            accent={accent}
-            onSelect={onSelect}
-            liked={likedIds.has(project.id)}
-            onToggleLike={(e) => { e.stopPropagation(); onToggleLike(project.id) }}
-            position={`${idx + 1}/${projects.length}`}
-          />
-        ))}
-      </div>
+      <StackedMobileCard
+        projects={projects}
+        accent={accent}
+        onSelect={onSelect}
+        liked={likedIds.has(projects[0].id)}
+        onToggleLike={(e) => { e.stopPropagation(); onToggleLike(projects[0].id) }}
+      />
     )
   }
 
@@ -212,4 +250,4 @@ export function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggle
       )}
     </div>
   )
-} 
+      } 
