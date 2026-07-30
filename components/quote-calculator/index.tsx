@@ -105,6 +105,19 @@ export function QuoteCalculatorWidget() {
     return () => window.removeEventListener("abh:add-to-quote", handler)
   }, [])
 
+  // ─── Step-quantity listener — used by ServiceDetailModal's +/- stepper.
+  // Separate from "abh:add-to-quote" (which always adds a fresh item at
+  // qty 1); this adjusts an EXISTING item's quantity up or down by a
+  // delta, reusing stepQty's existing remove-at-zero logic. ────────────
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { id, delta } = (e as CustomEvent).detail
+      stepQty(id, delta)
+    }
+    window.addEventListener("abh:step-quote-qty", handler)
+    return () => window.removeEventListener("abh:step-quote-qty", handler)
+  }, [])
+
   useEffect(() => {
     if (!highlightId) return
     const id = highlightId
@@ -337,20 +350,37 @@ export function QuoteCalculatorWidget() {
             Quote
           </span>
 
+          {/* Main FAB — no more filled circle. Just the calculator glyph
+              itself, colored in the brand blue (fabColor), sitting on
+              nothing. To keep it from disappearing against busy page
+              content, it gets a soft colored glow (drop-shadow, not a
+              box-shadow, since there's no box) plus a bit of extra size
+              since there's no button padding doing visual weight anymore. */}
           <button
             onClick={() => setIsOpen(o => !o)}
-            className="relative w-14 h-14 rounded-full shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
-            style={{ backgroundColor: fabColor, color: fabTextColor, boxShadow: `0 8px 24px ${fabColor}55, 0 4px 10px rgba(0,0,0,0.25)` }}
             aria-label={isOpen ? "Close quotation calculator" : "Open quotation calculator"}
+            className="relative w-14 h-14 flex items-center justify-center active:scale-90 hover:scale-110 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
           >
-            {isOpen ? <X size={22} weight="bold" /> : <Calculator size={26} weight="fill" />}
+            {isOpen ? (
+              <X
+                size={30}
+                weight="bold"
+                style={{ color: fabColor, filter: `drop-shadow(0 4px 10px ${fabColor}80) drop-shadow(0 2px 4px rgba(0,0,0,0.3))` }}
+              />
+            ) : (
+              <Calculator
+                size={34}
+                weight="fill"
+                style={{ color: fabColor, filter: `drop-shadow(0 4px 10px ${fabColor}80) drop-shadow(0 2px 4px rgba(0,0,0,0.3))` }}
+              />
+            )}
           </button>
 
           {!isOpen && itemCount > 0 && (
             <button
               onClick={(e) => { e.stopPropagation(); setMiniExpanded(v => !v) }}
               aria-label={miniExpanded ? "Hide quote total" : "Show quote total"}
-              className="absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 rounded-full bg-brand-orange text-white text-[0.65rem] font-black flex items-center justify-center border-2 border-white dark:border-zinc-950 shadow-md active:scale-90 transition-transform duration-150"
+              className="absolute -top-0.5 -right-0.5 min-w-[22px] h-[22px] px-1 rounded-full bg-brand-orange text-white text-[0.65rem] font-black flex items-center justify-center border-2 border-white dark:border-zinc-950 shadow-md active:scale-90 transition-transform duration-150"
             >
               {itemCount}
             </button>
@@ -527,4 +557,4 @@ export function QuoteCalculatorWidget() {
       )}
     </>
   )
-}
+} 
