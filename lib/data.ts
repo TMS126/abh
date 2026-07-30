@@ -341,7 +341,7 @@ export const PROJECTS = [
     tools: ["Microsoft Word", "Clean, structured formatting"],
     result: "Client received a complete, professional CV ready for job applications.",
   },
- // {
+  {
  // id: "cv-modernization",
  // hub: "doc" as HubId,
   //title: "Professional CV Redesign & Modern Layouts",
@@ -357,7 +357,7 @@ export const PROJECTS = [
    // "Structured contact details, work experience, and education for rapid scanning",
    // "Formatted a dedicated, clean section for professional references",
    // "Delivered sharp, high-contrast premium prints of the final documents"
-//  ],
+ ],
   tools: ["Advanced Document Formatting", "Modern Layout Design Principles"],
   result: "Provided clients with polished, executive-style CVs that elevate their professional presentation and confidence in the job market.",
 },
