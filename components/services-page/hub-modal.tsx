@@ -9,7 +9,8 @@ import { useTheme } from "next-themes"
 import { HUB_COLORS } from "@/lib/brand"
 import { HUBS, HubId, HUB_DISCLAIMERS } from "@/lib/data"
 import { HubIcon, useFocusTrap } from "./shared"
-import { getTurnaround, SelectedService, sectionHasBulk, itemHasBulk } from "./lib"
+import { getTurnaround, SelectedService } from "./lib"
+import { sectionHasBulk, itemHasBulk } from "../quote-calculator/lib"
 
 export function HubModal({ hubId, onClose, onSelectService }: {
   hubId: HubId | null
