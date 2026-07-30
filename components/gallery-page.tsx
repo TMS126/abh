@@ -19,6 +19,45 @@ import { EmptyHubState, GalleryClosingTagline } from "@/components/gallery/empty
 
 const LIKES_STORAGE_KEY = "apexbytes-gallery-likes"
 
+function NoticePill() {
+  const [hovering, setHovering] = useState(false)
+  const [pinned,   setPinned]   = useState(false)
+  const open = hovering || pinned
+
+  return (
+    <div
+      className={cn(
+        "relative flex items-center rounded-full bg-[#1E6FA8]/10 border border-[#1E6FA8]/20 overflow-hidden transition-[width] duration-500 ease-out",
+        open ? "w-[min(92vw,26rem)]" : "w-10"
+      )}
+      style={{ height: "2.5rem" }}
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
+    >
+      <button
+        onClick={() => setPinned(v => !v)}
+        aria-label={open ? "Hide notice" : "Show notice"}
+        aria-expanded={open}
+        className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+      >
+        <Info size={18} weight="fill" color="#1E6FA8" />
+      </button>
+      <div className={cn("flex items-center gap-2 pr-3 min-w-0 transition-opacity duration-300", open ? "opacity-100 delay-150" : "opacity-0")}>
+        <p className="text-xs font-bold text-[#1E6FA8] leading-snug whitespace-nowrap sm:whitespace-normal">
+          We use high-quality sample photos to represent our services — the professional standard shown is exactly what you receive.
+        </p>
+        <button
+          onClick={() => { setPinned(false); setHovering(false) }}
+          aria-label="Close notice"
+          className="shrink-0 w-5 h-5 rounded-full bg-[#1E6FA8]/20 flex items-center justify-center"
+        >
+          <X size={10} weight="bold" color="#1E6FA8" />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function GalleryPageInner() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
@@ -142,17 +181,18 @@ function GalleryPageInner() {
           </div>
         </ScrollBounce>
 
-        {/* ── Search + Shuffle — single row, shared underline, divided by | ── */}
+        {/* ── Search + Shuffle — word hugs its icon, shared underline, divided by | ── */}
         <ScrollBounce delay={0.06}>
           <div className="max-w-md mx-auto mb-2">
-            <div className="flex items-center gap-3 border-b-2 border-zinc-200 dark:border-zinc-800 focus-within:border-zinc-400 dark:focus-within:border-zinc-500 transition-colors duration-200">
-              <div className="flex-1 flex items-center gap-1.5 py-3 min-w-0">
+            <div className="flex items-center justify-center gap-3 border-b-2 border-zinc-200 dark:border-zinc-800 focus-within:border-zinc-400 dark:focus-within:border-zinc-500 transition-colors duration-200">
+              <div className="flex items-center gap-1 py-3 min-w-0">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Search for a project"
-                  className="flex-1 min-w-0 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none"
+                  placeholder="Search..."
+                  size={searchQuery ? Math.max(searchQuery.length, 7) : 7}
+                  className="bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none text-right"
                 />
                 {searchQuery && (
                   <button
@@ -183,15 +223,10 @@ function GalleryPageInner() {
           </div>
         </ScrollBounce>
 
-        {/* ── Notice — compact pill, current icon + color ── */}
+        {/* ── Notice — icon-only, rolls open on hover/click ── */}
         <ScrollBounce delay={0.1}>
-          <div className="flex justify-center mb-8 mt-6">
-            <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-[#1E6FA8]/10 border border-[#1E6FA8]/20 max-w-2xl">
-              <Info size={16} weight="fill" color="#1E6FA8" className="shrink-0" />
-              <p className="text-xs font-bold text-[#1E6FA8] leading-snug">
-                We use high-quality sample photos to represent our services — the professional standard shown is exactly what you receive.
-              </p>
-            </div>
+          <div className="flex justify-start max-w-2xl mx-auto mb-8 mt-6 pl-1">
+            <NoticePill />
           </div>
         </ScrollBounce>
 
@@ -260,11 +295,13 @@ function GalleryPageInner() {
                       "border-t-2 border-zinc-100 dark:border-zinc-800 mt-10 pt-8 md:border-t-0 md:mt-0 md:pt-7",
                       "first:border-t-0 first:mt-0 first:pt-0 md:first:pt-7"
                     )}>
-                      {/* Row header — big title + accent bar stay desktop-only; mobile identity now lives on the card itself */}
+                      {/* Row header — big title stays desktop-only; project count pill now lives on the card, so the popover only shows on desktop too */}
                       <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
                         <div className="w-1.5 h-8 rounded-full hidden md:block" style={{ backgroundColor: "#1E6FA8" }} />
                         <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 hidden md:block">{row.label}</h2>
-                        <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
+                        <div className="hidden md:block">
+                          <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
+                        </div>
                       </div>
                       <div className="px-4 md:px-0">
                         <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} likedIds={likedIds} onToggleLike={toggleLike} />
@@ -326,4 +363,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-                               }
+    } 
