@@ -1,3 +1,5 @@
+
+// hooks/shared.tsx (or wherever useModalBackStack lives — same file as HubIcon/AbhLoader/DragHandle)
 "use client"
 
 import { useCallback, useEffect, useRef } from "react"
@@ -8,7 +10,6 @@ import {
 import { HubId } from "@/lib/data"
 import { SelectedService } from "./lib"
 
-// ─── Hub icon ─────────────────────────────────────────────────────────────────
 export function HubIcon({ id, size = 28, color }: { id: HubId; size?: number; color?: string }) {
   const p = { size, weight: "fill" as const, color: color ?? "currentColor", "aria-hidden": true }
   switch (id) {
@@ -20,7 +21,6 @@ export function HubIcon({ id, size = 28, color }: { id: HubId; size?: number; co
   }
 }
 
-// ─── Loader — plain rotating ring, matches the reference upload spinners ─────
 export function AbhLoader({ size = 28, color }: { size?: number; color?: string }) {
   return (
     <div
@@ -31,8 +31,6 @@ export function AbhLoader({ size = 28, color }: { size?: number; color?: string 
   )
 }
 
-// ─── Drag handle — shared bottom-sheet grip. Was identical inline markup
-// duplicated in both HubModal and ServiceDetailModal. ────────────────────────
 export function DragHandle() {
   return (
     <div className="flex justify-center pt-2.5 pb-0.5 shrink-0" aria-hidden="true">
@@ -41,26 +39,20 @@ export function DragHandle() {
   )
 }
 
-// ─── Drag-to-dismiss threshold — same two numbers were duplicated in both
-// modals' handleDragEnd. ──────────────────────────────────────────────────────
 export function shouldDismissOnDrag(info: PanInfo) {
   return info.offset.y > 120 || info.velocity.y > 600
 }
 
-// ─── Back-button modal stack ──────────────────────────────────────────────────
-// Returns `closeHub`/`closeService`. Every UI close path (X, backdrop,
-// Escape, drag-to-dismiss) must call these instead of setting state
-// directly — this guarantees the history entry pushed when a modal opened
-// is consumed exactly once, whether the modal closes via a UI control or
-// the physical back button. Calling setActiveHub(null)/setSelectedService(null)
-// directly from a UI control left a "ghost" history entry that silently
-// ate the user's next back-press without navigating anywhere.
-//
-// Also owns the single Escape-key listener for both modals, so Escape
-// closes only the topmost open modal. Previously each modal registered
-// its own listener on `window`; when both were open at once (a service
-// opened from within a hub), one Escape press fired both listeners and
-// closed both modals simultaneously instead of just the top one.
+// ─── Back-button modal stack ──────────────────────────────────────────────
+// IMPORTANT: every UI close path (X button, backdrop click, drag-dismiss)
+// MUST call closeHub()/closeService() returned from this hook — never set
+// activeHub/selectedService to null directly from a UI handler. Doing so
+// leaves the history entry pushed on open permanently unconsumed, which
+// silently accumulates "ghost" entries every time a modal is closed by
+// anything other than the physical back button. Enough ghost entries and
+// a real back-press eventually burns through more of the stack than it
+// should, running past the site's root entry and exiting the browser
+// entirely instead of landing on the page underneath.
 export function useModalBackStack(
   activeHub: HubId | null, setActiveHub: (h: HubId | null) => void,
   selectedService: SelectedService | null, setSelectedService: (s: SelectedService | null) => void,
@@ -86,16 +78,17 @@ export function useModalBackStack(
 
   useEffect(() => {
     const onPop = () => {
+      // A physical back consumes exactly ONE entry — whatever's on top.
+      // If the service modal is open, its entry is what's on top: close
+      // just the service and stop. The hub entry pushed earlier is still
+      // sitting untouched right below it in history, so the NEXT
+      // back-press naturally reveals it — no need to re-push anything
+      // here. (The previous version re-pushed a fresh hub entry on every
+      // service-close, which inflated the stack by one phantom entry each
+      // time and was the second half of the "exits the site" bug.)
       if (selectedService) {
         servicePushed.current = false
         setSelectedService(null)
-        if (activeHub) {
-          // Re-push so the hub modal's own entry stays consistent — one
-          // physical back from "service" should land on "hub", not skip
-          // past it and let the next back-press exit the page early.
-          window.history.pushState({ abModal: "hub" }, "")
-          hubPushed.current = true
-        }
         return
       }
       if (activeHub) {
@@ -109,8 +102,6 @@ export function useModalBackStack(
 
   const closeHub = useCallback(() => {
     if (hubPushed.current) {
-      // Clear synchronously before the async popstate fires, so a rapid
-      // double-close (e.g. double-click) can't call history.back() twice.
       hubPushed.current = false
       window.history.back()
     } else {
@@ -141,7 +132,6 @@ export function useModalBackStack(
   return { closeHub, closeService }
 }
 
-// ─── Focus trap ───────────────────────────────────────────────────────────────
 export function useFocusTrap(active: boolean, containerRef: React.RefObject<HTMLElement>) {
   const previouslyFocused = useRef<HTMLElement | null>(null)
   useEffect(() => {
@@ -161,4 +151,4 @@ export function useFocusTrap(active: boolean, containerRef: React.RefObject<HTML
     document.addEventListener("keydown", handleKeyDown)
     return () => { document.removeEventListener("keydown", handleKeyDown); previouslyFocused.current?.focus?.() }
   }, [active, containerRef])
-        } 
+} 
