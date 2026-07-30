@@ -1,17 +1,80 @@
 "use client"
 
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { CaretLeft, CaretRight, ArrowsLeftRight } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 import { ProjectData } from "@/lib/data"
-import { BA_HUBS, CLIENT_TYPE_BADGE_BG, CLIENT_TYPE_LABEL, HubId } from "@/lib/gallery-helpers"
+import { BA_HUBS, CLIENT_TYPE_BADGE_BG, CLIENT_TYPE_LABEL, HubId, hubLabelFor } from "@/lib/gallery-helpers"
 import { SafeImage } from "./safe-image"
 import { LikeButton } from "./like-share-buttons"
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)")
+    setIsMobile(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener("change", handler)
+    return () => mq.removeEventListener("change", handler)
+  }, [])
+  return isMobile
+}
+
+// ─── Mobile card — image carries everything: solid (not gradient) bars top
+// and bottom hold heart/hub/position and title/client-type. No outer border
+// wrapping the image; the image's own rounded corners are the only frame.
+function MobileProjectCard({
+  project, accent, onSelect, liked, onToggleLike, position,
+}: {
+  project: ProjectData; accent: string; onSelect: (p: ProjectData) => void
+  liked: boolean; onToggleLike: (e: React.MouseEvent) => void; position: string
+}) {
+  const hasBA = BA_HUBS.includes(project.hub as HubId) && !!(project as any).beforeImage && !!(project as any).afterImage
+
+  return (
+    <button onClick={() => onSelect(project)} className="w-full text-left">
+      <div className="relative aspect-[4/3] rounded-[16px] overflow-hidden">
+        <SafeImage src={project.image} alt={project.title} accent={accent} fill sizes="100vw" className="object-cover" />
+
+        {/* Top bar — solid, no gradient */}
+        <div className="absolute top-0 inset-x-0 flex items-center gap-2 px-3 py-2.5 bg-zinc-950/90">
+          <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+            <LikeButton liked={liked} onToggle={onToggleLike} context="card" />
+          </div>
+          <span className="flex-1 min-w-0 text-white text-[0.68rem] font-black uppercase tracking-wider truncate">
+            {hubLabelFor(project.hub)}
+          </span>
+          {hasBA && (
+            <span
+              className="shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.55rem] font-black uppercase tracking-wider text-white"
+              style={{ backgroundColor: accent }}
+            >
+              <ArrowsLeftRight size={9} weight="bold" />
+              B&amp;A
+            </span>
+          )}
+          <span className="shrink-0 text-white/70 text-[0.62rem] font-bold">{position}</span>
+        </div>
+
+        {/* Bottom bar — solid, title never truncates, wraps freely */}
+        <div className="absolute bottom-0 inset-x-0 px-3 py-3 bg-zinc-950/90">
+          <h3 className="text-white font-black text-[0.95rem] leading-snug">{project.title}</h3>
+          {project.clientType && (
+            <p className="text-white/70 text-[0.68rem] italic mt-1">
+              {CLIENT_TYPE_LABEL[project.clientType]}
+            </p>
+          )}
+        </div>
+      </div>
+    </button>
+  )
+}
 
 export function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }: {
   projects: ProjectData[]; accent: string; onSelect: (p: ProjectData) => void
   likedIds: Set<string>; onToggleLike: (id: string) => void
 }) {
+  const isMobile = useIsMobile()
   const [activeIdx, setActiveIdx] = useState(0)
   const trackRef    = useRef<HTMLDivElement>(null)
   const isDragging  = useRef(false)
@@ -44,6 +107,24 @@ export function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggle
     trackRef.current.scrollLeft = scrollStart.current - (e.pageX - startX.current)
   }
   const onMouseUp = () => { isDragging.current = false }
+
+  if (isMobile) {
+    return (
+      <div className="flex flex-col gap-4">
+        {projects.map((project, idx) => (
+          <MobileProjectCard
+            key={project.id}
+            project={project}
+            accent={accent}
+            onSelect={onSelect}
+            liked={likedIds.has(project.id)}
+            onToggleLike={(e) => { e.stopPropagation(); onToggleLike(project.id) }}
+            position={`${idx + 1}/${projects.length}`}
+          />
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="relative md:max-w-2xl lg:max-w-3xl md:mx-auto">
