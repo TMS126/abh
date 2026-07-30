@@ -22,21 +22,21 @@ function useIsMobile() {
 }
 
 // ─── Mobile card — hub name (not caps, hub-colored) top-left, project count
-// badge top-right corner, heart+share grouped bottom-right over the image,
-// title/client-type on the solid bottom bar.
+// pill top-right corner (inside the card), heart+share grouped bottom-right
+// over the image, title/client-type on the solid bottom bar.
 function MobileProjectCard({
   project, accent, onSelect, liked, onToggleLike, position,
 }: {
   project: ProjectData; accent: string; onSelect: (p: ProjectData) => void
-  liked: boolean; onToggleLike: (e: React.MouseEvent) => void; position: string
+  liked: boolean; onToggleLike: (e: React.MouseEvent) => void; position?: string
 }) {
   const pathname = usePathname()
   const hasBA = BA_HUBS.includes(project.hub as HubId) && !!(project as any).beforeImage && !!(project as any).afterImage
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}${pathname}?project=${project.id}` : `${pathname}?project=${project.id}`
 
   return (
-    <button onClick={() => onSelect(project)} className="w-full text-left">
-      <div className="relative aspect-[4/3] rounded-[16px] overflow-hidden">
+    <button onClick={() => onSelect(project)} className="w-full h-full text-left">
+      <div className="relative w-full h-full rounded-[16px] overflow-hidden">
         <SafeImage src={project.image} alt={project.title} accent={accent} fill sizes="100vw" className="object-cover" />
 
         {/* Top bar — hub name only, not all-caps, hub-colored */}
@@ -55,10 +55,12 @@ function MobileProjectCard({
           )}
         </div>
 
-        {/* Position badge — top-right corner */}
-        <div className="absolute top-2.5 right-2.5 px-2 py-1 rounded-full bg-black/40 backdrop-blur-md text-white/80 text-[0.62rem] font-bold">
-          {position}
-        </div>
+        {/* Project count pill — inside the card, top-right corner */}
+        {position && (
+          <div className="absolute top-2.5 right-2.5 px-2 py-1 rounded-full bg-black/40 backdrop-blur-md text-white/85 text-[0.62rem] font-bold">
+            {position}
+          </div>
+        )}
 
         {/* Heart + share — grouped, bottom-right, over the image */}
         <div className="absolute bottom-16 right-2.5 flex flex-col items-center gap-2">
@@ -84,32 +86,115 @@ function MobileProjectCard({
   )
 }
 
-// Shows the first project full-size; if more exist, two faint offset layers
-// peek out behind it to hint at a stack. Full browsing of the rest happens
-// via the "N projects" popover already in the row header.
-function StackedMobileCard({
-  projects, accent, onSelect, liked, onToggleLike,
+// ─── Mobile swipe carousel — same slot-based peek approach as the testimonials
+// carousel (center card full-size, neighbors peeking at reduced scale/opacity),
+// but no rotation. Swiping/tapping a peeking card advances to it.
+function MobileSwipeCarousel({
+  projects, accent, onSelect, likedIds, onToggleLike,
 }: {
   projects: ProjectData[]; accent: string; onSelect: (p: ProjectData) => void
-  liked: boolean; onToggleLike: (e: React.MouseEvent) => void
+  likedIds: Set<string>; onToggleLike: (id: string) => void
 }) {
-  const extra = projects.length - 1
+  const n = projects.length
+  const [active, setActive] = useState(0)
+  const [dragX, setDragX]   = useState(0)
+  const touchStartX = useRef<number | null>(null)
+  const dragMoved    = useRef(false)
+
+  const goTo = useCallback((i: number) => setActive(((i % n) + n) % n), [n])
+  const prev = useCallback(() => goTo(active - 1), [active, goTo])
+  const next = useCallback(() => goTo(active + 1), [active, goTo])
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    dragMoved.current = false
+  }
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return
+    const dx = e.touches[0].clientX - touchStartX.current
+    if (Math.abs(dx) > 5) dragMoved.current = true
+    setDragX(dx)
+  }
+  const onTouchEnd = () => {
+    if (Math.abs(dragX) > 60) (dragX < 0 ? next() : prev())
+    setDragX(0)
+    touchStartX.current = null
+  }
+
+  const slotStyle = (offset: number): React.CSSProperties => {
+    const abs = Math.abs(offset)
+    if (abs === 0) {
+      return { transform: `translateX(${dragX}px) scale(1)`, opacity: 1, zIndex: 30 }
+    }
+    if (abs === 1) {
+      return {
+        transform: `translateX(${offset * 90 + dragX * 0.4}%) scale(0.88)`,
+        opacity: 0.4,
+        zIndex: 20,
+        filter: "blur(1px)",
+      }
+    }
+    return {
+      transform: `translateX(${offset * 150}%) scale(0.8)`,
+      opacity: 0,
+      zIndex: 10,
+      pointerEvents: "none",
+    }
+  }
+
   return (
     <div className="relative">
-      {extra > 0 && (
-        <>
-          <div className="absolute inset-x-4 -bottom-2 top-2 rounded-[16px] bg-zinc-300/50 dark:bg-zinc-700/50 -z-20 scale-[0.94]" />
-          <div className="absolute inset-x-2 -bottom-1 top-1 rounded-[16px] bg-zinc-200/70 dark:bg-zinc-800/70 -z-10 scale-[0.97]" />
-        </>
-      )}
-      <MobileProjectCard
-        project={projects[0]}
-        accent={accent}
-        onSelect={onSelect}
-        liked={liked}
-        onToggleLike={onToggleLike}
-        position={`1/${projects.length}`}
-      />
+      <div
+        className="relative w-full aspect-[4/3]"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        {projects.map((project, i) => {
+          let offset = i - active
+          if (offset > n / 2) offset -= n
+          if (offset < -n / 2) offset += n
+          if (Math.abs(offset) > 2) return null
+
+          const isActive = offset === 0
+
+          return (
+            <div
+              key={project.id}
+              aria-hidden={!isActive}
+              className="absolute inset-0 transition-[transform,opacity,filter] duration-500 ease-out"
+              style={slotStyle(offset)}
+              onClick={() => { if (!isActive && !dragMoved.current) goTo(i) }}
+            >
+              <MobileProjectCard
+                project={project}
+                accent={accent}
+                onSelect={(p) => { if (isActive && !dragMoved.current) onSelect(p) }}
+                liked={likedIds.has(project.id)}
+                onToggleLike={(e) => { e.stopPropagation(); onToggleLike(project.id) }}
+                position={`${i + 1}/${n}`}
+              />
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="flex items-center justify-center gap-1.5 mt-4">
+        {projects.map((_, i) => (
+          <button
+            key={i}
+            aria-label={`Go to project ${i + 1}`}
+            onClick={() => goTo(i)}
+            className="h-1.5 rounded-full transition-all duration-300"
+            style={{ width: i === active ? "18px" : "6px", backgroundColor: i === active ? accent : undefined }}
+          >
+            <span
+              className={i === active ? "sr-only" : "block h-1.5 w-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700"}
+              aria-hidden="true"
+            />
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -153,13 +238,26 @@ export function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggle
   const onMouseUp = () => { isDragging.current = false }
 
   if (isMobile) {
+    if (projects.length === 1) {
+      return (
+        <div className="aspect-[4/3]">
+          <MobileProjectCard
+            project={projects[0]}
+            accent={accent}
+            onSelect={onSelect}
+            liked={likedIds.has(projects[0].id)}
+            onToggleLike={(e) => { e.stopPropagation(); onToggleLike(projects[0].id) }}
+          />
+        </div>
+      )
+    }
     return (
-      <StackedMobileCard
+      <MobileSwipeCarousel
         projects={projects}
         accent={accent}
         onSelect={onSelect}
-        liked={likedIds.has(projects[0].id)}
-        onToggleLike={(e) => { e.stopPropagation(); onToggleLike(projects[0].id) }}
+        likedIds={likedIds}
+        onToggleLike={onToggleLike}
       />
     )
   }
@@ -250,4 +348,4 @@ export function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggle
       )}
     </div>
   )
-      } 
+              }
