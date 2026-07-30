@@ -22,23 +22,6 @@ const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 // flat hex that only worked in one theme.
 const SEARCH_ORANGE = { light: BRAND.orange, dark: BRAND.lightOrange }
 
-// Picks white or near-black based on actual WCAG relative luminance of
-// the given background hex, rather than assuming "white always works."
-// BRAND.lightOrange (#F9D1B0) is a pale peach — white text/icons on it
-// fail contrast badly, which is exactly the bug this fixes. Same helper
-// pattern already used in Navbar/AboutPage for the same reason.
-function getReadableTextColor(hex: string): string {
-  const clean = hex.replace("#", "")
-  const r = parseInt(clean.substring(0, 2), 16) / 255
-  const g = parseInt(clean.substring(2, 4), 16) / 255
-  const b = parseInt(clean.substring(4, 6), 16) / 255
-  const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4))
-  const luminance = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
-  const contrastWhite = 1.05 / (luminance + 0.05)
-  const contrastDark  = (luminance + 0.05) / 0.062
-  return contrastWhite >= contrastDark ? "#ffffff" : "#18181b"
-}
-
 // ── Distinct glass tokens — heavier blur/saturation and a warm orange
 // wash, so this panel reads as its own "search" identity rather than
 // reusing the neutral glass from the Quote Calculator / WhatsApp panels. ──
@@ -72,6 +55,12 @@ interface SelectedService {
   sectionTitle: string; requirements: string[]; desc?: string
 }
 
+// AUDIT FIX: item.description is typed `description?: string` in
+// lib/data.ts (ServiceItem). Every item happens to have one today, but
+// without this fallback, an item added later without a description would
+// make s.description undefined — and s.description.toLowerCase() /
+// matchSnippet(s.description, ...) below would throw at runtime the first
+// time someone searched with that item in the index.
 function buildSearchIndex(): SearchableService[] {
   const all: SearchableService[] = []
   HUB_ORDER.forEach((hubId) => {
@@ -80,7 +69,7 @@ function buildSearchIndex(): SearchableService[] {
         all.push({
           hubId, sectionTitle: section.title,
           name: item.name, price: item.price,
-          description: item.description,
+          description: item.description ?? "",
           requirements: item.requirements,
         })
       })
@@ -156,11 +145,6 @@ export function FloatingSearchWidget() {
   const index        = useMemo(buildSearchIndex, [])
 
   const accentColor = isDark ? SEARCH_ORANGE.dark : SEARCH_ORANGE.light
-  // FAB icon/X color — computed from accentColor's actual luminance
-  // rather than assumed white, so it stays readable in both themes even
-  // though accentColor swaps between a dark orange (light mode) and a
-  // pale peach (dark mode).
-  const fabIconColor = useMemo(() => getReadableTextColor(accentColor), [accentColor])
 
   const onServicesPage = pathname === SERVICES_PATH
   const hasQuery = query.trim().length > 0
@@ -306,12 +290,11 @@ export function FloatingSearchWidget() {
       )}
 
       {/* ── FAB ──────────────────────────────────────────────────────────
-          Closed: floats in its own slot above the trigger point, third in
-          the stack. Open: reattaches to sit exactly at the bottom-right
-          corner of the panel below it (same bottom/right offsets as the
-          panel), so it reads as the panel's own handle rather than a
-          separate control hovering over the results — and doubles as the
-          close button, swapping to an X like the other widgets. */}
+          Bare icon, no filled circle — matches the Quote Calculator FAB
+          treatment. Colored in accentColor with a soft drop-shadow glow
+          instead of a background pill, since there's no button surface
+          doing visual weight anymore. Toggles between the search glyph
+          and an X to double as the close control while open. */}
       <div
         className={cn(
           "fixed z-[9993] right-4 md:right-6 group/search transition-all duration-200 ease-out motion-reduce:transition-none transform-gpu",
@@ -324,27 +307,38 @@ export function FloatingSearchWidget() {
       >
         <div className="flex items-center justify-end gap-2">
           {/* Slide-out label — only ever shown while closed */}
-         <span
-  className={cn(
-    "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap pointer-events-none overflow-hidden",
-    "bg-white dark:bg-zinc-900 px-2.5 py-1 rounded-full shadow-md border border-zinc-100 dark:border-zinc-800",
-    "transition-all duration-200 ease-out origin-right motion-reduce:transition-none transform-gpu",
-    isOpen
-      ? "max-w-0 opacity-0 scale-x-0"
-      : "max-w-0 opacity-0 scale-x-0 group-hover/search:max-w-[100px] group-hover/search:opacity-100 group-hover/search:scale-x-100"
-  )}
-  style={{ color: accentColor }}
->
-  Search
-</span>
+          <span
+            className={cn(
+              "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap pointer-events-none overflow-hidden",
+              "bg-white dark:bg-zinc-900 px-2.5 py-1 rounded-full shadow-md border border-zinc-100 dark:border-zinc-800",
+              "transition-all duration-200 ease-out origin-right motion-reduce:transition-none transform-gpu",
+              isOpen
+                ? "max-w-0 opacity-0 scale-x-0"
+                : "max-w-0 opacity-0 scale-x-0 group-hover/search:max-w-[100px] group-hover/search:opacity-100 group-hover/search:scale-x-100"
+            )}
+            style={{ color: accentColor }}
+          >
+            Search
+          </span>
 
           <button
             onClick={() => (isOpen ? handleClose() : setIsOpen(true))}
-            className="relative w-14 h-14 rounded-full shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
-            style={{ backgroundColor: accentColor, color: fabIconColor, boxShadow: `0 8px 24px ${accentColor}55, 0 4px 10px rgba(0,0,0,0.25)` }}
+            className="relative w-14 h-14 flex items-center justify-center active:scale-90 hover:scale-110 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
             aria-label={isOpen ? "Close search" : "Search services"}
           >
-            {isOpen ? <X size={22} weight="bold" /> : <MagnifyingGlass size={24} weight="bold" />}
+            {isOpen ? (
+              <X
+                size={28}
+                weight="bold"
+                style={{ color: accentColor, filter: `drop-shadow(0 4px 10px ${accentColor}80) drop-shadow(0 2px 4px rgba(0,0,0,0.3))` }}
+              />
+            ) : (
+              <MagnifyingGlass
+                size={28}
+                weight="bold"
+                style={{ color: accentColor, filter: `drop-shadow(0 4px 10px ${accentColor}80) drop-shadow(0 2px 4px rgba(0,0,0,0.3))` }}
+              />
+            )}
           </button>
         </div>
       </div>
@@ -472,5 +466,4 @@ export function FloatingSearchWidget() {
       )}
     </>
   )
-}
- 
+} 
