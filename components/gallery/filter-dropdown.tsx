@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { CaretDown } from "@phosphor-icons/react"
+import { CaretDown, Funnel } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
@@ -9,6 +9,7 @@ import { BRAND } from "@/lib/brand"
 import { getContrastText } from "@/lib/color"
 import { ROW_ORDER, HubId, playClickSound } from "@/lib/gallery-helpers"
 import { useBackButtonDismiss } from "@/hooks/use-back-button-dismiss"
+import { HubIcon } from "@/components/services-page/shared"
 
 export function FilterDropdown({
   activeFilter, onSelect, getAccent,
@@ -42,12 +43,12 @@ export function FilterDropdown({
     { id: "all", label: "All hubs" },
     ...ROW_ORDER.map(r => ({ id: r.id, label: r.label })),
   ]
+  const currentAccent = activeFilter !== "all" ? getAccent(activeFilter) : blueColor
+  const displayedLabel = activeFilter === "all" ? "Select a Hub" : (options.find(o => o.id === activeFilter)?.label ?? "Select a Hub")
 
   return (
     <>
-      {/* ── Desktop pill row — matches the flat white-pill reference exactly:
-          plain pills, no dropdown, tight horizontal row. Only the active
-          pill picks up its hub color; the rest stay neutral. */}
+      {/* ── Desktop pill row — unchanged */}
       <div className="hidden md:flex justify-center flex-wrap gap-2 mb-10">
         {options.map(opt => {
           const accent   = opt.id !== "all" ? getAccent(opt.id as HubId) : undefined
@@ -81,27 +82,33 @@ export function FilterDropdown({
         })}
       </div>
 
-      {/* ── Mobile dropdown — unchanged from before */}
+      {/* ── Mobile — collapsed pill w/ icon, matching the Notice pill pattern:
+          solid colored fill, icon in its own circle, opens the listbox
+          below on tap, same as before/close animation. */}
       <div className="md:hidden relative flex justify-center mb-10 z-40">
         <button
           onClick={handleToggleClick}
           aria-expanded={open}
           className={cn(
-            "flex items-center justify-center gap-1.5 px-3 py-2 rounded-full",
-            "text-[10px] font-bold whitespace-nowrap transition-all duration-150 active:scale-95",
-            "shadow-[0_2px_10px_-2px_rgba(0,0,0,0.18)] dark:shadow-[0_4px_18px_-3px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.06)]",
-            "hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.24)] dark:hover:shadow-[0_6px_22px_-3px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.1)]",
+            "flex items-center gap-2 pl-1.5 pr-4 py-1.5 rounded-full",
+            "text-[0.78rem] font-black whitespace-nowrap transition-all duration-150 active:scale-95",
+            "shadow-[0_2px_10px_-2px_rgba(0,0,0,0.18)] dark:shadow-[0_4px_18px_-3px_rgba(0,0,0,0.7)]",
             "outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
           )}
           style={{
-            ["--tw-ring-color" as any]: activeFilter !== "all" ? getAccent(activeFilter) : blueColor,
+            backgroundColor: currentAccent,
+            color: getContrastText(currentAccent),
+            ["--tw-ring-color" as any]: currentAccent,
           }}
         >
-          {activeFilter !== "all" && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getAccent(activeFilter) }} />}
-          <span style={{ color: activeFilter !== "all" ? getAccent(activeFilter) : undefined }} className={activeFilter === "all" ? "text-zinc-800 dark:text-zinc-100" : undefined}>
-            {activeFilter === "all" ? "Select a Hub" : (options.find(o => o.id === activeFilter)?.label ?? "Select a Hub")}
+          <span className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-white/20">
+            {activeFilter !== "all"
+              ? <HubIcon id={activeFilter} size={15} color={getContrastText(currentAccent)} />
+              : <Funnel size={15} weight="bold" />
+            }
           </span>
-          <CaretDown size={14} weight="bold" className={cn("transition-transform duration-200 shrink-0", open && "rotate-180")} style={{ color: activeFilter !== "all" ? getAccent(activeFilter) : blueColor }} />
+          {displayedLabel}
+          <CaretDown size={13} weight="bold" className={cn("transition-transform duration-200 shrink-0", open && "rotate-180")} />
         </button>
 
         {open && (
@@ -139,7 +146,7 @@ export function FilterDropdown({
                         aria-selected={isActive}
                         onClick={() => handleSelect(opt.id)}
                         className={cn(
-                          "w-full flex items-center justify-center px-3 py-2.5 rounded-full",
+                          "w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-full",
                           "text-xs font-bold whitespace-nowrap transition-all duration-150 active:scale-95",
                           "shadow-[0_2px_10px_-2px_rgba(0,0,0,0.18)] dark:shadow-[0_2px_10px_-2px_rgba(0,0,0,0.5)]",
                           "hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.24)] dark:hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.6)]",
@@ -155,6 +162,7 @@ export function FilterDropdown({
                               }
                         }
                       >
+                        {opt.id !== "all" && <HubIcon id={opt.id as HubId} size={13} color={isActive ? activeText : accent} />}
                         <span className="truncate">{opt.label}</span>
                       </button>
                     )
@@ -167,4 +175,4 @@ export function FilterDropdown({
       </div>
     </>
   )
-}
+}  
