@@ -2,20 +2,40 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { useTheme } from 'next-themes'
-import { MagnifyingGlass, CaretDown, CaretUp, FileArrowDown, DownloadSimple } from '@phosphor-icons/react'
+import {
+  MagnifyingGlass, CaretDown, CaretUp, DownloadSimple,
+  PlusCircle, Check, Lightning, RowsPlusBottom, Rows,
+} from '@phosphor-icons/react'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { ScrollBounce } from '@/components/scroll-bounce'
 import { HUBS, type HubId } from '@/lib/data'
-import { HUB_COLORS, BRAND, type HubKey } from '@/lib/brand'
+import { HUB_COLORS, BRAND, BIZ, waLink, type HubKey } from '@/lib/brand'
 import { HUB_PREVIEWS } from '@/components/services-page/lib'
+import { HubIcon } from '@/components/services-page/shared'
+import { itemHasBulk } from '@/components/quote-calculator/lib'
 import { cn } from '@/lib/utils'
 
 const HUB_ORDER: HubId[] = ['print', 'doc', 'design', 'eservice', 'tech']
 
+// Hubs whose turnaround copy explicitly promises same-day service — used
+// to surface an inline "rush fee may apply" hint next to their items,
+// since the page-wide rush notice at the bottom is easy to miss once
+// someone's scrolled past it into a specific hub's price list.
+const RUSH_ELIGIBLE_HUBS: HubId[] = HUB_ORDER.filter(id =>
+  HUBS[id].turnaround.toLowerCase().includes('same-day')
+)
+
 function parsePrice(price: string): number {
   const match = price.match(/\d+/)
   return match ? parseInt(match[0]) : 0
+}
+
+// Same custom event the Quote Calculator widget listens for when items
+// are added from inside a Hub Modal — reusing it here means a "+" tap on
+// the Pricing page behaves identically, no separate wiring needed.
+function dispatchAddToQuote(hubId: HubId, sectionTitle: string, name: string, price: string) {
+  window.dispatchEvent(new CustomEvent('abh:add-to-quote', { detail: { hubId, sectionTitle, name, price } }))
 }
 
 type Result = {
@@ -34,8 +54,17 @@ export default function PricingPage() {
   const [openHubs, setOpenHubs] = useState<Set<HubId>>(new Set())
   const [query, setQuery] = useState('')
   const contentRef = useRef<HTMLDivElement>(null)
+  const hubRefs = useRef<Partial<Record<HubId, HTMLDivElement | null>>>({})
+
+  // Brief "Added ✓" swap on whichever add-to-quote button was just
+  // tapped — without this the tap gives zero feedback on this page,
+  // since the Quote Calculator FAB (the only other confirmation source)
+  // may be off-screen or the person may not have noticed it appear.
+  const [justAdded, setJustAdded] = useState<string | null>(null)
+  const addedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => { setMounted(true) }, [])
+  useEffect(() => () => { if (addedTimerRef.current) clearTimeout(addedTimerRef.current) }, [])
 
   const accentFor = (hubId: HubId) => {
     const c = HUB_COLORS[hubId as HubKey]
@@ -48,6 +77,34 @@ export default function PricingPage() {
       next.has(id) ? next.delete(id) : next.add(id)
       return next
     })
+  }, [])
+
+  const allOpen = openHubs.size === HUB_ORDER.length
+  const toggleAll = useCallback(() => {
+    setOpenHubs(allOpen ? new Set() : new Set(HUB_ORDER))
+  }, [allOpen])
+
+  // Jump-nav: opens the target hub (if closed) and scrolls its card into
+  // view — lets someone skip straight to a hub instead of scrolling past
+  // whichever ones sit above it.
+  const jumpToHub = useCallback((hubId: HubId) => {
+    setOpenHubs(prev => {
+      if (prev.has(hubId)) return prev
+      const next = new Set(prev)
+      next.add(hubId)
+      return next
+    })
+    requestAnimationFrame(() => {
+      hubRefs.current[hubId]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }, [])
+
+  const handleAdd = useCallback((hubId: HubId, sectionTitle: string, name: string, price: string) => {
+    dispatchAddToQuote(hubId, sectionTitle, name, price)
+    const key = `${hubId}-${sectionTitle}-${name}`
+    setJustAdded(key)
+    if (addedTimerRef.current) clearTimeout(addedTimerRef.current)
+    addedTimerRef.current = setTimeout(() => setJustAdded(null), 900)
   }, [])
 
   const results = useMemo((): Result[] | null => {
@@ -86,6 +143,8 @@ export default function PricingPage() {
     link.click()
   }, [])
 
+  const noResultsWaLink = waLink(`Hi ${BIZ.name}! I couldn't find "${query}" on your pricing page — is this something you offer?`)
+
   return (
     <>
       <style>{`
@@ -95,8 +154,10 @@ export default function PricingPage() {
         }
       `}</style>
 
+      {/* Only the WhatsApp FAB is suppressed on this page now — the Quote
+          Calculator stays visible so items added here (via the new + 
+          buttons below) have somewhere visible to land and be reviewed. */}
       <style>{`
-        [data-widget="quote-calculator"],
         [data-widget="whatsapp-fab"] {
           display: none !important;
         }
@@ -124,7 +185,7 @@ export default function PricingPage() {
 
             {/* Search + Download bar */}
             <ScrollBounce delay={0.08}>
-              <div className="no-print sticky top-[calc(var(--nav-h,74px)+0.5rem)] z-10 mb-6 flex gap-2">
+              <div className="no-print sticky top-[calc(var(--nav-h,74px)+0.5rem)] z-10 mb-4 flex gap-2">
                 <div className="relative flex-1">
                   <MagnifyingGlass
                     className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none"
@@ -138,14 +199,14 @@ export default function PricingPage() {
                     placeholder="Search any service or price…"
                     value={query}
                     onChange={e => setQuery(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 border rounded-[14px] bg-white dark:bg-zinc-900 text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 border-zinc-100 dark:border-zinc-800 outline-none focus:border-brand-blue transition-all shadow-sm"
+                    className="w-full pl-11 pr-4 py-3 border rounded-[14px] bg-white dark:bg-zinc-900 text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 border-zinc-100 dark:border-zinc-800 outline-none focus:border-brand-blue transition-all duration-200 shadow-sm focus:shadow-md"
                   />
                 </div>
 
                 <button
                   onClick={handleDownload}
                   aria-label="Download pricing catalog as PDF"
-                  className="no-print shrink-0 flex items-center gap-2 px-4 py-3 rounded-[14px] font-medium text-sm text-white transition-all active:scale-95 hover:-translate-y-0.5 shadow-lg"
+                  className="no-print shrink-0 flex items-center gap-2 px-4 py-3 rounded-[14px] font-medium text-sm text-white transition-all duration-200 active:scale-95 hover:-translate-y-0.5 shadow-lg hover:shadow-xl"
                   style={{ backgroundColor: BRAND.blue }}
                 >
                   <DownloadSimple size={18} weight="bold" aria-hidden="true" />
@@ -154,18 +215,59 @@ export default function PricingPage() {
               </div>
             </ScrollBounce>
 
+            {/* Jump-nav chips + expand/collapse all — hidden while a
+                search query is active, since results are already flat. */}
+            {results === null && (
+              <ScrollBounce delay={0.1}>
+                <div className="no-print flex items-center justify-between gap-2 mb-6">
+                  <div className="flex flex-wrap gap-1.5">
+                    {HUB_ORDER.map(hubId => {
+                      const accent = accentFor(hubId)
+                      return (
+                        <button
+                          key={hubId}
+                          onClick={() => jumpToHub(hubId)}
+                          className="flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-full text-[0.7rem] font-black border transition-all duration-150 active:scale-95 hover:-translate-y-0.5"
+                          style={{ borderColor: `${accent}35`, color: accent, backgroundColor: `${accent}0a` }}
+                        >
+                          <HubIcon id={hubId} size={13} color={accent} />
+                          {HUBS[hubId].title.replace(' Hub', '')}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <button
+                    onClick={toggleAll}
+                    className="shrink-0 flex items-center gap-1.5 text-[0.7rem] font-bold text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors duration-150"
+                  >
+                    {allOpen ? <Rows size={13} weight="bold" /> : <RowsPlusBottom size={13} weight="bold" />}
+                    {allOpen ? 'Collapse all' : 'Expand all'}
+                  </button>
+                </div>
+              </ScrollBounce>
+            )}
+
             {/* Content */}
             <div ref={contentRef} className="space-y-3">
               {results !== null ? (
                 results.length === 0 ? (
                   <ScrollBounce>
                     <div className="text-center py-12">
-                      <p className="abh-body">
+                      <p className="abh-body mb-4">
                         No results for{' '}
                         <span className="font-semibold text-zinc-700 dark:text-zinc-300">
                           "{query}"
                         </span>
                       </p>
+                      <a
+                        href={noResultsWaLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-black text-white transition-all duration-150 active:scale-95 hover:-translate-y-0.5 shadow-md"
+                        style={{ backgroundColor: '#25D366' }}
+                      >
+                        Can't find it? Ask us on WhatsApp
+                      </a>
                     </div>
                   </ScrollBounce>
                 ) : (
@@ -174,24 +276,60 @@ export default function PricingPage() {
                       <p className="text-xs text-zinc-400 pb-1">
                         {results.length} result{results.length !== 1 ? 's' : ''} — lowest first
                       </p>
-                      {results.map((r, i) => (
-                        <div
-                          key={i}
-                          className="abh-card flex items-center justify-between gap-3 px-4 py-3"
-                        >
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-zinc-900 dark:text-white truncate">
-                              {r.name}
-                            </p>
-                            <p className="text-xs text-zinc-400 mt-0.5">
-                              {r.hubTitle} · {r.section}
-                            </p>
+                      {results.map((r, i) => {
+                        const key = `${r.hubId}-${r.section}-${r.name}`
+                        const rushEligible = RUSH_ELIGIBLE_HUBS.includes(r.hubId)
+                        return (
+                          <div
+                            key={i}
+                            className="abh-card flex items-center gap-3 px-4 py-3 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+                          >
+                            <div
+                              className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
+                              style={{ backgroundColor: `${r.accent}18`, color: r.accent }}
+                              aria-hidden="true"
+                            >
+                              <HubIcon id={r.hubId} size={18} color={r.accent} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-zinc-900 dark:text-white truncate flex items-center gap-1.5">
+                                {r.name}
+                                {itemHasBulk(r.hubId, r.section, r.name) && (
+                                  <span
+                                    aria-label="Bulk pricing available"
+                                    className="w-1.5 h-1.5 rounded-full shrink-0"
+                                    style={{ backgroundColor: r.accent, opacity: 0.5 }}
+                                  />
+                                )}
+                                {rushEligible && (
+                                  <Lightning
+                                    size={11}
+                                    weight="fill"
+                                    className="shrink-0 text-amber-500"
+                                    aria-label="Rush fee may apply for urgent turnaround"
+                                  />
+                                )}
+                              </p>
+                              <p className="text-xs text-zinc-400 mt-0.5">
+                                {r.hubTitle} · {r.section}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-sm font-black" style={{ color: r.accent }}>{r.price}</span>
+                              <button
+                                onClick={() => handleAdd(r.hubId, r.section, r.name, r.price)}
+                                aria-label={`Add ${r.name} to quote`}
+                                className="w-7 h-7 rounded-full flex items-center justify-center transition-transform duration-150 active:scale-90 hover:scale-110"
+                                style={{ color: justAdded === key ? '#16a34a' : r.accent }}
+                              >
+                                {justAdded === key
+                                  ? <Check size={20} weight="bold" />
+                                  : <PlusCircle size={20} weight="fill" />}
+                              </button>
+                            </div>
                           </div>
-                          <span className="text-sm font-black shrink-0" style={{ color: r.accent }}>
-                            {r.price}
-                          </span>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   </ScrollBounce>
                 )
@@ -200,12 +338,19 @@ export default function PricingPage() {
                   const hub    = HUBS[hubId]
                   const accent = accentFor(hubId)
                   const isOpen = openHubs.has(hubId)
+                  const serviceCount = hub.sections.reduce((sum, s) => sum + s.items.length, 0)
+                  const rushEligible = RUSH_ELIGIBLE_HUBS.includes(hubId)
 
                   return (
                     <ScrollBounce key={hubId} delay={idx * 0.06}>
                       <div
-                        className="abh-card overflow-hidden transition-all duration-300"
-                        style={{ borderColor: isOpen ? `${accent}50` : undefined }}
+                        ref={(el) => { hubRefs.current[hubId] = el }}
+                        className="abh-card overflow-hidden transition-all duration-300 hover:shadow-md"
+                        style={{
+                          borderColor: isOpen ? `${accent}50` : undefined,
+                          boxShadow: isOpen ? `0 8px 24px -8px ${accent}30, 0 4px 12px -4px rgba(0,0,0,0.12)` : undefined,
+                          scrollMarginTop: 'calc(var(--nav-h, 74px) + 4.5rem)',
+                        }}
                       >
                         {/* Hub toggle */}
                         <button
@@ -215,23 +360,32 @@ export default function PricingPage() {
                           className="w-full flex items-center justify-between px-4 py-4 transition-all duration-200 text-left"
                           style={isOpen ? { backgroundColor: `${accent}08` } : undefined}
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
                             <div
-                              className="w-1.5 h-9 rounded-full shrink-0 transition-all duration-300"
-                              style={{ backgroundColor: accent }}
+                              className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 transition-colors duration-300"
+                              style={{ backgroundColor: `${accent}18`, color: accent }}
                               aria-hidden="true"
-                            />
-                            <div>
-                              <p className="text-sm font-black text-zinc-900 dark:text-zinc-50">
+                            >
+                              <HubIcon id={hubId} size={18} color={accent} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-black text-zinc-900 dark:text-zinc-50 flex items-center gap-1.5 truncate">
                                 {hub.title}
+                                {rushEligible && (
+                                  <Lightning size={11} weight="fill" className="shrink-0 text-amber-500" aria-label="Rush service available" />
+                                )}
                               </p>
-                              <p className="text-xs text-zinc-400 mt-0.5">
+                              <p className="text-xs text-zinc-400 mt-0.5 truncate">
                                 {HUB_PREVIEWS[hubId].join(' · ')}
+                                <span className="mx-1.5">·</span>
+                                <span className="font-semibold" style={{ color: accent }}>
+                                  {serviceCount} service{serviceCount !== 1 ? 's' : ''}
+                                </span>
                               </p>
                             </div>
                           </div>
                           <div
-                            className="w-7 h-7 rounded-full flex items-center justify-center transition-colors duration-200"
+                            className="w-7 h-7 rounded-full flex items-center justify-center transition-colors duration-200 shrink-0"
                             style={isOpen ? { backgroundColor: `${accent}18` } : undefined}
                           >
                             {isOpen
@@ -243,7 +397,7 @@ export default function PricingPage() {
 
                         {/* Hub sections */}
                         {isOpen && (
-                          <div id={`pricing-hub-${hubId}`} className="border-t" style={{ borderColor: `${accent}25` }}>
+                          <div id={`pricing-hub-${hubId}`} className="border-t animate-in fade-in slide-in-from-top-1 duration-200" style={{ borderColor: `${accent}25` }}>
                             {hub.sections.map((section, si) => {
                               const sorted = [...section.items].sort(
                                 (a, b) => parsePrice(a.price) - parsePrice(b.price)
@@ -264,20 +418,40 @@ export default function PricingPage() {
                                     </p>
                                   </div>
 
-                                  <div className="space-y-2">
-                                    {sorted.map(item => (
-                                      <div
-                                        key={item.name}
-                                        className="flex items-center justify-between gap-3 py-1"
-                                      >
-                                        <span className="text-sm text-zinc-700 dark:text-zinc-300">
-                                          {item.name}
-                                        </span>
-                                        <span className="text-sm font-black shrink-0" style={{ color: accent }}>
-                                          {item.price}
-                                        </span>
-                                      </div>
-                                    ))}
+                                  <div className="space-y-1.5">
+                                    {sorted.map(item => {
+                                      const key = `${hubId}-${section.title}-${item.name}`
+                                      return (
+                                        <div
+                                          key={item.name}
+                                          className="flex items-center justify-between gap-3 py-1.5 px-1.5 -mx-1.5 rounded-[10px] transition-colors duration-150 hover:bg-zinc-50 dark:hover:bg-white/[0.03]"
+                                        >
+                                          <span className="text-sm text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 min-w-0">
+                                            <span className="truncate">{item.name}</span>
+                                            {itemHasBulk(hubId, section.title, item.name) && (
+                                              <span
+                                                aria-label="Bulk pricing available"
+                                                className="w-1.5 h-1.5 rounded-full shrink-0"
+                                                style={{ backgroundColor: accent, opacity: 0.5 }}
+                                              />
+                                            )}
+                                          </span>
+                                          <div className="flex items-center gap-2 shrink-0">
+                                            <span className="text-sm font-black" style={{ color: accent }}>{item.price}</span>
+                                            <button
+                                              onClick={() => handleAdd(hubId, section.title, item.name, item.price)}
+                                              aria-label={`Add ${item.name} to quote`}
+                                              className="w-6 h-6 rounded-full flex items-center justify-center transition-transform duration-150 active:scale-90 hover:scale-110"
+                                              style={{ color: justAdded === key ? '#16a34a' : accent }}
+                                            >
+                                              {justAdded === key
+                                                ? <Check size={16} weight="bold" />
+                                                : <PlusCircle size={18} weight="fill" />}
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )
+                                    })}
                                   </div>
                                 </div>
                               )
@@ -304,7 +478,7 @@ export default function PricingPage() {
 
             {/* Rush fee notice */}
             <ScrollBounce delay={0.3}>
-              <div className="mt-8 rounded-[14px] border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-900/10 px-5 py-4">
+              <div className="mt-8 rounded-[14px] border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-900/10 px-5 py-4 transition-shadow duration-200 hover:shadow-sm">
                 <p className="text-xs text-amber-700 dark:text-amber-400">
                   <span className="font-black">⚡ Rush fee:</span> A 50% surcharge applies when same-session or urgent turnaround is required.
                 </p>
@@ -318,4 +492,4 @@ export default function PricingPage() {
       </div>
     </>
   )
-}
+} 
