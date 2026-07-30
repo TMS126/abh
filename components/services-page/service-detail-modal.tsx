@@ -1,9 +1,10 @@
+// components/services/service-detail-modal.tsx
 "use client"
 
 import { useState, useEffect, useRef, type ChangeEvent } from "react"
 import { motion } from "framer-motion"
 import {
-  X, Paperclip, CheckCircle, WarningCircle, ShieldCheck, ShareNetwork, Clock,
+  X, Paperclip, ShoppingCartSimple, CheckCircle, WarningCircle, ShieldCheck, ShareNetwork, Clock,
 } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
@@ -13,7 +14,6 @@ import { useFocusTrap, AbhLoader, DragHandle, shouldDismissOnDrag } from "./shar
 import {
   SelectedService, naturalServiceLabel, cleanText, formatAcceptHint,
   HUB_ACCEPT, CLD_MAX_MB, CLD_PRESET, BLOCKED_MIME_TYPES, BLOCKED_EXTENSIONS, getCldUrl, trackEvent,
-  getContrastText,
 } from "./lib"
 import { getCartQtyForItem } from "@/components/quote-calculator/lib"
 
@@ -94,12 +94,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
 
   if (!svc) return null
 
-  // NOTE: `svc.hubId as HubKey` — HubId and HubKey are the same alias
-  // (see lib/data.ts: `export type HubId = HubKey`), so this cast is very
-  // likely redundant, same as the ones removed elsewhere in this pass.
-  // Left as-is here because SelectedService's declared field type lives in
-  // ./lib, which wasn't available to verify — if `hubId` is already typed
-  // as HubId/HubKey there, this cast can be dropped safely.
   const colors      = HUB_COLORS[svc.hubId as HubKey]
   const accent      = isDark ? colors.accentDark : colors.accentLight
   const hubTitle    = HUBS[svc.hubId]?.title || svc.sectionTitle
@@ -119,6 +113,13 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
     }
   }
 
+  const handleAddToQuote = () => {
+    window.dispatchEvent(new CustomEvent("abh:add-to-quote", { detail: { hubId: svc.hubId, sectionTitle: svc.sectionTitle, name: svc.name, price: svc.price } }))
+    trackEvent("add_to_quote", { hub_id: svc.hubId, service_name: svc.name, section_title: svc.sectionTitle, price: svc.price })
+    setAddedToQuote(true); setTimeout(() => setAddedToQuote(false), 2200)
+    setQuoteQty(prev => prev + 1)
+  }
+
   const waMessage = fileUrl
     ? `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). Price shown: ${svc.price}. My file: ${fileUrl}`
     : `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). Price shown: ${svc.price}. Can you assist?`
@@ -128,9 +129,10 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
     : ["Just bring your file, document or USB — we'll take care of the rest."]
 
   const desc = svc.desc?.trim() || null
+  const inQuote = addedToQuote || quoteQty > 0
 
   return (
-    <div className="fixed inset-0 z-[10200] flex items-end md:items-center justify-center p-0 md:p-4">
+    <div className="fixed inset-0 z-[10200] flex items-center justify-center p-3 md:p-4">
       <motion.div
         className="absolute inset-0 bg-black/45"
         onClick={onClose}
@@ -147,8 +149,12 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={{ top: 0, bottom: 0.6 }}
         onDragEnd={(_e, info) => { if (shouldDismissOnDrag(info)) onClose() }}
-        initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-        transition={{ type: "tween", duration: 0.22, ease: [0.32, 0.72, 0, 1] }} className="relative w-full md:max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-t-[20px] md:rounded-[14px] cursor-grab active:cursor-grabbing"
+        initial={{ scale: 0.92, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.96, opacity: 0 }}
+        transition={{ type: "tween", duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
+        className="relative w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px] cursor-grab active:cursor-grabbing"
+        style={{ boxShadow: `0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4), 0 10px 24px -8px ${accent}50` }}
       >
         <DragHandle />
 
@@ -191,7 +197,10 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
 
           <div className="h-px bg-zinc-100 dark:bg-zinc-800 mb-4" />
 
-          <div className="flex items-center justify-center gap-3 mb-1">
+          {/* Price, with the turnaround pill stacked directly beneath it
+              instead of sitting beside it — reads cleaner as a single
+              "price block" rather than two competing pieces of info. */}
+          <div className="flex flex-col items-center gap-1.5">
             <span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
             {svc.turnaround && (
               <span className="flex items-center gap-1 text-[0.68rem] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: `${accent}12`, color: accent }}>
@@ -216,7 +225,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                     "flex-1 py-2.5 rounded-[14px] text-[0.72rem] font-black uppercase tracking-wider transition-all duration-200",
                     !isActive && "text-zinc-500 dark:text-zinc-400"
                   )}
-                  style={isActive ? { backgroundColor: accent, color: getContrastText(accent) } : undefined}
+                  style={isActive ? { backgroundColor: accent, color: isDark ? "#0a0a0a" : "#ffffff" } : undefined}
                 >
                   {t === "bring" ? "Bring" : "Description"}
                 </button>
@@ -254,54 +263,73 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           )}
         </div>
 
-        <div className="px-6 pb-6 pt-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800 space-y-4">
+        <div className="px-6 pb-6 pt-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
           <input ref={fileRef} type="file" accept={HUB_ACCEPT[svc.hubId]} onChange={handleFilePick} className="hidden" />
 
+          {/* Two compact icon actions side by side, replacing the old
+              stacked full-width "Attach a file" dashed box + separate
+              full-width "Add to Quote" button — same two actions, far
+              less visual weight, easier to scan at a glance. */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-[14px] font-bold text-[0.7rem] border-2 transition-all active:scale-95"
+              style={
+                uploadPhase === "done"
+                  ? { borderColor: "#22c55e", backgroundColor: "#22c55e10", color: "#16a34a" }
+                  : { borderColor: `${accent}35`, color: accent, backgroundColor: "transparent" }
+              }
+            >
+              <Paperclip size={18} weight="bold" aria-hidden="true" />
+              {uploadPhase === "done" ? "Attached" : "Attach File"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleAddToQuote}
+              className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-[14px] font-bold text-[0.7rem] border-2 transition-all active:scale-95"
+              style={inQuote
+                ? { borderColor: "#22c55e", backgroundColor: "#22c55e10", color: "#16a34a" }
+                : { borderColor: `${accent}35`, color: accent, backgroundColor: "transparent" }
+              }
+            >
+              <ShoppingCartSimple size={18} weight="bold" aria-hidden="true" />
+              {inQuote ? `In Quote${quoteQty > 1 ? ` · ${quoteQty}` : ""}` : "Add to Quote"}
+            </button>
+          </div>
+
           {uploadPhase === "idle" && (
-            <div className="space-y-2">
-              <button
-                type="button" onClick={() => fileRef.current?.click()}
-                className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-[14px] font-bold text-sm border-2 border-dashed transition-all active:scale-95 hover:opacity-80"
-                style={{ borderColor: `${accent}40`, color: accent }}
-              >
-                <Paperclip size={17} weight="bold" aria-hidden="true" />
-                Attach a file (optional)
-              </button>
-              <p className="text-[0.65rem] font-medium text-zinc-400 dark:text-zinc-500 text-center px-1">Accepts: {acceptHint}</p>
-              <div className="flex items-start gap-2 px-1">
-                <ShieldCheck size={13} weight="fill" aria-hidden="true" className="text-[#6FBF1A] shrink-0 mt-0.5" />
-                <p className="abh-muted text-[0.67rem] leading-relaxed">Your file goes directly to ApexbytesHub only — safe, private, and used only for your order. No explicit or inappropriate content allowed.</p>
-              </div>
+            <div className="flex items-start gap-2 px-1">
+              <ShieldCheck size={13} weight="fill" aria-hidden="true" className="text-[#6FBF1A] shrink-0 mt-0.5" />
+              <p className="abh-muted text-[0.65rem] leading-relaxed">Accepts: {acceptHint}. Your file goes directly to ApexbytesHub only — safe, private, used only for your order.</p>
             </div>
           )}
 
           {uploadPhase === "uploading" && (
             <div className="flex items-center gap-3 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-zinc-50 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400">
-              <AbhLoader size={28} color={accent} />
+              <AbhLoader size={24} color={accent} />
               <span className="font-black tabular-nums shrink-0" style={{ color: accent }}>{uploadProgress}%</span>
               <span className="truncate">Uploading {file?.name}…</span>
             </div>
           )}
 
           {uploadPhase === "done" && file && (
-            <div className="flex items-center justify-between gap-2 w-full px-4 py-3 rounded-[14px] text-sm font-bold border" style={{ borderColor: `${accent}35`, backgroundColor: `${accent}08` }}>
+            <div className="flex items-center justify-between gap-2 w-full px-4 py-2.5 rounded-[14px] text-sm font-bold border" style={{ borderColor: `${accent}35`, backgroundColor: `${accent}08` }}>
               <span className="flex items-center gap-2.5 min-w-0">
                 <span className="relative shrink-0">
                   {previewUrl
-                    ? <img src={previewUrl} alt="" className="w-9 h-9 rounded-[8px] object-cover shrink-0 border border-zinc-200 dark:border-zinc-700" />
-                    : <div className="w-9 h-9 rounded-[8px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${accent}15`, color: accent }}><Paperclip size={16} weight="bold" aria-hidden="true" /></div>
+                    ? <img src={previewUrl} alt="" className="w-8 h-8 rounded-[8px] object-cover shrink-0 border border-zinc-200 dark:border-zinc-700" />
+                    : <div className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${accent}15`, color: accent }}><Paperclip size={14} weight="bold" aria-hidden="true" /></div>
                   }
-                  <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-950" style={{ backgroundColor: "#22c55e" }}>
-                    <CheckCircle size={10} weight="fill" color="#fff" aria-hidden="true" />
+                  <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-950" style={{ backgroundColor: "#22c55e" }}>
+                    <CheckCircle size={9} weight="fill" color="#fff" aria-hidden="true" />
                   </span>
                 </span>
-                <span className="flex flex-col min-w-0">
-                  <span className="text-[0.6rem] font-black uppercase tracking-widest text-green-600 dark:text-green-400">Uploaded</span>
-                  <span className="truncate text-zinc-700 dark:text-zinc-300 text-[0.8rem]">{file.name}</span>
-                </span>
+                <span className="truncate text-zinc-700 dark:text-zinc-300 text-[0.78rem]">{file.name}</span>
               </span>
               <button type="button" onClick={clearFile} aria-label="Remove file" className="shrink-0 opacity-60 hover:opacity-100 transition-opacity">
-                <X size={15} weight="bold" aria-hidden="true" />
+                <X size={14} weight="bold" aria-hidden="true" />
               </button>
             </div>
           )}
@@ -320,29 +348,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
 
           <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
 
-          <button
-            type="button"
-            onClick={() => {
-              window.dispatchEvent(new CustomEvent("abh:add-to-quote", { detail: { hubId: svc.hubId, sectionTitle: svc.sectionTitle, name: svc.name, price: svc.price } }))
-              trackEvent("add_to_quote", { hub_id: svc.hubId, service_name: svc.name, section_title: svc.sectionTitle, price: svc.price })
-              setAddedToQuote(true); setTimeout(() => setAddedToQuote(false), 2200)
-              setQuoteQty(prev => prev + 1)
-            }}
-            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-[14px] font-bold text-sm border-2 transition-all duration-200 active:scale-95"
-            style={addedToQuote || quoteQty > 0
-              ? { borderColor: "#22c55e", backgroundColor: "#22c55e10", color: "#16a34a" }
-              : { borderColor: `${accent}35`, color: accent, backgroundColor: "transparent" }
-            }
-          >
-            {addedToQuote
-              ? "✓ Added to Quote"
-              : quoteQty > 0
-                ? `✓ In Quote · ${quoteQty}`
-                : "+ Add to Quote"}
-          </button>
-
-          <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
-
           <a
             href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waMessage)}`}
             target="_blank"
@@ -357,4 +362,4 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
       </motion.div>
     </div>
   )
-      } 
+} 
