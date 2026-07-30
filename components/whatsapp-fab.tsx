@@ -622,7 +622,9 @@ export function WhatsAppFAB() {
           own header X already closes it, so the FAB now simply fades
           out completely whenever the panel is open.
           right-4 md:right-6 now matches Search + Calculator FABs so all
-          three line up on the same right edge at desktop widths. */}
+          three line up on the same right edge at desktop widths.
+          Bare icon, no filled circle, no ping pulse — matches the
+          Quote Calculator / Search FAB treatment. */}
       <div
         className={cn(
           "fixed z-[9992] right-4 md:right-6 bottom-6 group/wa",
@@ -635,22 +637,24 @@ export function WhatsAppFAB() {
       >
         <div className="flex items-center justify-end gap-2">
           <span className={cn(
-  "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap pointer-events-none overflow-hidden",
-  "bg-white dark:bg-zinc-900 text-[#25D366]",
-  "px-2.5 py-1 rounded-full shadow-md border border-zinc-100 dark:border-zinc-800",
-  "transition-all duration-200 ease-out origin-right motion-reduce:transition-none transform-gpu",
-  "max-w-0 group-hover/wa:max-w-[100px] opacity-0 scale-x-0 group-hover/wa:opacity-100 group-hover/wa:scale-x-100"
-)}>
-  Chat
-</span>
+            "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap pointer-events-none overflow-hidden",
+            "bg-white dark:bg-zinc-900 text-[#25D366]",
+            "px-2.5 py-1 rounded-full shadow-md border border-zinc-100 dark:border-zinc-800",
+            "transition-all duration-200 ease-out origin-right motion-reduce:transition-none transform-gpu",
+            "max-w-0 group-hover/wa:max-w-[100px] opacity-0 scale-x-0 group-hover/wa:opacity-100 group-hover/wa:scale-x-100"
+          )}>
+            Chat
+          </span>
           <button
             onClick={() => setIsOpen(o => !o)}
             aria-label={isOpen ? "Close WhatsApp chat" : `Chat with ${BIZ.name} on WhatsApp`}
-            className="relative w-14 h-14 rounded-full text-white shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
-            style={{ backgroundColor: "#25D366", boxShadow: "0 8px 24px rgba(37,211,102,0.45), 0 4px 10px rgba(0,0,0,0.25)" }}
+            className="relative w-14 h-14 flex items-center justify-center active:scale-90 hover:scale-110 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
           >
-            <span className="absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-20 pointer-events-none" />
-            <WhatsappLogo size={28} weight="fill" />
+            <WhatsappLogo
+              size={32}
+              weight="fill"
+              style={{ color: WA.accent, filter: `drop-shadow(0 4px 10px ${WA.accent}80) drop-shadow(0 2px 4px rgba(0,0,0,0.3))` }}
+            />
           </button>
         </div>
       </div>
