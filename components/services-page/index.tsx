@@ -7,32 +7,33 @@ import { AnimatePresence } from "framer-motion"
 import { Megaphone, ArrowUp, ArrowRight, X } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
-import { HUB_COLORS, HubKey } from "@/lib/brand"
+import { BRAND, HUB_COLORS, HubKey } from "@/lib/brand"
 import { HUBS, HubId } from "@/lib/data"
 import { ScrollBounce } from "@/components/scroll-bounce"
-import { useModalBackStack } from "./shared"
+import { useModalBackStack, HubIcon } from "./shared"
 import { InlineSearchBar } from "./search-bar"
 import { HubModal } from "./hub-modal"
 import { ServiceDetailModal } from "./service-detail-modal"
 import { HUB_ORDER, HUB_PREVIEWS, NOTICE, trackEvent, SelectedService } from "./lib"
 
-const HUB_ICON_IMAGES: Record<HubId, string> = {
-  print:    "/print-hub.webp",
-  doc:      "/docu-hub.webp",
-  design:   "/design-hub.webp",
-  eservice: "/eservice-hub.webp",
-  tech:     "/tech-hub.webp",
-}
-
-function NoticeNotification() {
+function NoticeNotification({ isDark }: { isDark: boolean }) {
   const [expanded, setExpanded] = useState(false)
+
+  // Dark mode gets a translucent version of the brand orange (instead of
+  // flat opaque) plus a soft colored glow shadow, matching the elevated
+  // card treatment used elsewhere (e.g. About page standards cards).
+  const pillBg = isDark ? `${BRAND.orange}cc` : BRAND.orange
 
   if (!expanded) {
     return (
       <button
         onClick={() => setExpanded(true)}
         aria-label="Show notice to clients"
-        className="relative mx-auto mb-10 flex items-center gap-2 pl-4 pr-5 py-2.5 rounded-full text-white font-black text-[0.78rem] tracking-tight shadow-lg transition-transform active:scale-95 hover:-translate-y-0.5 bg-brand-orange"
+        style={{
+          backgroundColor: pillBg,
+          boxShadow: `0 10px 28px -8px ${BRAND.orange}70, 0 4px 12px -2px rgba(0,0,0,0.25)`,
+        }}
+        className="relative mx-auto mb-10 flex items-center gap-2 pl-4 pr-5 py-2.5 rounded-full text-white font-black text-[0.78rem] tracking-tight transition-transform active:scale-95 hover:-translate-y-0.5"
       >
         <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-white dark:bg-zinc-950 border-2 border-white dark:border-zinc-950 flex items-center justify-center shadow-md">
           <Megaphone size={10} weight="fill" className="text-brand-blue dark:text-brand-light-blue" />
@@ -78,23 +79,17 @@ function ClosingTagline() {
   )
 }
 
-function HubCta({ label, accent, pointsRight, previewActive }: { label: string; accent: string; pointsRight: boolean; previewActive?: boolean }) {
+function HubCta({ label, accent, pointsRight }: { label: string; accent: string; pointsRight: boolean }) {
   return (
     <span
-      className={cn(
-        "relative inline-flex items-center gap-1 text-[0.78rem] font-black transition-colors duration-200 group-hover/hubcard:text-[var(--hub-accent)]",
-        previewActive ? "text-[var(--hub-accent)]" : "text-zinc-400 dark:text-zinc-500"
-      )}
+      className="relative inline-flex items-center gap-1 text-[0.78rem] font-black text-zinc-400 dark:text-zinc-500 transition-colors duration-200 group-hover/hubcard:text-[var(--hub-accent)]"
       style={{ ["--hub-accent" as any]: accent }}
     >
       <span className="relative">
         {label}
         <span
           aria-hidden="true"
-          className={cn(
-            "absolute left-0 bottom-[-2px] h-[2px] bg-current transition-[width] duration-300 ease-linear group-hover/hubcard:w-full",
-            previewActive ? "w-full" : "w-0"
-          )}
+          className="absolute left-0 bottom-[-2px] h-[2px] w-0 bg-current transition-[width] duration-300 ease-linear group-hover/hubcard:w-full"
         />
       </span>
       <ArrowRight size={12} weight="bold" aria-hidden="true" className={cn(!pointsRight && "rotate-180")} />
@@ -102,29 +97,19 @@ function HubCta({ label, accent, pointsRight, previewActive }: { label: string; 
   )
 }
 
-// Icon block — stretches to match the height of its sibling text column
-// (via the parent's `items-stretch`) instead of a fixed pixel size, so
-// every card's icon is exactly as tall as that card's own title→Explore
-// content, whatever that happens to be. `mix-blend-mode: screen` makes
-// the icon's black background behave as transparent against the card's
-// own background in both themes — screening any base color with pure
-// black returns the base unchanged, which is what makes the black square
-// disappear. (Note: this is a CSS workaround, not a real transparent
-// asset — bright whites in the icon will render slightly hot. Swap to a
-// proper transparent-bg webp later and this can be simplified.)
-function HubIconBlock({ hubId }: { hubId: HubId }) {
+// Corner icon — tucked into the bottom-right corner, rotated, and
+// deliberately overflowing past the card's own edge so the parent's
+// `overflow-hidden` + rounded corner clips it into a "cut off" shape.
+// Neutral gray at rest, swaps to the hub's own accent color on hover via
+// the card's group state.
+function HubCornerIcon({ hubId, accent }: { hubId: HubId; accent: string }) {
   return (
-    <div className="relative shrink-0 h-full w-auto max-w-[110px] aspect-square flex items-end justify-center">
-      <img
-        src={HUB_ICON_IMAGES[hubId]}
-        alt=""
-        aria-hidden="true"
-        className="w-full h-full object-contain transition-transform duration-300 group-hover/hubcard:-translate-y-1"
-        style={{
-          mixBlendMode: "screen",
-          filter: "drop-shadow(0 10px 10px rgba(0,0,0,0.28))",
-        }}
-      />
+    <div
+      className="pointer-events-none absolute -bottom-5 -right-5 w-28 h-28 rotate-[18deg] flex items-center justify-center text-zinc-200 dark:text-zinc-800 transition-colors duration-300 group-hover/hubcard:text-[var(--hub-accent)]"
+      style={{ ["--hub-accent" as any]: accent }}
+      aria-hidden="true"
+    >
+      <HubIcon id={hubId} size={76} color="currentColor" />
     </div>
   )
 }
@@ -140,7 +125,6 @@ export function ServicesPage() {
   const [hubOriginSide,   setHubOriginSide]   = useState<"left" | "right">("right")
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
   const [showBackToTop,   setShowBackToTop]   = useState(false)
-  const [touchedCard, setTouchedCard] = useState<HubId | null>(null)
 
   const isModalOpen = !!(activeHub || selectedService)
 
@@ -183,11 +167,6 @@ export function ServicesPage() {
     }
   }, [searchParams, router])
 
-  // closeHub/closeService are now actually wired to the modals below —
-  // this was the missing piece. Previously the modals' onClose props
-  // called setActiveHub(null)/setSelectedService(null) directly, which
-  // bypassed the hook's history bookkeeping entirely and was the primary
-  // cause of the back-button eventually exiting the site (see shared.tsx).
   const { closeHub, closeService } = useModalBackStack(activeHub, setActiveHub, selectedService, setSelectedService)
 
   useEffect(() => {
@@ -240,101 +219,120 @@ export function ServicesPage() {
         </ScrollBounce>
 
         <ScrollBounce delay={0.14} className="relative z-0 w-full flex justify-center">
-          <NoticeNotification />
+          <NoticeNotification isDark={isDark} />
         </ScrollBounce>
 
-        {/* ── DESKTOP cards ── */}
-        <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-5 gap-5 pb-2 w-full">
+        {/* ── DESKTOP — 6-column grid. Each card spans 2 columns, so a
+            top row of 3 and a bottom row of 2 are all EXACTLY the same
+            width/height. The bottom row's 2 cards get explicit column
+            starts (2 and 4) so they sit centered with equal margins on
+            both sides, rather than left-aligned. All content is centered
+            (same direction) and vertically centered within a fixed-shape
+            card via flex-col + items-center + mt-auto on the CTA. Only
+            the CTA itself navigates; hovering anywhere on the card still
+            previews it via group-hover. ── */}
+        <div className="hidden md:grid md:grid-cols-6 gap-5 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
-            const hub       = HUBS[hubId]
-            const colors    = HUB_COLORS[hubId as HubKey]
-            const accent    = isDark ? colors.accentDark : colors.accentLight
-            const iconRight = index % 2 === 0
+            const hub    = HUBS[hubId]
+            const colors = HUB_COLORS[hubId as HubKey]
+            const accent = isDark ? colors.accentDark : colors.accentLight
 
             return (
-              <ScrollBounce key={hubId} delay={index * 0.06}>
-                <div className="group/hubcard relative flex flex-col w-full text-left rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-transform duration-300 ease-out hover:z-20 hover:-translate-y-0.5 transform-gpu">
-                  <div className={cn("flex items-stretch gap-5 p-5", !iconRight && "flex-row-reverse")}>
-                    <div className="flex-1 min-w-0 flex flex-col justify-center">
-                      <h3
-                        className="font-sans font-black text-[0.95rem] leading-tight transition-colors mb-1.5"
-                        style={{ color: accent }}
-                      >
-                        {hub.title}
-                      </h3>
-                      <div className="flex flex-wrap gap-x-2 gap-y-0.5 mb-1.5">
-                        {HUB_PREVIEWS[hubId].map((hint, i) => (
-                          <span key={i} className="text-[0.66rem] font-medium text-zinc-400 dark:text-zinc-500">
-                            {hint}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="abh-body text-[0.76rem] line-clamp-2 leading-snug">
-                        {hub.desc}
-                      </p>
+              <div
+                key={hubId}
+                className={cn(
+                  "col-span-2",
+                  index === 3 && "md:col-start-2",
+                  index === 4 && "md:col-start-4"
+                )}
+              >
+                <ScrollBounce delay={index * 0.06}>
+                  <div className="group/hubcard relative flex flex-col items-center text-center h-full rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 abh-shadow-elevated overflow-hidden transition-transform duration-300 hover:-translate-y-0.5 transform-gpu p-6 pt-7">
+                    <HubCornerIcon hubId={hubId} accent={accent} />
+
+                    <h3
+                      className="relative z-10 font-sans font-black text-[0.95rem] leading-tight mb-1.5"
+                      style={{ color: accent }}
+                    >
+                      {hub.title}
+                    </h3>
+
+                    <div className="relative z-10 flex flex-wrap justify-center gap-x-2 gap-y-0.5 mb-1.5">
+                      {HUB_PREVIEWS[hubId].map((hint, i) => (
+                        <span key={i} className="text-[0.66rem] font-medium text-zinc-400 dark:text-zinc-500">
+                          {hint}
+                        </span>
+                      ))}
                     </div>
 
-                    <HubIconBlock hubId={hubId} />
-                  </div>
+                    <p className="relative z-10 abh-body text-[0.76rem] line-clamp-2 leading-snug mb-4 max-w-[200px]">
+                      {hub.desc}
+                    </p>
 
-                  <div className="px-5 pb-4">
                     <button
                       onClick={() => handleOpenHub(hubId, "right")}
                       aria-label={`Open ${hub.title}`}
+                      className="relative z-10 mt-auto"
                     >
                       <HubCta label="View more" accent={accent} pointsRight={true} />
                     </button>
                   </div>
-                </div>
-              </ScrollBounce>
+                </ScrollBounce>
+              </div>
             )
           })}
         </div>
 
-        {/* ── MOBILE cards ── */}
-        <div className="flex md:hidden flex-col gap-6 pb-2 w-full">
+        {/* ── MOBILE — whole card navigates again (no longer Explore-only).
+            Same corner-icon treatment as desktop, border + shadow to match
+            the elevated card style used on the About page. ── */}
+        <div className="flex md:hidden flex-col gap-5 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
-            const hub        = HUBS[hubId]
-            const colors     = HUB_COLORS[hubId as HubKey]
-            const accent     = isDark ? colors.accentDark : colors.accentLight
-            const iconRight  = index % 2 === 0
-            const isTouched  = touchedCard === hubId
+            const hub    = HUBS[hubId]
+            const colors = HUB_COLORS[hubId as HubKey]
+            const accent = isDark ? colors.accentDark : colors.accentLight
 
             return (
               <ScrollBounce key={hubId} delay={index * 0.08}>
-                <div
-                  className="group/hubcard flex items-stretch gap-6 w-full p-4 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 abh-shadow-card text-left transition-transform duration-150 active:scale-[0.98] transform-gpu"
-                  onTouchStart={() => setTouchedCard(hubId)}
-                  onTouchEnd={() => setTouchedCard(null)}
-                  onTouchCancel={() => setTouchedCard(null)}
+                <button
+                  onClick={() => handleOpenHub(hubId, "right")}
+                  aria-label={`Open ${hub.title}`}
+                  className="group/hubcard relative flex flex-col items-center text-center w-full rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 abh-shadow-elevated overflow-hidden transition-transform duration-200 active:scale-[0.98] transform-gpu p-6 pt-7"
                 >
-                  <div className={cn("flex-1 min-w-0 flex flex-col justify-center", iconRight ? "text-left order-1" : "text-right order-2")}>
-                    <h3 className="font-sans font-black text-[0.98rem] text-zinc-900 dark:text-zinc-50 leading-tight mb-1">
-                      {hub.title}
-                    </h3>
-                    <p className="abh-body text-[0.76rem] line-clamp-2 leading-snug mb-2">
-                      {hub.desc}
-                    </p>
-                    <div className={cn("inline-flex", !iconRight && "flex-row-reverse")}>
-                      <button
-                        onClick={() => handleOpenHub(hubId, iconRight ? "right" : "left")}
-                        aria-label={`Open ${hub.title}`}
-                      >
-                        <HubCta label="Explore" accent={accent} pointsRight={iconRight} previewActive={isTouched} />
-                      </button>
-                    </div>
+                  <HubCornerIcon hubId={hubId} accent={accent} />
+
+                  <h3
+                    className="relative z-10 font-sans font-black text-[0.98rem] leading-tight mb-1.5"
+                    style={{ color: accent }}
+                  >
+                    {hub.title}
+                  </h3>
+
+                  <div className="relative z-10 flex flex-wrap justify-center gap-x-2 gap-y-0.5 mb-1.5">
+                    {HUB_PREVIEWS[hubId].map((hint, i) => (
+                      <span key={i} className="text-[0.66rem] font-medium text-zinc-400 dark:text-zinc-500">
+                        {hint}
+                      </span>
+                    ))}
                   </div>
 
-                  <div className={cn(iconRight ? "order-2" : "order-1")}>
-                    <HubIconBlock hubId={hubId} />
-                  </div>
-                </div>
+                  <p className="relative z-10 abh-body text-[0.76rem] line-clamp-2 leading-snug mb-3 max-w-[260px]">
+                    {hub.desc}
+                  </p>
+
+                  <span className="relative z-10 inline-flex items-center gap-1 text-[0.78rem] font-black" style={{ color: accent }}>
+                    Explore
+                    <ArrowRight size={12} weight="bold" aria-hidden="true" />
+                  </span>
+                </button>
               </ScrollBounce>
             )
           })}
         </div>
 
-        <ScrollBounce className="w-full">
+        {/* Extra breathing room above "Why ApexbytesHub" — it was sitting
+            right against the hub cards before. */}
+        <ScrollBounce className="w-full mt-14 md:mt-20">
           <ClosingTagline />
         </ScrollBounce>
       </div>
