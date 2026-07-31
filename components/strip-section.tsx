@@ -7,13 +7,14 @@ import { cn } from "@/lib/utils"
 import { BRAND, WA, STRIP_ITEMS } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
 
+// ─── Stats Bar ────────────────────────────────────────────────────────────────
 export function StripSection() {
   return (
     <section aria-label="Why choose us" className="bg-background py-12 px-4 md:px-8 transition-colors duration-300">
       <div className="max-w-[1080px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {STRIP_ITEMS.map((item, index) => (
           <ScrollBounce key={index} delay={index * 0.08}>
-            <StripCard item={item} />
+            <StripCard item={item} index={index} />
           </ScrollBounce>
         ))}
       </div>
@@ -21,75 +22,10 @@ export function StripSection() {
   )
 }
 
-// Icon treatment matched to Pricing/StatsBar: raw colored icon, no
-// filled square/circle chip behind it. The card itself still fills
-// solid blue on hover (unchanged), so the icon swaps to white in that
-// state purely for contrast against the new blue background — not
-// because it's sitting in its own colored container anymore.
-function StripCard({ item }: { item: any }) {
-  const { resolvedTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-  const [hovered, setHovered] = useState(false)
-  useEffect(() => { setMounted(true) }, [])
-  const isDark = mounted && resolvedTheme === "dark"
-
-  const color = isDark ? BRAND.lightBlue : BRAND.blue
-  const fillBlue = BRAND.blue
-
-  return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      className={cn(
-        "relative rounded-[14px] border p-6 transition-all duration-300 group overflow-hidden",
-        "border-zinc-100 dark:border-zinc-800",
-        "abh-shadow-card hover:-translate-y-1"
-      )}
-      style={{ backgroundColor: hovered ? fillBlue : undefined }}
-    >
-      <div
-        className={cn(
-          "absolute inset-0 bg-white dark:bg-zinc-900 transition-opacity duration-300 pointer-events-none",
-          hovered ? "opacity-0" : "opacity-100"
-        )}
-        aria-hidden="true"
-      />
-
-      <div className="relative z-10">
-        <div
-          className="mb-5 transition-colors duration-300"
-          style={{ color: hovered ? "#ffffff" : color }}
-        >
-          {item.iconName === "Rocket"          && <Rocket          weight="fill" className="w-6 h-6" aria-hidden="true" />}
-          {item.iconName === "CurrencyDollar"  && <CurrencyDollar  weight="fill" className="w-6 h-6" aria-hidden="true" />}
-          {item.iconName === "HandHeart"       && <HandHeart       weight="fill" className="w-6 h-6" aria-hidden="true" />}
-          {item.iconName === "MapPin"          && <MapPin          weight="fill" className="w-6 h-6" aria-hidden="true" />}
-        </div>
-        <div>
-          <h3
-            className="font-sans font-semibold text-sm mb-1 transition-colors duration-300"
-            style={{ color: hovered ? "#ffffff" : undefined }}
-          >
-            <span className={hovered ? "" : "text-zinc-800 dark:text-zinc-200"}>{item.title}</span>
-          </h3>
-          <p
-            className="text-sm leading-relaxed transition-colors duration-300"
-            style={{ color: hovered ? "rgba(255,255,255,0.9)" : undefined }}
-          >
-            <span className={hovered ? "" : "abh-body"}>{item.desc}</span>
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // Real WCAG relative luminance → picks white or near-black text against
-// any given background hex, rather than assuming a fixed color always
-// works. Needed here because ctaBlue itself flips between a DARK blue
-// (light mode) and a LIGHT pastel blue (dark mode) — a single hardcoded
-// text color (e.g. always white) fails against whichever one it wasn't
-// tuned for. Same technique as the navbar's getReadableTextColor.
+// any given background hex. Declared here (used by both StripCard and
+// CtaBar below) — function declarations are hoisted, so definition order
+// in the file doesn't matter.
 function getReadableTextColor(hex: string): string {
   const clean = hex.replace("#", "")
   const r = parseInt(clean.substring(0, 2), 16) / 255
@@ -102,6 +38,74 @@ function getReadableTextColor(hex: string): string {
   return contrastWhite >= contrastDark ? "#ffffff" : "#18181b"
 }
 
+// Was one flat color (BRAND.blue) for every card regardless of which item
+// it was — now cycles blue → green → orange by index, same rotation as
+// StatsBar and the About page cards. Hover-fill and hover-text both use
+// the card's own color instead of a single hardcoded blue/white pair.
+function StripCard({ item, index }: { item: any; index: number }) {
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  const [hovered, setHovered] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+  const isDark = mounted && resolvedTheme === "dark"
+
+  const palette = isDark
+    ? [BRAND.lightBlue, BRAND.green, BRAND.orangeDark]
+    : [BRAND.blue, BRAND.green, BRAND.orangeDark]
+  const color = palette[index % palette.length]
+  const hoverTextColor = getReadableTextColor(color)
+  const hoverDescColor = hoverTextColor === "#ffffff" ? "rgba(255,255,255,0.9)" : "rgba(24,24,27,0.75)"
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className={cn(
+        "relative rounded-[14px] border p-6 transition-all duration-300 group overflow-hidden",
+        "border-zinc-100 dark:border-zinc-800",
+        "abh-shadow-card hover:-translate-y-1"
+      )}
+      style={{ backgroundColor: hovered ? color : undefined }}
+    >
+      <div
+        className={cn(
+          "absolute inset-0 bg-white dark:bg-zinc-900 transition-opacity duration-300 pointer-events-none",
+          hovered ? "opacity-0" : "opacity-100"
+        )}
+        aria-hidden="true"
+      />
+
+      <div className="relative z-10">
+        <div
+          className="mb-5 transition-colors duration-300"
+          style={{ color: hovered ? hoverTextColor : color }}
+        >
+          {item.iconName === "Rocket"          && <Rocket          weight="fill" className="w-6 h-6" aria-hidden="true" />}
+          {item.iconName === "CurrencyDollar"  && <CurrencyDollar  weight="fill" className="w-6 h-6" aria-hidden="true" />}
+          {item.iconName === "HandHeart"       && <HandHeart       weight="fill" className="w-6 h-6" aria-hidden="true" />}
+          {item.iconName === "MapPin"          && <MapPin          weight="fill" className="w-6 h-6" aria-hidden="true" />}
+        </div>
+        <div>
+          <h3
+            className="font-sans font-semibold text-sm mb-1 transition-colors duration-300"
+            style={{ color: hovered ? hoverTextColor : undefined }}
+          >
+            <span className={hovered ? "" : "text-zinc-800 dark:text-zinc-200"}>{item.title}</span>
+          </h3>
+          <p
+            className="text-sm leading-relaxed transition-colors duration-300"
+            style={{ color: hovered ? hoverDescColor : undefined }}
+          >
+            <span className={hovered ? "" : "abh-body"}>{item.desc}</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── CtaBar — unchanged. It's a single CTA block, not a multi-item grid,
+// so there's no "per card" color to rotate here. ──
 export function CtaBar({
   title,
   description,
@@ -156,4 +160,4 @@ export function CtaBar({
       </ScrollBounce>
     </section>
   )
-} 
+      } 
