@@ -37,7 +37,7 @@ export function FaqAccordion({
       <div
         id="faq-accordion-panel"
         className={cn(
-          "grid w-full max-w-md transition-all duration-300 ease-in-out",
+          "grid w-full max-w-2xl transition-all duration-300 ease-in-out",
           isOpen ? "grid-rows-[1fr] opacity-100 mt-4" : "grid-rows-[0fr] opacity-0"
         )}
       >
@@ -60,7 +60,7 @@ export function FaqAccordion({
                   aria-controls={`faq-inner-${i}`}
                   className="flex items-center justify-between w-full text-left gap-4 px-5 py-4"
                 >
-                  <h4 className="text-[0.85rem] font-black text-zinc-800 dark:text-zinc-100 leading-snug">
+                  <h4 className="text-base font-black text-zinc-800 dark:text-zinc-100 leading-snug">
                     {faq.question}
                   </h4>
                   <CaretDown
@@ -81,7 +81,7 @@ export function FaqAccordion({
                   )}
                 >
                   <div className="overflow-hidden">
-                    <div className="px-5 pb-5 pt-1 text-[0.8rem] text-zinc-500 dark:text-zinc-400 leading-relaxed whitespace-pre-wrap">
+                    <div className="px-5 pb-5 pt-1 text-[0.92rem] text-zinc-500 dark:text-zinc-400 leading-relaxed whitespace-pre-wrap">
                       {faq.answer}
                     </div>
                   </div>
@@ -93,4 +93,4 @@ export function FaqAccordion({
       </div>
     </div>
   )
-}
+} 
