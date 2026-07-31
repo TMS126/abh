@@ -32,22 +32,22 @@ function ProjectDetailsBody({ project, accent }: { project: ProjectData; accent:
   return (
     <div className="space-y-5">
       <div className="rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 p-5">
-        <h4 className="text-[0.62rem] font-black uppercase tracking-widest mb-2 text-zinc-400 dark:text-zinc-500">The Goal</h4>
-        <p className="text-sm text-zinc-700 dark:text-zinc-200 leading-relaxed font-medium">{project.clientGoal}</p>
+        <h4 className="text-[0.74rem] font-black uppercase tracking-widest mb-2 text-zinc-400 dark:text-zinc-500">The Goal</h4>
+        <p className="text-base text-zinc-700 dark:text-zinc-200 leading-relaxed font-medium">{project.clientGoal}</p>
       </div>
       <div className="rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 p-5">
-        <h4 className="text-[0.62rem] font-black uppercase tracking-widest mb-2 text-zinc-400 dark:text-zinc-500">What we did</h4>
+        <h4 className="text-[0.74rem] font-black uppercase tracking-widest mb-2 text-zinc-400 dark:text-zinc-500">What we did</h4>
         <ul className="space-y-2">
           {project.whatWeDid.map((item, i) => (
-            <li key={i} className="flex items-start gap-2.5 text-sm text-zinc-700 dark:text-zinc-200 font-medium">
+            <li key={i} className="flex items-start gap-2.5 text-base text-zinc-700 dark:text-zinc-200 font-medium">
               <Check size={14} weight="bold" className="mt-1 shrink-0" style={{ color: accent }} />{item}
             </li>
           ))}
         </ul>
       </div>
       <div className="rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 p-5">
-        <h4 className="text-[0.62rem] font-black uppercase tracking-widest mb-2 text-zinc-400 dark:text-zinc-500">The Result</h4>
-        <p className="text-sm text-zinc-700 dark:text-zinc-200 leading-relaxed font-medium">{project.result}</p>
+        <h4 className="text-[0.74rem] font-black uppercase tracking-widest mb-2 text-zinc-400 dark:text-zinc-500">The Result</h4>
+        <p className="text-base text-zinc-700 dark:text-zinc-200 leading-relaxed font-medium">{project.result}</p>
       </div>
     </div>
   )
@@ -68,7 +68,7 @@ function ProjectCTAs({ project, onClose, accent }: {
         style={{ borderColor: accent, backgroundColor: `${accent}12`, color: accent }}
       >
         <WhatsappLogo size={20} weight="fill" aria-hidden="true" />
-        <span className="text-xs font-black leading-tight">Get a project like this</span>
+        <span className="text-sm font-black leading-tight">Get a project like this</span>
       </a>
       <Link
         href={buildInquireHref(project)}
@@ -76,7 +76,7 @@ function ProjectCTAs({ project, onClose, accent }: {
         style={{ borderColor: accent, color: accent }}
       >
         <EnvelopeSimple size={20} weight="bold" aria-hidden="true" />
-        <span className="text-xs font-black leading-tight">Inquire about this</span>
+        <span className="text-sm font-black leading-tight">Inquire about this</span>
       </Link>
     </div>
   )
@@ -177,7 +177,6 @@ export function ProjectViewerModal({
           : "border border-zinc-100 dark:border-zinc-800 rounded-[14px] h-[85vh] md:max-w-5xl md:overflow-hidden animate-in zoom-in-95 duration-500",
       )}>
 
-        {/* ── MOBILE: full-page layout ── */}
         {isMobile ? (
           <>
             <div className="relative h-[42%] shrink-0 overflow-hidden bg-zinc-900">
@@ -192,7 +191,6 @@ export function ProjectViewerModal({
                 >
                   <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="100vw" className="object-contain" priority />
 
-                  {/* Top overlay: just close + sibling nav — title/heart/share moved below */}
                   <div className="absolute top-0 inset-x-0 z-20 flex items-center justify-end px-3 pt-3 pb-8 bg-gradient-to-b from-black/50 to-transparent pointer-events-none">
                     <button
                       onClick={(e) => { e.stopPropagation(); onClose() }}
@@ -241,7 +239,7 @@ export function ProjectViewerModal({
               {hasBA && (
                 <button
                   onClick={() => setComparing(v => !v)}
-                  className={cn("absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-[0.65rem] font-black uppercase tracking-wider", CHIP)}
+                  className={cn("absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-[0.78rem] font-black uppercase tracking-wider", CHIP)}
                 >
                   <ArrowsLeftRight size={12} weight="bold" />
                   {comparing ? "Gallery" : "Before / After"}
@@ -249,7 +247,6 @@ export function ProjectViewerModal({
               )}
             </div>
 
-            {/* ── Scrollable body: swipe pill + client type + like/share stay sticky at top, details scroll under them ── */}
             <div
               ref={detailsRef}
               className="flex-1 overflow-y-auto overscroll-contain"
@@ -260,9 +257,9 @@ export function ProjectViewerModal({
               )}>
                 <div className="flex justify-center">
                   <div className={cn("flex flex-col items-center gap-1.5 px-5 py-3 rounded-[16px]", ACRYLIC_PILL)}>
-                    <h2 className="font-black text-lg text-zinc-900 dark:text-zinc-50 text-center leading-snug max-w-[240px]">{project.title}</h2>
+                    <h2 className="font-black text-xl text-zinc-900 dark:text-zinc-50 text-center leading-snug max-w-[240px]">{project.title}</h2>
                     {hasSiblings && (
-                      <div className="flex items-center gap-2 text-[0.65rem] font-bold text-zinc-500 dark:text-zinc-400">
+                      <div className="flex items-center gap-2 text-[0.78rem] font-bold text-zinc-500 dark:text-zinc-400">
                         <button onClick={goPrevProject} aria-label="Previous project" className="active:scale-90 transition-transform">
                           <CaretLeft size={12} weight="bold" />
                         </button>
@@ -276,7 +273,7 @@ export function ProjectViewerModal({
                 </div>
 
                 {project.clientType && (
-                  <p className={cn("text-[0.72rem] italic mt-3 text-center", project.clientType === "sample" ? "text-brand-orange" : "text-zinc-400 dark:text-zinc-500")}>
+                  <p className={cn("text-[0.86rem] italic mt-3 text-center", project.clientType === "sample" ? "text-brand-orange" : "text-zinc-400 dark:text-zinc-500")}>
                     {project.clientType === "practice" && "Practice design — portfolio project, not a real client"}
                     {project.clientType === "client" && "Real client work"}
                     {project.clientType === "sample" && "Representative example — reflects our work, not an actual client project"}
@@ -303,7 +300,6 @@ export function ProjectViewerModal({
             </div>
           </>
         ) : (
-          // ── DESKTOP: unchanged layout, left/right split ──
           <>
             <button
               onClick={onClose}
@@ -344,7 +340,7 @@ export function ProjectViewerModal({
                           <CaretRight size={16} weight="bold" />
                         </button>
                         {positionLabel && (
-                          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white text-[0.62rem] font-bold tracking-widest">
+                          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white text-[0.74rem] font-bold tracking-widest">
                             {positionLabel}
                           </div>
                         )}
@@ -364,19 +360,19 @@ export function ProjectViewerModal({
               )}
               {hasBA && (
                 <div className="shrink-0 flex border-t border-white/10 bg-zinc-950">
-                  <button onClick={() => setComparing(false)} className={cn("flex-1 py-2.5 text-[0.65rem] font-black uppercase tracking-widest transition-all duration-200", !comparing ? "text-white" : "text-white/30 hover:text-white/60")} style={!comparing ? { borderBottom: `2px solid ${accent}` } : {}}>Gallery</button>
-                  <button onClick={() => setComparing(true)} className={cn("flex-1 py-2.5 text-[0.65rem] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all duration-200", comparing ? "text-white" : "text-white/30 hover:text-white/60")} style={comparing ? { borderBottom: `2px solid ${accent}` } : {}}><ArrowsLeftRight size={13} weight="bold" />Before / After</button>
+                  <button onClick={() => setComparing(false)} className={cn("flex-1 py-2.5 text-[0.78rem] font-black uppercase tracking-widest transition-all duration-200", !comparing ? "text-white" : "text-white/30 hover:text-white/60")} style={!comparing ? { borderBottom: `2px solid ${accent}` } : {}}>Gallery</button>
+                  <button onClick={() => setComparing(true)} className={cn("flex-1 py-2.5 text-[0.78rem] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all duration-200", comparing ? "text-white" : "text-white/30 hover:text-white/60")} style={comparing ? { borderBottom: `2px solid ${accent}` } : {}}><ArrowsLeftRight size={13} weight="bold" />Before / After</button>
                 </div>
               )}
             </div>
 
             <div className="relative flex flex-col border-zinc-100 dark:border-zinc-800 flex-1 border-t md:h-auto md:flex-none md:border-t-0 md:border-l md:w-[380px]">
               <div className="shrink-0 px-6 md:px-8 pt-6 md:pt-8 relative z-20 bg-white dark:bg-zinc-950">
-                <span className="text-[0.7rem] font-black uppercase tracking-widest" style={{ color: accent }}>{project.tag}</span>
-                {hasBA && <span className="ml-2 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ backgroundColor: `${accent}20`, color: accent }}>Before &amp; After</span>}
-                <h2 className="font-sans font-black text-2xl md:text-3xl text-zinc-900 dark:text-zinc-50 leading-[1.1] mt-2">{project.title}</h2>
+                <span className="text-[0.84rem] font-black uppercase tracking-widest" style={{ color: accent }}>{project.tag}</span>
+                {hasBA && <span className="ml-2 text-[0.72rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ backgroundColor: `${accent}20`, color: accent }}>Before &amp; After</span>}
+                <h2 className="font-sans font-black text-3xl md:text-4xl text-zinc-900 dark:text-zinc-50 leading-[1.1] mt-2">{project.title}</h2>
                 {project.clientType && (
-                  <p className={cn("text-[0.72rem] italic mt-2", project.clientType === "sample" ? "text-brand-orange" : "text-zinc-400 dark:text-zinc-500")}>
+                  <p className={cn("text-[0.86rem] italic mt-2", project.clientType === "sample" ? "text-brand-orange" : "text-zinc-400 dark:text-zinc-500")}>
                     {project.clientType === "practice" && "Practice design — portfolio project, not a real client"}
                     {project.clientType === "client" && "Real client work"}
                     {project.clientType === "sample" && "Representative example — reflects our work, not an actual client project"}
@@ -406,4 +402,4 @@ export function ProjectViewerModal({
       )}
     </div>
   )
-      } 
+}
