@@ -100,7 +100,6 @@ const PAGE_BG_LIGHT = "#FFFFFF"
 const PAGE_BG_DARK  = "#0D1B2A"
 
 const ABOUT_BLUE   = BRAND.blue
-const ABOUT_GREEN  = BRAND.green
 const ABOUT_ORANGE = BRAND.orangeDark
 const ABOUT_NEUTRAL = { light: BRAND.dark100, dark: BRAND.techGreyDark }
 
@@ -125,8 +124,11 @@ function renderIcon(iconName: string, className: string) {
 }
 
 export function AboutPage() {
-  const [hoveredCard, setHoveredCard] = useState<number | null>(null)
-  const [statsHovered, setStatsHovered] = useState(false)
+  const [hoveredCard, setHoveredCard]         = useState<number | null>(null)
+  const [statsHoveredIdx, setStatsHoveredIdx] = useState<number | null>(null)
+  const [valueHoveredIdx, setValueHoveredIdx] = useState<number | null>(null)
+  const [miniHoveredIdx, setMiniHoveredIdx]   = useState<number | null>(null)
+  const [teamHoveredIdx, setTeamHoveredIdx]   = useState<number | null>(null)
 
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -134,10 +136,9 @@ export function AboutPage() {
   const isDark = mounted && resolvedTheme === "dark"
   const pageBg = isDark ? PAGE_BG_DARK : PAGE_BG_LIGHT
 
-  const blueColor    = ABOUT_BLUE
+  const blueColor    = isDark ? BRAND.lightBlue : ABOUT_BLUE
   const orangeColor  = ABOUT_ORANGE
   const orangeText   = "#ffffff"
-  const greenColor   = ABOUT_GREEN
   const neutralColor = isDark ? ABOUT_NEUTRAL.dark : ABOUT_NEUTRAL.light
 
   const blueOnPage = ensureAccessible(blueColor, pageBg, 4.5)
@@ -159,37 +160,36 @@ export function AboutPage() {
 
           <div className="abh-divider" />
 
+          {/* Stats — same abh-card / rounded / soft-shadow surface as
+              StatsBar, blue only, border lights up blue on hover. */}
           <ScrollBounce delay={0.1}>
-            <div
-              className="mt-8 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x divide-zinc-200 dark:divide-zinc-700 rounded-[14px] overflow-hidden shadow-lg border-2 transition-colors duration-300"
-              style={{ borderColor: blueColor }}
-              onMouseEnter={() => setStatsHovered(true)}
-              onMouseLeave={() => setStatsHovered(false)}
-            >
+            <div className="mt-8 w-full max-w-[560px] mx-auto grid grid-cols-3 gap-3">
               {[
                 { value: BIZ.hubCount,     label: "Service Hubs"  },
                 { value: BIZ.serviceCount, label: "Services"      },
                 { value: "Since 2023",     label: "Est. Kgotsong" },
-              ].map((s, i) => (
-                <div
-                  key={i}
-                  className="flex flex-col items-center justify-center py-5 px-3 transition-colors duration-300 cursor-default"
-                  style={{ backgroundColor: statsHovered ? blueColor : "transparent" }}
-                >
-                  <p
-                    className="font-sans font-black text-xl leading-none transition-colors duration-300"
-                    style={{ color: statsHovered ? "#ffffff" : blueOnPage }}
+              ].map((s, i) => {
+                const isHov = statsHoveredIdx === i
+                return (
+                  <div
+                    key={i}
+                    onMouseEnter={() => setStatsHoveredIdx(i)}
+                    onMouseLeave={() => setStatsHoveredIdx(null)}
+                    className="abh-card flex flex-col items-center justify-center py-5 px-3 text-center transition-all duration-300 cursor-default rounded-[14px] border"
+                    style={{ borderColor: isHov ? blueColor : undefined }}
                   >
-                    {s.value}
-                  </p>
-                  <p
-                    className="text-[0.62rem] font-medium uppercase tracking-widest mt-1.5 text-center transition-colors duration-300"
-                    style={{ color: statsHovered ? "rgba(255,255,255,0.85)" : `${blueOnPage}cc` }}
-                  >
-                    {s.label}
-                  </p>
-                </div>
-              ))}
+                    <p
+                      className="font-sans font-black text-xl leading-none transition-colors duration-300"
+                      style={{ color: isHov ? blueColor : blueOnPage }}
+                    >
+                      {s.value}
+                    </p>
+                    <p className="text-[0.62rem] font-medium uppercase tracking-widest mt-1.5 text-center text-zinc-400 dark:text-zinc-500">
+                      {s.label}
+                    </p>
+                  </div>
+                )
+              })}
             </div>
           </ScrollBounce>
 
@@ -219,30 +219,34 @@ export function AboutPage() {
 
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-stretch">
 
+            {/* Values — icon is now raw (no colored background chip),
+                neutral gray by default, turns blue only on hover. */}
             <ul
               className="flex flex-col gap-4 h-full"
               aria-label="Our values"
             >
-              {ABOUT_VALUES.map((item, index) => (
-                <li
-                  key={index}
-                  className="abh-card abh-shadow-elevated rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-5 flex flex-row items-center text-left gap-4 flex-1"
-                >
-                  <div
-                    className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: `${greenColor}15`, color: greenColor }}
-                    aria-hidden="true"
+              {ABOUT_VALUES.map((item, index) => {
+                const isHov = valueHoveredIdx === index
+                return (
+                  <li
+                    key={index}
+                    onMouseEnter={() => setValueHoveredIdx(index)}
+                    onMouseLeave={() => setValueHoveredIdx(null)}
+                    className="abh-card abh-shadow-elevated rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-5 flex flex-row items-center text-left gap-4 flex-1 transition-colors duration-300"
+                    style={{ borderColor: isHov ? blueColor : undefined }}
                   >
-                    {renderIcon(item.iconName, "w-5 h-5")}
-                  </div>
-                  <div>
-                    <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200 mb-1">
-                      {item.title}
-                    </h3>
-                    <p className="abh-body text-sm">{item.desc}</p>
-                  </div>
-                </li>
-              ))}
+                    <div className="shrink-0" aria-hidden="true">
+                      {renderIcon(item.iconName, "w-6 h-6")}
+                    </div>
+                    <div>
+                      <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200 mb-1">
+                        {item.title}
+                      </h3>
+                      <p className="abh-body text-sm">{item.desc}</p>
+                    </div>
+                  </li>
+                )
+              })}
             </ul>
 
             <ScrollBounce delay={0.2}>
@@ -252,12 +256,7 @@ export function AboutPage() {
               >
 
                 <div className="flex items-center gap-3 mb-7 pb-6 border-b border-zinc-100 dark:border-zinc-800">
-                  <div
-                    className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
-                  >
-                    <UsersThree size={20} weight="fill" />
-                  </div>
+                  <UsersThree size={24} weight="fill" style={{ color: neutralColor }} aria-hidden="true" />
                   <div>
                     <p className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200 leading-none">
                       {BIZ.name}
@@ -268,25 +267,36 @@ export function AboutPage() {
                   </div>
                 </div>
 
+                {/* Mini-stats — same abh-card treatment as the header
+                    stats, blue only on hover. */}
                 <div className="grid grid-cols-2 gap-3 flex-1">
                   {[
                     { value: BIZ.hubCount,      label: "Hubs"              },
                     { value: BIZ.serviceCount,  label: "Services"          },
                     { value: <WhatsappLogo weight="fill" className="w-6 h-6" aria-hidden="true" />, label: "WhatsApp Ready"    },
                     { value: <ShieldCheck  weight="fill" className="w-6 h-6" aria-hidden="true" />, label: "Community Trusted" },
-                  ].map((stat, index) => (
-                    <div
-                      key={index}
-                      className="rounded-[12px] p-5 flex flex-col justify-center items-center border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50"
-                    >
-                      <div className="font-black text-xl mb-1 flex items-center justify-center text-zinc-700 dark:text-zinc-300">
-                        {stat.value}
+                  ].map((stat, index) => {
+                    const isHov = miniHoveredIdx === index
+                    return (
+                      <div
+                        key={index}
+                        onMouseEnter={() => setMiniHoveredIdx(index)}
+                        onMouseLeave={() => setMiniHoveredIdx(null)}
+                        className="rounded-[12px] p-5 flex flex-col justify-center items-center border transition-colors duration-300 bg-zinc-50 dark:bg-zinc-900/50"
+                        style={{ borderColor: isHov ? blueColor : undefined }}
+                      >
+                        <div
+                          className="font-black text-xl mb-1 flex items-center justify-center transition-colors duration-300"
+                          style={{ color: isHov ? blueColor : neutralColor }}
+                        >
+                          {stat.value}
+                        </div>
+                        <p className="text-[0.6rem] font-medium uppercase tracking-widest text-zinc-400 text-center">
+                          {stat.label}
+                        </p>
                       </div>
-                      <p className="text-[0.6rem] font-medium uppercase tracking-widest text-zinc-400 text-center">
-                        {stat.label}
-                      </p>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
 
                 <p className="text-[0.72rem] font-medium text-zinc-400 dark:text-zinc-500 mt-6 leading-relaxed text-center">
@@ -298,7 +308,8 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* ── Team ── */}
+      {/* ── Team — avatar is a plain neutral circle (border only, no
+          filled color chip), turns blue only on hover. ── */}
       <section className="px-4 md:px-8 py-14 md:py-16 border-t border-zinc-100 dark:border-zinc-800/60" aria-labelledby="team-title">
         <div className="max-w-[680px] mx-auto">
           <ScrollBounce>
@@ -317,14 +328,21 @@ export function AboutPage() {
 
           <ul className="flex flex-col gap-5" aria-label="Team members">
             {TEAM.map((member, index) => {
+              const isHov = teamHoveredIdx === index
               const card = (
                 <li
                   key={member.initials}
-                  className="abh-card p-6 flex items-center text-left gap-4 shadow-md"
+                  onMouseEnter={() => setTeamHoveredIdx(index)}
+                  onMouseLeave={() => setTeamHoveredIdx(null)}
+                  className="abh-card p-6 flex items-center text-left gap-4 shadow-md transition-colors duration-300"
+                  style={{ borderColor: isHov ? blueColor : undefined }}
                 >
                   <div
-                    className="w-14 h-14 rounded-full flex items-center justify-center font-black text-base shrink-0"
-                    style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
+                    className="w-14 h-14 rounded-full flex items-center justify-center font-black text-base shrink-0 border-2 transition-colors duration-300"
+                    style={{
+                      borderColor: isHov ? blueColor : neutralColor,
+                      color: isHov ? blueColor : neutralColor,
+                    }}
                     aria-hidden="true"
                   >
                     {member.initials}
@@ -333,7 +351,10 @@ export function AboutPage() {
                     <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200">
                       {member.name}
                     </h3>
-                    <p className="text-[0.65rem] font-black uppercase tracking-widest mt-1" style={{ color: blueColor }}>
+                    <p
+                      className="text-[0.65rem] font-black uppercase tracking-widest mt-1 transition-colors duration-300"
+                      style={{ color: isHov ? blueColor : undefined }}
+                    >
                       {member.role}
                     </p>
                     <p className="abh-body text-xs mt-2 leading-relaxed">
@@ -354,7 +375,7 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* ── Standards ── */}
+      {/* ── Standards — raw neutral icon, no chip, turns blue on hover. ── */}
       <section
         className="py-14 md:py-16 px-4 md:px-8 bg-zinc-50/60 dark:bg-zinc-900/20 border-t border-zinc-100 dark:border-zinc-800/60"
         aria-labelledby="standards-title"
@@ -398,19 +419,8 @@ export function AboutPage() {
                     )}
                     style={isHovered ? { borderColor: blueColor } : undefined}
                   >
-                    <div
-                      className={cn(
-                        "w-11 h-11 rounded-[12px] flex items-center justify-center mb-5 transition-all duration-300 border shrink-0",
-                        isHovered ? "text-white border-transparent scale-110" : "border-transparent"
-                      )}
-                      style={
-                        isHovered
-                          ? { backgroundColor: blueColor, color: "#ffffff" }
-                          : { backgroundColor: `${neutralColor}15`, color: neutralColor }
-                      }
-                      aria-hidden="true"
-                    >
-                      {renderIcon(item.iconName, "w-5 h-5")}
+                    <div className="mb-5" aria-hidden="true">
+                      {renderIcon(item.iconName, "w-6 h-6")}
                     </div>
                     <h3 className="font-sans font-semibold text-sm leading-tight mb-2 text-zinc-800 dark:text-zinc-200">
                       {item.title}
@@ -426,7 +436,8 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* ── Mission ── */}
+      {/* ── Mission — untouched: this is the site's existing fixed CTA
+          identity, not part of the card-grid pattern being changed. ── */}
       <section
         className="relative overflow-hidden px-4 md:px-8 py-16 md:py-20 text-center"
         aria-labelledby="mission-title"
@@ -434,9 +445,7 @@ export function AboutPage() {
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div
             className="absolute inset-0 opacity-[0.04] dark:opacity-[0.07]"
-            style={{
-              background: `linear-gradient(135deg, ${blueColor} 0%, ${greenColor} 50%, ${orangeColor} 100%)`,
-            }}
+            style={{ backgroundColor: blueColor }}
           />
         </div>
 
@@ -481,4 +490,4 @@ export function AboutPage() {
 
     </div>
   )
-} 
+         }
