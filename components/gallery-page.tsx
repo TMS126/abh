@@ -31,7 +31,7 @@ function NoticePill() {
           backgroundColor: "#1E6FA8",
           boxShadow: "0 10px 28px -8px #1E6FA870, 0 4px 12px -2px rgba(0,0,0,0.25)",
         }}
-        className="relative flex items-center gap-2 pl-4 pr-5 py-2.5 rounded-full text-white font-black text-[0.78rem] tracking-tight transition-transform active:scale-95 hover:-translate-y-0.5"
+        className="relative flex items-center gap-2 pl-4 pr-5 py-2.5 rounded-full text-white font-black text-[0.94rem] tracking-tight transition-transform active:scale-95 hover:-translate-y-0.5"
       >
         <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-white dark:bg-zinc-950 border-2 border-white dark:border-zinc-950 flex items-center justify-center shadow-md">
           <Info size={10} weight="fill" color="#1E6FA8" />
@@ -55,7 +55,7 @@ function NoticePill() {
       </div>
       <div className="flex-1 min-w-0 pt-0.5 pr-6">
         <span className="abh-eyebrow text-[#1E6FA8] block mb-1">Notice</span>
-        <p className="abh-body text-[0.84rem]">
+        <p className="abh-body text-[1rem]">
           We use high-quality sample photos to represent our services — the professional standard shown is exactly what you receive.
         </p>
       </div>
@@ -186,7 +186,7 @@ function GalleryPageInner() {
           </div>
         </ScrollBounce>
 
-        {/* ── Search + Shuffle — word hugs its icon, shared underline, divided by | ── */}
+        {/* ── Search + Shuffle ── */}
         <ScrollBounce delay={0.06}>
           <div className="max-w-md mx-auto mb-2">
             <div className="flex items-center justify-center gap-3 border-b-2 border-zinc-200 dark:border-zinc-800 focus-within:border-zinc-400 dark:focus-within:border-zinc-500 transition-colors duration-200">
@@ -197,7 +197,7 @@ function GalleryPageInner() {
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="Search..."
                   size={searchQuery ? Math.max(searchQuery.length, 7) : 7}
-                  className="bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none text-right"
+                  className="bg-transparent text-base font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none text-right"
                 />
                 {searchQuery && (
                   <button
@@ -217,7 +217,7 @@ function GalleryPageInner() {
                 onClick={handleSurprise}
                 aria-label="Surprise me with a random project"
                 className={cn(
-                  "shrink-0 flex items-center gap-1.5 py-3 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-all duration-200 active:scale-95 group/surprise",
+                  "shrink-0 flex items-center gap-1.5 py-3 text-base font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-all duration-200 active:scale-95 group/surprise",
                   surpriseFlash && "scale-90 opacity-60"
                 )}
               >
@@ -229,11 +229,11 @@ function GalleryPageInner() {
         </ScrollBounce>
 
         {/* ── Notice ── */}
-<ScrollBounce delay={0.1}>
-  <div className="flex justify-center max-w-2xl mx-auto mb-8 mt-6">
-    <NoticePill />
-  </div>
-</ScrollBounce>
+        <ScrollBounce delay={0.1}>
+          <div className="flex justify-center max-w-2xl mx-auto mb-8 mt-6">
+            <NoticePill />
+          </div>
+        </ScrollBounce>
 
         <div className="relative z-50">
           <ScrollBounce delay={0.16}>
@@ -243,12 +243,12 @@ function GalleryPageInner() {
 
         {searchLower && totalMatches === 0 ? (
           <div className="max-w-md mx-auto text-center py-16 px-6">
-            <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">
+            <p className="text-base font-bold text-zinc-500 dark:text-zinc-400">
               No projects match &ldquo;{searchQuery.trim()}&rdquo;
             </p>
             <button
               onClick={() => setSearchQuery("")}
-              className="mt-3 text-xs font-black underline text-brand-blue"
+              className="mt-3 text-sm font-black underline text-brand-blue"
             >
               Clear search
             </button>
@@ -285,7 +285,7 @@ function GalleryPageInner() {
                       )}>
                         <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
                           <div className="w-1.5 h-8 rounded-full hidden md:block" style={{ backgroundColor: "#1E6FA8" }} />
-                          <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 hidden md:block">{row.label}</h2>
+                          <h2 className="text-3xl font-black text-zinc-900 dark:text-zinc-50 hidden md:block">{row.label}</h2>
                         </div>
                         <EmptyHubState label={row.label} query={searchLower ? searchQuery.trim() : undefined} />
                       </div>
@@ -300,13 +300,12 @@ function GalleryPageInner() {
                       "border-t-2 border-zinc-100 dark:border-zinc-800 mt-10 pt-8 md:border-t-0 md:mt-0 md:pt-7",
                       "first:border-t-0 first:mt-0 first:pt-0 md:first:pt-7"
                     )}>
-                      {/* Row header — big title stays desktop-only; project count pill now lives on the card, so the popover only shows on desktop too */}
                       <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
                         <div className="w-1.5 h-8 rounded-full hidden md:block" style={{ backgroundColor: "#1E6FA8" }} />
-                        <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 hidden md:block">{row.label}</h2>
+                        <h2 className="text-3xl font-black text-zinc-900 dark:text-zinc-50 hidden md:block">{row.label}</h2>
                         <div className="hidden md:block md:ml-auto">
-  <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
-</div>
+                          <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
+                        </div>
                       </div>
                       <div className="px-4 md:px-0">
                         <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} likedIds={likedIds} onToggleLike={toggleLike} />
@@ -368,4 +367,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-    } 
+} 
