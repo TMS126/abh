@@ -14,7 +14,7 @@ export function StripSection() {
       <div className="max-w-[1080px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {STRIP_ITEMS.map((item, index) => (
           <ScrollBounce key={index} delay={index * 0.08}>
-            <StripCard item={item} index={index} />
+            <StripCard item={item} />
           </ScrollBounce>
         ))}
       </div>
@@ -22,10 +22,6 @@ export function StripSection() {
   )
 }
 
-// Real WCAG relative luminance → picks white or near-black text against
-// any given background hex. Declared here (used by both StripCard and
-// CtaBar below) — function declarations are hoisted, so definition order
-// in the file doesn't matter.
 function getReadableTextColor(hex: string): string {
   const clean = hex.replace("#", "")
   const r = parseInt(clean.substring(0, 2), 16) / 255
@@ -38,21 +34,17 @@ function getReadableTextColor(hex: string): string {
   return contrastWhite >= contrastDark ? "#ffffff" : "#18181b"
 }
 
-// Was one flat color (BRAND.blue) for every card regardless of which item
-// it was — now cycles blue → green → orange by index, same rotation as
-// StatsBar and the About page cards. Hover-fill and hover-text both use
-// the card's own color instead of a single hardcoded blue/white pair.
-function StripCard({ item, index }: { item: any; index: number }) {
+// Raw neutral icon at rest (no colored chip behind it), blue only on
+// hover — matches StatsBar exactly, and only blue, no other accent.
+function StripCard({ item }: { item: any }) {
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [hovered, setHovered] = useState(false)
   useEffect(() => { setMounted(true) }, [])
   const isDark = mounted && resolvedTheme === "dark"
 
-  const palette = isDark
-    ? [BRAND.lightBlue, BRAND.green, BRAND.orangeDark]
-    : [BRAND.blue, BRAND.green, BRAND.orangeDark]
-  const color = palette[index % palette.length]
+  const color = isDark ? BRAND.lightBlue : BRAND.blue
+  const neutralColor = isDark ? "#a1a1aa" : "#71717a"
   const hoverTextColor = getReadableTextColor(color)
   const hoverDescColor = hoverTextColor === "#ffffff" ? "rgba(255,255,255,0.9)" : "rgba(24,24,27,0.75)"
 
@@ -78,7 +70,7 @@ function StripCard({ item, index }: { item: any; index: number }) {
       <div className="relative z-10">
         <div
           className="mb-5 transition-colors duration-300"
-          style={{ color: hovered ? hoverTextColor : color }}
+          style={{ color: hovered ? hoverTextColor : neutralColor }}
         >
           {item.iconName === "Rocket"          && <Rocket          weight="fill" className="w-6 h-6" aria-hidden="true" />}
           {item.iconName === "CurrencyDollar"  && <CurrencyDollar  weight="fill" className="w-6 h-6" aria-hidden="true" />}
@@ -104,8 +96,7 @@ function StripCard({ item, index }: { item: any; index: number }) {
   )
 }
 
-// ── CtaBar — unchanged. It's a single CTA block, not a multi-item grid,
-// so there's no "per card" color to rotate here. ──
+// ── CtaBar — unchanged, already blue-only, not part of this fix. ──
 export function CtaBar({
   title,
   description,
@@ -160,4 +151,4 @@ export function CtaBar({
       </ScrollBounce>
     </section>
   )
-      } 
+  } 
