@@ -19,9 +19,6 @@ import { HUB_ORDER, HUB_PREVIEWS, NOTICE, trackEvent, SelectedService } from "./
 function NoticeNotification({ isDark }: { isDark: boolean }) {
   const [expanded, setExpanded] = useState(false)
 
-  // Dark mode gets a translucent version of the brand orange (instead of
-  // flat opaque) plus a soft colored glow shadow, matching the elevated
-  // card treatment used elsewhere (e.g. About page standards cards).
   const pillBg = isDark ? `${BRAND.orange}cc` : BRAND.orange
 
   if (!expanded) {
@@ -33,7 +30,7 @@ function NoticeNotification({ isDark }: { isDark: boolean }) {
           backgroundColor: pillBg,
           boxShadow: `0 10px 28px -8px ${BRAND.orange}70, 0 4px 12px -2px rgba(0,0,0,0.25)`,
         }}
-        className="relative mx-auto mb-10 flex items-center gap-2 pl-4 pr-5 py-2.5 rounded-full text-white font-black text-[0.78rem] tracking-tight transition-transform active:scale-95 hover:-translate-y-0.5"
+        className="relative mx-auto mb-10 flex items-center gap-2 pl-4 pr-5 py-2.5 rounded-full text-white font-black text-[0.94rem] tracking-tight transition-transform active:scale-95 hover:-translate-y-0.5"
       >
         <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-white dark:bg-zinc-950 border-2 border-white dark:border-zinc-950 flex items-center justify-center shadow-md">
           <Megaphone size={10} weight="fill" className="text-brand-blue dark:text-brand-light-blue" />
@@ -57,7 +54,7 @@ function NoticeNotification({ isDark }: { isDark: boolean }) {
       </div>
       <div className="flex-1 min-w-0 pt-0.5 pr-6">
         <span className="abh-eyebrow text-brand-orange block mb-1">Notice to Clients</span>
-        <p className="abh-body text-[0.84rem]">
+        <p className="abh-body text-[1rem]">
           {NOTICE.text}
           <span className="font-black text-zinc-800 dark:text-zinc-100">{NOTICE.date}</span>
           {NOTICE.textAfter}
@@ -71,7 +68,7 @@ function ClosingTagline() {
   return (
     <div className="mt-2 mb-4 text-center px-6 py-6">
       <p className="abh-eyebrow text-zinc-400 dark:text-zinc-500 mb-3">Why ApexbytesHub</p>
-      <p className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 leading-snug max-w-2xl mx-auto">
+      <p className="font-sans font-black text-2xl md:text-3xl text-zinc-900 dark:text-zinc-50 leading-snug max-w-2xl mx-auto">
         From your first CV to your next big idea — one hub does it all, right here in Bothaville.
       </p>
       <div className="mt-6 h-px bg-zinc-200 dark:bg-zinc-800 max-w-[160px] mx-auto" />
@@ -82,7 +79,7 @@ function ClosingTagline() {
 function HubCta({ label, accent, pointsRight }: { label: string; accent: string; pointsRight: boolean }) {
   return (
     <span
-      className="relative inline-flex items-center gap-1 text-[0.78rem] font-black text-zinc-400 dark:text-zinc-500 transition-colors duration-200 group-hover/hubcard:text-[var(--hub-accent)]"
+      className="relative inline-flex items-center gap-1 text-[0.94rem] font-black text-zinc-400 dark:text-zinc-500 transition-colors duration-200 group-hover/hubcard:text-[var(--hub-accent)]"
       style={{ ["--hub-accent" as any]: accent }}
     >
       <span className="relative">
@@ -97,11 +94,6 @@ function HubCta({ label, accent, pointsRight }: { label: string; accent: string;
   )
 }
 
-// Corner icon — tucked into the bottom-right corner, rotated, and
-// deliberately overflowing past the card's own edge so the parent's
-// `overflow-hidden` + rounded corner clips it into a "cut off" shape.
-// Neutral gray at rest, swaps to the hub's own accent color on hover via
-// the card's group state.
 function HubCornerIcon({ hubId, accent }: { hubId: HubId; accent: string }) {
   return (
     <div
@@ -222,15 +214,6 @@ export function ServicesPage() {
           <NoticeNotification isDark={isDark} />
         </ScrollBounce>
 
-        {/* ── DESKTOP — 6-column grid. Each card spans 2 columns, so a
-            top row of 3 and a bottom row of 2 are all EXACTLY the same
-            width/height. The bottom row's 2 cards get explicit column
-            starts (2 and 4) so they sit centered with equal margins on
-            both sides, rather than left-aligned. All content is centered
-            (same direction) and vertically centered within a fixed-shape
-            card via flex-col + items-center + mt-auto on the CTA. Only
-            the CTA itself navigates; hovering anywhere on the card still
-            previews it via group-hover. ── */}
         <div className="hidden md:grid md:grid-cols-6 gap-5 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub    = HUBS[hubId]
@@ -251,7 +234,7 @@ export function ServicesPage() {
                     <HubCornerIcon hubId={hubId} accent={accent} />
 
                     <h3
-                      className="relative z-10 font-sans font-black text-[0.95rem] leading-tight mb-1.5"
+                      className="relative z-10 font-sans font-black text-[1.14rem] leading-tight mb-1.5"
                       style={{ color: accent }}
                     >
                       {hub.title}
@@ -259,13 +242,13 @@ export function ServicesPage() {
 
                     <div className="relative z-10 flex flex-wrap justify-center gap-x-2 gap-y-0.5 mb-1.5">
                       {HUB_PREVIEWS[hubId].map((hint, i) => (
-                        <span key={i} className="text-[0.66rem] font-medium text-zinc-400 dark:text-zinc-500">
+                        <span key={i} className="text-[0.79rem] font-medium text-zinc-400 dark:text-zinc-500">
                           {hint}
                         </span>
                       ))}
                     </div>
 
-                    <p className="relative z-10 abh-body text-[0.76rem] line-clamp-2 leading-snug mb-4 max-w-[200px]">
+                    <p className="relative z-10 abh-body text-[0.91rem] line-clamp-2 leading-snug mb-4 max-w-[200px]">
                       {hub.desc}
                     </p>
 
@@ -283,9 +266,6 @@ export function ServicesPage() {
           })}
         </div>
 
-        {/* ── MOBILE — whole card navigates again (no longer Explore-only).
-            Same corner-icon treatment as desktop, border + shadow to match
-            the elevated card style used on the About page. ── */}
         <div className="flex md:hidden flex-col gap-5 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub    = HUBS[hubId]
@@ -302,7 +282,7 @@ export function ServicesPage() {
                   <HubCornerIcon hubId={hubId} accent={accent} />
 
                   <h3
-                    className="relative z-10 font-sans font-black text-[0.98rem] leading-tight mb-1.5"
+                    className="relative z-10 font-sans font-black text-[1.18rem] leading-tight mb-1.5"
                     style={{ color: accent }}
                   >
                     {hub.title}
@@ -310,17 +290,17 @@ export function ServicesPage() {
 
                   <div className="relative z-10 flex flex-wrap justify-center gap-x-2 gap-y-0.5 mb-1.5">
                     {HUB_PREVIEWS[hubId].map((hint, i) => (
-                      <span key={i} className="text-[0.66rem] font-medium text-zinc-400 dark:text-zinc-500">
+                      <span key={i} className="text-[0.79rem] font-medium text-zinc-400 dark:text-zinc-500">
                         {hint}
                       </span>
                     ))}
                   </div>
 
-                  <p className="relative z-10 abh-body text-[0.76rem] line-clamp-2 leading-snug mb-3 max-w-[260px]">
+                  <p className="relative z-10 abh-body text-[0.91rem] line-clamp-2 leading-snug mb-3 max-w-[260px]">
                     {hub.desc}
                   </p>
 
-                  <span className="relative z-10 inline-flex items-center gap-1 text-[0.78rem] font-black" style={{ color: accent }}>
+                  <span className="relative z-10 inline-flex items-center gap-1 text-[0.94rem] font-black" style={{ color: accent }}>
                     Explore
                     <ArrowRight size={12} weight="bold" aria-hidden="true" />
                   </span>
@@ -330,8 +310,6 @@ export function ServicesPage() {
           })}
         </div>
 
-        {/* Extra breathing room above "Why ApexbytesHub" — it was sitting
-            right against the hub cards before. */}
         <ScrollBounce className="w-full mt-14 md:mt-20">
           <ClosingTagline />
         </ScrollBounce>
