@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Sora, Instrument_Sans, JetBrains_Mono } from 'next/font/google'
+import { Poppins, Sora, Instrument_Sans, DM_Sans, JetBrains_Mono } from 'next/font/google'
 import Script from 'next/script'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Analytics } from '@vercel/analytics/next'
@@ -15,22 +15,36 @@ import './globals.css'
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://v0-apexbytes-hub-website.vercel.app'
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-3FJ8QET6RE'
 
-// ─── Fonts — MODERN SORA SYSTEM ────────────────────────────────────
-const soraHeading = Sora({
+// ─── Poppins First + Modern Fallbacks ──────────────────────────────
+const poppinsHeading = Poppins({
   subsets: ['latin'],
   weight: ['600', '700', '800'],
-  variable: '--font-heading',
+  variable: '--font-poppins',
   display: 'swap',
 })
 
-const instrumentBody = Instrument_Sans({
+const soraFallback = Sora({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
+  weight: ['600', '700'],
+  variable: '--font-sora',
+  display: 'swap',
+})
+
+const instrumentFallback = Instrument_Sans({
+  subsets: ['latin'],
+  weight: ['600', '700'],
+  variable: '--font-instrument',
+  display: 'swap',
+})
+
+const dmSansBody = DM_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
   variable: '--font-body',
   display: 'swap',
 })
 
-const jetbrainsMono = JetBrains_Mono({
+const monoFont = JetBrains_Mono({
   subsets: ['latin'],
   weight: ['400', '500'],
   variable: '--font-mono',
@@ -38,18 +52,18 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: `${BIZ.name} — ${BIZ.tagline}`,
   description: `We make technology and important services accessible to everyone — no jargon, no stress. Right here in ${BIZ.address}.`,
   keywords: ['printing Bothaville','printing Kgotsong','CV writing Kgotsong','SASSA help Kgotsong','Apexbytes Hub'],
   authors: [{ name: BIZ.name }],
-  metadataBase: new URL(SITE_URL),
   openGraph: {
     type: 'website', locale: 'en_ZA', url: SITE_URL, siteName: BIZ.name,
     title: `${BIZ.name} — ${BIZ.tagline}`,
     description: `Printing, CVs, design, SASSA/SARS help, and tech support in ${BIZ.location}.`,
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: BIZ.name }],
+    images: [{ url: `${SITE_URL}/og-image.png`, width: 1200, height: 630, alt: BIZ.name }],
   },
-  twitter: { card: 'summary_large_image', title: `${BIZ.name} — ${BIZ.tagline}`, images: ['/og-image.png'] },
+  twitter: { card: 'summary_large_image', title: `${BIZ.name} — ${BIZ.tagline}`, images: [`${SITE_URL}/og-image.png`] },
   icons: {
     icon: [
       { url: '/favicon-light-32.png', sizes: '32x32', type: 'image/png', media: '(prefers-color-scheme: light)' },
@@ -72,22 +86,31 @@ export const viewport: Viewport = {
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const isProd = process.env.NODE_ENV === 'production'
+
   return (
-    <html lang="en" suppressHydrationWarning className={`${soraHeading.variable} ${instrumentBody.variable} ${jetbrainsMono.variable}`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${poppinsHeading.variable} ${soraFallback.variable} ${instrumentFallback.variable} ${dmSansBody.variable} ${monoFont.variable}`}
+    >
       <body className="font-sans antialiased min-h-screen bg-white dark:bg-background text-zinc-900 dark:text-zinc-100 transition-colors duration-300 text-[17.5px] leading-relaxed">
         <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[99999] focus:px-4 focus:py-2 focus:bg-white focus:text-brand-blue focus:font-bold focus:rounded-lg focus:shadow-lg focus:outline-none">
           Skip to main content
         </a>
+
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange={false}>
           <LocalBusinessJsonLd />
-          <InstanceGuardProvider>{children}</InstanceGuardProvider>
+          <InstanceGuardProvider><main id="main-content">{children}</main></InstanceGuardProvider>
           <FloatingSearchWidget />
           <QuoteCalculatorWidget />
           <WhatsAppFAB />
         </ThemeProvider>
-        {process.env.NODE_ENV === 'production' && (<><Analytics /><SpeedInsights /></>)}
-        {process.env.NODE_ENV === 'production' && (
+
+        {isProd && (
           <>
+            <Analytics />
+            <SpeedInsights />
             <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} strategy="afterInteractive" />
             <Script id="ga4-init" strategy="afterInteractive">{`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_MEASUREMENT_ID}');`}</Script>
           </>
@@ -95,4 +118,4 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       </body>
     </html>
   )
-} 
+  } 
