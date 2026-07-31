@@ -21,9 +21,6 @@ function useIsMobile() {
   return isMobile
 }
 
-// ─── Mobile card — hub name (not caps, hub-colored) top-left, project count
-// pill top-right corner (inside the card), heart+share grouped bottom-right
-// over the image, title/client-type on the solid bottom bar.
 function MobileProjectCard({
   project, accent, onSelect, liked, onToggleLike, position,
 }: {
@@ -39,14 +36,13 @@ function MobileProjectCard({
       <div className="relative w-full h-full rounded-[16px] overflow-hidden">
         <SafeImage src={project.image} alt={project.title} accent={accent} fill sizes="100vw" className="object-cover" />
 
-        {/* Top bar — hub name only, not all-caps, hub-colored */}
         <div className="absolute top-0 inset-x-0 flex items-center gap-2 px-3 py-2.5 bg-zinc-950/90">
-          <span className="flex-1 min-w-0 text-[0.75rem] font-black truncate" style={{ color: accent }}>
+          <span className="flex-1 min-w-0 text-[0.9rem] font-black truncate" style={{ color: accent }}>
             {hubLabelFor(project.hub)}
           </span>
           {hasBA && (
             <span
-              className="shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.55rem] font-black uppercase tracking-wider text-white"
+              className="shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.66rem] font-black uppercase tracking-wider text-white"
               style={{ backgroundColor: accent }}
             >
               <ArrowsLeftRight size={9} weight="bold" />
@@ -55,14 +51,12 @@ function MobileProjectCard({
           )}
         </div>
 
-        {/* Project count pill — inside the card, top-right corner */}
         {position && (
-          <div className="absolute top-2.5 right-2.5 px-2 py-1 rounded-full bg-black/40 backdrop-blur-md text-white/85 text-[0.62rem] font-bold">
+          <div className="absolute top-2.5 right-2.5 px-2 py-1 rounded-full bg-black/40 backdrop-blur-md text-white/85 text-[0.74rem] font-bold">
             {position}
           </div>
         )}
 
-        {/* Heart + share — grouped, bottom-right, over the image */}
         <div className="absolute bottom-16 right-2.5 flex flex-col items-center gap-2">
           <div onClick={(e) => e.stopPropagation()} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center [&_svg]:text-white">
             <LikeButton liked={liked} onToggle={onToggleLike} context="card" />
@@ -72,11 +66,10 @@ function MobileProjectCard({
           </div>
         </div>
 
-        {/* Bottom bar — solid, title never truncates, wraps freely */}
         <div className="absolute bottom-0 inset-x-0 px-3 py-3 bg-zinc-950/90">
-          <h3 className="text-white font-black text-[0.95rem] leading-snug">{project.title}</h3>
+          <h3 className="text-white font-black text-[1.14rem] leading-snug">{project.title}</h3>
           {project.clientType && (
-            <p className="text-white/70 text-[0.68rem] italic mt-1">
+            <p className="text-white/70 text-[0.82rem] italic mt-1">
               {CLIENT_TYPE_LABEL[project.clientType]}
             </p>
           )}
@@ -86,9 +79,6 @@ function MobileProjectCard({
   )
 }
 
-// ─── Mobile swipe carousel — same slot-based peek approach as the testimonials
-// carousel (center card full-size, neighbors peeking at reduced scale/opacity),
-// but no rotation. Swiping/tapping a peeking card advances to it.
 function MobileSwipeCarousel({
   projects, accent, onSelect, likedIds, onToggleLike,
 }: {
@@ -301,19 +291,19 @@ export function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggle
                     />
                   </div>
                   {BA_HUBS.includes(project.hub as HubId) && !!(project as any).beforeImage && !!(project as any).afterImage && (
-                    <div className="absolute top-4 right-4 flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.6rem] font-black uppercase tracking-wider text-white shadow-lg" style={{ backgroundColor: `${accent}dd`, backdropFilter: "blur(6px)" }}>
+                    <div className="absolute top-4 right-4 flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.72rem] font-black uppercase tracking-wider text-white shadow-lg" style={{ backgroundColor: `${accent}dd`, backdropFilter: "blur(6px)" }}>
                       <ArrowsLeftRight size={11} weight="bold" />
                       Before &amp; After
                     </div>
                   )}
                   <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-3">
                     <div className="min-w-0">
-                      <h3 className="text-white font-black text-xl md:text-2xl leading-tight transition-colors duration-300 group-hover:text-[var(--hub-accent)]">{project.title}</h3>
-                      <p className="text-white/70 text-xs font-medium mt-1 line-clamp-1">{project.shortDesc}</p>
+                      <h3 className="text-white font-black text-2xl md:text-3xl leading-tight transition-colors duration-300 group-hover:text-[var(--hub-accent)]">{project.title}</h3>
+                      <p className="text-white/70 text-sm font-medium mt-1 line-clamp-1">{project.shortDesc}</p>
                     </div>
                     {project.clientType && (
                       <span
-                        className="shrink-0 text-[0.58rem] font-black uppercase tracking-wider px-2.5 py-1 rounded-full text-white shadow-lg backdrop-blur-sm whitespace-nowrap"
+                        className="shrink-0 text-[0.7rem] font-black uppercase tracking-wider px-2.5 py-1 rounded-full text-white shadow-lg backdrop-blur-sm whitespace-nowrap"
                         style={{ backgroundColor: CLIENT_TYPE_BADGE_BG[project.clientType] }}
                       >
                         {CLIENT_TYPE_LABEL[project.clientType]}
@@ -348,4 +338,4 @@ export function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggle
       )}
     </div>
   )
-              }
+} 
