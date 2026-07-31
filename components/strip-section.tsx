@@ -21,6 +21,11 @@ export function StripSection() {
   )
 }
 
+// Icon treatment matched to Pricing/StatsBar: raw colored icon, no
+// filled square/circle chip behind it. The card itself still fills
+// solid blue on hover (unchanged), so the icon swaps to white in that
+// state purely for contrast against the new blue background — not
+// because it's sitting in its own colored container anymore.
 function StripCard({ item }: { item: any }) {
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -30,7 +35,6 @@ function StripCard({ item }: { item: any }) {
 
   const color = isDark ? BRAND.lightBlue : BRAND.blue
   const fillBlue = BRAND.blue
-  const iconHoverBg = BRAND.green
 
   return (
     <div
@@ -53,16 +57,13 @@ function StripCard({ item }: { item: any }) {
 
       <div className="relative z-10">
         <div
-          className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 mb-5 transition-colors duration-300"
-          style={{
-            backgroundColor: hovered ? iconHoverBg : `${color}15`,
-            color: hovered ? "#ffffff" : color,
-          }}
+          className="mb-5 transition-colors duration-300"
+          style={{ color: hovered ? "#ffffff" : color }}
         >
-          {item.iconName === "Rocket"          && <Rocket          weight="fill" className="w-5 h-5" aria-hidden="true" />}
-          {item.iconName === "CurrencyDollar"  && <CurrencyDollar  weight="fill" className="w-5 h-5" aria-hidden="true" />}
-          {item.iconName === "HandHeart"       && <HandHeart       weight="fill" className="w-5 h-5" aria-hidden="true" />}
-          {item.iconName === "MapPin"          && <MapPin          weight="fill" className="w-5 h-5" aria-hidden="true" />}
+          {item.iconName === "Rocket"          && <Rocket          weight="fill" className="w-6 h-6" aria-hidden="true" />}
+          {item.iconName === "CurrencyDollar"  && <CurrencyDollar  weight="fill" className="w-6 h-6" aria-hidden="true" />}
+          {item.iconName === "HandHeart"       && <HandHeart       weight="fill" className="w-6 h-6" aria-hidden="true" />}
+          {item.iconName === "MapPin"          && <MapPin          weight="fill" className="w-6 h-6" aria-hidden="true" />}
         </div>
         <div>
           <h3
@@ -155,4 +156,4 @@ export function CtaBar({
       </ScrollBounce>
     </section>
   )
-            } 
+          }
