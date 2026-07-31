@@ -18,26 +18,91 @@ import { cn } from "@/lib/utils"
 import { BRAND, BIZ, ABOUT_VALUES, ABOUT_STANDARDS } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
 
+// ─── Contrast-nudging helpers ─────────────────────────────────────────────────
+function hexToRgb(hex: string) {
+  const clean = hex.replace("#", "")
+  const full = clean.length === 3 ? clean.split("").map(c => c + c).join("") : clean
+  const bigint = parseInt(full, 16)
+  return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 }
+}
+function relativeLuminance({ r, g, b }: { r: number; g: number; b: number }) {
+  const [rs, gs, bs] = [r, g, b].map(c => {
+    const s = c / 255
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+  })
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs
+}
+function contrastRatio(hexA: string, hexB: string) {
+  const lA = relativeLuminance(hexToRgb(hexA))
+  const lB = relativeLuminance(hexToRgb(hexB))
+  const [lighter, darker] = lA > lB ? [lA, lB] : [lB, lA]
+  return (lighter + 0.05) / (darker + 0.05)
+}
+function rgbToHex({ r, g, b }: { r: number; g: number; b: number }) {
+  return "#" + [r, g, b].map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("")
+}
+function rgbToHsl({ r, g, b }: { r: number; g: number; b: number }) {
+  const rn = r / 255, gn = g / 255, bn = b / 255
+  const max = Math.max(rn, gn, bn), min = Math.min(rn, gn, bn)
+  let h = 0
+  const l = (max + min) / 2
+  let s = 0
+  if (max !== min) {
+    const d = max - min
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+    switch (max) {
+      case rn: h = (gn - bn) / d + (gn < bn ? 6 : 0); break
+      case gn: h = (bn - rn) / d + 2; break
+      case bn: h = (rn - gn) / d + 4; break
+    }
+    h /= 6
+  }
+  return { h: h * 360, s: s * 100, l: l * 100 }
+}
+function hslToRgb(h: number, s: number, l: number) {
+  const hn = h / 360, sn = s / 100, ln = l / 100
+  let r: number, g: number, b: number
+  if (sn === 0) {
+    r = g = b = ln
+  } else {
+    const hue2rgb = (p: number, q: number, t: number) => {
+      let tt = t
+      if (tt < 0) tt += 1
+      if (tt > 1) tt -= 1
+      if (tt < 1 / 6) return p + (q - p) * 6 * tt
+      if (tt < 1 / 2) return q
+      if (tt < 2 / 3) return p + (q - p) * (2 / 3 - tt) * 6
+      return p
+    }
+    const q = ln < 0.5 ? ln * (1 + sn) : ln + sn - ln * sn
+    const p = 2 * ln - q
+    r = hue2rgb(p, q, hn + 1 / 3); g = hue2rgb(p, q, hn); b = hue2rgb(p, q, hn - 1 / 3)
+  }
+  return { r: r * 255, g: g * 255, b: b * 255 }
+}
+function ensureAccessible(hex: string, bgHex: string, minRatio = 4.5) {
+  if (contrastRatio(hex, bgHex) >= minRatio) return hex
+  const hsl = rgbToHsl(hexToRgb(hex))
+  const bgLum = relativeLuminance(hexToRgb(bgHex))
+  const goingDarker = bgLum > 0.5
+  let l = hsl.l
+  for (let i = 0; i < 45; i++) {
+    l += goingDarker ? -2 : 2
+    l = Math.max(0, Math.min(100, l))
+    const candidate = rgbToHex(hslToRgb(hsl.h, hsl.s, l))
+    if (contrastRatio(candidate, bgHex) >= minRatio) return candidate
+    if (l <= 0 || l >= 100) break
+  }
+  return goingDarker ? "#1a1a1a" : "#fafafa"
+}
+
 const PAGE_BG_LIGHT = "#FFFFFF"
 const PAGE_BG_DARK  = "#0D1B2A"
 
+const ABOUT_BLUE   = BRAND.blue
+const ABOUT_GREEN  = BRAND.green
 const ABOUT_ORANGE = BRAND.orangeDark
-
-// Real WCAG relative luminance → white or near-black text, whichever
-// actually reads against the given blue. Every card on this page now
-// fills with that blue, so every piece of text/icon sitting on a card
-// needs to run through this instead of assuming a fixed color.
-function getReadableTextColor(hex: string): string {
-  const clean = hex.replace("#", "")
-  const r = parseInt(clean.substring(0, 2), 16) / 255
-  const g = parseInt(clean.substring(2, 4), 16) / 255
-  const b = parseInt(clean.substring(4, 6), 16) / 255
-  const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4))
-  const luminance = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
-  const contrastWhite = 1.05 / (luminance + 0.05)
-  const contrastDark  = (luminance + 0.05) / 0.062
-  return contrastWhite >= contrastDark ? "#ffffff" : "#18181b"
-}
+const ABOUT_NEUTRAL = { light: BRAND.dark100, dark: BRAND.techGreyDark }
 
 // ─── Team ──────────────────────────────────────────────────────────────────
 const TEAM = [
@@ -60,26 +125,22 @@ function renderIcon(iconName: string, className: string) {
 }
 
 export function AboutPage() {
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null)
+  const [statsHovered, setStatsHovered] = useState(false)
+
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
   const isDark = mounted && resolvedTheme === "dark"
+  const pageBg = isDark ? PAGE_BG_DARK : PAGE_BG_LIGHT
 
-  const orangeColor = ABOUT_ORANGE
-  const orangeText  = "#ffffff"
+  const blueColor    = ABOUT_BLUE
+  const orangeColor  = ABOUT_ORANGE
+  const orangeText   = "#ffffff"
+  const greenColor   = ABOUT_GREEN
+  const neutralColor = isDark ? ABOUT_NEUTRAL.dark : ABOUT_NEUTRAL.light
 
-  // Single source of truth for every card on this page: solid blue fill,
-  // same shadow, no more zinc/white/grey surfaces and no hover color swap.
-  const cardBlue = isDark ? BRAND.lightBlue : BRAND.blue
-  const cardText = getReadableTextColor(cardBlue)
-  const cardSubtext = cardText === "#ffffff" ? "rgba(255,255,255,0.8)" : "rgba(24,24,27,0.7)"
-  const cardMuted = cardText === "#ffffff" ? "rgba(255,255,255,0.55)" : "rgba(24,24,27,0.5)"
-
-  // Same shadow language as the reference screenshot — soft, rounded-top,
-  // no border needed since the fill itself is now the card's identity.
-  const cardShadow = isDark
-    ? "0 10px 28px -10px rgba(0,0,0,0.5)"
-    : "0 10px 24px -10px rgba(0,0,0,0.18)"
+  const blueOnPage = ensureAccessible(blueColor, pageBg, 4.5)
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
@@ -98,9 +159,13 @@ export function AboutPage() {
 
           <div className="abh-divider" />
 
-          {/* Stats */}
           <ScrollBounce delay={0.1}>
-            <div className="mt-8 w-full max-w-[560px] mx-auto grid grid-cols-3 gap-3">
+            <div
+              className="mt-8 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x divide-zinc-200 dark:divide-zinc-700 rounded-[14px] overflow-hidden shadow-lg border-2 transition-colors duration-300"
+              style={{ borderColor: blueColor }}
+              onMouseEnter={() => setStatsHovered(true)}
+              onMouseLeave={() => setStatsHovered(false)}
+            >
               {[
                 { value: BIZ.hubCount,     label: "Service Hubs"  },
                 { value: BIZ.serviceCount, label: "Services"      },
@@ -108,13 +173,19 @@ export function AboutPage() {
               ].map((s, i) => (
                 <div
                   key={i}
-                  className="flex flex-col items-center justify-center py-5 px-3 text-center rounded-[14px]"
-                  style={{ backgroundColor: cardBlue, boxShadow: cardShadow }}
+                  className="flex flex-col items-center justify-center py-5 px-3 transition-colors duration-300 cursor-default"
+                  style={{ backgroundColor: statsHovered ? blueColor : "transparent" }}
                 >
-                  <p className="font-sans font-black text-xl leading-none" style={{ color: cardText }}>
+                  <p
+                    className="font-sans font-black text-xl leading-none transition-colors duration-300"
+                    style={{ color: statsHovered ? "#ffffff" : blueOnPage }}
+                  >
                     {s.value}
                   </p>
-                  <p className="text-[0.62rem] font-medium uppercase tracking-widest mt-1.5 text-center" style={{ color: cardSubtext }}>
+                  <p
+                    className="text-[0.62rem] font-medium uppercase tracking-widest mt-1.5 text-center transition-colors duration-300"
+                    style={{ color: statsHovered ? "rgba(255,255,255,0.85)" : `${blueOnPage}cc` }}
+                  >
                     {s.label}
                   </p>
                 </div>
@@ -148,22 +219,27 @@ export function AboutPage() {
 
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-stretch">
 
-            {/* Values */}
-            <ul className="flex flex-col gap-4 h-full" aria-label="Our values">
+            <ul
+              className="flex flex-col gap-4 h-full"
+              aria-label="Our values"
+            >
               {ABOUT_VALUES.map((item, index) => (
                 <li
                   key={index}
-                  className="rounded-[14px] p-5 flex flex-row items-center text-left gap-4 flex-1"
-                  style={{ backgroundColor: cardBlue, boxShadow: cardShadow }}
+                  className="abh-card abh-shadow-elevated rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-5 flex flex-row items-center text-left gap-4 flex-1"
                 >
-                  <div className="shrink-0" style={{ color: cardText }} aria-hidden="true">
-                    {renderIcon(item.iconName, "w-6 h-6")}
+                  <div
+                    className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: `${greenColor}15`, color: greenColor }}
+                    aria-hidden="true"
+                  >
+                    {renderIcon(item.iconName, "w-5 h-5")}
                   </div>
                   <div>
-                    <h3 className="font-sans font-semibold text-sm mb-1" style={{ color: cardText }}>
+                    <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200 mb-1">
                       {item.title}
                     </h3>
-                    <p className="text-sm leading-relaxed" style={{ color: cardSubtext }}>{item.desc}</p>
+                    <p className="abh-body text-sm">{item.desc}</p>
                   </div>
                 </li>
               ))}
@@ -171,26 +247,27 @@ export function AboutPage() {
 
             <ScrollBounce delay={0.2}>
               <div
-                className="rounded-[14px] p-7 flex flex-col h-full"
-                style={{ backgroundColor: cardBlue, boxShadow: cardShadow }}
+                className="abh-shadow-elevated rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-7 flex flex-col h-full"
                 aria-label="Business overview"
               >
 
-                <div className="flex items-center gap-3 mb-7 pb-6" style={{ borderBottom: `1px solid ${cardText === "#ffffff" ? "rgba(255,255,255,0.15)" : "rgba(24,24,27,0.12)"}` }}>
-                  <UsersThree size={24} weight="fill" style={{ color: cardText }} aria-hidden="true" />
+                <div className="flex items-center gap-3 mb-7 pb-6 border-b border-zinc-100 dark:border-zinc-800">
+                  <div
+                    className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
+                  >
+                    <UsersThree size={20} weight="fill" />
+                  </div>
                   <div>
-                    <p className="font-sans font-semibold text-sm leading-none" style={{ color: cardText }}>
+                    <p className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200 leading-none">
                       {BIZ.name}
                     </p>
-                    <p className="text-[0.62rem] font-medium uppercase tracking-widest mt-0.5" style={{ color: cardMuted }}>
+                    <p className="text-[0.62rem] font-medium uppercase tracking-widest text-zinc-400 mt-0.5">
                       Serving Kgotsong &amp; surrounds
                     </p>
                   </div>
                 </div>
 
-                {/* Mini-stats — same blue fill, one shade of overlay so
-                    they read as distinct cells within the card without
-                    introducing a second, different color. */}
                 <div className="grid grid-cols-2 gap-3 flex-1">
                   {[
                     { value: BIZ.hubCount,      label: "Hubs"              },
@@ -200,20 +277,19 @@ export function AboutPage() {
                   ].map((stat, index) => (
                     <div
                       key={index}
-                      className="rounded-[12px] p-5 flex flex-col justify-center items-center"
-                      style={{ backgroundColor: cardText === "#ffffff" ? "rgba(255,255,255,0.1)" : "rgba(24,24,27,0.06)" }}
+                      className="rounded-[12px] p-5 flex flex-col justify-center items-center border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50"
                     >
-                      <div className="font-black text-xl mb-1 flex items-center justify-center" style={{ color: cardText }}>
+                      <div className="font-black text-xl mb-1 flex items-center justify-center text-zinc-700 dark:text-zinc-300">
                         {stat.value}
                       </div>
-                      <p className="text-[0.6rem] font-medium uppercase tracking-widest text-center" style={{ color: cardMuted }}>
+                      <p className="text-[0.6rem] font-medium uppercase tracking-widest text-zinc-400 text-center">
                         {stat.label}
                       </p>
                     </div>
                   ))}
                 </div>
 
-                <p className="text-[0.72rem] font-medium mt-6 leading-relaxed text-center" style={{ color: cardMuted }}>
+                <p className="text-[0.72rem] font-medium text-zinc-400 dark:text-zinc-500 mt-6 leading-relaxed text-center">
                   Walk-ins welcome · WhatsApp orders accepted · Same-day service on most requests
                 </p>
               </div>
@@ -244,24 +320,23 @@ export function AboutPage() {
               const card = (
                 <li
                   key={member.initials}
-                  className="rounded-[14px] p-6 flex items-center text-left gap-4"
-                  style={{ backgroundColor: cardBlue, boxShadow: cardShadow }}
+                  className="abh-card p-6 flex items-center text-left gap-4 shadow-md"
                 >
                   <div
                     className="w-14 h-14 rounded-full flex items-center justify-center font-black text-base shrink-0"
-                    style={{ backgroundColor: cardText === "#ffffff" ? "rgba(255,255,255,0.15)" : "rgba(24,24,27,0.1)", color: cardText }}
+                    style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
                     aria-hidden="true"
                   >
                     {member.initials}
                   </div>
                   <div>
-                    <h3 className="font-sans font-semibold text-sm" style={{ color: cardText }}>
+                    <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200">
                       {member.name}
                     </h3>
-                    <p className="text-[0.65rem] font-black uppercase tracking-widest mt-1" style={{ color: cardText }}>
+                    <p className="text-[0.65rem] font-black uppercase tracking-widest mt-1" style={{ color: blueColor }}>
                       {member.role}
                     </p>
-                    <p className="text-xs mt-2 leading-relaxed" style={{ color: cardSubtext }}>
+                    <p className="abh-body text-xs mt-2 leading-relaxed">
                       {member.note}
                     </p>
                   </div>
@@ -301,30 +376,57 @@ export function AboutPage() {
             </div>
           </ScrollBounce>
 
-          <ul className="grid grid-cols-1 sm:grid-cols-3 gap-5" aria-label="Standards">
-            {ABOUT_STANDARDS.map((item, index) => (
-              <ScrollBounce key={item.id} delay={index * 0.1}>
-                <li
-                  className="rounded-[14px] p-6 flex flex-col h-full"
-                  style={{ backgroundColor: cardBlue, boxShadow: cardShadow }}
-                >
-                  <div className="mb-5" style={{ color: cardText }} aria-hidden="true">
-                    {renderIcon(item.iconName, "w-6 h-6")}
-                  </div>
-                  <h3 className="font-sans font-semibold text-sm leading-tight mb-2" style={{ color: cardText }}>
-                    {item.title}
-                  </h3>
-                  <p className="text-xs leading-relaxed grow" style={{ color: cardSubtext }}>
-                    {item.description}
-                  </p>
-                </li>
-              </ScrollBounce>
-            ))}
+          <ul
+            className="grid grid-cols-1 sm:grid-cols-3 gap-5"
+            aria-label="Standards"
+          >
+            {ABOUT_STANDARDS.map((item, index) => {
+              const isHovered = hoveredCard === item.id
+              return (
+                <ScrollBounce key={item.id} delay={index * 0.1}>
+                  <li
+                    onMouseEnter={() => setHoveredCard(item.id)}
+                    onMouseLeave={() => setHoveredCard(null)}
+                    onFocus={() => setHoveredCard(item.id)}
+                    onBlur={() => setHoveredCard(null)}
+                    tabIndex={0}
+                    className={cn(
+                      "abh-card p-6 flex flex-col h-full outline-none transition-all duration-300 rounded-[14px] bg-white dark:bg-zinc-950 border",
+                      isHovered
+                        ? "shadow-lg -translate-y-1.5"
+                        : "border-zinc-200 dark:border-zinc-800 shadow-[0_1px_6px_rgba(0,0,0,0.05)] dark:shadow-[0_1px_6px_rgba(0,0,0,0.2)]"
+                    )}
+                    style={isHovered ? { borderColor: blueColor } : undefined}
+                  >
+                    <div
+                      className={cn(
+                        "w-11 h-11 rounded-[12px] flex items-center justify-center mb-5 transition-all duration-300 border shrink-0",
+                        isHovered ? "text-white border-transparent scale-110" : "border-transparent"
+                      )}
+                      style={
+                        isHovered
+                          ? { backgroundColor: blueColor, color: "#ffffff" }
+                          : { backgroundColor: `${neutralColor}15`, color: neutralColor }
+                      }
+                      aria-hidden="true"
+                    >
+                      {renderIcon(item.iconName, "w-5 h-5")}
+                    </div>
+                    <h3 className="font-sans font-semibold text-sm leading-tight mb-2 text-zinc-800 dark:text-zinc-200">
+                      {item.title}
+                    </h3>
+                    <p className="abh-body text-xs leading-relaxed grow">
+                      {item.description}
+                    </p>
+                  </li>
+                </ScrollBounce>
+              )
+            })}
           </ul>
         </div>
       </section>
 
-      {/* ── Mission — untouched, not a grid-card, keeps its own identity ── */}
+      {/* ── Mission ── */}
       <section
         className="relative overflow-hidden px-4 md:px-8 py-16 md:py-20 text-center"
         aria-labelledby="mission-title"
@@ -332,7 +434,9 @@ export function AboutPage() {
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div
             className="absolute inset-0 opacity-[0.04] dark:opacity-[0.07]"
-            style={{ backgroundColor: cardBlue }}
+            style={{
+              background: `linear-gradient(135deg, ${blueColor} 0%, ${greenColor} 50%, ${orangeColor} 100%)`,
+            }}
           />
         </div>
 
@@ -340,7 +444,7 @@ export function AboutPage() {
           <ScrollBounce>
             <span
               className="inline-block text-[0.65rem] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-6"
-              style={{ backgroundColor: `${cardBlue}12`, color: cardBlue }}
+              style={{ backgroundColor: `${blueColor}12`, color: blueColor }}
             >
               Our Mission
             </span>
@@ -377,4 +481,4 @@ export function AboutPage() {
 
     </div>
   )
-    } 
+} 
