@@ -156,4 +156,4 @@ export function CtaBar({
       </ScrollBounce>
     </section>
   )
-          }
+} 
