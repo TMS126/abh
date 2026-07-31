@@ -414,7 +414,7 @@ button, a, [role="button"] {
     background: var(--brand-light-blue);
     box-shadow: 0 0 8px rgba(169, 214, 242, 0.5);
   }
-
+   
   .abh-wa-btn {
     @apply font-heading flex items-center justify-center gap-2 font-black text-sm rounded-[14px] px-6 py-3 transition-all duration-200 active:scale-95 hover:-translate-y-0.5;
     background: var(--brand-whatsapp);
@@ -432,4 +432,22 @@ button, a, [role="button"] {
     background: var(--brand-orange);
   }
   .abh-btn-cta:hover { background: var(--brand-orange-dark); }
-   } 
+   }
+
+   /* ── Dark-mode card color unification ──
+     Many components historically hardcoded dark:bg-zinc-900 / dark:bg-zinc-950
+     directly instead of using the --card token, so "cards" across the site
+     ended up as several different near-black shades instead of one
+     consistent navy. This forces every one of those Tailwind utility
+     classes back to the single --card color in dark mode only — light mode
+     is completely untouched, since these rules are scoped under .dark. */
+  .dark .dark\:bg-zinc-900,
+  .dark .dark\:bg-zinc-950,
+  .dark .dark\:bg-zinc-900\/95,
+  .dark .dark\:bg-zinc-900\/60,
+  .dark .dark\:bg-zinc-950\/95,
+  .dark .dark\:bg-zinc-950\/60,
+  .dark .dark\:bg-zinc-900\/40,
+  .dark .dark\:bg-zinc-900\/50 {
+    background-color: var(--card) !important;
+  } 
