@@ -182,7 +182,11 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
 
 @layer base {
   * { @apply border-border outline-ring/50; }
-  body { @apply bg-background text-foreground; }
+  body {
+  @apply bg-background text-foreground;
+  font-size: 17px;
+  line-height: 1.65;
+     }
 }
 
 /* ── Skip link ── */
