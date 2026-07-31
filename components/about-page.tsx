@@ -126,7 +126,9 @@ function renderIcon(iconName: string, className: string) {
 
 export function AboutPage() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
-  const [statsHovered, setStatsHovered] = useState(false)
+  // Was a single boolean covering the whole stats row (all three cells lit
+  // up together). Now per-cell, since each cell gets its own accent color.
+  const [statsHoveredIdx, setStatsHoveredIdx] = useState<number | null>(null)
 
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -141,6 +143,12 @@ export function AboutPage() {
   const neutralColor = isDark ? ABOUT_NEUTRAL.dark : ABOUT_NEUTRAL.light
 
   const blueOnPage = ensureAccessible(blueColor, pageBg, 4.5)
+
+  // Same blue → green → orange rotation StatsBar uses, reused everywhere
+  // on this page that previously had every card/pill sharing one flat
+  // color instead of a per-item accent.
+  const ACCENT_CYCLE = [blueColor, greenColor, orangeColor]
+  const accentFor = (index: number) => ACCENT_CYCLE[index % ACCENT_CYCLE.length]
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
@@ -159,37 +167,40 @@ export function AboutPage() {
 
           <div className="abh-divider" />
 
+          {/* Stats — restructured from one divided box with a single
+              shared hover state into three independent StatsBar-style
+              cards, each carrying its own accent color (blue/green/
+              orange) and its own hover border, instead of every cell
+              lighting up blue together. */}
           <ScrollBounce delay={0.1}>
-            <div
-              className="mt-8 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x divide-zinc-200 dark:divide-zinc-700 rounded-[14px] overflow-hidden shadow-lg border-2 transition-colors duration-300"
-              style={{ borderColor: blueColor }}
-              onMouseEnter={() => setStatsHovered(true)}
-              onMouseLeave={() => setStatsHovered(false)}
-            >
+            <div className="mt-8 w-full max-w-[560px] mx-auto grid grid-cols-3 gap-3">
               {[
                 { value: BIZ.hubCount,     label: "Service Hubs"  },
                 { value: BIZ.serviceCount, label: "Services"      },
                 { value: "Since 2023",     label: "Est. Kgotsong" },
-              ].map((s, i) => (
-                <div
-                  key={i}
-                  className="flex flex-col items-center justify-center py-5 px-3 transition-colors duration-300 cursor-default"
-                  style={{ backgroundColor: statsHovered ? blueColor : "transparent" }}
-                >
-                  <p
-                    className="font-sans font-black text-xl leading-none transition-colors duration-300"
-                    style={{ color: statsHovered ? "#ffffff" : blueOnPage }}
+              ].map((s, i) => {
+                const color  = accentFor(i)
+                const isHov  = statsHoveredIdx === i
+                return (
+                  <div
+                    key={i}
+                    onMouseEnter={() => setStatsHoveredIdx(i)}
+                    onMouseLeave={() => setStatsHoveredIdx(null)}
+                    className="abh-card flex flex-col items-center justify-center py-5 px-3 text-center transition-all duration-300 cursor-default rounded-[14px] border"
+                    style={{ borderColor: isHov ? color : undefined }}
                   >
-                    {s.value}
-                  </p>
-                  <p
-                    className="text-[0.62rem] font-medium uppercase tracking-widest mt-1.5 text-center transition-colors duration-300"
-                    style={{ color: statsHovered ? "rgba(255,255,255,0.85)" : `${blueOnPage}cc` }}
-                  >
-                    {s.label}
-                  </p>
-                </div>
-              ))}
+                    <p
+                      className="font-sans font-black text-xl leading-none transition-colors duration-300"
+                      style={{ color }}
+                    >
+                      {s.value}
+                    </p>
+                    <p className="text-[0.62rem] font-medium uppercase tracking-widest mt-1.5 text-center text-zinc-400 dark:text-zinc-500">
+                      {s.label}
+                    </p>
+                  </div>
+                )
+              })}
             </div>
           </ScrollBounce>
 
@@ -219,30 +230,35 @@ export function AboutPage() {
 
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-stretch">
 
+            {/* Values — was uniform greenColor for every icon chip;
+                now cycles blue/green/orange per item. */}
             <ul
               className="flex flex-col gap-4 h-full"
               aria-label="Our values"
             >
-              {ABOUT_VALUES.map((item, index) => (
-                <li
-                  key={index}
-                  className="abh-card abh-shadow-elevated rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-5 flex flex-row items-center text-left gap-4 flex-1"
-                >
-                  <div
-                    className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: `${greenColor}15`, color: greenColor }}
-                    aria-hidden="true"
+              {ABOUT_VALUES.map((item, index) => {
+                const color = accentFor(index)
+                return (
+                  <li
+                    key={index}
+                    className="abh-card abh-shadow-elevated rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-5 flex flex-row items-center text-left gap-4 flex-1"
                   >
-                    {renderIcon(item.iconName, "w-5 h-5")}
-                  </div>
-                  <div>
-                    <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200 mb-1">
-                      {item.title}
-                    </h3>
-                    <p className="abh-body text-sm">{item.desc}</p>
-                  </div>
-                </li>
-              ))}
+                    <div
+                      className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: `${color}15`, color }}
+                      aria-hidden="true"
+                    >
+                      {renderIcon(item.iconName, "w-5 h-5")}
+                    </div>
+                    <div>
+                      <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200 mb-1">
+                        {item.title}
+                      </h3>
+                      <p className="abh-body text-sm">{item.desc}</p>
+                    </div>
+                  </li>
+                )
+              })}
             </ul>
 
             <ScrollBounce delay={0.2}>
@@ -268,25 +284,30 @@ export function AboutPage() {
                   </div>
                 </div>
 
+                {/* Mini-stats grid — was flat zinc-700/300 with no color
+                    at all; each cell now carries its own accent. */}
                 <div className="grid grid-cols-2 gap-3 flex-1">
                   {[
                     { value: BIZ.hubCount,      label: "Hubs"              },
                     { value: BIZ.serviceCount,  label: "Services"          },
                     { value: <WhatsappLogo weight="fill" className="w-6 h-6" aria-hidden="true" />, label: "WhatsApp Ready"    },
                     { value: <ShieldCheck  weight="fill" className="w-6 h-6" aria-hidden="true" />, label: "Community Trusted" },
-                  ].map((stat, index) => (
-                    <div
-                      key={index}
-                      className="rounded-[12px] p-5 flex flex-col justify-center items-center border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50"
-                    >
-                      <div className="font-black text-xl mb-1 flex items-center justify-center text-zinc-700 dark:text-zinc-300">
-                        {stat.value}
+                  ].map((stat, index) => {
+                    const color = accentFor(index)
+                    return (
+                      <div
+                        key={index}
+                        className="rounded-[12px] p-5 flex flex-col justify-center items-center border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50"
+                      >
+                        <div className="font-black text-xl mb-1 flex items-center justify-center" style={{ color }}>
+                          {stat.value}
+                        </div>
+                        <p className="text-[0.6rem] font-medium uppercase tracking-widest text-zinc-400 text-center">
+                          {stat.label}
+                        </p>
                       </div>
-                      <p className="text-[0.6rem] font-medium uppercase tracking-widest text-zinc-400 text-center">
-                        {stat.label}
-                      </p>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
 
                 <p className="text-[0.72rem] font-medium text-zinc-400 dark:text-zinc-500 mt-6 leading-relaxed text-center">
@@ -298,7 +319,8 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* ── Team ── */}
+      {/* ── Team — was uniform blueColor for every member's avatar/role;
+          now cycles blue/green/orange per member. ── */}
       <section className="px-4 md:px-8 py-14 md:py-16 border-t border-zinc-100 dark:border-zinc-800/60" aria-labelledby="team-title">
         <div className="max-w-[680px] mx-auto">
           <ScrollBounce>
@@ -317,6 +339,7 @@ export function AboutPage() {
 
           <ul className="flex flex-col gap-5" aria-label="Team members">
             {TEAM.map((member, index) => {
+              const color = accentFor(index)
               const card = (
                 <li
                   key={member.initials}
@@ -324,7 +347,7 @@ export function AboutPage() {
                 >
                   <div
                     className="w-14 h-14 rounded-full flex items-center justify-center font-black text-base shrink-0"
-                    style={{ backgroundColor: `${blueColor}15`, color: blueColor }}
+                    style={{ backgroundColor: `${color}15`, color }}
                     aria-hidden="true"
                   >
                     {member.initials}
@@ -333,7 +356,7 @@ export function AboutPage() {
                     <h3 className="font-sans font-semibold text-sm text-zinc-800 dark:text-zinc-200">
                       {member.name}
                     </h3>
-                    <p className="text-[0.65rem] font-black uppercase tracking-widest mt-1" style={{ color: blueColor }}>
+                    <p className="text-[0.65rem] font-black uppercase tracking-widest mt-1" style={{ color }}>
                       {member.role}
                     </p>
                     <p className="abh-body text-xs mt-2 leading-relaxed">
@@ -354,7 +377,8 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* ── Standards ── */}
+      {/* ── Standards — was uniform blueColor on hover for every card;
+          now cycles blue/green/orange per card. ── */}
       <section
         className="py-14 md:py-16 px-4 md:px-8 bg-zinc-50/60 dark:bg-zinc-900/20 border-t border-zinc-100 dark:border-zinc-800/60"
         aria-labelledby="standards-title"
@@ -382,6 +406,7 @@ export function AboutPage() {
           >
             {ABOUT_STANDARDS.map((item, index) => {
               const isHovered = hoveredCard === item.id
+              const color     = accentFor(index)
               return (
                 <ScrollBounce key={item.id} delay={index * 0.1}>
                   <li
@@ -396,7 +421,7 @@ export function AboutPage() {
                         ? "shadow-lg -translate-y-1.5"
                         : "border-zinc-200 dark:border-zinc-800 shadow-[0_1px_6px_rgba(0,0,0,0.05)] dark:shadow-[0_1px_6px_rgba(0,0,0,0.2)]"
                     )}
-                    style={isHovered ? { borderColor: blueColor } : undefined}
+                    style={isHovered ? { borderColor: color } : undefined}
                   >
                     <div
                       className={cn(
@@ -405,7 +430,7 @@ export function AboutPage() {
                       )}
                       style={
                         isHovered
-                          ? { backgroundColor: blueColor, color: "#ffffff" }
+                          ? { backgroundColor: color, color: "#ffffff" }
                           : { backgroundColor: `${neutralColor}15`, color: neutralColor }
                       }
                       aria-hidden="true"
@@ -426,7 +451,8 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* ── Mission ── */}
+      {/* ── Mission — single CTA block, intentionally kept its own
+          fixed orange identity; nothing to cycle here. ── */}
       <section
         className="relative overflow-hidden px-4 md:px-8 py-16 md:py-20 text-center"
         aria-labelledby="mission-title"
