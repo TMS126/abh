@@ -1,4 +1,3 @@
-// components/services/hub-modal.tsx
 "use client"
 
 import { useState, useEffect, useRef } from "react"
@@ -23,19 +22,17 @@ export function HubModal({ hubId, onClose, onSelectService }: {
   const [openSectionIdx, setOpenSectionIdx] = useState<number | null>(0)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => { setOpenSectionIdx(0) }, [hubId])
-
+  useEffect(() => setOpenSectionIdx(0), [hubId])
   useFocusTrap(!!hubId, containerRef)
 
   if (!hubId) return null
-  const hub         = HUBS[hubId]
-  const colors      = HUB_COLORS[hubId]
-  const accent      = isDark ? colors.accentDark : colors.accentLight
+  const hub = HUBS[hubId]
+  const colors = HUB_COLORS[hubId]
+  const accent = isDark ? colors.accentDark : colors.accentLight
   const solidAccent = colors.accentLight
 
   const hubDisclaimer = HUB_DISCLAIMERS[hubId]
-
-  const activeSection     = openSectionIdx !== null ? hub.sections[openSectionIdx] : null
+  const activeSection = openSectionIdx !== null ? hub.sections[openSectionIdx] : null
   const activeSectionDesc = activeSection?.desc
 
   return (
@@ -43,18 +40,13 @@ export function HubModal({ hubId, onClose, onSelectService }: {
       <motion.div
         className="absolute inset-0 bg-black/60"
         onClick={onClose}
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
       />
-      {/* Swipe-to-dismiss removed — no more drag/dragConstraints/
-          dragElastic/onDragEnd props, no more grab cursor, no more
-          DragHandle grip. This is the same treatment already applied to
-          ServiceDetailModal. Root cause it fixes: on mobile, a vertical
-          drag gesture on this modal could be intercepted by the browser
-          as its native "pull to refresh" instead of the modal's own drag
-          handler — reloading the whole page and wiping all React state,
-          which looked like "refresh closes every modal." Only the X
-          button and backdrop click close this modal now. */}
+      {/* Only the X button and backdrop close this — no swipe-to-dismiss,
+          so a mobile drag can't get intercepted by browser pull-to-refresh */}
       <motion.div
         ref={containerRef}
         tabIndex={-1}
@@ -74,7 +66,7 @@ export function HubModal({ hubId, onClose, onSelectService }: {
               <HubIcon id={hubId} size={28} color={accent} />
             </div>
             <div className="min-w-0">
-              <h2 className="abh-card-heading text-xl md:text-2xl truncate">{hub.title}</h2>
+              <h2 className="abh-card-heading text-2xl md:text-3xl truncate">{hub.title}</h2>
               <p className="abh-label mt-0.5" style={{ color: accent }}>
                 {hub.sections.reduce((sum, s) => sum + s.items.length, 0)} Available Services
               </p>
@@ -84,10 +76,10 @@ export function HubModal({ hubId, onClose, onSelectService }: {
           <div className="flex items-center gap-3 shrink-0">
             <Link
               href={`/gallery?hub=${hubId}`}
-              className="group/gallerylink flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[0.7rem] font-black tracking-tight whitespace-nowrap border-2 transition-all duration-200 hover:text-white"
+              className="group/gallerylink flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[0.84rem] font-black tracking-tight whitespace-nowrap border-2 transition-all duration-200 hover:text-white"
               style={{ borderColor: accent, color: accent }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = solidAccent }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent" }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = solidAccent)}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
             >
               View in Gallery
               <ArrowSquareOut size={12} weight="bold" aria-hidden="true" />
@@ -105,7 +97,6 @@ export function HubModal({ hubId, onClose, onSelectService }: {
         </div>
 
         <div className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-8">
-
           <div role="tablist" aria-label="Service categories" className="flex flex-wrap justify-center gap-2 mb-5">
             {hub.sections.map((section, sIdx) => {
               const isOpen = openSectionIdx === sIdx
@@ -116,7 +107,7 @@ export function HubModal({ hubId, onClose, onSelectService }: {
                   role="tab"
                   aria-selected={isOpen}
                   onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)}
-                  className={`relative px-3.5 py-1.5 rounded-full text-[0.7rem] font-black tracking-tight whitespace-nowrap transition-all duration-200 ${
+                  className={`relative px-3.5 py-1.5 rounded-full text-[0.84rem] font-black tracking-tight whitespace-nowrap transition-all duration-200 ${
                     isOpen ? "text-white" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
                   }`}
                   style={isOpen ? { backgroundColor: solidAccent, boxShadow: `0 10px 24px -6px ${solidAccent}90, 0 4px 10px -2px ${solidAccent}70` } : {}}
@@ -140,7 +131,7 @@ export function HubModal({ hubId, onClose, onSelectService }: {
               className="mb-5 rounded-[14px] p-4 border animate-in fade-in slide-in-from-top-1 duration-200"
               style={{ borderColor: `${accent}25`, backgroundColor: `${accent}08`, boxShadow: `0 8px 22px -6px ${accent}45, 0 3px 10px -2px rgba(0,0,0,0.2)` }}
             >
-              <p className="text-[0.82rem] leading-relaxed text-zinc-600 dark:text-zinc-300">{activeSectionDesc}</p>
+              <p className="text-[0.98rem] leading-relaxed text-zinc-600 dark:text-zinc-300">{activeSectionDesc}</p>
             </div>
           )}
 
@@ -149,27 +140,28 @@ export function HubModal({ hubId, onClose, onSelectService }: {
               {activeSection.items.map((item, iIdx) => (
                 <button
                   key={iIdx}
-                  onClick={() => onSelectService({
-                    name: item.name, price: item.price, hubId,
-                    sectionTitle: activeSection.title,
-                    requirements: item.requirements, desc: item.description,
-                    turnaround: getTurnaround(activeSection.title, item.name),
-                  })}
+                  onClick={() =>
+                    onSelectService({
+                      name: item.name,
+                      price: item.price,
+                      hubId,
+                      sectionTitle: activeSection.title,
+                      requirements: item.requirements,
+                      desc: item.description,
+                      turnaround: getTurnaround(activeSection.title, item.name),
+                    })
+                  }
                   className="abh-shadow-nested-item flex items-center justify-between p-3.5 md:p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-transparent transition-all"
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = accent }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "transparent" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = accent)}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = "transparent")}
                 >
-                  <span className="text-[0.84rem] font-black text-zinc-800 dark:text-zinc-200 text-left flex items-center gap-1.5">
+                  <span className="text-base font-black text-zinc-800 dark:text-zinc-200 text-left flex items-center gap-1.5">
                     {item.name}
                     {itemHasBulk(hubId, activeSection.title, item.name) && (
-                      <span
-                        aria-label="Bulk pricing available"
-                        className="w-1.5 h-1.5 rounded-full shrink-0"
-                        style={{ backgroundColor: accent, opacity: 0.5 }}
-                      />
+                      <span aria-label="Bulk pricing available" className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: accent, opacity: 0.5 }} />
                     )}
                   </span>
-                  <span className="text-[0.84rem] font-black shrink-0 ml-3" style={{ color: accent }}>{item.price}</span>
+                  <span className="text-base font-black shrink-0 ml-3" style={{ color: accent }}>{item.price}</span>
                 </button>
               ))}
             </div>
@@ -178,9 +170,7 @@ export function HubModal({ hubId, onClose, onSelectService }: {
           {hubDisclaimer && (
             <div className="mt-6 flex items-start gap-2">
               <Info size={13} weight="bold" aria-hidden="true" className="text-zinc-400 dark:text-zinc-500 shrink-0 mt-0.5" />
-              <p className="text-[0.72rem] font-medium text-zinc-400 dark:text-zinc-500 leading-relaxed">
-                {hubDisclaimer}
-              </p>
+              <p className="text-[0.86rem] font-medium text-zinc-400 dark:text-zinc-500 leading-relaxed">{hubDisclaimer}</p>
             </div>
           )}
         </div>
