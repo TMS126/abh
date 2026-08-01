@@ -1,6 +1,3 @@
-// ─────────────────────────────────────────────────────────────────────────
-// FAQAccordion — expandable FAQ list for the Contact page
-// ─────────────────────────────────────────────────────────────────────────
 "use client"
 
 import { useState, useEffect } from "react"
@@ -39,7 +36,7 @@ export function FAQAccordion() {
                   <button
                     onClick={() => setOpenIndex(isOpen ? null : index)}
                     aria-expanded={isOpen}
-                    className="w-full px-5 py-4 text-left flex items-center justify-between gap-4 text-[0.84rem] font-semibold text-zinc-800 dark:text-zinc-200 transition-colors"
+                    className="w-full px-5 py-4 text-left flex items-center justify-between gap-4 text-[1rem] font-semibold text-zinc-800 dark:text-zinc-200 transition-colors"
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = greyColor }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "" }}
                   >
@@ -73,4 +70,4 @@ export function FAQAccordion() {
       </div>
     </section>
   )
-}
+} 
