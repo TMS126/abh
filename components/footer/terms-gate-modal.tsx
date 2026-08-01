@@ -19,11 +19,9 @@ export function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () =
   const resolveColor = (s: { colorLight: string; colorDark: string }) =>
     mounted && theme === "dark" ? s.colorDark : s.colorLight
 
-  // Move focus into modal when it opens; restore it when it closes
   useEffect(() => {
     if (open) {
       triggerRef.current = document.activeElement as HTMLElement
-      // Small delay so the modal is in the DOM before focusing
       const id = setTimeout(() => closeBtnRef.current?.focus(), 50)
       return () => clearTimeout(id)
     } else {
@@ -74,8 +72,8 @@ export function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () =
 
         <div className="px-6 md:px-10 pt-8 pb-5 border-b border-zinc-100 dark:border-zinc-800 shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] relative z-10 flex items-start justify-between gap-4">
           <div>
-            <h2 className="font-sans font-black text-2xl text-brand-blue dark:text-brand-light-blue">Terms & Service Policies</h2>
-            <p className="text-[0.65rem] font-medium text-zinc-400 mt-1">
+            <h2 className="font-sans font-black text-[1.8rem] text-brand-blue dark:text-brand-light-blue">Terms & Service Policies</h2>
+            <p className="text-[0.78rem] font-medium text-zinc-400 mt-1">
               {BIZ.name} · Updated {BIZ.year}
             </p>
           </div>
@@ -92,10 +90,10 @@ export function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () =
         <div className="flex-1 overflow-y-auto overscroll-contain px-6 md:px-10 py-6 md:py-10">
           <div className="max-w-2xl mx-auto space-y-8">
             <div className="p-5 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 shadow-[0_2px_10px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
-              <h3 className="font-bold flex items-center gap-2 mb-2 text-[0.82rem] text-zinc-900 dark:text-zinc-50">
+              <h3 className="font-bold flex items-center gap-2 mb-2 text-[0.98rem] text-zinc-900 dark:text-zinc-50">
                 <Info weight="fill" className="w-4 h-4" aria-hidden="true" /> Operational Rule
               </h3>
-              <p className="text-[0.82rem] text-zinc-600 dark:text-zinc-400 leading-relaxed">
+              <p className="text-[0.98rem] text-zinc-600 dark:text-zinc-400 leading-relaxed">
                 By tapping &ldquo;I Agree&rdquo; below, you confirm full agreement with all operational rules and terms listed here.
               </p>
             </div>
@@ -105,13 +103,13 @@ export function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () =
               const color = resolveColor(s)
               return (
                 <div key={i} className="space-y-3">
-                  <h3 className="font-black flex items-center gap-2 text-[0.82rem]" style={{ color }}>
+                  <h3 className="font-black flex items-center gap-2 text-[0.98rem]" style={{ color }}>
                     <IconComp weight="fill" className="w-4 h-4 shrink-0" aria-hidden="true" style={{ color }} />
                     {s.title}
                   </h3>
                   <ul className="space-y-2 list-disc list-inside pl-1">
                     {s.points.map((p, j) => (
-                      <li key={j} className="text-[0.82rem] text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                      <li key={j} className="text-[0.98rem] text-zinc-600 dark:text-zinc-400 leading-relaxed">
                         <strong className="text-zinc-700 dark:text-zinc-300">{p.label}:</strong> {p.text}
                       </li>
                     ))}
@@ -125,7 +123,7 @@ export function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () =
         <div className="px-6 md:px-10 py-6 border-t border-zinc-100 dark:border-zinc-800 shrink-0 bg-white dark:bg-zinc-950 flex justify-center">
           <button
             onClick={handleClose}
-            className="px-10 py-3 rounded-[14px] bg-brand-blue text-white font-black text-[0.9rem] active:scale-[0.98] transition-transform"
+            className="px-10 py-3 rounded-[14px] bg-brand-blue text-white font-black text-[1.08rem] active:scale-[0.98] transition-transform"
           >
             I Agree
           </button>
@@ -133,4 +131,4 @@ export function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () =
       </div>
     </div>
   )
-}
+} 
