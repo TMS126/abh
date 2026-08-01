@@ -36,7 +36,7 @@ export function MobileMenu({ menuOpen, setMenuOpen, pathname, navigate, neutralC
                   ...(isActive ? { backgroundColor: BRAND.blue, color: "#ffffff" } : {}),
                 }}
                 className={cn(
-                  "relative py-3 px-8 rounded-[14px] font-sans text-base transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm overflow-hidden",
+                  "relative py-3 px-8 rounded-[14px] font-sans text-[1.2rem] transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm overflow-hidden",
                   isActive ? "font-semibold" : "font-medium text-zinc-700 dark:text-zinc-100 hover:text-brand-blue dark:hover:text-brand-blue bg-transparent",
                   item.isCta && !isActive && "border-2 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800/60",
                   menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
@@ -56,7 +56,6 @@ export function MobileMenu({ menuOpen, setMenuOpen, pathname, navigate, neutralC
         </nav>
       </div>
 
-      {/* Mobile Logo Watermark */}
       <div
         className={cn(
           "absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center select-none transition-all duration-500 z-10",
@@ -81,4 +80,4 @@ export function MobileMenu({ menuOpen, setMenuOpen, pathname, navigate, neutralC
       </div>
     </div>
   )
-                  } 
+}
