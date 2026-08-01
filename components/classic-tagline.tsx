@@ -20,8 +20,6 @@ export function ClassicTagline() {
   const isDark  = mounted && resolvedTheme === "dark"
   const pageBg  = isDark ? "#0D1B2A" : "#FFFFFF"
 
-  // Colors nudged for WCAG AA (4.5:1) against the page background in
-  // whichever theme is active — same helper used elsewhere on the site.
   const palette = {
     orange: ensureAccessible(isDark ? BRAND.lightOrange : BRAND.orange, pageBg, 4.5),
     blue:   ensureAccessible(isDark ? BRAND.lightBlue   : BRAND.blue,   pageBg, 4.5),
@@ -37,7 +35,7 @@ export function ClassicTagline() {
       onFocus={() => setHovered(true)}
       onBlur={() => setHovered(false)}
       tabIndex={0}
-      className="mt-3 text-sm md:text-base font-semibold italic tracking-normal cursor-default select-none outline-none"
+      className="mt-3 text-[1.05rem] md:text-[1.2rem] font-semibold italic tracking-normal cursor-default select-none outline-none"
     >
       {WORDS.map((w, i) => (
         <span
@@ -51,4 +49,4 @@ export function ClassicTagline() {
       ))}
     </p>
   )
-}
+} 
