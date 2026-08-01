@@ -40,12 +40,12 @@ export function HubAccordionCard({
         <div className="flex items-center gap-3.5 min-w-0">
           <HubIcon id={hubId} size={22} color={accent} />
           <div className="min-w-0">
-            <p className="text-sm font-black text-zinc-900 dark:text-zinc-50 truncate">{hub.title}</p>
-            <p className="text-xs text-zinc-400 mt-1 truncate">{HUB_PREVIEWS[hubId].join(' · ')}</p>
+            <p className="text-[1.05rem] font-black text-zinc-900 dark:text-zinc-50 truncate">{hub.title}</p>
+            <p className="text-[0.9rem] text-zinc-400 mt-1 truncate">{HUB_PREVIEWS[hubId].join(' · ')}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <span className="w-6 text-right text-sm font-black tabular-nums text-zinc-400 dark:text-zinc-500" aria-label={`${serviceCount} services`}>
+          <span className="w-6 text-right text-[1.05rem] font-black tabular-nums text-zinc-400 dark:text-zinc-500" aria-label={`${serviceCount} services`}>
             {serviceCount}
           </span>
           <div className={cn('w-7 h-7 rounded-full flex items-center justify-center transition-colors duration-200 shrink-0', isOpen && 'bg-zinc-100 dark:bg-white/10')}>
@@ -64,7 +64,7 @@ export function HubAccordionCard({
                 <div key={section.title} className={cn('px-5 py-5', si > 0 && 'border-t border-zinc-100 dark:border-zinc-800')}>
                   {/* ── Category pill ── */}
                   <span
-                    className="inline-block text-[0.72rem] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-3.5"
+                    className="inline-block text-[0.86rem] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-3.5"
                     style={{ color: accent, backgroundColor: `${accent}12` }}
                   >
                     {section.title}
@@ -76,12 +76,12 @@ export function HubAccordionCard({
                       const pct = bulkPercentFor(section.title, item.name, item.price)
                       return (
                         <div key={item.name} className="flex items-center justify-between gap-3 py-1.5 px-2 -mx-2 rounded-[10px] transition-colors duration-150 hover:bg-zinc-50 dark:hover:bg-white/[0.03]">
-                          <span className="text-sm text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 min-w-0">
+                          <span className="text-[1.05rem] text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 min-w-0">
                             <span className="truncate">{item.name}</span>
                             {pct !== null && <BulkBadge percent={pct} />}
                           </span>
                           <div className="flex items-center gap-2.5 shrink-0">
-                            <span className="text-sm font-black" style={{ color: accent }}>{item.price}</span>
+                            <span className="text-[1.05rem] font-black" style={{ color: accent }}>{item.price}</span>
                             <button
                               onClick={() => onAdd(section.title, item.name, item.price)}
                               aria-label={`Add ${item.name} to quote`}
@@ -101,7 +101,7 @@ export function HubAccordionCard({
 
             {/* ── Turnaround ── */}
             <div className="px-5 py-3.5 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-white/[0.02]">
-              <p className="text-xs text-zinc-400">
+              <p className="text-[0.9rem] text-zinc-400">
                 <span className="font-semibold text-zinc-600 dark:text-zinc-300">Turnaround: </span>
                 {hub.turnaround}
               </p>
@@ -116,4 +116,4 @@ export function HubAccordionCard({
       </div>
     </div>
   )
-}
+} 
