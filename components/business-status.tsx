@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react"
 import { Clock } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 
-// ─── SAST helpers ──────────────────────────────────────────────────────────────
 function getSASTDate(): Date {
   const now = new Date()
   const utc = now.getTime() + now.getTimezoneOffset() * 60_000
@@ -20,7 +19,6 @@ function getSASTDay(): number {
   return getSASTDate().getDay()
 }
 
-// ─── Opening logic ────────────────────────────────────────────────────────────
 interface HubStatus {
   open:      boolean
   label:     string
@@ -53,11 +51,10 @@ function getTechDesignStatus(): HubStatus {
   return { open: false, label, nextEvent: `Opens ${DAY_NAMES[day + 1]} at 09:00` }
 }
 
-// ─── Full status pill (footer / contact) ──────────────────────────────────────
 function StatusPill({ status }: { status: HubStatus }) {
   return (
     <div className={cn(
-      "flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[0.62rem] font-bold tracking-wide whitespace-nowrap",
+      "flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[0.74rem] font-bold tracking-wide whitespace-nowrap",
       status.open
         ? "bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400"
         : "bg-zinc-50  dark:bg-zinc-900     border-zinc-200  dark:border-zinc-700  text-zinc-500  dark:text-zinc-400"
@@ -74,10 +71,6 @@ function StatusPill({ status }: { status: HubStatus }) {
   )
 }
 
-// ─── Navbar variant ───────────────────────────────────────────────────────────
-// A clock icon button that reflects the overall open/closed state via color.
-// Click it to slide the two status pills open; click anywhere else to close.
-// Mirrors the same expand/collapse animation as the logo pill.
 export function BusinessStatusNavbar() {
   const [printDoc,  setPrintDoc]  = useState<HubStatus | null>(null)
   const [techEtc,   setTechEtc]   = useState<HubStatus | null>(null)
@@ -95,7 +88,6 @@ export function BusinessStatusNavbar() {
     return () => clearInterval(id)
   }, [])
 
-  // Close on outside click — same pattern as the logo timeout
   useEffect(() => {
     if (!expanded) return
     const onDown = (e: MouseEvent) => {
@@ -109,7 +101,6 @@ export function BusinessStatusNavbar() {
 
   if (!printDoc || !techEtc) return null
 
-  // Both hubs open → green; any closed → zinc/neutral
   const anyOpen   = printDoc.open || techEtc.open
   const bothOpen  = printDoc.open && techEtc.open
 
@@ -121,7 +112,6 @@ export function BusinessStatusNavbar() {
 
   return (
     <div ref={wrapperRef} className="hidden md:flex items-center gap-0">
-      {/* Clock trigger */}
       <button
         onClick={() => setExpanded(v => !v)}
         aria-label="Show business hours"
@@ -130,7 +120,6 @@ export function BusinessStatusNavbar() {
         <Clock size={18} weight="fill" className={clockColor} />
       </button>
 
-      {/* Sliding status pills — same max-width trick as the logo text */}
       <div
         className="overflow-hidden transition-all duration-500 ease-in-out flex items-center gap-1.5"
         style={{
@@ -140,7 +129,7 @@ export function BusinessStatusNavbar() {
         }}
       >
         <div className={cn(
-          "flex items-center gap-1 px-2 py-0.5 rounded-full border text-[0.62rem] font-bold whitespace-nowrap",
+          "flex items-center gap-1 px-2 py-0.5 rounded-full border text-[0.74rem] font-bold whitespace-nowrap",
           printDoc.open
             ? "bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400"
             : "bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400"
@@ -152,7 +141,7 @@ export function BusinessStatusNavbar() {
           <span>{printDoc.nextEvent}</span>
         </div>
         <div className={cn(
-          "flex items-center gap-1 px-2 py-0.5 rounded-full border text-[0.62rem] font-bold whitespace-nowrap",
+          "flex items-center gap-1 px-2 py-0.5 rounded-full border text-[0.74rem] font-bold whitespace-nowrap",
           techEtc.open
             ? "bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400"
             : "bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400"
@@ -168,7 +157,6 @@ export function BusinessStatusNavbar() {
   )
 }
 
-// ─── Footer / Contact variant — full pills with label + next event ─────────────
 export function BusinessStatusFull() {
   const [printDoc, setPrintDoc] = useState<HubStatus | null>(null)
   const [techEtc,  setTechEtc]  = useState<HubStatus | null>(null)
@@ -192,5 +180,4 @@ export function BusinessStatusFull() {
       <StatusPill status={techEtc}  />
     </div>
   )
-}
- 
+} 
