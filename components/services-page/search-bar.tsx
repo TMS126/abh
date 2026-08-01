@@ -19,7 +19,7 @@ export function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService)
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return []
-    return index.filter(s => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)).slice(0, 8)
+    return index.filter((s) => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)).slice(0, 8)
   }, [query, index])
 
   useEffect(() => {
@@ -32,7 +32,8 @@ export function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService)
 
   const pick = (s: SearchableService) => {
     onSelect({ name: s.name, price: s.price, hubId: s.hubId, sectionTitle: s.sectionTitle, requirements: s.requirements, desc: s.description, turnaround: s.turnaround })
-    setQuery(""); setFocused(false)
+    setQuery("")
+    setFocused(false)
   }
 
   return (
@@ -40,9 +41,12 @@ export function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService)
       <div className="flex items-center justify-center gap-1.5 border-b-2 border-zinc-200 dark:border-zinc-800 focus-within:border-[#1E6FA8] transition-colors pr-8">
         <MagnifyingGlass size={16} weight="bold" className="text-zinc-400 pointer-events-none shrink-0" />
         <input
-          type="text" value={query} onChange={e => setQuery(e.target.value)} onFocus={() => setFocused(true)}
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setFocused(true)}
           placeholder="Find a service…"
-          className="min-w-0 flex-1 py-3 bg-transparent border-0 text-sm font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none text-center"
+          className="min-w-0 flex-1 py-3 bg-transparent border-0 text-base font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none text-center"
         />
       </div>
       {query && (
@@ -63,22 +67,22 @@ export function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService)
                       <HubIcon id={s.hubId} size={18} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{s.name}</p>
-                      <p className="text-[0.65rem] font-bold uppercase tracking-wider text-zinc-400 truncate">{s.sectionTitle} · {HUBS[s.hubId].title}</p>
+                      <p className="text-sm font-black text-zinc-800 dark:text-zinc-200 truncate">{s.name}</p>
+                      <p className="text-[0.78rem] font-bold uppercase tracking-wider text-zinc-400 truncate">{s.sectionTitle} · {HUBS[s.hubId].title}</p>
                     </div>
-                    <span className="text-xs font-black shrink-0" style={{ color: accent }}>{s.price}</span>
+                    <span className="text-sm font-black shrink-0" style={{ color: accent }}>{s.price}</span>
                   </button>
                 )
               })}
             </div>
           ) : (
             <div className="p-5 text-center">
-              <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">No services found</p>
-              <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-1">Try a different word, or WhatsApp us directly.</p>
+              <p className="text-base font-bold text-zinc-500 dark:text-zinc-400">No services found</p>
+              <p className="text-sm font-medium text-zinc-400 dark:text-zinc-500 mt-1">Try a different word, or WhatsApp us directly.</p>
             </div>
           )}
         </div>
       )}
     </div>
   )
-          } 
+} 
