@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils"
 import { BRAND, WA, STRIP_ITEMS } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
 
-// ─── Stats Bar ────────────────────────────────────────────────────────────────
 export function StripSection() {
   return (
     <section aria-label="Why choose us" className="bg-background py-12 px-4 md:px-8 transition-colors duration-300">
@@ -30,17 +29,16 @@ function getReadableTextColor(hex: string): string {
   const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4))
   const luminance = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
   const contrastWhite = 1.05 / (luminance + 0.05)
-  const contrastDark  = (luminance + 0.05) / 0.062
+  const contrastDark = (luminance + 0.05) / 0.062
   return contrastWhite >= contrastDark ? "#ffffff" : "#18181b"
 }
 
-// Raw neutral icon at rest (no colored chip behind it), blue only on
-// hover — matches StatsBar exactly, and only blue, no other accent.
+// Neutral icon at rest, blue fill on hover
 function StripCard({ item }: { item: any }) {
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [hovered, setHovered] = useState(false)
-  useEffect(() => { setMounted(true) }, [])
+  useEffect(() => setMounted(true), [])
   const isDark = mounted && resolvedTheme === "dark"
 
   const color = isDark ? BRAND.lightBlue : BRAND.blue
@@ -68,26 +66,17 @@ function StripCard({ item }: { item: any }) {
       />
 
       <div className="relative z-10">
-        <div
-          className="mb-5 transition-colors duration-300"
-          style={{ color: hovered ? hoverTextColor : neutralColor }}
-        >
-          {item.iconName === "Rocket"          && <Rocket          weight="fill" className="w-6 h-6" aria-hidden="true" />}
-          {item.iconName === "CurrencyDollar"  && <CurrencyDollar  weight="fill" className="w-6 h-6" aria-hidden="true" />}
-          {item.iconName === "HandHeart"       && <HandHeart       weight="fill" className="w-6 h-6" aria-hidden="true" />}
-          {item.iconName === "MapPin"          && <MapPin          weight="fill" className="w-6 h-6" aria-hidden="true" />}
+        <div className="mb-5 transition-colors duration-300" style={{ color: hovered ? hoverTextColor : neutralColor }}>
+          {item.iconName === "Rocket" && <Rocket weight="fill" className="w-6 h-6" aria-hidden="true" />}
+          {item.iconName === "CurrencyDollar" && <CurrencyDollar weight="fill" className="w-6 h-6" aria-hidden="true" />}
+          {item.iconName === "HandHeart" && <HandHeart weight="fill" className="w-6 h-6" aria-hidden="true" />}
+          {item.iconName === "MapPin" && <MapPin weight="fill" className="w-6 h-6" aria-hidden="true" />}
         </div>
         <div>
-          <h3
-            className="font-sans font-semibold text-sm mb-1 transition-colors duration-300"
-            style={{ color: hovered ? hoverTextColor : undefined }}
-          >
+          <h3 className="font-sans font-semibold text-base mb-1 transition-colors duration-300" style={{ color: hovered ? hoverTextColor : undefined }}>
             <span className={hovered ? "" : "text-zinc-800 dark:text-zinc-200"}>{item.title}</span>
           </h3>
-          <p
-            className="text-sm leading-relaxed transition-colors duration-300"
-            style={{ color: hovered ? hoverDescColor : undefined }}
-          >
+          <p className="text-base leading-relaxed transition-colors duration-300" style={{ color: hovered ? hoverDescColor : undefined }}>
             <span className={hovered ? "" : "abh-body"}>{item.desc}</span>
           </p>
         </div>
@@ -96,7 +85,6 @@ function StripCard({ item }: { item: any }) {
   )
 }
 
-// ── CtaBar — unchanged, already blue-only, not part of this fix. ──
 export function CtaBar({
   title,
   description,
@@ -112,7 +100,7 @@ export function CtaBar({
 }) {
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
-  useEffect(() => { setMounted(true) }, [])
+  useEffect(() => setMounted(true), [])
   const isDark = mounted && resolvedTheme === "dark"
 
   const ctaBlue = isDark ? BRAND.lightBlue : BRAND.blue
@@ -126,14 +114,14 @@ export function CtaBar({
           <div className="absolute bottom-0 left-0 w-56 h-56 bg-brand-blue rounded-full blur-[100px] opacity-10 -ml-28 -mb-28" aria-hidden="true" />
 
           <span
-            className="text-[0.7rem] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-6 inline-block relative z-10"
+            className="text-[0.84rem] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-6 inline-block relative z-10"
             style={{ backgroundColor: ctaBlue, color: ctaTextOnBlue }}
           >
             Get In Touch
           </span>
 
-          <h2 className="abh-section-heading text-2xl mb-4 relative z-10">{title}</h2>
-          <p className="abh-body text-lg max-w-[500px] mx-auto mb-10 relative z-10">{description}</p>
+          <h2 className="abh-section-heading text-3xl mb-4 relative z-10">{title}</h2>
+          <p className="abh-body text-xl max-w-[500px] mx-auto mb-10 relative z-10">{description}</p>
           <div className="flex justify-center relative z-10">
             <a
               href={buttonHref || WA.general}
@@ -151,4 +139,4 @@ export function CtaBar({
       </ScrollBounce>
     </section>
   )
-  } 
+} 
