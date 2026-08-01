@@ -16,7 +16,7 @@ export function ImagePlaceholder({ accent, label }: { accent: string; label?: st
       <div className="w-14 h-14 rounded-2xl flex items-center justify-center abh-shadow-icon-inset" style={{ backgroundColor: `${accent}20`, border: `1.5px solid ${accent}30` }}>
         <ImageIcon size={26} weight="thin" style={{ color: accent }} />
       </div>
-      <p className="text-xs font-bold tracking-wider uppercase opacity-60" style={{ color: accent }}>{label ?? "No image"}</p>
+      <p className="text-[0.9rem] font-bold tracking-wider uppercase opacity-60" style={{ color: accent }}>{label ?? "No image"}</p>
     </div>
   )
 }
@@ -46,4 +46,4 @@ export function SafeImage({ src, alt, accent, fill, sizes, className, priority =
       />
     </>
   )
-}
+} 
