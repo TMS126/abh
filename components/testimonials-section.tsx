@@ -146,11 +146,11 @@ export function TestimonialsSection({
       <div className="max-w-[1300px] mx-auto">
         <ScrollBounce>
           <div className="text-center mb-12">
-            <p className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500 mb-2">
+            <p className="text-[0.78rem] font-black uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500 mb-2">
               Testimonials
             </p>
-            <h2 className="font-sans font-black text-2xl md:text-3xl text-zinc-900 dark:text-zinc-50 mb-3">{title}</h2>
-            <p className="text-sm md:text-base font-medium text-zinc-500 dark:text-zinc-400 max-w-xl mx-auto">{subtitle}</p>
+            <h2 className="font-sans font-black text-[1.8rem] md:text-[2.25rem] text-zinc-900 dark:text-zinc-50 mb-3">{title}</h2>
+            <p className="text-[1.05rem] md:text-[1.2rem] font-medium text-zinc-500 dark:text-zinc-400 max-w-xl mx-auto">{subtitle}</p>
           </div>
         </ScrollBounce>
 
@@ -197,21 +197,21 @@ export function TestimonialsSection({
                   >
                     <Quotes size={22} weight="fill" style={{ color: accent }} className="mb-3 opacity-40 shrink-0" />
 
-                    <p className="text-sm sm:text-base font-medium text-zinc-700 dark:text-zinc-300 leading-relaxed mb-4 max-w-[46ch]">
+                    <p className="text-[1.05rem] sm:text-[1.2rem] font-medium text-zinc-700 dark:text-zinc-300 leading-relaxed mb-4 max-w-[46ch]">
                       {r.quote}
                     </p>
 
                     <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-black text-white mb-1.5 shrink-0"
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-[0.9rem] font-black text-white mb-1.5 shrink-0"
                       style={{ backgroundColor: solid }}
                     >
                       {r.initials}
                     </div>
 
-                    <p className="text-sm font-black text-zinc-800 dark:text-zinc-200">{r.name}</p>
+                    <p className="text-[1.05rem] font-black text-zinc-800 dark:text-zinc-200">{r.name}</p>
 
                     <span
-                      className="flex items-center gap-1 text-[0.6rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mt-1.5"
+                      className="flex items-center gap-1 text-[0.72rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mt-1.5"
                       style={{ backgroundColor: `${accent}15`, color: accent }}
                     >
                       <HubIcon id={r.hubId} size={10} />
@@ -275,7 +275,7 @@ export function TestimonialsSection({
         <div className="flex justify-center mt-8">
           <a
             href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}`}
-            className="inline-flex items-center gap-2 text-xs font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
+            className="inline-flex items-center gap-2 text-[0.9rem] font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
           >
             <WhatsappLogo size={16} weight="fill" style={{ color: "#25D366" }} />
             Been helped by us? Send us your story/feedback on WhatsApp
@@ -284,4 +284,4 @@ export function TestimonialsSection({
       </div>
     </section>
   )
-                  } 
+} 
