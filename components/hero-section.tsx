@@ -9,15 +9,15 @@ import { ScrollBounce } from "@/components/scroll-bounce"
 import { HUBS_DATA } from "@/lib/hero-data"
 import { ClassicTagline } from "@/components/classic-tagline"
 
-// ─── Contrast helper for the arrow icon against its own circle bg ─────────────
+// Contrast helper for the arrow icon against its own circle bg
 function hexToRgbLocal(hex: string) {
   const clean = hex.replace("#", "")
-  const full = clean.length === 3 ? clean.split("").map(c => c + c).join("") : clean
+  const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean
   const bigint = parseInt(full, 16)
   return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 }
 }
 function relativeLuminanceLocal({ r, g, b }: { r: number; g: number; b: number }) {
-  const [rs, gs, bs] = [r, g, b].map(c => {
+  const [rs, gs, bs] = [r, g, b].map((c) => {
     const s = c / 255
     return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
   })
@@ -26,31 +26,25 @@ function relativeLuminanceLocal({ r, g, b }: { r: number; g: number; b: number }
 function getArrowIconColor(bgHex: string) {
   const lum = relativeLuminanceLocal(hexToRgbLocal(bgHex))
   const contrastWhite = 1.05 / (lum + 0.05)
-  const contrastDark  = (lum + 0.05) / 0.062
+  const contrastDark = (lum + 0.05) / 0.062
   return contrastWhite >= contrastDark ? "#ffffff" : "#14202b"
 }
 
-// ─── Hub photo collage data ────────────────────────────────────────────────
+// Hub photo collage data
 const HUB_IMAGES: Record<string, string> = {
-  print:    "/1_PRINT_HUB_white.webp",
-  doc:      "/2_DOCUMENT_HUB_white.webp",
-  design:   "/3_DESIGN_HUB_white.webp",
+  print: "/1_PRINT_HUB_white.webp",
+  doc: "/2_DOCUMENT_HUB_white.webp",
+  design: "/3_DESIGN_HUB_white.webp",
   eservice: "/4_APPLICATIONS_HUB_white.webp",
-  tech:     "/5_TECH_HUB_white.webp",
+  tech: "/5_TECH_HUB_white.webp",
 }
 
-// Five slots, respaced into a loose diamond/cross so every tile's
-// top-right corner (where its name pill sits) stays clear of the tile
-// stacked on top of it. Previous layout crammed two slots into the same
-// bottom-center zone (bottom:14%/left:6% and bottom:0%/left:36%), so one
-// tile's pill ended up directly underneath the other — not actually
-// missing, just fully covered. Container height bumped too so nothing
-// clips at the bottom edge on mobile.
+// Five slots in a loose diamond so pill corners never overlap
 const COLLAGE_SLOTS: { top?: string; bottom?: string; left?: string; right?: string; z: number; baseWidth: number }[] = [
-  { top: "0%",   left: "2%",  z: 10, baseWidth: 40 },
-  { top: "2%",   right: "0%", z: 20, baseWidth: 38 },
-  { top: "36%",  left: "16%", z: 30, baseWidth: 38 },
-  { top: "32%",  right: "12%", z: 40, baseWidth: 40 },
+  { top: "0%", left: "2%", z: 10, baseWidth: 40 },
+  { top: "2%", right: "0%", z: 20, baseWidth: 38 },
+  { top: "36%", left: "16%", z: 30, baseWidth: 38 },
+  { top: "32%", right: "12%", z: 40, baseWidth: 40 },
   { bottom: "0%", left: "28%", z: 50, baseWidth: 38 },
 ]
 
@@ -77,7 +71,6 @@ function buildArrangement() {
   }))
 }
 
-// ─── Hero Section ─────────────────────────────────────────────────────────────
 export function HeroSection() {
   const router = useRouter()
   const { resolvedTheme } = useTheme()
@@ -97,11 +90,11 @@ export function HeroSection() {
 
   const isDark = mounted && resolvedTheme === "dark"
 
-  const STROKE_COLOR   = BRAND.blue
+  const STROKE_COLOR = BRAND.blue
   const CTA_FILL_COLOR = BRAND.blue
-  const REST_COLOR     = isDark ? BRAND.lightBlue : BRAND.blue
+  const REST_COLOR = isDark ? BRAND.lightBlue : BRAND.blue
 
-  const activeCircleColor    = CTA_FILL_COLOR
+  const activeCircleColor = CTA_FILL_COLOR
   const activeArrowIconColor = getArrowIconColor(activeCircleColor)
 
   const handleNavigate = (path: string) => router.push(path)
@@ -123,16 +116,15 @@ export function HeroSection() {
       </div>
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center relative z-10 w-full mb-6">
-
         <div className="w-full max-w-[1100px] mx-auto grid md:grid-cols-2 gap-10 md:gap-16 items-center mb-10 md:mb-14">
 
           {/* Left column — text + CTA */}
           <div className="text-center md:text-left">
-            <h1 className="font-sans font-black text-4xl sm:text-5xl md:text-6xl tracking-tight text-zinc-900 dark:text-zinc-50 leading-[1.05] mb-4 text-balance transition-colors duration-300">
+            <h1 className="font-sans font-black text-5xl sm:text-6xl md:text-7xl tracking-tight text-zinc-900 dark:text-zinc-50 leading-[1.05] mb-4 text-balance transition-colors duration-300">
               Printing, Design, Documents &amp; Tech — All in One Place
             </h1>
 
-            <p className="text-base md:text-lg font-medium text-zinc-600 dark:text-zinc-400 max-w-[480px] md:max-w-none mx-auto md:mx-0 leading-relaxed mb-6">
+            <p className="text-lg md:text-xl font-medium text-zinc-600 dark:text-zinc-400 max-w-[480px] md:max-w-none mx-auto md:mx-0 leading-relaxed mb-6">
               {BIZ.tagline}
             </p>
 
@@ -146,8 +138,8 @@ export function HeroSection() {
                 onClick={handleCtaClick}
                 style={{ borderColor: STROKE_COLOR }}
                 className="group relative z-30 flex items-center w-[300px] sm:w-[320px] mx-auto md:mx-0 px-5 sm:px-7 py-5 rounded-full font-sans font-black overflow-hidden border-2 transition-all duration-150 active:duration-75 touch-manipulation hover:-translate-y-1 active:translate-y-0 active:scale-[0.94] shadow-[0_4px_14px_rgba(0,0,0,0.12)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.6)] hover:shadow-[0_10px_28px_rgba(0,0,0,0.18)] dark:hover:shadow-[0_12px_36px_rgba(0,0,0,0.7)] active:shadow-[0_2px_8px_rgba(0,0,0,0.1)] dark:active:shadow-[0_2px_10px_rgba(0,0,0,0.5)]"
-                >
-               <span
+              >
+                <span
                   aria-hidden="true"
                   className="absolute inset-0 origin-bottom scale-y-0 transition-transform duration-150 ease-out group-hover:scale-y-100 group-active:scale-y-100"
                   style={{ backgroundColor: CTA_FILL_COLOR }}
@@ -159,10 +151,7 @@ export function HeroSection() {
                   className="relative z-10 flex-1 flex items-center justify-center whitespace-nowrap transition-colors duration-150"
                   style={{ color: REST_COLOR }}
                 >
-                  {/* Font bump lives ONLY here — the button's own box,
-                      padding, and width above are untouched, so the pill
-                      stays the same size while just the label reads bigger. */}
-                  <span className="group-hover:text-white group-active:text-white transition-colors duration-150 text-lg sm:text-xl">
+                  <span className="group-hover:text-white group-active:text-white transition-colors duration-150 text-xl sm:text-2xl">
                     Explore Hubs
                   </span>
                 </span>
@@ -182,9 +171,7 @@ export function HeroSection() {
             </ScrollBounce>
           </div>
 
-          {/* Right column — hub photo collage. Height bumped a bit on every
-              breakpoint to give the new, more spread-out slot layout room
-              to breathe without any tile crowding the container edge. */}
+          {/* Right column — hub photo collage */}
           <ScrollBounce delay={0.1} className="w-full">
             <div className="relative w-full h-[420px] sm:h-[480px] md:h-[560px]">
               {arrangement.map(({ hub, slot, width }) => {
@@ -203,14 +190,8 @@ export function HeroSection() {
                       ["--hub-accent" as any]: hubAccent,
                     }}
                   >
-                    <img
-                      src={HUB_IMAGES[hub.id]}
-                      alt={`${hub.name} example`}
-                      className="w-full h-full object-cover"
-                    />
-                    <span
-                      className="absolute -top-2 -right-2 px-3 py-1 rounded-full text-[0.6rem] font-black uppercase tracking-widest bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 shadow-md transition-colors duration-200 group-hover/tile:bg-[var(--hub-accent)] group-hover/tile:text-white group-hover/tile:border-transparent"
-                    >
+                    <img src={HUB_IMAGES[hub.id]} alt={`${hub.name} example`} className="w-full h-full object-cover" />
+                    <span className="absolute -top-2 -right-2 px-3 py-1 rounded-full text-[0.72rem] font-black uppercase tracking-widest bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 shadow-md transition-colors duration-200 group-hover/tile:bg-[var(--hub-accent)] group-hover/tile:text-white group-hover/tile:border-transparent">
                       {pillLabel(hub.name)}
                     </span>
                   </div>
@@ -218,19 +199,18 @@ export function HeroSection() {
               })}
             </div>
           </ScrollBounce>
-
         </div>
 
-        {/* ── Marquee — width bumped from max-w-[840px] to max-w-[1240px]
-            to match the section's own outer content width. Adjust this
-            number if testimonials actually uses a different container
-            width — I don't have that file to confirm the exact value. ── */}
+        {/* Marquee */}
         <div
           role="marquee"
           aria-label="Our services"
           onMouseEnter={() => setMarqueePaused(true)}
           onMouseLeave={() => setMarqueePaused(false)}
-          onTouchStart={(e) => { e.stopPropagation(); setMarqueePaused(p => !p) }}
+          onTouchStart={(e) => {
+            e.stopPropagation()
+            setMarqueePaused((p) => !p)
+          }}
           className="relative w-full max-w-[1240px] py-4 overflow-hidden select-none group/marquee rounded-[14px] bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800"
         >
           <div
@@ -241,18 +221,19 @@ export function HeroSection() {
               <div key={copy} className="flex items-center shrink-0">
                 {MARQUEE_ITEMS.map((item, idx) => (
                   <React.Fragment key={idx}>
-                    <span className="inline-flex items-center px-5 font-semibold text-sm text-zinc-600 dark:text-zinc-400 transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100">
+                    <span className="inline-flex items-center px-5 font-semibold text-base text-zinc-600 dark:text-zinc-400 transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100">
                       {item}
                     </span>
-                    <span className="font-black text-base leading-none shrink-0 text-zinc-300 dark:text-zinc-600" aria-hidden="true">•</span>
+                    <span className="font-black text-lg leading-none shrink-0 text-zinc-300 dark:text-zinc-600" aria-hidden="true">
+                      •
+                    </span>
                   </React.Fragment>
                 ))}
               </div>
             ))}
           </div>
         </div>
-
       </div>
     </section>
   )
-}
+} 
