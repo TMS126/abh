@@ -23,7 +23,7 @@ export function HubBrowser({
 }: HubBrowserProps) {
   return (
     <div className="p-4 space-y-2">
-      <span className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 px-1">Add a Service</span>
+      <span className="text-[0.78rem] font-black uppercase tracking-widest text-zinc-400 px-1">Add a Service</span>
       {HUB_ORDER.map(hubId => {
         const hub = HUBS[hubId]
         const accent = getAccent(hubId)
@@ -46,13 +46,13 @@ export function HubBrowser({
               </div>
               <span className="flex-1 min-w-0">
                 <span className="flex items-center gap-1.5">
-                  <span className="text-xs font-black truncate" style={{ color: accent }}>{hub.title}</span>
+                  <span className="text-[0.9rem] font-black truncate" style={{ color: accent }}>{hub.title}</span>
                   {hubBulk && (
                     <SealPercent size={12} weight="fill" style={{ color: accent }} className="shrink-0" aria-label="Bulk pricing available" />
                   )}
                 </span>
                 {subtotal && (
-                  <span className="block text-[0.62rem] font-bold mt-0.5" style={{ color: accent }}>
+                  <span className="block text-[0.74rem] font-bold mt-0.5" style={{ color: accent }}>
                     {subtotal.count} item{subtotal.count === 1 ? "" : "s"} · R{subtotal.total}
                   </span>
                 )}
@@ -87,7 +87,7 @@ export function HubBrowser({
                         >
                           <span className="flex items-center gap-1.5">
                             <span
-                              className="text-[0.65rem] font-black uppercase tracking-[0.15em] px-2.5 py-1 rounded-full transition-colors duration-200"
+                              className="text-[0.78rem] font-black uppercase tracking-[0.15em] px-2.5 py-1 rounded-full transition-colors duration-200"
                               style={
                                 isSectionOpen
                                   ? { backgroundColor: solidAccent, color: "#fff" }
@@ -125,10 +125,10 @@ export function HubBrowser({
                                     style={{ backgroundColor: `${accent}08`, borderLeftColor: `${accent}70` }}
                                   >
                                     <div className="min-w-0">
-                                      <p className="text-xs font-bold text-zinc-700 dark:text-zinc-300 truncate">
+                                      <p className="text-[0.9rem] font-bold text-zinc-700 dark:text-zinc-300 truncate">
                                         {getDisplayName(section.title, item.name)}
                                       </p>
-                                      <p className="text-[0.65rem] font-medium text-zinc-400">
+                                      <p className="text-[0.78rem] font-medium text-zinc-400">
                                         {item.price}
                                         {hasBulk && <span className="font-bold ml-1" style={{ color: accent }}>· bulk</span>}
                                       </p>
@@ -158,4 +158,4 @@ export function HubBrowser({
       })}
     </div>
   )
-}
+} 
