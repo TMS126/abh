@@ -22,7 +22,7 @@ export function FaqAccordion({
         aria-expanded={isOpen}
         aria-controls="faq-accordion-panel"
         className={cn(
-          "inline-flex items-center gap-2 text-[0.75rem] font-black text-zinc-700 dark:text-zinc-200 hover:text-brand-blue transition-colors px-6 py-3 rounded-full border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900",
+          "inline-flex items-center gap-2 text-[0.9rem] font-black text-zinc-700 dark:text-zinc-200 hover:text-brand-blue transition-colors px-6 py-3 rounded-full border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900",
           "shadow-[0_8px_20px_rgba(0,0,0,0.10),0_2px_6px_rgba(0,0,0,0.06)]",
           "dark:shadow-[0_8px_20px_rgba(0,0,0,0.45),0_2px_6px_rgba(0,0,0,0.3)]"
         )}
@@ -60,7 +60,7 @@ export function FaqAccordion({
                   aria-controls={`faq-inner-${i}`}
                   className="flex items-center justify-between w-full text-left gap-4 px-5 py-4"
                 >
-                  <h4 className="text-base font-black text-zinc-800 dark:text-zinc-100 leading-snug">
+                  <h4 className="text-[1.2rem] font-black text-zinc-800 dark:text-zinc-100 leading-snug">
                     {faq.question}
                   </h4>
                   <CaretDown
@@ -81,7 +81,7 @@ export function FaqAccordion({
                   )}
                 >
                   <div className="overflow-hidden">
-                    <div className="px-5 pb-5 pt-1 text-[0.92rem] text-zinc-500 dark:text-zinc-400 leading-relaxed whitespace-pre-wrap">
+                    <div className="px-5 pb-5 pt-1 text-[1.1rem] text-zinc-500 dark:text-zinc-400 leading-relaxed whitespace-pre-wrap">
                       {faq.answer}
                     </div>
                   </div>
