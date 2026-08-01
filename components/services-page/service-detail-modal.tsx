@@ -1,4 +1,3 @@
-// components/services/service-detail-modal.tsx
 "use client"
 
 import { useState, useEffect, useRef, type ChangeEvent } from "react"
@@ -22,52 +21,70 @@ type Tab = "bring" | "about"
 export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onClose: () => void }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
-  const [tab,           setTab]           = useState<Tab>("bring")
-  const [file,          setFile]          = useState<File | null>(null)
-  const [uploadPhase,   setUploadPhase]   = useState<"idle" | "uploading" | "done" | "error">("idle")
+  const [tab, setTab] = useState<Tab>("bring")
+  const [file, setFile] = useState<File | null>(null)
+  const [uploadPhase, setUploadPhase] = useState<"idle" | "uploading" | "done" | "error">("idle")
   const [uploadProgress, setUploadProgress] = useState(0)
-  const [fileUrl,       setFileUrl]       = useState<string | null>(null)
-  const [uploadErr,     setUploadErr]     = useState<string | null>(null)
-  const [previewUrl,    setPreviewUrl]    = useState<string | null>(null)
-  const [shareCopied,   setShareCopied]   = useState(false)
-  const [addedToQuote,  setAddedToQuote]  = useState(false)
-  const [quoteQty,      setQuoteQty]      = useState(0)
-  const fileRef      = useRef<HTMLInputElement>(null)
+  const [fileUrl, setFileUrl] = useState<string | null>(null)
+  const [uploadErr, setUploadErr] = useState<string | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [shareCopied, setShareCopied] = useState(false)
+  const [addedToQuote, setAddedToQuote] = useState(false)
+  const [quoteQty, setQuoteQty] = useState(0)
+  const fileRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    setTab("bring"); setAddedToQuote(false)
-    setFile(null); setFileUrl(null)
-    setUploadPhase("idle"); setUploadErr(null); setUploadProgress(0)
-    setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null })
+    setTab("bring")
+    setAddedToQuote(false)
+    setFile(null)
+    setFileUrl(null)
+    setUploadPhase("idle")
+    setUploadErr(null)
+    setUploadProgress(0)
+    setPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return null
+    })
     if (fileRef.current) fileRef.current.value = ""
     if (svc) setQuoteQty(getCartQtyForItem(`${svc.hubId}-${svc.sectionTitle}-${svc.name}`))
   }, [svc?.name])
 
   useEffect(() => {
-    return () => { if (previewUrl) URL.revokeObjectURL(previewUrl) }
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+    }
   }, [previewUrl])
 
   useFocusTrap(!!svc, containerRef)
 
   const doUpload = (f: File) => {
-    setUploadPhase("uploading"); setUploadProgress(0)
+    setUploadPhase("uploading")
+    setUploadProgress(0)
     const fd = new FormData()
-    fd.append("file", f); fd.append("upload_preset", CLD_PRESET)
+    fd.append("file", f)
+    fd.append("upload_preset", CLD_PRESET)
     const xhr = new XMLHttpRequest()
     xhr.open("POST", getCldUrl(f))
-    xhr.upload.onprogress = (e) => { if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100)) }
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100))
+    }
     xhr.onload = () => {
       try {
         const data = JSON.parse(xhr.responseText)
         if (xhr.status < 200 || xhr.status >= 300) throw new Error(data?.error?.message || `HTTP ${xhr.status}`)
         if (!data.secure_url) throw new Error("No URL returned")
-        setFileUrl(data.secure_url); setUploadPhase("done")
+        setFileUrl(data.secure_url)
+        setUploadPhase("done")
       } catch (err) {
-        setUploadErr(`Upload failed: ${err instanceof Error ? err.message : "Unknown error"}`); setUploadPhase("error")
+        setUploadErr(`Upload failed: ${err instanceof Error ? err.message : "Unknown error"}`)
+        setUploadPhase("error")
       }
     }
-    xhr.onerror = () => { setUploadErr("Upload failed: network error"); setUploadPhase("error") }
+    xhr.onerror = () => {
+      setUploadErr("Upload failed: network error")
+      setUploadPhase("error")
+    }
     xhr.send(fd)
   }
 
@@ -75,61 +92,80 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
     const f = e.target.files?.[0]
     if (!f) return
     if (BLOCKED_MIME_TYPES.has(f.type) || BLOCKED_EXTENSIONS.test(f.name)) {
-      setUploadErr("That file type isn't allowed. Please send a document, image, or PDF only."); setUploadPhase("error"); return
+      setUploadErr("That file type isn't allowed. Please send a document, image, or PDF only.")
+      setUploadPhase("error")
+      return
     }
     if (f.size > CLD_MAX_MB * 1024 * 1024) {
-      setUploadErr(`File too large — please keep it under ${CLD_MAX_MB}MB.`); setUploadPhase("error"); return
+      setUploadErr(`File too large — please keep it under ${CLD_MAX_MB}MB.`)
+      setUploadPhase("error")
+      return
     }
-    setFile(f); setUploadErr(null)
-    setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null })
+    setFile(f)
+    setUploadErr(null)
+    setPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return null
+    })
     if (f.type.startsWith("image/")) setPreviewUrl(URL.createObjectURL(f))
     doUpload(f)
   }
 
   const clearFile = () => {
-    setFile(null); setFileUrl(null); setUploadPhase("idle"); setUploadErr(null); setUploadProgress(0)
-    setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null })
+    setFile(null)
+    setFileUrl(null)
+    setUploadPhase("idle")
+    setUploadErr(null)
+    setUploadProgress(0)
+    setPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return null
+    })
     if (fileRef.current) fileRef.current.value = ""
   }
 
   if (!svc) return null
 
-  const colors      = HUB_COLORS[svc.hubId as HubKey]
-  const accent      = isDark ? colors.accentDark : colors.accentLight
-  const hubTitle    = HUBS[svc.hubId]?.title || svc.sectionTitle
+  const colors = HUB_COLORS[svc.hubId as HubKey]
+  const accent = isDark ? colors.accentDark : colors.accentLight
+  const hubTitle = HUBS[svc.hubId]?.title || svc.sectionTitle
   const naturalLabel = naturalServiceLabel(svc.name, svc.sectionTitle)
-  const acceptHint  = formatAcceptHint(HUB_ACCEPT[svc.hubId])
-  const itemId      = `${svc.hubId}-${svc.sectionTitle}-${svc.name}`
+  const acceptHint = formatAcceptHint(HUB_ACCEPT[svc.hubId])
+  const itemId = `${svc.hubId}-${svc.sectionTitle}-${svc.name}`
 
-  // ─── Bulk pricing preview — same tier logic the Quote Calculator uses,
-  // so the rate shown here can never drift out of sync with what actually
-  // happens once the item is in the cart. Uses whichever is larger of the
-  // real cart quantity or 1, so someone who hasn't added it yet still sees
-  // an accurate incentive (e.g. "10+ from R3 each") rather than nothing.
+  // Bulk pricing preview — same tier logic the quote calculator uses
   const { amount: baseUnitPrice, unit: priceUnit } = parsePrice(svc.price)
-  const effectiveQty   = Math.max(quoteQty, 1)
-  const effRate        = getEffectiveRate(itemId, svc.name, effectiveQty, baseUnitPrice)
+  const effectiveQty = Math.max(quoteQty, 1)
+  const effRate = getEffectiveRate(itemId, svc.name, effectiveQty, baseUnitPrice)
   const isBulkDiscount = effRate < baseUnitPrice
-  const bulkHint        = getBulkHint(itemId, svc.name, effectiveQty, effRate, baseUnitPrice)
+  const bulkHint = getBulkHint(itemId, svc.name, effectiveQty, effRate, baseUnitPrice)
 
   const handleShare = async () => {
     const shareText = `${naturalLabel} — ${svc.price} at ${BIZ.name}`
-    const shareUrl  = typeof window !== "undefined" ? window.location.href : ""
+    const shareUrl = typeof window !== "undefined" ? window.location.href : ""
     if (typeof navigator !== "undefined" && navigator.share) {
-      try { await navigator.share({ title: `${naturalLabel} — ${BIZ.name}`, text: shareText, url: shareUrl }) } catch { /* cancelled */ }
+      try {
+        await navigator.share({ title: `${naturalLabel} — ${BIZ.name}`, text: shareText, url: shareUrl })
+      } catch {
+        // user cancelled
+      }
       return
     }
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`)
-      setShareCopied(true); setTimeout(() => setShareCopied(false), 2000)
+      setShareCopied(true)
+      setTimeout(() => setShareCopied(false), 2000)
     }
   }
 
   const handleAddToQuote = () => {
-    window.dispatchEvent(new CustomEvent("abh:add-to-quote", { detail: { hubId: svc.hubId, sectionTitle: svc.sectionTitle, name: svc.name, price: svc.price } }))
+    window.dispatchEvent(
+      new CustomEvent("abh:add-to-quote", { detail: { hubId: svc.hubId, sectionTitle: svc.sectionTitle, name: svc.name, price: svc.price } })
+    )
     trackEvent("add_to_quote", { hub_id: svc.hubId, service_name: svc.name, section_title: svc.sectionTitle, price: svc.price })
-    setAddedToQuote(true); setTimeout(() => setAddedToQuote(false), 2200)
-    setQuoteQty(prev => prev + 1)
+    setAddedToQuote(true)
+    setTimeout(() => setAddedToQuote(false), 2200)
+    setQuoteQty((prev) => prev + 1)
   }
 
   const handleStepQty = (delta: number) => {
@@ -142,9 +178,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
     ? `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). Price shown: ${svc.price}. My file: ${fileUrl}`
     : `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). Price shown: ${svc.price}. Can you assist?`
 
-  const requirements = svc.requirements?.length
-    ? svc.requirements
-    : ["Just bring your file, document or USB — we'll take care of the rest."]
+  const requirements = svc.requirements?.length ? svc.requirements : ["Just bring your file, document or USB — we'll take care of the rest."]
 
   const desc = svc.desc?.trim() || null
   const inQuote = quoteQty > 0
@@ -155,7 +189,9 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
       <motion.div
         className="absolute inset-0 bg-black/55"
         onClick={onClose}
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
       />
       <motion.div
@@ -178,35 +214,33 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
             <div className="flex-1 min-w-0 text-center">
               <div className="flex items-center justify-center gap-1.5 mb-2">
                 <HubIcon id={svc.hubId} size={12} color={accent} />
-                <span className="text-[0.62rem] font-black uppercase tracking-widest" style={{ color: accent }}>
-                  {hubTitle}
-                </span>
+                <span className="text-[0.74rem] font-black uppercase tracking-widest" style={{ color: accent }}>{hubTitle}</span>
               </div>
 
-              <span
-                className="text-[0.62rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-2.5 inline-block"
-                style={{ backgroundColor: `${accent}15`, color: accent }}
-              >
+              <span className="text-[0.74rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-2.5 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>
                 {cleanText(svc.sectionTitle)}
               </span>
-              <h3 className="abh-card-heading text-[1.1rem] leading-tight">{svc.name}</h3>
+              <h3 className="abh-card-heading text-[1.32rem] leading-tight">{svc.name}</h3>
             </div>
 
             <div className="flex items-center justify-end gap-2 shrink-0 relative w-[72px]">
               <button
-                type="button" onClick={handleShare} aria-label="Share this service"
+                type="button"
+                onClick={handleShare}
+                aria-label="Share this service"
                 className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
                 style={{ backgroundColor: `${accent}15`, color: accent }}
               >
                 <ShareNetwork size={16} weight="bold" aria-hidden="true" />
               </button>
               {shareCopied && (
-                <span className="absolute -bottom-8 right-0 whitespace-nowrap text-[0.62rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full shadow-lg animate-in fade-in zoom-in-95 duration-150">
+                <span className="absolute -bottom-8 right-0 whitespace-nowrap text-[0.74rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full shadow-lg animate-in fade-in zoom-in-95 duration-150">
                   Copied!
                 </span>
               )}
               <button
-                onClick={onClose} aria-label="Close"
+                onClick={onClose}
+                aria-label="Close"
                 className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
                 style={{ backgroundColor: `${accent}15`, color: accent }}
               >
@@ -218,9 +252,9 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           <div className="h-px bg-zinc-100 dark:bg-zinc-800 mb-4" />
 
           <div className="flex flex-col items-center gap-1.5">
-            <span className="text-4xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
+            <span className="text-5xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
             {svc.turnaround && (
-              <span className="flex items-center gap-1 text-[0.68rem] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: `${accent}12`, color: accent }}>
+              <span className="flex items-center gap-1 text-[0.82rem] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: `${accent}12`, color: accent }}>
                 <Clock size={12} weight="bold" aria-hidden="true" />
                 {svc.turnaround}
               </span>
@@ -238,10 +272,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                   role="tab"
                   aria-selected={isActive}
                   onClick={() => setTab(t)}
-                  className={cn(
-                    "flex-1 py-2.5 rounded-[14px] text-[0.72rem] font-black uppercase tracking-wider transition-all duration-200",
-                    !isActive && "text-zinc-500 dark:text-zinc-400"
-                  )}
+                  className={cn("flex-1 py-2.5 rounded-[14px] text-[0.86rem] font-black uppercase tracking-wider transition-all duration-200", !isActive && "text-zinc-500 dark:text-zinc-400")}
                   style={isActive ? { backgroundColor: accent, color: isDark ? "#0a0a0a" : "#ffffff" } : undefined}
                 >
                   {t === "bring" ? "Needs" : "Description"}
@@ -257,10 +288,13 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
               <ol className="space-y-3 inline-flex flex-col items-start">
                 {requirements.map((req, idx) => (
                   <li key={idx} className="flex items-start gap-3 text-left">
-                    <span className={cn("shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[0.7rem] font-black mt-0.5", isDark ? "text-zinc-900" : "text-white")} style={{ backgroundColor: accent }}>
+                    <span
+                      className={cn("shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[0.82rem] font-black mt-0.5", isDark ? "text-zinc-900" : "text-white")}
+                      style={{ backgroundColor: accent }}
+                    >
                       {idx + 1}
                     </span>
-                    <span className="abh-body text-[0.84rem] pt-0.5">{req}</span>
+                    <span className="abh-body text-base pt-0.5">{req}</span>
                   </li>
                 ))}
               </ol>
@@ -269,10 +303,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           )}
           {tab === "about" && (
             <div className="animate-in fade-in duration-150">
-              {desc
-                ? <p className="abh-body text-[0.84rem]">{desc}</p>
-                : <p className="abh-muted text-[0.84rem]">No description available for this service yet.</p>
-              }
+              {desc ? <p className="abh-body text-base">{desc}</p> : <p className="abh-muted text-base">No description available for this service yet.</p>}
               <p className="abh-muted mt-5">
                 Have questions? Switch to the <span className="font-black" style={{ color: accent }}>Needs</span> tab or chat with us directly.
               </p>
@@ -287,7 +318,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-[14px] font-bold text-[0.7rem] border-2 transition-all active:scale-95"
+              className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-[14px] font-bold text-[0.84rem] border-2 transition-all active:scale-95"
               style={
                 uploadPhase === "done"
                   ? { borderColor: "#22c55e", backgroundColor: "#22c55e10", color: "#16a34a" }
@@ -302,17 +333,14 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
               <button
                 type="button"
                 onClick={handleAddToQuote}
-                className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-[14px] font-bold text-[0.7rem] border-2 transition-all active:scale-95"
+                className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-[14px] font-bold text-[0.84rem] border-2 transition-all active:scale-95"
                 style={{ borderColor: `${accent}35`, color: accent, backgroundColor: "transparent" }}
               >
                 <ShoppingCartSimple size={18} weight="bold" aria-hidden="true" />
                 Add to Quote
               </button>
             ) : (
-              <div
-                className="flex items-center justify-between gap-2 rounded-[14px] border-2 py-2 px-2.5"
-                style={{ borderColor: "#22c55e40", backgroundColor: "#22c55e0d" }}
-              >
+              <div className="flex items-center justify-between gap-2 rounded-[14px] border-2 py-2 px-2.5" style={{ borderColor: "#22c55e40", backgroundColor: "#22c55e0d" }}>
                 <button
                   type="button"
                   onClick={() => handleStepQty(-1)}
@@ -322,11 +350,9 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                   <Minus size={14} weight="bold" style={{ color: neutralIconColor }} className="transition-colors duration-150 group-hover:!text-white" />
                 </button>
 
-                <span className="flex items-center gap-1.5 text-[0.78rem] font-black text-green-600 dark:text-green-400">
+                <span className="flex items-center gap-1.5 text-[0.94rem] font-black text-green-600 dark:text-green-400">
                   Added
-                  <span className="text-[0.65rem] font-black px-2 py-0.5 rounded-full bg-green-500/15">
-                    {quoteQty}
-                  </span>
+                  <span className="text-[0.78rem] font-black px-2 py-0.5 rounded-full bg-green-500/15">{quoteQty}</span>
                 </span>
 
                 <button
@@ -341,31 +367,16 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
             )}
           </div>
 
-          {/* Bulk discount panel — sits directly below the Add-to-Quote /
-              stepper row, per request. Shown whenever this item has ANY
-              bulk tier configured (bulkHint isn't null), even before it's
-              in the cart, so someone considering the service can already
-              see the incentive to order more. Once quantity actually
-              crosses a tier, the discounted rate is shown alongside the
-              original price (struck through) so the saving is unmistakable
-              at a glance rather than requiring mental math. */}
           {bulkHint && (
-            <div
-              className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-[12px] border animate-in fade-in duration-200"
-              style={{ borderColor: `${accent}30`, backgroundColor: `${accent}0a` }}
-            >
+            <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-[12px] border animate-in fade-in duration-200" style={{ borderColor: `${accent}30`, backgroundColor: `${accent}0a` }}>
               <SealPercent size={18} weight="fill" style={{ color: accent }} className="shrink-0" aria-hidden="true" />
               <div className="flex-1 min-w-0 text-left">
-                <p className="text-[0.72rem] font-bold text-zinc-700 dark:text-zinc-300 leading-snug">
-                  {bulkHint}
-                </p>
+                <p className="text-[0.86rem] font-bold text-zinc-700 dark:text-zinc-300 leading-snug">{bulkHint}</p>
                 {isBulkDiscount && (
-                  <p className="text-[0.68rem] font-medium text-zinc-400 dark:text-zinc-500 mt-0.5">
+                  <p className="text-[0.82rem] font-medium text-zinc-400 dark:text-zinc-500 mt-0.5">
                     <span className="line-through">R{baseUnitPrice}{priceUnit ? `/${priceUnit}` : ""}</span>
                     {" → "}
-                    <span className="font-black" style={{ color: accent }}>
-                      R{effRate}{priceUnit ? `/${priceUnit}` : ""}
-                    </span>
+                    <span className="font-black" style={{ color: accent }}>R{effRate}{priceUnit ? `/${priceUnit}` : ""}</span>
                     {" each"}
                   </p>
                 )}
@@ -376,13 +387,15 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           {uploadPhase === "idle" && (
             <div className="flex items-start gap-2 px-1">
               <ShieldCheck size={13} weight="fill" aria-hidden="true" className="text-[#6FBF1A] shrink-0 mt-0.5" />
-              <p className="abh-muted text-[0.65rem] leading-relaxed">Accepts: {acceptHint}. Your file goes directly to ApexbytesHub only — safe, private, used only for your order.</p>
+              <p className="abh-muted text-[0.78rem] leading-relaxed">
+                Accepts: {acceptHint}. Your file goes directly to ApexbytesHub only — safe, private, used only for your order.
+              </p>
             </div>
           )}
 
           {uploadPhase === "uploading" && (
             <div className="flex flex-col gap-2 w-full px-4 py-3 rounded-[14px] bg-zinc-50 dark:bg-zinc-900">
-              <div className="flex items-center justify-between text-sm font-bold text-zinc-500 dark:text-zinc-400">
+              <div className="flex items-center justify-between text-base font-bold text-zinc-500 dark:text-zinc-400">
                 <span className="truncate">Uploading {file?.name}…</span>
                 <span className="font-black tabular-nums shrink-0 ml-2 text-zinc-700 dark:text-zinc-200">{uploadProgress}%</span>
               </div>
@@ -393,27 +406,27 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                     background: `linear-gradient(90deg, ${BRAND.blue} 0%, ${BRAND.blue} 70%, ${BRAND.green} 70%, ${BRAND.green} 92%, ${BRAND.orange} 92%, ${BRAND.orange} 100%)`,
                   }}
                 />
-                <div
-                  className="absolute inset-y-0 right-0 bg-zinc-200 dark:bg-zinc-800 transition-[width] duration-150 ease-out"
-                  style={{ width: `${100 - uploadProgress}%` }}
-                />
+                <div className="absolute inset-y-0 right-0 bg-zinc-200 dark:bg-zinc-800 transition-[width] duration-150 ease-out" style={{ width: `${100 - uploadProgress}%` }} />
               </div>
             </div>
           )}
 
           {uploadPhase === "done" && file && (
-            <div className="flex items-center justify-between gap-2 w-full px-4 py-2.5 rounded-[14px] text-sm font-bold border" style={{ borderColor: `${accent}35`, backgroundColor: `${accent}08` }}>
+            <div className="flex items-center justify-between gap-2 w-full px-4 py-2.5 rounded-[14px] text-base font-bold border" style={{ borderColor: `${accent}35`, backgroundColor: `${accent}08` }}>
               <span className="flex items-center gap-2.5 min-w-0">
                 <span className="relative shrink-0">
-                  {previewUrl
-                    ? <img src={previewUrl} alt="" className="w-8 h-8 rounded-[8px] object-cover shrink-0 border border-zinc-200 dark:border-zinc-700" />
-                    : <div className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${accent}15`, color: accent }}><Paperclip size={14} weight="bold" aria-hidden="true" /></div>
-                  }
+                  {previewUrl ? (
+                    <img src={previewUrl} alt="" className="w-8 h-8 rounded-[8px] object-cover shrink-0 border border-zinc-200 dark:border-zinc-700" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${accent}15`, color: accent }}>
+                      <Paperclip size={14} weight="bold" aria-hidden="true" />
+                    </div>
+                  )}
                   <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-950" style={{ backgroundColor: "#22c55e" }}>
                     <CheckCircle size={9} weight="fill" color="#fff" aria-hidden="true" />
                   </span>
                 </span>
-                <span className="truncate text-zinc-700 dark:text-zinc-300 text-[0.78rem]">{file.name}</span>
+                <span className="truncate text-zinc-700 dark:text-zinc-300 text-[0.94rem]">{file.name}</span>
               </span>
               <button type="button" onClick={clearFile} aria-label="Remove file" className="shrink-0 opacity-60 hover:opacity-100 transition-opacity">
                 <X size={14} weight="bold" aria-hidden="true" />
@@ -423,11 +436,20 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
 
           {uploadPhase === "error" && (
             <div className="space-y-2">
-              <div className="flex items-start gap-2 w-full px-4 py-3 rounded-[14px] text-sm font-bold bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200/50 dark:border-red-800/30">
+              <div className="flex items-start gap-2 w-full px-4 py-3 rounded-[14px] text-base font-bold bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200/50 dark:border-red-800/30">
                 <WarningCircle size={17} weight="fill" aria-hidden="true" className="shrink-0 mt-0.5" />
                 <span className="leading-snug font-medium">{uploadErr}</span>
               </div>
-              <button type="button" onClick={() => { setUploadPhase("idle"); setUploadErr(null); fileRef.current?.click() }} className="text-xs font-black underline" style={{ color: accent }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setUploadPhase("idle")
+                  setUploadErr(null)
+                  fileRef.current?.click()
+                }}
+                className="text-sm font-black underline"
+                style={{ color: accent }}
+              >
                 Try a different file
               </button>
             </div>
@@ -440,7 +462,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackEvent("request_whatsapp", { hub_id: svc.hubId, service_name: svc.name, section_title: svc.sectionTitle, price: svc.price, had_file_attached: uploadPhase === "done" })}
-            className="flex items-center justify-center gap-2 w-full px-4 py-4 rounded-[14px] font-black text-sm text-white text-center transition-all active:scale-95 shadow-[0_4px_14px_rgba(37,211,102,0.3)] hover:-translate-y-0.5"
+            className="flex items-center justify-center gap-2 w-full px-4 py-4 rounded-[14px] font-black text-base text-white text-center transition-all active:scale-95 shadow-[0_4px_14px_rgba(37,211,102,0.3)] hover:-translate-y-0.5"
             style={{ backgroundColor: "#25D366" }}
           >
             Request {naturalLabel}
