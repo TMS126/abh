@@ -1,6 +1,3 @@
-// ─────────────────────────────────────────────────────────────────────────
-// HubSelect — custom dropdown for choosing a service hub on the form
-// ─────────────────────────────────────────────────────────────────────────
 "use client"
 
 import { useState, useEffect, useRef } from "react"
@@ -38,7 +35,7 @@ export function HubSelect({ value, onChange }: { value: string; onChange: (val: 
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-label="Select a service hub"
-        className="w-full px-4 py-3 border rounded-[14px] bg-white dark:bg-background text-[0.84rem] font-semibold transition-all flex items-center justify-between gap-3 border-zinc-100 dark:border-zinc-800"
+        className="w-full px-4 py-3 border rounded-[14px] bg-white dark:bg-background text-[1rem] font-semibold transition-all flex items-center justify-between gap-3 border-zinc-100 dark:border-zinc-800"
         style={{
           borderColor: value ? activeColor : (isOpen ? BRAND.blue : undefined),
           color:       value ? activeColor : (isDark ? "#9A9A9A" : "#777777"),
@@ -65,7 +62,7 @@ export function HubSelect({ value, onChange }: { value: string; onChange: (val: 
                 role="option"
                 aria-selected={value === opt}
                 onClick={() => { onChange(opt); setIsOpen(false) }}
-                className="w-full px-4 py-3 text-left text-[0.84rem] font-semibold flex items-center gap-3 text-zinc-800 dark:text-zinc-200 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                className="w-full px-4 py-3 text-left text-[1rem] font-semibold flex items-center gap-3 text-zinc-800 dark:text-zinc-200 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900"
                 onMouseEnter={(e) => { e.currentTarget.style.color = color }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = "inherit" }}
               >
@@ -78,4 +75,4 @@ export function HubSelect({ value, onChange }: { value: string; onChange: (val: 
       )}
     </div>
   )
-}
+} 
