@@ -46,4 +46,4 @@ export function SafeImage({ src, alt, accent, fill, sizes, className, priority =
       />
     </>
   )
-} 
+}
