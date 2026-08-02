@@ -73,9 +73,23 @@ function HubCollectionCard({
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}${pathname}?project=${project.id}` : `${pathname}?project=${project.id}`
 
   return (
-    <div className="rounded-[20px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
+    // ---- Outer wrapper: big card container removed. ----
+    // No background, border, shadow, or rounded card shape anymore —
+    // just left padding to make room for the accent line.
+    <div className="pl-4">
       {/* Big image — click opens the project, swipe changes project */}
-      <div className="relative aspect-[4/3] cursor-pointer group" onClick={handleImageClick} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <div className="relative aspect-[4/3] cursor-pointer group rounded-[14px] overflow-hidden" onClick={handleImageClick} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+        {/* ---- Accent line container ----
+             Thin vertical bar in the hub's accent color, sitting
+             right against the left edge of the image, spanning
+             exactly the image's height. This replaces the old
+             big rounded card container entirely. */}
+        <div
+          className="absolute -left-4 top-0 bottom-0 w-[3px] rounded-full z-20 pointer-events-none"
+          style={{ backgroundColor: accent }}
+          aria-hidden="true"
+        />
+
         <SafeImage src={images[bigIdx]} alt={project.title} accent={accent} fill sizes="(max-width: 1024px) 33vw, 400px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
         <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.35) 30%, rgba(0,0,0,0) 60%)" }} />
 
@@ -99,7 +113,7 @@ function HubCollectionCard({
 
       {/* Two square thumbnails — click to swap into the big spot */}
       {thumbIdxs.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 p-3">
+        <div className="grid grid-cols-2 gap-2 pt-2">
           {thumbIdxs.map((imgIdx, posOffset) => (
             <button key={imgIdx} onClick={() => swapThumb(posOffset + 1)} aria-label="View this image large" className="relative aspect-square rounded-[10px] overflow-hidden">
               <SafeImage src={images[imgIdx]} alt={`${project.title} detail`} accent={accent} fill sizes="150px" className="object-cover" />
@@ -109,7 +123,7 @@ function HubCollectionCard({
       )}
 
       {/* Footer — hub name + project count, click filters to this hub */}
-      <button onClick={() => onSelectHub(hubId)} className="w-full flex items-center justify-between px-4 pb-4 pt-1 text-left">
+      <button onClick={() => onSelectHub(hubId)} className="w-full flex items-center justify-between pt-2 pb-1 text-left">
         <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50">{HUBS[hubId].title}</h3>
         <span className="flex items-center gap-1 text-sm font-semibold text-zinc-400 dark:text-zinc-500">
           <ImageIcon size={14} weight="fill" aria-hidden="true" />
