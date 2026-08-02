@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
-import { ArrowsLeftRight, Image as ImageIcon } from "@phosphor-icons/react"
+import { ArrowsLeftRight, CaretLeft, CaretRight, Stack } from "@phosphor-icons/react"
 import { HUB_COLORS, type HubKey } from "@/lib/brand"
 import { HUBS, PROJECTS, type HubId, type ProjectData } from "@/lib/data"
 import { SafeImage } from "./safe-image"
@@ -41,6 +41,12 @@ function HubCollectionCard({
   const bigIdx = order[0] ?? 0
   const thumbIdxs = order.slice(1, 3)
 
+  // ---- Shared step logic used by both touch-swipe and the desktop arrow buttons ----
+  const step = (dir: -1 | 1) => {
+    if (projects.length < 2) return
+    setProjectIdx((prev) => (prev + dir + projects.length) % projects.length)
+  }
+
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
     touchStartY.current = e.touches[0].clientY
@@ -52,7 +58,7 @@ function HubCollectionCard({
     const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current)
     if (Math.abs(dx) < 40 || dy > Math.abs(dx)) return
     didSwipe.current = true
-    setProjectIdx((prev) => (dx < 0 ? (prev + 1) % projects.length : (prev - 1 + projects.length) % projects.length))
+    step(dx < 0 ? 1 : -1)
   }
   const handleImageClick = () => {
     if (didSwipe.current) {
@@ -73,17 +79,9 @@ function HubCollectionCard({
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}${pathname}?project=${project.id}` : `${pathname}?project=${project.id}`
 
   return (
-    // ---- Outer wrapper: big card container removed. ----
-    // No background, border, shadow, or rounded card shape anymore —
-    // just left padding to make room for the accent line.
     <div className="pl-4">
-      {/* Big image — click opens the project, swipe changes project */}
+      {/* Big image — click opens the project, swipe changes project, desktop gets arrow buttons */}
       <div className="relative aspect-[4/3] cursor-pointer group rounded-[14px] overflow-hidden" onClick={handleImageClick} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-        {/* ---- Accent line container ----
-             Thin vertical bar in the hub's accent color, sitting
-             right against the left edge of the image, spanning
-             exactly the image's height. This replaces the old
-             big rounded card container entirely. */}
         <div
           className="absolute -left-4 top-0 bottom-0 w-[3px] rounded-full z-20 pointer-events-none"
           style={{ backgroundColor: accent }}
@@ -94,10 +92,34 @@ function HubCollectionCard({
         <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.35) 30%, rgba(0,0,0,0) 60%)" }} />
 
         {projects.length > 1 && (
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/25 text-white text-[0.78rem] font-bold">
-            <ArrowsLeftRight size={12} weight="bold" aria-hidden="true" />
-            Swipe for more {HUBS[hubId].title} projects
-          </div>
+          <>
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/25 text-white text-[0.78rem] font-bold">
+              <ArrowsLeftRight size={12} weight="bold" aria-hidden="true" />
+              Swipe for more {HUBS[hubId].title} projects
+            </div>
+
+            {/* ---- Desktop prev/next buttons ----
+                Sit where a mouse-only user (no touch/swipe) needs them —
+                flanking the "swipe for more" pill. Hidden on mobile since
+                swipe already works there. Subtle accent-color glow on
+                hover via a CSS var so each hub gets its own glow color. */}
+            <button
+              onClick={(e) => { e.stopPropagation(); step(-1) }}
+              aria-label={`Previous ${HUBS[hubId].title} project`}
+              style={{ ["--hub-glow" as any]: accent }}
+              className="hidden md:flex absolute top-3 left-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-md border border-white/25 items-center justify-center text-white transition-all duration-300 hover:bg-white/30 hover:shadow-[0_0_14px_-2px_var(--hub-glow)] active:scale-90"
+            >
+              <CaretLeft size={14} weight="bold" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); step(1) }}
+              aria-label={`Next ${HUBS[hubId].title} project`}
+              style={{ ["--hub-glow" as any]: accent }}
+              className="hidden md:flex absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-md border border-white/25 items-center justify-center text-white transition-all duration-300 hover:bg-white/30 hover:shadow-[0_0_14px_-2px_var(--hub-glow)] active:scale-90"
+            >
+              <CaretRight size={14} weight="bold" />
+            </button>
+          </>
         )}
 
         <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 z-10">
@@ -105,7 +127,14 @@ function HubCollectionCard({
             <LikeButton liked={likedIds.has(project.id)} onToggle={(e) => { e.stopPropagation(); onToggleLike(project.id) }} context="card" />
           </div>
           <p className="flex-1 min-w-0 text-center text-white text-base font-black truncate px-1">{project.title}</p>
-          <div className="w-8 h-8 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors shrink-0 [&_svg]:text-white" onClick={(e) => e.stopPropagation()}>
+          {/* ---- Share button: distinct accent-tinted background so it
+              reads clearly and doesn't blend/get lost near other fixed
+              UI (e.g. the calculator FAB) that can sit nearby. ---- */}
+          <div
+            className="w-8 h-8 rounded-full backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors shrink-0 [&_svg]:text-white"
+            style={{ backgroundColor: `${accent}dd` }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <ShareButton url={shareUrl} title={project.title} />
           </div>
         </div>
@@ -122,11 +151,11 @@ function HubCollectionCard({
         </div>
       )}
 
-      {/* Footer — hub name + project count, click filters to this hub */}
+      {/* Footer — hub name + project count (projects icon, in hub color — not a gallery/image icon) */}
       <button onClick={() => onSelectHub(hubId)} className="w-full flex items-center justify-between pt-2 pb-1 text-left">
         <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50">{HUBS[hubId].title}</h3>
-        <span className="flex items-center gap-1 text-sm font-semibold text-zinc-400 dark:text-zinc-500">
-          <ImageIcon size={14} weight="fill" aria-hidden="true" />
+        <span className="flex items-center gap-1 text-sm font-semibold" style={{ color: accent }}>
+          <Stack size={14} weight="fill" aria-hidden="true" />
           {projects.length}
         </span>
       </button>
