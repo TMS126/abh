@@ -15,6 +15,12 @@ import { InlineSearchBar } from "./search-bar"
 import { HubModal } from "./hub-modal"
 import { ServiceDetailModal } from "./service-detail-modal"
 import { HUB_ORDER, HUB_PREVIEWS, NOTICE, trackEvent, SelectedService } from "./lib"
+import { sectionHasBulk } from "../quote-calculator/lib"
+
+// A distinct, muted orange for the bulk-pricing ribbon — deliberately
+// different from BRAND.orange (used for the Notice pill) so the two
+// don't visually compete or get confused with each other.
+const BULK_RIBBON_ORANGE = "#B45309"
 
 function NoticeNotification({ isDark }: { isDark: boolean }) {
   const [expanded, setExpanded] = useState(false)
@@ -94,14 +100,43 @@ function HubCta({ label, accent, pointsRight }: { label: string; accent: string;
   )
 }
 
+// ============================================================
+// Hub corner icon (bottom-right watermark icon)
+// Fixed: dark:text-zinc-800 was nearly invisible against the
+// card's dark:bg-zinc-950 background — bumped to a lighter
+// neutral (dark:text-zinc-700) so it actually reads in dark mode,
+// while staying just as subtle/neutral as the light-mode version.
+// ============================================================
+
 function HubCornerIcon({ hubId, accent }: { hubId: HubId; accent: string }) {
   return (
     <div
-      className="pointer-events-none absolute -bottom-5 -right-5 w-28 h-28 rotate-[18deg] flex items-center justify-center text-zinc-200 dark:text-zinc-800 transition-colors duration-300 group-hover/hubcard:text-[var(--hub-accent)]"
+      className="pointer-events-none absolute -bottom-5 -right-5 w-28 h-28 rotate-[18deg] flex items-center justify-center text-zinc-200 dark:text-zinc-700 transition-colors duration-300 group-hover/hubcard:text-[var(--hub-accent)]"
       style={{ ["--hub-accent" as any]: accent }}
       aria-hidden="true"
     >
       <HubIcon id={hubId} size={76} color="currentColor" />
+    </div>
+  )
+}
+
+// ============================================================
+// Bulk-pricing ribbon
+// Only rendered when a hub actually has bulk pricing somewhere
+// in its sections. Small, muted, diagonal — sits in the top-right
+// corner (opposite the bottom-right HubCornerIcon), clipped by the
+// card's existing overflow-hidden so it never spills outside it.
+// ============================================================
+
+function BulkRibbon() {
+  return (
+    <div className="absolute top-4 -right-8 rotate-45 z-20 pointer-events-none">
+      <span
+        className="block w-28 text-center py-0.5 text-[0.62rem] font-black uppercase tracking-wider text-white"
+        style={{ backgroundColor: BULK_RIBBON_ORANGE, boxShadow: "0 3px 8px -2px rgba(0,0,0,0.35)" }}
+      >
+        Bulk
+      </span>
     </div>
   )
 }
@@ -214,11 +249,13 @@ export function ServicesPage() {
           <NoticeNotification isDark={isDark} />
         </ScrollBounce>
 
+        {/* ── Desktop grid ── */}
         <div className="hidden md:grid md:grid-cols-6 gap-5 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub    = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
             const accent = isDark ? colors.accentDark : colors.accentLight
+            const hubHasBulk = hub.sections.some((s) => sectionHasBulk(hubId, s.title, s.items))
 
             return (
               <div
@@ -232,11 +269,10 @@ export function ServicesPage() {
                 <ScrollBounce delay={index * 0.06}>
                   <div className="group/hubcard relative flex flex-col items-center text-center h-full rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 abh-shadow-elevated overflow-hidden transition-transform duration-300 hover:-translate-y-0.5 transform-gpu p-6 pt-7">
                     <HubCornerIcon hubId={hubId} accent={accent} />
+                    {hubHasBulk && <BulkRibbon />}
 
-                    <h3
-                      className="relative z-10 font-sans font-black text-[1.14rem] leading-tight mb-1.5"
-                      style={{ color: accent }}
-                    >
+                    {/* ---- Title: neutral color on desktop (was hub-accent colored) ---- */}
+                    <h3 className="relative z-10 font-sans font-black text-[1.14rem] leading-tight mb-1.5 text-zinc-900 dark:text-zinc-50">
                       {hub.title}
                     </h3>
 
@@ -266,11 +302,13 @@ export function ServicesPage() {
           })}
         </div>
 
+        {/* ── Mobile stacked cards (titles stay hub-accent colored, unchanged) ── */}
         <div className="flex md:hidden flex-col gap-5 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub    = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
             const accent = isDark ? colors.accentDark : colors.accentLight
+            const hubHasBulk = hub.sections.some((s) => sectionHasBulk(hubId, s.title, s.items))
 
             return (
               <ScrollBounce key={hubId} delay={index * 0.08}>
@@ -280,6 +318,7 @@ export function ServicesPage() {
                   className="group/hubcard relative flex flex-col items-center text-center w-full rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 abh-shadow-elevated overflow-hidden transition-transform duration-200 active:scale-[0.98] transform-gpu p-6 pt-7"
                 >
                   <HubCornerIcon hubId={hubId} accent={accent} />
+                  {hubHasBulk && <BulkRibbon />}
 
                   <h3
                     className="relative z-10 font-sans font-black text-[1.18rem] leading-tight mb-1.5"
