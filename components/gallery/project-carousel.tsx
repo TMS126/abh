@@ -9,22 +9,6 @@ import { SafeImage } from "./safe-image"
 import { LikeButton, ShareButton } from "./like-share-buttons"
 
 // ============================================================
-// Accent line (desktop only) — replaces the old frame container.
-// Sits just outside the left edge of the image, same height as
-// the image, colored with the hub's own accent (not a fixed blue).
-// ============================================================
-
-function AccentLine({ accent }: { accent: string }) {
-  return (
-    <div
-      className="hidden sm:block absolute -left-5 top-0 bottom-0 w-[3px] rounded-full z-40 pointer-events-none"
-      style={{ backgroundColor: accent }}
-      aria-hidden="true"
-    />
-  )
-}
-
-// ============================================================
 // Project Card (single carousel slide)
 // ============================================================
 
@@ -44,7 +28,7 @@ function ProjectCard({
         <SafeImage src={project.image} alt={project.title} accent={accent} fill sizes="(max-width: 640px) 100vw, 448px" className="object-cover" />
 
         {/* ---- Header bar: hub label + before/after badge ---- */}
-        <div className="absolute top-0 inset-x-0 flex items-center gap-2 px-3 py-2.5 bg-zinc-950/90">
+        <div className="absolute top-0 inset-x-0 flex items-center gap-2 px-3 py-2.5 bg-zinc-950/90 z-20">
           <span className="flex-1 min-w-0 text-[0.9rem] font-black truncate" style={{ color: accent }}>
             {hubLabelFor(project.hub)}
           </span>
@@ -61,16 +45,16 @@ function ProjectCard({
 
         {/* ---- Position indicator (e.g. "2/5") ---- */}
         {position && (
-          <div className="absolute top-2.5 right-2.5 px-2 py-1 rounded-full bg-black/40 backdrop-blur-md text-white/85 text-[0.74rem] font-bold">
+          <div className="absolute top-2.5 right-2.5 px-2 py-1 rounded-full bg-black/40 backdrop-blur-md text-white/85 text-[0.74rem] font-bold z-20">
             {position}
           </div>
         )}
 
         {/* ---- Like / share action stack ----
-             Nudged inward (right-3 instead of right-2.5) and given
-             fixed icon sizing so the share icon can't overflow its
-             circle and get clipped by the parent's overflow-hidden. */}
-        <div className="absolute bottom-16 right-3 flex flex-col items-center gap-2">
+             z-30 (above the footer bar's z-10) and bottom-24 so the
+             circles sit fully clear of the footer bar instead of
+             being overlapped/clipped by it. */}
+        <div className="absolute bottom-24 right-3 flex flex-col items-center gap-2 z-30">
           <div onClick={(e) => e.stopPropagation()} className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center [&_svg]:text-white [&_svg]:w-4 [&_svg]:h-4">
             <LikeButton liked={liked} onToggle={onToggleLike} context="card" />
           </div>
@@ -80,7 +64,7 @@ function ProjectCard({
         </div>
 
         {/* ---- Footer: title + client type ---- */}
-        <div className="absolute bottom-0 inset-x-0 px-3 py-3 bg-zinc-950/90">
+        <div className="absolute bottom-0 inset-x-0 px-3 py-3 bg-zinc-950/90 z-10">
           <h3 className="text-white font-black text-[1.14rem] leading-snug">{project.title}</h3>
           {project.clientType && (
             <p className="text-white/70 text-[0.82rem] italic mt-1">
@@ -164,8 +148,6 @@ function SwipeCarousel({
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        <AccentLine accent={accent} />
-
         {projects.map((project, i) => {
           let offset = i - active
           if (offset > n / 2) offset -= n
@@ -218,10 +200,9 @@ function SwipeCarousel({
 
 // ============================================================
 // Public API: ProjectCarousel
-// One consistent card-swipe UI across mobile, desktop, and all
-// other breakpoints. On sm: and up, a thin vertical line in the
-// hub's own accent color runs alongside the image — no frame,
-// no rounded container.
+// Consistent card-swipe UI across all breakpoints. No frame, no
+// center accent line — the hub-accent vertical line lives next
+// to the hub title elsewhere, not here.
 // ============================================================
 
 export function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }: {
@@ -229,10 +210,9 @@ export function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggle
   likedIds: Set<string>; onToggleLike: (id: string) => void
 }) {
   return (
-    <div className="max-w-md mx-auto sm:pl-5">
+    <div className="max-w-md mx-auto">
       {projects.length === 1 ? (
-        <div className="relative aspect-[4/3]">
-          <AccentLine accent={accent} />
+        <div className="aspect-[4/3]">
           <ProjectCard
             project={projects[0]}
             accent={accent}
