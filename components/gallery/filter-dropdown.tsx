@@ -37,7 +37,6 @@ export function FilterDropdown({
   }
 
   const options: { id: HubId | "all"; label: string }[] = [{ id: "all", label: "All hubs" }, ...ROW_ORDER.map((r) => ({ id: r.id, label: r.label }))]
-  const currentAccent = activeFilter !== "all" ? getAccent(activeFilter) : blueColor
   const displayedLabel = activeFilter === "all" ? "Select a Hub" : options.find((o) => o.id === activeFilter)?.label ?? "Select a Hub"
 
   return (
@@ -72,25 +71,32 @@ export function FilterDropdown({
         })}
       </div>
 
-      {/* Mobile — collapsed pill, opens listbox below */}
+      {/* Mobile — collapsed trigger is now always neutral (border-only,
+          never filled with the hub's accent color), and hides itself
+          entirely while the option list is open, reappearing only once
+          the list is dismissed (click outside, Escape, or a selection). */}
       <div className="md:hidden relative flex justify-center mb-10 z-40">
-        <button
-          onClick={handleToggleClick}
-          aria-expanded={open}
-          className={cn(
-            "flex items-center gap-2 pl-1.5 pr-4 py-1.5 rounded-full",
-            "text-[0.94rem] font-black whitespace-nowrap transition-all duration-150 active:scale-95",
-            "shadow-[0_2px_10px_-2px_rgba(0,0,0,0.18)] dark:shadow-[0_4px_18px_-3px_rgba(0,0,0,0.7)]",
-            "outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          )}
-          style={{ backgroundColor: currentAccent, color: getContrastText(currentAccent), ["--tw-ring-color" as any]: currentAccent }}
-        >
-          <span className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-white/20">
-            {activeFilter !== "all" ? <HubIcon id={activeFilter} size={15} color={getContrastText(currentAccent)} /> : <Funnel size={15} weight="bold" />}
-          </span>
-          {displayedLabel}
-          <CaretDown size={13} weight="bold" className={cn("transition-transform duration-200 shrink-0", open && "rotate-180")} />
-        </button>
+        {!open && (
+          <button
+            onClick={handleToggleClick}
+            aria-expanded={open}
+            aria-haspopup="listbox"
+            className={cn(
+              "flex items-center gap-2 pl-1.5 pr-4 py-1.5 rounded-full border-2 bg-transparent",
+              "text-[0.94rem] font-black whitespace-nowrap transition-all duration-150 active:scale-95",
+              "shadow-[0_2px_10px_-2px_rgba(0,0,0,0.14)] dark:shadow-[0_4px_18px_-3px_rgba(0,0,0,0.55)]",
+              "outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+              "border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200"
+            )}
+            style={{ ["--tw-ring-color" as any]: blueColor }}
+          >
+            <span className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-zinc-100 dark:bg-zinc-800">
+              {activeFilter !== "all" ? <HubIcon id={activeFilter} size={15} color={getAccent(activeFilter)} /> : <Funnel size={15} weight="bold" aria-hidden="true" />}
+            </span>
+            {displayedLabel}
+            <CaretDown size={13} weight="bold" aria-hidden="true" className="transition-transform duration-200 shrink-0" />
+          </button>
+        )}
 
         {open && (
           <>
@@ -103,7 +109,7 @@ export function FilterDropdown({
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -10, scale: 0.94 }}
                 transition={{ type: "spring", stiffness: 280, damping: 22, mass: 0.6 }}
-                className="absolute left-1/2 -translate-x-1/2 top-full mt-3 z-50 w-[calc(100vw-2rem)] max-w-sm"
+                className="relative z-50 w-[calc(100vw-2rem)] max-w-sm"
                 style={{ isolation: "isolate" }}
               >
                 <div className={cn("flex flex-wrap justify-center gap-2 p-2.5 rounded-[24px]", "bg-white/70 dark:bg-zinc-900/60 backdrop-blur-md", "border border-white/50 dark:border-white/10", "shadow-xl dark:shadow-black/40")}>
