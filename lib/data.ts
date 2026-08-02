@@ -399,15 +399,15 @@ export const PROJECTS = [
     result: "Client had a professional flyer and A-board ready to attract walk-ins and answer common questions before clients even step inside.",
   },
   
-  {
-    id: "wedding-party-programme", hub: "design" as HubId, title: "Wedding Party Programme", tag: HUB_NAMES.design,
-    shortDesc: "Printed wedding party programme with roles, names, and a celebratory layout.",
+//  {
+    //id: "wedding-party-programme", hub: "design" as HubId, title: "Wedding Party Programme", tag: HUB_NAMES.design,
+    //shortDesc: "Printed wedding party programme with roles, names, and a celebratory layout.",
   //  image: "/Wp.png", images: ["/wedding_party_blurred.jpg"], clientType: "client" as const, sensitive: true,
-    clientGoal: `The client needed a clean printed programme listing everyone's role at the wedding reception — from MC to cake cutting.`,
-    whatWeDid: ["Designed a blue and white wedding layout with decorative elements","Listed all roles on the left with matching names on the right","Added floral and ribbon decorations to keep the celebratory feel","Used a dividing gold line between roles and names for readability","Made it print-ready at A4 size"],
-    tools: ["Adobe Illustrator", "Print-ready A4 (foldable) layout"],
-    result: `The client received a beautiful, easy-to-read programme that felt personal and matched the wedding's colours.`,
-  },
+    //clientGoal: `The client needed a clean printed programme listing everyone's role at the wedding reception — from MC to cake cutting.`,
+   // whatWeDid: ["Designed a blue and white wedding layout with decorative elements","Listed all roles on the left with matching names on the right","Added floral and ribbon decorations to keep the celebratory feel","Used a dividing gold line between roles and names for readability","Made it print-ready at A4 size"],
+    //tools: ["Adobe Illustrator", "Print-ready A4 (foldable) layout"],
+  //  result: `The client received a beautiful, easy-to-read programme that felt personal and matched the wedding's colours.`,
+ // },
   {
     id: "illusion-technologies", hub: "design" as HubId, title: "Illusion Technologies — Brand Identity", tag: HUB_NAMES.design,
     shortDesc: "Full corporate brand identity concept for a drone tech company. Portfolio practice project.",
