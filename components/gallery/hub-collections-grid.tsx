@@ -95,7 +95,7 @@ function HubCollectionCard({
           <>
             <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/25 text-white text-[0.78rem] font-bold">
               <ArrowsLeftRight size={12} weight="bold" aria-hidden="true" />
-              Swipe for more {HUBS[hubId].title} projects
+              Swipe for projects
             </div>
 
             {/* ---- Desktop prev/next buttons ----
