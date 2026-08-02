@@ -285,8 +285,10 @@ function GalleryPageInner() {
                         "border-t-2 border-zinc-100 dark:border-zinc-800 mt-10 pt-8 md:border-t-0 md:mt-0 md:pt-7",
                         "first:border-t-0 first:mt-0 first:pt-0 md:first:pt-7"
                       )}>
+                        {/* ---- Hub title bar: accent line now matches
+                            this hub's own brand color, not a fixed blue ---- */}
                         <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
-                          <div className="w-1.5 h-8 rounded-full hidden md:block" style={{ backgroundColor: "#1E6FA8" }} />
+                          <div className="w-1.5 h-8 rounded-full hidden md:block shrink-0" style={{ backgroundColor: accent }} />
                           <h2 className="text-3xl font-black text-zinc-900 dark:text-zinc-50 hidden md:block">{row.label}</h2>
                         </div>
                         <EmptyHubState label={row.label} query={searchLower ? searchQuery.trim() : undefined} />
@@ -302,8 +304,13 @@ function GalleryPageInner() {
                       "border-t-2 border-zinc-100 dark:border-zinc-800 mt-10 pt-8 md:border-t-0 md:mt-0 md:pt-7",
                       "first:border-t-0 first:mt-0 first:pt-0 md:first:pt-7"
                     )}>
+                      {/* ---- Hub title bar: accent line now matches
+                          this hub's own brand color, not a fixed blue.
+                          Stays confined to this header row (its own
+                          mb-6 spacing) so it never touches the carousel
+                          card rendered below it. ---- */}
                       <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
-                        <div className="w-1.5 h-8 rounded-full hidden md:block" style={{ backgroundColor: "#1E6FA8" }} />
+                        <div className="w-1.5 h-8 rounded-full hidden md:block shrink-0" style={{ backgroundColor: accent }} />
                         <h2 className="text-3xl font-black text-zinc-900 dark:text-zinc-50 hidden md:block">{row.label}</h2>
                         <div className="hidden md:block md:ml-auto">
                           <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
