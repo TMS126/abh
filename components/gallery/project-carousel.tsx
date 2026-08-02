@@ -1,27 +1,18 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
-import { CaretLeft, CaretRight, ArrowsLeftRight } from "@phosphor-icons/react"
-import { cn } from "@/lib/utils"
+import { ArrowsLeftRight } from "@phosphor-icons/react"
 import { ProjectData } from "@/lib/data"
-import { BA_HUBS, CLIENT_TYPE_BADGE_BG, CLIENT_TYPE_LABEL, HubId, hubLabelFor } from "@/lib/gallery-helpers"
+import { BA_HUBS, CLIENT_TYPE_LABEL, HubId, hubLabelFor } from "@/lib/gallery-helpers"
 import { SafeImage } from "./safe-image"
 import { LikeButton, ShareButton } from "./like-share-buttons"
 
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false)
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)")
-    setIsMobile(mq.matches)
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
-    mq.addEventListener("change", handler)
-    return () => mq.removeEventListener("change", handler)
-  }, [])
-  return isMobile
-}
+// ============================================================
+// Project Card (single carousel slide)
+// ============================================================
 
-function MobileProjectCard({
+function ProjectCard({
   project, accent, onSelect, liked, onToggleLike, position,
 }: {
   project: ProjectData; accent: string; onSelect: (p: ProjectData) => void
@@ -34,8 +25,9 @@ function MobileProjectCard({
   return (
     <button onClick={() => onSelect(project)} className="w-full h-full text-left">
       <div className="relative w-full h-full rounded-[16px] overflow-hidden">
-        <SafeImage src={project.image} alt={project.title} accent={accent} fill sizes="100vw" className="object-cover" />
+        <SafeImage src={project.image} alt={project.title} accent={accent} fill sizes="(max-width: 640px) 100vw, 448px" className="object-cover" />
 
+        {/* ---- Header bar: hub label + before/after badge ---- */}
         <div className="absolute top-0 inset-x-0 flex items-center gap-2 px-3 py-2.5 bg-zinc-950/90">
           <span className="flex-1 min-w-0 text-[0.9rem] font-black truncate" style={{ color: accent }}>
             {hubLabelFor(project.hub)}
@@ -51,12 +43,14 @@ function MobileProjectCard({
           )}
         </div>
 
+        {/* ---- Position indicator (e.g. "2/5") ---- */}
         {position && (
           <div className="absolute top-2.5 right-2.5 px-2 py-1 rounded-full bg-black/40 backdrop-blur-md text-white/85 text-[0.74rem] font-bold">
             {position}
           </div>
         )}
 
+        {/* ---- Like / share action stack ---- */}
         <div className="absolute bottom-16 right-2.5 flex flex-col items-center gap-2">
           <div onClick={(e) => e.stopPropagation()} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center [&_svg]:text-white">
             <LikeButton liked={liked} onToggle={onToggleLike} context="card" />
@@ -66,6 +60,7 @@ function MobileProjectCard({
           </div>
         </div>
 
+        {/* ---- Footer: title + client type ---- */}
         <div className="absolute bottom-0 inset-x-0 px-3 py-3 bg-zinc-950/90">
           <h3 className="text-white font-black text-[1.14rem] leading-snug">{project.title}</h3>
           {project.clientType && (
@@ -79,7 +74,11 @@ function MobileProjectCard({
   )
 }
 
-function MobileSwipeCarousel({
+// ============================================================
+// Swipe Carousel (drives multiple ProjectCards, touch + drag)
+// ============================================================
+
+function SwipeCarousel({
   projects, accent, onSelect, likedIds, onToggleLike,
 }: {
   projects: ProjectData[]; accent: string; onSelect: (p: ProjectData) => void
@@ -95,6 +94,7 @@ function MobileSwipeCarousel({
   const prev = useCallback(() => goTo(active - 1), [active, goTo])
   const next = useCallback(() => goTo(active + 1), [active, goTo])
 
+  // ---- Touch handlers (mobile swipe) ----
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
     dragMoved.current = false
@@ -111,6 +111,7 @@ function MobileSwipeCarousel({
     touchStartX.current = null
   }
 
+  // ---- Slot positioning (active / adjacent / hidden) ----
   const slotStyle = (offset: number): React.CSSProperties => {
     const abs = Math.abs(offset)
     if (abs === 0) {
@@ -156,7 +157,7 @@ function MobileSwipeCarousel({
               style={slotStyle(offset)}
               onClick={() => { if (!isActive && !dragMoved.current) goTo(i) }}
             >
-              <MobileProjectCard
+              <ProjectCard
                 project={project}
                 accent={accent}
                 onSelect={(p) => { if (isActive && !dragMoved.current) onSelect(p) }}
@@ -169,6 +170,7 @@ function MobileSwipeCarousel({
         })}
       </div>
 
+      {/* ---- Dot pagination ---- */}
       <div className="flex items-center justify-center gap-1.5 mt-4">
         {projects.map((_, i) => (
           <button
@@ -189,49 +191,23 @@ function MobileSwipeCarousel({
   )
 }
 
+// ============================================================
+// Public API: ProjectCarousel
+// One consistent card-swipe UI across mobile, desktop, and all
+// other breakpoints. On sm: and up, the carousel sits inside a
+// centered, capped-width frame (soft shadow + border) so it
+// doesn't look like a stray mobile element on larger screens.
+// ============================================================
+
 export function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }: {
   projects: ProjectData[]; accent: string; onSelect: (p: ProjectData) => void
   likedIds: Set<string>; onToggleLike: (id: string) => void
 }) {
-  const isMobile = useIsMobile()
-  const [activeIdx, setActiveIdx] = useState(0)
-  const trackRef    = useRef<HTMLDivElement>(null)
-  const isDragging  = useRef(false)
-  const startX      = useRef(0)
-  const scrollStart = useRef(0)
-  const dragMoved   = useRef(false)
-
-  const onScroll = useCallback(() => {
-    if (!trackRef.current) return
-    const { scrollLeft, clientWidth } = trackRef.current
-    setActiveIdx(Math.round(scrollLeft / clientWidth))
-  }, [])
-
-  const scrollTo = useCallback((idx: number) => {
-    if (!trackRef.current) return
-    const clamped = Math.max(0, Math.min(idx, projects.length - 1))
-    trackRef.current.scrollTo({ left: clamped * trackRef.current.clientWidth, behavior: "smooth" })
-    setActiveIdx(clamped)
-  }, [projects.length])
-
-  const onMouseDown = (e: React.MouseEvent) => {
-    isDragging.current  = true
-    dragMoved.current   = false
-    startX.current      = e.pageX
-    scrollStart.current = trackRef.current?.scrollLeft ?? 0
-  }
-  const onMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging.current || !trackRef.current) return
-    if (Math.abs(e.pageX - startX.current) > 5) dragMoved.current = true
-    trackRef.current.scrollLeft = scrollStart.current - (e.pageX - startX.current)
-  }
-  const onMouseUp = () => { isDragging.current = false }
-
-  if (isMobile) {
-    if (projects.length === 1) {
-      return (
+  return (
+    <div className="max-w-md mx-auto sm:rounded-2xl sm:shadow-lg sm:border sm:border-zinc-200 dark:sm:border-zinc-800 sm:p-4 sm:bg-white dark:sm:bg-zinc-950">
+      {projects.length === 1 ? (
         <div className="aspect-[4/3]">
-          <MobileProjectCard
+          <ProjectCard
             project={projects[0]}
             accent={accent}
             onSelect={onSelect}
@@ -239,102 +215,14 @@ export function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggle
             onToggleLike={(e) => { e.stopPropagation(); onToggleLike(projects[0].id) }}
           />
         </div>
-      )
-    }
-    return (
-      <MobileSwipeCarousel
-        projects={projects}
-        accent={accent}
-        onSelect={onSelect}
-        likedIds={likedIds}
-        onToggleLike={onToggleLike}
-      />
-    )
-  }
-
-  return (
-    <div className="relative md:max-w-2xl lg:max-w-3xl md:mx-auto">
-      <div
-        ref={trackRef}
-        onScroll={onScroll}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onMouseLeave={onMouseUp}
-        className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar cursor-grab active:cursor-grabbing select-none"
-        style={{ scrollSnapType: "x mandatory" }}
-      >
-        {projects.map((project) => (
-          <div key={project.id} className="shrink-0 w-full snap-center px-6 md:px-8 py-11 md:py-14" style={{ scrollSnapAlign: "center" }}>
-            <div
-              className="group abh-shadow-project-card rounded-[16px] cursor-pointer will-change-transform transition-all duration-300 ease-out active:scale-[0.98] hover:-translate-y-1.5"
-              style={{
-                ["--hub-accent" as any]: accent,
-                ["--hub-shadow" as any]: `${accent}55`,
-              }}
-              onClick={() => { if (!dragMoved.current) onSelect(project) }}
-            >
-              <div className="relative rounded-[16px] overflow-hidden border-2 border-zinc-100 dark:border-zinc-800 group-hover:border-[var(--hub-accent)] bg-white dark:bg-zinc-950 transition-colors duration-300">
-                <div className="relative aspect-[16/9] md:aspect-[16/8] bg-zinc-100 dark:bg-zinc-900">
-                  <SafeImage src={project.image} alt={project.title} accent={accent} fill sizes="(max-width: 768px) 100vw, 800px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                      background: "linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.6) 22%, rgba(0,0,0,0.22) 48%, rgba(0,0,0,0) 75%)",
-                    }}
-                  />
-                  <div className="absolute top-4 left-4 z-10">
-                    <LikeButton
-                      liked={likedIds.has(project.id)}
-                      onToggle={(e) => { e.stopPropagation(); onToggleLike(project.id) }}
-                      context="card"
-                    />
-                  </div>
-                  {BA_HUBS.includes(project.hub as HubId) && !!(project as any).beforeImage && !!(project as any).afterImage && (
-                    <div className="absolute top-4 right-4 flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.72rem] font-black uppercase tracking-wider text-white shadow-lg" style={{ backgroundColor: `${accent}dd`, backdropFilter: "blur(6px)" }}>
-                      <ArrowsLeftRight size={11} weight="bold" />
-                      Before &amp; After
-                    </div>
-                  )}
-                  <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-3">
-                    <div className="min-w-0">
-                      <h3 className="text-white font-black text-2xl md:text-3xl leading-tight transition-colors duration-300 group-hover:text-[var(--hub-accent)]">{project.title}</h3>
-                      <p className="text-white/70 text-sm font-medium mt-1 line-clamp-1">{project.shortDesc}</p>
-                    </div>
-                    {project.clientType && (
-                      <span
-                        className="shrink-0 text-[0.7rem] font-black uppercase tracking-wider px-2.5 py-1 rounded-full text-white shadow-lg backdrop-blur-sm whitespace-nowrap"
-                        style={{ backgroundColor: CLIENT_TYPE_BADGE_BG[project.clientType] }}
-                      >
-                        {CLIENT_TYPE_LABEL[project.clientType]}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {projects.length > 1 && (
-        <>
-          <button onClick={() => scrollTo(activeIdx - 1)} disabled={activeIdx === 0} className="absolute left-1 md:left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/90 dark:bg-zinc-900/90 shadow-lg flex items-center justify-center text-zinc-700 dark:text-white disabled:opacity-0 transition-all hover:scale-105 active:scale-95"><CaretLeft size={20} weight="bold" /></button>
-          <button onClick={() => scrollTo(activeIdx + 1)} disabled={activeIdx === projects.length - 1} className="absolute right-1 md:right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/90 dark:bg-zinc-900/90 shadow-lg flex items-center justify-center text-zinc-700 dark:text-white disabled:opacity-0 transition-all hover:scale-105 active:scale-95"><CaretRight size={20} weight="bold" /></button>
-        </>
-      )}
-      {projects.length > 1 && (
-        <div className="flex justify-center gap-2 -mt-6">
-          {projects.map((_, idx) => (
-            <button
-              key={idx}
-              aria-label={`Go to project ${idx + 1}`}
-              onClick={() => scrollTo(idx)}
-              className={cn("rounded-full transition-all duration-300", activeIdx === idx ? "w-5 h-2" : "w-2 h-2 opacity-30 hover:opacity-60")}
-              style={{ backgroundColor: activeIdx === idx ? accent : undefined }}
-            />
-          ))}
-        </div>
+      ) : (
+        <SwipeCarousel
+          projects={projects}
+          accent={accent}
+          onSelect={onSelect}
+          likedIds={likedIds}
+          onToggleLike={onToggleLike}
+        />
       )}
     </div>
   )
