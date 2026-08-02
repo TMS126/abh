@@ -186,9 +186,17 @@ function GalleryPageInner() {
           </div>
         </ScrollBounce>
 
-        {/* ── Search + Shuffle ── */}
+        {/* ── Notice now sits ABOVE search + hub selector (moved from
+            below search per request) ── */}
         <ScrollBounce delay={0.06}>
-          <div className="max-w-md mx-auto mb-2">
+          <div className="flex justify-center max-w-2xl mx-auto mb-6">
+            <NoticePill />
+          </div>
+        </ScrollBounce>
+
+        {/* ── Search + Shuffle ── */}
+        <ScrollBounce delay={0.1}>
+          <div className="max-w-md mx-auto mb-8">
             <div className="flex items-center justify-center gap-3 border-b-2 border-zinc-200 dark:border-zinc-800 focus-within:border-zinc-400 dark:focus-within:border-zinc-500 transition-colors duration-200">
               <div className="flex items-center gap-1 py-3 min-w-0">
                 <input
@@ -196,6 +204,7 @@ function GalleryPageInner() {
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="Search..."
+                  aria-label="Search projects"
                   size={searchQuery ? Math.max(searchQuery.length, 7) : 7}
                   className="bg-transparent text-base font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none text-right"
                 />
@@ -208,10 +217,10 @@ function GalleryPageInner() {
                     <X size={11} weight="bold" />
                   </button>
                 )}
-                <MagnifyingGlass size={16} weight="bold" className="shrink-0 text-zinc-400" />
+                <MagnifyingGlass size={16} weight="bold" className="shrink-0 text-zinc-400" aria-hidden="true" />
               </div>
 
-              <div className="w-px h-5 bg-zinc-300 dark:bg-zinc-700 shrink-0" />
+              <div className="w-px h-5 bg-zinc-300 dark:bg-zinc-700 shrink-0" aria-hidden="true" />
 
               <button
                 onClick={handleSurprise}
@@ -225,13 +234,6 @@ function GalleryPageInner() {
                 Pick for me
               </button>
             </div>
-          </div>
-        </ScrollBounce>
-
-        {/* ── Notice ── */}
-        <ScrollBounce delay={0.1}>
-          <div className="flex justify-center max-w-2xl mx-auto mb-8 mt-6">
-            <NoticePill />
           </div>
         </ScrollBounce>
 
