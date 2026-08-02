@@ -9,6 +9,22 @@ import { SafeImage } from "./safe-image"
 import { LikeButton, ShareButton } from "./like-share-buttons"
 
 // ============================================================
+// Accent line (desktop only) — replaces the old frame container.
+// Sits just outside the left edge of the image, same height as
+// the image, colored with the hub's own accent (not a fixed blue).
+// ============================================================
+
+function AccentLine({ accent }: { accent: string }) {
+  return (
+    <div
+      className="hidden sm:block absolute -left-5 top-0 bottom-0 w-[3px] rounded-full z-40 pointer-events-none"
+      style={{ backgroundColor: accent }}
+      aria-hidden="true"
+    />
+  )
+}
+
+// ============================================================
 // Project Card (single carousel slide)
 // ============================================================
 
@@ -50,12 +66,15 @@ function ProjectCard({
           </div>
         )}
 
-        {/* ---- Like / share action stack ---- */}
-        <div className="absolute bottom-16 right-2.5 flex flex-col items-center gap-2">
-          <div onClick={(e) => e.stopPropagation()} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center [&_svg]:text-white">
+        {/* ---- Like / share action stack ----
+             Nudged inward (right-3 instead of right-2.5) and given
+             fixed icon sizing so the share icon can't overflow its
+             circle and get clipped by the parent's overflow-hidden. */}
+        <div className="absolute bottom-16 right-3 flex flex-col items-center gap-2">
+          <div onClick={(e) => e.stopPropagation()} className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center [&_svg]:text-white [&_svg]:w-4 [&_svg]:h-4">
             <LikeButton liked={liked} onToggle={onToggleLike} context="card" />
           </div>
-          <div onClick={(e) => e.stopPropagation()} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center [&_svg]:text-white">
+          <div onClick={(e) => e.stopPropagation()} className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center [&_svg]:text-white [&_svg]:w-4 [&_svg]:h-4">
             <ShareButton url={shareUrl} title={project.title} />
           </div>
         </div>
@@ -112,23 +131,27 @@ function SwipeCarousel({
   }
 
   // ---- Slot positioning (active / adjacent / hidden) ----
+  // Adjacent ("back") slides are darkened via brightness only —
+  // never grayscale/desaturated — so they still read as color
+  // photos, just dimmed to push focus onto the active project.
   const slotStyle = (offset: number): React.CSSProperties => {
     const abs = Math.abs(offset)
     if (abs === 0) {
-      return { transform: `translateX(${dragX}px) scale(1)`, opacity: 1, zIndex: 30 }
+      return { transform: `translateX(${dragX}px) scale(1)`, opacity: 1, zIndex: 30, filter: "none" }
     }
     if (abs === 1) {
       return {
         transform: `translateX(${offset * 90 + dragX * 0.4}%) scale(0.88)`,
-        opacity: 0.4,
+        opacity: 1,
         zIndex: 20,
-        filter: "blur(1px)",
+        filter: "brightness(0.5)",
       }
     }
     return {
       transform: `translateX(${offset * 150}%) scale(0.8)`,
       opacity: 0,
       zIndex: 10,
+      filter: "brightness(0.5)",
       pointerEvents: "none",
     }
   }
@@ -141,6 +164,8 @@ function SwipeCarousel({
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
+        <AccentLine accent={accent} />
+
         {projects.map((project, i) => {
           let offset = i - active
           if (offset > n / 2) offset -= n
@@ -194,9 +219,9 @@ function SwipeCarousel({
 // ============================================================
 // Public API: ProjectCarousel
 // One consistent card-swipe UI across mobile, desktop, and all
-// other breakpoints. On sm: and up, the carousel sits inside a
-// centered, capped-width frame (soft shadow + border) so it
-// doesn't look like a stray mobile element on larger screens.
+// other breakpoints. On sm: and up, a thin vertical line in the
+// hub's own accent color runs alongside the image — no frame,
+// no rounded container.
 // ============================================================
 
 export function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggleLike }: {
@@ -204,9 +229,10 @@ export function ProjectCarousel({ projects, accent, onSelect, likedIds, onToggle
   likedIds: Set<string>; onToggleLike: (id: string) => void
 }) {
   return (
-    <div className="max-w-md mx-auto sm:rounded-2xl sm:shadow-lg sm:border sm:border-zinc-200 dark:sm:border-zinc-800 sm:p-4 sm:bg-white dark:sm:bg-zinc-950">
+    <div className="max-w-md mx-auto sm:pl-5">
       {projects.length === 1 ? (
-        <div className="aspect-[4/3]">
+        <div className="relative aspect-[4/3]">
+          <AccentLine accent={accent} />
           <ProjectCard
             project={projects[0]}
             accent={accent}
