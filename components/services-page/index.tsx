@@ -1,4 +1,4 @@
-// components/services/services-page.tsx
+// components/services-page/index.tsx
 "use client"
 
 import { useState, useEffect, useRef } from "react"
