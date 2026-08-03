@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, type ChangeEvent } from "react"
 import { motion } from "framer-motion"
 import {
-  X, Paperclip, ShoppingCartSimple, Plus, Minus, CheckCircle, WarningCircle, ShieldCheck, ShareNetwork, Clock, SealPercent, Percent,
+  X, Paperclip, ShoppingCartSimple, Plus, Minus, CheckCircle, WarningCircle, ShieldCheck, ShareNetwork, Clock, SealPercent, Copy,
 } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
@@ -16,11 +16,9 @@ import {
 } from "./lib"
 import { getCartQtyForItem, getEffectiveRate, getBulkHint, parsePrice, itemHasBulk } from "@/components/quote-calculator/lib"
 
-// Same muted ribbon orange used on the hub cards — kept as one constant so
-// both places stay visually identical without duplicating a raw hex.
 const BULK_RIBBON_ORANGE = "#B45309"
 
-type Tab = "bring" | "about"
+type Tab = "bring" | "about" | "tips"
 
 export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onClose: () => void }) {
   const { resolvedTheme } = useTheme()
@@ -33,6 +31,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
   const [uploadErr, setUploadErr] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [shareCopied, setShareCopied] = useState(false)
+  const [tipsCopied, setTipsCopied] = useState(false)
   const [addedToQuote, setAddedToQuote] = useState(false)
   const [quoteQty, setQuoteQty] = useState(0)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -137,6 +136,12 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
   const acceptHint = formatAcceptHint(HUB_ACCEPT[svc.hubId])
   const itemId = `${svc.hubId}-${svc.sectionTitle}-${svc.name}`
   const hasBulk = itemHasBulk(svc.hubId, svc.sectionTitle, svc.name)
+  const hasTips = !!svc.tips?.length
+
+  // ── Tabs shown ──
+  // "tips" only appears for services that actually have tips — dynamic per
+  // item, so most services still show just the original two tabs.
+  const tabs: Tab[] = hasTips ? ["bring", "about", "tips"] : ["bring", "about"]
 
   // Bulk pricing preview — same tier logic the quote calculator uses
   const { amount: baseUnitPrice, unit: priceUnit } = parsePrice(svc.price)
@@ -160,6 +165,22 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
       await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`)
       setShareCopied(true)
       setTimeout(() => setShareCopied(false), 2000)
+    }
+  }
+
+  // ── Copy tips ──
+  // Copies the tips as a plain-text bulleted list to the clipboard.
+  const handleCopyTips = async () => {
+    if (!svc.tips?.length) return
+    const text = svc.tips.map((t) => `• ${t}`).join("\n")
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(text)
+        setTipsCopied(true)
+        setTimeout(() => setTipsCopied(false), 2000)
+      } catch {
+        // fail silently
+      }
     }
   }
 
@@ -212,11 +233,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         className="relative w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px] overflow-hidden"
         style={{ boxShadow: `0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4), 0 10px 24px -8px ${accent}50` }}
       >
-        {/* ---- Bulk-pricing ribbon ----
-            Same diagonal ribbon used on the hub cards, positioned in the
-            same top-right corner. The modal card needed overflow-hidden
-            added (it didn't have it before) so this ribbon clips cleanly
-            instead of spilling past the rounded corner. */}
         {hasBulk && (
           <div className="absolute top-4 -right-8 rotate-45 z-20 pointer-events-none">
             <span
@@ -285,8 +301,9 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
 
         <div className="px-6 pt-1">
           <div role="tablist" aria-label="Service info sections" className="flex items-center gap-1 p-1 rounded-[14px] bg-zinc-100 dark:bg-zinc-900">
-            {(["bring", "about"] as Tab[]).map((t) => {
+            {tabs.map((t) => {
               const isActive = tab === t
+              const label = t === "bring" ? "Needs" : t === "about" ? "Description" : "Tips"
               return (
                 <button
                   key={t}
@@ -296,7 +313,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                   className={cn("flex-1 py-2.5 rounded-[14px] text-[0.86rem] font-black uppercase tracking-wider transition-all duration-200", !isActive && "text-zinc-500 dark:text-zinc-400")}
                   style={isActive ? { backgroundColor: accent, color: isDark ? "#0a0a0a" : "#ffffff" } : undefined}
                 >
-                  {t === "bring" ? "Needs" : "Description"}
+                  {label}
                 </button>
               )
             })}
@@ -328,6 +345,36 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
               <p className="abh-muted mt-5">
                 Have questions? Switch to the <span className="font-black" style={{ color: accent }}>Needs</span> tab or chat with us directly.
               </p>
+            </div>
+          )}
+          {tab === "tips" && hasTips && (
+            <div className="animate-in fade-in duration-150 text-left relative">
+              {/* ---- Copy button ----
+                  Small, top-right of the tips text block, rounded-[14px]. */}
+              <div className="relative mb-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleCopyTips}
+                  aria-label="Copy tips"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[14px] text-[0.74rem] font-black uppercase tracking-wider transition-all active:scale-95"
+                  style={{ backgroundColor: `${accent}15`, color: accent }}
+                >
+                  <Copy size={13} weight="bold" aria-hidden="true" />
+                  {tipsCopied ? "Copied!" : "Copy"}
+                </button>
+              </div>
+              <ul className="space-y-3">
+                {svc.tips!.map((tip, idx) => (
+                  <li key={idx} className="flex items-start gap-3">
+                    <span
+                      className="shrink-0 w-1.5 h-1.5 rounded-full mt-2"
+                      style={{ backgroundColor: accent }}
+                      aria-hidden="true"
+                    />
+                    <span className="abh-body text-base">{tip}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>
@@ -492,4 +539,4 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
       </motion.div>
     </div>
   )
-} 
+          } 
