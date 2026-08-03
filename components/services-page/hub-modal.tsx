@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { X, Info, ArrowSquareOut, Percent } from "@phosphor-icons/react"
+import { X, Info, ArrowSquareOut } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { HUB_COLORS } from "@/lib/brand"
 import { HUBS, HubId, HUB_DISCLAIMERS } from "@/lib/data"
@@ -116,13 +116,9 @@ export function HubModal({ hubId, onClose, onSelectService }: {
                   {hasBulk && (
                     <span
                       aria-label="Bulk pricing available"
-                      className="absolute -top-2 -right-2 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-white shadow-md"
-                      style={{ backgroundColor: solidAccent }}
+                      className="absolute -top-2 -right-2 px-1.5 py-0.5 rounded-full text-[0.56rem] font-black uppercase tracking-wide bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 shadow-sm"
                     >
-                      <Percent size={8} weight="bold" aria-hidden="true" />
-                      <span className="text-[0.56rem] font-black uppercase tracking-wide" style={{ textShadow: "0 1px 2px rgba(0,0,0,0.45)" }}>
-                        Bulk
-                      </span>
+                      Bulk
                     </span>
                   )}
                 </button>
@@ -156,8 +152,6 @@ export function HubModal({ hubId, onClose, onSelectService }: {
                       requirements: item.requirements,
                       desc: item.description,
                       turnaround: getTurnaround(activeSection.title, item.name),
-                      // Passed through only when the item actually has tips —
-                      // the modal's Tips tab uses this to decide whether to render.
                       tips: item.tips ? [...item.tips] : undefined,
                     })
                   }
@@ -189,4 +183,4 @@ export function HubModal({ hubId, onClose, onSelectService }: {
       </motion.div>
     </div>
   )
-} 
+              } 
