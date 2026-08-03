@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { ShoppingCartSimple, Plus, Minus } from "@phosphor-icons/react"
 
 export function QuoteControl({
@@ -8,13 +9,24 @@ export function QuoteControl({
   inQuote: boolean; quoteQty: number; accent: string; neutralIconColor: string
   onAdd: () => void; onStep: (delta: number) => void
 }) {
+  const [pressed, setPressed] = useState(false)
+
   if (!inQuote) {
     return (
       <button
         type="button"
         onClick={onAdd}
-        className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-[14px] font-bold text-[0.84rem] transition-all active:scale-95"
-        style={{ backgroundColor: `${accent}12`, color: accent, boxShadow: `0 4px 14px -4px ${accent}55` }}
+        onPointerDown={() => setPressed(true)}
+        onPointerUp={() => setPressed(false)}
+        onPointerLeave={() => setPressed(false)}
+        onPointerCancel={() => setPressed(false)}
+        className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-[14px] font-bold text-[0.84rem] transition-all duration-150"
+        style={{
+          backgroundColor: `${accent}12`,
+          color: accent,
+          boxShadow: pressed ? `inset 0 2px 6px -1px ${accent}55` : `0 4px 14px -4px ${accent}55`,
+          transform: pressed ? "translateY(1px) scale(0.97)" : "translateY(0) scale(1)",
+        }}
       >
         <ShoppingCartSimple size={18} weight="bold" aria-hidden="true" />
         Add to Quote
@@ -48,4 +60,4 @@ export function QuoteControl({
       </button>
     </div>
   )
-}
+} 
