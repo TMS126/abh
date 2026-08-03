@@ -229,10 +229,18 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         className="relative w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px] overflow-hidden"
         style={{ boxShadow: `0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4), 0 10px 24px -8px ${accent}50` }}
       >
+        {/* ── Bulk-deal corner ribbon ──
+            Re-tuned position/width/tracking so the full word clips
+            cleanly inside the modal's rounded corner instead of running
+            past the visible edge (previous -right-10/w-36/tracking-wider
+            combo pushed part of the text outside the clip region). */}
         {hasBulk && (
-          <div className="absolute -top-1 -right-10 rotate-45 z-10 pointer-events-none">
+          <div
+            className="absolute z-10 pointer-events-none"
+            style={{ top: "18px", right: "-36px", transform: "rotate(45deg)" }}
+          >
             <span
-              className="block w-36 text-center py-1 text-[0.62rem] font-black uppercase tracking-wider text-white"
+              className="block w-[150px] text-center py-1.5 text-[0.66rem] font-black uppercase text-white"
               style={{ backgroundColor: BULK_RIBBON_ORANGE, boxShadow: "0 3px 8px -2px rgba(0,0,0,0.35)" }}
             >
               Bulk
@@ -296,12 +304,15 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           </div>
         </div>
 
-        {/* ── Tabs: Needs / Description / Tips ── */}
+        {/* ── Tabs: Needs / Description / Tips ──
+            Active tab background is now a single motion.span with a
+            shared layoutId, so switching tabs animates it sliding between
+            positions instead of just swapping color instantly. */}
         <div className="px-6 pt-1">
           <div
             role="tablist"
             aria-label="Service info sections"
-            className="flex items-center gap-1 p-1 rounded-[14px] bg-zinc-100 dark:bg-zinc-900"
+            className="relative flex items-center gap-1 p-1 rounded-[14px] bg-zinc-100 dark:bg-zinc-900"
             style={{ boxShadow: "inset 0 1px 3px rgba(0,0,0,0.06)" }}
           >
             {tabs.map((t) => {
@@ -313,10 +324,21 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                   role="tab"
                   aria-selected={isActive}
                   onClick={() => setTab(t)}
-                  className={cn("flex-1 py-2.5 rounded-[14px] text-[0.86rem] font-black uppercase tracking-wider transition-all duration-200", !isActive && "text-zinc-500 dark:text-zinc-400")}
-                  style={isActive ? { backgroundColor: accent, color: isDark ? "#0a0a0a" : "#ffffff", boxShadow: `0 4px 14px -4px ${accent}70` } : undefined}
+                  className={cn(
+                    "relative flex-1 py-2.5 rounded-[14px] text-[0.86rem] font-black uppercase tracking-wider transition-colors duration-200",
+                    !isActive && "text-zinc-500 dark:text-zinc-400"
+                  )}
+                  style={isActive ? { color: isDark ? "#0a0a0a" : "#ffffff" } : undefined}
                 >
-                  {label}
+                  {isActive && (
+                    <motion.span
+                      layoutId="service-tab-highlight"
+                      className="absolute inset-0 rounded-[14px] -z-10"
+                      style={{ backgroundColor: accent, boxShadow: `0 4px 14px -4px ${accent}70` }}
+                      transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                    />
+                  )}
+                  <span className="relative">{label}</span>
                 </button>
               )
             })}
@@ -411,4 +433,4 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
       </motion.div>
     </div>
   )
-    } 
+} 
