@@ -530,13 +530,7 @@ function generateItemTips(hubId: HubId, sectionTitle: string | undefined, itemNa
   const found = findExactTips(hubId, sectionTitle, itemName)
   if (found) return found
 
-  if (itemName) {
-    return [
-      `What to bring: Any sample, reference, or existing file for "${itemName}" — helps us match exactly what you want.`,
-      `What you get: Finished work in the right format for its use — print-ready PDF, JPG for sharing, or submission confirmation.`,
-      `Best result: Tell us final use and deadline upfront — sizing and turnaround can change based on that.`,
-    ]
-  }
+  
   return []
 }
 
