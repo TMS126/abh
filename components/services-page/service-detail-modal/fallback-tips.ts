@@ -435,7 +435,9 @@ const ITEM_TIPS_MAP: Record<string, string[]> = {
 
 // ─────────────────────────────────────────────────────────
 // Lookup logic with your recommended priority
-// ─────────────────────────────────────────────────────────function findExactTips(hubId: string, sectionTitle: string | undefined, itemName: string | undefined): string[] | null {
+// ─────────────────────────────────────────────────────────
+
+function findExactTips(hubId: string, sectionTitle: string | undefined, itemName: string | undefined): string[] | null {
   const hub = normalize(hubId)
   const section = normalize(sectionTitle)
   const item = normalize(itemName)
