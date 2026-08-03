@@ -486,4 +486,4 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
       />
     </div>
   )
-} 
+}
