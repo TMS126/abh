@@ -142,7 +142,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
 
   // Tips tab always has content now — item-specific tips if present,
   // otherwise a hub-level fallback (see fallback-tips.ts).
-  const { tips, isGeneric } = getServiceTips(svc.hubId, svc.tips)
+  const { tips, isGeneric } = getServiceTips(svc.hubId, svc.sectionTitle, svc.name, svc.tips)
   const tabs: Tab[] = ["bring", "about", "tips"]
 
   const { amount: baseUnitPrice, unit: priceUnit } = parsePrice(svc.price)
@@ -224,7 +224,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.96, opacity: 0 }}
         transition={{ type: "tween", duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
-        className="relative w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px] overflow-hidden"
+        className="relative w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px] overflow-hidden[...]
         style={{ boxShadow: `0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4), 0 10px 24px -8px ${accent}50` }}
       >
         {hasBulk && (
@@ -269,7 +269,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                 <ShareNetwork size={16} weight="bold" aria-hidden="true" />
               </button>
               {shareCopied && (
-                <span className="absolute -bottom-8 right-0 whitespace-nowrap text-[0.74rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full shadow-lg animate-in fade-in zoom-in-95 duration-150">
+                <span className="absolute -bottom-8 right-0 whitespace-nowrap text-[0.74rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 [...]
                   Copied!
                 </span>
               )}
@@ -400,7 +400,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackEvent("request_whatsapp", { hub_id: svc.hubId, service_name: svc.name, section_title: svc.sectionTitle, price: svc.price, had_file_attached: uploadPhase === "done" })}
-            className="flex items-center justify-center gap-2 w-full px-4 py-4 rounded-[14px] font-black text-base text-white text-center transition-all active:scale-95 shadow-[0_4px_14px_rgba(37,211,102,0.3)] hover:-translate-y-0.5"
+            className="flex items-center justify-center gap-2 w-full px-4 py-4 rounded-[14px] font-black text-base text-white text-center transition-all active:scale-95 shadow-[0_4px_14px_rgba(37,99,235,0.18)]"
             style={{ backgroundColor: "#25D366" }}
           >
             Request {naturalLabel}
