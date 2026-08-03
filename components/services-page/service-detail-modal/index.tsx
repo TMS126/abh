@@ -1,8 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, type ChangeEvent } from "react"
-import { motion } from "framer-motion"
-import { X, ShareNetwork, Clock } from "@phosphor-icons/react"
+import { X, ShareNetwork, Clock, Lightbulb } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey, BIZ } from "@/lib/brand"
@@ -16,17 +15,22 @@ import { getCartQtyForItem, getEffectiveRate, getBulkHint, parsePrice, itemHasBu
 import { UploadButton, UploadStatus } from "./UploadControl"
 import { QuoteControl } from "./QuoteControl"
 import { BulkHint } from "./BulkHint"
-import { TipsPanel } from "./TipsPanel"
+import { TipsModal } from "./TipsModal"
 import { getServiceTips } from "./fallback-tips"
 
 const BULK_RIBBON_ORANGE = "#B45309"
 
-type Tab = "bring" | "about" | "tips"
+// ── Tabs ──
+// "tips" removed from here entirely — it's now a standalone popup
+// (TipsModal), triggered by its own button next to the tab bar, not a
+// tab. Only Needs/Description remain as tabs.
+type Tab = "bring" | "about"
 
 export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onClose: () => void }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
   const [tab, setTab] = useState<Tab>("bring")
+  const [tipsOpen, setTipsOpen] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [uploadPhase, setUploadPhase] = useState<"idle" | "uploading" | "done" | "error">("idle")
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -43,6 +47,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
   // ── Reset local state whenever a new service is opened ──
   useEffect(() => {
     setTab("bring")
+    setTipsOpen(false)
     setAddedToQuote(false)
     setFile(null)
     setFileUrl(null)
@@ -144,7 +149,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
   const hasBulk = itemHasBulk(svc.hubId, svc.sectionTitle, svc.name)
 
   const { tips, isGeneric } = getServiceTips(svc.hubId, svc.sectionTitle, svc.name, svc.tips)
-  const tabs: Tab[] = ["bring", "about", "tips"]
+  const tabs: Tab[] = ["bring", "about"]
 
   const { amount: baseUnitPrice, unit: priceUnit } = parsePrice(svc.price)
   const effectiveQty = Math.max(quoteQty, 1)
@@ -208,27 +213,44 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
 
   return (
     <div className="fixed inset-0 z-[10200] flex items-center justify-center p-3 md:p-4">
-      <motion.div
-        className="absolute inset-0 bg-black/55"
+      {/* ── Backdrop ──
+          Plain div, no framer-motion. A brief CSS fade is all this
+          needs — the animation library was never required here, and
+          removing it eliminates an entire class of risk (see the
+          layoutId note below). */}
+      <div
+        className="absolute inset-0 bg-black/55 animate-in fade-in duration-200"
         onClick={onClose}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
       />
-      <motion.div
+
+      {/* ── Modal card ──
+          FIXED: this file previously used framer-motion (`motion.div`
+          plus a `layoutId` shared across every instance of this modal)
+          to animate parts of the UI. Because that ID was a hardcoded
+          global string, Framer Motion treated separate modal instances
+          as "the same element" — so closing one service and opening
+          another (or the hub modal) could make an exit animation hang,
+          which meant the old modal never actually finished unmounting.
+          It stayed in the DOM, invisible, full-screen, and still fully
+          clickable underneath the page — which is exactly what broke
+          the whole Services page (search, hub cards, footer, all of it)
+          after visiting Tips. Framer Motion has been removed from this
+          entire feature (this file, TipsPanel, and the new TipsModal)
+          so there is no animation-library state left to get stuck. */}
+      <div
         ref={containerRef}
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={svc.name}
-        initial={{ scale: 0.92, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.96, opacity: 0 }}
-        transition={{ type: "tween", duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
-        className="relative w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px] overflow-hidden"
+        className="relative w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         style={{ boxShadow: `0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4), 0 10px 24px -8px ${accent}50` }}
       >
+        {/* ── Bulk-deal corner ribbon ──
+            Stays in the classic top-right corner. The header action
+            buttons (share/close) have moved to the top-LEFT instead —
+            see below — so there's no longer any shared real estate for
+            the two to fight over. */}
         {hasBulk && (
           <div
             className="absolute top-0 right-0 w-[104px] h-[104px] overflow-hidden pointer-events-none z-10"
@@ -254,7 +276,36 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         {/* ── Header: hub label, title, price ── */}
         <div className="px-6 pt-6 pb-5 flex-shrink-0">
           <div className="flex items-start mb-2">
-            <div className="w-[72px] shrink-0" aria-hidden="true" />
+            {/* Share + Close — moved from top-right to top-left. That
+                corner is otherwise always empty, so this permanently
+                clears any overlap with the ribbon (which only ever
+                occupies the top-right 104×104 corner) instead of relying
+                on conditional spacing that has to be re-checked every
+                time either element changes. */}
+            <div className="relative z-30 flex items-center justify-start gap-2 shrink-0 w-[72px]">
+              <button
+                onClick={onClose}
+                aria-label="Close"
+                className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
+                style={{ backgroundColor: `${accent}15`, color: accent }}
+              >
+                <X size={16} weight="bold" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={handleShare}
+                aria-label="Share this service"
+                className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                style={{ backgroundColor: `${accent}15`, color: accent }}
+              >
+                <ShareNetwork size={16} weight="bold" aria-hidden="true" />
+              </button>
+              {shareCopied && (
+                <span className="absolute -bottom-8 left-0 whitespace-nowrap text-[0.74rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full shadow-lg animate-in fade-in zoom-in-95 duration-150">
+                  Copied!
+                </span>
+              )}
+            </div>
 
             <div className="flex-1 min-w-0 text-center">
               <div className="flex items-center justify-center gap-1.5 mb-2">
@@ -268,30 +319,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
               <h3 className="abh-card-heading text-[1.32rem] leading-tight">{svc.name}</h3>
             </div>
 
-            <div className="relative z-30 flex items-center justify-end gap-2 shrink-0 w-[72px]">
-              <button
-                type="button"
-                onClick={handleShare}
-                aria-label="Share this service"
-                className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                style={{ backgroundColor: `${accent}15`, color: accent }}
-              >
-                <ShareNetwork size={16} weight="bold" aria-hidden="true" />
-              </button>
-              {shareCopied && (
-                <span className="absolute -bottom-8 right-0 whitespace-nowrap text-[0.74rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full shadow-lg animate-in fade-in zoom-in-95 duration-150">
-                  Copied!
-                </span>
-              )}
-              <button
-                onClick={onClose}
-                aria-label="Close"
-                className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
-                style={{ backgroundColor: `${accent}15`, color: accent }}
-              >
-                <X size={16} weight="bold" aria-hidden="true" />
-              </button>
-            </div>
+            <div className="w-[72px] shrink-0" aria-hidden="true" />
           </div>
 
           <div className="h-px bg-zinc-100 dark:bg-zinc-800 mb-4" />
@@ -307,54 +335,53 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           </div>
         </div>
 
-        {/* ── Tabs: Needs / Description / Tips ──
-            FIXED: previously used a framer-motion `layoutId` shared
-            across every instance of this modal to animate the active-tab
-            highlight sliding between positions. Because that ID was a
-            hardcoded global string, Framer Motion treated it as "the same
-            element" across entirely separate modal instances (e.g. after
-            closing one service and opening another, or opening the hub
-            modal next). That cross-instance layout animation could hang
-            mid-transition, which prevented AnimatePresence from ever
-            completing the exit animation — so the old modal never
-            actually unmounted. It stayed in the DOM, invisible, full-
-            screen, and still fully clickable underneath everything else
-            — which is exactly what caused hub cards to stop responding,
-            WhatsApp to "randomly" fire (it was the stale modal's own
-            Request button), and the hub modal to appear to show upload
-            UI (that was actually the stuck old modal bleeding through).
-            Replaced with a plain, non-shared background-color transition
-            — same smooth feel, zero cross-instance risk. */}
+        {/* ── Tabs: Needs / Description, plus a separate Tips trigger ──
+            Tips is intentionally NOT a tab anymore — it's its own small
+            icon button beside the tab bar that opens TipsModal as a
+            popup. This keeps the tab bar simple (2 tabs) and makes Tips
+            visually distinct rather than competing for tab space. */}
         <div className="px-6 pt-1">
-          <div
-            role="tablist"
-            aria-label="Service info sections"
-            className="relative flex items-center gap-1 p-1 rounded-[14px] bg-zinc-100 dark:bg-zinc-900"
-            style={{ boxShadow: "inset 0 1px 3px rgba(0,0,0,0.06)" }}
-          >
-            {tabs.map((t) => {
-              const isActive = tab === t
-              const label = t === "bring" ? "Needs" : t === "about" ? "Description" : "Tips"
-              return (
-                <button
-                  key={t}
-                  role="tab"
-                  aria-selected={isActive}
-                  onClick={() => setTab(t)}
-                  className={cn(
-                    "flex-1 py-2.5 rounded-[14px] text-[0.86rem] font-black uppercase tracking-wider transition-all duration-200",
-                    !isActive && "text-zinc-500 dark:text-zinc-400"
-                  )}
-                  style={
-                    isActive
-                      ? { backgroundColor: accent, color: isDark ? "#0a0a0a" : "#ffffff", boxShadow: `0 4px 14px -4px ${accent}70` }
-                      : undefined
-                  }
-                >
-                  {label}
-                </button>
-              )
-            })}
+          <div className="flex items-center gap-1.5">
+            <div
+              role="tablist"
+              aria-label="Service info sections"
+              className="flex-1 flex items-center gap-1 p-1 rounded-[14px] bg-zinc-100 dark:bg-zinc-900"
+              style={{ boxShadow: "inset 0 1px 3px rgba(0,0,0,0.06)" }}
+            >
+              {tabs.map((t) => {
+                const isActive = tab === t
+                const label = t === "bring" ? "Needs" : "Description"
+                return (
+                  <button
+                    key={t}
+                    role="tab"
+                    aria-selected={isActive}
+                    onClick={() => setTab(t)}
+                    className={cn(
+                      "flex-1 py-2.5 rounded-[14px] text-[0.86rem] font-black uppercase tracking-wider transition-all duration-200",
+                      !isActive && "text-zinc-500 dark:text-zinc-400"
+                    )}
+                    style={
+                      isActive
+                        ? { backgroundColor: accent, color: isDark ? "#0a0a0a" : "#ffffff", boxShadow: `0 4px 14px -4px ${accent}70` }
+                        : undefined
+                    }
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setTipsOpen(true)}
+              aria-label="View helpful tips"
+              className="shrink-0 w-11 h-11 rounded-[14px] flex items-center justify-center transition-all active:scale-95"
+              style={{ backgroundColor: `${accent}12`, color: accent, boxShadow: `0 2px 10px -4px ${accent}40` }}
+            >
+              <Lightbulb size={18} weight="fill" aria-hidden="true" />
+            </button>
           </div>
         </div>
 
@@ -385,9 +412,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                 Have questions? Switch to the <span className="font-black" style={{ color: accent }}>Needs</span> tab or chat with us directly.
               </p>
             </div>
-          )}
-          {tab === "tips" && (
-            <TipsPanel tips={tips} isGeneric={isGeneric} accent={accent} copied={tipsCopied} onCopy={handleCopyTips} />
           )}
         </div>
 
@@ -443,7 +467,23 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
             Request {naturalLabel}
           </a>
         </div>
-      </motion.div>
+      </div>
+
+      {/* ── Tips popup ──
+          Renders on top of this modal (own z-index, own backdrop) rather
+          than as a tab. Only appears when explicitly opened via the
+          Lightbulb button — never auto-opens, never intercepts clicks
+          when closed. */}
+      <TipsModal
+        open={tipsOpen}
+        onClose={() => setTipsOpen(false)}
+        tips={tips}
+        isGeneric={isGeneric}
+        accent={accent}
+        copied={tipsCopied}
+        onCopy={handleCopyTips}
+        hubTitle={hubTitle}
+      />
     </div>
   )
 } 
