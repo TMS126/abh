@@ -97,11 +97,6 @@ export function HubModal({ hubId, onClose, onSelectService }: {
         </div>
 
         <div className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-8">
-          {/* ── Section tabs ──
-              Bulk indicator is no longer a pulsing dot — it's a small
-              notification-style pill (icon + the word "Bulk") that sits
-              on the tab's corner, colored in the hub's accent, with a
-              text-shadow so the word pops instead of relying on a dot. */}
           <div role="tablist" aria-label="Service categories" className="flex flex-wrap justify-center gap-2 mb-5">
             {hub.sections.map((section, sIdx) => {
               const isOpen = openSectionIdx === sIdx
@@ -135,12 +130,6 @@ export function HubModal({ hubId, onClose, onSelectService }: {
             })}
           </div>
 
-          {/* ── Section description ──
-              Old version: a bordered/tinted box with a heavy triple
-              box-shadow glow. Now: no container box at all — just a
-              thin divider line, and a much softer background/shadow
-              sitting directly behind the text itself so it still
-              pops a little without reading as its own "panel". */}
           {activeSectionDesc && (
             <div key={openSectionIdx} className="mb-5 animate-in fade-in slide-in-from-top-1 duration-200">
               <div className="h-px w-full mb-3" style={{ backgroundColor: `${accent}30` }} aria-hidden="true" />
@@ -153,11 +142,6 @@ export function HubModal({ hubId, onClose, onSelectService }: {
             </div>
           )}
 
-          {/* ── Service item list ──
-              Bulk indicator here is now a word pill (not a dot) placed
-              in front of the item name — kept neutral gray, not hub
-              accent, so it doesn't visually compete with the section
-              tab's accent-colored bulk pill above. */}
           {activeSection && (
             <div key={`items-${openSectionIdx}`} className="abh-shadow-nested-group rounded-[14px] bg-zinc-50 dark:bg-zinc-900/50 p-3 md:p-4 grid grid-cols-1 gap-2 animate-in fade-in duration-200">
               {activeSection.items.map((item, iIdx) => (
@@ -172,6 +156,9 @@ export function HubModal({ hubId, onClose, onSelectService }: {
                       requirements: item.requirements,
                       desc: item.description,
                       turnaround: getTurnaround(activeSection.title, item.name),
+                      // Passed through only when the item actually has tips —
+                      // the modal's Tips tab uses this to decide whether to render.
+                      tips: item.tips ? [...item.tips] : undefined,
                     })
                   }
                   className="abh-shadow-nested-item flex items-center justify-between p-3.5 md:p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-transparent transition-all"
