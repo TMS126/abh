@@ -493,31 +493,36 @@ function findExactTips(hubId: string, sectionTitle: string | undefined, itemName
   return null
 }
 
+// ─────────────────────────────────────────────────────────
+// Hub-level fallback tips (used only when no item-specific
+// match is found). Tips content sourced from latest approved
+// copy — logic and structure unchanged.
+// ─────────────────────────────────────────────────────────
 export const HUB_FALLBACK_TIPS: Record<HubId, string[]> = {
   print: [
-    "What to bring: Original documents or digital files on phone/USB.",
-    "What you get: High-quality prints or copies while you wait.",
-    "Best result: PDF format prevents your layout from shifting.",
+    "What to bring: Physical original or digital file on your phone or USB.",
+    "What you get: High-quality print or copy on standard 80gsm paper (thicker options available).",
+    "Best result: PDF files keep your layout exact; tell us the quantity upfront for bulk rates.",
   ],
   doc: [
-    "What to bring: All details for your document (IDs, dates, notes).",
-    "What you get: Professionally typed and formatted documents.",
-    "Turnaround: Most single-page documents completed within 30 minutes.",
+    "What to bring: All notes, IDs, or reference details needed for your document.",
+    "What you get: Professionally typed, formatted, and printed document ready for use.",
+    "Best result: Double-check the spelling of names and dates before we finalize the document.",
   ],
   design: [
-    "What to bring: Clear idea of your style and any examples you like.",
-    "What you get: Custom digital designs ready for print or social media.",
-    "Note: We provide the design file only; printing is a separate service.",
+    "What to bring: Examples you like and any specific business details you want reflected.",
+    "What you get: Custom digital design delivered in PNG and print-ready PDF formats.",
+    "Best result: A clear description of your \"vibe\" (e.g., modern, professional) helps us finish faster.",
   ],
   eservice: [
-    "What to bring: ID and the phone linked to your government profile.",
-    "What you get: Application submitted with official proof provided.",
-    "Best result: Ensure your phone is charged to receive required OTPs.",
+    "What to bring: Your ID and the phone that receives OTP messages.",
+    "What you get: Official submission or check completed with a digital confirmation screenshot provided.",
+    "Best result: Ensure your phone is charged and you have access to your registered email address.",
   ],
   tech: [
-    "What to bring: Your device and its power cable/charger.",
-    "What you get: Expert technical setup or repair with a clear explanation.",
-    "Aftercare: We provide a written summary of any passwords or settings changed.",
+    "What to bring: Your device, its power charger, and any error messages you've seen.",
+    "What you get: Expert technical solution or setup with a clear explanation of what was fixed.",
+    "Best result: Describe exactly when the problem started to help us diagnose it faster.",
   ],
 }
 
