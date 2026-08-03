@@ -48,4 +48,4 @@ export function TipsPanel({ tips, isGeneric, accent, copied, onCopy }: {
       </ul>
     </div>
   )
-}
+            }
