@@ -435,8 +435,7 @@ const ITEM_TIPS_MAP: Record<string, string[]> = {
 
 // ─────────────────────────────────────────────────────────
 // Lookup logic with your recommended priority
-// ─────────────────────────────────────────────────────────
-function findExactTips(hubId: string, sectionTitle: string | undefined, itemName: string | undefined): string[] | null {
+// ─────────────────────────────────────────────────────────function findExactTips(hubId: string, sectionTitle: string | undefined, itemName: string | undefined): string[] | null {
   const hub = normalize(hubId)
   const section = normalize(sectionTitle)
   const item = normalize(itemName)
@@ -447,38 +446,43 @@ function findExactTips(hubId: string, sectionTitle: string | undefined, itemName
     if (ITEM_TIPS_MAP[k1]) return ITEM_TIPS_MAP[k1]
   }
 
-  // 2. hub|section|item where section is part of hub (e.g. doc|cv from scratch)
-  if (item) {
-    const k2 = `${hub}|${item}`
+  // 2. hub|section+item concatenated (how most keys are actually stored,
+  //    e.g. "doc|laminating a5" = hub "doc" + item "laminating a5")
+  if (section && item) {
+    const k2 = `${hub}|${section} ${item}`
     if (ITEM_TIPS_MAP[k2]) return ITEM_TIPS_MAP[k2]
   }
 
-  // 3. section|item
-  if (section && item) {
-    const k3 = `${section}|${item}`
+  // 3. hub|item (item alone already contains full phrase, e.g. "cv from scratch")
+  if (item) {
+    const k3 = `${hub}|${item}`
     if (ITEM_TIPS_MAP[k3]) return ITEM_TIPS_MAP[k3]
   }
 
-  // 4. Exact item name (for non-generic)
+  // 4. section|item
+  if (section && item) {
+    const k4 = `${section}|${item}`
+    if (ITEM_TIPS_MAP[k4]) return ITEM_TIPS_MAP[k4]
+  }
+
+  // 5. Exact item name alone
   if (item && ITEM_TIPS_MAP[item]) return ITEM_TIPS_MAP[item]
 
-  // 5. Scoped whole-word partial match - only if hub/section context matches for generic terms
+  // 6. Scoped whole-word partial match — only if hub/section context matches for generic terms
   const genericTerms = new Set(["basic", "standard", "premium", "simple", "custom", "complex", "colour", "b&w", "a4", "a5", "a3", "post", "video", "static", "single side", "double side", "basic (1 page)", "standard (2–3 pages)", "premium (4–5 pages)"])
-  
+
   const keys = Object.keys(ITEM_TIPS_MAP).sort((a, b) => b.length - a.length)
   for (const key of keys) {
     const keyParts = key.split("|")
     const keyItem = keyParts[keyParts.length - 1]
 
-    // Only allow generic term matching if composite key contains hub or section
     const isGeneric = genericTerms.has(keyItem) || genericTerms.has(key)
     if (isGeneric) {
       if (!key.includes(hub) && !key.includes(section)) continue
     }
 
-    // Whole-word matching to avoid accidental substring matches
     const itemWords = item.split(/\s+/)
-    const matchesWholeWord = 
+    const matchesWholeWord =
       item === keyItem ||
       item.startsWith(keyItem + " ") ||
       item.endsWith(" " + keyItem) ||
@@ -491,6 +495,22 @@ function findExactTips(hubId: string, sectionTitle: string | undefined, itemName
   }
 
   return null
+}
+
+function generateItemTips(hubId: HubId, sectionTitle: string | undefined, itemName: string | undefined): string[] {
+  return findExactTips(hubId, sectionTitle, itemName) ?? []
+}
+
+export function getServiceTips(
+  hubId: HubId,
+  sectionTitle?: string,
+  itemName?: string,
+  itemTips?: string[]
+): { tips: string[]; isGeneric: boolean } {
+  if (itemTips && itemTips.length > 0) return { tips: itemTips, isGeneric: false }
+
+  const tips = generateItemTips(hubId, sectionTitle, itemName)
+  return { tips, isGeneric: false }
 }
 
 // ─────────────────────────────────────────────────────────
