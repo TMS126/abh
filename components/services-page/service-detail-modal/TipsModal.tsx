@@ -1,51 +1,66 @@
 "use client"
 
-import { Copy, CheckCircle } from "@phosphor-icons/react"
+import { useEffect } from "react"
+import { X, Lightbulb } from "@phosphor-icons/react"
+import { TipsPanel } from "./TipsPanel"
 
-export function TipsPanel({ tips, isGeneric, accent, copied, onCopy }: {
-  tips: string[]; isGeneric: boolean; accent: string; copied: boolean; onCopy: () => void
+// Standalone popup for tips — no framer-motion, plain CSS animate-in.
+// Sits above the ServiceDetailModal with its own backdrop/z-index, and
+// only ever renders when `open` is true, so there's nothing left mounted
+// (invisible or otherwise) once it's closed.
+export function TipsModal({
+  open, onClose, tips, isGeneric, accent, copied, onCopy, hubTitle,
+}: {
+  open: boolean
+  onClose: () => void
+  tips: string[]
+  isGeneric: boolean
+  accent: string
+  copied: boolean
+  onCopy: () => void
+  hubTitle: string
 }) {
-  if (tips.length === 0) return null
-  return (
-    <div className="text-left">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        {isGeneric ? (
-          <span className="text-[0.7rem] font-bold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
-            General tips for this hub
-          </span>
-        ) : <span />}
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [open, onClose])
 
-        {/* Icon-only at rest; briefly swaps to a checkmark + "Copied"
-            label on copy. Plain conditional render + a keyed animate-in
-            fade for the swap — no framer-motion, no shared animation
-            state, nothing that can hang across instances. */}
-        <button
-          type="button"
-          onClick={onCopy}
-          aria-label={copied ? "Tips copied" : "Copy tips"}
-          className="ml-auto flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all active:scale-90"
-          style={{ backgroundColor: `${accent}15`, color: copied ? "#16a34a" : accent }}
-        >
-          {copied ? (
-            <span key="copied" className="flex items-center gap-1.5 text-[0.74rem] font-black uppercase tracking-wider animate-in fade-in zoom-in-95 duration-150">
-              <CheckCircle size={14} weight="fill" aria-hidden="true" />
-              Copied
-            </span>
-          ) : (
-            <span key="idle" className="flex items-center animate-in fade-in zoom-in-95 duration-150">
-              <Copy size={14} weight="bold" aria-hidden="true" />
-            </span>
-          )}
-        </button>
+  if (!open) return null
+
+  return (
+    <div className="fixed inset-0 z-[10300] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/55 animate-in fade-in duration-150" onClick={onClose} />
+
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Tips for ${hubTitle}`}
+        className="relative w-full max-w-sm bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 rounded-[14px] max-h-[80vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        style={{ boxShadow: `0 30px 70px -18px rgba(0,0,0,0.5), 0 10px 24px -8px ${accent}45` }}
+      >
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: `${accent}15`, color: accent }}>
+              <Lightbulb size={16} weight="fill" aria-hidden="true" />
+            </div>
+            <h4 className="abh-card-heading text-base truncate">Helpful Tips</h4>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close tips"
+            className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
+            style={{ backgroundColor: `${accent}15`, color: accent }}
+          >
+            <X size={16} weight="bold" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4 min-h-0">
+          <TipsPanel tips={tips} isGeneric={isGeneric} accent={accent} copied={copied} onCopy={onCopy} />
+        </div>
       </div>
-      <ul className="space-y-3">
-        {tips.map((tip, idx) => (
-          <li key={idx} className="flex items-start gap-3">
-            <span className="shrink-0 w-1.5 h-1.5 rounded-full mt-2" style={{ backgroundColor: accent }} aria-hidden="true" />
-            <span className="abh-body text-base">{tip}</span>
-          </li>
-        ))}
-      </ul>
     </div>
   )
 }
