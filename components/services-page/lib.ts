@@ -1,4 +1,3 @@
-
 import { HUBS, HubId, TURNAROUND, TURNAROUND_OVERRIDE } from "@/lib/data"
 // ─── Constants ────────────────────────────────────────────────────────────────
 export const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
@@ -145,7 +144,11 @@ export function buildSearchIndex(): SearchableService[] {
   return all
 }
 
+// ── Added `tips` ──
+// Optional — mirrors ServiceItem.tips in lib/data.ts. Only present when
+// the underlying item actually has tips; the modal's Tips tab checks for
+// this before rendering, so every other service is unaffected.
 export interface SelectedService {
   name: string; price: string; hubId: HubId
-  sectionTitle: string; requirements: string[]; desc?: string; turnaround?: string
-}
+  sectionTitle: string; requirements: string[]; desc?: string; turnaround?: string; tips?: string[]
+} 
