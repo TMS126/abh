@@ -36,7 +36,7 @@ function NoticeNotification({ isDark }: { isDark: boolean }) {
           backgroundColor: pillBg,
           boxShadow: `0 10px 28px -8px ${BRAND.orange}70, 0 4px 12px -2px rgba(0,0,0,0.25)`,
         }}
-        className="relative mx-auto mb-10 flex items-center gap-2 pl-4 pr-5 py-2.5 rounded-full text-white font-black text-[0.94rem] tracking-tight transition-transform active:scale-95 hover:-translate-y-0.5"
+        className="relative mx-auto mb-6 flex items-center gap-2 pl-4 pr-5 py-2.5 rounded-full text-white font-black text-[0.94rem] tracking-tight transition-transform active:scale-95 hover:-translate-y-0.5"
       >
         <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-white dark:bg-zinc-950 border-2 border-white dark:border-zinc-950 flex items-center justify-center shadow-md">
           <Megaphone size={10} weight="fill" className="text-brand-blue dark:text-brand-light-blue" />
@@ -47,7 +47,7 @@ function NoticeNotification({ isDark }: { isDark: boolean }) {
   }
 
   return (
-    <div className="relative mx-auto w-full max-w-md mb-10 rounded-[14px] border border-brand-orange/20 bg-brand-orange/5 dark:bg-brand-orange/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+    <div className="relative mx-auto w-full max-w-md mb-6 rounded-[14px] border border-brand-orange/20 bg-brand-orange/5 dark:bg-brand-orange/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
       <button
         onClick={() => setExpanded(false)}
         aria-label="Collapse notice"
@@ -102,20 +102,21 @@ function HubCta({ label, accent, pointsRight }: { label: string; accent: string;
 
 // ============================================================
 // Hub corner icon (bottom-right watermark icon)
-// Fixed: dark:text-zinc-800 was nearly invisible against the
-// card's dark:bg-zinc-950 background — bumped to a lighter
-// neutral (dark:text-zinc-700) so it actually reads in dark mode,
-// while staying just as subtle/neutral as the light-mode version.
+// No rotation (tilt 0). Neutral by default, richer than before
+// (zinc-300/600 instead of 200/700) so it doesn't read as dull,
+// and only shifts to the hub's accent color + a subtle scale-up
+// on hover — the color swap is the ONLY thing that changes on
+// interaction, everything else (position, size, tilt) stays fixed.
 // ============================================================
 
 function HubCornerIcon({ hubId, accent }: { hubId: HubId; accent: string }) {
   return (
     <div
-      className="pointer-events-none absolute -bottom-5 -right-5 w-28 h-28 rotate-[18deg] flex items-center justify-center text-zinc-200 dark:text-zinc-700 transition-colors duration-300 group-hover/hubcard:text-[var(--hub-accent)]"
+      className="pointer-events-none absolute -bottom-4 -right-4 w-24 h-24 flex items-center justify-center text-zinc-300 dark:text-zinc-600 opacity-90 transition-all duration-300 group-hover/hubcard:opacity-100 group-hover/hubcard:text-[var(--hub-accent)] group-hover/hubcard:scale-105"
       style={{ ["--hub-accent" as any]: accent }}
       aria-hidden="true"
     >
-      <HubIcon id={hubId} size={76} color="currentColor" />
+      <HubIcon id={hubId} size={72} color="currentColor" />
     </div>
   )
 }
@@ -239,18 +240,20 @@ export function ServicesPage() {
           </div>
         </ScrollBounce>
 
-        <ScrollBounce delay={0.08} className="relative z-40 w-full mb-10 flex justify-center">
+        {/* Notice now sits ABOVE the search bar, not below it */}
+        <ScrollBounce delay={0.08} className="relative z-0 w-full flex justify-center">
+          <NoticeNotification isDark={isDark} />
+        </ScrollBounce>
+
+        <ScrollBounce delay={0.14} className="relative z-40 w-full mb-10 flex justify-center">
           <div id="abh-inline-search" className="w-full flex justify-center">
             <InlineSearchBar onSelect={handleSelectService} />
           </div>
         </ScrollBounce>
 
-        <ScrollBounce delay={0.14} className="relative z-0 w-full flex justify-center">
-          <NoticeNotification isDark={isDark} />
-        </ScrollBounce>
-
-        {/* ── Desktop grid ── */}
-        <div className="hidden md:grid md:grid-cols-6 gap-5 pb-2 w-full">
+        {/* ── Desktop grid — gap-6 (was gap-5): a bit more breathing
+            room between hub cards without changing the layout shape ── */}
+        <div className="hidden md:grid md:grid-cols-6 gap-6 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub    = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
@@ -271,7 +274,6 @@ export function ServicesPage() {
                     <HubCornerIcon hubId={hubId} accent={accent} />
                     {hubHasBulk && <BulkRibbon />}
 
-                    {/* ---- Title: neutral color on desktop (was hub-accent colored) ---- */}
                     <h3 className="relative z-10 font-sans font-black text-[1.14rem] leading-tight mb-1.5 text-zinc-900 dark:text-zinc-50">
                       {hub.title}
                     </h3>
@@ -302,8 +304,9 @@ export function ServicesPage() {
           })}
         </div>
 
-        {/* ── Mobile stacked cards (titles stay hub-accent colored, unchanged) ── */}
-        <div className="flex md:hidden flex-col gap-5 pb-2 w-full">
+        {/* ── Mobile stacked cards — gap-6, hub title now neutral to
+            match the desktop treatment (was accent-colored) ── */}
+        <div className="flex md:hidden flex-col gap-6 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub    = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
@@ -320,10 +323,7 @@ export function ServicesPage() {
                   <HubCornerIcon hubId={hubId} accent={accent} />
                   {hubHasBulk && <BulkRibbon />}
 
-                  <h3
-                    className="relative z-10 font-sans font-black text-[1.18rem] leading-tight mb-1.5"
-                    style={{ color: accent }}
-                  >
+                  <h3 className="relative z-10 font-sans font-black text-[1.18rem] leading-tight mb-1.5 text-zinc-900 dark:text-zinc-50">
                     {hub.title}
                   </h3>
 
@@ -383,4 +383,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-} 
+      } 
