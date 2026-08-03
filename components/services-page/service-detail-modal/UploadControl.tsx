@@ -1,26 +1,41 @@
 "use client"
 
+import { useState } from "react"
 import { Paperclip, CheckCircle, WarningCircle, ShieldCheck, X } from "@phosphor-icons/react"
 import { BRAND } from "@/lib/brand"
 
 type UploadPhase = "idle" | "uploading" | "done" | "error"
 
-// Borderless — muted colored shadow does the "framing" job instead, so
-// the button reads as elevated rather than outlined.
+// Tracks pointer down/up/leave to get a genuine "pressed into the
+// surface" feel — inset shadow + a slight downward nudge while held —
+// rather than relying only on active:scale-95, which just shrinks it in
+// place without any sense of depth.
 export function UploadButton({ phase, accent, onClick }: { phase: UploadPhase; accent: string; onClick: () => void }) {
+  const [pressed, setPressed] = useState(false)
+  const isDone     = phase === "done"
+  const baseColor  = isDone ? "#16a34a" : accent
+  const baseBg     = isDone ? "#22c55e14" : `${accent}12`
+  const restShadow = isDone ? "0 4px 14px -4px #22c55e55" : `0 4px 14px -4px ${accent}55`
+  const pressShadow = isDone ? "inset 0 2px 6px -1px #16a34a55" : `inset 0 2px 6px -1px ${accent}55`
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-[14px] font-bold text-[0.84rem] transition-all active:scale-95"
-      style={
-        phase === "done"
-          ? { backgroundColor: "#22c55e14", color: "#16a34a", boxShadow: "0 4px 14px -4px #22c55e55" }
-          : { backgroundColor: `${accent}12`, color: accent, boxShadow: `0 4px 14px -4px ${accent}55` }
-      }
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerLeave={() => setPressed(false)}
+      onPointerCancel={() => setPressed(false)}
+      className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-[14px] font-bold text-[0.84rem] transition-all duration-150"
+      style={{
+        backgroundColor: baseBg,
+        color: baseColor,
+        boxShadow: pressed ? pressShadow : restShadow,
+        transform: pressed ? "translateY(1px) scale(0.97)" : "translateY(0) scale(1)",
+      }}
     >
       <Paperclip size={18} weight="bold" aria-hidden="true" />
-      {phase === "done" ? "Attached" : "Attach File"}
+      {isDone ? "Attached" : "Attach File"}
     </button>
   )
 }
@@ -103,4 +118,4 @@ export function UploadStatus({
   }
 
   return null
-}
+} 
