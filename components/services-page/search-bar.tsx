@@ -38,7 +38,7 @@ export function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService)
 
   return (
     <div ref={wrapRef} className="relative mx-auto w-full max-w-md">
-      <div className="flex items-center justify-center gap-1.5 border-b-2 border-zinc-200 dark:border-zinc-800 focus-within:border-[#1E6FA8] transition-colors pr-8">
+      <div className="flex items-center gap-2 border-b-2 border-zinc-200 dark:border-zinc-800 focus-within:border-[#1E6FA8] transition-colors pr-8 px-1">
         <MagnifyingGlass size={16} weight="bold" className="text-zinc-400 pointer-events-none shrink-0" />
         <input
           type="text"
@@ -46,7 +46,7 @@ export function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService)
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setFocused(true)}
           placeholder="Find a service…"
-          className="min-w-0 flex-1 py-3 bg-transparent border-0 text-base font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none text-center"
+          className="min-w-0 flex-1 py-3 bg-transparent border-0 text-base font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none"
         />
       </div>
       {query && (
