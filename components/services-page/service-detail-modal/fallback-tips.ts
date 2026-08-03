@@ -56,7 +56,7 @@ const ITEM_TIPS_MAP: Record<string, string[]> = {
   "print|glossy photo (a4)": [
     "What to bring: Highest quality original — A4 enlarges 4x more than 4x6, so quality matters more.",
     "What you get: A4 glossy print suitable for framing or display.",
-    "Best result: You can choose glossy for vibrant colours or matte to reduce glare behind glass.",
+    "Best result: For photos going behind glass, ask for our Matte option to reduce glare and prevent the photo from sticking to the glass.",
   ],
 
   // ==================== DOC HUB ====================
@@ -88,7 +88,7 @@ const ITEM_TIPS_MAP: Record<string, string[]> = {
   "doc|affidavit / letter": [
     "What to bring: ID and any reference numbers like case numbers for police-related affidavits.",
     "What you get: Typed affidavit or formal letter ready for Commissioner of Oaths.",
-    "Important: Don't sign before you come — affidavits must be signed in front of the Commissioner after typing.",
+    "Important: Don't sign before you come — legally, affidavits must be signed in front of the Commissioner after typing.",
   ],
   "doc|scan to digital": [
     "What to bring: Original physical document — originals scan sharper than photos of documents.",
@@ -103,7 +103,7 @@ const ITEM_TIPS_MAP: Record<string, string[]> = {
   "doc|laminating a4": [
     "What to bring: Document flat — if you need to certify it later, certify first then laminate the certified copy.",
     "What you get: A4 laminated in 2 minutes while you wait, with neat trimmed edges.",
-    "Aftercare: Laminating is permanent, so please confirm before we seal it.",
+    "Note: Laminating is permanent; most officials will not certify a document once it is sealed in plastic.",
   ],
   "doc|laminating a3": [
     "What to bring: A3 document flat — this is the largest size our machine handles, we cannot laminate A2/A1/A0.",
@@ -149,8 +149,8 @@ const ITEM_TIPS_MAP: Record<string, string[]> = {
   ],
   "design|flyers & posters complex": [
     "What to bring: All text upfront — price list, services, map, photos — adding content later may need revision fee.",
-    "What you get: Complex layout with multiple sections, delivered as A3 300dpi for printing elsewhere plus 1080px for WhatsApp.",
-    "Aftercare: We keep files 6 months — extra pages after that are R80 per page, not full redesign price.",
+    "What you get: Complex layout with multiple sections, delivered as A3 300dpi for printing plus 1080px for WhatsApp.",
+    "Policy: Minor text fixes after completion are R80; major layout changes or adding new sections will require a new design fee.",
   ],
   "design|social media post": [
     "What to bring: Exact wording you want — we copy it exactly to avoid typos.",
@@ -165,7 +165,7 @@ const ITEM_TIPS_MAP: Record<string, string[]> = {
   "design|invitations static": [
     "What to bring: Names exactly as you want spelled, date, time, venue, and theme colours.",
     "What you get: Static invitation as JPG for WhatsApp plus PDF for printing elsewhere.",
-    "Best result: If printing elsewhere, order 10 extra — reprinting small quantities costs more than extra now.",
+    "Best result: If printing elsewhere, we recommend ordering 10 extra copies — reprinting small quantities later is much more expensive.",
   ],
   "design|invitations video": [
     "What to bring: 5 best photos, event details worded exactly, and music preference if you have one.",
@@ -232,12 +232,12 @@ const ITEM_TIPS_MAP: Record<string, string[]> = {
   "eservice|sassa banking update": [
     "What to bring: ID and bank letter or statement not older than 3 months — account must be in your name.",
     "What you get: Banking details updated and confirmation shown.",
-    "Turnaround: Banking updates take 7-14 days to reflect — keep old account open for one month in case payment goes there first.",
+    "Turnaround: Updates take 7-14 days to reflect — keep your old account open for one month in case the next payment goes there first.",
   ],
   "eservice|sassa grant application": [
     "What to bring: Your ID, child's birth certificate, clinic card, and proof of income if applicable.",
     "What you get: Grant application submitted with reference to track at SASSA office.",
-    "Turnaround: Grants take up to 3 months to approve — reference helps you follow up.",
+    "Turnaround: Grants take up to 3 months to approve — keep your reference number to follow up at the SASSA office if you don't receive an SMS.",
   ],
   "eservice|sars enquiry / statement / updates": [
     "What to bring: ID and phone that receives SARS OTP — needed for every login.",
@@ -251,8 +251,8 @@ const ITEM_TIPS_MAP: Record<string, string[]> = {
   ],
   "eservice|sars tax pin / penalty": [
     "What to bring: ID and phone for OTP — we check compliance and penalty details.",
-    "What you get: Tax PIN generated if compliant, or penalty amount and letter explaining why PIN fails.",
-    "Best result: If you owe even R1, PIN won't generate — we check statement first so you don't pay twice.",
+    "What you get: Tax PIN generated if compliant, or penalty letter explaining why it failed.",
+    "Best result: If you owe even R1, the PIN won't generate — we check your statement first so you don't pay for a failed application.",
   ],
   "eservice|sars tax clearance": [
     "What to bring: ID and confirmation that tax affairs are up to date.",
@@ -287,7 +287,7 @@ const ITEM_TIPS_MAP: Record<string, string[]> = {
   "eservice|job / dpsa application": [
     "What to bring: New Z83 form (2021 version), CV, and certified documents less than 6 months old.",
     "What you get: Application compiled and submitted online with confirmation.",
-    "Note: DPSA system closes at 15:00 on closing date — not midnight — so apply before that.",
+    "Note: We recommend a 15:00 deadline on closing dates to avoid common system crashes caused by last-minute traffic.",
   ],
   "eservice|bursary application": [
     "What to bring: Certified ID less than 3 months, latest results, parents' income proof, and motivational letter handwritten if possible.",
@@ -302,7 +302,7 @@ const ITEM_TIPS_MAP: Record<string, string[]> = {
   "eservice|nsfas application": [
     "What to bring: ID, parents' IDs, proof of income, and your own email you can access long-term.",
     "What you get: NSFAS application submitted with all documents uploaded as PDFs.",
-    "Best result: Upload clear PDFs, not blurry photos — NSFAS system can reject blurry uploads and you may think you applied when it didn't save.",
+    "Best result: Upload clear PDFs, not blurry photos — the NSFAS system often rejects blurry uploads without notifying you.",
   ],
   "eservice|university application": [
     "What to bring: Certified ID less than 3 months, Grade 11 or 12 results, and ID of parent/guardian if required.",
@@ -408,8 +408,8 @@ const ITEM_TIPS_MAP: Record<string, string[]> = {
   ],
   "tech|pc cleanup": [
     "What to bring: Laptop plus charger.",
-    "What you get: Internal dust cleaned, temporary files removed, startup programs optimized, plus speed check before and after.",
-    "Aftercare: Dust cleaning every 6 months helps prevent overheating and auto shutdowns — Bothaville dust builds up quickly.",
+    "What you get: Internal dust cleaned, temporary files removed, and startup programs optimized.",
+    "Aftercare: Bothaville dust builds up quickly; an internal cleaning every 6 months prevents the overheating that leads to hardware failure.",
   ],
   "tech|virus / malware removal": [
     "What to bring: Laptop plus charger — and list of important accounts if possible.",
@@ -422,9 +422,9 @@ const ITEM_TIPS_MAP: Record<string, string[]> = {
     "Turnaround: Updates take 1-2 hours — you don't need to wait in shop, we call when done.",
   ],
   "tech|windows install (no activation)": [
-    "What to bring: Laptop, charger, and flash drive if you want important files copied — we save old files to 'OldFiles' folder.",
-    "What you get: Windows installed with drivers, Office trial, and antivirus — usable same day, with watermark until activated.",
-    "Best result: Good option if you need files urgently and will activate later when you have a key.",
+    "What to bring: Laptop, charger, and flash drive if you want files copied — we save old files to an 'OldFiles' folder.",
+    "What you get: Windows installed with drivers and antivirus — usable same day with a watermark.",
+    "Note: Microsoft Office is installed but will require your own activation key to use all features.",
   ],
   "tech|windows install + activation": [
     "What to bring: Laptop, charger, and flash drive for extra backup if needed — we also backup to desktop folder.",
@@ -494,11 +494,31 @@ function findExactTips(hubId: string, sectionTitle: string | undefined, itemName
 }
 
 export const HUB_FALLBACK_TIPS: Record<HubId, string[]> = {
-  print: [],
-  doc: [],
-  design: [],
-  eservice: [],
-  tech: [],
+  print: [
+    "What to bring: Original documents or digital files on phone/USB.",
+    "What you get: High-quality prints or copies while you wait.",
+    "Best result: PDF format prevents your layout from shifting.",
+  ],
+  doc: [
+    "What to bring: All details for your document (IDs, dates, notes).",
+    "What you get: Professionally typed and formatted documents.",
+    "Turnaround: Most single-page documents completed within 30 minutes.",
+  ],
+  design: [
+    "What to bring: Clear idea of your style and any examples you like.",
+    "What you get: Custom digital designs ready for print or social media.",
+    "Note: We provide the design file only; printing is a separate service.",
+  ],
+  eservice: [
+    "What to bring: ID and the phone linked to your government profile.",
+    "What you get: Application submitted with official proof provided.",
+    "Best result: Ensure your phone is charged to receive required OTPs.",
+  ],
+  tech: [
+    "What to bring: Your device and its power cable/charger.",
+    "What you get: Expert technical setup or repair with a clear explanation.",
+    "Aftercare: We provide a written summary of any passwords or settings changed.",
+  ],
 }
 
 function generateItemTips(hubId: HubId, sectionTitle: string | undefined, itemName: string | undefined): string[] {
