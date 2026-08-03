@@ -229,17 +229,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         className="relative w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px] overflow-hidden"
         style={{ boxShadow: `0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4), 0 10px 24px -8px ${accent}50` }}
       >
-        {/* ── Bulk-deal corner ribbon ──
-            Fixed properly this time: the ribbon now has its own small
-            square clipping box (104×104px, overflow-hidden) sitting
-            exactly in the modal's top-right corner, instead of relying on
-            the entire modal's overflow-hidden to clip it. That's what was
-            causing the word to get cut mid-letter — the clip boundary was
-            the whole modal edge, which shifts relative to the ribbon at
-            different modal widths. With a dedicated box sized to just the
-            ribbon, the diagonal strip's two ends clip symmetrically no
-            matter the screen width, and "Bulk" stays centered and fully
-            visible in the middle every time. */}
         {hasBulk && (
           <div
             className="absolute top-0 right-0 w-[104px] h-[104px] overflow-hidden pointer-events-none z-10"
@@ -319,9 +308,23 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         </div>
 
         {/* ── Tabs: Needs / Description / Tips ──
-            Active tab background is a single motion.span with a shared
-            layoutId, so switching tabs animates it sliding between
-            positions instead of just swapping color instantly. */}
+            FIXED: previously used a framer-motion `layoutId` shared
+            across every instance of this modal to animate the active-tab
+            highlight sliding between positions. Because that ID was a
+            hardcoded global string, Framer Motion treated it as "the same
+            element" across entirely separate modal instances (e.g. after
+            closing one service and opening another, or opening the hub
+            modal next). That cross-instance layout animation could hang
+            mid-transition, which prevented AnimatePresence from ever
+            completing the exit animation — so the old modal never
+            actually unmounted. It stayed in the DOM, invisible, full-
+            screen, and still fully clickable underneath everything else
+            — which is exactly what caused hub cards to stop responding,
+            WhatsApp to "randomly" fire (it was the stale modal's own
+            Request button), and the hub modal to appear to show upload
+            UI (that was actually the stuck old modal bleeding through).
+            Replaced with a plain, non-shared background-color transition
+            — same smooth feel, zero cross-instance risk. */}
         <div className="px-6 pt-1">
           <div
             role="tablist"
@@ -339,20 +342,16 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                   aria-selected={isActive}
                   onClick={() => setTab(t)}
                   className={cn(
-                    "relative flex-1 py-2.5 rounded-[14px] text-[0.86rem] font-black uppercase tracking-wider transition-colors duration-200",
+                    "flex-1 py-2.5 rounded-[14px] text-[0.86rem] font-black uppercase tracking-wider transition-all duration-200",
                     !isActive && "text-zinc-500 dark:text-zinc-400"
                   )}
-                  style={isActive ? { color: isDark ? "#0a0a0a" : "#ffffff" } : undefined}
+                  style={
+                    isActive
+                      ? { backgroundColor: accent, color: isDark ? "#0a0a0a" : "#ffffff", boxShadow: `0 4px 14px -4px ${accent}70` }
+                      : undefined
+                  }
                 >
-                  {isActive && (
-                    <motion.span
-                      layoutId="service-tab-highlight"
-                      className="absolute inset-0 rounded-[14px] -z-10"
-                      style={{ backgroundColor: accent, boxShadow: `0 4px 14px -4px ${accent}70` }}
-                      transition={{ type: "spring", stiffness: 420, damping: 32 }}
-                    />
-                  )}
-                  <span className="relative">{label}</span>
+                  {label}
                 </button>
               )
             })}
@@ -447,4 +446,4 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
       </motion.div>
     </div>
   )
-}
+} 
