@@ -228,13 +228,14 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         style={{ boxShadow: `0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4), 0 10px 24px -8px ${accent}50` }}
       >
         {hasBulk && (
-          // Moved down from top-4 to top-14 and dropped below the header
-          // action buttons in stacking order (z-10 vs their z-30) — it
-          // previously sat in the same corner as share/close and could
-          // visually collide with them at narrow widths.
-          <div className="absolute top-14 -right-8 rotate-45 z-10 pointer-events-none">
+          // Now flush in the actual top-right corner, offset so its
+          // rotated ends run past the modal's own edges — the modal's
+          // rounded-[14px] overflow-hidden clips it into a clean corner
+          // ribbon shape. Buttons moved to the opposite (top-left) corner
+          // below, so there's no shared space left for it to overlap.
+          <div className="absolute -top-1 -right-10 rotate-45 z-10 pointer-events-none">
             <span
-              className="block w-28 text-center py-0.5 text-[0.62rem] font-black uppercase tracking-wider text-white"
+              className="block w-36 text-center py-1 text-[0.62rem] font-black uppercase tracking-wider text-white"
               style={{ backgroundColor: BULK_RIBBON_ORANGE, boxShadow: "0 3px 8px -2px rgba(0,0,0,0.35)" }}
             >
               Bulk
@@ -244,13 +245,45 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
 
         <div className="px-6 pt-6 pb-5 flex-shrink-0">
           <div className="flex items-start mb-2">
-            <div className="w-[72px] shrink-0" aria-hidden="true" />
+            <div className="relative z-30 flex items-center justify-start gap-2 shrink-0 w-[72px]">
+              <button
+                type="button"
+                onClick={handleShare}
+                aria-label="Share this service"
+                className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                style={{ backgroundColor: `${accent}15`, color: accent }}
+              >
+                <ShareNetwork size={16} weight="bold" aria-hidden="true" />
+              </button>
+              {shareCopied && (
+                <span className="absolute -bottom-8 left-0 whitespace-nowrap text-[0.74rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full shadow-lg animate-in fade-in zoom-in-95 duration-150">
+                  Copied!
+                </span>
+              )}
+              <button
+                onClick={onClose}
+                aria-label="Close"
+                className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
+                style={{ backgroundColor: `${accent}15`, color: accent }}
+              >
+                <X size={16} weight="bold" aria-hidden="true" />
+              </button>
+            </div>
 
             <div className="flex-1 min-w-0 text-center">
               <div className="flex items-center justify-center gap-1.5 mb-2">
                 <HubIcon id={svc.hubId} size={12} color={accent} />
                 <span className="text-[0.74rem] font-black uppercase tracking-widest" style={{ color: accent }}>{hubTitle}</span>
               </div>
+
+              <span className="text-[0.74rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-2.5 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>
+                {cleanText(svc.sectionTitle)}
+              </span>
+              <h3 className="abh-card-heading text-[1.32rem] leading-tight">{svc.name}</h3>
+            </div>
+
+            <div className="w-[72px] shrink-0" aria-hidden="true" />
+          </div>
 
               <span className="text-[0.74rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-2.5 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>
                 {cleanText(svc.sectionTitle)}
