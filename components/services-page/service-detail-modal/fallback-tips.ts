@@ -1,11 +1,9 @@
 import { HubId } from "@/lib/data"
 
-// Item-level dynamic tips. If a specific service provides `tips` we use
-// those verbatim. Otherwise we try to synthesize short, practical tips
-// based on the service's section and item name so the Tips tab is useful
-// and focused on the thing the customer is about to request.
-// If we can't generate anything useful, fall back to the older hub-level
-// tips (still reasonably helpful).
+// Item-level dynamic tips. Checked most-specific-first: exact service
+// keywords → section-level → hub-level fallback. Keeps the Tips tab
+// genuinely tailored to what the customer is about to request rather
+// than generic hub advice.
 export const HUB_FALLBACK_TIPS: Record<HubId, string[]> = {
   print: [
     "Send your file ahead via WhatsApp or email if you can — it saves time when you arrive.",
@@ -38,78 +36,158 @@ function normalize(s: string | undefined) {
   return (s || "").toLowerCase().trim()
 }
 
+// ── Item-specific tip generator ──
+// Ordered from most specific keyword matches to broadest. Returns as soon
+// as a category matches, so a "Black & White Printing" item gets its own
+// exact tips rather than falling into the generic "print" catch-all below it.
 function generateItemTips(sectionTitle: string | undefined, itemName: string | undefined): string[] {
   const section = normalize(sectionTitle)
   const name = normalize(itemName)
   const combined = `${section} ${name}`
-  const tips: string[] = []
+
+  // Black & White printing/copying
+  if ((combined.includes("black") && combined.includes("white")) && (section.includes("print") || section.includes("copy"))) {
+    return [
+      "Black & white keeps small text sharpest — great for documents, contracts, and anything text-heavy.",
+      "Photos and graphics convert to greyscale automatically; if contrast matters, colour usually reads clearer.",
+      "Bulk pricing kicks in automatically from 10+ pages — mention your page count upfront.",
+    ]
+  }
+
+  // Colour printing/copying
+  if (combined.includes("colour") && (section.includes("print") || section.includes("copy"))) {
+    return [
+      "Bring your file in its original resolution — low-res images can look blurry or pixelated when printed large.",
+      "If exact brand colours matter (logo, letterhead), let us know — screen colours and print colours can shift slightly.",
+      "Bulk pricing kicks in automatically from 10+ pages — mention your page count upfront.",
+    ]
+  }
 
   // CV / Resume / Cover letter
   if (combined.includes("cv") || combined.includes("resume") || combined.includes("cover")) {
-    tips.push("Bring any existing CV or job adverts you9re applying for — we can tailor keywords and layout to match.")
-    tips.push("Use a recent, professional photo only if requested; many employers prefer no photo.")
-    tips.push("List out your key achievements with numbers where possible (e.g., “Increased sales 30%”); this helps us write punchy bullet points.")
-    return tips
+    return [
+      "Bring any existing CV or job adverts you're applying for — we can tailor keywords and layout to match.",
+      "Use a recent, professional photo only if requested; many employers prefer no photo.",
+      "List out your key achievements with numbers where possible (e.g. \"Increased sales 30%\") — this helps us write punchy bullet points.",
+    ]
   }
 
   // Passport / ID / Photo services
   if (combined.includes("passport") || combined.includes("id photo") || combined.includes("photo")) {
-    tips.push("Wear neutral clothing and avoid heavy makeup or sunglasses for ID/passport photos.")
-    tips.push("If a specific size is required (e.g., passport, visa), tell us up front so we produce the exact dimensions.")
-    return tips
+    return [
+      "Wear neutral clothing and avoid heavy makeup or sunglasses for ID/passport photos.",
+      "If a specific size is required (passport, visa, etc.), tell us up front so we produce the exact dimensions.",
+    ]
   }
 
-  // Printing / Photocopying / Scanning
-  if (section.includes("print") || combined.includes("print") || combined.includes("photocopy") || combined.includes("scan")) {
-    tips.push("Bring the original document or a high-quality file to avoid blurry scans or low-resolution prints.")
-    tips.push("If you need duplex printing or special paper (gloss/matte), mention it when you order.")
-    tips.push("For many pages, ask about stapling, binding, or bulk discounts before we print.")
-    return tips
+  // Business cards
+  if (combined.includes("business card")) {
+    return [
+      "Provide your logo (SVG or high-resolution PNG) and exact contact details — double-check spelling before we print.",
+      "Decide between single or double-sided upfront; double-sided fits a QR code or social handles nicely.",
+      "Matte or gloss finish? Let us know your preference before the final print run.",
+    ]
   }
 
-  // Business cards / Flyers / Posters / Design
-  if (combined.includes("business card") || combined.includes("flyer") || combined.includes("poster") || section.includes("design")) {
-    tips.push("Provide your logo (SVG or high-resolution PNG) and any brand colours/hex codes to keep things consistent.")
-    tips.push("Specify the final use (print size, social media, WhatsApp) so we export the correct file format and resolution.")
-    tips.push("If you want bleed or crop marks for print, tell us — we can prepare print-ready PDFs.")
-    return tips
+  // Flyers / Posters
+  if (combined.includes("flyer") || combined.includes("poster")) {
+    return [
+      "Share the exact event/promo details (date, time, price) written out — avoids last-minute text changes.",
+      "Tell us the intended size and where it'll be displayed (print, WhatsApp, social) so we export it correctly.",
+      "A clear headline and one strong image usually outperform a flyer packed with text.",
+    ]
+  }
+
+  // Invitations
+  if (combined.includes("invitation")) {
+    return [
+      "Share the full event details (date, time, venue, dress code if any) exactly as you want them worded.",
+      "Video invitations take longer to produce — let us know your date so we can plan turnaround.",
+      "Send us any theme colours or reference invitations you like the style of.",
+    ]
+  }
+
+  // Logo / Brand identity
+  if (name.includes("logo") || name.includes("brand") || name.includes("identity")) {
+    return [
+      "Tell us what feelings or adjectives the brand should communicate (e.g. friendly, professional, modern).",
+      "Share any competitor examples you like so we can avoid accidental similarity.",
+      "Standard and Premium tiers include multiple concepts — decide upfront if you want options to choose from.",
+    ]
+  }
+
+  // Social media posts
+  if (section.includes("social") || combined.includes("social media")) {
+    return [
+      "Tell us which platform it's for (Instagram, Facebook, WhatsApp Status) — sizing differs between them.",
+      "Share the exact caption/message wording so nothing gets typo'd or reworded by accident.",
+    ]
+  }
+
+  // Letterhead
+  if (combined.includes("letterhead")) {
+    return [
+      "Provide your logo, business name, and contact details exactly as they should appear — this becomes a template you'll reuse.",
+      "Let us know if you need both a digital (Word/PDF) and print-ready version.",
+    ]
   }
 
   // Laminating / Binding
-  if (combined.includes("lamin") || combined.includes("bind") || combined.includes("binding")) {
-    tips.push("Confirm the exact pages you want laminated or bound — laminating is permanent for single pages.")
-    tips.push("For documents that must remain editable, choose binding instead of laminating.")
-    return tips
+  if (combined.includes("lamin") || combined.includes("bind")) {
+    return [
+      "Confirm the exact pages you want laminated — laminating is permanent, so double-check before we start.",
+      "For documents you'll need to edit later, choose binding instead of laminating.",
+    ]
   }
 
-  // Technical repairs / Install / Support
+  // Affidavits / typed letters
+  if (combined.includes("affidavit") || combined.includes("letter")) {
+    return [
+      "Bring your ID document — most affidavits and formal letters need it for reference.",
+      "Some affidavits require swearing in front of a Commissioner of Oaths after typing — ask us if yours does.",
+    ]
+  }
+
+  // Scanning
+  if (combined.includes("scan")) {
+    return [
+      "Bring the original physical document — scan quality depends on the condition of what you bring in.",
+      "Let us know the file format you need (PDF, JPG) and where it should be sent.",
+    ]
+  }
+
+  // Generic printing / photocopying (catch-all within Print/Docu hubs, after the more specific B&W/colour checks above)
+  if (section.includes("print") || combined.includes("photocopy")) {
+    return [
+      "Bring the original document or a high-quality file to avoid blurry scans or low-resolution prints.",
+      "For many pages, ask about stapling, binding, or bulk discounts before we print.",
+    ]
+  }
+
+  // Tech repairs / installs / setup
   if (section.includes("tech") || combined.includes("repair") || combined.includes("install") || combined.includes("setup")) {
-    tips.push("Back up your data before handing over devices — we may need to reset or reinstall to fix problems.")
-    tips.push("Bring any chargers, passwords, or account info related to the device; they speed up diagnostics and repairs.")
-    tips.push("Describe when the problem started and any recent changes (apps installed, updates) — that9s often the key to a quick fix.")
-    return tips
+    return [
+      "Back up your data before handing over devices — we may need to reset or reinstall to fix problems.",
+      "Bring any chargers, passwords, or account info related to the device; they speed up diagnostics and repairs.",
+      "Describe when the problem started and any recent changes (apps installed, updates) — that's often the key to a quick fix.",
+    ]
   }
 
-  // eServices / Government forms / Submissions
+  // eServices / Government forms
   if (section.includes("eservice") || combined.includes("sassa") || combined.includes("sars") || combined.includes("nsfas") || combined.includes("application")) {
-    tips.push("Bring original ID and any supporting documents (proof of address, bank statements) — portals usually require scans or photos.")
-    tips.push("Have your cellphone ready for OTPs and keep an eye on SMS during submission.")
-    tips.push("We submit and provide you with a reference number — keep it for tracking and follow-up with the relevant agency.")
-    return tips
+    return [
+      "Bring original ID and any supporting documents (proof of address, bank statements) — portals usually require scans or photos.",
+      "Have your cellphone ready for OTPs and keep an eye on SMS during submission.",
+      "We submit and provide you with a reference number — keep it for tracking and follow-up with the relevant agency.",
+    ]
   }
 
-  // Generic but item-focused: use words in the item name to guess
-  if (name.includes("logo") || name.includes("brand") || name.includes("identity")) {
-    tips.push("Tell us what feelings or adjectives the brand should communicate (e.g., friendly, professional, modern).")
-    tips.push("Share any competitor examples you like so we can avoid accidental similarity.")
-    return tips
-  }
-
-  if (name.includes("cv") === false && name.length > 0) {
-    // If we have an item name but none of the above matched, offer some general, practical tips
-    tips.push(`If you have any reference files or examples, bring them — they help us get the first draft right for “${itemName}”.`)
-    tips.push("Tell us your final use or deadline so we prioritise format and turnaround correctly.")
-    return tips
+  // Nothing matched a specific category — fall back to a general, still item-aware tip
+  if (itemName) {
+    return [
+      `If you have any reference files or examples, bring them — they help us get the first draft right for "${itemName}".`,
+      "Tell us your final use or deadline so we prioritise format and turnaround correctly.",
+    ]
   }
 
   return []
@@ -124,7 +202,7 @@ export function getServiceTips(
   // If the item itself provides tips, use those
   if (itemTips && itemTips.length > 0) return { tips: itemTips, isGeneric: false }
 
-  // First try to generate item-specific tips from the section/title/name
+  // Try to generate item-specific tips from the section/name
   const generated = generateItemTips(sectionTitle, itemName)
   if (generated.length > 0) return { tips: generated, isGeneric: false }
 
