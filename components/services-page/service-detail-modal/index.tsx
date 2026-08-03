@@ -230,18 +230,32 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         style={{ boxShadow: `0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4), 0 10px 24px -8px ${accent}50` }}
       >
         {/* ── Bulk-deal corner ribbon ──
-            Re-tuned position/width/tracking so the full word clips
-            cleanly inside the modal's rounded corner instead of running
-            past the visible edge (previous -right-10/w-36/tracking-wider
-            combo pushed part of the text outside the clip region). */}
+            Fixed properly this time: the ribbon now has its own small
+            square clipping box (104×104px, overflow-hidden) sitting
+            exactly in the modal's top-right corner, instead of relying on
+            the entire modal's overflow-hidden to clip it. That's what was
+            causing the word to get cut mid-letter — the clip boundary was
+            the whole modal edge, which shifts relative to the ribbon at
+            different modal widths. With a dedicated box sized to just the
+            ribbon, the diagonal strip's two ends clip symmetrically no
+            matter the screen width, and "Bulk" stays centered and fully
+            visible in the middle every time. */}
         {hasBulk && (
           <div
-            className="absolute z-10 pointer-events-none"
-            style={{ top: "18px", right: "-36px", transform: "rotate(45deg)" }}
+            className="absolute top-0 right-0 w-[104px] h-[104px] overflow-hidden pointer-events-none z-10"
+            aria-hidden="true"
           >
             <span
-              className="block w-[150px] text-center py-1.5 text-[0.66rem] font-black uppercase text-white"
-              style={{ backgroundColor: BULK_RIBBON_ORANGE, boxShadow: "0 3px 8px -2px rgba(0,0,0,0.35)" }}
+              className="absolute block text-center text-[0.66rem] font-black uppercase text-white"
+              style={{
+                top: "28px",
+                right: "-34px",
+                width: "150px",
+                transform: "rotate(45deg)",
+                backgroundColor: BULK_RIBBON_ORANGE,
+                padding: "6px 0",
+                boxShadow: "0 3px 8px -2px rgba(0,0,0,0.35)",
+              }}
             >
               Bulk
             </span>
@@ -305,8 +319,8 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         </div>
 
         {/* ── Tabs: Needs / Description / Tips ──
-            Active tab background is now a single motion.span with a
-            shared layoutId, so switching tabs animates it sliding between
+            Active tab background is a single motion.span with a shared
+            layoutId, so switching tabs animates it sliding between
             positions instead of just swapping color instantly. */}
         <div className="px-6 pt-1">
           <div
@@ -433,4 +447,4 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
       </motion.div>
     </div>
   )
-} 
+}
