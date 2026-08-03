@@ -3,10 +3,10 @@
 import { Tag } from "@phosphor-icons/react"
 import { getContrastText } from "@/lib/color"
 
-// Discount-type pill (defaults to "Bulk Deal" — the label is a prop so
-// any future discount type can reuse this same component with different
-// wording) sits centered above the live "Add X more..." hint, which stays
-// in the hub's soft accent tint as before.
+// Merged into a single pill — solid-accent label half + soft-accent-tint
+// hint half, sitting flush against each other instead of stacked as two
+// separate pills. Each half keeps its own original coloring (solid fill
+// for the label, ${accent}14 tint for the hint) — only the layout changed.
 export function BulkHint({
   hint, accent, isDiscount, baseUnitPrice, effRate, priceUnit, label = "Bulk Deal",
 }: {
@@ -18,19 +18,20 @@ export function BulkHint({
 
   return (
     <div className="animate-in fade-in duration-200 flex flex-col items-center gap-2 px-1">
-      <span
-        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.65rem] font-black uppercase tracking-wider"
-        style={{ backgroundColor: accent, color: labelTextColor }}
-      >
-        <Tag size={11} weight="fill" aria-hidden="true" />
-        {label}
-      </span>
-
-      <div
-        className="inline-flex items-center px-3 py-1.5 rounded-full text-[0.8rem] font-bold text-center"
-        style={{ backgroundColor: `${accent}14`, color: accent }}
-      >
-        {hint}
+      <div className="inline-flex items-stretch rounded-full overflow-hidden shadow-sm">
+        <span
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[0.65rem] font-black uppercase tracking-wider whitespace-nowrap"
+          style={{ backgroundColor: accent, color: labelTextColor }}
+        >
+          <Tag size={11} weight="fill" aria-hidden="true" />
+          {label}
+        </span>
+        <span
+          className="inline-flex items-center px-3 py-1.5 text-[0.8rem] font-bold text-center"
+          style={{ backgroundColor: `${accent}14`, color: accent }}
+        >
+          {hint}
+        </span>
       </div>
 
       {isDiscount && (
@@ -43,4 +44,4 @@ export function BulkHint({
       )}
     </div>
   )
-}
+} 
