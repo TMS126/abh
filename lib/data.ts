@@ -19,7 +19,12 @@ export const PRICING = {
 
 export type HubId = HubKey
 
-export interface ServiceItem { name: string; price: string; requirements: string[]; description?: string }
+// ── Added `tips` ──
+// Optional, per-item, plain-language customer tips shown in the service
+// modal's 3rd tab ("Tips"). Deliberately optional and general-purpose —
+// any hub/section/item can add it later; the tab itself only renders
+// when an item actually has tips (see service-detail-modal.tsx).
+export interface ServiceItem { name: string; price: string; requirements: string[]; description?: string; tips?: string[] }
 export interface HubSection { title: string; desc?: string; items: ServiceItem[] }
 export interface Hub { iconName: string; iconColor: string; title: string; grad: string; desc: string; turnaround: string; sections: HubSection[]; previews: string[]; tagStyle: { bg: string; color: string }; tagStyleDark: { bg: string; color: string } }
 
@@ -59,9 +64,36 @@ export const HUBS: Record<HubId, Hub> = {
         { name: 'Colour', price: 'R18/page', description: `Same as our typing service but printed in full colour — useful when your document includes colour tables, headings, charts, or needs to make a strong visual impression.`, requirements: ['Bring your handwritten notes or rough draft', 'Clearly state any formatting preferences (font, spacing, layout)', 'Let us know the number of pages and copies needed'] },
       ]},
       { title: 'CV Services', desc: `From a first CV built from nothing to a full professional upgrade, plus cover letters that get noticed.`, items: [
-        { name: 'CV from Scratch', price: 'R30', description: `Never had a CV before? We build one for you from the ground up — personal details, education, skills, and work experience — all formatted neatly and ready to hand in or email to employers.`, requirements: ['Bring your ID document', 'Provide your personal details, education history, and work experience', 'Bring a recent photo if you want one included', 'Share contact details (phone number, email if available)'] },
-        { name: 'CV Upgrade/Fix', price: 'R40', description: `Already have a CV but it's outdated, poorly formatted, or missing key information? We clean it up, restructure it, and add your latest experience so it looks professional and up to date.`, requirements: ['Bring your existing CV (digital file or printed copy)', 'Let us know what changes or updates you need', 'Provide any new information to be added'] },
-        { name: 'Cover Letter', price: 'R30', description: `A strong cover letter introduces you to a potential employer before they even read your CV. We write a personalised one based on the job you're applying for, highlighting your key strengths.`, requirements: ['Bring details of the job you are applying for', 'Bring your CV for reference', 'Mention key skills or experience you want highlighted'] },
+        {
+          name: 'CV from Scratch', price: 'R30',
+          description: `Never had a CV before? We build one for you from the ground up — personal details, education, skills, and work experience — all formatted neatly and ready to hand in or email to employers.`,
+          requirements: ['Bring your ID document', 'Provide your personal details, education history, and work experience', 'Bring a recent photo if you want one included', 'Share contact details (phone number, email if available)'],
+          tips: [
+            "Have your ID number, school/qualification names, and dates ready beforehand — it speeds things up a lot.",
+            "List your work history in order, most recent first, even if it was informal or short-term work.",
+            "Mention 2–3 real personal strengths (e.g. punctual, hardworking, good with people) — plain language works better than buzzwords.",
+          ],
+        },
+        {
+          name: 'CV Upgrade/Fix', price: 'R40',
+          description: `Already have a CV but it's outdated, poorly formatted, or missing key information? We clean it up, restructure it, and add your latest experience so it looks professional and up to date.`,
+          requirements: ['Bring your existing CV (digital file or printed copy)', 'Let us know what changes or updates you need', 'Provide any new information to be added'],
+          tips: [
+            "Bring your current CV as a digital file if you can — a clear photo works too, but a file updates faster.",
+            "Tell us what's outdated first (old job, old contact number) so we fix what matters most, first.",
+            "If you're applying somewhere specific, mention it — we can tailor the layout slightly to suit that job.",
+          ],
+        },
+        {
+          name: 'Cover Letter', price: 'R30',
+          description: `A strong cover letter introduces you to a potential employer before they even read your CV. We write a personalised one based on the job you're applying for, highlighting your key strengths.`,
+          requirements: ['Bring details of the job you are applying for', 'Bring your CV for reference', 'Mention key skills or experience you want highlighted'],
+          tips: [
+            "Tell us the exact job title and company name — a personalised letter gets noticed far more than a generic one.",
+            "Mention one specific reason you want that job, not just 'I need work' — even a short reason helps.",
+            "Keep it to one page — we'll help trim it down to the strongest points if it runs long.",
+          ],
+        },
       ]},
       { title: 'Other Documents', desc: `Affidavits and formal letters, typed and printed correctly for banks, schools, landlords, or the police station.`, items: [
         { name: 'Affidavit / Letter', price: 'R15/page', description: `Need a formal letter or affidavit typed and printed? We handle the wording, formatting, and printing — whether it's for a bank, school, landlord, or the police station. Some affidavits need to be sworn in front of a Commissioner of Oaths after printing.`, requirements: ['Bring your ID document', 'Provide the details/facts that need to be included', 'Some affidavits may require a visit to the police station or Commissioner of Oaths to be sworn'] },
