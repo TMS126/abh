@@ -40,6 +40,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
   const fileRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
+  // ── Reset local state whenever a new service is opened ──
   useEffect(() => {
     setTab("bring")
     setAddedToQuote(false)
@@ -64,6 +65,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
 
   useFocusTrap(!!svc, containerRef)
 
+  // ── File upload handling ──
   const doUpload = (f: File) => {
     setUploadPhase("uploading")
     setUploadProgress(0)
@@ -132,6 +134,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
 
   if (!svc) return null
 
+  // ── Derived display values ──
   const colors = HUB_COLORS[svc.hubId as HubKey]
   const accent = isDark ? colors.accentDark : colors.accentLight
   const hubTitle = HUBS[svc.hubId]?.title || svc.sectionTitle
@@ -140,8 +143,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
   const itemId = `${svc.hubId}-${svc.sectionTitle}-${svc.name}`
   const hasBulk = itemHasBulk(svc.hubId, svc.sectionTitle, svc.name)
 
-  // Tips tab always has content now — item-specific tips if present,
-  // otherwise a hub-level fallback (see fallback-tips.ts).
   const { tips, isGeneric } = getServiceTips(svc.hubId, svc.sectionTitle, svc.name, svc.tips)
   const tabs: Tab[] = ["bring", "about", "tips"]
 
@@ -151,6 +152,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
   const isBulkDiscount = effRate < baseUnitPrice
   const bulkHint = getBulkHint(itemId, svc.name, effectiveQty, effRate, baseUnitPrice)
 
+  // ── Actions ──
   const handleShare = async () => {
     const shareText = `${naturalLabel} — ${svc.price} at ${BIZ.name}`
     const shareUrl = typeof window !== "undefined" ? window.location.href : ""
@@ -228,11 +230,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         style={{ boxShadow: `0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4), 0 10px 24px -8px ${accent}50` }}
       >
         {hasBulk && (
-          // Now flush in the actual top-right corner, offset so its
-          // rotated ends run past the modal's own edges — the modal's
-          // rounded-[14px] overflow-hidden clips it into a clean corner
-          // ribbon shape. Buttons moved to the opposite (top-left) corner
-          // below, so there's no shared space left for it to overlap.
           <div className="absolute -top-1 -right-10 rotate-45 z-10 pointer-events-none">
             <span
               className="block w-36 text-center py-1 text-[0.62rem] font-black uppercase tracking-wider text-white"
@@ -243,47 +240,16 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           </div>
         )}
 
+        {/* ── Header: hub label, title, price ── */}
         <div className="px-6 pt-6 pb-5 flex-shrink-0">
           <div className="flex items-start mb-2">
-            <div className="relative z-30 flex items-center justify-start gap-2 shrink-0 w-[72px]">
-              <button
-                type="button"
-                onClick={handleShare}
-                aria-label="Share this service"
-                className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                style={{ backgroundColor: `${accent}15`, color: accent }}
-              >
-                <ShareNetwork size={16} weight="bold" aria-hidden="true" />
-              </button>
-              {shareCopied && (
-                <span className="absolute -bottom-8 left-0 whitespace-nowrap text-[0.74rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full shadow-lg animate-in fade-in zoom-in-95 duration-150">
-                  Copied!
-                </span>
-              )}
-              <button
-                onClick={onClose}
-                aria-label="Close"
-                className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
-                style={{ backgroundColor: `${accent}15`, color: accent }}
-              >
-                <X size={16} weight="bold" aria-hidden="true" />
-              </button>
-            </div>
+            <div className="w-[72px] shrink-0" aria-hidden="true" />
 
             <div className="flex-1 min-w-0 text-center">
               <div className="flex items-center justify-center gap-1.5 mb-2">
                 <HubIcon id={svc.hubId} size={12} color={accent} />
                 <span className="text-[0.74rem] font-black uppercase tracking-widest" style={{ color: accent }}>{hubTitle}</span>
               </div>
-
-              <span className="text-[0.74rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-2.5 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>
-                {cleanText(svc.sectionTitle)}
-              </span>
-              <h3 className="abh-card-heading text-[1.32rem] leading-tight">{svc.name}</h3>
-            </div>
-
-            <div className="w-[72px] shrink-0" aria-hidden="true" />
-          </div>
 
               <span className="text-[0.74rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-2.5 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>
                 {cleanText(svc.sectionTitle)}
@@ -330,6 +296,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           </div>
         </div>
 
+        {/* ── Tabs: Needs / Description / Tips ── */}
         <div className="px-6 pt-1">
           <div
             role="tablist"
@@ -356,6 +323,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           </div>
         </div>
 
+        {/* ── Tab content ── */}
         <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 min-h-0 text-center">
           {tab === "bring" && (
             <div className="animate-in fade-in duration-150 flex flex-col items-center">
@@ -388,6 +356,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           )}
         </div>
 
+        {/* ── Footer: upload, quote controls, WhatsApp request ── */}
         <div className="px-6 pb-6 pt-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
           <input ref={fileRef} type="file" accept={HUB_ACCEPT[svc.hubId]} onChange={handleFilePick} className="hidden" />
 
@@ -442,4 +411,4 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
       </motion.div>
     </div>
   )
-} 
+    } 
