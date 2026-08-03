@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, type ChangeEvent } from "react"
 import { motion } from "framer-motion"
 import {
-  X, Paperclip, ShoppingCartSimple, Plus, Minus, CheckCircle, WarningCircle, ShieldCheck, ShareNetwork, Clock, SealPercent,
+  X, Paperclip, ShoppingCartSimple, Plus, Minus, CheckCircle, WarningCircle, ShieldCheck, ShareNetwork, Clock, SealPercent, Percent,
 } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
@@ -14,7 +14,11 @@ import {
   SelectedService, naturalServiceLabel, cleanText, formatAcceptHint,
   HUB_ACCEPT, CLD_MAX_MB, CLD_PRESET, BLOCKED_MIME_TYPES, BLOCKED_EXTENSIONS, getCldUrl, trackEvent,
 } from "./lib"
-import { getCartQtyForItem, getEffectiveRate, getBulkHint, parsePrice } from "@/components/quote-calculator/lib"
+import { getCartQtyForItem, getEffectiveRate, getBulkHint, parsePrice, itemHasBulk } from "@/components/quote-calculator/lib"
+
+// Same muted ribbon orange used on the hub cards — kept as one constant so
+// both places stay visually identical without duplicating a raw hex.
+const BULK_RIBBON_ORANGE = "#B45309"
 
 type Tab = "bring" | "about"
 
@@ -132,6 +136,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
   const naturalLabel = naturalServiceLabel(svc.name, svc.sectionTitle)
   const acceptHint = formatAcceptHint(HUB_ACCEPT[svc.hubId])
   const itemId = `${svc.hubId}-${svc.sectionTitle}-${svc.name}`
+  const hasBulk = itemHasBulk(svc.hubId, svc.sectionTitle, svc.name)
 
   // Bulk pricing preview — same tier logic the quote calculator uses
   const { amount: baseUnitPrice, unit: priceUnit } = parsePrice(svc.price)
@@ -204,9 +209,25 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.96, opacity: 0 }}
         transition={{ type: "tween", duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
-        className="relative w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px]"
+        className="relative w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px] overflow-hidden"
         style={{ boxShadow: `0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4), 0 10px 24px -8px ${accent}50` }}
       >
+        {/* ---- Bulk-pricing ribbon ----
+            Same diagonal ribbon used on the hub cards, positioned in the
+            same top-right corner. The modal card needed overflow-hidden
+            added (it didn't have it before) so this ribbon clips cleanly
+            instead of spilling past the rounded corner. */}
+        {hasBulk && (
+          <div className="absolute top-4 -right-8 rotate-45 z-20 pointer-events-none">
+            <span
+              className="block w-28 text-center py-0.5 text-[0.62rem] font-black uppercase tracking-wider text-white"
+              style={{ backgroundColor: BULK_RIBBON_ORANGE, boxShadow: "0 3px 8px -2px rgba(0,0,0,0.35)" }}
+            >
+              Bulk
+            </span>
+          </div>
+        )}
+
         <div className="px-6 pt-6 pb-5 flex-shrink-0">
           <div className="flex items-start mb-2">
             <div className="w-[72px] shrink-0" aria-hidden="true" />
