@@ -3,9 +3,12 @@ import type { HubId } from './types'
 
 export const PROJECTS = [
   {
-    id: "vasep-branding", hub: "design" as HubId, title: "VASEP — Visual Arts Skills Empowerment Projects", tag: HUB_NAMES.design,
+    id: "vasep-branding", 
+    hub: "design" as HubId, title: "VASEP — Visual Arts Skills Empowerment Projects", tag: HUB_NAMES.design,
     shortDesc: "Full logo for a local arts empowerment organisation, in Kgotsong.",
-    image: "/vsp1.webp", images: ["/Vspsktch.webp", "/vsp1.webp", "/Vspm.webp"], clientType: "client" as const,
+    image: "/vsp1.webp", 
+    images: ["/Vspsktch.webp", "/vsp1.webp", "/Vspm.webp"], 
+    clientType: "client" as const,
     clientGoal: `VASEP needed a logo that shows what they do — arts, skills, and community. Something colourful, meaningful, and strong enough to put on merch.`,
     whatWeDid: ["Designed a custom logo using a paint palette as the base symbol","Used multiple colours to represent different art disciplines and people","Added paint brushes crossing the palette for that creative feel","Placed a paint bottle on top as the hero element","Set VASEP in bold uppercase with full name underneath","Mocked up the logo on a t-shirt to show how it looks on merch"],
     tools: ["Adobe Illustrator", "Vector logo design", "T-shirt mockup"],
@@ -23,7 +26,7 @@ export const PROJECTS = [
   {
     id: "shuttle-flyer", hub: "design" as HubId, title: "Sol's Shuttle Services", tag: HUB_NAMES.design,
     shortDesc: "A local shuttle service — flyer.",
-    image: "/Sol.webp", images: ["/Sol.wepb", "/sol1.webp" ], clientType: "client" as const,
+    image: "/Sol.webp", images: ["/Sol.webp", "/sol1.webp" ], clientType: "client" as const,
     clientGoal: "Sol needed a complete design for his shuttle service — a flyer to share rates for customers.",
     whatWeDid: ["Designed full pricing layout (Day vs Evening rates)","Structured pricing into clear distance ranges","Added service areas section","Included important notices (deposit, surcharge, negotiable distances)","Created transport-themed visual design","Positioned vehicle image for brand identity"],
     tools: ["Adobe Illustrator", "Print + WhatsApp-friendly layout design", "High contrast readability (dark + gold theme)"],
@@ -32,7 +35,9 @@ export const PROJECTS = [
   {
     id: "cv-creation", hub: "doc" as HubId, title: "CV Creation for First-Time Job Seeker", tag: HUB_NAMES.doc,
     shortDesc: "Built a complete professional CV from scratch for a first-time job applicant.",
-    image: "/gallery/docu/cv-2.webp", images: ["/gallery/docu/cv-1.webp", "/gallery/docu/cv-2.webp", "/gallery/docu/cv-3.webp"], clientType: "sample" as const,
+    image: "/cv-2.webp", 
+    images: ["/cv-1.webp", "/cv-2.webp", "/cv-3.webp"], 
+    clientType: "sample" as const,
     clientGoal: "Client had no CV and needed a professional document to apply for jobs.",
     whatWeDid: ["Created CV from scratch","Structured personal information clearly","Added skills and experience sections","Formatted document professionally","Printed final CV"],
     tools: ["Microsoft Word", "Clean, structured formatting"],
@@ -68,7 +73,9 @@ export const PROJECTS = [
   {
     id: "pure-african-herbs", hub: "design" as HubId, title: "Pure African Herbs — Flyer Design", tag: HUB_NAMES.design,
     shortDesc: "Health services poster for a local herbal specialist in Bothaville.",
-    image: "/Ahm.webp", images: ["/Aphp1.webp", "/Aphp2.webp", "/Ahm.webp"], clientType: "client" as const,
+    image: "/Ahm.webp", 
+    images: ["/Aphp1.webp", "/Aphp2.webp", "/Ahm.webp"], 
+    clientType: "client" as const,
     clientGoal: "The client needed a professional flyer for their herbal health practice — something that lists conditions they treat, contact details, pricing, and hours. It also needed to work as a big A-board outside the shop.",
     whatWeDid: ["Designed a green health-themed layout matching the herbal brand","Organised conditions treated into a clean bullet list","Added pricing, specialist name, and contact numbers clearly","Included shop address and trading hours at the bottom","Created an A-board version for outdoor display","Added organic and no-side-effects trust badges"],
     tools: ["Adobe Illustrator", "Print-ready A4 and A-board format"],
@@ -77,7 +84,9 @@ export const PROJECTS = [
   {
     id: "illusion-technologies", hub: "design" as HubId, title: "Illusion Technologies — Brand Identity", tag: HUB_NAMES.design,
     shortDesc: "Full corporate brand identity concept for a drone tech company. Portfolio practice project.",
-    image: "/Itw.webp", images: ["/20230527_194537.webp", "/Itp.webp", "/Itw.webp", "/Itm2.webp"], clientType: "practice" as const,
+    image: "/Itw.webp", 
+    images: ["/20230527_194537.webp", "/Itp.webp", "/Itw.webp", "/Itm2.webp"], 
+    clientType: "practice" as const,
     clientGoal: "Explore what a premium tech brand identity looks like — logo design, mockups on buildings and office spaces, business card design, and a brand showcase layout.",
     whatWeDid: ["Designed the Illusion Technologies wordmark with a custom S-letter detail","Added a small blue accent on the S to break the dark monotone","Created logo variants on white and dark backgrounds","Mocked up the logo on a glass office building exterior","Mocked up the brand in an office interior setting","Designed matching business cards on dark textured stock","Built a full brand showcase poster layout"],
     tools: ["Adobe Illustrator", "Photoshop mockups", "Brand presentation layout"],
