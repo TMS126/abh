@@ -23,7 +23,7 @@ export const PROJECTS = [
   {
     id: "shuttle-flyer", hub: "design" as HubId, title: "Sol's Shuttle Services", tag: HUB_NAMES.design,
     shortDesc: "A local shuttle service — flyer.",
-    image: "/Sol.webp", images: ["/Sol.wepb", "/sol1.webp], clientType: "client" as const,
+    image: "/Sol.webp", images: ["/Sol.wepb", "/sol1.webp" ], clientType: "client" as const,
     clientGoal: "Sol needed a complete design for his shuttle service — a flyer to share rates for customers.",
     whatWeDid: ["Designed full pricing layout (Day vs Evening rates)","Structured pricing into clear distance ranges","Added service areas section","Included important notices (deposit, surcharge, negotiable distances)","Created transport-themed visual design","Positioned vehicle image for brand identity"],
     tools: ["Adobe Illustrator", "Print + WhatsApp-friendly layout design", "High contrast readability (dark + gold theme)"],
