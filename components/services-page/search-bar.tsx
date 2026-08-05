@@ -39,8 +39,10 @@ export function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService)
   return (
     <div ref={wrapRef} className="relative mx-auto w-full max-w-md">
       <div className="flex items-center gap-2 border-b-2 border-zinc-200 dark:border-zinc-800 focus-within:border-[#1E6FA8] transition-colors pr-8 px-1">
-        <MagnifyingGlass size={16} weight="bold" className="text-zinc-400 pointer-events-none shrink-0" />
+        <MagnifyingGlass size={16} weight="bold" className="text-zinc-400 pointer-events-none shrink-0" aria-hidden="true" />
+        <label htmlFor="inline-search-input" className="sr-only">Find a service</label>
         <input
+          id="inline-search-input"
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -50,8 +52,8 @@ export function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService)
         />
       </div>
       {query && (
-        <button onClick={() => setQuery("")} className="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-600">
-          <X size={12} weight="bold" />
+        <button onClick={() => setQuery("")} aria-label="Clear search" className="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-600">
+          <X size={12} weight="bold" aria-hidden="true" />
         </button>
       )}
       {focused && query.trim().length > 0 && (
