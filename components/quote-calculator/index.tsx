@@ -441,7 +441,9 @@ export function QuoteCalculatorWidget() {
 
                 {showSaveForm && (
                   <div className="flex items-center gap-2 p-2 rounded-[12px] bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/10 animate-in fade-in slide-in-from-top-1 duration-150">
+                    <label htmlFor="save-quote-name" className="sr-only">Name this quote (optional)</label>
                     <input
+                      id="save-quote-name"
                       autoFocus
                       value={saveNameDraft}
                       onChange={e => setSaveNameDraft(e.target.value)}
