@@ -228,6 +228,10 @@ button, a, [role="button"] {
 
 .animate-marquee { animation: marquee-track 35s linear infinite; }
 
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee { animation: none; }
+}
+
 /* ── Component system ── */
 @layer components {
 
