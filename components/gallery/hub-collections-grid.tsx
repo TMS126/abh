@@ -80,8 +80,24 @@ function HubCollectionCard({
 
   return (
     <div className="pl-4">
-      {/* Big image — click opens the project, swipe changes project, desktop gets arrow buttons */}
-      <div className="relative aspect-[4/3] cursor-pointer group rounded-[14px] overflow-hidden" onClick={handleImageClick} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      {/* Big image — click opens the project, swipe changes project, desktop gets arrow buttons.
+          role="button" + tabIndex + onKeyDown make this keyboard-operable since it can't be a
+          real <button> (it contains nested buttons: like, share, prev/next). */}
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={`Open project: ${project.title}`}
+        className="relative aspect-[4/3] cursor-pointer group rounded-[14px] overflow-hidden"
+        onClick={handleImageClick}
+        onKeyDown={(e) => {
+          if ((e.key === "Enter" || e.key === " ") && e.target === e.currentTarget) {
+            e.preventDefault()
+            handleImageClick()
+          }
+        }}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
         <div
           className="absolute -left-4 top-0 bottom-0 w-[3px] rounded-full z-20 pointer-events-none"
           style={{ backgroundColor: accent }}
