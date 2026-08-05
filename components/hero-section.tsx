@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
-import { ArrowRight } from "@phosphor-icons/react"
+import { ArrowRight, Play, Pause } from "@phosphor-icons/react"
 import { BRAND, BIZ, MARQUEE_ITEMS } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { HUBS_DATA } from "@/lib/hero-data"
@@ -203,7 +203,7 @@ export function HeroSection() {
 
         {/* Marquee */}
         <div
-          role="marquee"
+          role="group"
           aria-label="Our services"
           onMouseEnter={() => setMarqueePaused(true)}
           onMouseLeave={() => setMarqueePaused(false)}
@@ -213,12 +213,27 @@ export function HeroSection() {
           }}
           className="relative w-full max-w-[1240px] py-4 overflow-hidden select-none group/marquee rounded-[14px] bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800"
         >
+          {/* Accessibility: hover/touch already pause this, but neither is
+              keyboard-operable — WCAG 2.2.2 requires a pause mechanism for
+              continuously auto-scrolling content that any input method can
+              reach, so this button is the keyboard (and click) equivalent. */}
+          <button
+            onClick={() => setMarqueePaused((p) => !p)}
+            aria-pressed={marqueePaused}
+            aria-label={marqueePaused ? "Play scrolling services list" : "Pause scrolling services list"}
+            className="absolute top-1/2 right-2 -translate-y-1/2 z-10 w-6 h-6 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 bg-zinc-50 dark:bg-zinc-900/80 transition-colors"
+          >
+            {marqueePaused
+              ? <Play size={11} weight="fill" aria-hidden="true" />
+              : <Pause size={11} weight="fill" aria-hidden="true" />}
+          </button>
+
           <div
             className="flex whitespace-nowrap w-max animate-marquee"
             style={{ animationPlayState: marqueePaused ? "paused" : "running" }}
           >
             {[0, 1].map((copy) => (
-              <div key={copy} className="flex items-center shrink-0">
+              <div key={copy} className="flex items-center shrink-0" aria-hidden={copy === 1 ? "true" : undefined}>
                 {MARQUEE_ITEMS.map((item, idx) => (
                   <React.Fragment key={idx}>
                     <span className="inline-flex items-center px-5 font-semibold text-base text-zinc-600 dark:text-zinc-400 transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100">
@@ -236,4 +251,4 @@ export function HeroSection() {
       </div>
     </section>
   )
-} 
+}  
