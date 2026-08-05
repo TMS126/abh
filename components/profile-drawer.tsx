@@ -191,11 +191,11 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2.5 py-3.5 px-4 rounded-[14px] font-black text-sm text-white transition-all duration-200 active:scale-95 hover:-translate-y-0.5"
                   style={{
-                    backgroundColor: BRAND.whatsapp,
+                    backgroundColor: BRAND.whatsappAccessible,
                     boxShadow: `0 4px 14px rgba(37,211,102,0.3)`,
                   }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = BRAND.whatsappDark }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = BRAND.whatsapp }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = BRAND.whatsappAccessibleDark }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = BRAND.whatsappAccessible }}
                 >
                   <WhatsappLogo size={18} weight="fill" aria-hidden="true" />
                   <span className="text-sm font-black leading-tight">WhatsApp</span>
