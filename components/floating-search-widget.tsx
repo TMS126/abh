@@ -372,9 +372,10 @@ export function FloatingSearchWidget() {
             <h3 className="font-sans font-black text-lg" style={{ color: accentColor }}>Search Services</h3>
             <button
               onClick={handleClose}
+              aria-label="Close search"
               className="w-8 h-8 rounded-[14px] shadow-sm flex items-center justify-center text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150 bg-zinc-100/70 dark:bg-white/[0.07]"
             >
-              <X size={16} weight="bold" />
+              <X size={16} weight="bold" aria-hidden="true" />
             </button>
           </div>
 
@@ -387,8 +388,10 @@ export function FloatingSearchWidget() {
                 "bg-white/75 dark:bg-white/10 border border-white/70 dark:border-white/10 shadow-sm focus-within:shadow-md"
               )}
             >
-              <MagnifyingGlass size={16} weight="bold" className="shrink-0 text-zinc-400 dark:text-zinc-500" />
+              <MagnifyingGlass size={16} weight="bold" className="shrink-0 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
+              <label htmlFor="floating-search-input" className="sr-only">Search a service</label>
               <input
+                id="floating-search-input"
                 ref={inputRef}
                 type="text"
                 value={query}
