@@ -61,6 +61,12 @@ export const BRAND = {
   whatsapp: "#25D366",
   whatsappDark: "#1ebe5a",
 
+  // Same-hue, WCAG AA-safe variants for solid buttons with white text
+  // (the raw `whatsapp`/`whatsappDark` pair above only reaches ~2:1 and
+  // ~2.45:1 against white — well under the 4.5:1 minimum for text).
+  whatsappAccessible: "#178540",     // WCAG AA — 4.70:1 with white text
+  whatsappAccessibleDark: "#125F2F", // hover state — 7.77:1 with white text
+
   // text-safe variants
   blueText: "#16325f",
   orangeText: "#b85c17",
