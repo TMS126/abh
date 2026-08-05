@@ -64,6 +64,9 @@ export function Navbar() {
         <div className="relative flex items-center justify-between w-full max-w-[1200px]">
           {/* Logo */}
           <div
+            role="button"
+            tabIndex={0}
+            aria-label="ApexbytesHub — go to homepage"
             className={cn(
               glassPillClass,
               "flex items-center cursor-pointer select-none pointer-events-auto group transition-all duration-300",
@@ -75,6 +78,9 @@ export function Navbar() {
             onMouseEnter={handleLogoMouseEnter}
             onMouseLeave={handleLogoMouseLeave}
             onClick={() => navigate("/")}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate("/") }
+            }}
           >
             <div
               className="relative w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-[14px] overflow-hidden transition-colors duration-300"
@@ -151,6 +157,7 @@ export function Navbar() {
                         onClick={() => navigate(item.path)}
                         onMouseEnter={() => setContactHovered(true)}
                         onMouseLeave={() => setContactHovered(false)}
+                        aria-current={isActive ? "page" : undefined}
                         style={{
                           transitionDelay: desktopNavOpen ? `${idx * 30}ms` : "0ms",
                           backgroundColor: contactHovered ? HOVER_ORANGE : BRAND.blue,
@@ -171,6 +178,7 @@ export function Navbar() {
                     <button
                       key={item.id}
                       onClick={() => navigate(item.path)}
+                      aria-current={isActive ? "page" : undefined}
                       style={{
                         transitionDelay: desktopNavOpen ? `${idx * 30}ms` : "0ms",
                         color: isActive ? HOVER_ORANGE : undefined,
@@ -218,12 +226,13 @@ export function Navbar() {
 
             <button
               onClick={() => setMenuOpen(true)}
+              aria-label="Open menu"
               className={cn(
                 "flex items-center justify-center w-7 h-7 active:scale-90 md:hidden",
                 menuOpen ? "opacity-0 pointer-events-none" : "opacity-100"
               )}
             >
-              <div className="w-4 h-[12px] flex flex-col justify-between items-center">
+              <div className="w-4 h-[12px] flex flex-col justify-between items-center" aria-hidden="true">
                 <span className="w-full h-[2.5px] rounded-full transition-colors duration-300" style={{ backgroundColor: neutralColor }} />
                 <span className="w-full h-[2.5px] rounded-full transition-colors duration-300" style={{ backgroundColor: neutralColor }} />
                 <span className="w-full h-[2.5px] rounded-full transition-colors duration-300" style={{ backgroundColor: neutralColor }} />
@@ -232,12 +241,13 @@ export function Navbar() {
 
             <button
               onClick={() => setMenuOpen(false)}
+              aria-label="Close menu"
               className={cn(
                 "flex items-center justify-center w-7 h-7 active:scale-90 absolute right-3 md:hidden",
                 menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
               )}
             >
-              <X size={20} weight="bold" style={{ color: neutralColor }} className="transition-colors duration-300" />
+              <X size={20} weight="bold" style={{ color: neutralColor }} className="transition-colors duration-300" aria-hidden="true" />
             </button>
           </div>
         </div>
