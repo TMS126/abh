@@ -45,8 +45,8 @@ export function CartItemRow({
           <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{displayName}</p>
           <p className="text-[0.62rem] font-bold mt-0.5" style={{ color: accent }}>{hubLabel}</p>
         </div>
-        <button onClick={() => onRemove(item.id)} className="text-zinc-400 hover:text-red-500 shrink-0 transition-colors duration-150">
-          <Trash size={14} weight="bold" />
+        <button onClick={() => onRemove(item.id)} aria-label={`Remove ${displayName} from quote`} className="text-zinc-400 hover:text-red-500 shrink-0 transition-colors duration-150">
+          <Trash size={14} weight="bold" aria-hidden="true" />
         </button>
       </div>
       <div className="flex items-center gap-2 text-xs">
@@ -61,9 +61,10 @@ export function CartItemRow({
             onPointerUp={() => onPressEnd(item.id)}
             onPointerLeave={() => onPressEnd(item.id)}
             onPointerCancel={() => onPressEnd(item.id)}
+            aria-label={`Decrease quantity for ${displayName}`}
             className={cn("w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-150 select-none touch-none", GLASS.btn)}
           >
-            <Minus size={12} weight="bold" />
+            <Minus size={12} weight="bold" aria-hidden="true" />
           </button>
           <input
             ref={qtyInputRef}
@@ -81,9 +82,10 @@ export function CartItemRow({
             onPointerUp={() => onPressEnd(item.id)}
             onPointerLeave={() => onPressEnd(item.id)}
             onPointerCancel={() => onPressEnd(item.id)}
+            aria-label={`Increase quantity for ${displayName}`}
             className={cn("w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-150 select-none touch-none", GLASS.btn)}
           >
-            <Plus size={12} weight="bold" />
+            <Plus size={12} weight="bold" aria-hidden="true" />
           </button>
         </div>
         <span className="text-sm font-black text-zinc-900 dark:text-zinc-50">R{lineTotal}</span>
@@ -93,4 +95,4 @@ export function CartItemRow({
       )}
     </div>
   )
-}
+} 
