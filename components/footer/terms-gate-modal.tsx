@@ -10,6 +10,7 @@ export function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () =
   const guardActive  = useRef(false)
   const closeBtnRef  = useRef<HTMLButtonElement>(null)
   const triggerRef   = useRef<HTMLElement | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const BUFFER = 5
   const { theme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -27,6 +28,26 @@ export function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () =
     } else {
       triggerRef.current?.focus()
     }
+  }, [open])
+
+  // ── Accessibility: Tab focus trap. This gate is intentionally
+  // non-dismissible (no backdrop click, no Escape — see the history-buffer
+  // guard below), so without this a keyboard user could Tab straight past
+  // the gate into background content that's still technically in the DOM. ──
+  useEffect(() => {
+    if (!open) return
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== "Tab" || !containerRef.current) return
+      const focusable = containerRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      if (focusable.length === 0) return
+      const first = focusable[0]; const last = focusable[focusable.length - 1]
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+    }
+    document.addEventListener("keydown", handleTab)
+    return () => document.removeEventListener("keydown", handleTab)
   }, [open])
 
   useEffect(() => {
@@ -63,6 +84,7 @@ export function TermsGateModal({ open, onAgree }: { open: boolean; onAgree: () =
 
   return (
     <div
+      ref={containerRef}
       role="dialog"
       aria-modal="true"
       aria-label="Terms & Service Policies"
