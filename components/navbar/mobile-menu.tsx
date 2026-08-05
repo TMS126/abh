@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useRef } from "react"
 import { NAV_ITEMS, BRAND } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 
@@ -12,9 +13,44 @@ interface MobileMenuProps {
 }
 
 export function MobileMenu({ menuOpen, setMenuOpen, pathname, navigate, neutralColor }: MobileMenuProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const previouslyFocused = useRef<HTMLElement | null>(null)
+
+  // ── Accessibility: this is a full-screen takeover, so treat it like a
+  // dialog — move focus in on open, restore it on close, trap Tab inside,
+  // and let Escape close it (mirrors the pattern used by the other modals
+  // across the site, e.g. services-page/shared.tsx's useFocusTrap). ──
+  useEffect(() => {
+    if (!menuOpen) return
+    previouslyFocused.current = document.activeElement as HTMLElement
+    containerRef.current?.focus()
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { setMenuOpen(false); return }
+      if (e.key !== "Tab" || !containerRef.current) return
+      const focusable = containerRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      if (focusable.length === 0) return
+      const first = focusable[0]; const last = focusable[focusable.length - 1]
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown)
+      previouslyFocused.current?.focus?.()
+    }
+  }, [menuOpen, setMenuOpen])
+
   return (
     <div
-      className={cn("fixed inset-0 z-[9998] md:hidden transition-opacity duration-300", menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none")}
+      ref={containerRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Main menu"
+      aria-hidden={!menuOpen}
+      tabIndex={-1}
+      className={cn("fixed inset-0 z-[9998] md:hidden transition-opacity duration-300 outline-none", menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none")}
     >
       <div
         className={cn("absolute -inset-[50%] transition-opacity duration-700", menuOpen ? "opacity-100 animate-[spin_16s_linear_infinite]" : "opacity-0")}
@@ -31,6 +67,8 @@ export function MobileMenu({ menuOpen, setMenuOpen, pathname, navigate, neutralC
               <button
                 key={item.id}
                 onClick={() => navigate(item.path)}
+                aria-current={isActive ? "page" : undefined}
+                tabIndex={menuOpen ? 0 : -1}
                 style={{
                   transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms",
                   ...(isActive ? { backgroundColor: BRAND.blue, color: "#ffffff" } : {}),
@@ -80,4 +118,4 @@ export function MobileMenu({ menuOpen, setMenuOpen, pathname, navigate, neutralC
       </div>
     </div>
   )
-}
+} 
