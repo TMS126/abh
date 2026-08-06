@@ -270,7 +270,7 @@ export function ServicesPage() {
                 )}
               >
                 <ScrollBounce delay={index * 0.06}>
-                  <div className="group/hubcard relative flex flex-col items-center text-center h-full rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 abh-shadow-elevated overflow-hidden transition-transform duration-300 hover:-translate-y-0.5 transform-gpu p-6 pt-7">
+                  <div className="group/hubcard relative flex flex-col items-center text-center h-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-elevated overflow-hidden transition-transform duration-300 hover:-translate-y-0.5 transform-gpu p-6 pt-7">
                     <HubCornerIcon hubId={hubId} accent={accent} />
                     {hubHasBulk && <BulkRibbon />}
 
@@ -318,7 +318,7 @@ export function ServicesPage() {
                 <button
                   onClick={() => handleOpenHub(hubId, "right")}
                   aria-label={`Open ${hub.title}`}
-                  className="group/hubcard relative flex flex-col items-center text-center w-full rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 abh-shadow-elevated overflow-hidden transition-transform duration-200 active:scale-[0.98] transform-gpu p-6 pt-7"
+                  className="group/hubcard relative flex flex-col items-center text-center w-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-elevated overflow-hidden transition-transform duration-200 active:scale-[0.98] transform-gpu p-6 pt-7"
                 >
                   <HubCornerIcon hubId={hubId} accent={accent} />
                   {hubHasBulk && <BulkRibbon />}

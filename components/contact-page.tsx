@@ -168,7 +168,7 @@ function ContactPageInner() {
             </div>
 
             <ScrollBounce delay={0.24}>
-              <div className="rounded-[14px] overflow-hidden shadow-sm border border-zinc-100 dark:border-zinc-800">
+              <div className="rounded-[14px] overflow-hidden" style={{ boxShadow: "0 2px 16px -2px rgba(0,0,0,0.10), 0 1px 4px -1px rgba(0,0,0,0.06)" }}>
                 <LocationMap />
               </div>
             </ScrollBounce>

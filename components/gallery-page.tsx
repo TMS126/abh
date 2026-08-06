@@ -281,7 +281,7 @@ function GalleryPageInner() {
                   return (
                     <ScrollBounce key={row.id} delay={rowIndex * 0.06}>
                       <div className={cn(
-                        "md:rounded-[20px] md:border md:border-zinc-100 dark:md:border-zinc-800 md:bg-white dark:md:bg-zinc-950/40 md:shadow-sm p-0 md:p-7",
+                        "md:rounded-[20px] md:bg-white dark:md:bg-zinc-950/40 md:shadow-md p-0 md:p-7",
                         "border-t-2 border-zinc-100 dark:border-zinc-800 mt-10 pt-8 md:border-t-0 md:mt-0 md:pt-7",
                         "first:border-t-0 first:mt-0 first:pt-0 md:first:pt-7"
                       )}>
@@ -300,7 +300,7 @@ function GalleryPageInner() {
                 return (
                   <ScrollBounce key={row.id} delay={rowIndex * 0.06}>
                     <div className={cn(
-                      "md:rounded-[20px] md:border md:border-zinc-100 dark:md:border-zinc-800 md:bg-white dark:md:bg-zinc-950/40 md:shadow-sm p-0 md:p-7",
+                      "md:rounded-[20px] md:bg-white dark:md:bg-zinc-950/40 md:shadow-md p-0 md:p-7",
                       "border-t-2 border-zinc-100 dark:border-zinc-800 mt-10 pt-8 md:border-t-0 md:mt-0 md:pt-7",
                       "first:border-t-0 first:mt-0 first:pt-0 md:first:pt-7"
                     )}>
