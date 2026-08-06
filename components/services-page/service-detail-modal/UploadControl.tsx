@@ -27,8 +27,8 @@ export function UploadButton({ phase, accent, onClick }: { phase: UploadPhase; a
         backgroundColor: isDone ? "#22c55e18" : `${accent}18`,
         color: isDone ? "#16a34a" : accent,
         boxShadow: pressed
-          ? "inset 0 2px 5px -1px rgba(0,0,0,0.18)"
-          : "0 2px 8px -2px rgba(0,0,0,0.12)",
+          ? "inset 0 2px 6px -1px rgba(0,0,0,0.22), inset 0 1px 3px -1px rgba(0,0,0,0.14)"
+          : "0 2px 8px -2px rgba(0,0,0,0.12), 0 1px 3px -1px rgba(0,0,0,0.08)",
         transform: pressed ? "translateY(1px) scale(0.97)" : "translateY(0) scale(1)",
       }}
     >
@@ -78,7 +78,7 @@ export function UploadStatus({
 
   if (phase === "done" && file) {
     return (
-      <div className="flex items-center justify-between gap-2 w-full px-4 py-2.5 rounded-[14px] text-base font-bold" style={{ backgroundColor: `${accent}10`, boxShadow: "0 2px 8px -2px rgba(0,0,0,0.10)" }}>
+      <div className="flex items-center justify-between gap-2 w-full px-4 py-2.5 rounded-[14px] text-base font-bold" style={{ backgroundColor: `${accent}10`, boxShadow: "0 2px 10px -2px rgba(0,0,0,0.10), 0 1px 4px -1px rgba(0,0,0,0.06)" }}>
         <span className="flex items-center gap-2.5 min-w-0">
           <span className="relative shrink-0">
             {previewUrl ? (

@@ -363,7 +363,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                     )}
                     style={
                       isActive
-                        ? { backgroundColor: accent, color: isDark ? "#0a0a0a" : "#ffffff", boxShadow: `0 4px 14px -4px ${accent}70` }
+                        ? { backgroundColor: accent, color: isDark ? "#0a0a0a" : "#ffffff", boxShadow: "0 4px 14px -4px rgba(0,0,0,0.28)" }
                         : undefined
                     }
                   >
@@ -378,7 +378,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
               onClick={() => setTipsOpen(true)}
               aria-label="View helpful tips"
               className="shrink-0 w-11 h-11 rounded-[14px] flex items-center justify-center transition-all active:scale-95"
-              style={{ backgroundColor: `${accent}12`, color: accent, boxShadow: `0 2px 10px -4px ${accent}40` }}
+              style={{ backgroundColor: `${accent}12`, color: accent, boxShadow: "0 2px 10px -4px rgba(0,0,0,0.18)" }}
             >
               <Lightbulb size={18} weight="fill" aria-hidden="true" />
             </button>

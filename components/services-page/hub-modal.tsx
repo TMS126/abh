@@ -110,7 +110,7 @@ export function HubModal({ hubId, onClose, onSelectService }: {
                   className={`relative px-3.5 py-1.5 rounded-full text-[0.84rem] font-black tracking-tight whitespace-nowrap transition-all duration-200 ${
                     isOpen ? "text-white" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
                   }`}
-                  style={isOpen ? { backgroundColor: solidAccent, boxShadow: `0 10px 24px -6px ${solidAccent}90, 0 4px 10px -2px ${solidAccent}70` } : {}}
+                  style={isOpen ? { backgroundColor: solidAccent, boxShadow: "0 10px 24px -6px rgba(0,0,0,0.30), 0 4px 10px -2px rgba(0,0,0,0.18)" } : {}}
                 >
                   {section.title}
                   {hasBulk && (
@@ -131,7 +131,7 @@ export function HubModal({ hubId, onClose, onSelectService }: {
               <div className="h-px w-full mb-3" style={{ backgroundColor: `${accent}30` }} aria-hidden="true" />
               <p
                 className="text-[0.98rem] leading-relaxed text-zinc-600 dark:text-zinc-300 rounded-[10px] px-3 py-2 -mx-3"
-                style={{ backgroundColor: `${accent}08`, boxShadow: `0 2px 8px -4px ${accent}30` }}
+                style={{ backgroundColor: `${accent}08`, boxShadow: "0 2px 8px -4px rgba(0,0,0,0.10)" }}
               >
                 {activeSectionDesc}
               </p>
