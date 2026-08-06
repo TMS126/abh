@@ -246,11 +246,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         className="relative w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         style={{ boxShadow: "0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4)" }}
       >
-        {/* ── Bulk-deal corner ribbon ──
-            Stays in the classic top-right corner. The header action
-            buttons (share/close) have moved to the top-LEFT instead —
-            see below — so there's no longer any shared real estate for
-            the two to fight over. */}
+        {/* ── Bulk-deal corner ribbon — top-right ── */}
         {hasBulk && (
           <div
             className="absolute top-0 right-0 w-[104px] h-[104px] overflow-hidden pointer-events-none z-10"
@@ -273,53 +269,44 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           </div>
         )}
 
+        {/* ── Share + Close — top-right, above the ribbon (z-30) ── */}
+        <div className="absolute top-3.5 right-3.5 z-30 flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={handleShare}
+            aria-label="Share this service"
+            className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+            style={{ backgroundColor: `${accent}15`, color: accent }}
+          >
+            <ShareNetwork size={15} weight="bold" aria-hidden="true" />
+          </button>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
+            style={{ backgroundColor: `${accent}15`, color: accent }}
+          >
+            <X size={15} weight="bold" aria-hidden="true" />
+          </button>
+          {shareCopied && (
+            <span className="absolute top-full right-0 mt-2 whitespace-nowrap text-[0.74rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full shadow-lg animate-in fade-in zoom-in-95 duration-150">
+              Copied!
+            </span>
+          )}
+        </div>
+
         {/* ── Header: hub label, title, price ── */}
         <div className="px-6 pt-6 pb-5 flex-shrink-0">
-          <div className="flex items-start mb-2">
-            {/* Share + Close — moved from top-right to top-left. That
-                corner is otherwise always empty, so this permanently
-                clears any overlap with the ribbon (which only ever
-                occupies the top-right 104×104 corner) instead of relying
-                on conditional spacing that has to be re-checked every
-                time either element changes. */}
-            <div className="relative z-30 flex items-center justify-start gap-2 shrink-0 w-[72px]">
-              <button
-                onClick={onClose}
-                aria-label="Close"
-                className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
-                style={{ backgroundColor: `${accent}15`, color: accent }}
-              >
-                <X size={16} weight="bold" aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                onClick={handleShare}
-                aria-label="Share this service"
-                className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                style={{ backgroundColor: `${accent}15`, color: accent }}
-              >
-                <ShareNetwork size={16} weight="bold" aria-hidden="true" />
-              </button>
-              {shareCopied && (
-                <span className="absolute -bottom-8 left-0 whitespace-nowrap text-[0.74rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full shadow-lg animate-in fade-in zoom-in-95 duration-150">
-                  Copied!
-                </span>
-              )}
+          <div className="mb-2 pr-20 text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-2">
+              <HubIcon id={svc.hubId} size={12} color={accent} />
+              <span className="text-[0.74rem] font-black uppercase tracking-widest" style={{ color: accent }}>{hubTitle}</span>
             </div>
 
-            <div className="flex-1 min-w-0 text-center">
-              <div className="flex items-center justify-center gap-1.5 mb-2">
-                <HubIcon id={svc.hubId} size={12} color={accent} />
-                <span className="text-[0.74rem] font-black uppercase tracking-widest" style={{ color: accent }}>{hubTitle}</span>
-              </div>
-
-              <span className="text-[0.74rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-2.5 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>
-                {cleanText(svc.sectionTitle)}
-              </span>
-              <h3 className="abh-card-heading text-[1.32rem] leading-tight">{svc.name}</h3>
-            </div>
-
-            <div className="w-[72px] shrink-0" aria-hidden="true" />
+            <span className="text-[0.74rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-2.5 inline-block" style={{ backgroundColor: `${accent}15`, color: accent }}>
+              {cleanText(svc.sectionTitle)}
+            </span>
+            <h3 className="abh-card-heading text-[1.32rem] leading-tight">{svc.name}</h3>
           </div>
 
           <div className="h-px bg-zinc-100 dark:bg-zinc-800 mb-4" />

@@ -123,18 +123,18 @@ function FooterContent() {
                   </span>
                 )}
               </li>
-              <li>
+              <li className="min-w-0">
                 <a
                   href={`mailto:${BIZ.email}`}
-                  className="flex items-center gap-4 text-base text-zinc-600 dark:text-zinc-300 hover:text-brand-blue transition-colors"
+                  className="flex items-center gap-4 text-base text-zinc-600 dark:text-zinc-300 hover:text-brand-blue transition-colors min-w-0"
                 >
                   <div
-                    className="w-10 h-10 rounded-[14px] border border-zinc-100 dark:border-zinc-800 flex items-center justify-center bg-white dark:bg-zinc-900 shadow-sm"
+                    className="w-10 h-10 rounded-[14px] border border-zinc-100 dark:border-zinc-800 flex items-center justify-center bg-white dark:bg-zinc-900 shadow-sm shrink-0"
                     aria-hidden="true"
                   >
                     <EnvelopeSimple weight="fill" className="w-5 h-5" />
                   </div>
-                  {BIZ.email}
+                  <span className="truncate">{BIZ.email}</span>
                 </a>
               </li>
               <li className="pt-2">

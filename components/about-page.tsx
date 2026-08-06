@@ -169,8 +169,7 @@ export function AboutPage() {
 
           <ScrollBounce delay={0.1}>
             <div
-              className="mt-8 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x divide-zinc-200 dark:divide-zinc-700 rounded-[14px] overflow-hidden shadow-lg border-2 transition-colors duration-300"
-              style={{ borderColor: blueColor }}
+              className="mt-8 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x divide-zinc-200 dark:divide-zinc-700 rounded-[14px] overflow-hidden shadow-lg transition-colors duration-300"
               onMouseEnter={() => setStatsHovered(true)}
               onMouseLeave={() => setStatsHovered(false)}
             >
@@ -225,7 +224,7 @@ export function AboutPage() {
               {ABOUT_VALUES.map((item, index) => (
                 <li
                   key={index}
-                  className="abh-card abh-shadow-elevated rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-5 flex flex-row items-center text-left gap-4 flex-1"
+                  className="abh-card abh-shadow-elevated rounded-[14px] bg-white dark:bg-zinc-950 p-5 flex flex-row items-center text-left gap-4 flex-1"
                 >
                   <div
                     className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
@@ -243,8 +242,8 @@ export function AboutPage() {
             </ul>
 
             <ScrollBounce delay={0.2}>
-              <div className="abh-shadow-elevated rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-7 flex flex-col h-full" aria-label="Business overview">
-                <div className="flex items-center gap-3 mb-7 pb-6 border-b border-zinc-100 dark:border-zinc-800">
+              <div className="abh-shadow-elevated rounded-[14px] bg-white dark:bg-zinc-950 p-7 flex flex-col h-full" aria-label="Business overview">
+                <div className="flex items-center gap-3 mb-7 pb-6 border-b border-zinc-100/60 dark:border-zinc-800/40">
                   <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${blueColor}15`, color: blueColor }}>
                     <UsersThree size={20} weight="fill" />
                   </div>
@@ -261,7 +260,7 @@ export function AboutPage() {
                     { value: <WhatsappLogo weight="fill" className="w-6 h-6" aria-hidden="true" />, label: "WhatsApp Ready" },
                     { value: <ShieldCheck weight="fill" className="w-6 h-6" aria-hidden="true" />, label: "Community Trusted" },
                   ].map((stat, index) => (
-                    <div key={index} className="rounded-[12px] p-5 flex flex-col justify-center items-center border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+                    <div key={index} className="rounded-[12px] p-5 flex flex-col justify-center items-center bg-zinc-50 dark:bg-zinc-900/50 shadow-[0_1px_4px_rgba(0,0,0,0.06)] dark:shadow-[0_1px_4px_rgba(0,0,0,0.20)]">
                       <div className="font-black text-2xl mb-1 flex items-center justify-center text-zinc-700 dark:text-zinc-300">{stat.value}</div>
                       <p className="text-[0.72rem] font-medium uppercase tracking-widest text-zinc-400 text-center">{stat.label}</p>
                     </div>
@@ -350,10 +349,9 @@ export function AboutPage() {
                     onBlur={() => setHoveredCard(null)}
                     tabIndex={0}
                     className={cn(
-                      "abh-card p-6 flex flex-col h-full outline-none transition-all duration-300 rounded-[14px] bg-white dark:bg-zinc-950 border",
-                      isHovered ? "shadow-lg -translate-y-1.5" : "border-zinc-200 dark:border-zinc-800 shadow-[0_1px_6px_rgba(0,0,0,0.05)] dark:shadow-[0_1px_6px_rgba(0,0,0,0.2)]"
+                      "abh-card p-6 flex flex-col h-full outline-none transition-all duration-300 rounded-[14px] bg-white dark:bg-zinc-950",
+                      isHovered ? "shadow-lg -translate-y-1.5" : "shadow-[0_1px_6px_rgba(0,0,0,0.07)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.28)]"
                     )}
-                    style={isHovered ? { borderColor: blueColor } : undefined}
                   >
                     <div
                       className={cn(

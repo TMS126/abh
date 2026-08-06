@@ -41,7 +41,7 @@ function ProjectCard({
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(project) } }}
       className="w-full h-full text-left cursor-pointer"
     >
-      <div className="relative w-full h-full rounded-[16px] overflow-hidden">
+      <div className="relative w-full h-full rounded-[16px] overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,0,0,0.18),0_2px_8px_-2px_rgba(0,0,0,0.12)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.60),0_2px_10px_-2px_rgba(0,0,0,0.45)]">
         <SafeImage src={project.image} alt={project.title} accent={accent} fill sizes="(max-width: 640px) 100vw, 448px" className="object-cover" />
 
         {/* ---- Header bar: hub label + before/after badge ---- */}
@@ -138,29 +138,30 @@ function SwipeCarousel({
   const slotStyle = (offset: number): React.CSSProperties => {
     const abs = Math.abs(offset)
     if (abs === 0) {
-      return { transform: `translateX(${dragX}px) scale(1)`, opacity: 1, zIndex: 30, filter: "none" }
+      return { transform: `translateX(${dragX}px) scale(1)`, opacity: 1, zIndex: 30, willChange: "transform" }
     }
     if (abs === 1) {
       return {
         transform: `translateX(${offset * 90 + dragX * 0.4}%) scale(0.88)`,
-        opacity: 1,
+        opacity: 0.45,
         zIndex: 20,
-        filter: "brightness(0.5)",
+        willChange: "transform",
       }
     }
     return {
       transform: `translateX(${offset * 150}%) scale(0.8)`,
       opacity: 0,
       zIndex: 10,
-      filter: "brightness(0.5)",
       pointerEvents: "none",
+      willChange: "transform",
     }
   }
 
   return (
     <div className="relative">
       <div
-        className="relative w-full aspect-[4/3]"
+        className="relative w-full aspect-[4/3] transform-gpu"
+        style={{ contain: "layout style" }}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -177,7 +178,7 @@ function SwipeCarousel({
             <div
               key={project.id}
               aria-hidden={!isActive}
-              className="absolute inset-0 transition-[transform,opacity,filter] duration-500 ease-out"
+              className="absolute inset-0 transition-[transform,opacity] duration-500 ease-out transform-gpu"
               style={slotStyle(offset)}
               onClick={() => { if (!isActive && !dragMoved.current) goTo(i) }}
             >

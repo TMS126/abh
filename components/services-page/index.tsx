@@ -24,47 +24,80 @@ const BULK_RIBBON_ORANGE = "#B45309"
 
 function NoticeNotification({ isDark }: { isDark: boolean }) {
   const [expanded, setExpanded] = useState(false)
-
   const pillBg = isDark ? `${BRAND.orange}cc` : BRAND.orange
 
-  if (!expanded) {
-    return (
-      <button
-        onClick={() => setExpanded(true)}
-        aria-label="Show notice to clients"
-        style={{
-          backgroundColor: pillBg,
-          boxShadow: "0 4px 14px -4px rgba(0,0,0,0.25), 0 2px 6px -2px rgba(0,0,0,0.15)",
-        }}
-        className="relative mx-auto mb-6 flex items-center gap-2 pl-4 pr-5 py-2.5 rounded-full text-white font-black text-[0.94rem] tracking-tight transition-transform active:scale-95 hover:-translate-y-0.5"
-      >
-        <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-white dark:bg-zinc-950 border-2 border-white dark:border-zinc-950 flex items-center justify-center shadow-md">
-          <Megaphone size={10} weight="fill" className="text-brand-blue dark:text-brand-light-blue" />
-        </span>
-        Notice
-      </button>
-    )
-  }
-
   return (
-    <div className="relative mx-auto w-full max-w-md mb-6 rounded-[14px] border border-brand-orange/20 bg-brand-orange/5 dark:bg-brand-orange/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+    <div
+      className="mx-auto w-full overflow-hidden"
+      style={{
+        maxWidth: expanded ? "28rem" : "120px",
+        borderRadius: expanded ? "14px" : "14px",
+        border: expanded ? "1px solid rgba(var(--brand-orange-rgb, 249,115,22),0.2)" : "none",
+        backgroundColor: expanded ? undefined : pillBg,
+        boxShadow: expanded
+          ? undefined
+          : "0 4px 14px -4px rgba(0,0,0,0.22), 0 2px 6px -2px rgba(0,0,0,0.14)",
+        transition:
+          "max-width 340ms cubic-bezier(0.32,0.72,0,1), box-shadow 250ms, background-color 250ms, border 250ms",
+      }}
+    >
+      {/* Pill / header toggle button */}
       <button
-        onClick={() => setExpanded(false)}
-        aria-label="Collapse notice"
-        className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white/70 dark:bg-black/30 flex items-center justify-center text-zinc-500 hover:text-zinc-800 transition-colors"
+        onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
+        aria-label={expanded ? "Collapse notice" : "Show notice to clients"}
+        className={cn(
+          "w-full flex items-center gap-2 transition-all duration-300 active:scale-[0.97]",
+          expanded
+            ? "px-5 py-3.5 justify-between bg-brand-orange/5 dark:bg-brand-orange/10"
+            : "pl-4 pr-5 py-2.5 justify-center"
+        )}
       >
-        <X size={12} weight="bold" />
+        {!expanded && (
+          <span className="relative flex items-center justify-center w-5 h-5 rounded-full bg-white/25 shrink-0">
+            <Megaphone size={11} weight="fill" color="#fff" aria-hidden="true" />
+          </span>
+        )}
+        {expanded && (
+          <div className="w-7 h-7 rounded-[8px] bg-brand-orange flex items-center justify-center shrink-0">
+            <Megaphone size={14} weight="fill" color="#fff" aria-hidden="true" />
+          </div>
+        )}
+        <span
+          className={cn(
+            "whitespace-nowrap font-black text-[0.9rem] tracking-tight",
+            expanded ? "text-brand-orange flex-1 text-left" : "text-white"
+          )}
+        >
+          {expanded ? "Notice to Clients" : "Notice"}
+        </span>
+        <X
+          size={14}
+          weight="bold"
+          aria-hidden="true"
+          className={cn(
+            "shrink-0 transition-all duration-300 text-zinc-400",
+            expanded ? "opacity-100 rotate-0" : "opacity-0 rotate-90 w-0 h-0"
+          )}
+        />
       </button>
-      <div className="w-9 h-9 rounded-[10px] bg-brand-orange flex items-center justify-center shrink-0">
-        <Megaphone size={18} weight="fill" color="#fff" />
-      </div>
-      <div className="flex-1 min-w-0 pt-0.5 pr-6">
-        <span className="abh-eyebrow text-brand-orange block mb-1">Notice to Clients</span>
-        <p className="abh-body text-[1rem]">
-          {NOTICE.text}
-          <span className="font-black text-zinc-800 dark:text-zinc-100">{NOTICE.date}</span>
-          {NOTICE.textAfter}
-        </p>
+
+      {/* Expandable content */}
+      <div
+        className={cn(
+          "grid transition-all duration-300 ease-in-out",
+          expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        )}
+      >
+        <div className="overflow-hidden">
+          <div className="px-5 pb-4 pt-1">
+            <p className="abh-body text-[1rem]">
+              {NOTICE.text}
+              <span className="font-black text-zinc-800 dark:text-zinc-100">{NOTICE.date}</span>
+              {NOTICE.textAfter}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )
