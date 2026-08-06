@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 import { ArrowsLeftRight, CaretLeft, CaretRight, Stack } from "@phosphor-icons/react"
 import { HUB_COLORS, type HubKey } from "@/lib/brand"
+import { getContrastText } from "@/lib/color"
 import { HUBS, PROJECTS, type HubId, type ProjectData } from "@/lib/data"
 import { SafeImage } from "./safe-image"
 import { LikeButton, ShareButton } from "./like-share-buttons"
@@ -32,6 +33,10 @@ function HubCollectionCard({
 
   const project = projects[projectIdx]
   const images = project.images?.length ? project.images : [project.image]
+  // The share button fills with the theme-resolved accent (a pale variant in
+  // dark mode), so its icon needs a contrast-safe color rather than a
+  // hardcoded white that would disappear on that pale fill.
+  const accentFg = getContrastText(accent)
 
   // Reset which image is "big" whenever the active project changes
   useEffect(() => {
@@ -147,8 +152,8 @@ function HubCollectionCard({
               reads clearly and doesn't blend/get lost near other fixed
               UI (e.g. the calculator FAB) that can sit nearby. ---- */}
           <div
-            className="w-8 h-8 rounded-full backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors shrink-0 [&_svg]:text-white"
-            style={{ backgroundColor: `${accent}dd` }}
+            className="w-8 h-8 rounded-full backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors shrink-0 [&_svg]:text-current"
+            style={{ backgroundColor: `${accent}dd`, color: accentFg }}
             onClick={(e) => e.stopPropagation()}
           >
             <ShareButton url={shareUrl} title={project.title} />
