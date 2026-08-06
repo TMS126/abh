@@ -26,6 +26,8 @@ export function Navbar() {
   const { isTextExpanded, handleLogoMouseEnter, handleLogoMouseLeave } = useLogoAnimation()
   // true when a dark element is visually behind the right-side controls pill
   const isDarkBehind = useNavContrast()
+  // true when a dark element is visually behind the left-side logo pill
+  const isLogoDarkBehind = useNavContrast(0.07)
 
   const desktopNavRef = useRef<HTMLDivElement>(null)
 
@@ -65,10 +67,26 @@ export function Navbar() {
   // keep the icon dark so it contrasts against that light background.
   const neutralColor = useMemo(() => {
     if (!mounted) return "#3f3f46"
-    if (isDarkBehind) return "#f4f4f5"   // light icon — dark bg detected behind pill
+    if (isDarkBehind) return "#f4f4f5"    // light icon — dark bg detected behind pill
     if (theme === "dark") return "#e4e4e7" // light icon — dark theme, light bg
     return "#3f3f46"                       // dark icon — light theme, light bg
   }, [mounted, theme, isDarkBehind])
+
+  // Same logic scoped to the logo pill on the left side
+  const logoNeutralColor = useMemo(() => {
+    if (!mounted) return "#3f3f46"
+    if (isLogoDarkBehind) return "#f4f4f5"
+    if (theme === "dark") return "#e4e4e7"
+    return "#3f3f46"
+  }, [mounted, theme, isLogoDarkBehind])
+
+  // "Hub" accent — stays on its green family but flips to the light variant
+  // whenever dark content is behind the logo pill
+  const hubColor = useMemo(() => {
+    if (!mounted) return BRAND.green
+    if (isLogoDarkBehind) return BRAND.lightGreen
+    return theme === "dark" ? BRAND.lightGreen : BRAND.green
+  }, [mounted, theme, isLogoDarkBehind])
 
   return (
     <>
@@ -87,6 +105,12 @@ export function Navbar() {
                 ? "opacity-0 -translate-y-20 pointer-events-none"
                 : "opacity-100 translate-y-0 pointer-events-auto"
             )}
+            style={{
+              backgroundColor: mounted && isLogoDarkBehind
+                ? "rgba(10, 10, 15, 0.55)"
+                : undefined,
+              transition: "background-color 250ms ease, opacity 300ms, transform 300ms",
+            }}
             onMouseEnter={handleLogoMouseEnter}
             onMouseLeave={handleLogoMouseLeave}
             onClick={() => navigate("/")}
@@ -97,7 +121,7 @@ export function Navbar() {
             <div
               className="relative w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-[14px] overflow-hidden transition-colors duration-300"
               style={{
-                backgroundColor: neutralColor,
+                backgroundColor: logoNeutralColor,
                 WebkitMaskImage: "url(/logo.png)",
                 maskImage: "url(/logo.png)",
                 WebkitMaskSize: "contain",
@@ -118,7 +142,7 @@ export function Navbar() {
               </span>
               <span
                 className="whitespace-nowrap transition-colors duration-300"
-                style={{ color: mounted && theme === "dark" ? BRAND.lightGreen : BRAND.green }}
+                style={{ color: hubColor }}
               >
                 Hub
               </span>
