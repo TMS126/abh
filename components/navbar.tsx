@@ -6,7 +6,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { Sun, Moon, X, List } from "@phosphor-icons/react"
 import { NAV_ITEMS, BRAND } from "@/lib/brand"
 import { cn } from "@/lib/utils"
-import { useNavVisibility, useMobileMenu, useLogoAnimation } from "@/hooks/use-navbar"
+import { useNavVisibility, useMobileMenu, useLogoAnimation, useNavContrast } from "@/hooks/use-navbar"
 import { MobileMenu } from "@/components/navbar/mobile-menu"
 
 // Hover accent for plain-text nav links
@@ -24,6 +24,8 @@ export function Navbar() {
   const navVisible = useNavVisibility()
   const { menuOpen, setMenuOpen } = useMobileMenu()
   const { isTextExpanded, handleLogoMouseEnter, handleLogoMouseLeave } = useLogoAnimation()
+  // true when a dark element is visually behind the right-side controls pill
+  const isDarkBehind = useNavContrast()
 
   const desktopNavRef = useRef<HTMLDivElement>(null)
 
@@ -56,7 +58,17 @@ export function Navbar() {
   // Acrylic pill — blur only, no fill/border until something scrolls under it
   const glassPillClass = "backdrop-blur-md py-2 rounded-[14px] pointer-events-auto"
 
-  const neutralColor = useMemo(() => (mounted && theme === "dark" ? "#e4e4e7" : "#3f3f46"), [mounted, theme])
+  // Base color from theme — dark theme gets a light icon, light theme gets a dark icon.
+  // Override: when a genuinely dark element scrolls behind the controls pill
+  // (isDarkBehind), force a light icon so the hamburger stays visible regardless
+  // of theme. And vice-versa: if light content is behind us on a dark-theme page,
+  // keep the icon dark so it contrasts against that light background.
+  const neutralColor = useMemo(() => {
+    if (!mounted) return "#3f3f46"
+    if (isDarkBehind) return "#f4f4f5"   // light icon — dark bg detected behind pill
+    if (theme === "dark") return "#e4e4e7" // light icon — dark theme, light bg
+    return "#3f3f46"                       // dark icon — light theme, light bg
+  }, [mounted, theme, isDarkBehind])
 
   return (
     <>
@@ -210,6 +222,15 @@ export function Navbar() {
               "flex items-center gap-3 pl-3 pr-3 pointer-events-auto ml-4 transition-all duration-300",
               !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100"
             )}
+            style={{
+              // When dark content is behind the pill, add a subtle frosted
+              // backing so the icons have a guaranteed contrast surface.
+              // Transitions smoothly via CSS transition-colors on the parent.
+              backgroundColor: mounted && isDarkBehind
+                ? "rgba(10, 10, 15, 0.55)"
+                : undefined,
+              transition: "background-color 250ms ease, opacity 300ms, transform 300ms",
+            }}
           >
             <button
               onClick={handleThemeToggle}
