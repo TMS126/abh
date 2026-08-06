@@ -176,6 +176,11 @@ export function HeroSection() {
             <div className="relative w-full h-[420px] sm:h-[480px] md:h-[560px]">
               {arrangement.map(({ hub, slot, width }) => {
                 const hubAccent = isDark ? hub.colorDark : hub.colorLight
+                // On hover the pill fills with --hub-accent. Its text must
+                // contrast that fill, not be a hardcoded white — several hubs
+                // (E-Service, Tech) use pale accents in dark mode where white
+                // text would be unreadable. Derive a readable fg per accent.
+                const hubAccentFg = getArrowIconColor(hubAccent)
                 return (
                   <div
                     key={hub.id}
@@ -188,10 +193,11 @@ export function HeroSection() {
                       width: `${width}%`,
                       zIndex: slot.z,
                       ["--hub-accent" as any]: hubAccent,
+                      ["--hub-accent-fg" as any]: hubAccentFg,
                     }}
                   >
                     <img src={HUB_IMAGES[hub.id]} alt={`${hub.name} example`} className="w-full h-full object-cover" />
-                    <span className="absolute -top-2 -right-2 px-3 py-1 rounded-full text-[0.72rem] font-black uppercase tracking-widest bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 shadow-md transition-colors duration-200 group-hover/tile:bg-[var(--hub-accent)] group-hover/tile:text-white group-hover/tile:border-transparent">
+                    <span className="absolute -top-2 -right-2 px-3 py-1 rounded-full text-[0.72rem] font-black uppercase tracking-widest bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 shadow-md transition-colors duration-200 group-hover/tile:bg-[var(--hub-accent)] group-hover/tile:text-[var(--hub-accent-fg)] group-hover/tile:border-transparent">
                       {pillLabel(hub.name)}
                     </span>
                   </div>
