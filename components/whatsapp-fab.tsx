@@ -9,10 +9,14 @@ import { useTheme } from "next-themes"
 import { useExclusiveWidget } from "@/hooks/use-exclusive-widget"
 import { WA_BOOKING_CONFIG } from "@/lib/wa-booking-config"
 import { generateSlotsForDate } from "@/lib/slot-utils"
-import DayPicker from "react-day-picker"
+import dynamic from "next/dynamic"
 import "react-day-picker/dist/style.css"
 import { format } from "date-fns"
 import { trackEvent } from "@/lib/analytics"
+
+// Dynamically load DayPicker on the client only to avoid SSR/Turbopack
+// export/import errors during build — DayPicker provides named exports.
+const DayPicker = dynamic(() => import("react-day-picker").then(mod => mod.DayPicker), { ssr: false })
 
 const WA_NUMBER  = "27753338260" // hardcoded per request
 const GREETING   = "Hi there 👋 Tell us what you need and we'll get back to you right away!"
