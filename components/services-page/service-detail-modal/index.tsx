@@ -244,7 +244,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         aria-modal="true"
         aria-label={svc.name}
         className="relative w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
-        style={{ boxShadow: `0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4), 0 10px 24px -8px ${accent}50` }}
+        style={{ boxShadow: "0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4)" }}
       >
         {/* ── Bulk-deal corner ribbon ──
             Stays in the classic top-right corner. The header action
@@ -461,7 +461,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackEvent("request_whatsapp", { hub_id: svc.hubId, service_name: svc.name, section_title: svc.sectionTitle, price: svc.price, had_file_attached: uploadPhase === "done" })}
-            className="flex items-center justify-center gap-2 w-full px-4 py-4 rounded-[14px] font-black text-base text-white text-center transition-all active:scale-95 shadow-[0_4px_14px_rgba(37,99,235,0.18)]"
+            className="flex items-center justify-center gap-2 w-full px-4 py-4 rounded-[14px] font-black text-base text-white text-center transition-all active:scale-95"
             style={{ backgroundColor: "#25D366" }}
           >
             Request {naturalLabel}

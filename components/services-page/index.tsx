@@ -34,7 +34,7 @@ function NoticeNotification({ isDark }: { isDark: boolean }) {
         aria-label="Show notice to clients"
         style={{
           backgroundColor: pillBg,
-          boxShadow: `0 10px 28px -8px ${BRAND.orange}70, 0 4px 12px -2px rgba(0,0,0,0.25)`,
+          boxShadow: "0 4px 14px -4px rgba(0,0,0,0.25), 0 2px 6px -2px rgba(0,0,0,0.15)",
         }}
         className="relative mx-auto mb-6 flex items-center gap-2 pl-4 pr-5 py-2.5 rounded-full text-white font-black text-[0.94rem] tracking-tight transition-transform active:scale-95 hover:-translate-y-0.5"
       >
@@ -270,7 +270,7 @@ export function ServicesPage() {
                 )}
               >
                 <ScrollBounce delay={index * 0.06}>
-                  <div className="group/hubcard relative flex flex-col items-center text-center h-full rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 abh-shadow-elevated overflow-hidden transition-transform duration-300 hover:-translate-y-0.5 transform-gpu p-6 pt-7">
+                  <div className="group/hubcard relative flex flex-col items-center text-center h-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-elevated overflow-hidden transition-transform duration-300 hover:-translate-y-0.5 transform-gpu p-6 pt-7">
                     <HubCornerIcon hubId={hubId} accent={accent} />
                     {hubHasBulk && <BulkRibbon />}
 
@@ -318,7 +318,7 @@ export function ServicesPage() {
                 <button
                   onClick={() => handleOpenHub(hubId, "right")}
                   aria-label={`Open ${hub.title}`}
-                  className="group/hubcard relative flex flex-col items-center text-center w-full rounded-[14px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 abh-shadow-elevated overflow-hidden transition-transform duration-200 active:scale-[0.98] transform-gpu p-6 pt-7"
+                  className="group/hubcard relative flex flex-col items-center text-center w-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-elevated overflow-hidden transition-transform duration-200 active:scale-[0.98] transform-gpu p-6 pt-7"
                 >
                   <HubCornerIcon hubId={hubId} accent={accent} />
                   {hubHasBulk && <BulkRibbon />}

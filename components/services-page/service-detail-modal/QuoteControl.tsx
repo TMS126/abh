@@ -22,9 +22,11 @@ export function QuoteControl({
         onPointerCancel={() => setPressed(false)}
         className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-[14px] font-bold text-[0.84rem] transition-all duration-150"
         style={{
-          backgroundColor: `${accent}12`,
+          backgroundColor: `${accent}18`,
           color: accent,
-          boxShadow: pressed ? `inset 0 2px 6px -1px ${accent}55` : `0 4px 14px -4px ${accent}55`,
+          boxShadow: pressed
+            ? "inset 0 2px 5px -1px rgba(0,0,0,0.18)"
+            : "0 2px 8px -2px rgba(0,0,0,0.12)",
           transform: pressed ? "translateY(1px) scale(0.97)" : "translateY(0) scale(1)",
         }}
       >
@@ -35,7 +37,7 @@ export function QuoteControl({
   }
 
   return (
-    <div className="flex items-center justify-between gap-2 rounded-[14px] py-2 px-2.5" style={{ backgroundColor: "#22c55e0d", boxShadow: "0 4px 14px -4px #22c55e55" }}>
+    <div className="flex items-center justify-between gap-2 rounded-[14px] py-2 px-2.5" style={{ backgroundColor: "#22c55e10", boxShadow: "0 2px 8px -2px rgba(0,0,0,0.12)" }}>
       <button
         type="button"
         onClick={() => onStep(-1)}

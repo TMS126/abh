@@ -12,11 +12,7 @@ type UploadPhase = "idle" | "uploading" | "done" | "error"
 // place without any sense of depth.
 export function UploadButton({ phase, accent, onClick }: { phase: UploadPhase; accent: string; onClick: () => void }) {
   const [pressed, setPressed] = useState(false)
-  const isDone     = phase === "done"
-  const baseColor  = isDone ? "#16a34a" : accent
-  const baseBg     = isDone ? "#22c55e14" : `${accent}12`
-  const restShadow = isDone ? "0 4px 14px -4px #22c55e55" : `0 4px 14px -4px ${accent}55`
-  const pressShadow = isDone ? "inset 0 2px 6px -1px #16a34a55" : `inset 0 2px 6px -1px ${accent}55`
+  const isDone = phase === "done"
 
   return (
     <button
@@ -28,9 +24,11 @@ export function UploadButton({ phase, accent, onClick }: { phase: UploadPhase; a
       onPointerCancel={() => setPressed(false)}
       className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-[14px] font-bold text-[0.84rem] transition-all duration-150"
       style={{
-        backgroundColor: baseBg,
-        color: baseColor,
-        boxShadow: pressed ? pressShadow : restShadow,
+        backgroundColor: isDone ? "#22c55e18" : `${accent}18`,
+        color: isDone ? "#16a34a" : accent,
+        boxShadow: pressed
+          ? "inset 0 2px 5px -1px rgba(0,0,0,0.18)"
+          : "0 2px 8px -2px rgba(0,0,0,0.12)",
         transform: pressed ? "translateY(1px) scale(0.97)" : "translateY(0) scale(1)",
       }}
     >
@@ -80,7 +78,7 @@ export function UploadStatus({
 
   if (phase === "done" && file) {
     return (
-      <div className="flex items-center justify-between gap-2 w-full px-4 py-2.5 rounded-[14px] text-base font-bold" style={{ backgroundColor: `${accent}08`, boxShadow: `0 2px 10px -4px ${accent}40` }}>
+      <div className="flex items-center justify-between gap-2 w-full px-4 py-2.5 rounded-[14px] text-base font-bold" style={{ backgroundColor: `${accent}10`, boxShadow: "0 2px 8px -2px rgba(0,0,0,0.10)" }}>
         <span className="flex items-center gap-2.5 min-w-0">
           <span className="relative shrink-0">
             {previewUrl ? (

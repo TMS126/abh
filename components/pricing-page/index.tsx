@@ -212,7 +212,7 @@ export default function PricingPage() {
 
             {/* ── Notices ── */}
             <ScrollBounce delay={0.3}>
-              <div className="rounded-[14px] border px-5 py-5 space-y-3" style={{ borderColor: `${BRAND.orange}35`, backgroundColor: `${BRAND.orange}0a` }}>
+              <div className="rounded-[14px] px-5 py-5 space-y-3" style={{ backgroundColor: `${BRAND.orange}0d`, boxShadow: `0 2px 16px -2px ${BRAND.orange}20` }}>
                 <p className="text-xs flex items-start gap-1.5" style={{ color: BRAND.orange }}>
                   <Lightning size={14} weight="fill" className="shrink-0 mt-0.5" />
                   <span><span className="font-black">Rush fee:</span> A 50% surcharge applies when same-session or urgent turnaround is required.</span>

@@ -287,27 +287,26 @@ button, a, [role="button"] {
   }
 
   .abh-card {
-    @apply rounded-[14px] border transition-all duration-300;
+    @apply rounded-[14px] transition-all duration-300;
     background: var(--card);
-    border-color: var(--border);
-    box-shadow: 0 2px 10px -2px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 16px -2px rgba(0, 0, 0, 0.10), 0 1px 4px -1px rgba(0, 0, 0, 0.06);
   }
   .dark .abh-card {
-    box-shadow: 0 2px 14px -2px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 2px 20px -2px rgba(0, 0, 0, 0.55), 0 1px 6px -1px rgba(0, 0, 0, 0.3);
   }
 
   /* Interactive card shadow (StripCard, hub cards) — resting + hover lift, both themes */
   .abh-shadow-card {
-    box-shadow: 0 2px 10px -2px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 16px -2px rgba(0, 0, 0, 0.10), 0 1px 4px -1px rgba(0, 0, 0, 0.06);
   }
   .dark .abh-shadow-card {
-    box-shadow: 0 2px 14px -2px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 2px 20px -2px rgba(0, 0, 0, 0.55), 0 1px 6px -1px rgba(0, 0, 0, 0.3);
   }
   .abh-shadow-card:hover {
-    box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.14);
+    box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.16), 0 4px 10px -2px rgba(0, 0, 0, 0.08);
   }
   .dark .abh-shadow-card:hover {
-    box-shadow: 0 8px 28px -4px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 10px 36px -4px rgba(0, 0, 0, 0.65), 0 4px 12px -2px rgba(0, 0, 0, 0.4);
   }
 
   /* Container shadow for a group of small nested rows (e.g. HubModal service list) */
@@ -326,15 +325,11 @@ button, a, [role="button"] {
     box-shadow: 0 1px 8px -1px rgba(0, 0, 0, 0.35);
   }
 
-  /* Full-screen modal shadow — shared dark, layered base. Optional per-modal
-     accent glow layered on top via the --modal-glow custom property, which
-     any component can set inline (e.g. HubModal sets it to an accent-tinted
-     color; components that don't set it just get transparent = no glow). */
+  /* Full-screen modal shadow — clean neutral drop shadow only. */
   .abh-shadow-modal {
     box-shadow:
       0 45px 100px -20px rgba(0, 0, 0, 0.55),
-      0 20px 48px -14px rgba(0, 0, 0, 0.4),
-      0 10px 24px -8px var(--modal-glow, transparent);
+      0 20px 48px -14px rgba(0, 0, 0, 0.4);
   }
 
   /* Small floating popover/dropdown panel shadow, both themes */
@@ -354,7 +349,7 @@ button, a, [role="button"] {
     transition: box-shadow 0.3s ease;
   }
   .abh-shadow-project-card:hover {
-    box-shadow: 0 20px 36px -14px var(--hub-shadow, rgba(0, 0, 0, 0.45)), 0 8px 16px -8px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 20px 36px -14px rgba(0, 0, 0, 0.55), 0 8px 16px -8px rgba(0, 0, 0, 0.35);
   }
 /* Overlay/lightbox image shadow — backdrop is already near-black, so a
      dark shadow is invisible regardless of alpha. Uses a subtle light glow

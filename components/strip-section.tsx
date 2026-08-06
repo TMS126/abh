@@ -51,8 +51,7 @@ function StripCard({ item }: { item: any }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={cn(
-        "relative rounded-[14px] border p-6 transition-all duration-300 group overflow-hidden h-full",
-        "border-zinc-100 dark:border-zinc-800",
+        "relative rounded-[14px] p-6 transition-all duration-300 group overflow-hidden h-full",
         "abh-shadow-card hover:-translate-y-1"
       )}
       style={{ backgroundColor: hovered ? color : undefined }}
