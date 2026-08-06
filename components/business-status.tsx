@@ -54,19 +54,21 @@ function getTechDesignStatus(): HubStatus {
 function StatusPill({ status }: { status: HubStatus }) {
   return (
     <div className={cn(
-      "flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[0.74rem] font-bold tracking-wide whitespace-nowrap",
+      "inline-flex flex-wrap items-center gap-x-1.5 gap-y-0.5 px-2.5 py-1.5 rounded-2xl border text-[0.74rem] font-bold tracking-wide",
       status.open
         ? "bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400"
         : "bg-zinc-50  dark:bg-zinc-900     border-zinc-200  dark:border-zinc-700  text-zinc-500  dark:text-zinc-400"
     )}>
-      <span className={cn(
-        "w-1.5 h-1.5 rounded-full shrink-0",
-        status.open ? "bg-green-500 animate-pulse" : "bg-zinc-400 dark:bg-zinc-600"
-      )} />
-      <span className="font-black">{status.label}</span>
-      <span className="font-normal opacity-70">{status.open ? "Open" : "Closed"}</span>
+      <span className="flex items-center gap-1.5 shrink-0">
+        <span className={cn(
+          "w-1.5 h-1.5 rounded-full shrink-0",
+          status.open ? "bg-green-500 animate-pulse" : "bg-zinc-400 dark:bg-zinc-600"
+        )} />
+        <span className="font-black">{status.label}</span>
+        <span className="font-normal opacity-70">{status.open ? "Open" : "Closed"}</span>
+      </span>
       <span className="opacity-40">·</span>
-      <span>{status.nextEvent}</span>
+      <span className="shrink-0">{status.nextEvent}</span>
     </div>
   )
 }

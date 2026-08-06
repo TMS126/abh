@@ -6,7 +6,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { Sun, Moon, X, List } from "@phosphor-icons/react"
 import { NAV_ITEMS, BRAND } from "@/lib/brand"
 import { cn } from "@/lib/utils"
-import { useNavVisibility, useMobileMenu, useLogoAnimation } from "@/hooks/use-navbar"
+import { useNavVisibility, useMobileMenu, useLogoAnimation, useNavContrast } from "@/hooks/use-navbar"
 import { MobileMenu } from "@/components/navbar/mobile-menu"
 
 // Hover accent for plain-text nav links
@@ -24,6 +24,10 @@ export function Navbar() {
   const navVisible = useNavVisibility()
   const { menuOpen, setMenuOpen } = useMobileMenu()
   const { isTextExpanded, handleLogoMouseEnter, handleLogoMouseLeave } = useLogoAnimation()
+  // true when a dark element is visually behind the right-side controls pill
+  const isDarkBehind = useNavContrast()
+  // true when a dark element is visually behind the left-side logo pill
+  const isLogoDarkBehind = useNavContrast(0.07)
 
   const desktopNavRef = useRef<HTMLDivElement>(null)
 
@@ -56,7 +60,33 @@ export function Navbar() {
   // Acrylic pill — blur only, no fill/border until something scrolls under it
   const glassPillClass = "backdrop-blur-md py-2 rounded-[14px] pointer-events-auto"
 
-  const neutralColor = useMemo(() => (mounted && theme === "dark" ? "#e4e4e7" : "#3f3f46"), [mounted, theme])
+  // Base color from theme — dark theme gets a light icon, light theme gets a dark icon.
+  // Override: when a genuinely dark element scrolls behind the controls pill
+  // (isDarkBehind), force a light icon so the hamburger stays visible regardless
+  // of theme. And vice-versa: if light content is behind us on a dark-theme page,
+  // keep the icon dark so it contrasts against that light background.
+  const neutralColor = useMemo(() => {
+    if (!mounted) return "#3f3f46"
+    if (isDarkBehind) return "#f4f4f5"    // light icon — dark bg detected behind pill
+    if (theme === "dark") return "#e4e4e7" // light icon — dark theme, light bg
+    return "#3f3f46"                       // dark icon — light theme, light bg
+  }, [mounted, theme, isDarkBehind])
+
+  // Same logic scoped to the logo pill on the left side
+  const logoNeutralColor = useMemo(() => {
+    if (!mounted) return "#3f3f46"
+    if (isLogoDarkBehind) return "#f4f4f5"
+    if (theme === "dark") return "#e4e4e7"
+    return "#3f3f46"
+  }, [mounted, theme, isLogoDarkBehind])
+
+  // "Hub" accent — stays on its green family but flips to the light variant
+  // whenever dark content is behind the logo pill
+  const hubColor = useMemo(() => {
+    if (!mounted) return BRAND.green
+    if (isLogoDarkBehind) return BRAND.lightGreen
+    return theme === "dark" ? BRAND.lightGreen : BRAND.green
+  }, [mounted, theme, isLogoDarkBehind])
 
   return (
     <>
@@ -75,6 +105,12 @@ export function Navbar() {
                 ? "opacity-0 -translate-y-20 pointer-events-none"
                 : "opacity-100 translate-y-0 pointer-events-auto"
             )}
+            style={{
+              backgroundColor: mounted && isLogoDarkBehind
+                ? "rgba(10, 10, 15, 0.55)"
+                : undefined,
+              transition: "background-color 250ms ease, opacity 300ms, transform 300ms",
+            }}
             onMouseEnter={handleLogoMouseEnter}
             onMouseLeave={handleLogoMouseLeave}
             onClick={() => navigate("/")}
@@ -85,7 +121,7 @@ export function Navbar() {
             <div
               className="relative w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-[14px] overflow-hidden transition-colors duration-300"
               style={{
-                backgroundColor: neutralColor,
+                backgroundColor: logoNeutralColor,
                 WebkitMaskImage: "url(/logo.png)",
                 maskImage: "url(/logo.png)",
                 WebkitMaskSize: "contain",
@@ -106,7 +142,7 @@ export function Navbar() {
               </span>
               <span
                 className="whitespace-nowrap transition-colors duration-300"
-                style={{ color: mounted && theme === "dark" ? BRAND.lightGreen : BRAND.green }}
+                style={{ color: hubColor }}
               >
                 Hub
               </span>
@@ -210,6 +246,15 @@ export function Navbar() {
               "flex items-center gap-3 pl-3 pr-3 pointer-events-auto ml-4 transition-all duration-300",
               !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100"
             )}
+            style={{
+              // When dark content is behind the pill, add a subtle frosted
+              // backing so the icons have a guaranteed contrast surface.
+              // Transitions smoothly via CSS transition-colors on the parent.
+              backgroundColor: mounted && isDarkBehind
+                ? "rgba(10, 10, 15, 0.55)"
+                : undefined,
+              transition: "background-color 250ms ease, opacity 300ms, transform 300ms",
+            }}
           >
             <button
               onClick={handleThemeToggle}

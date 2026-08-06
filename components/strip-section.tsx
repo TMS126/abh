@@ -10,9 +10,9 @@ import { ScrollBounce } from "@/components/scroll-bounce"
 export function StripSection() {
   return (
     <section aria-label="Why choose us" className="bg-background py-12 px-4 md:px-8 transition-colors duration-300">
-      <div className="max-w-[1080px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="max-w-[1080px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
         {STRIP_ITEMS.map((item, index) => (
-          <ScrollBounce key={index} delay={index * 0.08}>
+          <ScrollBounce key={index} delay={index * 0.08} className="h-full">
             <StripCard item={item} />
           </ScrollBounce>
         ))}
@@ -51,7 +51,7 @@ function StripCard({ item }: { item: any }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={cn(
-        "relative rounded-[14px] border p-6 transition-all duration-300 group overflow-hidden",
+        "relative rounded-[14px] border p-6 transition-all duration-300 group overflow-hidden h-full",
         "border-zinc-100 dark:border-zinc-800",
         "abh-shadow-card hover:-translate-y-1"
       )}

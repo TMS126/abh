@@ -157,9 +157,9 @@ function ContactPageInner() {
                       >
                         <Icon size={20} weight="fill" aria-hidden="true" />
                       </span>
-                      <div className="min-w-0">
-                        <p className="text-base font-medium text-zinc-800 dark:text-zinc-200">{c.title}</p>
-                        <p className="abh-muted break-words text-sm">{c.value}</p>
+                      <div className="min-w-0 w-full">
+                        <p className="text-base font-medium text-zinc-800 dark:text-zinc-200 truncate">{c.title}</p>
+                        <p className="abh-muted text-sm break-all leading-tight">{c.value}</p>
                       </div>
                     </a>
                   </ScrollBounce>
