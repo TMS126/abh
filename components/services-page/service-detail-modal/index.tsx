@@ -246,11 +246,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         className="relative w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         style={{ boxShadow: "0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4)" }}
       >
-        {/* ── Bulk-deal corner ribbon ──
-            Stays in the classic top-right corner. The header action
-            buttons (share/close) have moved to the top-LEFT instead —
-            see below — so there's no longer any shared real estate for
-            the two to fight over. */}
+        {/* ── Bulk-deal corner ribbon — top-right ── */}
         {hasBulk && (
           <div
             className="absolute top-0 right-0 w-[104px] h-[104px] overflow-hidden pointer-events-none z-10"
@@ -276,12 +272,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         {/* ── Header: hub label, title, price ── */}
         <div className="px-6 pt-6 pb-5 flex-shrink-0">
           <div className="flex items-start mb-2">
-            {/* Share + Close — moved from top-right to top-left. That
-                corner is otherwise always empty, so this permanently
-                clears any overlap with the ribbon (which only ever
-                occupies the top-right 104×104 corner) instead of relying
-                on conditional spacing that has to be re-checked every
-                time either element changes. */}
+            {/* Share + Close — top-left */}
             <div className="relative z-30 flex items-center justify-start gap-2 shrink-0 w-[72px]">
               <button
                 onClick={onClose}
@@ -363,7 +354,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                     )}
                     style={
                       isActive
-                        ? { backgroundColor: accent, color: isDark ? "#0a0a0a" : "#ffffff", boxShadow: `0 4px 14px -4px ${accent}70` }
+                        ? { backgroundColor: accent, color: isDark ? "#0a0a0a" : "#ffffff", boxShadow: "0 4px 14px -4px rgba(0,0,0,0.28)" }
                         : undefined
                     }
                   >
@@ -378,7 +369,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
               onClick={() => setTipsOpen(true)}
               aria-label="View helpful tips"
               className="shrink-0 w-11 h-11 rounded-[14px] flex items-center justify-center transition-all active:scale-95"
-              style={{ backgroundColor: `${accent}12`, color: accent, boxShadow: `0 2px 10px -4px ${accent}40` }}
+              style={{ backgroundColor: `${accent}12`, color: accent, boxShadow: "0 2px 10px -4px rgba(0,0,0,0.18)" }}
             >
               <Lightbulb size={18} weight="fill" aria-hidden="true" />
             </button>

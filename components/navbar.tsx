@@ -106,10 +106,7 @@ export function Navbar() {
                 : "opacity-100 translate-y-0 pointer-events-auto"
             )}
             style={{
-              backgroundColor: mounted && isLogoDarkBehind
-                ? "rgba(10, 10, 15, 0.55)"
-                : undefined,
-              transition: "background-color 250ms ease, opacity 300ms, transform 300ms",
+              transition: "opacity 300ms, transform 300ms",
             }}
             onMouseEnter={handleLogoMouseEnter}
             onMouseLeave={handleLogoMouseLeave}
@@ -247,13 +244,7 @@ export function Navbar() {
               !navVisible && !menuOpen ? "-translate-y-20 opacity-0" : "translate-y-0 opacity-100"
             )}
             style={{
-              // When dark content is behind the pill, add a subtle frosted
-              // backing so the icons have a guaranteed contrast surface.
-              // Transitions smoothly via CSS transition-colors on the parent.
-              backgroundColor: mounted && isDarkBehind
-                ? "rgba(10, 10, 15, 0.55)"
-                : undefined,
-              transition: "background-color 250ms ease, opacity 300ms, transform 300ms",
+              transition: "opacity 300ms, transform 300ms",
             }}
           >
             <button
