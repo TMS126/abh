@@ -76,4 +76,4 @@ export function QuoteControl({
       )}
     </div>
   )
-} 
+}
