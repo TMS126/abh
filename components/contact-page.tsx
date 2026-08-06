@@ -159,7 +159,7 @@ function ContactPageInner() {
                       </span>
                       <div className="min-w-0 w-full">
                         <p className="text-base font-medium text-zinc-800 dark:text-zinc-200 truncate">{c.title}</p>
-                        <p className="abh-muted text-sm break-all leading-tight">{c.value}</p>
+                        <p className="abh-muted text-sm truncate leading-tight" title={c.value}>{c.value}</p>
                       </div>
                     </a>
                   </ScrollBounce>
