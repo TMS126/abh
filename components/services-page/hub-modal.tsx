@@ -45,8 +45,6 @@ export function HubModal({ hubId, onClose, onSelectService }: {
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
       />
-      {/* Only the X button and backdrop close this — no swipe-to-dismiss,
-          so a mobile drag can't get intercepted by browser pull-to-refresh */}
       <motion.div
         ref={containerRef}
         tabIndex={-1}
@@ -97,7 +95,10 @@ export function HubModal({ hubId, onClose, onSelectService }: {
         </div>
 
         <div className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-8">
-          <div role="tablist" aria-label="Service categories" className="flex flex-wrap justify-center gap-2 mb-5">
+
+          {/* Section selector — plain text, thin underline on the active
+              one. No filled pills, no background color at all. */}
+          <div role="tablist" aria-label="Service categories" className="flex flex-wrap justify-center gap-x-6 gap-y-3 mb-6 border-b border-zinc-100 dark:border-zinc-800 pb-3">
             {hub.sections.map((section, sIdx) => {
               const isOpen = openSectionIdx === sIdx
               const hasBulk = sectionHasBulk(hubId, section.title, section.items)
@@ -107,20 +108,25 @@ export function HubModal({ hubId, onClose, onSelectService }: {
                   role="tab"
                   aria-selected={isOpen}
                   onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)}
-                  className={`relative px-3.5 py-1.5 rounded-full text-[0.84rem] font-black tracking-tight whitespace-nowrap transition-all duration-200 ${
-                    isOpen ? "text-white" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
-                  }`}
-                  style={isOpen ? { backgroundColor: solidAccent, boxShadow: "0 10px 24px -6px rgba(0,0,0,0.30), 0 4px 10px -2px rgba(0,0,0,0.18)" } : {}}
+                  className={cn ? undefined : undefined}
+                  style={{
+                    color: isOpen ? accent : (isDark ? "#a1a1aa" : "#71717a"),
+                  }}
                 >
-                  {section.title}
-                  {hasBulk && (
-                    <span
-                      aria-label="Bulk pricing available"
-                      className="absolute -top-2 -right-2 px-1.5 py-0.5 rounded-full text-[0.56rem] font-black uppercase tracking-wide bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 shadow-sm"
-                    >
-                      Bulk
-                    </span>
-                  )}
+                  <span
+                    className="relative pb-1.5 text-[0.86rem] font-black tracking-tight whitespace-nowrap transition-colors duration-200 border-b-2 -mb-[13px]"
+                    style={{ borderColor: isOpen ? accent : "transparent" }}
+                  >
+                    {section.title}
+                    {hasBulk && (
+                      <span
+                        aria-label="Bulk pricing available"
+                        className="ml-1.5 text-[0.6rem] font-black uppercase tracking-wide opacity-60"
+                      >
+                        · Bulk
+                      </span>
+                    )}
+                  </span>
                 </button>
               )
             })}
@@ -128,11 +134,7 @@ export function HubModal({ hubId, onClose, onSelectService }: {
 
           {activeSectionDesc && (
             <div key={openSectionIdx} className="mb-5 animate-in fade-in slide-in-from-top-1 duration-200">
-              <div className="h-px w-full mb-3" style={{ backgroundColor: `${accent}30` }} aria-hidden="true" />
-              <p
-                className="text-[0.98rem] leading-relaxed text-zinc-600 dark:text-zinc-300 rounded-[10px] px-3 py-2 -mx-3"
-                style={{ backgroundColor: `${accent}08`, boxShadow: "0 2px 8px -4px rgba(0,0,0,0.10)" }}
-              >
+              <p className="text-[0.98rem] leading-relaxed text-zinc-600 dark:text-zinc-300">
                 {activeSectionDesc}
               </p>
             </div>
@@ -161,8 +163,8 @@ export function HubModal({ hubId, onClose, onSelectService }: {
                 >
                   <span className="text-base font-black text-zinc-800 dark:text-zinc-200 text-left flex items-center gap-2">
                     {itemHasBulk(hubId, activeSection.title, item.name) && (
-                      <span className="shrink-0 px-1.5 py-0.5 rounded-full text-[0.6rem] font-black uppercase tracking-wide bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
-                        Bulk
+                      <span className="shrink-0 text-[0.6rem] font-black uppercase tracking-wide opacity-60">
+                        Bulk ·
                       </span>
                     )}
                     {item.name}
@@ -183,4 +185,4 @@ export function HubModal({ hubId, onClose, onSelectService }: {
       </motion.div>
     </div>
   )
-              } 
+}
