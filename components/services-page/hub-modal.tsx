@@ -113,8 +113,10 @@ export function HubModal({ hubId, onClose, onSelectService }: {
                   aria-selected={isOpen}
                   onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)}
                 >
+                  {/* Bumped from 0.86rem → 0.95rem for readability; the
+                      "· Bulk" tag stays at its original small size. */}
                   <span
-                    className="relative pb-1.5 text-[0.86rem] font-black tracking-tight whitespace-nowrap transition-colors duration-200 border-b-2 -mb-[13px]"
+                    className="relative pb-1.5 text-[0.95rem] font-black tracking-tight whitespace-nowrap transition-colors duration-200 border-b-2 -mb-[13px]"
                     style={{ borderColor: isOpen ? accent : "transparent", color: isOpen ? accent : (isDark ? "#a1a1aa" : "#71717a") }}
                   >
                     {section.title}
