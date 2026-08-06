@@ -108,7 +108,21 @@ export function HubModal({ hubId, onClose, onSelectService }: {
                   role="tab"
                   aria-selected={isOpen}
                   onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)}
-                  className={cn ? undefined : undefined}
+                >
+                  <span
+                    className="relative pb-1.5 text-[0.86rem] font-black tracking-tight whitespace-nowrap transition-colors duration-200 border-b-2 -mb-[13px]"
+                    style={{ borderColor: isOpen ? accent : "transparent", color: isOpen ? accent : (isDark ? "#a1a1aa" : "#71717a") }}
+                  >
+                    {section.title}
+                    {hasBulk && (
+                      <span aria-label="Bulk pricing available" className="ml-1.5 text-[0.6rem] font-black uppercase tracking-wide opacity-60">
+                        · Bulk
+                      </span>
+                    )}
+                  </span>
+                </button>
+                
+                className={cn ? undefined : undefined}
                   style={{
                     color: isOpen ? accent : (isDark ? "#a1a1aa" : "#71717a"),
                   }}
