@@ -20,7 +20,7 @@ export function BulkHint({
     <div className="animate-in fade-in duration-200 flex flex-col items-center gap-2 px-1">
       <div className="inline-flex items-stretch rounded-full overflow-hidden shadow-sm">
         <span
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[0.65rem] font-black uppercase tracking-wider whitespace-nowrap"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[0.65rem] font-black uppercase tracking-wider"
           style={{ backgroundColor: accent, color: labelTextColor }}
         >
           <Tag size={11} weight="fill" aria-hidden="true" />
@@ -35,7 +35,7 @@ export function BulkHint({
       </div>
 
       {isDiscount && (
-        <p className="text-[0.82rem] font-medium text-zinc-400 dark:text-zinc-500">
+        <p className="text-[0.82rem] font-medium text-zinc-400 dark:text-zinc-500 text-center">
           <span className="line-through">R{baseUnitPrice}{priceUnit ? `/${priceUnit}` : ""}</span>
           {" → "}
           <span className="font-black" style={{ color: accent }}>R{effRate}{priceUnit ? `/${priceUnit}` : ""}</span>
@@ -44,4 +44,4 @@ export function BulkHint({
       )}
     </div>
   )
-} 
+}
