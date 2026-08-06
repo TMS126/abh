@@ -36,7 +36,7 @@ export function HubModal({ hubId, onClose, onSelectService }: {
   const activeSectionDesc = activeSection?.desc
 
   return (
-    <div className="fixed inset-0 z-[10100] flex items-end md:items-center justify-center p-0 md:p-4">
+    <div className="fixed inset-0 z-[10100] flex items-center justify-center p-3 md:p-4">
       <motion.div
         className="absolute inset-0 bg-black/60"
         onClick={onClose}
@@ -53,18 +53,13 @@ export function HubModal({ hubId, onClose, onSelectService }: {
         role="dialog"
         aria-modal="true"
         aria-label={hub.title}
-        initial={{ y: 40, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 40, opacity: 0 }}
+        initial={{ scale: 0.92, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.96, opacity: 0 }}
         transition={{ type: "tween", duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
-        className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 shadow-2xl md:border md:border-zinc-100 dark:md:border-zinc-800 h-[94dvh] md:h-auto md:max-h-[88vh] flex flex-col outline-none rounded-t-[22px] rounded-b-none md:rounded-[14px]"
+        className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px]"
         style={{ boxShadow: "0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4)" }}
       >
-        {/* Drag handle — mobile only */}
-        <div className="md:hidden flex justify-center pt-3 pb-1 shrink-0" aria-hidden="true">
-          <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700" />
-        </div>
-
         <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center shrink-0 gap-3" style={{ backgroundColor: `${accent}05` }}>
           <div className="flex items-center gap-4 min-w-0">
             <div className="w-12 h-12 md:w-14 md:h-14 rounded-[14px] flex items-center justify-center shadow-lg bg-zinc-100 dark:bg-zinc-800 shrink-0" style={{ border: `2px solid ${accent}` }}>

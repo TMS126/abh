@@ -26,7 +26,7 @@ export function FaqAccordion({
           "w-full overflow-hidden border transition-[border-color,background-color,box-shadow] duration-300 ease-in-out",
           isOpen
             ? "max-w-2xl bg-white dark:bg-zinc-900/80 border-zinc-100 dark:border-zinc-800 shadow-lg"
-            : "max-w-[230px] bg-white dark:bg-zinc-900/60 border-zinc-200/70 dark:border-zinc-700/50 shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.22)]"
+            : "max-w-[120px] bg-white dark:bg-zinc-900/60 border-zinc-200/70 dark:border-zinc-700/50 shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.22)]"
         )}
         style={{
           borderRadius: isOpen ? "18px" : "999px",
@@ -46,11 +46,11 @@ export function FaqAccordion({
               : "px-5 py-2.5 justify-center text-[0.84rem] font-semibold text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
           )}
         >
-          <span className={cn("whitespace-nowrap", isOpen && "text-left")}>Frequently Asked Questions</span>
+          <span className={cn("whitespace-nowrap", isOpen && "text-left")}>{isOpen ? "Frequently Asked Questions" : "FAQs"}</span>
           <CaretDown
             className={cn(
-              "w-3.5 h-3.5 shrink-0 transition-transform duration-300",
-              isOpen ? "rotate-180 text-zinc-400" : "text-zinc-400"
+              "w-3.5 h-3.5 shrink-0 text-zinc-400",
+              isOpen && "rotate-180"
             )}
             aria-hidden="true"
           />
@@ -88,10 +88,7 @@ export function FaqAccordion({
                         {faq.question}
                       </h4>
                       <CaretDown
-                        className={cn(
-                          "w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform duration-300",
-                          open && "rotate-180"
-                        )}
+                        className={cn("w-3.5 h-3.5 text-zinc-400 shrink-0", open && "rotate-180")}
                         aria-hidden="true"
                       />
                     </button>
