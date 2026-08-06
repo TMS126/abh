@@ -461,7 +461,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackEvent("request_whatsapp", { hub_id: svc.hubId, service_name: svc.name, section_title: svc.sectionTitle, price: svc.price, had_file_attached: uploadPhase === "done" })}
-            className="flex items-center justify-center gap-2 w-full px-4 py-4 rounded-[14px] font-black text-base text-white text-center transition-all active:scale-95 shadow-[0_4px_14px_rgba(37,99,235,0.18)]"
+            className="flex items-center justify-center gap-2 w-full px-4 py-4 rounded-[14px] font-black text-base text-white text-center transition-all active:scale-95"
             style={{ backgroundColor: "#25D366" }}
           >
             Request {naturalLabel}
