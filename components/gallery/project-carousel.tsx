@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 import { ArrowsLeftRight } from "@phosphor-icons/react"
 import { ProjectData } from "@/lib/data"
+import { HUB_COLORS } from "@/lib/brand"
 import { BA_HUBS, CLIENT_TYPE_LABEL, HubId, hubLabelFor } from "@/lib/gallery-helpers"
 import { SafeImage } from "./safe-image"
 import { LikeButton, ShareButton } from "./like-share-buttons"
@@ -22,6 +23,16 @@ function ProjectCard({
   const hasBA = BA_HUBS.includes(project.hub as HubId) && !!(project as any).beforeImage && !!(project as any).afterImage
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}${pathname}?project=${project.id}` : `${pathname}?project=${project.id}`
 
+  // The header/footer bars are ALWAYS dark (bg-zinc-950/90) in both themes,
+  // so their content must use theme-independent, dark-surface-safe colors —
+  // not the page `accent` (which is near-black for Tech in light mode, and a
+  // pale pastel for every hub in dark mode). accentDark is the bright variant
+  // (readable label text on dark); accentLight is the AA-dark variant (safe
+  // fill behind the badge's white text).
+  const hubColors = HUB_COLORS[project.hub as HubId] ?? HUB_COLORS.print
+  const labelColor = hubColors.accentDark
+  const badgeBg = hubColors.accentLight
+
   return (
     <button onClick={() => onSelect(project)} className="w-full h-full text-left">
       <div className="relative w-full h-full rounded-[16px] overflow-hidden">
@@ -29,13 +40,13 @@ function ProjectCard({
 
         {/* ---- Header bar: hub label + before/after badge ---- */}
         <div className="absolute top-0 inset-x-0 flex items-center gap-2 px-3 py-2.5 bg-zinc-950/90 z-20">
-          <span className="flex-1 min-w-0 text-[0.9rem] font-black truncate" style={{ color: accent }}>
+          <span className="flex-1 min-w-0 text-[0.9rem] font-black truncate" style={{ color: labelColor }}>
             {hubLabelFor(project.hub)}
           </span>
           {hasBA && (
             <span
               className="shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.66rem] font-black uppercase tracking-wider text-white"
-              style={{ backgroundColor: accent }}
+              style={{ backgroundColor: badgeBg }}
             >
               <ArrowsLeftRight size={9} weight="bold" />
               B&amp;A

@@ -2,9 +2,14 @@
 
 import { useEffect, useRef, useState } from "react"
 import { ArrowsLeftRight } from "@phosphor-icons/react"
+import { getContrastText } from "@/lib/color"
 import { SafeImage } from "./safe-image"
 
 export function BeforeAfterSlider({ before, after, accent }: { before: string; after: string; accent: string }) {
+  // `accent` is theme-resolved: a pale variant in dark mode. Hardcoded white
+  // text/icons on the accent fill (After badge, drag handle) would be
+  // unreadable there, so derive a contrast-safe foreground from the accent.
+  const accentFg = getContrastText(accent)
   const [pos, setPos] = useState(50)
   const targetRef = useRef(50)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -61,7 +66,7 @@ export function BeforeAfterSlider({ before, after, accent }: { before: string; a
     >
       <div className="absolute inset-0">
         <SafeImage src={after} alt="After" accent={accent} fill sizes="55vw" className="object-cover" priority />
-        <span className="absolute bottom-3 right-3 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full text-white abh-shadow-badge" style={{ backgroundColor: `${accent}cc` }}>After</span>
+        <span className="absolute bottom-3 right-3 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full abh-shadow-badge" style={{ backgroundColor: `${accent}cc`, color: accentFg }}>After</span>
       </div>
 
       <div className="absolute inset-0 overflow-hidden" style={{ width: `${pos}%` }}>
@@ -75,7 +80,7 @@ export function BeforeAfterSlider({ before, after, accent }: { before: string; a
 
       <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 pointer-events-none" style={{ left: `${pos}%` }}>
         <div className="w-11 h-11 rounded-full flex items-center justify-center abh-shadow-handle border-2 border-white/90 backdrop-blur-sm transition-transform hover:scale-110" style={{ backgroundColor: accent }}>
-          <ArrowsLeftRight size={18} weight="bold" className="text-white" />
+          <ArrowsLeftRight size={18} weight="bold" style={{ color: accentFg }} />
         </div>
         {!revealed && <div className="absolute inset-0 rounded-full animate-ping opacity-40" style={{ backgroundColor: accent }} />}
       </div>

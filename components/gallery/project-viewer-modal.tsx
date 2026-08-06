@@ -180,6 +180,11 @@ export function ProjectViewerModal({
   if (!project) return null
 
   const accent    = isDark ? HUB_COLORS[project.hub as HubKey].accentDark : HUB_COLORS[project.hub as HubKey].accentLight
+  // The image column, its thumbnail strip and the B/A tab bar are ALWAYS dark
+  // (bg-zinc-900 / bg-zinc-950) in both themes, so accents shown against them
+  // must use the always-bright variant — not the page `accent`, which is the
+  // near-black light variant in light mode and would vanish on the dark bar.
+  const accentOnDark = HUB_COLORS[project.hub as HubKey].accentDark
   const allImages = project.images?.length > 0 ? project.images : [project.image]
   const hasBA     = BA_HUBS.includes(project.hub as HubId) && !!(project as any).beforeImage && !!(project as any).afterImage
   const beforeImg = (project as any).beforeImage as string | undefined
@@ -360,7 +365,7 @@ export function ProjectViewerModal({
                     // mobile's size and free up more room for the main image
                     <div className="flex justify-center gap-2 px-3 py-2.5 overflow-x-auto no-scrollbar shrink-0 border-t border-white/10">
                       {allImages.map((img, idx) => (
-                        <button key={idx} onClick={() => setActiveImg(idx)} aria-label={`View image ${idx + 1} of ${allImages.length}`} className={cn("relative shrink-0 w-11 h-11 rounded-[8px] overflow-hidden border-2 transition-all", activeImg === idx ? "scale-105" : "border-transparent opacity-50 hover:opacity-80")} style={activeImg === idx ? { borderColor: accent } : {}}>
+                        <button key={idx} onClick={() => setActiveImg(idx)} aria-label={`View image ${idx + 1} of ${allImages.length}`} className={cn("relative shrink-0 w-11 h-11 rounded-[8px] overflow-hidden border-2 transition-all", activeImg === idx ? "scale-105" : "border-transparent opacity-50 hover:opacity-80")} style={activeImg === idx ? { borderColor: accentOnDark } : {}}>
                           <SafeImage src={img} alt={`Thumb ${idx + 1}`} accent={accent} fill sizes="44px" className="object-cover" />
                         </button>
                       ))}
@@ -370,8 +375,8 @@ export function ProjectViewerModal({
               )}
               {hasBA && (
                 <div className="shrink-0 flex border-t border-white/10 bg-zinc-950">
-                  <button onClick={() => setComparing(false)} aria-pressed={!comparing} className={cn("flex-1 py-2.5 text-[0.78rem] font-black uppercase tracking-widest transition-all duration-200", !comparing ? "text-white" : "text-white/30 hover:text-white/60")} style={!comparing ? { borderBottom: `2px solid ${accent}` } : {}}>Gallery</button>
-                  <button onClick={() => setComparing(true)} aria-pressed={comparing} className={cn("flex-1 py-2.5 text-[0.78rem] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all duration-200", comparing ? "text-white" : "text-white/30 hover:text-white/60")} style={comparing ? { borderBottom: `2px solid ${accent}` } : {}}><ArrowsLeftRight size={13} weight="bold" aria-hidden="true" />Before / After</button>
+                  <button onClick={() => setComparing(false)} aria-pressed={!comparing} className={cn("flex-1 py-2.5 text-[0.78rem] font-black uppercase tracking-widest transition-all duration-200", !comparing ? "text-white" : "text-white/30 hover:text-white/60")} style={!comparing ? { borderBottom: `2px solid ${accentOnDark}` } : {}}>Gallery</button>
+                  <button onClick={() => setComparing(true)} aria-pressed={comparing} className={cn("flex-1 py-2.5 text-[0.78rem] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all duration-200", comparing ? "text-white" : "text-white/30 hover:text-white/60")} style={comparing ? { borderBottom: `2px solid ${accentOnDark}` } : {}}><ArrowsLeftRight size={13} weight="bold" aria-hidden="true" />Before / After</button>
                 </div>
               )}
             </div>
