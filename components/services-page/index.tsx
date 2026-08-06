@@ -34,7 +34,7 @@ function NoticeNotification({ isDark }: { isDark: boolean }) {
         aria-label="Show notice to clients"
         style={{
           backgroundColor: pillBg,
-          boxShadow: `0 10px 28px -8px ${BRAND.orange}70, 0 4px 12px -2px rgba(0,0,0,0.25)`,
+          boxShadow: "0 4px 14px -4px rgba(0,0,0,0.25), 0 2px 6px -2px rgba(0,0,0,0.15)",
         }}
         className="relative mx-auto mb-6 flex items-center gap-2 pl-4 pr-5 py-2.5 rounded-full text-white font-black text-[0.94rem] tracking-tight transition-transform active:scale-95 hover:-translate-y-0.5"
       >
