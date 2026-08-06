@@ -23,7 +23,13 @@ function ProjectCard({
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}${pathname}?project=${project.id}` : `${pathname}?project=${project.id}`
 
   return (
-    <button onClick={() => onSelect(project)} className="w-full h-full text-left">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onSelect(project)}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(project) } }}
+      className="w-full h-full text-left cursor-pointer"
+    >
       <div className="relative w-full h-full rounded-[16px] overflow-hidden">
         <SafeImage src={project.image} alt={project.title} accent={accent} fill sizes="(max-width: 640px) 100vw, 448px" className="object-cover" />
 
@@ -73,7 +79,7 @@ function ProjectCard({
           )}
         </div>
       </div>
-    </button>
+    </div>
   )
 }
 
