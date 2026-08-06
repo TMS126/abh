@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, type ChangeEvent } from "react"
+import { useState, useEffect, useRef, type ChangeEvent, type TouchEvent } from "react"
 import { X, ShareNetwork, Clock, Lightbulb, Paperclip, ShoppingCartSimple, Plus, Minus } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
@@ -17,6 +17,17 @@ import { TipsModal } from "./TipsModal"
 import { getServiceTips } from "./fallback-tips"
 
 const BULK_RIBBON_ORANGE = "#B45309"
+
+// Right-edge icon rail: every header row uses this same grid template so
+// the tips icon (price row) and the Close/Share stack (tabs row) share one
+// perfectly aligned column.
+const HEADER_GRID = "grid grid-cols-[36px_1fr_36px] gap-2"
+
+// Minimum horizontal drag distance, and how much more horizontal than
+// vertical it must be, before a touch counts as a tab-switch swipe rather
+// than a vertical scroll.
+const SWIPE_MIN_DX = 48
+const SWIPE_DOMINANCE = 1.4
 
 type Tab = "bring" | "about"
 
@@ -37,6 +48,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
   const [quoteQty, setQuoteQty] = useState(0)
   const fileRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null)
 
   useEffect(() => {
     setTab("bring")
@@ -192,6 +204,28 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
     setQuoteQty(nextQty)
   }
 
+  // ===== SWIPE-TO-SWITCH-TABS =====
+  // Horizontal swipe on the tab content body toggles between Needs/Description.
+  // Requires a clearly horizontal, deliberate drag so vertical scrolling of
+  // the content (overflow-y-auto) is never hijacked.
+  const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+    const t = e.touches[0]
+    touchStartRef.current = { x: t.clientX, y: t.clientY }
+  }
+
+  const handleTouchEnd = (e: TouchEvent<HTMLDivElement>) => {
+    const start = touchStartRef.current
+    touchStartRef.current = null
+    if (!start) return
+    const t = e.changedTouches[0]
+    const dx = t.clientX - start.x
+    const dy = t.clientY - start.y
+    if (Math.abs(dx) < SWIPE_MIN_DX || Math.abs(dx) < Math.abs(dy) * SWIPE_DOMINANCE) return
+    const idx = tabs.indexOf(tab)
+    if (dx < 0 && idx < tabs.length - 1) setTab(tabs[idx + 1])
+    else if (dx > 0 && idx > 0) setTab(tabs[idx - 1])
+  }
+
   const waMessage = fileUrl
     ? `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). Price shown: ${svc.price}. My file: ${fileUrl}`
     : `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). Price shown: ${svc.price}. Can you assist?`
@@ -231,40 +265,15 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
 
         {/* ── Header ── */}
         <div className="px-6 pt-6 pb-5 flex-shrink-0">
-          <div className="flex items-start mb-2">
-            <div className="relative z-30 flex items-center justify-start gap-2 shrink-0 w-[72px]">
-              <button
-                onClick={onClose}
-                aria-label="Close"
-                className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
-                style={{ backgroundColor: `${accent}15`, color: accent }}
-              >
-                <X size={16} weight="bold" aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                onClick={handleShare}
-                aria-label="Share this service"
-                className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                style={{ backgroundColor: `${accent}15`, color: accent }}
-              >
-                <ShareNetwork size={16} weight="bold" aria-hidden="true" />
-              </button>
-              {shareCopied && (
-                <span className="absolute -bottom-8 left-0 whitespace-nowrap text-[0.74rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full shadow-lg animate-in fade-in zoom-in-95 duration-150">
-                  Copied!
-                </span>
-              )}
-            </div>
-
-            <div className="flex-1 min-w-0 text-center">
+          {/* Title row — uses the same 3-col rail as the rows below it so
+              every row's right-edge icon column lines up exactly. */}
+          <div className={cn(HEADER_GRID, "items-start mb-2")}>
+            <div aria-hidden="true" />
+            <div className="min-w-0 text-center">
               <div className="flex items-center justify-center gap-1.5 mb-2">
                 <HubIcon id={svc.hubId} size={12} color={accent} />
                 <span className="text-[0.74rem] font-black uppercase tracking-widest" style={{ color: accent }}>{hubTitle}</span>
               </div>
-
-              {/* Section badge — no more pill/chip bg, just plain
-                  accent-colored text with a thin underline. */}
               <span
                 className="text-[0.74rem] font-black uppercase tracking-widest mb-2.5 inline-block pb-0.5 border-b"
                 style={{ color: accent, borderColor: `${accent}50` }}
@@ -273,31 +282,46 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
               </span>
               <h3 className="abh-card-heading text-[1.32rem] leading-tight">{svc.name}</h3>
             </div>
-
-            <div className="w-[72px] shrink-0" aria-hidden="true" />
+            <div aria-hidden="true" />
           </div>
 
           <div className="h-px bg-zinc-100 dark:bg-zinc-800 mb-4" />
 
-          <div className="flex flex-col items-center gap-1.5">
-            <span className="text-5xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
-            {svc.turnaround && (
-              // Turnaround pill → plain underlined text, no bg
-              <span
-                className="flex items-center gap-1 text-[0.82rem] font-bold pb-0.5 border-b"
-                style={{ color: accent, borderColor: `${accent}50` }}
-              >
-                <Clock size={12} weight="bold" aria-hidden="true" />
-                {svc.turnaround}
-              </span>
-            )}
+          {/* Price row — tips icon lives here now, top-aligned with the
+              price digits (not the turnaround line below it). Same
+              right-edge column as the Close/Share stack in the tabs row. */}
+          <div className={cn(HEADER_GRID, "items-start")}>
+            <div aria-hidden="true" />
+            <div className="flex flex-col items-center gap-1.5">
+              <span className="text-5xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
+              {svc.turnaround && (
+                <span
+                  className="flex items-center gap-1 text-[0.82rem] font-bold pb-0.5 border-b"
+                  style={{ color: accent, borderColor: `${accent}50` }}
+                >
+                  <Clock size={12} weight="bold" aria-hidden="true" />
+                  {svc.turnaround}
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setTipsOpen(true)}
+              aria-label="View helpful tips"
+              className="w-9 h-9 flex items-center justify-center transition-all active:scale-95"
+              style={{ color: accent }}
+            >
+              <Lightbulb size={18} weight="fill" aria-hidden="true" />
+            </button>
           </div>
         </div>
 
-        {/* ── Tabs — underline only, no filled pill/bg ── */}
+        {/* ── Tabs — underline only, centered. Right rail continues the
+            tips-icon column with Close + Share stacked vertically. ── */}
         <div className="px-6 pt-1">
-          <div className="flex items-center gap-1.5">
-            <div role="tablist" aria-label="Service info sections" className="flex-1 flex items-center gap-6 border-b border-zinc-100 dark:border-zinc-800">
+          <div className={cn(HEADER_GRID, "items-center")}>
+            <div aria-hidden="true" />
+            <div role="tablist" aria-label="Service info sections" className="flex items-center justify-center gap-6 border-b border-zinc-100 dark:border-zinc-800">
               {tabs.map((t) => {
                 const isActive = tab === t
                 const label = t === "bring" ? "Needs" : "Description"
@@ -308,7 +332,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                     aria-selected={isActive}
                     onClick={() => setTab(t)}
                     className={cn(
-                      "py-2.5 text-[0.86rem] font-black uppercase tracking-wider transition-colors duration-200 border-b-2 -mb-px",
+                      "py-2.5 text-[0.95rem] font-black uppercase tracking-wider transition-colors duration-200 border-b-2 -mb-px",
                       isActive ? "border-current" : "border-transparent text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300"
                     )}
                     style={isActive ? { color: accent } : undefined}
@@ -319,26 +343,46 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
               })}
             </div>
 
-            <button
-              type="button"
-              onClick={() => setTipsOpen(true)}
-              aria-label="View helpful tips"
-              className="shrink-0 w-9 h-9 flex items-center justify-center transition-all active:scale-95"
-              style={{ color: accent }}
-            >
-              <Lightbulb size={18} weight="fill" aria-hidden="true" />
-            </button>
+            <div className="relative flex flex-col items-center gap-1.5">
+              <button
+                onClick={onClose}
+                aria-label="Close"
+                className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
+                style={{ backgroundColor: `${accent}15`, color: accent }}
+              >
+                <X size={16} weight="bold" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={handleShare}
+                aria-label="Share this service"
+                className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
+                style={{ backgroundColor: `${accent}15`, color: accent }}
+              >
+                <ShareNetwork size={16} weight="bold" aria-hidden="true" />
+              </button>
+              {shareCopied && (
+                <span className="absolute -bottom-8 right-0 whitespace-nowrap text-[0.74rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full shadow-lg animate-in fade-in zoom-in-95 duration-150">
+                  Copied!
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* ── Tab content ── */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 min-h-0 text-center">
+        {/* ── Tab content — swipeable to switch tabs ── */}
+        <div
+          className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 min-h-0 text-center"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
           {tab === "bring" && (
             <div className="animate-in fade-in duration-150 flex flex-col items-center">
               <ol className="space-y-3 inline-flex flex-col items-start">
                 {requirements.map((req, idx) => (
                   <li key={idx} className="flex items-start gap-3 text-left">
-                    {/* Numbered circle removed — plain "1." "2." "3." text */}
+                    {/* Numbering intentionally left at its original size —
+                        only the tab labels above were bumped. */}
                     <span className="shrink-0 font-black text-[0.86rem] mt-0.5" style={{ color: accent }}>
                       {idx + 1}.
                     </span>
@@ -363,8 +407,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         <div className="px-6 pb-6 pt-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
           <input ref={fileRef} type="file" accept={HUB_ACCEPT[svc.hubId]} onChange={handleFilePick} className="hidden" />
 
-          {/* Attach File + Quote trigger — one row, no pill/box
-              backgrounds, split by a single thin vertical divider. */}
           {!inQuote && (
             <div className="flex items-stretch justify-center gap-4 py-1">
               <button
@@ -395,8 +437,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
             </div>
           )}
 
-          {/* In-quote state — stepper merged with the bulk hint into ONE
-              bar, split by thin vertical dividers, no pill/box bg at all. */}
           {inQuote && (
             <div className="flex items-center justify-center gap-3 py-1 flex-wrap">
               <button
