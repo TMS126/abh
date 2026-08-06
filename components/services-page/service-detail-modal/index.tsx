@@ -13,6 +13,7 @@ import {
 } from "../lib"
 import { getCartQtyForItem, getEffectiveRate, getBulkHint, parsePrice, itemHasBulk } from "@/components/quote-calculator/lib"
 import { UploadStatus } from "./UploadControl"
+import { BulkHint } from "./BulkHint"
 import { TipsModal } from "./TipsModal"
 import { getServiceTips } from "./fallback-tips"
 
