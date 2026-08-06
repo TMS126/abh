@@ -409,7 +409,7 @@ button, a, [role="button"] {
      reads clearly in both themes. Affects every page using .abh-divider,
      not just one — this was a shared bug, not a per-page styling choice. */
   .abh-divider {
-    @apply mt-6 h-[2px] max-w-[160px] mx-auto rounded-full;
+    @apply mt-6 h-[2px] w-[160px] max-w-full mx-auto rounded-full;
     background: var(--brand-blue);
     box-shadow: 0 0 8px rgba(30, 111, 168, 0.5);
   }
