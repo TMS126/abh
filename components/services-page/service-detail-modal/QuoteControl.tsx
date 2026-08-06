@@ -27,9 +27,11 @@ export function QuoteControl({
         aria-label="Add to quote"
         className="flex items-center justify-center py-3.5 rounded-[14px] transition-all duration-150"
         style={{
-          backgroundColor: `${accent}12`,
+          backgroundColor: `${accent}18`,
           color: accent,
-          boxShadow: pressed ? `inset 0 2px 6px -1px ${accent}55` : `0 4px 14px -4px ${accent}55`,
+          boxShadow: pressed
+            ? "inset 0 2px 6px -1px rgba(0,0,0,0.22), inset 0 1px 3px -1px rgba(0,0,0,0.14)"
+            : "0 2px 8px -2px rgba(0,0,0,0.12), 0 1px 3px -1px rgba(0,0,0,0.08)",
         }}
       >
         <ShoppingCartSimple size={22} weight="bold" aria-hidden="true" />
@@ -39,7 +41,7 @@ export function QuoteControl({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-2 rounded-[14px] py-2 px-2.5" style={{ backgroundColor: "#22c55e0d", boxShadow: "0 4px 14px -4px #22c55e55" }}>
+      <div className="flex items-center justify-between gap-2 rounded-[14px] py-2 px-2.5" style={{ backgroundColor: "#22c55e10", boxShadow: "0 2px 8px -2px rgba(0,0,0,0.12)" }}>
         <button
           type="button"
           onClick={() => onStep(-1)}
