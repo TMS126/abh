@@ -37,6 +37,7 @@ export function HubModal({ hubId, onClose, onSelectService }: {
 
   return (
     <div className="fixed inset-0 z-[10100] flex items-center justify-center p-3 md:p-4">
+      {/* ===== BACKDROP ===== */}
       <motion.div
         className="absolute inset-0 bg-black/60"
         onClick={onClose}
@@ -45,6 +46,8 @@ export function HubModal({ hubId, onClose, onSelectService }: {
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
       />
+
+      {/* ===== MODAL CONTAINER ===== */}
       <motion.div
         ref={containerRef}
         tabIndex={-1}
@@ -58,6 +61,7 @@ export function HubModal({ hubId, onClose, onSelectService }: {
         className="relative w-full max-w-2xl bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px]"
         style={{ boxShadow: "0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4)" }}
       >
+        {/* ===== HEADER ===== */}
         <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center shrink-0 gap-3" style={{ backgroundColor: `${accent}05` }}>
           <div className="flex items-center gap-4 min-w-0">
             <div className="w-12 h-12 md:w-14 md:h-14 rounded-[14px] flex items-center justify-center shadow-lg bg-zinc-100 dark:bg-zinc-800 shrink-0" style={{ border: `2px solid ${accent}` }}>
@@ -94,10 +98,10 @@ export function HubModal({ hubId, onClose, onSelectService }: {
           </div>
         </div>
 
+        {/* ===== BODY ===== */}
         <div className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-8">
 
-          {/* Section selector — plain text, thin underline on the active
-              one. No filled pills, no background color at all. */}
+          {/* ===== SECTION SELECTOR (plain text, underline on active) ===== */}
           <div role="tablist" aria-label="Service categories" className="flex flex-wrap justify-center gap-x-6 gap-y-3 mb-6 border-b border-zinc-100 dark:border-zinc-800 pb-3">
             {hub.sections.map((section, sIdx) => {
               const isOpen = openSectionIdx === sIdx
@@ -121,31 +125,11 @@ export function HubModal({ hubId, onClose, onSelectService }: {
                     )}
                   </span>
                 </button>
-                
-                className={cn ? undefined : undefined}
-                  style={{
-                    color: isOpen ? accent : (isDark ? "#a1a1aa" : "#71717a"),
-                  }}
-                >
-                  <span
-                    className="relative pb-1.5 text-[0.86rem] font-black tracking-tight whitespace-nowrap transition-colors duration-200 border-b-2 -mb-[13px]"
-                    style={{ borderColor: isOpen ? accent : "transparent" }}
-                  >
-                    {section.title}
-                    {hasBulk && (
-                      <span
-                        aria-label="Bulk pricing available"
-                        className="ml-1.5 text-[0.6rem] font-black uppercase tracking-wide opacity-60"
-                      >
-                        · Bulk
-                      </span>
-                    )}
-                  </span>
-                </button>
               )
             })}
           </div>
 
+          {/* ===== SECTION DESCRIPTION ===== */}
           {activeSectionDesc && (
             <div key={openSectionIdx} className="mb-5 animate-in fade-in slide-in-from-top-1 duration-200">
               <p className="text-[0.98rem] leading-relaxed text-zinc-600 dark:text-zinc-300">
@@ -154,6 +138,7 @@ export function HubModal({ hubId, onClose, onSelectService }: {
             </div>
           )}
 
+          {/* ===== SERVICE ITEMS LIST ===== */}
           {activeSection && (
             <div key={`items-${openSectionIdx}`} className="abh-shadow-nested-group rounded-[14px] bg-zinc-50 dark:bg-zinc-900/50 p-3 md:p-4 grid grid-cols-1 gap-2 animate-in fade-in duration-200">
               {activeSection.items.map((item, iIdx) => (
@@ -189,6 +174,7 @@ export function HubModal({ hubId, onClose, onSelectService }: {
             </div>
           )}
 
+          {/* ===== HUB DISCLAIMER ===== */}
           {hubDisclaimer && (
             <div className="mt-6 flex items-start gap-2">
               <Info size={13} weight="bold" aria-hidden="true" className="text-zinc-400 dark:text-zinc-500 shrink-0 mt-0.5" />
@@ -199,4 +185,4 @@ export function HubModal({ hubId, onClose, onSelectService }: {
       </motion.div>
     </div>
   )
-}
+} 
