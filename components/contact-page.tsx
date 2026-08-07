@@ -1,3 +1,4 @@
+// components/contact/contact-page.tsx
 "use client"
 
 import { useState, useEffect, useRef, Suspense } from "react"
@@ -20,7 +21,6 @@ const CONTACT_ICONS: Record<string, React.ElementType> = {
   "Email Us": EnvelopeSimple,
 }
 
-// "Visit Us" lives only in the LocationMap card below — filtered out here
 const GRID_CONTACT_LINKS = CONTACT_LINKS.filter((c) => c.title !== "Visit Us")
 
 function ContactPageInner() {
@@ -39,7 +39,6 @@ function ContactPageInner() {
 
   useEffect(() => setMounted(true), [])
 
-  // Prefill from ?service= / ?message= (gallery "Inquire" links)
   useEffect(() => {
     const serviceParam = searchParams.get("service")
     const messageParam = searchParams.get("message")
@@ -53,7 +52,6 @@ function ContactPageInner() {
     setPrefilled(true)
   }, [searchParams])
 
-  // Scroll to + glow the form when arriving prefilled
   useEffect(() => {
     if (!prefilled || !mounted) return
     const id = requestAnimationFrame(() => {
@@ -91,7 +89,6 @@ function ContactPageInner() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Glow-pulse for the "Inquire" scroll-in effect */}
       <style>{`
         @keyframes abh-inquire-glow {
           0%   { box-shadow: 0 0 0 0 transparent; }
@@ -105,7 +102,6 @@ function ContactPageInner() {
         }
       `}</style>
 
-      {/* Hero */}
       <section className="px-4 md:px-8 pt-[calc(var(--nav-h)+2rem)] pb-8">
         <div className="max-w-[980px] mx-auto">
           <ScrollBounce>
@@ -116,7 +112,6 @@ function ContactPageInner() {
         </div>
       </section>
 
-      {/* Main grid: contact methods + form */}
       <section className="px-4 md:px-8 pb-16">
         <div className="max-w-[980px] mx-auto grid md:grid-cols-2 gap-10 items-stretch">
           <div className="flex flex-col justify-between gap-6">
@@ -127,6 +122,12 @@ function ContactPageInner() {
               </div>
             </ScrollBounce>
 
+            {/* Contact cards — icon is now raw (no colored bg chip),
+                and the value text (e.g. the email address) no longer
+                truncates. It wraps cleanly onto a second line instead
+                of being cut off or overflowing the card. Card height is
+                no longer fixed to a single-line assumption, so nothing
+                overlaps below it. */}
             <div className="grid grid-cols-3 gap-3 items-stretch">
               {GRID_CONTACT_LINKS.map((c, index) => {
                 const Icon = CONTACT_ICONS[c.title] ?? Phone
@@ -143,23 +144,10 @@ function ContactPageInner() {
                       onMouseEnter={(e) => (e.currentTarget.style.borderColor = dotColor)}
                       onMouseLeave={(e) => (e.currentTarget.style.borderColor = "transparent")}
                     >
-                      <span
-                        className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 transition-colors duration-200 text-zinc-400 dark:text-zinc-500 bg-zinc-50 dark:bg-zinc-900"
-                        style={{ ["--icon-color" as any]: dotColor }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.color = dotColor
-                          e.currentTarget.style.backgroundColor = `${dotColor}15`
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.color = ""
-                          e.currentTarget.style.backgroundColor = ""
-                        }}
-                      >
-                        <Icon size={20} weight="fill" aria-hidden="true" />
-                      </span>
+                      <Icon size={22} weight="fill" aria-hidden="true" style={{ color: dotColor }} />
                       <div className="min-w-0 w-full">
                         <p className="text-base font-medium text-zinc-800 dark:text-zinc-200 truncate">{c.title}</p>
-                        <p className="abh-muted text-sm truncate leading-tight" title={c.value}>{c.value}</p>
+                        <p className="abh-muted text-sm leading-snug break-words">{c.value}</p>
                       </div>
                     </a>
                   </ScrollBounce>
@@ -176,9 +164,7 @@ function ContactPageInner() {
             <ScrollBounce delay={0.1}>
               <div className="abh-card p-5 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${greyColor}15`, color: greyColor }}>
-                    <AddressBook size={20} weight="fill" aria-hidden="true" />
-                  </div>
+                  <AddressBook size={22} weight="fill" aria-hidden="true" style={{ color: greyColor }} />
                   <div className="min-w-0">
                     <p className="text-base font-medium text-zinc-800 dark:text-zinc-200">Save Our Contact</p>
                     <p className="abh-muted">Add ApexbytesHub to your phone</p>
@@ -229,7 +215,6 @@ function ContactPageInner() {
             </ScrollBounce>
           </div>
 
-          {/* Message form */}
           <ScrollBounce delay={0.2}>
             <div ref={formCardRef} className="abh-card p-8 flex flex-col h-full rounded-[14px]">
               <h2 className="abh-section-heading mb-2">Send a Message</h2>
