@@ -1,3 +1,4 @@
+// components/services-page/search-bar.tsx
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
@@ -65,9 +66,8 @@ export function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService)
                 const accent = isDark ? colors.accentDark : colors.accentLight
                 return (
                   <button key={`${s.hubId}-${s.name}-${idx}`} onClick={() => pick(s)} className="w-full flex items-center gap-3 p-3 rounded-[10px] hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left">
-                    <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${accent}15`, color: accent }}>
-                      <HubIcon id={s.hubId} size={18} />
-                    </div>
+                    {/* Raw icon, no colored bg chip */}
+                    <HubIcon id={s.hubId} size={20} color={accent} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-black text-zinc-800 dark:text-zinc-200 truncate">{s.name}</p>
                       <p className="text-[0.78rem] font-bold uppercase tracking-wider text-zinc-400 truncate">{s.sectionTitle} · {HUBS[s.hubId].title}</p>
