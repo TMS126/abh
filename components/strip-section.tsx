@@ -9,13 +9,25 @@ import { ScrollBounce } from "@/components/scroll-bounce"
 
 export function StripSection() {
   return (
-    <section aria-label="Why choose us" className="bg-background py-12 px-4 md:px-8 transition-colors duration-300">
-      <div className="max-w-[1080px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
-        {STRIP_ITEMS.map((item, index) => (
-          <ScrollBounce key={index} delay={index * 0.08} className="h-full">
-            <StripCard item={item} />
-          </ScrollBounce>
-        ))}
+    <section aria-label="Why choose us" className="bg-background py-12 md:py-16 px-4 md:px-8 transition-colors duration-300">
+      <div className="max-w-[1080px] mx-auto">
+        <ScrollBounce>
+          <div className="text-center mb-10">
+            <p className="text-[0.78rem] font-black uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500 mb-2">
+              Why ApexbytesHub
+            </p>
+            <h2 className="font-sans font-black text-2xl md:text-3xl text-zinc-900 dark:text-zinc-50">
+              Fast, Friendly &amp; Local
+            </h2>
+          </div>
+        </ScrollBounce>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+          {STRIP_ITEMS.map((item, index) => (
+            <ScrollBounce key={index} delay={index * 0.08} className="h-full">
+              <StripCard item={item} />
+            </ScrollBounce>
+          ))}
+        </div>
       </div>
     </section>
   )
@@ -127,11 +139,11 @@ export function CtaBar({
               target="_blank"
               rel="noopener noreferrer"
               onClick={onButtonClick}
-              aria-label={buttonText}
-              className="w-20 h-20 rounded-full flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-all"
-              style={{ backgroundColor: ctaBlue }}
+              className="inline-flex items-center gap-3 px-8 py-4 rounded-full font-sans font-black text-lg shadow-xl hover:scale-[1.04] hover:-translate-y-0.5 active:scale-95 active:translate-y-0 transition-all duration-200"
+              style={{ backgroundColor: ctaBlue, color: ctaTextOnBlue }}
             >
-              <WhatsappLogo weight="fill" className="w-10 h-10" aria-hidden="true" style={{ color: ctaTextOnBlue }} />
+              <WhatsappLogo weight="fill" className="w-6 h-6 shrink-0" aria-hidden="true" />
+              {buttonText}
             </a>
           </div>
         </div>

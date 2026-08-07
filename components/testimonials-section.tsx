@@ -52,6 +52,22 @@ export const SAMPLE_REVIEWS: Review[] = [
     rating: 5,
     quote: "The job seeker package came out sharp, exactly what I needed. Really happy with it, thank you!",
   },
+  {
+    name: "Lerato",
+    initials: "LM",
+    hubId: "print",
+    serviceUsed: "Flyer Printing",
+    rating: 5,
+    quote: "Printed flyers for my spaza shop and they came out so clean and bright. People in the street were stopping to look. I'll be back every time I need printing done.",
+  },
+  {
+    name: "Kagiso",
+    initials: "KD",
+    hubId: "design",
+    serviceUsed: "Logo Design",
+    rating: 5,
+    quote: "Got a proper logo made for my small business. It looks professional and nothing like the cheap ones online. Now I can put it on my t-shirts and flyers with confidence.",
+  },
 ]
 
 function Stars({ rating, color }: { rating: number; color: string }) {
@@ -150,7 +166,12 @@ export function TestimonialsSection({
               Testimonials
             </p>
             <h2 className="font-sans font-black text-[1.8rem] md:text-[2.25rem] text-zinc-900 dark:text-zinc-50 mb-3">{title}</h2>
-            <p className="text-[1.05rem] md:text-[1.2rem] font-medium text-zinc-500 dark:text-zinc-400 max-w-xl mx-auto">{subtitle}</p>
+            <p className="text-[1.05rem] md:text-[1.2rem] font-medium text-zinc-500 dark:text-zinc-400 max-w-xl mx-auto mb-5">{subtitle}</p>
+            {/* Kgotsong community trust badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/60 text-[0.78rem] font-bold text-zinc-500 dark:text-zinc-400">
+              <span className="w-2 h-2 rounded-full bg-brand-green shrink-0" aria-hidden="true" />
+              Real customers from Kgotsong, Bothaville
+            </div>
           </div>
         </ScrollBounce>
 
@@ -274,11 +295,13 @@ export function TestimonialsSection({
 
         <div className="flex justify-center mt-8">
           <a
-            href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}`}
-            className="inline-flex items-center gap-2 text-[0.9rem] font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
+            href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent("Hi ApexbytesHub! I'd like to share my experience with you.")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 text-[0.88rem] font-bold text-zinc-600 dark:text-zinc-300 hover:border-[#25D366] hover:text-[#25D366] hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-200 shadow-sm"
           >
-            <WhatsappLogo size={16} weight="fill" style={{ color: "#25D366" }} />
-            Been helped by us? Send us your story/feedback on WhatsApp
+            <WhatsappLogo size={16} weight="fill" style={{ color: "#25D366" }} aria-hidden="true" />
+            Share your experience on WhatsApp
           </a>
         </div>
       </div>
