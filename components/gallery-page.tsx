@@ -20,48 +20,81 @@ import { EmptyHubState, GalleryClosingTagline } from "@/components/gallery/empty
 
 const LIKES_STORAGE_KEY = "apexbytes-gallery-likes"
 
-// Notice pill — now matches Services page's pattern exactly: a plain
-// collapsed pill that expands into a full notice card via a simple
-// fade+slide-in, rather than the old width-morphing single element.
+// ===== NOTICE PILL — motion now matches Services page's NoticeNotification
+// exactly: max-width morph on the collapsed pill + grid-rows expand for the
+// detail card, instead of the old fade+slide-in treatment. =====
 function NoticePill() {
   const [expanded, setExpanded] = useState(false)
-
-  if (!expanded) {
-    return (
-      <button
-        onClick={() => setExpanded(true)}
-        aria-label="Show notice"
-        style={{
-          backgroundColor: "#1E6FA8",
-          boxShadow: "0 10px 28px -8px #1E6FA870, 0 4px 12px -2px rgba(0,0,0,0.25)",
-        }}
-        className="relative flex items-center gap-2 pl-4 pr-5 py-2.5 rounded-full text-white font-black text-[0.94rem] tracking-tight transition-transform active:scale-95 hover:-translate-y-0.5"
-      >
-        <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-white dark:bg-zinc-950 border-2 border-white dark:border-zinc-950 flex items-center justify-center shadow-md">
-          <Info size={10} weight="fill" color="#1E6FA8" />
-        </span>
-        Notice
-      </button>
-    )
-  }
+  const pillBg = "#1E6FA8"
 
   return (
-    <div className="relative w-full max-w-md rounded-[14px] border border-[#1E6FA8]/20 bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10 px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+    <div
+      className="mx-auto w-full overflow-hidden"
+      style={{
+        maxWidth: expanded ? "28rem" : "120px",
+        borderRadius: "14px",
+        border: expanded ? "1px solid rgba(30,111,168,0.2)" : "none",
+        backgroundColor: expanded ? undefined : pillBg,
+        boxShadow: expanded
+          ? undefined
+          : "0 4px 14px -4px rgba(0,0,0,0.22), 0 2px 6px -2px rgba(0,0,0,0.14)",
+        transition:
+          "max-width 300ms ease-in-out, box-shadow 300ms ease-in-out, background-color 300ms ease-in-out, border 300ms ease-in-out",
+      }}
+    >
       <button
-        onClick={() => setExpanded(false)}
-        aria-label="Collapse notice"
-        className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white/70 dark:bg-black/30 flex items-center justify-center text-zinc-500 hover:text-zinc-800 transition-colors"
+        onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
+        aria-label={expanded ? "Collapse notice" : "Show notice"}
+        className={cn(
+          "w-full flex items-center gap-2 transition-all duration-300 ease-in-out active:scale-[0.97]",
+          expanded
+            ? "px-5 py-3.5 justify-between bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10"
+            : "pl-4 pr-5 py-2.5 justify-center"
+        )}
       >
-        <X size={12} weight="bold" />
+        {!expanded && (
+          <span className="relative flex items-center justify-center w-5 h-5 rounded-full bg-white/25 shrink-0">
+            <Info size={10} weight="fill" color="#fff" aria-hidden="true" />
+          </span>
+        )}
+        {expanded && (
+          <div className="w-7 h-7 rounded-[8px] bg-[#1E6FA8] flex items-center justify-center shrink-0">
+            <Info size={14} weight="fill" color="#fff" aria-hidden="true" />
+          </div>
+        )}
+        <span
+          className={cn(
+            "whitespace-nowrap font-black text-[0.9rem] tracking-tight transition-colors duration-300 ease-in-out",
+            expanded ? "text-[#1E6FA8] flex-1 text-left" : "text-white"
+          )}
+        >
+          {expanded ? "Notice" : "Notice"}
+        </span>
+        <X
+          size={14}
+          weight="bold"
+          aria-hidden="true"
+          className={cn(
+            "shrink-0 transition-opacity duration-300 ease-in-out text-zinc-400",
+            expanded ? "opacity-100" : "opacity-0 w-0 h-0"
+          )}
+        />
       </button>
-      <div className="w-9 h-9 rounded-[10px] bg-[#1E6FA8] flex items-center justify-center shrink-0">
-        <Info size={18} weight="fill" color="#fff" />
-      </div>
-      <div className="flex-1 min-w-0 pt-0.5 pr-6">
-        <span className="abh-eyebrow text-[#1E6FA8] block mb-1">Notice</span>
-        <p className="abh-body text-[1rem]">
-          We use high-quality sample photos to represent our services — the professional standard shown is exactly what you receive.
-        </p>
+
+      <div
+        className={cn(
+          "grid transition-all duration-300 ease-in-out",
+          expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        )}
+      >
+        <div className="overflow-hidden">
+          <div className="px-5 pb-4 pt-1">
+            <p className="abh-body text-[1rem]">
+              We use high-quality sample photos to represent our services — the professional standard shown is exactly what you receive.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -176,6 +209,14 @@ function GalleryPageInner() {
     }, 220)
   }, [selectedProject])
 
+  // ── Jumps the open viewer modal to a different hub entirely, keeping the
+  // modal open — used by the in-viewer hub filter row. ──
+  const handleViewerHubSwitch = useCallback((hubId: HubId) => {
+    setActiveFilter(hubId)
+    const pool = PROJECTS.filter(p => p.hub === hubId && matchesSearch(p))
+    if (pool.length > 0) setSelectedProject(pool[0])
+  }, [matchesSearch])
+
   const modalSiblings = selectedProject ? PROJECTS.filter(p => p.hub === selectedProject.hub) : []
 
   return (
@@ -196,14 +237,14 @@ function GalleryPageInner() {
           </div>
         </ScrollBounce>
 
-        {/* ── Search + Shuffle — combined into one bordered box, matching
-            the Contact page's input styling (rounded-[14px], solid
-            border, focus:border-brand-blue) instead of the old
-            underline-only treatment. Both controls still live inside
-            the same pill/box. ── */}
+        {/* ── Search + Shuffle — one unified pill. The search field uses
+            the Contact page's input treatment; Shuffle is a true pill
+            button nested flush inside the container's right edge, sized
+            to sit cleanly inside without clipping or overlapping the
+            outer border. ── */}
         <ScrollBounce delay={0.1}>
           <div className="max-w-md mx-auto mb-8">
-            <div className="flex items-center gap-2 px-4 py-1 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus-within:border-brand-blue transition-all duration-200 shadow-sm">
+            <div className="flex items-center gap-2 pl-4 pr-1.5 py-1.5 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus-within:border-brand-blue transition-all duration-200">
               <MagnifyingGlass size={16} weight="bold" className="shrink-0 text-zinc-400" aria-hidden="true" />
               <input
                 type="text"
@@ -211,29 +252,27 @@ function GalleryPageInner() {
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Search..."
                 aria-label="Search projects"
-                className="min-w-0 flex-1 py-3 bg-transparent text-base font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none"
+                className="min-w-0 flex-1 py-2.5 bg-transparent text-base font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
                   aria-label="Clear search"
-                  className="shrink-0 w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-all active:scale-90"
+                  className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-all active:scale-90"
                 >
                   <X size={11} weight="bold" />
                 </button>
               )}
 
-              <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700 shrink-0" aria-hidden="true" />
-
               <button
                 onClick={handleSurprise}
                 aria-label="Surprise me with a random project"
                 className={cn(
-                  "shrink-0 flex items-center gap-1.5 py-3 text-[0.9rem] font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-all duration-200 active:scale-95 group/surprise whitespace-nowrap",
+                  "shrink-0 flex items-center gap-1.5 pl-3 pr-3.5 py-2 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[0.82rem] font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-all duration-200 active:scale-95 group/surprise whitespace-nowrap",
                   surpriseFlash && "scale-90 opacity-60"
                 )}
               >
-                <Shuffle size={14} weight="bold" className="transition-transform duration-300 group-hover/surprise:rotate-180" aria-hidden="true" />
+                <Shuffle size={13} weight="bold" className="transition-transform duration-300 group-hover/surprise:rotate-180" aria-hidden="true" />
                 Pick for me
               </button>
             </div>
@@ -339,6 +378,9 @@ function GalleryPageInner() {
         onNavigate={setSelectedProject}
         likedIds={likedIds}
         onToggleLike={toggleLike}
+        rowOrder={ROW_ORDER}
+        getAccent={getAccent}
+        onSelectHub={handleViewerHubSwitch}
       />
 
       <button
@@ -372,4 +414,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-} 
+              } 
