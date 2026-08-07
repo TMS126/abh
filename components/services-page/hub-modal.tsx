@@ -63,12 +63,10 @@ export function HubModal({ hubId, onClose, onSelectService }: {
         {/* ===== HEADER ===== */}
         <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center shrink-0 gap-3">
           <div className="flex items-center gap-4 min-w-0">
-            <div className="w-12 h-12 md:w-14 md:h-14 rounded-[14px] flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 shrink-0">
-              <HubIcon id={hubId} size={26} color={accent} />
-            </div>
+            <HubIcon id={hubId} size={28} color={accent} />
             <div className="min-w-0">
-              <h2 className="font-sans font-black text-xl md:text-2xl text-zinc-900 dark:text-zinc-50 truncate">{hub.title}</h2>
-              <p className="text-[0.8rem] font-semibold text-zinc-400 dark:text-zinc-500 mt-0.5">
+              <h2 className="font-sans font-black text-2xl md:text-3xl text-zinc-900 dark:text-zinc-50 truncate">{hub.title}</h2>
+              <p className="text-[0.82rem] font-semibold text-zinc-400 dark:text-zinc-500 mt-0.5">
                 {hub.sections.reduce((sum, s) => sum + s.items.length, 0)} services available
               </p>
             </div>
@@ -153,7 +151,7 @@ export function HubModal({ hubId, onClose, onSelectService }: {
                     }
                     className="flex items-center justify-between px-4 py-3.5 rounded-[10px] bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/70 transition-colors duration-150 active:scale-[0.99] w-full"
                   >
-                    <span className="text-[0.97rem] font-semibold text-zinc-700 dark:text-zinc-200 text-left flex items-center gap-2">
+                    <span className="text-[1.02rem] font-semibold text-zinc-700 dark:text-zinc-200 text-left flex items-center gap-2">
                       {itemHasBulk(hubId, activeSection.title, item.name) && (
                         <span className="shrink-0 text-[0.58rem] font-black uppercase tracking-wide text-zinc-400">
                           Bulk ·
@@ -161,7 +159,7 @@ export function HubModal({ hubId, onClose, onSelectService }: {
                       )}
                       {item.name}
                     </span>
-                    <span className="text-[0.97rem] font-black shrink-0 ml-3" style={{ color: accent }}>{item.price}</span>
+                    <span className="text-[1.02rem] font-black shrink-0 ml-3" style={{ color: accent }}>{item.price}</span>
                   </button>
               ))}
             </div>
