@@ -1,12 +1,13 @@
+// components/services-page/service-detail-modal/BulkHint.tsx
 "use client"
 
 import { Tag } from "@phosphor-icons/react"
 import { getContrastText } from "@/lib/color"
 
-// Merged into a single pill — solid-accent label half + soft-accent-tint
-// hint half, sitting flush against each other instead of stacked as two
-// separate pills. Each half keeps its own original coloring (solid fill
-// for the label, ${accent}14 tint for the hint) — only the layout changed.
+// Single unit: the pill (solid-accent label half + soft-accent-tint hint
+// half) plus its strikethrough price line underneath when a discount is
+// active. Rendered as one self-contained block, meant to sit on its own
+// row — not split apart or nested inside another control.
 export function BulkHint({
   hint, accent, isDiscount, baseUnitPrice, effRate, priceUnit, label = "Bulk Deal",
 }: {
