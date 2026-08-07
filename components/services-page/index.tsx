@@ -14,7 +14,7 @@ import { useModalBackStack, HubIcon } from "./shared"
 import { InlineSearchBar } from "./search-bar"
 import { HubModal } from "./hub-modal"
 import { ServiceDetailModal } from "./service-detail-modal"
-import { HUB_ORDER, HUB_PREVIEWS, NOTICE, trackEvent, SelectedService } from "./lib"
+import { HUB_ORDER, HUB_PREVIEWS, NOTICE, trackEvent, getTurnaround, SelectedService } from "./lib"
 import { sectionHasBulk } from "../quote-calculator/lib"
 
 function NoticeNotification({ isDark }: { isDark: boolean }) {
@@ -36,7 +36,6 @@ function NoticeNotification({ isDark }: { isDark: boolean }) {
           "max-width 300ms ease-in-out, box-shadow 300ms ease-in-out, background-color 300ms ease-in-out, border 300ms ease-in-out",
       }}
     >
-      {/* Pill / header toggle button */}
       <button
         onClick={() => setExpanded(!expanded)}
         aria-expanded={expanded}
@@ -77,7 +76,6 @@ function NoticeNotification({ isDark }: { isDark: boolean }) {
         />
       </button>
 
-      {/* Expandable content — simple opacity fade, no bounce/scale */}
       <div
         className={cn(
           "grid transition-all duration-300 ease-in-out",
@@ -158,7 +156,7 @@ export function ServicesPage() {
   const isDark       = resolvedTheme === "dark"
   const searchParams = useSearchParams()
   const router       = useRouter()
-  const consumedHubParam = useRef<string | null>(null)
+  const consumedParamsKey = useRef<string | null>(null)
 
   const [activeHub,       setActiveHub]       = useState<HubId | null>(null)
   const [hubOriginSide,   setHubOriginSide]   = useState<"left" | "right">("right")
@@ -197,13 +195,36 @@ export function ServicesPage() {
     return () => window.removeEventListener("abh:selectService", handler)
   }, [])
 
+  // ── Deep-linking — ?hub= alone opens the Hub modal; ?hub=&section=&service=
+  // together (from a shared service link) opens that exact service's detail
+  // modal directly, skipping straight past the hub list. ──
   useEffect(() => {
-    const hubParam = searchParams.get("hub")
-    if (hubParam && HUB_ORDER.includes(hubParam as HubId) && consumedHubParam.current !== hubParam) {
-      consumedHubParam.current = hubParam
-      handleOpenHub(hubParam as HubId, "right")
-      router.replace("/services", { scroll: false })
+    const hubParam     = searchParams.get("hub")
+    const sectionParam = searchParams.get("section")
+    const serviceParam = searchParams.get("service")
+    if (!hubParam || !HUB_ORDER.includes(hubParam as HubId)) return
+
+    const paramsKey = `${hubParam}|${sectionParam ?? ""}|${serviceParam ?? ""}`
+    if (consumedParamsKey.current === paramsKey) return
+    consumedParamsKey.current = paramsKey
+
+    if (sectionParam && serviceParam) {
+      const section = HUBS[hubParam as HubId].sections.find((s) => s.title === sectionParam)
+      const item = section?.items.find((i) => i.name === serviceParam)
+      if (section && item) {
+        handleSelectService({
+          name: item.name, price: item.price, hubId: hubParam as HubId,
+          sectionTitle: section.title, requirements: item.requirements,
+          desc: item.description, turnaround: getTurnaround(section.title, item.name),
+          tips: item.tips ? [...item.tips] : undefined,
+        })
+        router.replace("/services", { scroll: false })
+        return
+      }
     }
+
+    handleOpenHub(hubParam as HubId, "right")
+    router.replace("/services", { scroll: false })
   }, [searchParams, router])
 
   const { closeHub, closeService } = useModalBackStack(activeHub, setActiveHub, selectedService, setSelectedService)
@@ -251,12 +272,10 @@ export function ServicesPage() {
           </div>
         </ScrollBounce>
 
-        {/* Notice pill */}
         <ScrollBounce delay={0.08} className="relative z-0 w-full flex justify-center mb-6">
           <NoticeNotification isDark={isDark} />
         </ScrollBounce>
 
-        {/* Search — clearly separated from notice above */}
         <ScrollBounce delay={0.14} className="relative z-40 w-full mb-12 flex justify-center">
           <div id="abh-inline-search" className="w-full flex justify-center">
             <InlineSearchBar onSelect={handleSelectService} />
@@ -354,7 +373,6 @@ export function ServicesPage() {
                     {hub.desc}
                   </p>
 
-                  {/* "Explore" label + hub-colored dot marker below it */}
                   <div className="relative z-10 flex flex-col items-center gap-1.5">
                     <span className="inline-flex items-center gap-1 text-[0.88rem] font-black text-zinc-400 dark:text-zinc-500 group-hover/hubcard:text-[var(--hub-accent)] transition-colors duration-200">
                       Explore
@@ -385,6 +403,7 @@ export function ServicesPage() {
             originSide={hubOriginSide}
             onClose={closeHub}
             onSelectService={handleSelectService}
+            onSwitchHub={(id) => handleOpenHub(id, "right")}
           />
         )}
         {selectedService && (
