@@ -17,8 +17,6 @@ import { ServiceDetailModal } from "./service-detail-modal"
 import { HUB_ORDER, HUB_PREVIEWS, NOTICE, trackEvent, SelectedService } from "./lib"
 import { sectionHasBulk } from "../quote-calculator/lib"
 
-
-
 function NoticeNotification({ isDark }: { isDark: boolean }) {
   const [expanded, setExpanded] = useState(false)
   const pillBg = isDark ? `${BRAND.orange}cc` : BRAND.orange
@@ -28,14 +26,14 @@ function NoticeNotification({ isDark }: { isDark: boolean }) {
       className="mx-auto w-full overflow-hidden"
       style={{
         maxWidth: expanded ? "28rem" : "120px",
-        borderRadius: expanded ? "14px" : "14px",
+        borderRadius: "14px",
         border: expanded ? "1px solid rgba(var(--brand-orange-rgb, 249,115,22),0.2)" : "none",
         backgroundColor: expanded ? undefined : pillBg,
         boxShadow: expanded
           ? undefined
           : "0 4px 14px -4px rgba(0,0,0,0.22), 0 2px 6px -2px rgba(0,0,0,0.14)",
         transition:
-          "max-width 340ms cubic-bezier(0.32,0.72,0,1), box-shadow 250ms, background-color 250ms, border 250ms",
+          "max-width 300ms ease-in-out, box-shadow 300ms ease-in-out, background-color 300ms ease-in-out, border 300ms ease-in-out",
       }}
     >
       {/* Pill / header toggle button */}
@@ -44,7 +42,7 @@ function NoticeNotification({ isDark }: { isDark: boolean }) {
         aria-expanded={expanded}
         aria-label={expanded ? "Collapse notice" : "Show notice to clients"}
         className={cn(
-          "w-full flex items-center gap-2 transition-all duration-300 active:scale-[0.97]",
+          "w-full flex items-center gap-2 transition-all duration-300 ease-in-out active:scale-[0.97]",
           expanded
             ? "px-5 py-3.5 justify-between bg-brand-orange/5 dark:bg-brand-orange/10"
             : "pl-4 pr-5 py-2.5 justify-center"
@@ -62,7 +60,7 @@ function NoticeNotification({ isDark }: { isDark: boolean }) {
         )}
         <span
           className={cn(
-            "whitespace-nowrap font-black text-[0.9rem] tracking-tight",
+            "whitespace-nowrap font-black text-[0.9rem] tracking-tight transition-colors duration-300 ease-in-out",
             expanded ? "text-brand-orange flex-1 text-left" : "text-white"
           )}
         >
@@ -73,13 +71,13 @@ function NoticeNotification({ isDark }: { isDark: boolean }) {
           weight="bold"
           aria-hidden="true"
           className={cn(
-            "shrink-0 transition-all duration-300 text-zinc-400",
-            expanded ? "opacity-100 rotate-0" : "opacity-0 rotate-90 w-0 h-0"
+            "shrink-0 transition-opacity duration-300 ease-in-out text-zinc-400",
+            expanded ? "opacity-100" : "opacity-0 w-0 h-0"
           )}
         />
       </button>
 
-      {/* Expandable content */}
+      {/* Expandable content — simple opacity fade, no bounce/scale */}
       <div
         className={cn(
           "grid transition-all duration-300 ease-in-out",
@@ -130,15 +128,6 @@ function HubCta({ label, accent, pointsRight }: { label: string; accent: string;
   )
 }
 
-// ============================================================
-// Hub corner icon (bottom-right watermark icon)
-// No rotation (tilt 0). Neutral by default, richer than before
-// (zinc-300/600 instead of 200/700) so it doesn't read as dull,
-// and only shifts to the hub's accent color + a subtle scale-up
-// on hover — the color swap is the ONLY thing that changes on
-// interaction, everything else (position, size, tilt) stays fixed.
-// ============================================================
-
 function HubCornerIcon({ hubId, accent }: { hubId: HubId; accent: string }) {
   return (
     <div
@@ -150,14 +139,6 @@ function HubCornerIcon({ hubId, accent }: { hubId: HubId; accent: string }) {
     </div>
   )
 }
-
-// ============================================================
-// Bulk-pricing ribbon
-// Only rendered when a hub actually has bulk pricing somewhere
-// in its sections. Small, muted, diagonal — sits in the top-right
-// corner (opposite the bottom-right HubCornerIcon), clipped by the
-// card's existing overflow-hidden so it never spills outside it.
-// ============================================================
 
 function BulkRibbon() {
   return (
@@ -282,8 +263,7 @@ export function ServicesPage() {
           </div>
         </ScrollBounce>
 
-        {/* ── Desktop grid — gap-6 (was gap-5): a bit more breathing
-            room between hub cards without changing the layout shape ── */}
+        {/* ── Desktop grid ── */}
         <div className="hidden md:grid md:grid-cols-6 gap-6 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub    = HUBS[hubId]
@@ -339,8 +319,7 @@ export function ServicesPage() {
           })}
         </div>
 
-        {/* ── Mobile stacked cards — gap-6, hub title now neutral to
-            match the desktop treatment (was accent-colored) ── */}
+        {/* ── Mobile stacked cards ── */}
         <div className="flex md:hidden flex-col gap-6 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub    = HUBS[hubId]
@@ -375,15 +354,14 @@ export function ServicesPage() {
                     {hub.desc}
                   </p>
 
-                  {/* "Explore" label + accent pill-dot marker below it */}
+                  {/* "Explore" label + hub-colored dot marker below it */}
                   <div className="relative z-10 flex flex-col items-center gap-1.5">
                     <span className="inline-flex items-center gap-1 text-[0.88rem] font-black text-zinc-400 dark:text-zinc-500 group-hover/hubcard:text-[var(--hub-accent)] transition-colors duration-200">
                       Explore
                       <ArrowRight size={12} weight="bold" aria-hidden="true" />
                     </span>
-                    {/* Small pill-dot in hub accent color */}
                     <span
-                      className="block h-[3px] w-5 rounded-full opacity-0 group-hover/hubcard:opacity-100 transition-opacity duration-200"
+                      className="block w-1.5 h-1.5 rounded-full opacity-0 group-hover/hubcard:opacity-100 transition-opacity duration-200"
                       style={{ backgroundColor: accent }}
                       aria-hidden="true"
                     />
@@ -428,4 +406,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-      } 
+} 
