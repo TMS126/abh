@@ -7,7 +7,7 @@ import { CaretLeft, CaretRight, ArrowsLeftRight, WhatsappLogo } from "@phosphor-
 import { X } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
-import { HUB_COLORS, HubKey, BIZ } from "@/lib/brand"
+import { HUB_COLORS, HubKey, BIZ, BRAND } from "@/lib/brand"
 import { ProjectData } from "@/lib/data"
 import { HubId, BA_HUBS, buildInquireHref } from "@/lib/gallery-helpers"
 import { SafeImage } from "./safe-image"
@@ -29,7 +29,6 @@ function useIsMobile() {
 }
 
 const CHIP = "bg-black/30 backdrop-blur-md border border-white/10 [&_svg]:text-white"
-const ACRYLIC_PILL = "bg-zinc-100/85 dark:bg-zinc-800/75 backdrop-blur-md border border-zinc-200/60 dark:border-zinc-700/50"
 
 // Body-swipe (info panel) thresholds — switches to the next/prev project,
 // same feel as the Hub modal's section-swipe.
@@ -51,17 +50,23 @@ function shortTitle(title: string) {
   return idx > -1 ? title.slice(0, idx).trim() : title
 }
 
-function ProjectNav({ current, total, onPrev, onNext, accent }: {
-  current: number; total: number; onPrev: () => void; onNext: () => void; accent: string
+// `light` renders white-on-blue for use inside the brand-blue sticky
+// header bar; without it, renders the original accent-on-neutral style.
+function ProjectNav({ current, total, onPrev, onNext, accent, light }: {
+  current: number; total: number; onPrev: () => void; onNext: () => void; accent: string; light?: boolean
 }) {
   if (total <= 1) return null
+  const color = light ? "#ffffff" : accent
   return (
-    <div className="flex items-center justify-center gap-3 text-[0.8rem] font-bold text-zinc-500 dark:text-zinc-400">
+    <div className={cn("flex items-center justify-center gap-3 text-[0.8rem] font-bold", light ? "text-white/90" : "text-zinc-500 dark:text-zinc-400")}>
       <button
         onClick={onPrev}
         aria-label="Previous project"
-        className="w-7 h-7 rounded-full flex items-center justify-center border border-zinc-200 dark:border-zinc-700 active:scale-90 transition-transform hover:border-current"
-        style={{ color: accent }}
+        className={cn(
+          "w-7 h-7 rounded-full flex items-center justify-center border active:scale-90 transition-transform hover:border-current",
+          light ? "border-white/40" : "border-zinc-200 dark:border-zinc-700"
+        )}
+        style={{ color }}
       >
         <CaretLeft size={13} weight="bold" />
       </button>
@@ -69,8 +74,11 @@ function ProjectNav({ current, total, onPrev, onNext, accent }: {
       <button
         onClick={onNext}
         aria-label="Next project"
-        className="w-7 h-7 rounded-full flex items-center justify-center border border-zinc-200 dark:border-zinc-700 active:scale-90 transition-transform hover:border-current"
-        style={{ color: accent }}
+        className={cn(
+          "w-7 h-7 rounded-full flex items-center justify-center border active:scale-90 transition-transform hover:border-current",
+          light ? "border-white/40" : "border-zinc-200 dark:border-zinc-700"
+        )}
+        style={{ color }}
       >
         <CaretRight size={13} weight="bold" />
       </button>
@@ -135,26 +143,29 @@ function ProjectCTAs({ project, onClose, accent }: {
   )
 }
 
-// ===== FLOATING "OTHER PROJECTS" WIDGET — mirrors the Hub modal's
-// hub-switcher: lives OUTSIDE the modal card, centered, one shared
-// shadow, small thumbnail+name pills. =====
+// ===== "OTHER PROJECTS" TRAY =====
+// Sits directly below the modal card, flush against it (no gap), full
+// width, rounded only at the top so it reads as a tray sliding out from
+// under the modal's now-square-topped, rounded-bottom card. A single
+// horizontally-scrollable row instead of wrapping pills — the label
+// above it has no background of its own.
 function OtherProjectsWidget({ siblings, currentId, accent, onSelect }: {
   siblings: ProjectData[]; currentId: string; accent: string; onSelect: (p: ProjectData) => void
 }) {
   const others = siblings.filter((p) => p.id !== currentId)
   if (others.length === 0) return null
   return (
-    <div className="relative z-10 w-full max-w-2xl mt-1 flex justify-center animate-in fade-in slide-in-from-bottom-1 duration-200">
-      <div
-        className="flex flex-wrap justify-center gap-2 p-3 rounded-[16px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm"
-        style={{ boxShadow: "0 16px 36px -14px rgba(0,0,0,0.28), 0 6px 16px -6px rgba(0,0,0,0.14)" }}
-      >
+    <div className="relative z-10 w-full bg-white dark:bg-zinc-950 rounded-t-[14px] pt-3 pb-4 px-4 animate-in fade-in slide-in-from-bottom-1 duration-200">
+      <p className="text-[0.7rem] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-2 px-1">
+        More projects
+      </p>
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
         {others.map((p) => (
           <button
             key={p.id}
             onClick={() => onSelect(p)}
             aria-label={`View ${p.title}`}
-            className="shrink-0 flex items-center gap-2 pl-1.5 pr-3.5 py-1.5 rounded-[14px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:-translate-y-0.5 transition-all duration-150 active:scale-95"
+            className="shrink-0 flex items-center gap-2 pl-1.5 pr-3.5 py-1.5 rounded-[14px] bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:-translate-y-0.5 transition-all duration-150 active:scale-95"
           >
             <span className="relative w-8 h-8 rounded-[8px] overflow-hidden shrink-0" style={{ color: accent }}>
               <SafeImage src={p.image} alt="" accent={accent} fill sizes="32px" className="object-cover" />
@@ -273,221 +284,231 @@ export function ProjectViewerModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[10200] flex flex-col items-center justify-center gap-4 p-3 md:p-4 overflow-y-auto animate-in fade-in duration-300" role="dialog" aria-modal="true" aria-label={project.title}>
+    <div
+      className="fixed inset-0 z-[10200] flex flex-col justify-end overflow-y-auto animate-in fade-in duration-300"
+      role="dialog"
+      aria-modal="true"
+      aria-label={project.title}
+    >
       <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
 
-      <div className={cn(
-        "relative z-10 w-full abh-shadow-modal bg-white dark:bg-zinc-950",
-        "flex flex-col md:flex-row",
-        "border border-zinc-200 dark:border-zinc-800 rounded-[14px]",
-        "h-[88vh] md:h-[85vh] md:max-w-5xl md:overflow-hidden animate-in zoom-in-95 duration-500",
-      )}>
+      {/* ── Stack: modal card (top, square top / rounded bottom) directly
+          above the "other projects" tray (rounded top / square bottom).
+          Both full width, no side margins, no gap between them. ── */}
+      <div className="relative z-10 w-full flex flex-col">
+        <div className={cn(
+          "relative w-full abh-shadow-modal bg-white dark:bg-zinc-950",
+          "flex flex-col md:flex-row",
+          "border-x-0 border-t-0 border-b border-zinc-200 dark:border-zinc-800",
+          "h-[78vh] md:h-[75vh] md:overflow-hidden animate-in zoom-in-95 duration-500",
+        )}>
 
-        {isMobile ? (
-          <>
-            <div className="relative h-[42%] shrink-0 overflow-hidden bg-zinc-950 rounded-t-[14px]">
-              {comparing && hasBA ? (
-                <BeforeAfterSlider before={beforeImg!} after={afterImg!} accent={accent} />
-              ) : (
-                <div
-                  className="relative w-full h-full cursor-zoom-in"
-                  onClick={handleImageClick}
-                  onTouchStart={onImageTouchStart}
-                  onTouchEnd={onImageTouchEnd}
-                >
-                  {/* Ambient background — the current image itself, blurred
-                      and scaled up, filling every edge. */}
-                  <div className="absolute inset-0" aria-hidden="true">
-                    <SafeImage src={allImages[activeImg]} alt="" accent={accent} fill sizes="100vw" className="object-cover scale-125 blur-2xl opacity-70" />
-                  </div>
-                  <div className="absolute inset-0 bg-black/15" aria-hidden="true" />
-
-                  {/* Framed foreground image — min margin all round + shadow to pop it out */}
-                  <div className="absolute inset-0 p-4 flex items-center justify-center pointer-events-none">
-                    <div className="relative w-full h-full rounded-[14px] overflow-hidden" style={{ boxShadow: "0 20px 44px -12px rgba(0,0,0,0.55), 0 8px 20px -8px rgba(0,0,0,0.35)" }}>
-                      <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="100vw" className="object-contain bg-zinc-900" priority />
-                    </div>
-                  </div>
-
-                  {/* Client-type pill — sticky top-left, one word, small, out of the way */}
-                  {clientTypeLabel && (
-                    <span className={cn("absolute top-3 left-3 z-30 px-2.5 py-1 rounded-full text-[0.64rem] font-black uppercase tracking-wide text-white", CHIP)}>
-                      {clientTypeLabel}
-                    </span>
-                  )}
-
-                  <div className="absolute top-3 right-3 z-30">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onClose() }}
-                      aria-label="Close"
-                      className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white transition-transform active:scale-90", CHIP)}
-                    >
-                      <X size={17} weight="bold" />
-                    </button>
-                  </div>
-
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-2.5">
-                    <div className={cn("w-9 h-9 rounded-full flex items-center justify-center transition-colors", CHIP)} onClick={(e) => e.stopPropagation()}>
-                      <LikeButton liked={likedIds.has(project.id)} onToggle={(e) => { e.stopPropagation(); onToggleLike(project.id) }} context="header" />
-                    </div>
-                    <div className={cn("w-9 h-9 rounded-full flex items-center justify-center transition-colors", CHIP)} onClick={(e) => e.stopPropagation()}>
-                      <ShareButton url={shareUrl} title={project.title} />
-                    </div>
-                  </div>
-
-                  {allImages.length > 1 && (
-                    <div className="absolute bottom-0 inset-x-0 z-20 flex justify-center gap-2 px-3 py-2.5 bg-gradient-to-t from-black/55 to-transparent overflow-x-auto no-scrollbar">
-                      {allImages.map((img, idx) => (
-                        <button
-                          key={idx}
-                          onClick={(e) => { e.stopPropagation(); setActiveImg(idx) }}
-                          aria-label={`View image ${idx + 1} of ${allImages.length}`}
-                          className={cn("relative shrink-0 w-11 h-11 rounded-[8px] overflow-hidden border-2 transition-all", activeImg === idx ? "scale-105 border-white" : "border-white/20 opacity-60")}
-                        >
-                          <SafeImage src={img} alt={`Thumb ${idx + 1}`} accent={accent} fill sizes="44px" className="object-cover" />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {hasBA && (
-                <button
-                  onClick={() => setComparing(v => !v)}
-                  aria-label={comparing ? "Show gallery view" : "Show before and after comparison"}
-                  className={cn("absolute bottom-2 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-[0.78rem] font-black uppercase tracking-wider", CHIP)}
-                >
-                  <ArrowsLeftRight size={12} weight="bold" aria-hidden="true" />
-                  {comparing ? "Gallery" : "Before / After"}
-                </button>
-              )}
-            </div>
-
-            <div
-              ref={detailsRef}
-              className="flex-1 overflow-y-auto overscroll-contain"
-              onTouchStart={handleBodyTouchStart}
-              onTouchEnd={handleBodyTouchEnd}
-            >
-              {/* Floating pill header — static acrylic, no shrink-on-scroll */}
-              <div className="sticky top-0 z-20 pt-5 pb-4 px-6 backdrop-blur-md bg-white/85 dark:bg-zinc-950/80 shadow-[0_10px_14px_-10px_rgba(0,0,0,0.18)] dark:shadow-[0_10px_14px_-10px_rgba(0,0,0,0.5)]">
-                <div className="flex justify-center">
-                  <div className={cn("flex flex-col items-center gap-2 px-5 py-3 rounded-[16px]", ACRYLIC_PILL)}>
-                    <h2 className="font-black text-base text-zinc-900 dark:text-zinc-50 text-center leading-snug max-w-[260px] truncate">
-                      {displayTitle}
-                    </h2>
-                    <ProjectNav current={currentIdx + 1} total={siblings.length} onPrev={goPrevProject} onNext={goNextProject} accent={accent} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="px-6 pt-4 pb-6">
-                <ProjectDetailsBody project={project} accent={accent} />
-              </div>
-            </div>
-
-            <div className="shrink-0 px-6 pt-4 pb-6 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 relative z-20 rounded-b-[14px]">
-              <ProjectCTAs project={project} onClose={onClose} accent={accent} />
-            </div>
-          </>
-        ) : (
-          <>
-            <button
-              onClick={onClose}
-              aria-label="Close"
-              className="absolute top-3 right-3 z-40 w-9 h-9 rounded-full flex items-center justify-center bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg text-white transition-colors active:scale-90"
-            >
-              <X size={18} weight="bold" />
-            </button>
-
-            <div className="md:h-auto md:flex-1 flex flex-col overflow-hidden bg-zinc-950 relative rounded-l-[14px]">
-              {comparing && hasBA ? (
-                <div className="relative flex-1">
+          {isMobile ? (
+            <>
+              <div className="relative h-[42%] shrink-0 overflow-hidden bg-zinc-950">
+                {comparing && hasBA ? (
                   <BeforeAfterSlider before={beforeImg!} after={afterImg!} accent={accent} />
-                </div>
-              ) : (
-                <>
-                  <div className="relative flex-1 overflow-hidden cursor-zoom-in group/img" onClick={handleImageClick}>
-                    {/* Ambient blurred background */}
+                ) : (
+                  <div
+                    className="relative w-full h-full cursor-zoom-in"
+                    onClick={handleImageClick}
+                    onTouchStart={onImageTouchStart}
+                    onTouchEnd={onImageTouchEnd}
+                  >
+                    {/* Ambient background — the current image itself, blurred
+                        and scaled up, filling every edge. */}
                     <div className="absolute inset-0" aria-hidden="true">
-                      <SafeImage src={allImages[activeImg]} alt="" accent={accent} fill sizes="55vw" className="object-cover scale-125 blur-2xl opacity-70" />
+                      <SafeImage src={allImages[activeImg]} alt="" accent={accent} fill sizes="100vw" className="object-cover scale-125 blur-2xl opacity-70" />
                     </div>
                     <div className="absolute inset-0 bg-black/15" aria-hidden="true" />
 
-                    {/* Framed foreground image — min margin + shadow */}
+                    {/* Framed foreground image — more margin now (p-6) so the
+                        image itself reads smaller with more breathing room,
+                        still fully visible via object-contain. */}
                     <div className="absolute inset-0 p-6 flex items-center justify-center pointer-events-none">
-                      <div className="relative w-full h-full rounded-[14px] overflow-hidden" style={{ boxShadow: "0 24px 60px -14px rgba(0,0,0,0.55), 0 10px 24px -8px rgba(0,0,0,0.35)" }}>
-                        <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="55vw" className="object-contain bg-zinc-900" priority={activeImg === 0} />
+                      <div className="relative w-full h-full rounded-[14px] overflow-hidden" style={{ boxShadow: "0 20px 44px -12px rgba(0,0,0,0.55), 0 8px 20px -8px rgba(0,0,0,0.35)" }}>
+                        <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="100vw" className="object-contain bg-zinc-900" priority />
                       </div>
                     </div>
 
+                    {/* Client-type pill — sticky top-left, one word, small, out of the way */}
                     {clientTypeLabel && (
-                      <span className={cn("absolute top-3 left-3 z-20 px-2.5 py-1 rounded-full text-[0.64rem] font-black uppercase tracking-wide text-white", CHIP)}>
+                      <span className={cn("absolute top-3 left-3 z-30 px-2.5 py-1 rounded-full text-[0.64rem] font-black uppercase tracking-wide text-white", CHIP)}>
                         {clientTypeLabel}
                       </span>
                     )}
 
-                    <div className="absolute top-3 right-14 z-20 w-9 h-9 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors [&_svg]:text-white" onClick={(e) => e.stopPropagation()}>
-                      <LikeButton liked={likedIds.has(project.id)} onToggle={(e) => { e.stopPropagation(); onToggleLike(project.id) }} context="header" />
+                    <div className="absolute top-3 right-3 z-30">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onClose() }}
+                        aria-label="Close"
+                        className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white transition-transform active:scale-90", CHIP)}
+                      >
+                        <X size={17} weight="bold" />
+                      </button>
                     </div>
-                    <div className="absolute top-3 right-3 z-20 w-9 h-9 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors [&_svg]:text-white" onClick={(e) => e.stopPropagation()}>
-                      <ShareButton url={shareUrl} title={project.title} />
-                    </div>
-                  </div>
-                  {allImages.length > 1 && (
-                    <div className="flex justify-center gap-2 px-3 py-2.5 overflow-x-auto no-scrollbar shrink-0 border-t border-white/10">
-                      {allImages.map((img, idx) => (
-                        <button key={idx} onClick={() => setActiveImg(idx)} aria-label={`View image ${idx + 1} of ${allImages.length}`} className={cn("relative shrink-0 w-11 h-11 rounded-[8px] overflow-hidden border-2 transition-all", activeImg === idx ? "scale-105" : "border-transparent opacity-50 hover:opacity-80")} style={activeImg === idx ? { borderColor: accentOnDark } : {}}>
-                          <SafeImage src={img} alt={`Thumb ${idx + 1}`} accent={accent} fill sizes="44px" className="object-cover" />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-              {hasBA && (
-                <div className="shrink-0 flex border-t border-white/10 bg-zinc-950">
-                  <button onClick={() => setComparing(false)} aria-pressed={!comparing} className={cn("flex-1 py-2.5 text-[0.78rem] font-black uppercase tracking-widest transition-all duration-200", !comparing ? "text-white" : "text-white/30 hover:text-white/60")} style={!comparing ? { borderBottom: `2px solid ${accentOnDark}` } : {}}>Gallery</button>
-                  <button onClick={() => setComparing(true)} aria-pressed={comparing} className={cn("flex-1 py-2.5 text-[0.78rem] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all duration-200", comparing ? "text-white" : "text-white/30 hover:text-white/60")} style={comparing ? { borderBottom: `2px solid ${accentOnDark}` } : {}}><ArrowsLeftRight size={13} weight="bold" aria-hidden="true" />Before / After</button>
-                </div>
-              )}
-            </div>
 
-            <div className="relative flex flex-col border-zinc-100 dark:border-zinc-800 flex-1 border-t md:h-auto md:flex-none md:border-t-0 md:border-l md:w-[380px] rounded-r-[14px] overflow-hidden">
-              {/* Floating pill header — static acrylic, no shrink-on-scroll */}
-              <div
-                className="shrink-0 px-6 md:px-8 pt-6 md:pt-8 pb-5 relative z-20 backdrop-blur-md bg-white/85 dark:bg-zinc-950/80 shadow-[0_10px_14px_-10px_rgba(0,0,0,0.12)] dark:shadow-[0_10px_14px_-10px_rgba(0,0,0,0.4)]"
-                onTouchStart={handleBodyTouchStart}
-                onTouchEnd={handleBodyTouchEnd}
-              >
-                <span className="text-[0.84rem] font-black uppercase tracking-widest" style={{ color: accent }}>{project.tag}</span>
-                {hasBA && <span className="ml-2 text-[0.72rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ backgroundColor: `${accent}20`, color: accent }}>Before &amp; After</span>}
-                <h2 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 leading-snug mt-2 truncate">{displayTitle}</h2>
-                <div className="mt-3">
-                  <ProjectNav current={currentIdx + 1} total={siblings.length} onPrev={goPrevProject} onNext={goNextProject} accent={accent} />
-                </div>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-2.5">
+                      <div className={cn("w-9 h-9 rounded-full flex items-center justify-center transition-colors", CHIP)} onClick={(e) => e.stopPropagation()}>
+                        <LikeButton liked={likedIds.has(project.id)} onToggle={(e) => { e.stopPropagation(); onToggleLike(project.id) }} context="header" />
+                      </div>
+                      <div className={cn("w-9 h-9 rounded-full flex items-center justify-center transition-colors", CHIP)} onClick={(e) => e.stopPropagation()}>
+                        <ShareButton url={shareUrl} title={project.title} />
+                      </div>
+                    </div>
+
+                    {allImages.length > 1 && (
+                      <div className="absolute bottom-0 inset-x-0 z-20 flex justify-center gap-2 px-3 py-2.5 bg-gradient-to-t from-black/55 to-transparent overflow-x-auto no-scrollbar">
+                        {allImages.map((img, idx) => (
+                          <button
+                            key={idx}
+                            onClick={(e) => { e.stopPropagation(); setActiveImg(idx) }}
+                            aria-label={`View image ${idx + 1} of ${allImages.length}`}
+                            className={cn("relative shrink-0 w-11 h-11 rounded-[8px] overflow-hidden border-2 transition-all", activeImg === idx ? "scale-105 border-white" : "border-white/20 opacity-60")}
+                          >
+                            <SafeImage src={img} alt={`Thumb ${idx + 1}`} accent={accent} fill sizes="44px" className="object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {hasBA && (
+                  <button
+                    onClick={() => setComparing(v => !v)}
+                    aria-label={comparing ? "Show gallery view" : "Show before and after comparison"}
+                    className={cn("absolute bottom-2 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-[0.78rem] font-black uppercase tracking-wider", CHIP)}
+                  >
+                    <ArrowsLeftRight size={12} weight="bold" aria-hidden="true" />
+                    {comparing ? "Gallery" : "Before / After"}
+                  </button>
+                )}
               </div>
 
               <div
                 ref={detailsRef}
-                className="flex-1 overflow-y-auto overscroll-contain px-6 md:px-8 pt-5 pb-6"
+                className="flex-1 overflow-y-auto overscroll-contain"
                 onTouchStart={handleBodyTouchStart}
                 onTouchEnd={handleBodyTouchEnd}
               >
-                <ProjectDetailsBody project={project} accent={accent} />
+                {/* Sticky header — solid brand blue, flush edge to edge,
+                    no floating inset pill anymore. */}
+                <div className="sticky top-0 z-20 py-4 px-6 flex flex-col items-center gap-2" style={{ backgroundColor: BRAND.blue }}>
+                  <h2 className="font-black text-base text-white text-center leading-snug max-w-[260px] truncate">
+                    {displayTitle}
+                  </h2>
+                  <ProjectNav current={currentIdx + 1} total={siblings.length} onPrev={goPrevProject} onNext={goNextProject} accent={accent} light />
+                </div>
+
+                <div className="px-6 pt-4 pb-6">
+                  <ProjectDetailsBody project={project} accent={accent} />
+                </div>
               </div>
 
-              <div className={cn("shrink-0 px-6 md:px-8 pt-4 pb-6 md:pb-8 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 relative z-20", "shadow-[0_-6px_14px_-10px_rgba(0,0,0,0.1)] dark:shadow-[0_-6px_14px_-10px_rgba(0,0,0,0.4)]")}>
+              <div className="shrink-0 px-6 pt-4 pb-6 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 relative z-20 rounded-b-[14px]">
                 <ProjectCTAs project={project} onClose={onClose} accent={accent} />
               </div>
-            </div>
-          </>
-        )}
-      </div>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={onClose}
+                aria-label="Close"
+                className="absolute top-3 right-3 z-40 w-9 h-9 rounded-full flex items-center justify-center bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg text-white transition-colors active:scale-90"
+              >
+                <X size={18} weight="bold" />
+              </button>
 
-      {/* ===== FLOATING "OTHER PROJECTS" — outside the modal card ===== */}
-      <OtherProjectsWidget siblings={siblings} currentId={project.id} accent={accent} onSelect={onNavigate} />
+              <div className="md:h-auto md:flex-1 flex flex-col overflow-hidden bg-zinc-950 relative rounded-bl-[14px]">
+                {comparing && hasBA ? (
+                  <div className="relative flex-1">
+                    <BeforeAfterSlider before={beforeImg!} after={afterImg!} accent={accent} />
+                  </div>
+                ) : (
+                  <>
+                    <div className="relative flex-1 overflow-hidden cursor-zoom-in group/img" onClick={handleImageClick}>
+                      {/* Ambient blurred background */}
+                      <div className="absolute inset-0" aria-hidden="true">
+                        <SafeImage src={allImages[activeImg]} alt="" accent={accent} fill sizes="55vw" className="object-cover scale-125 blur-2xl opacity-70" />
+                      </div>
+                      <div className="absolute inset-0 bg-black/15" aria-hidden="true" />
+
+                      {/* Framed foreground image — more margin now (p-8) */}
+                      <div className="absolute inset-0 p-8 flex items-center justify-center pointer-events-none">
+                        <div className="relative w-full h-full rounded-[14px] overflow-hidden" style={{ boxShadow: "0 24px 60px -14px rgba(0,0,0,0.55), 0 10px 24px -8px rgba(0,0,0,0.35)" }}>
+                          <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="55vw" className="object-contain bg-zinc-900" priority={activeImg === 0} />
+                        </div>
+                      </div>
+
+                      {clientTypeLabel && (
+                        <span className={cn("absolute top-3 left-3 z-20 px-2.5 py-1 rounded-full text-[0.64rem] font-black uppercase tracking-wide text-white", CHIP)}>
+                          {clientTypeLabel}
+                        </span>
+                      )}
+
+                      <div className="absolute top-3 right-14 z-20 w-9 h-9 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors [&_svg]:text-white" onClick={(e) => e.stopPropagation()}>
+                        <LikeButton liked={likedIds.has(project.id)} onToggle={(e) => { e.stopPropagation(); onToggleLike(project.id) }} context="header" />
+                      </div>
+                      <div className="absolute top-3 right-3 z-20 w-9 h-9 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors [&_svg]:text-white" onClick={(e) => e.stopPropagation()}>
+                        <ShareButton url={shareUrl} title={project.title} />
+                      </div>
+                    </div>
+                    {allImages.length > 1 && (
+                      <div className="flex justify-center gap-2 px-3 py-2.5 overflow-x-auto no-scrollbar shrink-0 border-t border-white/10">
+                        {allImages.map((img, idx) => (
+                          <button key={idx} onClick={() => setActiveImg(idx)} aria-label={`View image ${idx + 1} of ${allImages.length}`} className={cn("relative shrink-0 w-11 h-11 rounded-[8px] overflow-hidden border-2 transition-all", activeImg === idx ? "scale-105" : "border-transparent opacity-50 hover:opacity-80")} style={activeImg === idx ? { borderColor: accentOnDark } : {}}>
+                            <SafeImage src={img} alt={`Thumb ${idx + 1}`} accent={accent} fill sizes="44px" className="object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+                {hasBA && (
+                  <div className="shrink-0 flex border-t border-white/10 bg-zinc-950">
+                    <button onClick={() => setComparing(false)} aria-pressed={!comparing} className={cn("flex-1 py-2.5 text-[0.78rem] font-black uppercase tracking-widest transition-all duration-200", !comparing ? "text-white" : "text-white/30 hover:text-white/60")} style={!comparing ? { borderBottom: `2px solid ${accentOnDark}` } : {}}>Gallery</button>
+                    <button onClick={() => setComparing(true)} aria-pressed={comparing} className={cn("flex-1 py-2.5 text-[0.78rem] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all duration-200", comparing ? "text-white" : "text-white/30 hover:text-white/60")} style={comparing ? { borderBottom: `2px solid ${accentOnDark}` } : {}}><ArrowsLeftRight size={13} weight="bold" aria-hidden="true" />Before / After</button>
+                  </div>
+                )}
+              </div>
+
+              <div className="relative flex flex-col border-zinc-100 dark:border-zinc-800 flex-1 border-t md:h-auto md:flex-none md:border-t-0 md:border-l md:w-[380px] rounded-br-[14px] overflow-hidden">
+                {/* Sticky header — solid brand blue, flush edge to edge */}
+                <div
+                  className="shrink-0 px-6 md:px-8 pt-6 md:pt-8 pb-5 relative z-20"
+                  style={{ backgroundColor: BRAND.blue }}
+                  onTouchStart={handleBodyTouchStart}
+                  onTouchEnd={handleBodyTouchEnd}
+                >
+                  <span className="text-[0.84rem] font-black uppercase tracking-widest text-white/80">{project.tag}</span>
+                  {hasBA && <span className="ml-2 text-[0.72rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/20 text-white">Before &amp; After</span>}
+                  <h2 className="font-sans font-black text-xl text-white leading-snug mt-2 truncate">{displayTitle}</h2>
+                  <div className="mt-3">
+                    <ProjectNav current={currentIdx + 1} total={siblings.length} onPrev={goPrevProject} onNext={goNextProject} accent={accent} light />
+                  </div>
+                </div>
+
+                <div
+                  ref={detailsRef}
+                  className="flex-1 overflow-y-auto overscroll-contain px-6 md:px-8 pt-5 pb-6"
+                  onTouchStart={handleBodyTouchStart}
+                  onTouchEnd={handleBodyTouchEnd}
+                >
+                  <ProjectDetailsBody project={project} accent={accent} />
+                </div>
+
+                <div className={cn("shrink-0 px-6 md:px-8 pt-4 pb-6 md:pb-8 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 relative z-20", "shadow-[0_-6px_14px_-10px_rgba(0,0,0,0.1)] dark:shadow-[0_-6px_14px_-10px_rgba(0,0,0,0.4)]")}>
+                  <ProjectCTAs project={project} onClose={onClose} accent={accent} />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* ===== "OTHER PROJECTS" TRAY — flush below the modal, full width ===== */}
+        <OtherProjectsWidget siblings={siblings} currentId={project.id} accent={accent} onSelect={onNavigate} />
+      </div>
 
       {zoomIndex !== null && !comparing && (
         <ZoomOverlay
@@ -499,4 +520,4 @@ export function ProjectViewerModal({
       )}
     </div>
   )
-      } 
+} 
