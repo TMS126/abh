@@ -39,7 +39,10 @@ export function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService)
 
   return (
     <div ref={wrapRef} className="relative mx-auto w-full max-w-md">
-      <div className="flex items-center gap-2.5 px-4 py-0 rounded-[14px] border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/60 focus-within:border-[#1E6FA8] dark:focus-within:border-[#A9D6F2] focus-within:bg-white dark:focus-within:bg-zinc-900 transition-all duration-200 shadow-sm">
+      {/* ===== INPUT — matches the Contact page's field styling:
+          rounded-[14px], solid neutral border, brand-blue focus border,
+          white/zinc-900 fill instead of the old zinc-50/underline look ===== */}
+      <div className="flex items-center gap-2.5 px-4 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus-within:border-brand-blue transition-all duration-200">
         <MagnifyingGlass size={16} weight="bold" className="text-zinc-400 pointer-events-none shrink-0" aria-hidden="true" />
         <label htmlFor="inline-search-input" className="sr-only">Find a service</label>
         <input
@@ -66,7 +69,6 @@ export function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService)
                 const accent = isDark ? colors.accentDark : colors.accentLight
                 return (
                   <button key={`${s.hubId}-${s.name}-${idx}`} onClick={() => pick(s)} className="w-full flex items-center gap-3 p-3 rounded-[10px] hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors text-left">
-                    {/* Raw icon, no colored bg chip */}
                     <HubIcon id={s.hubId} size={20} color={accent} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-black text-zinc-800 dark:text-zinc-200 truncate">{s.name}</p>
