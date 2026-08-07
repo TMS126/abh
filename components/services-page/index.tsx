@@ -195,9 +195,6 @@ export function ServicesPage() {
     return () => window.removeEventListener("abh:selectService", handler)
   }, [])
 
-  // ── Deep-linking — ?hub= alone opens the Hub modal; ?hub=&section=&service=
-  // together (from a shared service link) opens that exact service's detail
-  // modal directly, skipping straight past the hub list. ──
   useEffect(() => {
     const hubParam     = searchParams.get("hub")
     const sectionParam = searchParams.get("section")
@@ -374,8 +371,16 @@ export function ServicesPage() {
                   </p>
 
                   <div className="relative z-10 flex flex-col items-center gap-1.5">
+                    {/* "Explore" now sits on a subtle dotted underline in
+                        the hub's own accent color — always faintly visible,
+                        fading to full strength on hover/press. */}
                     <span className="inline-flex items-center gap-1 text-[0.88rem] font-black text-zinc-400 dark:text-zinc-500 group-hover/hubcard:text-[var(--hub-accent)] transition-colors duration-200">
-                      Explore
+                      <span
+                        className="border-b-2 border-dotted pb-0.5 opacity-45 group-hover/hubcard:opacity-100 transition-opacity duration-200"
+                        style={{ borderColor: accent }}
+                      >
+                        Explore
+                      </span>
                       <ArrowRight size={12} weight="bold" aria-hidden="true" />
                     </span>
                     <span
@@ -425,4 +430,4 @@ export function ServicesPage() {
       </button>
     </section>
   )
-} 
+      } 
