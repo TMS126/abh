@@ -19,14 +19,8 @@ import { getServiceTips } from "./fallback-tips"
 
 const BULK_RIBBON_ORANGE = "#B45309"
 
-// Right-edge icon rail: every header row uses this same grid template so
-// the tips icon (price row) and the Close/Share stack (tabs row) share one
-// perfectly aligned column.
 const HEADER_GRID = "grid grid-cols-[36px_1fr_36px] gap-2"
 
-// Minimum horizontal drag distance, and how much more horizontal than
-// vertical it must be, before a touch counts as a tab-switch swipe rather
-// than a vertical scroll.
 const SWIPE_MIN_DX = 48
 const SWIPE_DOMINANCE = 1.4
 
@@ -170,12 +164,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         await navigator.share({ title: `${naturalLabel} — ${BIZ.name}`, text: shareText, url: shareUrl })
       } catch {}
       return
-    }
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`)
-      setShareCopied(true)
-      setTimeout(() => setShareCopied(false), 2000)
-    }
   }
 
   const handleCopyTips = async () => {
@@ -206,10 +194,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
     setQuoteQty(nextQty)
   }
 
-  // ===== SWIPE-TO-SWITCH-TABS =====
-  // Horizontal swipe on the tab content body toggles between Needs/Description.
-  // Requires a clearly horizontal, deliberate drag so vertical scrolling of
-  // the content (overflow-y-auto) is never hijacked.
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
     const t = e.touches[0]
     touchStartRef.current = { x: t.clientX, y: t.clientY }
@@ -237,7 +221,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
   const inQuote = quoteQty > 0
   const neutralIconColor = isDark ? "#e4e4e7" : "#3f3f46"
 
-  // Pressed-state visual params (medium tactile feel)
   const pressedTransform = "translateY(1px) scale(0.995)"
   const normalTransform = "translateY(0) scale(1)"
   const pressedBoxShadow = "inset 0 2px 6px rgba(0,0,0,0.12)"
@@ -259,7 +242,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         {hasBulk && (
           <div className="absolute top-0 right-0 w-[104px] h-[104px] overflow-hidden pointer-events-none z-10" aria-hidden="true">
             <span
-              className="absolute block text-center text-[0.66rem] font-black uppercase text-white"
+              className="absolute block text-center text-[0.66rem] font-black uppercase tracking-widest text-white"
               style={{
                 top: "28px", right: "-34px", width: "150px", transform: "rotate(45deg)",
                 backgroundColor: BULK_RIBBON_ORANGE, padding: "6px 0",
@@ -283,287 +266,4 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                 <span className="text-[0.74rem] font-black uppercase tracking-widest" style={{ color: accent }}>{hubTitle}</span>
               </div>
               <span
-                className="text-[0.74rem] font-black uppercase tracking-widest mb-2.5 inline-block pb-0.5 border-b"
-                style={{ color: accent, borderColor: `${accent}50` }}
-              >
-                {cleanText(svc.sectionTitle)}
-              </span>
-              <h3 className="abh-card-heading text-[1.32rem] leading-tight">{svc.name}</h3>
-            </div>
-            <div aria-hidden="true" />
-          </div>
-
-          <div className="h-px bg-zinc-100 dark:bg-zinc-800 mb-4" />
-
-          {/* Price row — tips icon lives here now, top-aligned with the
-              price digits (not the turnaround line below it). Same
-              right-edge column as the Close/Share stack in the tabs row. */}
-          <div className={cn(HEADER_GRID, "items-start")}>
-            <div aria-hidden="true" />
-            <div className="flex flex-col items-center gap-1.5">
-              <span className="text-5xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
-              {svc.turnaround && (
-                <span
-                  className="flex items-center gap-1 text-[0.82rem] font-bold pb-0.5 border-b"
-                  style={{ color: accent, borderColor: `${accent}50` }}
-                >
-                  <Clock size={12} weight="bold" aria-hidden="true" />
-                  {svc.turnaround}
-                </span>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => setTipsOpen(true)}
-              aria-label="View helpful tips"
-              className="w-9 h-9 flex items-center justify-center transition-all active:scale-95"
-              style={{ color: accent }}
-            >
-              <Lightbulb size={18} weight="fill" aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-
-        {/* ── Tabs — underline only, centered. Right rail continues the
-            tips-icon column with Close + Share stacked vertically. ── */}
-        <div className="px-6 pt-1">
-          <div className={cn(HEADER_GRID, "items-center")}>
-            <div aria-hidden="true" />
-            <div role="tablist" aria-label="Service info sections" className="flex items-center justify-center gap-6 border-b border-zinc-100 dark:border-zinc-800">
-              {tabs.map((t) => {
-                const isActive = tab === t
-                const label = t === "bring" ? "Needs" : "Description"
-                return (
-                  <button
-                    key={t}
-                    role="tab"
-                    aria-selected={isActive}
-                    onClick={() => setTab(t)}
-                    className={cn(
-                      "py-2.5 text-[0.95rem] font-black uppercase tracking-wider transition-colors duration-200 border-b-2 -mb-px",
-                      isActive ? "border-current" : "border-transparent text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300"
-                    )}
-                    style={isActive ? { color: accent } : undefined}
-                  >
-                    {label}
-                  </button>
-                )
-              })}
-            </div>
-
-            <div className="relative flex flex-col items-center gap-1.5">
-              <button
-                onClick={onClose}
-                aria-label="Close"
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
-                style={{ backgroundColor: `${accent}15`, color: accent }}
-              >
-                <X size={16} weight="bold" aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                onClick={handleShare}
-                aria-label="Share this service"
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
-                style={{ backgroundColor: `${accent}15`, color: accent }}
-              >
-                <ShareNetwork size={16} weight="bold" aria-hidden="true" />
-              </button>
-              {shareCopied && (
-                <span className="absolute -bottom-8 right-0 whitespace-nowrap text-[0.74rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full">
-                  Copied!
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ── Tab content — swipeable to switch tabs ── */}
-        <div
-          className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 min-h-0 text-center"
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-        >
-          {tab === "bring" && (
-            <div className="animate-in fade-in duration-150 flex flex-col items-center">
-              <ol className="space-y-3 inline-flex flex-col items-start">
-                {requirements.map((req, idx) => (
-                  <li key={idx} className="flex items-start gap-3 text-left">
-                    {/* Numbering intentionally left at its original size —
-                        only the tab labels above were bumped. */}
-                    <span className="shrink-0 font-black text-[0.86rem] mt-0.5" style={{ color: accent }}>
-                      {idx + 1}.
-                    </span>
-                    <span className="abh-body text-base">{req}</span>
-                  </li>
-                ))}
-              </ol>
-              <p className="abh-muted mt-5">Not sure? Don't worry — just WhatsApp us first and we'll guide you step by step.</p>
-            </div>
-          )}
-          {tab === "about" && (
-            <div className="animate-in fade-in duration-150">
-              {desc ? <p className="abh-body text-base">{desc}</p> : <p className="abh-muted text-base">No description available for this service yet.</p>}
-              <p className="abh-muted mt-5">
-                Have questions? Switch to the <span className="font-black" style={{ color: accent }}>Needs</span> tab or chat with us directly.
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* ── Footer ── */}
-        <div className="px-6 pb-6 pt-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800" style={{ minHeight: 104 }}>
-          <input ref={fileRef} type="file" accept={HUB_ACCEPT[svc.hubId]} onChange={handleFilePick} className="hidden" />
-
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-full flex items-center justify-center gap-4" style={{ maxWidth: 520 }}>
-
-              {/* Attach button */}
-              <button
-                type="button"
-                onPointerDown={() => setPressed("attach")}
-                onPointerUp={() => setPressed("none")}
-                onPointerLeave={() => setPressed("none")}
-                onPointerCancel={() => setPressed("none")}
-                onClick={() => fileRef.current?.click()}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-2 py-2 font-bold text-[0.86rem] rounded-[12px] transition-all",
-                  ""
-                )}
-                style={
-                  uploadPhase === "done"
-                    ? {
-                        color: "#16a34a",
-                        backgroundColor: "#ecfdf5",
-                        transform: pressed === "attach" ? pressedTransform : normalTransform,
-                        boxShadow: pressed === "attach" ? pressedBoxShadow : normalBoxShadow,
-                      }
-                    : {
-                        color: accent,
-                        backgroundColor: `${accent}06`,
-                        transform: pressed === "attach" ? pressedTransform : normalTransform,
-                        boxShadow: pressed === "attach" ? pressedBoxShadow : normalBoxShadow,
-                      }
-                }
-              >
-                <Paperclip size={16} weight="bold" aria-hidden="true" />
-                {uploadPhase === "done" ? "Attached" : "Attach File"}
-              </button>
-
-              {/* separator */}
-              <div className="w-px h-8 bg-zinc-200 dark:bg-zinc-800" aria-hidden="true" />
-
-              {/* Add to quote */}
-              {!inQuote ? (
-                <button
-                  type="button"
-                  onPointerDown={() => setPressed("add")}
-                  onPointerUp={() => setPressed("none")}
-                  onPointerLeave={() => setPressed("none")}
-                  onPointerCancel={() => setPressed("none")}
-                  onClick={handleAddToQuote}
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-2 py-2 font-bold text-[0.86rem] rounded-[12px] transition-all",
-                    ""
-                  )}
-                  style={{
-                    color: "#fff",
-                    backgroundColor: accent,
-                    transform: pressed === "add" ? pressedTransform : normalTransform,
-                    boxShadow: pressed === "add" ? pressedBoxShadow : normalBoxShadow,
-                  }}
-                >
-                  <ShoppingCartSimple size={16} weight="bold" aria-hidden="true" />
-                  Add to Quote
-                </button>
-              ) : (
-                <div className="flex-1 flex items-center justify-center gap-2">
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleStepQty(-1)}
-                      aria-label="Remove one from quote"
-                      className="group w-9 h-9 rounded-full border border-red-500 flex items-center justify-center shrink-0 transition-colors duration-150 hover:bg-red-500 active:scale-90"
-                    >
-                      <Minus size={14} weight="bold" style={{ color: neutralIconColor }} className="transition-colors duration-150 group-hover:!text-white" />
-                    </button>
-
-                    <span className="text-[0.9rem] font-black text-green-600 dark:text-green-400 px-3">Added {quoteQty}</span>
-
-                    <button
-                      type="button"
-                      onClick={() => handleStepQty(1)}
-                      aria-label="Add one more to quote"
-                      className="group w-9 h-9 rounded-full border border-green-500 flex items-center justify-center shrink-0 transition-colors duration-150 hover:bg-green-500 active:scale-90"
-                    >
-                      <Plus size={14} weight="bold" style={{ color: neutralIconColor }} className="transition-colors duration-150 group-hover:!text-white" />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Bulk hint centered below the buttons */}
-            {bulkHint && (
-              <div className="w-full flex items-center justify-center px-2">
-                <BulkHint
-                  hint={bulkHint}
-                  accent={accent}
-                  isDiscount={isBulkDiscount}
-                  baseUnitPrice={baseUnitPrice}
-                  effRate={effRate}
-                  priceUnit={priceUnit}
-                />
-              </div>
-            )}
-          </div>
-
-          {inQuote && isBulkDiscount && (
-            <p className="text-[0.82rem] font-medium text-zinc-400 dark:text-zinc-500 text-center">
-              <span className="line-through">R{baseUnitPrice}{priceUnit ? `/${priceUnit}` : ""}</span>
-              {" → "}
-              <span className="font-black" style={{ color: accent }}>R{effRate}{priceUnit ? `/${priceUnit}` : ""}</span>
-              {" each"}
-            </p>
-          )}
-
-          <UploadStatus
-            phase={uploadPhase}
-            file={file}
-            uploadErr={uploadErr}
-            uploadProgress={uploadProgress}
-            previewUrl={previewUrl}
-            accent={accent}
-            acceptHint={acceptHint}
-            onClear={clearFile}
-            onRetry={() => { setUploadPhase("idle"); setUploadErr(null); fileRef.current?.click() }}
-          />
-
-          <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
-
-          <a
-            href={`https://wa.me/27753338260?text=${encodeURIComponent(waMessage)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => trackEvent("request_whatsapp", { hub_id: svc.hubId, service_name: svc.name, section_title: svc.sectionTitle, price: svc.price, had_file_attached: uploadPhase === "done" })}
-            className="flex items-center justify-center gap-2 w-full px-4 py-4 rounded-[14px] font-black text-base text-white text-center transition-all active:scale-95"
-            style={{ backgroundColor: "#25D366" }}
-          >
-            Request {naturalLabel}
-          </a>
-        </div>
-      </div>
-
-      <TipsModal
-        open={tipsOpen}
-        onClose={() => setTipsOpen(false)}
-        tips={tips}
-        isGeneric={isGeneric}
-        accent={accent}
-        copied={tipsCopied}
-        onCopy={handleCopyTips}
-        hubTitle={hubTitle}
-      />
-    </div>
-  )
-}
+{
