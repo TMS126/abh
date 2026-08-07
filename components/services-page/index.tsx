@@ -273,12 +273,13 @@ export function ServicesPage() {
           </div>
         </ScrollBounce>
 
-        {/* Notice now sits ABOVE the search bar, not below it */}
-        <ScrollBounce delay={0.08} className="relative z-0 w-full flex justify-center">
+        {/* Notice pill */}
+        <ScrollBounce delay={0.08} className="relative z-0 w-full flex justify-center mb-6">
           <NoticeNotification isDark={isDark} />
         </ScrollBounce>
 
-        <ScrollBounce delay={0.14} className="relative z-40 w-full mb-10 flex justify-center">
+        {/* Search — clearly separated from notice above */}
+        <ScrollBounce delay={0.14} className="relative z-40 w-full mb-12 flex justify-center">
           <div id="abh-inline-search" className="w-full flex justify-center">
             <InlineSearchBar onSelect={handleSelectService} />
           </div>
@@ -304,43 +305,40 @@ export function ServicesPage() {
               >
                 <ScrollBounce delay={index * 0.06}>
                   <div
-                    className="group/hubcard relative flex flex-col items-center text-center h-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-elevated overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:abh-shadow-card transform-gpu p-6 pt-8"
-                    style={{ borderTop: `3px solid ${accent}` }}
+                    className="group/hubcard relative flex flex-col items-center text-center h-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-300 hover:-translate-y-1 transform-gpu p-6 cursor-pointer"
+                    onClick={() => handleOpenHub(hubId, "right")}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === "Enter" && handleOpenHub(hubId, "right")}
+                    aria-label={`Open ${hub.title}`}
                   >
                     <HubCornerIcon hubId={hubId} accent={accent} />
                     {hubHasBulk && <BulkRibbon />}
 
-                    {/* Hub icon chip */}
-                    <div
-                      className="relative z-10 w-11 h-11 rounded-[12px] flex items-center justify-center mb-3 shrink-0 transition-colors duration-300"
-                      style={{ backgroundColor: `${accent}18`, color: accent }}
-                    >
-                      <HubIcon id={hubId} size={22} color={accent} />
+                    {/* Neutral icon — no tint background */}
+                    <div className="relative z-10 mb-3 text-zinc-400 dark:text-zinc-500 group-hover/hubcard:text-[var(--hub-accent)] transition-colors duration-300" style={{ ["--hub-accent" as any]: accent }}>
+                      <HubIcon id={hubId} size={28} color="currentColor" />
                     </div>
 
-                    <h3 className="relative z-10 font-sans font-black text-[1.14rem] leading-tight mb-1.5 text-zinc-900 dark:text-zinc-50">
+                    <h3 className="relative z-10 font-sans font-black text-[1.08rem] leading-tight mb-1 text-zinc-900 dark:text-zinc-50">
                       {hub.title}
                     </h3>
 
-                    <div className="relative z-10 flex flex-wrap justify-center gap-x-2 gap-y-0.5 mb-1.5">
+                    <div className="relative z-10 flex flex-wrap justify-center gap-x-1.5 gap-y-0.5 mb-2">
                       {HUB_PREVIEWS[hubId].map((hint, i) => (
-                        <span key={i} className="text-[0.79rem] font-medium text-zinc-400 dark:text-zinc-500">
+                        <span key={i} className="text-[0.76rem] font-medium text-zinc-400 dark:text-zinc-500">
                           {hint}
                         </span>
                       ))}
                     </div>
 
-                    <p className="relative z-10 abh-body text-[0.91rem] line-clamp-2 leading-snug mb-4 max-w-[200px]">
+                    <p className="relative z-10 abh-body text-[0.88rem] line-clamp-2 leading-snug mb-4 max-w-[190px]">
                       {hub.desc}
                     </p>
 
-                    <button
-                      onClick={() => handleOpenHub(hubId, "right")}
-                      aria-label={`Open ${hub.title}`}
-                      className="relative z-10 mt-auto"
-                    >
+                    <div className="relative z-10 mt-auto">
                       <HubCta label="View more" accent={accent} pointsRight={true} />
-                    </button>
+                    </div>
                   </div>
                 </ScrollBounce>
               </div>
@@ -362,37 +360,33 @@ export function ServicesPage() {
                 <button
                   onClick={() => handleOpenHub(hubId, "right")}
                   aria-label={`Open ${hub.title}`}
-                  className="group/hubcard relative flex flex-col items-center text-center w-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-elevated overflow-hidden transition-all duration-200 active:scale-[0.98] transform-gpu p-6 pt-8"
-                  style={{ borderTop: `3px solid ${accent}` }}
+                  className="group/hubcard relative flex flex-col items-center text-center w-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-200 active:scale-[0.98] transform-gpu p-6"
                 >
                   <HubCornerIcon hubId={hubId} accent={accent} />
                   {hubHasBulk && <BulkRibbon />}
 
-                  {/* Hub icon chip */}
-                  <div
-                    className="relative z-10 w-11 h-11 rounded-[12px] flex items-center justify-center mb-3 shrink-0"
-                    style={{ backgroundColor: `${accent}18`, color: accent }}
-                  >
-                    <HubIcon id={hubId} size={22} color={accent} />
+                  {/* Neutral icon */}
+                  <div className="relative z-10 mb-3 text-zinc-400 dark:text-zinc-500 group-hover/hubcard:text-[var(--hub-accent)] transition-colors duration-200" style={{ ["--hub-accent" as any]: accent }}>
+                    <HubIcon id={hubId} size={28} color="currentColor" />
                   </div>
 
-                  <h3 className="relative z-10 font-sans font-black text-[1.18rem] leading-tight mb-1.5 text-zinc-900 dark:text-zinc-50">
+                  <h3 className="relative z-10 font-sans font-black text-[1.1rem] leading-tight mb-1 text-zinc-900 dark:text-zinc-50">
                     {hub.title}
                   </h3>
 
-                  <div className="relative z-10 flex flex-wrap justify-center gap-x-2 gap-y-0.5 mb-1.5">
+                  <div className="relative z-10 flex flex-wrap justify-center gap-x-1.5 gap-y-0.5 mb-2">
                     {HUB_PREVIEWS[hubId].map((hint, i) => (
-                      <span key={i} className="text-[0.79rem] font-medium text-zinc-400 dark:text-zinc-500">
+                      <span key={i} className="text-[0.76rem] font-medium text-zinc-400 dark:text-zinc-500">
                         {hint}
                       </span>
                     ))}
                   </div>
 
-                  <p className="relative z-10 abh-body text-[0.91rem] line-clamp-2 leading-snug mb-3 max-w-[260px]">
+                  <p className="relative z-10 abh-body text-[0.88rem] line-clamp-2 leading-snug mb-3 max-w-[260px]">
                     {hub.desc}
                   </p>
 
-                  <span className="relative z-10 inline-flex items-center gap-1 text-[0.94rem] font-black" style={{ color: accent }}>
+                  <span className="relative z-10 inline-flex items-center gap-1 text-[0.88rem] font-black text-zinc-400 dark:text-zinc-500 group-hover/hubcard:text-[var(--hub-accent)] transition-colors duration-200" style={{ ["--hub-accent" as any]: accent }}>
                     Explore
                     <ArrowRight size={12} weight="bold" aria-hidden="true" />
                   </span>

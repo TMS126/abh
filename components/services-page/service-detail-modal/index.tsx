@@ -271,17 +271,14 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           <div className={cn(HEADER_GRID, "items-start mb-2")}>
             <div aria-hidden="true" />
             <div className="min-w-0 text-center">
-              <div className="flex items-center justify-center gap-1.5 mb-2">
-                <HubIcon id={svc.hubId} size={12} color={accent} />
-                <span className="text-[0.74rem] font-black uppercase tracking-widest" style={{ color: accent }}>{hubTitle}</span>
+              <div className="flex items-center justify-center gap-1.5 mb-1.5">
+                <HubIcon id={svc.hubId} size={11} color={accent} />
+                <span className="text-[0.72rem] font-black uppercase tracking-widest" style={{ color: accent }}>{hubTitle}</span>
               </div>
-              <span
-                className="text-[0.74rem] font-black uppercase tracking-widest mb-2.5 inline-block pb-0.5 border-b"
-                style={{ color: accent, borderColor: `${accent}50` }}
-              >
+              <span className="text-[0.72rem] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide mb-2.5 inline-block">
                 {cleanText(svc.sectionTitle)}
               </span>
-              <h3 className="abh-card-heading text-[1.32rem] leading-tight">{svc.name}</h3>
+              <h3 className="abh-card-heading text-[1.28rem] leading-tight">{svc.name}</h3>
             </div>
             <div aria-hidden="true" />
           </div>
@@ -309,8 +306,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
               type="button"
               onClick={() => setTipsOpen(true)}
               aria-label="View helpful tips"
-              className="w-9 h-9 flex items-center justify-center transition-all active:scale-95"
-              style={{ color: accent }}
+              className="w-9 h-9 flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors duration-150 active:scale-95"
             >
               <Lightbulb size={18} weight="fill" aria-hidden="true" />
             </button>
@@ -348,8 +344,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
               <button
                 onClick={onClose}
                 aria-label="Close"
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
-                style={{ backgroundColor: `${accent}15`, color: accent }}
+                className="w-9 h-9 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150 shrink-0"
               >
                 <X size={16} weight="bold" aria-hidden="true" />
               </button>
@@ -357,8 +352,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                 type="button"
                 onClick={handleShare}
                 aria-label="Share this service"
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
-                style={{ backgroundColor: `${accent}15`, color: accent }}
+                className="w-9 h-9 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150 shrink-0"
               >
                 <ShareNetwork size={16} weight="bold" aria-hidden="true" />
               </button>
@@ -378,20 +372,18 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           onTouchEnd={handleTouchEnd}
         >
           {tab === "bring" && (
-            <div className="animate-in fade-in duration-150 flex flex-col items-center">
-              <ol className="space-y-3 inline-flex flex-col items-start">
+            <div className="animate-in fade-in duration-150 flex flex-col items-center w-full">
+              <ul className="w-full divide-y divide-zinc-100 dark:divide-zinc-800">
                 {requirements.map((req, idx) => (
-                  <li key={idx} className="flex items-start gap-3 text-left">
-                    {/* Numbering intentionally left at its original size —
-                        only the tab labels above were bumped. */}
-                    <span className="shrink-0 font-black text-[0.86rem] mt-0.5" style={{ color: accent }}>
+                  <li key={idx} className="flex items-start gap-3 py-3 text-left">
+                    <span className="shrink-0 font-black text-[0.8rem] text-zinc-400 dark:text-zinc-500 mt-0.5 w-4 text-right">
                       {idx + 1}.
                     </span>
-                    <span className="abh-body text-base">{req}</span>
+                    <span className="abh-body text-[0.95rem] leading-relaxed">{req}</span>
                   </li>
                 ))}
-              </ol>
-              <p className="abh-muted mt-5">Not sure? Don't worry — just WhatsApp us first and we'll guide you step by step.</p>
+              </ul>
+              <p className="abh-muted text-[0.88rem] mt-4 text-center">Not sure? Don&apos;t worry — just WhatsApp us first and we&apos;ll guide you step by step.</p>
             </div>
           )}
           {tab === "about" && (
@@ -405,7 +397,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         </div>
 
         {/* ── Footer ── */}
-        <div className="px-6 pb-6 pt-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
+        <div className="px-6 pb-8 pt-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
           <input ref={fileRef} type="file" accept={HUB_ACCEPT[svc.hubId]} onChange={handleFilePick} className="hidden" />
 
           {!inQuote && (
@@ -496,6 +488,19 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
               <span className="font-black" style={{ color: accent }}>R{effRate}{priceUnit ? `/${priceUnit}` : ""}</span>
               {" each"}
             </p>
+          )}
+
+          {hasBulk && !inQuote && (
+            <div className="flex justify-center">
+              <BulkHint
+                hint={getBulkHint(itemId, svc.name, 1, getEffectiveRate(itemId, svc.name, 1, baseUnitPrice), baseUnitPrice) ?? "Bulk pricing available"}
+                accent={accent}
+                isDiscount={false}
+                baseUnitPrice={baseUnitPrice}
+                effRate={baseUnitPrice}
+                priceUnit={priceUnit}
+              />
+            </div>
           )}
 
           <UploadStatus
