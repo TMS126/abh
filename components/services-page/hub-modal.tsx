@@ -72,9 +72,10 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
 
   const titleFontSize = 28 - scrollProgress * 8
   const subtitleOpacity = 1 - scrollProgress
+  const otherHubs = HUB_ORDER.filter((id) => id !== hubId)
 
   return (
-    <div className="fixed inset-0 z-[10100] flex flex-col items-center justify-center gap-3 p-3 md:p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-[10100] flex flex-col items-center justify-center gap-4 p-3 md:p-4 overflow-y-auto">
       {/* ===== BACKDROP ===== */}
       <motion.div
         className="absolute inset-0 bg-black/60"
@@ -131,7 +132,6 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
               <ArrowSquareOut size={11} weight="bold" aria-hidden="true" />
             </Link>
 
-            {/* Close — raw icon, no circular bg pill */}
             <button
               onClick={onClose}
               aria-label="Close"
@@ -157,14 +157,14 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
           className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-8 pb-8 md:pb-10"
         >
 
-          {/* ===== SECTION SELECTOR — now sticky, so it (plus the header
-              above) stays visible while scrolling; only the description
-              and item list scroll underneath. Bleeds full-width via
-              negative margins so nothing peeks past its edges. ===== */}
+          {/* ===== SECTION SELECTOR — its own rounded-[14px] card, with
+              an acrylic blur fill (not solid) so items scrolling behind
+              it are visibly blurred through, rather than hard-cut. Font
+              sizes untouched. ===== */}
           <div
             role="tablist"
             aria-label="Service categories"
-            className="sticky top-0 z-10 -mx-5 md:-mx-8 px-5 md:px-8 bg-white dark:bg-zinc-950 flex flex-wrap justify-center gap-x-7 gap-y-3 pt-1 pb-4 mb-6 border-b border-zinc-100 dark:border-zinc-800"
+            className="sticky top-0 z-10 mb-6 rounded-[14px] backdrop-blur-md bg-white/80 dark:bg-zinc-950/75 border border-zinc-100 dark:border-zinc-800 shadow-sm flex flex-wrap justify-center gap-x-7 gap-y-3 px-5 py-4"
           >
             {hub.sections.map((section, sIdx) => {
               const isOpen = openSectionIdx === sIdx
@@ -242,35 +242,42 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
               <p className="text-[0.86rem] font-medium text-zinc-400 dark:text-zinc-500 leading-relaxed">{hubDisclaimer}</p>
             </div>
           )}
-
-          {/* ===== OTHER HUBS — moved INSIDE the card, centered, with
-              top margin/gap and a soft box shadow on the group container
-              (previously a separate floating row below the card). ===== */}
-          <div className="mt-10 pt-6 border-t border-zinc-100 dark:border-zinc-800">
-            <div
-              className="flex flex-wrap justify-center gap-2 p-3 rounded-[16px]"
-              style={{ boxShadow: "0 8px 24px -10px rgba(0,0,0,0.10), 0 2px 8px -2px rgba(0,0,0,0.05)" }}
-            >
-              {HUB_ORDER.filter((id) => id !== hubId).map((id) => {
-                const otherColors = HUB_COLORS[id as HubKey]
-                const otherAccent = isDark ? otherColors.accentDark : otherColors.accentLight
-                return (
-                  <button
-                    key={id}
-                    onClick={() => onSwitchHub(id)}
-                    className="shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-[14px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:-translate-y-0.5 transition-all duration-150 active:scale-95"
-                  >
-                    <HubIcon id={id} size={16} color={otherAccent} />
-                    <span className="text-[0.78rem] font-bold text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
-                      {HUBS[id].title}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
         </div>
       </motion.div>
+
+      {/* ===== OTHER HUBS — back outside the card, as its own floating,
+          centered, single-shadowed group with top breathing room. ===== */}
+      {otherHubs.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 8 }}
+          transition={{ duration: 0.2, delay: 0.1 }}
+          className="relative z-10 w-full max-w-2xl mt-1 flex justify-center"
+        >
+          <div
+            className="flex flex-wrap justify-center gap-2 p-3 rounded-[16px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm"
+            style={{ boxShadow: "0 16px 36px -14px rgba(0,0,0,0.28), 0 6px 16px -6px rgba(0,0,0,0.14)" }}
+          >
+            {otherHubs.map((id) => {
+              const otherColors = HUB_COLORS[id as HubKey]
+              const otherAccent = isDark ? otherColors.accentDark : otherColors.accentLight
+              return (
+                <button
+                  key={id}
+                  onClick={() => onSwitchHub(id)}
+                  className="shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-[14px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:-translate-y-0.5 transition-all duration-150 active:scale-95"
+                >
+                  <HubIcon id={id} size={16} color={otherAccent} />
+                  <span className="text-[0.78rem] font-bold text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
+                    {HUBS[id].title}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </motion.div>
+      )}
     </div>
   )
-} 
+                                 } 
