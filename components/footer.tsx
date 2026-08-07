@@ -38,14 +38,12 @@ function FooterContent() {
       {showFaq && (
         <ScrollBounce>
           <div className="px-4 md:px-8 mb-14 flex justify-center">
-            <div className="w-full max-w-[760px] rounded-[16px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 px-4 py-4 md:px-6 md:py-5">
-              <FaqAccordion
-                isOpen={isFaqAccordionOpen}
-                onToggle={() => setIsFaqAccordionOpen((v) => !v)}
-                openIndex={openFaqIndex}
-                onToggleIndex={toggleFaqIndex}
-              />
-            </div>
+            <FaqAccordion
+              isOpen={isFaqAccordionOpen}
+              onToggle={() => setIsFaqAccordionOpen((v) => !v)}
+              openIndex={openFaqIndex}
+              onToggleIndex={toggleFaqIndex}
+            />
           </div>
         </ScrollBounce>
       )}
@@ -171,6 +169,7 @@ function FooterContent() {
               </span>
               <Link
                 href="/privacy"
+                prefetch={true}
                 className="text-[0.78rem] font-medium text-zinc-300 dark:text-zinc-500 hover:text-brand-blue transition-colors py-2 px-1"
               >
                 Privacy Policy

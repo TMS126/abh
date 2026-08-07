@@ -34,7 +34,7 @@ export const SAMPLE_REVIEWS: Review[] = [
     hubId: "doc",
     serviceUsed: "CV Writing & Design",
     rating: 5,
-    quote: "They got my CV finished quickly and made sure it was ready before I even needed it. My mother called to say thank you for the great work — I'm really happy with how it turned out.",
+    quote: "They got my CV finished quickly and made sure it was ready before I even needed it. I'm really happy with how it turned out.",
   },
   {
     name: "Tseleng",
@@ -51,22 +51,6 @@ export const SAMPLE_REVIEWS: Review[] = [
     serviceUsed: "CV Job Seeker Package",
     rating: 5,
     quote: "The job seeker package came out sharp, exactly what I needed. Really happy with it, thank you!",
-  },
-  {
-    name: "Lerato",
-    initials: "LM",
-    hubId: "print",
-    serviceUsed: "Flyer Printing",
-    rating: 5,
-    quote: "Printed flyers for my spaza shop and they came out so clean and bright. People in the street were stopping to look. I'll be back every time I need printing done.",
-  },
-  {
-    name: "Kagiso",
-    initials: "KD",
-    hubId: "design",
-    serviceUsed: "Logo Design",
-    rating: 5,
-    quote: "Got a proper logo made for my small business. It looks professional and nothing like the cheap ones online. Now I can put it on my t-shirts and flyers with confidence.",
   },
 ]
 
