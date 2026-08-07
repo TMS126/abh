@@ -1,3 +1,4 @@
+// components/services-page/service-detail-modal/UploadControl.tsx
 "use client"
 
 import { useState } from "react"
@@ -116,4 +117,4 @@ export function UploadStatus({
   }
 
   return null
-                                                                      }
+} 
