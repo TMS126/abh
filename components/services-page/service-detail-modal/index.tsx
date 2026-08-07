@@ -158,9 +158,18 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
   const isBulkDiscount = effRate < baseUnitPrice
   const bulkHint = getBulkHint(itemId, svc.name, effectiveQty, effRate, baseUnitPrice)
 
+  // ── Share: link straight to this exact service (hub + section + name),
+  // not just the bare /services page — ServicesPage's deep-link effect
+  // consumes these params and opens this same service detail modal.
   const handleShare = async () => {
     const shareText = `${naturalLabel} — ${svc.price} at ${BIZ.name}`
-    const shareUrl = typeof window !== "undefined" ? window.location.href : ""
+    const shareUrl = typeof window !== "undefined"
+      ? `${window.location.origin}/services?${new URLSearchParams({
+          hub: svc.hubId,
+          section: svc.sectionTitle,
+          service: svc.name,
+        }).toString()}`
+      : ""
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({ title: `${naturalLabel} — ${BIZ.name}`, text: shareText, url: shareUrl })
