@@ -1,3 +1,4 @@
+// components/services-page/service-detail-modal/QuoteControl.tsx
 "use client"
 
 import { useState } from "react"
@@ -15,27 +16,42 @@ export function QuoteControl({
 }) {
   const [pressed, setPressed] = useState(false)
 
+  const hint =
+    bulkHint && baseUnitPrice !== undefined && effRate !== undefined ? (
+      <BulkHint
+        hint={bulkHint}
+        accent={accent}
+        isDiscount={!!isBulkDiscount}
+        baseUnitPrice={baseUnitPrice}
+        effRate={effRate}
+        priceUnit={priceUnit ?? null}
+      />
+    ) : null
+
   if (!inQuote) {
     return (
-      <button
-        type="button"
-        onClick={onAdd}
-        onPointerDown={() => setPressed(true)}
-        onPointerUp={() => setPressed(false)}
-        onPointerLeave={() => setPressed(false)}
-        onPointerCancel={() => setPressed(false)}
-        aria-label="Add to quote"
-        className="flex items-center justify-center py-3.5 rounded-[14px] transition-all duration-150"
-        style={{
-          backgroundColor: `${accent}18`,
-          color: accent,
-          boxShadow: pressed
-            ? "inset 0 2px 6px -1px rgba(0,0,0,0.22), inset 0 1px 3px -1px rgba(0,0,0,0.14)"
-            : "0 2px 8px -2px rgba(0,0,0,0.12), 0 1px 3px -1px rgba(0,0,0,0.08)",
-        }}
-      >
-        <ShoppingCartSimple size={22} weight="bold" aria-hidden="true" />
-      </button>
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={onAdd}
+          onPointerDown={() => setPressed(true)}
+          onPointerUp={() => setPressed(false)}
+          onPointerLeave={() => setPressed(false)}
+          onPointerCancel={() => setPressed(false)}
+          aria-label="Add to quote"
+          className="flex items-center justify-center py-3.5 rounded-[14px] transition-all duration-150"
+          style={{
+            backgroundColor: `${accent}18`,
+            color: accent,
+            boxShadow: pressed
+              ? "inset 0 2px 6px -1px rgba(0,0,0,0.22), inset 0 1px 3px -1px rgba(0,0,0,0.14)"
+              : "0 2px 8px -2px rgba(0,0,0,0.12), 0 1px 3px -1px rgba(0,0,0,0.08)",
+          }}
+        >
+          <ShoppingCartSimple size={22} weight="bold" aria-hidden="true" />
+        </button>
+        {hint}
+      </div>
     )
   }
 
@@ -65,17 +81,7 @@ export function QuoteControl({
           <Plus size={14} weight="bold" style={{ color: neutralIconColor }} className="transition-colors duration-150 group-hover:!text-white" />
         </button>
       </div>
-
-      {bulkHint && baseUnitPrice !== undefined && effRate !== undefined && (
-        <BulkHint
-          hint={bulkHint}
-          accent={accent}
-          isDiscount={!!isBulkDiscount}
-          baseUnitPrice={baseUnitPrice}
-          effRate={effRate}
-          priceUnit={priceUnit ?? null}
-        />
-      )}
+      {hint}
     </div>
   )
-}
+} 
