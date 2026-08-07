@@ -38,7 +38,7 @@ export function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService)
 
   return (
     <div ref={wrapRef} className="relative mx-auto w-full max-w-md">
-      <div className="flex items-center gap-2 border-b-2 border-zinc-200 dark:border-zinc-800 focus-within:border-[#1E6FA8] transition-colors pr-8 px-1">
+      <div className="flex items-center gap-2.5 px-4 py-0 rounded-[14px] border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/60 focus-within:border-[#1E6FA8] dark:focus-within:border-[#A9D6F2] focus-within:bg-white dark:focus-within:bg-zinc-900 transition-all duration-200 shadow-sm">
         <MagnifyingGlass size={16} weight="bold" className="text-zinc-400 pointer-events-none shrink-0" aria-hidden="true" />
         <label htmlFor="inline-search-input" className="sr-only">Find a service</label>
         <input
@@ -48,7 +48,7 @@ export function InlineSearchBar({ onSelect }: { onSelect: (svc: SelectedService)
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setFocused(true)}
           placeholder="Find a service…"
-          className="min-w-0 flex-1 py-3 bg-transparent border-0 text-base font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none"
+          className="min-w-0 flex-1 py-3 pr-8 bg-transparent border-0 ring-0 focus:ring-0 focus:outline-none text-base font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none appearance-none [-webkit-appearance:none]"
         />
       </div>
       {query && (

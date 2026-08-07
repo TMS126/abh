@@ -23,33 +23,23 @@ export function FaqAccordion({
       */}
       <div
         className={cn(
-          "w-full overflow-hidden border transition-[border-color,background-color,box-shadow] duration-300 ease-in-out",
+          "w-full max-w-2xl overflow-hidden border rounded-[18px] transition-[border-color,background-color] duration-200",
           isOpen
-            ? "max-w-2xl bg-white dark:bg-zinc-900/80 border-zinc-100 dark:border-zinc-800 shadow-lg"
-            : "max-w-[120px] bg-white dark:bg-zinc-900/60 border-zinc-200/70 dark:border-zinc-700/50 shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.22)]"
+            ? "bg-white dark:bg-zinc-900/80 border-zinc-200 dark:border-zinc-700"
+            : "bg-transparent border-zinc-200 dark:border-zinc-700"
         )}
-        style={{
-          borderRadius: isOpen ? "18px" : "999px",
-          transition:
-            "max-width 320ms ease-out, border-radius 320ms ease-out, border-color 250ms, background-color 250ms, box-shadow 250ms",
-        }}
       >
-        {/* Pill / card header button */}
+        {/* Header button */}
         <button
           onClick={onToggle}
           aria-expanded={isOpen}
           aria-controls="faq-accordion-panel"
-          className={cn(
-            "w-full flex items-center gap-2 transition-all duration-300",
-            isOpen
-              ? "px-6 py-4 justify-between text-[0.9rem] font-semibold text-zinc-700 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800"
-              : "px-5 py-2.5 justify-center text-[0.84rem] font-semibold text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
-          )}
+          className="w-full flex items-center justify-between gap-2 px-6 py-4 text-[0.9rem] font-semibold text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors duration-150"
         >
-          <span className={cn("whitespace-nowrap", isOpen && "text-left")}>{isOpen ? "Frequently Asked Questions" : "FAQs"}</span>
+          <span>Frequently Asked Questions</span>
           <CaretDown
             className={cn(
-              "w-3.5 h-3.5 shrink-0 text-zinc-400",
+              "w-3.5 h-3.5 shrink-0 text-zinc-400 transition-transform duration-200",
               isOpen && "rotate-180"
             )}
             aria-hidden="true"

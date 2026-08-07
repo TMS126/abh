@@ -29,7 +29,6 @@ export function HubModal({ hubId, onClose, onSelectService }: {
   const hub = HUBS[hubId]
   const colors = HUB_COLORS[hubId]
   const accent = isDark ? colors.accentDark : colors.accentLight
-  const solidAccent = colors.accentLight
 
   const hubDisclaimer = HUB_DISCLAIMERS[hubId]
   const activeSection = openSectionIdx !== null ? hub.sections[openSectionIdx] : null
@@ -62,47 +61,41 @@ export function HubModal({ hubId, onClose, onSelectService }: {
         style={{ boxShadow: "0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4)" }}
       >
         {/* ===== HEADER ===== */}
-        <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center shrink-0 gap-3" style={{ backgroundColor: `${accent}05` }}>
+        <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center shrink-0 gap-3">
           <div className="flex items-center gap-4 min-w-0">
-            <div className="w-12 h-12 md:w-14 md:h-14 rounded-[14px] flex items-center justify-center shadow-lg bg-zinc-100 dark:bg-zinc-800 shrink-0" style={{ border: `2px solid ${accent}` }}>
-              <HubIcon id={hubId} size={28} color={accent} />
-            </div>
+            <HubIcon id={hubId} size={28} color={accent} />
             <div className="min-w-0">
-              <h2 className="abh-card-heading text-2xl md:text-3xl truncate">{hub.title}</h2>
-              <p className="abh-label mt-0.5" style={{ color: accent }}>
-                {hub.sections.reduce((sum, s) => sum + s.items.length, 0)} Available Services
+              <h2 className="font-sans font-black text-2xl md:text-3xl text-zinc-900 dark:text-zinc-50 truncate">{hub.title}</h2>
+              <p className="text-[0.82rem] font-semibold text-zinc-400 dark:text-zinc-500 mt-0.5">
+                {hub.sections.reduce((sum, s) => sum + s.items.length, 0)} services available
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <Link
               href={`/gallery?hub=${hubId}`}
-              className="group/gallerylink flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[0.84rem] font-black tracking-tight whitespace-nowrap border-2 transition-all duration-200 hover:text-white"
-              style={{ borderColor: accent, color: accent }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = solidAccent)}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[0.8rem] font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors duration-150 whitespace-nowrap"
             >
-              View in Gallery
-              <ArrowSquareOut size={12} weight="bold" aria-hidden="true" />
+              Gallery
+              <ArrowSquareOut size={11} weight="bold" aria-hidden="true" />
             </Link>
 
             <button
               onClick={onClose}
               aria-label="Close"
-              className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
-              style={{ backgroundColor: `${accent}15`, color: accent }}
+              className="w-9 h-9 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150 shrink-0"
             >
-              <X size={20} weight="bold" aria-hidden="true" />
+              <X size={18} weight="bold" aria-hidden="true" />
             </button>
           </div>
         </div>
 
         {/* ===== BODY ===== */}
-        <div className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-8">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-8 pb-8 md:pb-10">
 
-          {/* ===== SECTION SELECTOR (plain text, underline on active) ===== */}
-          <div role="tablist" aria-label="Service categories" className="flex flex-wrap justify-center gap-x-6 gap-y-3 mb-6 border-b border-zinc-100 dark:border-zinc-800 pb-3">
+          {/* ===== SECTION SELECTOR ===== */}
+          <div role="tablist" aria-label="Service categories" className="flex flex-wrap justify-center gap-x-7 gap-y-3 mb-6 border-b border-zinc-100 dark:border-zinc-800 pb-4">
             {hub.sections.map((section, sIdx) => {
               const isOpen = openSectionIdx === sIdx
               const hasBulk = sectionHasBulk(hubId, section.title, section.items)
@@ -113,10 +106,8 @@ export function HubModal({ hubId, onClose, onSelectService }: {
                   aria-selected={isOpen}
                   onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)}
                 >
-                  {/* Bumped from 0.86rem → 0.95rem for readability; the
-                      "· Bulk" tag stays at its original small size. */}
                   <span
-                    className="relative pb-1.5 text-[0.95rem] font-black tracking-tight whitespace-nowrap transition-colors duration-200 border-b-2 -mb-[13px]"
+                    className="relative pb-1.5 text-[1.05rem] font-black tracking-tight whitespace-nowrap transition-colors duration-200 border-b-2 -mb-[17px]"
                     style={{ borderColor: isOpen ? accent : "transparent", color: isOpen ? accent : (isDark ? "#a1a1aa" : "#71717a") }}
                   >
                     {section.title}
@@ -144,34 +135,32 @@ export function HubModal({ hubId, onClose, onSelectService }: {
           {activeSection && (
             <div key={`items-${openSectionIdx}`} className="abh-shadow-nested-group rounded-[14px] bg-zinc-50 dark:bg-zinc-900/50 p-3 md:p-4 grid grid-cols-1 gap-2 animate-in fade-in duration-200">
               {activeSection.items.map((item, iIdx) => (
-                <button
-                  key={iIdx}
-                  onClick={() =>
-                    onSelectService({
-                      name: item.name,
-                      price: item.price,
-                      hubId,
-                      sectionTitle: activeSection.title,
-                      requirements: item.requirements,
-                      desc: item.description,
-                      turnaround: getTurnaround(activeSection.title, item.name),
-                      tips: item.tips ? [...item.tips] : undefined,
-                    })
-                  }
-                  className="abh-shadow-nested-item flex items-center justify-between p-3.5 md:p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-transparent transition-all"
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = accent)}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = "transparent")}
-                >
-                  <span className="text-base font-black text-zinc-800 dark:text-zinc-200 text-left flex items-center gap-2">
-                    {itemHasBulk(hubId, activeSection.title, item.name) && (
-                      <span className="shrink-0 text-[0.6rem] font-black uppercase tracking-wide opacity-60">
-                        Bulk ·
-                      </span>
-                    )}
-                    {item.name}
-                  </span>
-                  <span className="text-base font-black shrink-0 ml-3" style={{ color: accent }}>{item.price}</span>
-                </button>
+                  <button
+                    key={iIdx}
+                    onClick={() =>
+                      onSelectService({
+                        name: item.name,
+                        price: item.price,
+                        hubId,
+                        sectionTitle: activeSection.title,
+                        requirements: item.requirements,
+                        desc: item.description,
+                        turnaround: getTurnaround(activeSection.title, item.name),
+                        tips: item.tips ? [...item.tips] : undefined,
+                      })
+                    }
+                    className="flex items-center justify-between px-4 py-3.5 rounded-[10px] bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/70 transition-colors duration-150 active:scale-[0.99] w-full"
+                  >
+                    <span className="text-[1.02rem] font-semibold text-zinc-700 dark:text-zinc-200 text-left flex items-center gap-2">
+                      {itemHasBulk(hubId, activeSection.title, item.name) && (
+                        <span className="shrink-0 text-[0.58rem] font-black uppercase tracking-wide text-zinc-400">
+                          Bulk ·
+                        </span>
+                      )}
+                      {item.name}
+                    </span>
+                    <span className="text-[1.02rem] font-black shrink-0 ml-3" style={{ color: accent }}>{item.price}</span>
+                  </button>
               ))}
             </div>
           )}

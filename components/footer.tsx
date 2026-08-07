@@ -37,7 +37,7 @@ function FooterContent() {
     <div className="pt-16 pb-12">
       {showFaq && (
         <ScrollBounce>
-          <div className="px-6 mb-12 flex justify-center">
+          <div className="px-4 md:px-8 mb-14 flex justify-center">
             <FaqAccordion
               isOpen={isFaqAccordionOpen}
               onToggle={() => setIsFaqAccordionOpen((v) => !v)}
@@ -55,9 +55,13 @@ function FooterContent() {
               <div
                 className="relative w-6 h-6 overflow-hidden rounded-[10px] shrink-0"
                 aria-hidden="true"
-                style={mounted && theme === "dark" ? { filter: "brightness(0) invert(1)" } : undefined}
               >
-                <Image src="/logo.png" alt="" fill className="object-contain" />
+                <Image
+                  src="/logo.png"
+                  alt=""
+                  fill
+                  className={`object-contain transition-[filter] duration-300 ${mounted && theme === "dark" ? "brightness-0 invert" : ""}`}
+                />
               </div>
               <h2 className="font-sans font-black text-lg tracking-tight text-zinc-900 dark:text-white">
                 ApexbytesHub
@@ -147,8 +151,8 @@ function FooterContent() {
 
       <ScrollBounce>
         <div className="mt-8 bg-zinc-50 dark:bg-zinc-900/40 border-t border-zinc-100 dark:border-zinc-800">
-          <div className="max-w-[1200px] mx-auto pt-8 pb-8 px-6 md:px-8 grid grid-cols-1 md:grid-cols-3 items-center gap-4">
-            <p className="text-[0.78rem] font-medium text-zinc-400 text-center md:text-left">
+          <div className="max-w-[1200px] mx-auto pt-8 pb-8 px-6 md:px-8 flex flex-col md:grid md:grid-cols-3 items-center gap-4 text-center md:text-left">
+            <p className="text-[0.78rem] font-medium text-zinc-400 md:text-left text-center">
               © {new Date().getFullYear()} {BIZ.name}. All rights reserved.
             </p>
 
@@ -165,6 +169,7 @@ function FooterContent() {
               </span>
               <Link
                 href="/privacy"
+                prefetch={true}
                 className="text-[0.78rem] font-medium text-zinc-300 dark:text-zinc-500 hover:text-brand-blue transition-colors py-2 px-1"
               >
                 Privacy Policy

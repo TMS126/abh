@@ -120,8 +120,23 @@ export function HeroSection() {
 
           {/* Left column — text + CTA */}
           <div className="text-center md:text-left">
-            <h1 className="font-sans font-black text-5xl sm:text-6xl md:text-7xl tracking-tight text-zinc-900 dark:text-zinc-50 leading-[1.05] mb-4 text-balance transition-colors duration-300">
-              Printing, Design, Documents &amp; Tech — All in One Place
+            <h1 className="font-sans font-black text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.1] mb-4 text-balance transition-colors duration-300 text-zinc-900 dark:text-zinc-50">
+              <span
+                className="transition-colors duration-200 hover:text-[#1E6FA8] active:text-[#1E6FA8]"
+              >Printing</span>,{" "}
+              <span
+                className="transition-colors duration-200 hover:text-[#B06225] active:text-[#B06225]"
+              >Design</span>,{" "}
+              <span
+                className="transition-colors duration-200 hover:text-[#4A8011] active:text-[#4A8011]"
+              >Documents</span>,{" "}
+              <span
+                className="transition-colors duration-200 hover:text-[#0F766E] active:text-[#0F766E]"
+              >E-Services</span>{" "}&amp;{" "}
+              <span
+                className="transition-colors duration-200 hover:text-[#333333] dark:hover:text-[#B8CCE0] active:text-[#333333] dark:active:text-[#B8CCE0]"
+              >Tech</span>
+              <span className="text-zinc-900 dark:text-zinc-50"> — All in One Place</span>
             </h1>
 
             <p className="text-lg md:text-xl font-medium text-zinc-600 dark:text-zinc-400 max-w-[480px] md:max-w-none mx-auto md:mx-0 leading-relaxed mb-6">
@@ -152,7 +167,7 @@ export function HeroSection() {
                   style={{ color: REST_COLOR }}
                 >
                   <span className="group-hover:text-white group-active:text-white transition-colors duration-150 text-xl sm:text-2xl">
-                    Explore Hubs
+                    See Our Services
                   </span>
                 </span>
 
@@ -184,7 +199,7 @@ export function HeroSection() {
                 return (
                   <div
                     key={hub.id}
-                    className="group/tile absolute aspect-square rounded-2xl overflow-hidden border-4 border-white dark:border-zinc-900 shadow-[0_6px_18px_rgba(0,0,0,0.10)] dark:shadow-[0_6px_18px_rgba(0,0,0,0.35)] transition-transform duration-300 hover:z-[60] hover:scale-[1.03]"
+                    className="group/tile absolute aspect-square rounded-2xl overflow-hidden border-4 border-white dark:border-zinc-900 shadow-[0_6px_18px_rgba(0,0,0,0.10)] dark:shadow-[0_6px_18px_rgba(0,0,0,0.35)] transition-transform duration-300 hover:z-[60] hover:scale-[1.03] animate-in fade-in zoom-in-95"
                     style={{
                       top: slot.top,
                       bottom: slot.bottom,
@@ -192,6 +207,9 @@ export function HeroSection() {
                       right: slot.right,
                       width: `${width}%`,
                       zIndex: slot.z,
+                      animationDelay: `${slot.z * 40}ms`,
+                      animationDuration: "500ms",
+                      animationFillMode: "both",
                       ["--hub-accent" as any]: hubAccent,
                       ["--hub-accent-fg" as any]: hubAccentFg,
                     }}
@@ -217,7 +235,7 @@ export function HeroSection() {
             e.stopPropagation()
             setMarqueePaused((p) => !p)
           }}
-          className="relative w-full max-w-[1240px] py-4 overflow-hidden select-none group/marquee rounded-[14px] bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800"
+          className="relative w-full max-w-[1240px] py-4 overflow-hidden select-none group/marquee rounded-[14px] bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800 [mask-image:linear-gradient(to_right,transparent_0%,black_8%,black_92%,transparent_100%)]"
         >
           {/* Accessibility: hover/touch already pause this, but neither is
               keyboard-operable — WCAG 2.2.2 requires a pause mechanism for

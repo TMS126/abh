@@ -17,10 +17,7 @@ import { ServiceDetailModal } from "./service-detail-modal"
 import { HUB_ORDER, HUB_PREVIEWS, NOTICE, trackEvent, SelectedService } from "./lib"
 import { sectionHasBulk } from "../quote-calculator/lib"
 
-// A distinct, muted orange for the bulk-pricing ribbon — deliberately
-// different from BRAND.orange (used for the Notice pill) so the two
-// don't visually compete or get confused with each other.
-const BULK_RIBBON_ORANGE = "#B45309"
+
 
 function NoticeNotification({ isDark }: { isDark: boolean }) {
   const [expanded, setExpanded] = useState(false)
@@ -167,7 +164,7 @@ function BulkRibbon() {
     <div className="absolute top-4 -right-8 rotate-45 z-20 pointer-events-none">
       <span
         className="block w-28 text-center py-0.5 text-[0.62rem] font-black uppercase tracking-wider text-white"
-        style={{ backgroundColor: BULK_RIBBON_ORANGE, boxShadow: "0 3px 8px -2px rgba(0,0,0,0.35)" }}
+        style={{ backgroundColor: BRAND.blue, boxShadow: "0 4px 10px -2px rgba(30,111,168,0.55), 0 2px 4px -1px rgba(0,0,0,0.25)" }}
       >
         Bulk
       </span>
@@ -273,12 +270,13 @@ export function ServicesPage() {
           </div>
         </ScrollBounce>
 
-        {/* Notice now sits ABOVE the search bar, not below it */}
-        <ScrollBounce delay={0.08} className="relative z-0 w-full flex justify-center">
+        {/* Notice pill */}
+        <ScrollBounce delay={0.08} className="relative z-0 w-full flex justify-center mb-6">
           <NoticeNotification isDark={isDark} />
         </ScrollBounce>
 
-        <ScrollBounce delay={0.14} className="relative z-40 w-full mb-10 flex justify-center">
+        {/* Search — clearly separated from notice above */}
+        <ScrollBounce delay={0.14} className="relative z-40 w-full mb-12 flex justify-center">
           <div id="abh-inline-search" className="w-full flex justify-center">
             <InlineSearchBar onSelect={handleSelectService} />
           </div>
@@ -303,33 +301,37 @@ export function ServicesPage() {
                 )}
               >
                 <ScrollBounce delay={index * 0.06}>
-                  <div className="group/hubcard relative flex flex-col items-center text-center h-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-elevated overflow-hidden transition-transform duration-300 hover:-translate-y-0.5 transform-gpu p-6 pt-7">
+                  <div
+                    className="group/hubcard relative flex flex-col items-center text-center h-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-300 hover:-translate-y-1 transform-gpu p-6 cursor-pointer"
+                    onClick={() => handleOpenHub(hubId, "right")}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === "Enter" && handleOpenHub(hubId, "right")}
+                    aria-label={`Open ${hub.title}`}
+                    style={{ ["--hub-accent" as any]: accent }}
+                  >
                     <HubCornerIcon hubId={hubId} accent={accent} />
                     {hubHasBulk && <BulkRibbon />}
 
-                    <h3 className="relative z-10 font-sans font-black text-[1.14rem] leading-tight mb-1.5 text-zinc-900 dark:text-zinc-50">
+                    <h3 className="relative z-10 font-sans font-black text-[1.45rem] leading-tight mb-1.5 text-zinc-900 dark:text-zinc-50 group-hover/hubcard:text-[var(--hub-accent)] transition-colors duration-200">
                       {hub.title}
                     </h3>
 
-                    <div className="relative z-10 flex flex-wrap justify-center gap-x-2 gap-y-0.5 mb-1.5">
+                    <div className="relative z-10 flex flex-wrap justify-center gap-x-1.5 gap-y-0.5 mb-2">
                       {HUB_PREVIEWS[hubId].map((hint, i) => (
-                        <span key={i} className="text-[0.79rem] font-medium text-zinc-400 dark:text-zinc-500">
+                        <span key={i} className="text-[0.76rem] font-medium text-zinc-400 dark:text-zinc-500">
                           {hint}
                         </span>
                       ))}
                     </div>
 
-                    <p className="relative z-10 abh-body text-[0.91rem] line-clamp-2 leading-snug mb-4 max-w-[200px]">
+                    <p className="relative z-10 abh-body text-[0.88rem] line-clamp-2 leading-snug mb-4 max-w-[190px]">
                       {hub.desc}
                     </p>
 
-                    <button
-                      onClick={() => handleOpenHub(hubId, "right")}
-                      aria-label={`Open ${hub.title}`}
-                      className="relative z-10 mt-auto"
-                    >
+                    <div className="relative z-10 mt-auto">
                       <HubCta label="View more" accent={accent} pointsRight={true} />
-                    </button>
+                    </div>
                   </div>
                 </ScrollBounce>
               </div>
@@ -351,31 +353,41 @@ export function ServicesPage() {
                 <button
                   onClick={() => handleOpenHub(hubId, "right")}
                   aria-label={`Open ${hub.title}`}
-                  className="group/hubcard relative flex flex-col items-center text-center w-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-elevated overflow-hidden transition-transform duration-200 active:scale-[0.98] transform-gpu p-6 pt-7"
+                  className="group/hubcard relative flex flex-col items-center text-center w-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-200 active:scale-[0.98] transform-gpu p-6"
+                  style={{ ["--hub-accent" as any]: accent }}
                 >
                   <HubCornerIcon hubId={hubId} accent={accent} />
                   {hubHasBulk && <BulkRibbon />}
 
-                  <h3 className="relative z-10 font-sans font-black text-[1.18rem] leading-tight mb-1.5 text-zinc-900 dark:text-zinc-50">
+                  <h3 className="relative z-10 font-sans font-black text-[1.45rem] leading-tight mb-1.5 text-zinc-900 dark:text-zinc-50 group-hover/hubcard:text-[var(--hub-accent)] transition-colors duration-200">
                     {hub.title}
                   </h3>
 
-                  <div className="relative z-10 flex flex-wrap justify-center gap-x-2 gap-y-0.5 mb-1.5">
+                  <div className="relative z-10 flex flex-wrap justify-center gap-x-1.5 gap-y-0.5 mb-2">
                     {HUB_PREVIEWS[hubId].map((hint, i) => (
-                      <span key={i} className="text-[0.79rem] font-medium text-zinc-400 dark:text-zinc-500">
+                      <span key={i} className="text-[0.76rem] font-medium text-zinc-400 dark:text-zinc-500">
                         {hint}
                       </span>
                     ))}
                   </div>
 
-                  <p className="relative z-10 abh-body text-[0.91rem] line-clamp-2 leading-snug mb-3 max-w-[260px]">
+                  <p className="relative z-10 abh-body text-[0.88rem] line-clamp-2 leading-snug mb-3 max-w-[260px]">
                     {hub.desc}
                   </p>
 
-                  <span className="relative z-10 inline-flex items-center gap-1 text-[0.94rem] font-black" style={{ color: accent }}>
-                    Explore
-                    <ArrowRight size={12} weight="bold" aria-hidden="true" />
-                  </span>
+                  {/* "Explore" label + accent pill-dot marker below it */}
+                  <div className="relative z-10 flex flex-col items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 text-[0.88rem] font-black text-zinc-400 dark:text-zinc-500 group-hover/hubcard:text-[var(--hub-accent)] transition-colors duration-200">
+                      Explore
+                      <ArrowRight size={12} weight="bold" aria-hidden="true" />
+                    </span>
+                    {/* Small pill-dot in hub accent color */}
+                    <span
+                      className="block h-[3px] w-5 rounded-full opacity-0 group-hover/hubcard:opacity-100 transition-opacity duration-200"
+                      style={{ backgroundColor: accent }}
+                      aria-hidden="true"
+                    />
+                  </div>
                 </button>
               </ScrollBounce>
             )
