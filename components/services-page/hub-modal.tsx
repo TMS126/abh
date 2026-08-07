@@ -78,10 +78,8 @@ export function HubModal({ hubId, onClose, onSelectService }: {
           <div className="flex items-center gap-3 shrink-0">
             <Link
               href={`/gallery?hub=${hubId}`}
-              className="group/gallerylink flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[0.84rem] font-black tracking-tight whitespace-nowrap border-2 transition-all duration-200 hover:text-white"
+              className="group/gallerylink flex items-center gap-1.5 px-3.5 py-1.5 text-[0.84rem] font-black tracking-tight whitespace-nowrap border-2 transition-all duration-200"
               style={{ borderColor: accent, color: accent }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = solidAccent)}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
             >
               View in Gallery
               <ArrowSquareOut size={12} weight="bold" aria-hidden="true" />
@@ -91,7 +89,7 @@ export function HubModal({ hubId, onClose, onSelectService }: {
               onClick={onClose}
               aria-label="Close"
               className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
-              style={{ backgroundColor: `${accent}15`, color: accent }}
+              style={{ color: accent }}
             >
               <X size={20} weight="bold" aria-hidden="true" />
             </button>
@@ -113,15 +111,14 @@ export function HubModal({ hubId, onClose, onSelectService }: {
                   aria-selected={isOpen}
                   onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)}
                 >
-                  {/* Bumped from 0.86rem → 0.95rem for readability; the
-                      "· Bulk" tag stays at its original small size. */}
+                  {/* Increased section label and removed pill backgrounds site-wide */}
                   <span
-                    className="relative pb-1.5 text-[0.95rem] font-black tracking-tight whitespace-nowrap transition-colors duration-200 border-b-2 -mb-[13px]"
+                    className="relative pb-1.5 text-[1.12rem] md:text-[1.18rem] font-black tracking-tight transition-colors duration-200 border-b-2 -mb-[13px]"
                     style={{ borderColor: isOpen ? accent : "transparent", color: isOpen ? accent : (isDark ? "#a1a1aa" : "#71717a") }}
                   >
                     {section.title}
                     {hasBulk && (
-                      <span aria-label="Bulk pricing available" className="ml-1.5 text-[0.6rem] font-black uppercase tracking-wide opacity-60">
+                      <span aria-label="Bulk pricing available" className="ml-1.5 text-[0.6rem] font-black uppercase tracking-wide opacity-60" style={{ borderBottom: `2px solid ${accent}` }}>
                         · Bulk
                       </span>
                     )}
@@ -134,7 +131,7 @@ export function HubModal({ hubId, onClose, onSelectService }: {
           {/* ===== SECTION DESCRIPTION ===== */}
           {activeSectionDesc && (
             <div key={openSectionIdx} className="mb-5 animate-in fade-in slide-in-from-top-1 duration-200">
-              <p className="text-[0.98rem] leading-relaxed text-zinc-600 dark:text-zinc-300">
+              <p className="text-[1.08rem] leading-relaxed text-zinc-600 dark:text-zinc-300">
                 {activeSectionDesc}
               </p>
             </div>
@@ -142,7 +139,7 @@ export function HubModal({ hubId, onClose, onSelectService }: {
 
           {/* ===== SERVICE ITEMS LIST ===== */}
           {activeSection && (
-            <div key={`items-${openSectionIdx}`} className="abh-shadow-nested-group rounded-[14px] bg-zinc-50 dark:bg-zinc-900/50 p-3 md:p-4 grid grid-cols-1 gap-2 animate-in fade-in duration-200">
+            <div key={`items-${openSectionIdx}`} className="abh-shadow-nested-group rounded-[14px] p-3 md:p-4 grid grid-cols-1 gap-2 animate-in fade-in duration-200">
               {activeSection.items.map((item, iIdx) => (
                 <button
                   key={iIdx}
@@ -187,4 +184,4 @@ export function HubModal({ hubId, onClose, onSelectService }: {
       </motion.div>
     </div>
   )
-} 
+}
