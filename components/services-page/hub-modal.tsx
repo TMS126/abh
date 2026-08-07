@@ -1,9 +1,11 @@
+// components/services-page/hub-modal.tsx
 "use client"
 
 import { useState, useEffect, useRef, type TouchEvent } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { X, Info, ArrowSquareOut } from "@phosphor-icons/react"
+import { Info, ArrowSquareOut } from "@phosphor-icons/react"
+import { X as XIcon } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { HUB_COLORS, HubKey } from "@/lib/brand"
 import { HUBS, HubId, HUB_DISCLAIMERS } from "@/lib/data"
@@ -11,12 +13,8 @@ import { HubIcon, useFocusTrap } from "./shared"
 import { getTurnaround, HUB_ORDER, SelectedService } from "./lib"
 import { sectionHasBulk, itemHasBulk } from "../quote-calculator/lib"
 
-// ── Swipe-to-swap-sections thresholds — same values as the service detail
-// modal's tab-swipe, so the gesture feel is consistent across both modals.
 const SWIPE_MIN_DX = 48
 const SWIPE_DOMINANCE = 1.4
-
-// ── Header shrink-on-scroll distance (px of body scroll to fully shrink) ──
 const SHRINK_DISTANCE = 90
 
 export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
@@ -50,15 +48,12 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
   const activeSection = openSectionIdx !== null ? hub.sections[openSectionIdx] : null
   const activeSectionDesc = activeSection?.desc
 
-  // ── Header shrink — driven purely by body scrollTop, so it reverses
-  // automatically when scrolling back up. ──
   const handleBodyScroll = () => {
     if (!bodyRef.current) return
     const top = bodyRef.current.scrollTop
     setScrollProgress(Math.min(top / SHRINK_DISTANCE, 1))
   }
 
-  // ── Swipe body left/right to move to the next/previous section ──
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
     const t = e.touches[0]
     touchStartRef.current = { x: t.clientX, y: t.clientY }
@@ -104,7 +99,7 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
         className="relative z-10 w-full max-w-2xl bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[76vh] flex flex-col outline-none rounded-[14px]"
         style={{ boxShadow: "0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4)" }}
       >
-        {/* ===== HEADER — shrinks smoothly as the body scrolls ===== */}
+        {/* ===== HEADER — shrinks as body scrolls; always visible ===== */}
         <div
           className="relative px-6 md:px-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center shrink-0 gap-3 transition-[padding] duration-150 ease-out"
           style={{ paddingTop: `${24 - scrollProgress * 8}px`, paddingBottom: `${24 - scrollProgress * 8}px` }}
@@ -136,23 +131,20 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
               <ArrowSquareOut size={11} weight="bold" aria-hidden="true" />
             </Link>
 
+            {/* Close — raw icon, no circular bg pill */}
             <button
               onClick={onClose}
               aria-label="Close"
-              className="w-9 h-9 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150 shrink-0"
+              className="w-9 h-9 rounded-full flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150 shrink-0"
             >
-              <X size={18} weight="bold" aria-hidden="true" />
+              <XIcon size={18} weight="bold" aria-hidden="true" />
             </button>
           </div>
 
-          {/* Shadow that fades in under the header as content scrolls beneath it */}
           <div
             className="absolute left-0 right-0 -bottom-4 h-4 pointer-events-none"
             aria-hidden="true"
-            style={{
-              opacity: scrollProgress,
-              background: "linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0) 100%)",
-            }}
+            style={{ opacity: scrollProgress, background: "linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0) 100%)" }}
           />
         </div>
 
@@ -165,8 +157,15 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
           className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-8 pb-8 md:pb-10"
         >
 
-          {/* ===== SECTION SELECTOR ===== */}
-          <div role="tablist" aria-label="Service categories" className="flex flex-wrap justify-center gap-x-7 gap-y-3 mb-6 border-b border-zinc-100 dark:border-zinc-800 pb-4">
+          {/* ===== SECTION SELECTOR — now sticky, so it (plus the header
+              above) stays visible while scrolling; only the description
+              and item list scroll underneath. Bleeds full-width via
+              negative margins so nothing peeks past its edges. ===== */}
+          <div
+            role="tablist"
+            aria-label="Service categories"
+            className="sticky top-0 z-10 -mx-5 md:-mx-8 px-5 md:px-8 bg-white dark:bg-zinc-950 flex flex-wrap justify-center gap-x-7 gap-y-3 pt-1 pb-4 mb-6 border-b border-zinc-100 dark:border-zinc-800"
+          >
             {hub.sections.map((section, sIdx) => {
               const isOpen = openSectionIdx === sIdx
               const hasBulk = sectionHasBulk(hubId, section.title, section.items)
@@ -206,32 +205,32 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
           {activeSection && (
             <div key={`items-${openSectionIdx}`} className="abh-shadow-nested-group rounded-[14px] bg-zinc-50 dark:bg-zinc-900/50 p-3 md:p-4 grid grid-cols-1 gap-2 animate-in fade-in duration-200">
               {activeSection.items.map((item, iIdx) => (
-                  <button
-                    key={iIdx}
-                    onClick={() =>
-                      onSelectService({
-                        name: item.name,
-                        price: item.price,
-                        hubId,
-                        sectionTitle: activeSection.title,
-                        requirements: item.requirements,
-                        desc: item.description,
-                        turnaround: getTurnaround(activeSection.title, item.name),
-                        tips: item.tips ? [...item.tips] : undefined,
-                      })
-                    }
-                    className="flex items-center justify-between px-4 py-3.5 rounded-[10px] bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/70 transition-colors duration-150 active:scale-[0.99] w-full"
-                  >
-                    <span className="text-[1.02rem] font-semibold text-zinc-700 dark:text-zinc-200 text-left flex items-center gap-2">
-                      {itemHasBulk(hubId, activeSection.title, item.name) && (
-                        <span className="shrink-0 text-[0.58rem] font-black uppercase tracking-wide text-zinc-400">
-                          Bulk ·
-                        </span>
-                      )}
-                      {item.name}
-                    </span>
-                    <span className="text-[1.02rem] font-black shrink-0 ml-3" style={{ color: accent }}>{item.price}</span>
-                  </button>
+                <button
+                  key={iIdx}
+                  onClick={() =>
+                    onSelectService({
+                      name: item.name,
+                      price: item.price,
+                      hubId,
+                      sectionTitle: activeSection.title,
+                      requirements: item.requirements,
+                      desc: item.description,
+                      turnaround: getTurnaround(activeSection.title, item.name),
+                      tips: item.tips ? [...item.tips] : undefined,
+                    })
+                  }
+                  className="flex items-center justify-between px-4 py-3.5 rounded-[10px] bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/70 transition-colors duration-150 active:scale-[0.99] w-full"
+                >
+                  <span className="text-[1.02rem] font-semibold text-zinc-700 dark:text-zinc-200 text-left flex items-center gap-2">
+                    {itemHasBulk(hubId, activeSection.title, item.name) && (
+                      <span className="shrink-0 text-[0.58rem] font-black uppercase tracking-wide text-zinc-400">
+                        Bulk ·
+                      </span>
+                    )}
+                    {item.name}
+                  </span>
+                  <span className="text-[1.02rem] font-black shrink-0 ml-3" style={{ color: accent }}>{item.price}</span>
+                </button>
               ))}
             </div>
           )}
@@ -243,35 +242,35 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
               <p className="text-[0.86rem] font-medium text-zinc-400 dark:text-zinc-500 leading-relaxed">{hubDisclaimer}</p>
             </div>
           )}
-        </div>
-      </motion.div>
 
-      {/* ===== OTHER HUBS — mini switcher row, only rendered while a hub
-          modal is open ===== */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 8 }}
-        transition={{ duration: 0.2, delay: 0.1 }}
-        className="relative z-10 w-full max-w-2xl flex gap-2 overflow-x-auto no-scrollbar px-1"
-      >
-        {HUB_ORDER.filter((id) => id !== hubId).map((id) => {
-          const otherColors = HUB_COLORS[id as HubKey]
-          const otherAccent = isDark ? otherColors.accentDark : otherColors.accentLight
-          return (
-            <button
-              key={id}
-              onClick={() => onSwitchHub(id)}
-              className="shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-[14px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-sm hover:-translate-y-0.5 transition-all duration-150 active:scale-95"
+          {/* ===== OTHER HUBS — moved INSIDE the card, centered, with
+              top margin/gap and a soft box shadow on the group container
+              (previously a separate floating row below the card). ===== */}
+          <div className="mt-10 pt-6 border-t border-zinc-100 dark:border-zinc-800">
+            <div
+              className="flex flex-wrap justify-center gap-2 p-3 rounded-[16px]"
+              style={{ boxShadow: "0 8px 24px -10px rgba(0,0,0,0.10), 0 2px 8px -2px rgba(0,0,0,0.05)" }}
             >
-              <HubIcon id={id} size={16} color={otherAccent} />
-              <span className="text-[0.78rem] font-bold text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
-                {HUBS[id].title}
-              </span>
-            </button>
-          )
-        })}
+              {HUB_ORDER.filter((id) => id !== hubId).map((id) => {
+                const otherColors = HUB_COLORS[id as HubKey]
+                const otherAccent = isDark ? otherColors.accentDark : otherColors.accentLight
+                return (
+                  <button
+                    key={id}
+                    onClick={() => onSwitchHub(id)}
+                    className="shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-[14px] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:-translate-y-0.5 transition-all duration-150 active:scale-95"
+                  >
+                    <HubIcon id={id} size={16} color={otherAccent} />
+                    <span className="text-[0.78rem] font-bold text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
+                      {HUBS[id].title}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
       </motion.div>
     </div>
   )
-}  
+} 
