@@ -50,6 +50,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
   const fileRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const touchStartRef = useRef<{ x: number; y: number } | null>(null)
+  const [pressed, setPressed] = useState<"none" | "attach" | "add">("none")
 
   useEffect(() => {
     setTab("bring")
@@ -246,7 +247,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         role="dialog"
         aria-modal="true"
         aria-label={svc.name}
-        className="relative w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        className="relative w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px] overflow-hidden"
         style={{ boxShadow: "0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4)" }}
       >
         {hasBulk && (
@@ -363,7 +364,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                 <ShareNetwork size={16} weight="bold" aria-hidden="true" />
               </button>
               {shareCopied && (
-                <span className="absolute -bottom-8 right-0 whitespace-nowrap text-[0.74rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full shadow-lg animate-in fade-in zoom-in-95 duration-150">
+                <span className="absolute -bottom-8 right-0 whitespace-nowrap text-[0.74rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full">
                   Copied!
                 </span>
               )}
@@ -405,89 +406,96 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         </div>
 
         {/* ── Footer ── */}
-        <div className="px-6 pb-6 pt-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
+        <div className="px-6 pb-6 pt-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800" style={{ minHeight: 88 }}>
           <input ref={fileRef} type="file" accept={HUB_ACCEPT[svc.hubId]} onChange={handleFilePick} className="hidden" />
 
-          {!inQuote && (
-            <div className="flex items-stretch justify-center gap-4 py-1">
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-full flex items-center justify-center gap-4" style={{ maxWidth: 520 }}>
+
+              {/* Attach button */}
               <button
                 type="button"
+                onPointerDown={() => setPressed("attach")}
+                onPointerUp={() => setPressed("none")}
+                onPointerLeave={() => setPressed("none")}
+                onPointerCancel={() => setPressed("none")}
                 onClick={() => fileRef.current?.click()}
-                className="flex-1 flex items-center justify-center gap-2 py-2 text-[0.86rem] font-bold transition-opacity active:opacity-60"
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 py-2 font-bold text-[0.86rem] rounded-[12px] transition-all",
+                  pressed === "attach" ? "shadow-inner" : "shadow-lg"
+                )}
                 style={
                   uploadPhase === "done"
-                    ? { color: "#16a34a", borderBottom: "2px solid #16a34a" }
-                    : { color: accent }
+                    ? { color: "#16a34a", backgroundColor: "#ecfdf5" }
+                    : { color: accent, backgroundColor: `${accent}06` }
                 }
               >
                 <Paperclip size={16} weight="bold" aria-hidden="true" />
                 {uploadPhase === "done" ? "Attached" : "Attach File"}
               </button>
 
-              <div className="w-px bg-zinc-200 dark:bg-zinc-800" aria-hidden="true" />
+              {/* separator */}
+              <div className="w-px h-8 bg-zinc-200 dark:bg-zinc-800" aria-hidden="true" />
 
-              <button
-                type="button"
-                onClick={handleAddToQuote}
-                className="flex-1 flex items-center justify-center gap-2 py-2 text-[0.86rem] font-bold transition-opacity active:opacity-60"
-                style={{ color: accent }}
-              >
-                <ShoppingCartSimple size={16} weight="bold" aria-hidden="true" />
-                Add to Quote
-              </button>
-            </div>
-          )}
+              {/* Add to quote */}
+              {!inQuote ? (
+                <button
+                  type="button"
+                  onPointerDown={() => setPressed("add")}
+                  onPointerUp={() => setPressed("none")}
+                  onPointerLeave={() => setPressed("none")}
+                  onPointerCancel={() => setPressed("none")}
+                  onClick={handleAddToQuote}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2 py-2 font-bold text-[0.86rem] rounded-[12px] transition-all",
+                    pressed === "add" ? "translate-y-[1px] scale-99 shadow-inner" : "shadow-lg"
+                  )}
+                  style={{ color: "#fff", backgroundColor: accent }}
+                >
+                  <ShoppingCartSimple size={16} weight="bold" aria-hidden="true" />
+                  Add to Quote
+                </button>
+              ) : (
+                <div className="flex-1 flex items-center justify-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleStepQty(-1)}
+                      aria-label="Remove one from quote"
+                      className="group w-9 h-9 rounded-full border border-red-500 flex items-center justify-center shrink-0 transition-colors duration-150 hover:bg-red-500 active:scale-90"
+                    >
+                      <Minus size={14} weight="bold" style={{ color: neutralIconColor }} className="transition-colors duration-150 group-hover:!text-white" />
+                    </button>
 
-          {inQuote && (
-            <div className="flex items-center justify-center gap-3 py-1 flex-wrap">
-              <button
-                type="button"
-                onClick={() => handleStepQty(-1)}
-                aria-label="Remove one from quote"
-                className="group w-7 h-7 rounded-full border border-red-500 flex items-center justify-center shrink-0 transition-colors duration-150 hover:bg-red-500 active:scale-90"
-              >
-                <Minus size={13} weight="bold" style={{ color: neutralIconColor }} className="transition-colors duration-150 group-hover:!text-white" />
-              </button>
+                    <span className="text-[0.9rem] font-black text-green-600 dark:text-green-400 px-3">Added {quoteQty}</span>
 
-              <span className="flex items-center gap-1.5 text-[0.9rem] font-black text-green-600 dark:text-green-400">
-                Added {quoteQty}
-              </span>
-
-              <button
-                type="button"
-                onClick={() => handleStepQty(1)}
-                aria-label="Add one more to quote"
-                className="group w-7 h-7 rounded-full border border-green-500 flex items-center justify-center shrink-0 transition-colors duration-150 hover:bg-green-500 active:scale-90"
-              >
-                <Plus size={13} weight="bold" style={{ color: neutralIconColor }} className="transition-colors duration-150 group-hover:!text-white" />
-              </button>
-
-              {bulkHint && (
-                <>
-                  <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-800" aria-hidden="true" />
-                  <span className="text-[0.82rem] font-bold" style={{ color: accent }}>
-                    {bulkHint}
-                  </span>
-                </>
+                    <button
+                      type="button"
+                      onClick={() => handleStepQty(1)}
+                      aria-label="Add one more to quote"
+                      className="group w-9 h-9 rounded-full border border-green-500 flex items-center justify-center shrink-0 transition-colors duration-150 hover:bg-green-500 active:scale-90"
+                    >
+                      <Plus size={14} weight="bold" style={{ color: neutralIconColor }} className="transition-colors duration-150 group-hover:!text-white" />
+                    </button>
+                  </div>
+                </div>
               )}
-
-              <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-800" aria-hidden="true" />
-
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="flex items-center gap-1.5 text-[0.86rem] font-bold transition-opacity active:opacity-60"
-                style={
-                  uploadPhase === "done"
-                    ? { color: "#16a34a" }
-                    : { color: accent }
-                }
-              >
-                <Paperclip size={14} weight="bold" aria-hidden="true" />
-                {uploadPhase === "done" ? "Attached" : "Attach File"}
-              </button>
             </div>
-          )}
+
+            {/* Bulk hint centered below the buttons */}
+            {bulkHint && (
+              <div className="w-full flex items-center justify-center px-2">
+                <BulkHint
+                  hint={bulkHint}
+                  accent={accent}
+                  isDiscount={isBulkDiscount}
+                  baseUnitPrice={baseUnitPrice}
+                  effRate={effRate}
+                  priceUnit={priceUnit}
+                />
+              </div>
+            )}
+          </div>
 
           {inQuote && isBulkDiscount && (
             <p className="text-[0.82rem] font-medium text-zinc-400 dark:text-zinc-500 text-center">
@@ -513,7 +521,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
 
           <a
-            href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waMessage)}`}
+            href={`https://wa.me/27753338260?text=${encodeURIComponent(waMessage)}`}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackEvent("request_whatsapp", { hub_id: svc.hubId, service_name: svc.name, section_title: svc.sectionTitle, price: svc.price, had_file_attached: uploadPhase === "done" })}
@@ -537,4 +545,4 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
       />
     </div>
   )
-} 
+}
