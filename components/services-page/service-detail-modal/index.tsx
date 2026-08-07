@@ -15,6 +15,7 @@ import {
 import { getCartQtyForItem, getEffectiveRate, getBulkHint, parsePrice, itemHasBulk } from "@/components/quote-calculator/lib"
 import { UploadButton, UploadStatus } from "./UploadControl"
 import { QuoteControl } from "./QuoteControl"
+import { BulkHint } from "./BulkHint"
 import { TipsModal } from "./TipsModal"
 import { getServiceTips } from "./fallback-tips"
 
@@ -396,13 +397,19 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
               neutralIconColor={neutralIconColor}
               onAdd={handleAddToQuote}
               onStep={handleStepQty}
-              bulkHint={bulkHint}
-              isBulkDiscount={isBulkDiscount}
+            />
+          </div>
+
+          {bulkHint && (
+            <BulkHint
+              hint={bulkHint}
+              accent={accent}
+              isDiscount={isBulkDiscount}
               baseUnitPrice={baseUnitPrice}
               effRate={effRate}
               priceUnit={priceUnit}
             />
-          </div>
+          )}
 
           <UploadStatus
             phase={uploadPhase}
