@@ -30,10 +30,6 @@ function useIsMobile() {
 const CHIP = "bg-black/30 backdrop-blur-md border border-white/10 [&_svg]:text-white"
 const ACRYLIC_PILL = "bg-zinc-100/80 dark:bg-zinc-800/70 backdrop-blur-md border border-zinc-200/60 dark:border-zinc-700/50"
 
-// Shared "‹ Project X/Y ›" nav control — used in both mobile and desktop
-// info-panel headers, replacing the old overlay arrows that sat ON the
-// image itself (those were misleading — they looked like photo-swipe
-// controls but actually changed the whole project).
 function ProjectNav({ current, total, onPrev, onNext, accent }: {
   current: number; total: number; onPrev: () => void; onNext: () => void; accent: string
 }) {
@@ -86,25 +82,22 @@ function ProjectDetailsBody({ project, accent }: { project: ProjectData; accent:
   )
 }
 
-// CTA labels shortened to single, intent-differentiated words: "Order"
-// for the direct WhatsApp purchase path, "Ask" for the lower-commitment
-// inquiry path — rather than the literal "Get"/"Inquire" suggested, since
-// two near-synonyms side by side read as redundant, not as two distinct
-// choices.
 function ProjectCTAs({ project, onClose, accent }: {
   project: ProjectData; onClose: () => void; accent: string
 }) {
-  const btnBase = "flex flex-col items-center justify-center gap-1.5 py-3.5 px-2 rounded-[14px] border-2 text-center transition-all active:scale-[0.97]"
+  // Converted CTA row to a horizontally-scrollable inline list so
+  // pills remain on one line and can scroll instead of stacking.
+  const btnBase = "inline-flex flex-col items-center justify-center gap-1.5 py-3.5 px-3 rounded-md border text-center transition-all active:scale-[0.97]"
   return (
-    <div className="grid grid-cols-2 gap-2.5">
+    <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-1 px-1" style={{ WebkitOverflowScrolling: 'touch' }}>
       <a
         href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(`Hi ${BIZ.name}! I saw "${project.title}" in your gallery and I'd like something similar.`)}`}
         target="_blank"
         rel="noopener noreferrer"
         onClick={onClose}
         aria-label={`Order a project like ${project.title} via WhatsApp`}
-        className={btnBase}
-        style={{ borderColor: accent, backgroundColor: `${accent}12`, color: accent }}
+        className={cn(btnBase, "min-w-[92px] shrink-0")}
+        style={{ borderColor: accent, color: accent, backgroundColor: "transparent" }}
       >
         <WhatsappLogo size={20} weight="fill" aria-hidden="true" />
         <span className="text-sm font-black leading-tight">Order</span>
@@ -112,8 +105,8 @@ function ProjectCTAs({ project, onClose, accent }: {
       <Link
         href={buildInquireHref(project)}
         aria-label={`Ask a question about ${project.title}`}
-        className={btnBase}
-        style={{ borderColor: accent, color: accent }}
+        className={cn(btnBase, "min-w-[92px] shrink-0")}
+        style={{ borderColor: accent, color: accent, backgroundColor: "transparent" }}
       >
         <EnvelopeSimple size={20} weight="bold" aria-hidden="true" />
         <span className="text-sm font-black leading-tight">Ask</span>
@@ -180,10 +173,6 @@ export function ProjectViewerModal({
   if (!project) return null
 
   const accent    = isDark ? HUB_COLORS[project.hub as HubKey].accentDark : HUB_COLORS[project.hub as HubKey].accentLight
-  // The image column, its thumbnail strip and the B/A tab bar are ALWAYS dark
-  // (bg-zinc-900 / bg-zinc-950) in both themes, so accents shown against them
-  // must use the always-bright variant — not the page `accent`, which is the
-  // near-black light variant in light mode and would vanish on the dark bar.
   const accentOnDark = HUB_COLORS[project.hub as HubKey].accentDark
   const allImages = project.images?.length > 0 ? project.images : [project.image]
   const hasBA     = BA_HUBS.includes(project.hub as HubId) && !!(project as any).beforeImage && !!(project as any).afterImage
@@ -216,9 +205,6 @@ export function ProjectViewerModal({
       <div className={cn(
         "relative w-full abh-shadow-modal bg-white dark:bg-zinc-950",
         "flex flex-col md:flex-row",
-        // "One card" unification: consistent border wraps the WHOLE modal
-        // (image + info panel together) rather than each half looking
-        // like its own separate zone.
         "border border-zinc-200 dark:border-zinc-800",
         isMobile
           ? "h-full rounded-none border-x-0"
@@ -227,7 +213,6 @@ export function ProjectViewerModal({
 
         {isMobile ? (
           <>
-            {/* Image shrunk from 42% to 38% of vertical space */}
             <div className="relative h-[38%] shrink-0 overflow-hidden bg-zinc-900">
               {comparing && hasBA ? (
                 <BeforeAfterSlider before={beforeImg!} after={afterImg!} accent={accent} />
@@ -250,11 +235,6 @@ export function ProjectViewerModal({
                     </button>
                   </div>
 
-                  {/* Like/Share moved HERE — stacked vertically on the
-                      image's right edge, mid-height — replacing the old
-                      position in the sticky header pill below the title.
-                      Project-nav arrows removed from the image entirely
-                      (see ProjectNav in the info panel below instead). */}
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2.5">
                     <div className={cn("w-9 h-9 rounded-full flex items-center justify-center transition-colors", CHIP)} onClick={(e) => e.stopPropagation()}>
                       <LikeButton liked={likedIds.has(project.id)} onToggle={(e) => { e.stopPropagation(); onToggleLike(project.id) }} context="header" />
@@ -285,7 +265,7 @@ export function ProjectViewerModal({
                 <button
                   onClick={() => setComparing(v => !v)}
                   aria-label={comparing ? "Show gallery view" : "Show before and after comparison"}
-                  className={cn("absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-[0.78rem] font-black uppercase tracking-wider", CHIP)}
+                  className={cn("absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-[0.78rem] font-black uppercase tracking-wider")}
                 >
                   <ArrowsLeftRight size={12} weight="bold" aria-hidden="true" />
                   {comparing ? "Gallery" : "Before / After"}
@@ -300,8 +280,6 @@ export function ProjectViewerModal({
               )}>
                 <div className="flex justify-center">
                   <div className={cn("flex flex-col items-center gap-2 px-5 py-3 rounded-[16px]", ACRYLIC_PILL)}>
-                    {/* Title font shrunk + clamped to a single line so
-                        long titles don't push the layout around. */}
                     <h2 className="font-black text-base text-zinc-900 dark:text-zinc-50 text-center leading-snug max-w-[260px] truncate">
                       {project.title}
                     </h2>
@@ -332,7 +310,7 @@ export function ProjectViewerModal({
             <button
               onClick={onClose}
               aria-label="Close"
-              className="absolute top-3 right-3 z-40 w-9 h-9 rounded-full flex items-center justify-center bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg text-white transition-colors active:scale-90"
+              className="absolute top-3 right-3 z-40 w-9 h-9 rounded-full flex items-center justify-center bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg flex items-center justify-center text-white transition-colors active:scale-95"
             >
               <X size={18} weight="bold" />
             </button>
@@ -349,23 +327,17 @@ export function ProjectViewerModal({
                       <SafeImage src={allImages[activeImg]} alt={`${project.title} view ${activeImg + 1}`} accent={accent} fill sizes="55vw" className="relative object-contain" priority={activeImg === 0} />
                     </div>
 
-                    {/* Like/Share stay on the image on desktop (plenty of
-                        room here), but project-nav arrows are removed —
-                        navigation now lives next to "Project X/Y" in the
-                        info panel header instead. */}
-                    <div className="absolute top-3 left-3 z-20 w-9 h-9 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors [&_svg]:text-white" onClick={(e) => e.stopPropagation()}>
+                    <div className="absolute top-3 left-3 z-20 w-9 h-9 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors">
                       <LikeButton liked={likedIds.has(project.id)} onToggle={(e) => { e.stopPropagation(); onToggleLike(project.id) }} context="header" />
                     </div>
-                    <div className="absolute top-3 right-14 z-20 w-9 h-9 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors [&_svg]:text-white" onClick={(e) => e.stopPropagation()}>
+                    <div className="absolute top-3 right-14 z-20 w-9 h-9 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-sm shadow-lg flex items-center justify-center transition-colors">
                       <ShareButton url={shareUrl} title={project.title} />
                     </div>
                   </div>
                   {allImages.length > 1 && (
-                    // Thumbnails shrunk (w-14 h-14 → w-11 h-11) to match
-                    // mobile's size and free up more room for the main image
                     <div className="flex justify-center gap-2 px-3 py-2.5 overflow-x-auto no-scrollbar shrink-0 border-t border-white/10">
                       {allImages.map((img, idx) => (
-                        <button key={idx} onClick={() => setActiveImg(idx)} aria-label={`View image ${idx + 1} of ${allImages.length}`} className={cn("relative shrink-0 w-11 h-11 rounded-[8px] overflow-hidden border-2 transition-all", activeImg === idx ? "scale-105" : "border-transparent opacity-50 hover:opacity-80")} style={activeImg === idx ? { borderColor: accentOnDark } : {}}>
+                        <button key={idx} onClick={() => setActiveImg(idx)} aria-label={`View image ${idx + 1} of ${allImages.length}`} className={cn("relative shrink-0 w-11 h-11 rounded-[8px] overflow-hidden border-2 transition-all", activeImg === idx ? "scale-105 border-white" : "border-white/20 opacity-60")}> 
                           <SafeImage src={img} alt={`Thumb ${idx + 1}`} accent={accent} fill sizes="44px" className="object-cover" />
                         </button>
                       ))}
@@ -375,19 +347,16 @@ export function ProjectViewerModal({
               )}
               {hasBA && (
                 <div className="shrink-0 flex border-t border-white/10 bg-zinc-950">
-                  <button onClick={() => setComparing(false)} aria-pressed={!comparing} className={cn("flex-1 py-2.5 text-[0.78rem] font-black uppercase tracking-widest transition-all duration-200", !comparing ? "text-white" : "text-white/30 hover:text-white/60")} style={!comparing ? { borderBottom: `2px solid ${accentOnDark}` } : {}}>Gallery</button>
-                  <button onClick={() => setComparing(true)} aria-pressed={comparing} className={cn("flex-1 py-2.5 text-[0.78rem] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all duration-200", comparing ? "text-white" : "text-white/30 hover:text-white/60")} style={comparing ? { borderBottom: `2px solid ${accentOnDark}` } : {}}><ArrowsLeftRight size={13} weight="bold" aria-hidden="true" />Before / After</button>
+                  <button onClick={() => setComparing(false)} aria-pressed={!comparing} className={cn("flex-1 py-2.5 text-[0.78rem] font-black uppercase tracking-widest transition-all duration-200", !comparing ? "bg-white/5" : "bg-transparent")}>Gallery</button>
+                  <button onClick={() => setComparing(true)} aria-pressed={comparing} className={cn("flex-1 py-2.5 text-[0.78rem] font-black uppercase tracking-widest transition-all duration-200", comparing ? "bg-white/5" : "bg-transparent")}>Before / After</button>
                 </div>
               )}
             </div>
 
             <div className="relative flex flex-col border-zinc-100 dark:border-zinc-800 flex-1 border-t md:h-auto md:flex-none md:border-t-0 md:border-l md:w-[380px]">
-              {/* Acrylic header treatment now matches mobile, instead of
-                  a plain flat bg. */}
-              <div className={cn("shrink-0 px-6 md:px-8 pt-6 md:pt-8 pb-5 relative z-20 bg-white dark:bg-zinc-950", "shadow-[0_10px_14px_-10px_rgba(0,0,0,0.12)] dark:shadow-[0_10px_14px_-10px_rgba(0,0,0,0.4)]")}>
+              <div className={cn("shrink-0 px-6 md:px-8 pt-6 md:pt-8 pb-5 relative z-20 bg-white dark:bg-zinc-950", "shadow-[0_10px_14px_-10px_rgba(0,0,0,0.12)] dark:shadow-[0_10px_14px_-10px_rgba(0,0,0,0.5)]")}>
                 <span className="text-[0.84rem] font-black uppercase tracking-widest" style={{ color: accent }}>{project.tag}</span>
                 {hasBA && <span className="ml-2 text-[0.72rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ backgroundColor: `${accent}20`, color: accent }}>Before &amp; After</span>}
-                {/* Title shrunk (from text-3xl/4xl) and clamped to one line */}
                 <h2 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 leading-snug mt-2 truncate">{project.title}</h2>
                 {project.clientType && (
                   <p className={cn("text-[0.86rem] italic mt-2", project.clientType === "sample" ? "text-brand-orange" : "text-zinc-400 dark:text-zinc-500")}>
@@ -405,8 +374,7 @@ export function ProjectViewerModal({
                 <ProjectDetailsBody project={project} accent={accent} />
               </div>
 
-              {/* Footer bg treatment now matches mobile's acrylic feel */}
-              <div className={cn("shrink-0 px-6 md:px-8 pt-4 pb-6 md:pb-8 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 relative z-20", "shadow-[0_-6px_14px_-10px_rgba(0,0,0,0.1)] dark:shadow-[0_-6px_14px_-10px_rgba(0,0,0,0.4)]")}>
+              <div className={cn("shrink-0 px-6 md:px-8 pt-4 pb-6 md:pb-8 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 relative z-20", "shadow-[0_-6px_14px_-10px_rgba(0,0,0,0.06)] dark:shadow-[0_-6px_14px_-10px_rgba(0,0,0,0.6)]")}>
                 <ProjectCTAs project={project} onClose={onClose} accent={accent} />
               </div>
             </div>
@@ -424,4 +392,4 @@ export function ProjectViewerModal({
       )}
     </div>
   )
-} 
+}
