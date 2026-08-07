@@ -237,6 +237,12 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
   const inQuote = quoteQty > 0
   const neutralIconColor = isDark ? "#e4e4e7" : "#3f3f46"
 
+  // Pressed-state visual params (medium tactile feel)
+  const pressedTransform = "translateY(1px) scale(0.995)"
+  const normalTransform = "translateY(0) scale(1)"
+  const pressedBoxShadow = "inset 0 2px 6px rgba(0,0,0,0.12)"
+  const normalBoxShadow = "0 10px 30px -12px rgba(0,0,0,0.12)"
+
   return (
     <div className="fixed inset-0 z-[10200] flex items-center justify-center p-3 md:p-4">
       <div className="absolute inset-0 bg-black/55 animate-in fade-in duration-200" onClick={onClose} />
@@ -406,10 +412,10 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         </div>
 
         {/* ── Footer ── */}
-        <div className="px-6 pb-6 pt-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800" style={{ minHeight: 88 }}>
+        <div className="px-6 pb-6 pt-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800" style={{ minHeight: 104 }}>
           <input ref={fileRef} type="file" accept={HUB_ACCEPT[svc.hubId]} onChange={handleFilePick} className="hidden" />
 
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-3">
             <div className="w-full flex items-center justify-center gap-4" style={{ maxWidth: 520 }}>
 
               {/* Attach button */}
@@ -422,12 +428,22 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                 onClick={() => fileRef.current?.click()}
                 className={cn(
                   "flex-1 flex items-center justify-center gap-2 py-2 font-bold text-[0.86rem] rounded-[12px] transition-all",
-                  pressed === "attach" ? "shadow-inner" : "shadow-lg"
+                  ""
                 )}
                 style={
                   uploadPhase === "done"
-                    ? { color: "#16a34a", backgroundColor: "#ecfdf5" }
-                    : { color: accent, backgroundColor: `${accent}06` }
+                    ? {
+                        color: "#16a34a",
+                        backgroundColor: "#ecfdf5",
+                        transform: pressed === "attach" ? pressedTransform : normalTransform,
+                        boxShadow: pressed === "attach" ? pressedBoxShadow : normalBoxShadow,
+                      }
+                    : {
+                        color: accent,
+                        backgroundColor: `${accent}06`,
+                        transform: pressed === "attach" ? pressedTransform : normalTransform,
+                        boxShadow: pressed === "attach" ? pressedBoxShadow : normalBoxShadow,
+                      }
                 }
               >
                 <Paperclip size={16} weight="bold" aria-hidden="true" />
@@ -448,9 +464,14 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                   onClick={handleAddToQuote}
                   className={cn(
                     "flex-1 flex items-center justify-center gap-2 py-2 font-bold text-[0.86rem] rounded-[12px] transition-all",
-                    pressed === "add" ? "translate-y-[1px] scale-99 shadow-inner" : "shadow-lg"
+                    ""
                   )}
-                  style={{ color: "#fff", backgroundColor: accent }}
+                  style={{
+                    color: "#fff",
+                    backgroundColor: accent,
+                    transform: pressed === "add" ? pressedTransform : normalTransform,
+                    boxShadow: pressed === "add" ? pressedBoxShadow : normalBoxShadow,
+                  }}
                 >
                   <ShoppingCartSimple size={16} weight="bold" aria-hidden="true" />
                   Add to Quote
