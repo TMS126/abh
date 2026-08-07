@@ -144,24 +144,30 @@ export function HubModal({ hubId, onClose, onSelectService }: {
           {activeSection && (
             <div key={`items-${openSectionIdx}`} className="abh-shadow-nested-group rounded-[14px] bg-zinc-50 dark:bg-zinc-900/50 p-3 md:p-4 grid grid-cols-1 gap-2 animate-in fade-in duration-200">
               {activeSection.items.map((item, iIdx) => (
-                <button
-                  key={iIdx}
-                  onClick={() =>
-                    onSelectService({
-                      name: item.name,
-                      price: item.price,
-                      hubId,
-                      sectionTitle: activeSection.title,
-                      requirements: item.requirements,
-                      desc: item.description,
-                      turnaround: getTurnaround(activeSection.title, item.name),
-                      tips: item.tips ? [...item.tips] : undefined,
-                    })
-                  }
-                  className="abh-shadow-nested-item flex items-center justify-between p-3.5 md:p-4 rounded-[14px] bg-white dark:bg-zinc-900 border border-transparent transition-all"
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = accent)}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = "transparent")}
-                >
+                  <button
+                    key={iIdx}
+                    onClick={() =>
+                      onSelectService({
+                        name: item.name,
+                        price: item.price,
+                        hubId,
+                        sectionTitle: activeSection.title,
+                        requirements: item.requirements,
+                        desc: item.description,
+                        turnaround: getTurnaround(activeSection.title, item.name),
+                        tips: item.tips ? [...item.tips] : undefined,
+                      })
+                    }
+                    className="abh-shadow-nested-item flex items-center justify-between p-3.5 md:p-4 rounded-[14px] bg-white dark:bg-zinc-900 border-l-2 border border-transparent transition-all duration-150 hover:-translate-y-px active:scale-[0.99]"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = accent
+                      e.currentTarget.style.borderLeftColor = accent
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "transparent"
+                      e.currentTarget.style.borderLeftColor = "transparent"
+                    }}
+                  >
                   <span className="text-base font-black text-zinc-800 dark:text-zinc-200 text-left flex items-center gap-2">
                     {itemHasBulk(hubId, activeSection.title, item.name) && (
                       <span className="shrink-0 text-[0.6rem] font-black uppercase tracking-wide opacity-60">

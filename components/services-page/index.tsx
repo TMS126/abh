@@ -303,9 +303,20 @@ export function ServicesPage() {
                 )}
               >
                 <ScrollBounce delay={index * 0.06}>
-                  <div className="group/hubcard relative flex flex-col items-center text-center h-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-elevated overflow-hidden transition-transform duration-300 hover:-translate-y-0.5 transform-gpu p-6 pt-7">
+                  <div
+                    className="group/hubcard relative flex flex-col items-center text-center h-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-elevated overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:abh-shadow-card transform-gpu p-6 pt-8"
+                    style={{ borderTop: `3px solid ${accent}` }}
+                  >
                     <HubCornerIcon hubId={hubId} accent={accent} />
                     {hubHasBulk && <BulkRibbon />}
+
+                    {/* Hub icon chip */}
+                    <div
+                      className="relative z-10 w-11 h-11 rounded-[12px] flex items-center justify-center mb-3 shrink-0 transition-colors duration-300"
+                      style={{ backgroundColor: `${accent}18`, color: accent }}
+                    >
+                      <HubIcon id={hubId} size={22} color={accent} />
+                    </div>
 
                     <h3 className="relative z-10 font-sans font-black text-[1.14rem] leading-tight mb-1.5 text-zinc-900 dark:text-zinc-50">
                       {hub.title}
@@ -351,10 +362,19 @@ export function ServicesPage() {
                 <button
                   onClick={() => handleOpenHub(hubId, "right")}
                   aria-label={`Open ${hub.title}`}
-                  className="group/hubcard relative flex flex-col items-center text-center w-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-elevated overflow-hidden transition-transform duration-200 active:scale-[0.98] transform-gpu p-6 pt-7"
+                  className="group/hubcard relative flex flex-col items-center text-center w-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-elevated overflow-hidden transition-all duration-200 active:scale-[0.98] transform-gpu p-6 pt-8"
+                  style={{ borderTop: `3px solid ${accent}` }}
                 >
                   <HubCornerIcon hubId={hubId} accent={accent} />
                   {hubHasBulk && <BulkRibbon />}
+
+                  {/* Hub icon chip */}
+                  <div
+                    className="relative z-10 w-11 h-11 rounded-[12px] flex items-center justify-center mb-3 shrink-0"
+                    style={{ backgroundColor: `${accent}18`, color: accent }}
+                  >
+                    <HubIcon id={hubId} size={22} color={accent} />
+                  </div>
 
                   <h3 className="relative z-10 font-sans font-black text-[1.18rem] leading-tight mb-1.5 text-zinc-900 dark:text-zinc-50">
                     {hub.title}
