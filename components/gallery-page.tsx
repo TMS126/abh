@@ -3,16 +3,17 @@
 
 import { useCallback, useEffect, useRef, useState, Suspense } from "react"
 import { useSearchParams, usePathname } from "next/navigation"
-import { X, Info, MagnifyingGlass, Shuffle, ArrowUp, Heart } from "@phosphor-icons/react"
+import { X, Info, MagnifyingGlass, Shuffle, ArrowUp } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey } from "@/lib/brand"
 import { PROJECTS, ProjectData } from "@/lib/data"
 import { ScrollBounce } from "@/components/scroll-bounce"
-import { ROW_ORDER, HubId, hubLabelFor } from "@/lib/gallery-helpers"
+import { ROW_ORDER, HubId, hubLabelFor, CLIENT_TYPE_LABEL } from "@/lib/gallery-helpers"
 import { useGalleryBackStack } from "@/hooks/use-gallery-back-stack"
 import { ProjectViewerModal } from "@/components/gallery/project-viewer-modal"
 import { SafeImage } from "@/components/gallery/safe-image"
+import { LikeButton, ShareButton } from "@/components/gallery/like-share-buttons"
 import { HubIcon } from "@/components/services-page/shared"
 import { GalleryClosingTagline } from "@/components/gallery/empty-and-tagline"
 
@@ -95,10 +96,7 @@ function NoticePill() {
   )
 }
 
-// ── Hub-filter circles — "All" + one per hub, centered, styled like
-// Instagram Story avatars but with hub icons instead of photos. Solid
-// accent ring (no gradient) only on the active circle. Hover shows a
-// soft pulsing circle fading in/out behind the icon. ──
+// ── Hub-filter circles ──
 function HubFilterCircles({
   activeFilter, onSelect, getAccent, isDark,
 }: {
@@ -163,56 +161,65 @@ function HubFilterCircles({
   )
 }
 
-// ── Instagram-style feed grid — 3 columns, square crop, small gaps,
-// rounded corners, centered in a narrower column. Desktop hover darkens
-// the image and shows a heart + hub name + project type at the bottom. ──
+// ── Feed-style project grid — image on top with a centered hub-name pill,
+// info row below (hub icon+name/type left, share+heart right). Replaces
+// the old hover-only overlay so this info is always visible, not just on
+// desktop hover. ──
 function ProjectGrid({
-  projects, likedIds, onToggleLike, onSelect,
+  projects, likedIds, onToggleLike, onSelect, pathname,
 }: {
   projects: ProjectData[]
   likedIds: Set<string>
   onToggleLike: (id: string) => void
   onSelect: (p: ProjectData) => void
+  pathname: string
 }) {
   return (
-    <div className="grid grid-cols-3 gap-2 md:gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-6">
       {projects.map((p) => {
         const liked = likedIds.has(p.id)
+        const shareUrl = typeof window !== "undefined" ? `${window.location.origin}${pathname}?project=${p.id}` : `${pathname}?project=${p.id}`
         return (
-          <button
-            key={p.id}
-            onClick={() => onSelect(p)}
-            aria-label={`View ${p.title}`}
-            className="group relative aspect-square rounded-[10px] overflow-hidden bg-zinc-100 dark:bg-zinc-900"
-          >
-            <SafeImage
-              src={p.image}
-              alt={p.title}
-              accent="#1E6FA8"
-              fill
-              sizes="(max-width: 768px) 33vw, 300px"
-              className="object-cover transition-transform duration-300 md:group-hover:scale-105"
-            />
+          <div key={p.id} className="flex flex-col">
+            <button
+              onClick={() => onSelect(p)}
+              aria-label={`View ${p.title}`}
+              className="group relative aspect-square rounded-[10px] overflow-hidden bg-zinc-100 dark:bg-zinc-900"
+            >
+              <SafeImage
+                src={p.image}
+                alt={p.title}
+                accent="#1E6FA8"
+                fill
+                sizes="(max-width: 640px) 50vw, 33vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              {/* Hub name pill — dark translucent + blur reads against any photo regardless of theme */}
+              <span
+                className="absolute top-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-full text-[0.68rem] font-black text-white backdrop-blur-md whitespace-nowrap"
+                style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+              >
+                {hubLabelFor(p.hub)}
+              </span>
+            </button>
 
-            <div className="hidden md:flex absolute inset-0 bg-black/0 group-hover:bg-black/45 transition-colors duration-200 items-end opacity-0 group-hover:opacity-100">
-              <div className="w-full flex items-center justify-between gap-2 p-2.5">
-                <span
-                  role="button"
-                  tabIndex={0}
-                  onClick={(e) => { e.stopPropagation(); onToggleLike(p.id) }}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); onToggleLike(p.id) } }}
-                  aria-label={liked ? "Unlike" : "Like"}
-                  aria-pressed={liked}
-                  className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-white/15 hover:bg-white/25 transition-colors"
-                >
-                  <Heart size={16} weight={liked ? "fill" : "bold"} color={liked ? "#ef4444" : "#ffffff"} />
+            {/* Info row below image */}
+            <div className="flex items-start justify-between gap-2 mt-2 px-0.5">
+              <button onClick={() => onSelect(p)} className="flex items-center gap-1.5 min-w-0 text-left">
+                <HubIcon id={p.hub as HubId} size={14} color="#1E6FA8" />
+                <span className="min-w-0">
+                  <span className="block text-[0.8rem] font-black text-zinc-800 dark:text-zinc-100 truncate">{p.title}</span>
+                  {p.clientType && (
+                    <span className="block text-[0.68rem] font-medium text-zinc-400 dark:text-zinc-500 truncate">{CLIENT_TYPE_LABEL[p.clientType]}</span>
+                  )}
                 </span>
-                <span className="min-w-0 flex-1 text-right text-white text-[0.7rem] font-bold leading-tight truncate">
-                  {hubLabelFor(p.hub)} <span className="opacity-70">· {p.tag}</span>
-                </span>
+              </button>
+              <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+                <ShareButton url={shareUrl} title={p.title} />
+                <LikeButton liked={liked} onToggle={(e) => { e.stopPropagation(); onToggleLike(p.id) }} context="card" />
               </div>
             </div>
-          </button>
+          </div>
         )
       })}
     </div>
@@ -404,8 +411,8 @@ function GalleryPageInner() {
           </div>
         ) : (
           <ScrollBounce>
-            <div className="max-w-3xl mx-auto">
-              <ProjectGrid projects={visibleProjects} likedIds={likedIds} onToggleLike={toggleLike} onSelect={setSelectedProject} />
+            <div className="max-w-6xl mx-auto">
+              <ProjectGrid projects={visibleProjects} likedIds={likedIds} onToggleLike={toggleLike} onSelect={setSelectedProject} pathname={pathname} />
             </div>
           </ScrollBounce>
         )}
@@ -459,4 +466,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-} 
+              } 
