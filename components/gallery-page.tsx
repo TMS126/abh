@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey } from "@/lib/brand"
 import { PROJECTS, ProjectData } from "@/lib/data"
 import { ScrollBounce } from "@/components/scroll-bounce"
-import { ROW_ORDER, HubId } from "@/lib/gallery-helpers"
+import { ROW_ORDER, HubId, hubLabelFor } from "@/lib/gallery-helpers"
 import { useGalleryBackStack } from "@/hooks/use-gallery-back-stack"
 import { ProjectViewerModal } from "@/components/gallery/project-viewer-modal"
 import { SafeImage } from "@/components/gallery/safe-image"
@@ -95,9 +95,10 @@ function NoticePill() {
   )
 }
 
-// ── Hub-filter circles — "All" + one per hub, styled like Instagram Story
-// avatars but with hub icons instead of photos. Solid accent ring (no
-// gradient) only on the active circle; a horizontally-scrollable row. ──
+// ── Hub-filter circles — "All" + one per hub, centered, styled like
+// Instagram Story avatars but with hub icons instead of photos. Solid
+// accent ring (no gradient) only on the active circle. Hover shows a
+// soft pulsing circle fading in/out behind the icon. ──
 function HubFilterCircles({
   activeFilter, onSelect, getAccent, isDark,
 }: {
@@ -109,18 +110,23 @@ function HubFilterCircles({
   const neutralIconColor = isDark ? "#a1a1aa" : "#71717a"
 
   return (
-    <div className="flex items-center gap-4 overflow-x-auto no-scrollbar px-1 pb-1">
+    <div className="flex items-center justify-center flex-wrap gap-4 overflow-x-auto no-scrollbar px-1 pb-1">
       <button
         onClick={() => onSelect("all")}
         aria-pressed={activeFilter === "all"}
         aria-label="All projects"
-        className="shrink-0 flex flex-col items-center gap-1.5"
+        className="group shrink-0 flex flex-col items-center gap-1.5"
       >
         <span
-          className="w-16 h-16 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 border-2 transition-colors"
+          className="relative w-16 h-16 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 border-2 transition-colors overflow-hidden"
           style={{ borderColor: activeFilter === "all" ? "#1E6FA8" : "transparent" }}
         >
-          <span className={cn("text-[0.8rem] font-black", activeFilter === "all" ? "text-[#1E6FA8]" : "text-zinc-500 dark:text-zinc-400")}>All</span>
+          <span
+            aria-hidden="true"
+            className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping"
+            style={{ backgroundColor: "#1E6FA830" }}
+          />
+          <span className={cn("relative text-[0.8rem] font-black", activeFilter === "all" ? "text-[#1E6FA8]" : "text-zinc-500 dark:text-zinc-400")}>All</span>
         </span>
         <span className="text-[0.72rem] font-bold text-zinc-500 dark:text-zinc-400">All</span>
       </button>
@@ -134,13 +140,20 @@ function HubFilterCircles({
             onClick={() => onSelect(row.id)}
             aria-pressed={isActive}
             aria-label={row.label}
-            className="shrink-0 flex flex-col items-center gap-1.5"
+            className="group shrink-0 flex flex-col items-center gap-1.5"
           >
             <span
-              className="w-16 h-16 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 border-2 transition-colors"
+              className="relative w-16 h-16 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 border-2 transition-colors overflow-hidden"
               style={{ borderColor: isActive ? accent : "transparent" }}
             >
-              <HubIcon id={row.id} size={26} color={isActive ? accent : neutralIconColor} />
+              <span
+                aria-hidden="true"
+                className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping"
+                style={{ backgroundColor: `${accent}30` }}
+              />
+              <span className="relative">
+                <HubIcon id={row.id} size={26} color={isActive ? accent : neutralIconColor} />
+              </span>
             </span>
             <span className="text-[0.72rem] font-bold text-zinc-500 dark:text-zinc-400 max-w-[64px] truncate">{row.short}</span>
           </button>
@@ -151,8 +164,8 @@ function HubFilterCircles({
 }
 
 // ── Instagram-style feed grid — 3 columns, square crop, small gaps,
-// rounded corners. Desktop hover darkens the image and shows the hub tag
-// + a like heart; tap/click always opens the viewer. ──
+// rounded corners, centered in a narrower column. Desktop hover darkens
+// the image and shows a heart + hub name + project type at the bottom. ──
 function ProjectGrid({
   projects, likedIds, onToggleLike, onSelect,
 }: {
@@ -181,21 +194,23 @@ function ProjectGrid({
               className="object-cover transition-transform duration-300 md:group-hover:scale-105"
             />
 
-            <div className="hidden md:flex absolute inset-0 bg-black/0 group-hover:bg-black/45 transition-colors duration-200 flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-              <span
-                role="button"
-                tabIndex={0}
-                onClick={(e) => { e.stopPropagation(); onToggleLike(p.id) }}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); onToggleLike(p.id) } }}
-                aria-label={liked ? "Unlike" : "Like"}
-                aria-pressed={liked}
-                className="w-9 h-9 rounded-full flex items-center justify-center bg-white/15 hover:bg-white/25 transition-colors"
-              >
-                <Heart size={18} weight={liked ? "fill" : "bold"} color={liked ? "#ef4444" : "#ffffff"} />
-              </span>
-              <span className="text-white text-[0.68rem] font-bold px-2.5 py-1 rounded-full bg-white/15 whitespace-nowrap">
-                {p.tag}
-              </span>
+            <div className="hidden md:flex absolute inset-0 bg-black/0 group-hover:bg-black/45 transition-colors duration-200 items-end opacity-0 group-hover:opacity-100">
+              <div className="w-full flex items-center justify-between gap-2 p-2.5">
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => { e.stopPropagation(); onToggleLike(p.id) }}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); onToggleLike(p.id) } }}
+                  aria-label={liked ? "Unlike" : "Like"}
+                  aria-pressed={liked}
+                  className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-white/15 hover:bg-white/25 transition-colors"
+                >
+                  <Heart size={16} weight={liked ? "fill" : "bold"} color={liked ? "#ef4444" : "#ffffff"} />
+                </span>
+                <span className="min-w-0 flex-1 text-right text-white text-[0.7rem] font-bold leading-tight truncate">
+                  {hubLabelFor(p.hub)} <span className="opacity-70">· {p.tag}</span>
+                </span>
+              </div>
             </div>
           </button>
         )
@@ -291,8 +306,6 @@ function GalleryPageInner() {
     )
   }, [searchLower])
 
-  // Single unified feed, filtered by the active circle + search — no more
-  // per-hub carousels/rows.
   const visibleProjects = PROJECTS.filter(
     p => (activeFilter === "all" || p.hub === activeFilter) && matchesSearch(p)
   )
@@ -391,7 +404,9 @@ function GalleryPageInner() {
           </div>
         ) : (
           <ScrollBounce>
-            <ProjectGrid projects={visibleProjects} likedIds={likedIds} onToggleLike={toggleLike} onSelect={setSelectedProject} />
+            <div className="max-w-3xl mx-auto">
+              <ProjectGrid projects={visibleProjects} likedIds={likedIds} onToggleLike={toggleLike} onSelect={setSelectedProject} />
+            </div>
           </ScrollBounce>
         )}
 
@@ -444,4 +459,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-            } 
+} 
