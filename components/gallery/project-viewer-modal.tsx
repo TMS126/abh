@@ -244,15 +244,19 @@ export function ProjectViewerModal({
     onNavigate(siblings[i])
   }, [hasSiblings, currentIdx, siblings, onNavigate])
 
+  // components/gallery/project-viewer-modal.tsx (keydown effect only — everything
+// else in the file is unchanged from the last version I sent)
+
   useEffect(() => {
     if (!project || zoomIndex !== null) return
     const fn = (e: KeyboardEvent) => {
+      if (e.key === "Escape")     onClose()
       if (e.key === "ArrowLeft")  goPrevProject()
       if (e.key === "ArrowRight") goNextProject()
     }
     document.addEventListener("keydown", fn)
     return () => document.removeEventListener("keydown", fn)
-  }, [project, zoomIndex, goPrevProject, goNextProject])
+  }, [project, zoomIndex, goPrevProject, goNextProject, onClose])
 
   if (!project) return null
 
