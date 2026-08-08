@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useRef, useState, Suspense } from "react"
 import { useSearchParams, usePathname } from "next/navigation"
-import { X, Info, MagnifyingGlass, Shuffle, ArrowUp } from "@phosphor-icons/react"
+import { X, Info, MagnifyingGlass, Shuffle, ArrowUp, Heart } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey } from "@/lib/brand"
@@ -12,17 +12,12 @@ import { ScrollBounce } from "@/components/scroll-bounce"
 import { ROW_ORDER, HubId } from "@/lib/gallery-helpers"
 import { useGalleryBackStack } from "@/hooks/use-gallery-back-stack"
 import { ProjectViewerModal } from "@/components/gallery/project-viewer-modal"
-import { ProjectCarousel } from "@/components/gallery/project-carousel"
-import { ProjectsPopover } from "@/components/gallery/projects-popover"
-import { FilterDropdown } from "@/components/gallery/filter-dropdown"
-import { HubCollectionsGrid } from "@/components/gallery/hub-collections-grid"
-import { EmptyHubState, GalleryClosingTagline } from "@/components/gallery/empty-and-tagline"
+import { SafeImage } from "@/components/gallery/safe-image"
+import { HubIcon } from "@/components/services-page/shared"
+import { GalleryClosingTagline } from "@/components/gallery/empty-and-tagline"
 
 const LIKES_STORAGE_KEY = "apexbytes-gallery-likes"
 
-// ===== NOTICE PILL — motion now matches Services page's NoticeNotification
-// exactly: max-width morph on the collapsed pill + grid-rows expand for the
-// detail card, instead of the old fade+slide-in treatment. =====
 function NoticePill() {
   const [expanded, setExpanded] = useState(false)
   const pillBg = "#1E6FA8"
@@ -96,6 +91,115 @@ function NoticePill() {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+// ── Hub-filter circles — "All" + one per hub, styled like Instagram Story
+// avatars but with hub icons instead of photos. Solid accent ring (no
+// gradient) only on the active circle; a horizontally-scrollable row. ──
+function HubFilterCircles({
+  activeFilter, onSelect, getAccent, isDark,
+}: {
+  activeFilter: HubId | "all"
+  onSelect: (id: HubId | "all") => void
+  getAccent: (id: HubId) => string
+  isDark: boolean
+}) {
+  const neutralIconColor = isDark ? "#a1a1aa" : "#71717a"
+
+  return (
+    <div className="flex items-center gap-4 overflow-x-auto no-scrollbar px-1 pb-1">
+      <button
+        onClick={() => onSelect("all")}
+        aria-pressed={activeFilter === "all"}
+        aria-label="All projects"
+        className="shrink-0 flex flex-col items-center gap-1.5"
+      >
+        <span
+          className="w-16 h-16 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 border-2 transition-colors"
+          style={{ borderColor: activeFilter === "all" ? "#1E6FA8" : "transparent" }}
+        >
+          <span className={cn("text-[0.8rem] font-black", activeFilter === "all" ? "text-[#1E6FA8]" : "text-zinc-500 dark:text-zinc-400")}>All</span>
+        </span>
+        <span className="text-[0.72rem] font-bold text-zinc-500 dark:text-zinc-400">All</span>
+      </button>
+
+      {ROW_ORDER.map((row) => {
+        const isActive = activeFilter === row.id
+        const accent = getAccent(row.id)
+        return (
+          <button
+            key={row.id}
+            onClick={() => onSelect(row.id)}
+            aria-pressed={isActive}
+            aria-label={row.label}
+            className="shrink-0 flex flex-col items-center gap-1.5"
+          >
+            <span
+              className="w-16 h-16 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 border-2 transition-colors"
+              style={{ borderColor: isActive ? accent : "transparent" }}
+            >
+              <HubIcon id={row.id} size={26} color={isActive ? accent : neutralIconColor} />
+            </span>
+            <span className="text-[0.72rem] font-bold text-zinc-500 dark:text-zinc-400 max-w-[64px] truncate">{row.short}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Instagram-style feed grid — 3 columns, square crop, small gaps,
+// rounded corners. Desktop hover darkens the image and shows the hub tag
+// + a like heart; tap/click always opens the viewer. ──
+function ProjectGrid({
+  projects, likedIds, onToggleLike, onSelect,
+}: {
+  projects: ProjectData[]
+  likedIds: Set<string>
+  onToggleLike: (id: string) => void
+  onSelect: (p: ProjectData) => void
+}) {
+  return (
+    <div className="grid grid-cols-3 gap-2 md:gap-3">
+      {projects.map((p) => {
+        const liked = likedIds.has(p.id)
+        return (
+          <button
+            key={p.id}
+            onClick={() => onSelect(p)}
+            aria-label={`View ${p.title}`}
+            className="group relative aspect-square rounded-[10px] overflow-hidden bg-zinc-100 dark:bg-zinc-900"
+          >
+            <SafeImage
+              src={p.image}
+              alt={p.title}
+              accent="#1E6FA8"
+              fill
+              sizes="(max-width: 768px) 33vw, 300px"
+              className="object-cover transition-transform duration-300 md:group-hover:scale-105"
+            />
+
+            <div className="hidden md:flex absolute inset-0 bg-black/0 group-hover:bg-black/45 transition-colors duration-200 flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => { e.stopPropagation(); onToggleLike(p.id) }}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); onToggleLike(p.id) } }}
+                aria-label={liked ? "Unlike" : "Like"}
+                aria-pressed={liked}
+                className="w-9 h-9 rounded-full flex items-center justify-center bg-white/15 hover:bg-white/25 transition-colors"
+              >
+                <Heart size={18} weight={liked ? "fill" : "bold"} color={liked ? "#ef4444" : "#ffffff"} />
+              </span>
+              <span className="text-white text-[0.68rem] font-bold px-2.5 py-1 rounded-full bg-white/15 whitespace-nowrap">
+                {p.tag}
+              </span>
+            </div>
+          </button>
+        )
+      })}
     </div>
   )
 }
@@ -176,7 +280,6 @@ function GalleryPageInner() {
     (id: HubId) => { const c = HUB_COLORS[id as HubKey]; return isDark ? c.accentDark : c.accentLight },
     [isDark]
   )
-  const filteredRows = activeFilter === "all" ? ROW_ORDER : ROW_ORDER.filter(r => r.id === activeFilter)
 
   const searchLower = searchQuery.trim().toLowerCase()
   const matchesSearch = useCallback((p: ProjectData) => {
@@ -188,11 +291,11 @@ function GalleryPageInner() {
     )
   }, [searchLower])
 
-  const totalMatches = PROJECTS.filter(
+  // Single unified feed, filtered by the active circle + search — no more
+  // per-hub carousels/rows.
+  const visibleProjects = PROJECTS.filter(
     p => (activeFilter === "all" || p.hub === activeFilter) && matchesSearch(p)
-  ).length
-
-  const showCollectionsGrid = activeFilter === "all" && !searchLower
+  )
 
   const handleSurprise = useCallback(() => {
     if (PROJECTS.length === 0) return
@@ -208,14 +311,6 @@ function GalleryPageInner() {
       setSurpriseFlash(false)
     }, 220)
   }, [selectedProject])
-
-  // ── Jumps the open viewer modal to a different hub entirely, keeping the
-  // modal open — used by the in-viewer hub filter row. ──
-  const handleViewerHubSwitch = useCallback((hubId: HubId) => {
-    setActiveFilter(hubId)
-    const pool = PROJECTS.filter(p => p.hub === hubId && matchesSearch(p))
-    if (pool.length > 0) setSelectedProject(pool[0])
-  }, [matchesSearch])
 
   const modalSiblings = selectedProject ? PROJECTS.filter(p => p.hub === selectedProject.hub) : []
 
@@ -237,11 +332,6 @@ function GalleryPageInner() {
           </div>
         </ScrollBounce>
 
-        {/* ── Search + Shuffle — one unified pill. The search field uses
-            the Contact page's input treatment; Shuffle is a true pill
-            button nested flush inside the container's right edge, sized
-            to sit cleanly inside without clipping or overlapping the
-            outer border. ── */}
         <ScrollBounce delay={0.1}>
           <div className="max-w-md mx-auto mb-8">
             <div className="flex items-center gap-2 pl-4 pr-1.5 py-1.5 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus-within:border-brand-blue transition-all duration-200">
@@ -279,87 +369,30 @@ function GalleryPageInner() {
           </div>
         </ScrollBounce>
 
-        <div className="relative z-50">
-          <ScrollBounce delay={0.16}>
-            <FilterDropdown activeFilter={activeFilter} onSelect={setActiveFilter} getAccent={getAccent} />
-          </ScrollBounce>
-        </div>
+        <ScrollBounce delay={0.16}>
+          <div className="mb-10">
+            <HubFilterCircles activeFilter={activeFilter} onSelect={setActiveFilter} getAccent={getAccent} isDark={isDark} />
+          </div>
+        </ScrollBounce>
 
-        {searchLower && totalMatches === 0 ? (
+        {visibleProjects.length === 0 ? (
           <div className="max-w-md mx-auto text-center py-16 px-6">
             <p className="text-base font-bold text-zinc-500 dark:text-zinc-400">
-              No projects match &ldquo;{searchQuery.trim()}&rdquo;
+              {searchLower ? `No projects match "${searchQuery.trim()}"` : "No projects in this category yet"}
             </p>
-            <button
-              onClick={() => setSearchQuery("")}
-              className="mt-3 text-sm font-black underline text-brand-blue"
-            >
-              Clear search
-            </button>
+            {searchLower && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="mt-3 text-sm font-black underline text-brand-blue"
+              >
+                Clear search
+              </button>
+            )}
           </div>
         ) : (
-          <>
-            {showCollectionsGrid && (
-              <ScrollBounce>
-                <div className="mb-8">
-                  <HubCollectionsGrid
-                    isDark={isDark}
-                    onSelectHub={setActiveFilter}
-                    likedIds={likedIds}
-                    onToggleLike={toggleLike}
-                    onOpenProject={setSelectedProject}
-                  />
-                </div>
-              </ScrollBounce>
-            )}
-
-            <div className={showCollectionsGrid ? "md:hidden" : ""}>
-              {filteredRows.map((row, rowIndex) => {
-                const accent = getAccent(row.id)
-                const projects = PROJECTS.filter(p => p.hub === row.id && matchesSearch(p))
-
-                if (projects.length === 0) {
-                  if (activeFilter !== row.id) return null
-                  return (
-                    <ScrollBounce key={row.id} delay={rowIndex * 0.06}>
-                      <div className={cn(
-                        "md:rounded-[20px] md:bg-white dark:md:bg-zinc-950/40 md:shadow-md p-0 md:p-7",
-                        "border-t-2 border-zinc-100 dark:border-zinc-800 mt-10 pt-8 md:border-t-0 md:mt-0 md:pt-7",
-                        "first:border-t-0 first:mt-0 first:pt-0 md:first:pt-7"
-                      )}>
-                        <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
-                          <div className="w-1.5 h-8 rounded-full hidden md:block shrink-0" style={{ backgroundColor: accent }} />
-                          <h2 className="text-3xl font-black text-zinc-900 dark:text-zinc-50 hidden md:block">{row.label}</h2>
-                        </div>
-                        <EmptyHubState label={row.label} query={searchLower ? searchQuery.trim() : undefined} />
-                      </div>
-                    </ScrollBounce>
-                  )
-                }
-
-                return (
-                  <ScrollBounce key={row.id} delay={rowIndex * 0.06}>
-                    <div className={cn(
-                      "md:rounded-[20px] md:bg-white dark:md:bg-zinc-950/40 md:shadow-md p-0 md:p-7",
-                      "border-t-2 border-zinc-100 dark:border-zinc-800 mt-10 pt-8 md:border-t-0 md:mt-0 md:pt-7",
-                      "first:border-t-0 first:mt-0 first:pt-0 md:first:pt-7"
-                    )}>
-                      <div className="flex items-center gap-4 mb-6 px-4 md:px-6">
-                        <div className="w-1.5 h-8 rounded-full hidden md:block shrink-0" style={{ backgroundColor: accent }} />
-                        <h2 className="text-3xl font-black text-zinc-900 dark:text-zinc-50 hidden md:block">{row.label}</h2>
-                        <div className="hidden md:block md:ml-auto">
-                          <ProjectsPopover projects={projects} accent={accent} isDark={isDark} onSelect={setSelectedProject} />
-                        </div>
-                      </div>
-                      <div className="px-4 md:px-0">
-                        <ProjectCarousel projects={projects} accent={accent} onSelect={setSelectedProject} likedIds={likedIds} onToggleLike={toggleLike} />
-                      </div>
-                    </div>
-                  </ScrollBounce>
-                )
-              })}
-            </div>
-          </>
+          <ScrollBounce>
+            <ProjectGrid projects={visibleProjects} likedIds={likedIds} onToggleLike={toggleLike} onSelect={setSelectedProject} />
+          </ScrollBounce>
         )}
 
         <ScrollBounce>
@@ -378,9 +411,6 @@ function GalleryPageInner() {
         onNavigate={setSelectedProject}
         likedIds={likedIds}
         onToggleLike={toggleLike}
-        rowOrder={ROW_ORDER}
-        getAccent={getAccent}
-        onSelectHub={handleViewerHubSwitch}
       />
 
       <button
@@ -414,4 +444,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-              } 
+            } 
