@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { X, ArrowsLeftRight, WhatsappLogo, EnvelopeSimple, Check } from "@phosphor-icons/react"
+import { X, CaretLeft, CaretRight, ArrowsLeftRight, WhatsappLogo, EnvelopeSimple, Check } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey, BIZ } from "@/lib/brand"
@@ -14,8 +14,6 @@ import { SafeImage } from "./safe-image"
 import { BeforeAfterSlider } from "./before-after-slider"
 import { ZoomOverlay } from "./zoom-overlay"
 import { LikeButton, ShareButton } from "./like-share-buttons"
-
-const CHIP = "bg-black/35 backdrop-blur-md border border-white/10 [&_svg]:text-white"
 
 // ── Goal / What we did / Result ──
 function ProjectDetailsBody({ project, accent }: { project: ProjectData; accent: string }) {
@@ -69,7 +67,7 @@ function ProjectCTAs({ project, onClose, accent }: { project: ProjectData; onClo
   )
 }
 
-// ── Other Projects — horizontally scrollable pills, very bottom of page ──
+// ── Other Projects — horizontally scrollable pills ──
 function OtherProjectsPills({ siblings, currentId, accent, onSelect }: {
   siblings: ProjectData[]; currentId: string; accent: string; onSelect: (p: ProjectData) => void
 }) {
@@ -99,54 +97,101 @@ function OtherProjectsPills({ siblings, currentId, accent, onSelect }: {
   )
 }
 
-// ── Image peek carousel — neighbouring images visible in pieces at the
-// edges, native scroll-snap so it's swipeable on touch without custom
-// drag handling. Same peek carousel on every screen size — no desktop
-// variant, per the "exact same layout everywhere" requirement. ──
-function ImagePeekCarousel({
+// ── Single-image viewer — exactly ONE image visible/focused at a time,
+// no adjacent-image peeking. Swipe (touch) or the arrow buttons change
+// the index by exactly one, never more. Arrows sit in the horizontal
+// padding gutter AROUND the image (outside its rounded edge), not
+// overlaid on the photo itself. Image fills full width, object-cover
+// crops as needed rather than letterboxing.
+function SingleImageViewer({
   images, activeIdx, setActiveIdx, accent, onTapImage,
 }: {
   images: string[]; activeIdx: number; setActiveIdx: (i: number) => void
   accent: string; onTapImage: (i: number) => void
 }) {
-  const trackRef = useRef<HTMLDivElement>(null)
-  const isProgrammaticScroll = useRef(false)
+  const touchStartX = useRef(0)
+  const touchStartY = useRef(0)
+  const didSwipe = useRef(false)
+  const hasMultiple = images.length > 1
 
-  const onScroll = useCallback(() => {
-    if (!trackRef.current || isProgrammaticScroll.current) return
-    const track = trackRef.current
-    const slideW = track.scrollWidth / images.length
-    const idx = Math.round(track.scrollLeft / slideW)
-    const clamped = Math.max(0, Math.min(idx, images.length - 1))
-    if (clamped !== activeIdx) setActiveIdx(clamped)
-  }, [images.length, activeIdx, setActiveIdx])
+  const goPrev = useCallback(() => setActiveIdx(activeIdx > 0 ? activeIdx - 1 : images.length - 1), [activeIdx, images.length, setActiveIdx])
+  const goNext = useCallback(() => setActiveIdx(activeIdx < images.length - 1 ? activeIdx + 1 : 0), [activeIdx, images.length, setActiveIdx])
 
-  useEffect(() => {
-    if (!trackRef.current) return
-    const slideW = trackRef.current.scrollWidth / images.length
-    isProgrammaticScroll.current = true
-    trackRef.current.scrollTo({ left: slideW * activeIdx, behavior: "smooth" })
-    const t = setTimeout(() => { isProgrammaticScroll.current = false }, 400)
-    return () => clearTimeout(t)
-  }, [activeIdx, images.length])
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+    didSwipe.current = false
+  }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (!hasMultiple) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current)
+    if (Math.abs(dx) < 40 || dy > Math.abs(dx)) return
+    didSwipe.current = true
+    // Exactly one step per swipe, regardless of swipe speed/distance.
+    dx < 0 ? goNext() : goPrev()
+  }
+  const handleTap = () => {
+    if (didSwipe.current) { didSwipe.current = false; return }
+    onTapImage(activeIdx)
+  }
 
   return (
-    <div
-      ref={trackRef}
-      onScroll={onScroll}
-      className="flex h-full overflow-x-auto no-scrollbar snap-x snap-mandatory px-[8%] gap-3"
-      style={{ scrollSnapType: "x mandatory" }}
-    >
-      {images.map((img, idx) => (
-        <div
-          key={idx}
-          onClick={() => onTapImage(idx)}
-          className="relative h-full shrink-0 rounded-[14px] overflow-hidden cursor-zoom-in transition-opacity duration-200"
-          style={{ width: "84%", scrollSnapAlign: "center", opacity: idx === activeIdx ? 1 : 0.45 }}
+    <div className="relative flex items-center gap-2 px-3 md:px-4">
+      {hasMultiple && (
+        <button
+          onClick={goPrev}
+          aria-label="Previous image"
+          className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 transition-colors hover:text-current active:scale-90"
+          style={{ ["--tw-hover-color" as any]: accent }}
         >
-          <SafeImage src={img} alt={`Image ${idx + 1}`} accent={accent} fill sizes="84vw" className="object-cover" priority={idx === 0} />
-        </div>
-      ))}
+          <CaretLeft size={15} weight="bold" />
+        </button>
+      )}
+
+      <div
+        className="relative flex-1 aspect-[4/3] max-h-[380px] rounded-[16px] overflow-hidden cursor-zoom-in"
+        onClick={handleTap}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
+        <SafeImage
+          key={activeIdx}
+          src={images[activeIdx]}
+          alt={`Image ${activeIdx + 1} of ${images.length}`}
+          accent={accent}
+          fill
+          sizes="(max-width: 768px) 90vw, 500px"
+          className="object-cover animate-in fade-in duration-200"
+          priority={activeIdx === 0}
+        />
+
+        {/* Soft persistent fade at the bottom edge of the image itself —
+            not scroll-triggered, always present — so the photo blends
+            into the page rather than ending with a hard cut. */}
+        <div
+          className="absolute inset-x-0 bottom-0 h-14 pointer-events-none"
+          style={{ background: "linear-gradient(to bottom, transparent, rgba(0,0,0,0.28))" }}
+          aria-hidden="true"
+        />
+
+        {hasMultiple && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-sm text-white text-[0.68rem] font-bold tracking-widest">
+            {activeIdx + 1} / {images.length}
+          </div>
+        )}
+      </div>
+
+      {hasMultiple && (
+        <button
+          onClick={goNext}
+          aria-label="Next image"
+          className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 transition-colors hover:text-current active:scale-90"
+          style={{ ["--tw-hover-color" as any]: accent }}
+        >
+          <CaretRight size={15} weight="bold" />
+        </button>
+      )}
     </div>
   )
 }
@@ -175,7 +220,6 @@ export function ProjectViewerModal({
     setComparing(false)
   }, [project?.id])
 
-  // ── Escape closes; zoom overlay handles its own Escape when open ──
   useEffect(() => {
     if (!project || zoomIndex !== null) return
     const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
@@ -193,92 +237,81 @@ export function ProjectViewerModal({
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}${pathname}?project=${project.id}` : `${pathname}?project=${project.id}`
 
   const handleTapImage = (idx: number) => {
-    if (idx === activeImg) {
-      setZoomIndex(idx)
-    } else {
-      setActiveImg(idx)
-    }
+    setZoomIndex(idx)
   }
 
   return (
     <div className="fixed inset-0 z-[10200] bg-white dark:bg-zinc-950 flex flex-col animate-in fade-in duration-200" role="dialog" aria-modal="true" aria-label={project.title}>
 
-      {/* ── Image area — same immersive stacked layout on every screen
-          size, just scaled taller on larger viewports (no side-by-side
-          split, ever). ── */}
-      <div className="relative shrink-0 h-[42vh] md:h-[52vh] bg-zinc-900">
-        {comparing && hasBA ? (
-          <BeforeAfterSlider before={beforeImg!} after={afterImg!} accent={accent} />
-        ) : (
-          <ImagePeekCarousel
-            images={allImages}
-            activeIdx={activeImg}
-            setActiveIdx={setActiveImg}
-            accent={accent}
-            onTapImage={handleTapImage}
-          />
-        )}
-
-        {/* Top overlay — hub icon+name, project name, type; close */}
-        <div className="absolute top-0 inset-x-0 z-20 flex items-start justify-between gap-3 px-5 md:px-8 pt-5 md:pt-6 pb-10 bg-gradient-to-b from-black/60 to-transparent pointer-events-none">
-          <div className="min-w-0 pointer-events-auto">
-            <div className="flex items-center gap-1.5">
-              <HubIcon id={project.hub as HubId} size={13} color="#fff" />
-              <span className="text-[0.7rem] font-black uppercase tracking-widest text-white/85">{hubLabelFor(project.hub as HubId)}</span>
-            </div>
-            <h2 className="font-black text-lg md:text-xl text-white leading-snug mt-1 truncate max-w-[68vw]">{project.title}</h2>
-            {project.clientType && (
-              <p className="text-[0.78rem] italic text-white/60 mt-0.5">{CLIENT_TYPE_LABEL[project.clientType]}</p>
-            )}
-          </div>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className={cn("shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-white transition-transform active:scale-90 pointer-events-auto", CHIP)}
-          >
-            <X size={17} weight="bold" />
-          </button>
-        </div>
-
-        {/* Bottom overlay — like bottom-left, share bottom-right */}
-        {!comparing && (
-          <div className="absolute bottom-3 inset-x-3 md:inset-x-6 z-20 flex items-center justify-between">
-            <div className={cn("w-9 h-9 rounded-full flex items-center justify-center", CHIP)}>
-              <LikeButton liked={likedIds.has(project.id)} onToggle={(e) => { e.stopPropagation(); onToggleLike(project.id) }} context="header" />
-            </div>
-            {hasBA && (
-              <button
-                onClick={() => setComparing(true)}
-                aria-label="Show before and after comparison"
-                className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-[0.72rem] font-black uppercase tracking-wider", CHIP)}
-              >
-                <ArrowsLeftRight size={12} weight="bold" aria-hidden="true" />
-                Before / After
-              </button>
-            )}
-            <div className={cn("w-9 h-9 rounded-full flex items-center justify-center", CHIP)}>
-              <ShareButton url={shareUrl} title={project.title} />
-            </div>
-          </div>
-        )}
-        {comparing && (
-          <button
-            onClick={() => setComparing(false)}
-            aria-label="Show gallery view"
-            className={cn("absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-[0.72rem] font-black uppercase tracking-wider", CHIP)}
-          >
-            Gallery
-          </button>
-        )}
-      </div>
-
-      {/* ── Scrollable info + CTAs + other projects — content column
-          gets a max-width and centers on wide screens so it stays
-          readable, but stays a single stacked column underneath the
-          image, exactly like mobile. ── */}
       <div className="flex-1 overflow-y-auto overscroll-contain">
         <div className="max-w-2xl mx-auto">
-          <div className="px-6 md:px-8 pt-6 pb-4">
+
+          {/* ── Header — sits ABOVE the image on the plain page
+              background now, not overlaid on the photo. ── */}
+          <div className="flex items-start justify-between gap-3 px-6 md:px-8 pt-6 pb-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <HubIcon id={project.hub as HubId} size={13} color={accent} />
+                <span className="text-[0.7rem] font-black uppercase tracking-widest" style={{ color: accent }}>{hubLabelFor(project.hub as HubId)}</span>
+              </div>
+              <h2 className="font-black text-lg md:text-xl text-zinc-900 dark:text-zinc-50 leading-snug mt-1 truncate">{project.title}</h2>
+              {project.clientType && (
+                <p className="text-[0.78rem] italic text-zinc-400 dark:text-zinc-500 mt-0.5">{CLIENT_TYPE_LABEL[project.clientType]}</p>
+              )}
+            </div>
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 transition-transform active:scale-90"
+            >
+              <X size={16} weight="bold" />
+            </button>
+          </div>
+
+          {/* ── Image — single focused image, arrows in the gutter
+              beside it, not on top of it. Reduced from a fixed 42vh to
+              a capped aspect ratio, freeing up more room for the info
+              below without needing to scroll as far. ── */}
+          <div className="relative">
+            {comparing && hasBA ? (
+              <div className="px-3 md:px-4">
+                <div className="relative aspect-[4/3] max-h-[380px] rounded-[16px] overflow-hidden">
+                  <BeforeAfterSlider before={beforeImg!} after={afterImg!} accent={accent} />
+                </div>
+              </div>
+            ) : (
+              <SingleImageViewer
+                images={allImages}
+                activeIdx={activeImg}
+                setActiveIdx={setActiveImg}
+                accent={accent}
+                onTapImage={handleTapImage}
+              />
+            )}
+          </div>
+
+          {/* ── Action row — like / before-after / share, now sitting
+              below the image as a plain row on the page background,
+              not floating chips over the photo. ── */}
+          <div className="flex items-center justify-between px-6 md:px-8 pt-4 pb-2">
+            <LikeButton liked={likedIds.has(project.id)} onToggle={(e) => { e.stopPropagation(); onToggleLike(project.id) }} context="header" />
+            {hasBA && (
+              <button
+                onClick={() => setComparing((v) => !v)}
+                aria-label={comparing ? "Show gallery view" : "Show before and after comparison"}
+                className="flex items-center gap-1.5 text-[0.78rem] font-black uppercase tracking-wider transition-opacity active:opacity-60"
+                style={{ color: accent }}
+              >
+                <ArrowsLeftRight size={13} weight="bold" aria-hidden="true" />
+                {comparing ? "Gallery" : "Before / After"}
+              </button>
+            )}
+            <ShareButton url={shareUrl} title={project.title} />
+          </div>
+
+          {/* ── Info — everything below flows continuously from here,
+              no hard section boundary against the image above it. ── */}
+          <div className="px-6 md:px-8 pt-4 pb-4">
             <ProjectDetailsBody project={project} accent={accent} />
           </div>
           <div className="px-6 md:px-8 pb-4">
@@ -293,4 +326,4 @@ export function ProjectViewerModal({
       )}
     </div>
   )
-        } 
+      } 
