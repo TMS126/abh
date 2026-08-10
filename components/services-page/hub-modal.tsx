@@ -27,9 +27,6 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
   const isDark = resolvedTheme === "dark"
   const [openSectionIdx, setOpenSectionIdx] = useState<number | null>(0)
   const [isScrolled, setIsScrolled] = useState(false)
-  // Per-item "View Pricing" reveal state. Keyed by "sectionTitle|itemName"
-  // so it survives switching between sections. Cleared whenever a new
-  // hub is opened (component effectively gets a fresh hub = fresh page).
   const [revealedPrices, setRevealedPrices] = useState<Set<string>>(new Set())
   const containerRef = useRef<HTMLDivElement>(null)
   const bodyRef = useRef<HTMLDivElement>(null)
@@ -96,7 +93,10 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
         transition={{ duration: 0.2 }}
       />
 
-      {/* ===== MODAL CONTAINER ===== */}
+      {/* ===== MODAL CONTAINER — overflow-hidden added so every child
+          (header block, disclaimer footer) actually gets clipped to
+          this rounded-[14px] shape instead of squaring off the top
+          corners where the header's own flat bg met the edge. ===== */}
       <motion.div
         ref={containerRef}
         tabIndex={-1}
@@ -107,23 +107,15 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.96, opacity: 0 }}
         transition={{ type: "tween", duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
-        className="relative z-10 w-full max-w-2xl bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[76vh] flex flex-col outline-none rounded-[14px]"
+        className="relative z-10 w-full max-w-2xl bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[76vh] flex flex-col outline-none rounded-[14px] overflow-hidden"
         style={{ boxShadow: "0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4)" }}
       >
-        {/* ===== GLUED HEADER — title row + section selector now share one
-            solid background and sit in the same non-scrolling block, so
-            they read as a single sticky unit with a hard edge. No item
-            content ever shows or blurs through it, and it no longer
-            shrinks/fades as the body scrolls — static at all times.
-            A shadow fades in only once the body has scrolled, as the
-            sole visual cue that content is now underneath it. ===== */}
+        {/* ===== GLUED HEADER — title row + section selector, static,
+            solid bg ===== */}
         <div
           className="relative z-10 shrink-0 bg-white dark:bg-zinc-950 transition-shadow duration-200"
-          style={{
-            boxShadow: isScrolled ? "0 10px 20px -14px rgba(0,0,0,0.35)" : "none",
-          }}
+          style={{ boxShadow: isScrolled ? "0 10px 20px -14px rgba(0,0,0,0.35)" : "none" }}
         >
-          {/* Title row */}
           <div className="px-6 md:px-8 pt-6 pb-5 flex justify-between items-center gap-3">
             <div className="flex items-center gap-4 min-w-0">
               <HubIcon id={hubId} size={28} color={accent} />
@@ -156,9 +148,6 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
             </div>
           </div>
 
-          {/* Section selector — glued directly beneath the title row,
-              same solid bg, single shared border-b closing off the
-              whole header block. */}
           <div
             role="tablist"
             aria-label="Service categories"
@@ -197,9 +186,8 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
           onScroll={handleBodyScroll}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
-          className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-8 pb-8 md:pb-10"
+          className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-8"
         >
-
           {/* ===== SECTION DESCRIPTION ===== */}
           {activeSectionDesc && (
             <div key={openSectionIdx} className="mb-5 animate-in fade-in slide-in-from-top-1 duration-200">
@@ -241,12 +229,6 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
                       {item.name}
                     </span>
 
-                    {/* Price is hidden behind a "View Pricing" toggle.
-                        stopPropagation so tapping it doesn't also select
-                        the service — it only reveals/hides the price.
-                        Once revealed it stays revealed (persists in
-                        state) until the hub modal is closed/reopened, or
-                        the user taps it again to hide it. */}
                     <span
                       role="button"
                       tabIndex={0}
@@ -273,20 +255,21 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
               })}
             </div>
           )}
-
-          {/* ===== HUB DISCLAIMER ===== */}
-          {hubDisclaimer && (
-            <div className="mt-6 flex items-start gap-2">
-              <Info size={13} weight="bold" aria-hidden="true" className="text-zinc-400 dark:text-zinc-500 shrink-0 mt-0.5" />
-              <p className="text-[0.86rem] font-medium text-zinc-400 dark:text-zinc-500 leading-relaxed">{hubDisclaimer}</p>
-            </div>
-          )}
         </div>
+
+        {/* ===== TURNAROUND / DISCLAIMER FOOTER — moved OUT of the
+            scrollable body entirely, into its own shrink-0 block below
+            it. It's now fixed in place within the card: it never
+            scrolls with the item list, regardless of section length. ===== */}
+        {hubDisclaimer && (
+          <div className="shrink-0 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-6 md:px-8 py-4 flex items-start gap-2">
+            <Info size={13} weight="bold" aria-hidden="true" className="text-zinc-400 dark:text-zinc-500 shrink-0 mt-0.5" />
+            <p className="text-[0.86rem] font-medium text-zinc-400 dark:text-zinc-500 leading-relaxed">{hubDisclaimer}</p>
+          </div>
+        )}
       </motion.div>
 
-      {/* ===== OTHER HUBS — labeled "More Hubs" above the group, with
-          extra top margin so it breathes rather than hugging the card
-          above it. ===== */}
+      {/* ===== OTHER HUBS ===== */}
       {otherHubs.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -323,4 +306,4 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
       )}
     </div>
   )
-        } 
+                                     } 
