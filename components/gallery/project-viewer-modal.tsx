@@ -27,24 +27,31 @@ function useIsMobile() {
   return isMobile
 }
 
-// ===== SCROLL-BOUNDARY FADE — a static (not scroll-linked) gradient
-// pinned to the top of a scrollable text region, so content fades out
-// as it passes beneath the fixed header/image section above it instead
-// of being hard-clipped. =====================================================
+const CHIP = "bg-black/35 backdrop-blur-md border border-white/10 [&_svg]:text-white"
+
+// Graduated size pattern for the desktop image stack — cycled per index so
+// a run of images reads as genuinely varied sizes, not uniform tiles.
+const STACK_SIZE_RATIOS = [1, 0.72, 1, 0.6, 0.82]
+
+// ===== SCROLL-BOUNDARY FADE — pinned to the top of a scrollable text
+// region, so content fades out as it passes beneath the fixed section
+// above it instead of being hard-clipped or divided by a border. =====
 function ScrollFadeTop() {
   return (
     <div
       aria-hidden="true"
-      className="sticky top-0 z-10 h-6 -mb-6 pointer-events-none bg-gradient-to-b from-white dark:from-zinc-950 to-transparent"
+      className="sticky top-0 z-10 h-8 -mb-8 pointer-events-none bg-gradient-to-b from-white dark:from-zinc-950 to-transparent"
     />
   )
 }
 
 // ===== EXPANDABLE TEXT — clamps long paragraphs to 4 lines with a fade
-// + "Read more…" toggle in the hub's accent color. =====
-function ExpandableText({ text, accent }: { text: string; accent: string }) {
+// + "Read more…" toggle in the hub's accent color. `forceExpandable`
+// makes the clamp/toggle appear regardless of length (used for The Goal,
+// which should always offer it even when moderately short). =====
+function ExpandableText({ text, accent, forceExpandable = false }: { text: string; accent: string; forceExpandable?: boolean }) {
   const [expanded, setExpanded] = useState(false)
-  const isLong = text.length > 220
+  const isLong = forceExpandable || text.length > 220
 
   return (
     <div className="relative">
@@ -83,7 +90,7 @@ function ProjectDetailsBody({ project, accent }: { project: ProjectData; accent:
     <div className="space-y-5">
       <div className="rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 p-5">
         <h4 className="text-[0.74rem] font-black uppercase tracking-widest mb-2 text-zinc-400 dark:text-zinc-500">The Goal</h4>
-        <ExpandableText text={project.clientGoal} accent={accent} />
+        <ExpandableText text={project.clientGoal} accent={accent} forceExpandable />
       </div>
       <div className="rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 p-5">
         <h4 className="text-[0.74rem] font-black uppercase tracking-widest mb-2 text-zinc-400 dark:text-zinc-500">What we did</h4>
@@ -103,9 +110,7 @@ function ProjectDetailsBody({ project, accent }: { project: ProjectData; accent:
   )
 }
 
-// ===== FLOATING ORDER/ASK PILL — true 50/50 split via flex-1 on both
-// buttons; genuinely translucent (not the near-solid look from before) so
-// page content is visible through it while text/icons stay legible. =====
+// ===== FLOATING ORDER/ASK PILL — unchanged. =====
 function FloatingCTAPill({ project, onClose, accent }: { project: ProjectData; onClose: () => void; accent: string }) {
   return (
     <div className="fixed inset-x-0 bottom-6 z-30 flex justify-center px-6 pointer-events-none">
@@ -140,23 +145,25 @@ function FloatingCTAPill({ project, onClose, accent }: { project: ProjectData; o
   )
 }
 
-// ── Other Projects — horizontally scrollable thumbnail pills ──
-function OtherProjectsPills({ siblings, currentId, accent, onSelect, className }: {
-  siblings: ProjectData[]; currentId: string; accent: string; onSelect: (p: ProjectData) => void; className?: string
+// ===== FLOATING "OTHER PROJECTS" WIDGET (desktop only) — same floating
+// treatment as the CTA pill, centered, sitting just above it. =====
+function FloatingOtherProjectsWidget({ siblings, currentId, accent, onSelect }: {
+  siblings: ProjectData[]; currentId: string; accent: string; onSelect: (p: ProjectData) => void
 }) {
   const others = siblings.filter((p) => p.id !== currentId)
   if (others.length === 0) return null
   return (
-    <div className={className}>
-      <p className="text-[0.7rem] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-2.5">
-        Other Projects
-      </p>
-      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+    <div className="hidden md:flex fixed inset-x-0 bottom-24 z-30 justify-center px-6 pointer-events-none">
+      <div
+        className="pointer-events-auto flex items-center gap-2 max-w-xl overflow-x-auto no-scrollbar px-3 py-2.5 rounded-full backdrop-blur-xl bg-white/45 dark:bg-zinc-900/40 border border-white/40 dark:border-white/10"
+        style={{ boxShadow: "0 16px 38px -10px rgba(0,0,0,0.3), 0 6px 16px -6px rgba(0,0,0,0.16)" }}
+      >
         {others.map((p) => (
           <button
             key={p.id}
             onClick={() => onSelect(p)}
-            className="shrink-0 flex items-center gap-2 pl-1.5 pr-3.5 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 transition-colors hover:border-current focus-visible:outline-none focus-visible:ring-2"
+            aria-label={`View ${p.title}`}
+            className="shrink-0 flex items-center gap-2 pl-1.5 pr-3.5 py-1 rounded-full border border-zinc-200/60 dark:border-zinc-700/60 bg-white/60 dark:bg-zinc-900/60 transition-colors hover:border-current focus-visible:outline-none focus-visible:ring-2"
             style={{ color: accent, ["--tw-ring-color" as any]: accent }}
           >
             <span className="relative w-7 h-7 rounded-full overflow-hidden shrink-0">
@@ -170,10 +177,10 @@ function OtherProjectsPills({ siblings, currentId, accent, onSelect, className }
   )
 }
 
-// ===== MOBILE IMAGE VIEWER — active image on top; up to two more peek
-// out STRAIGHT to the right (horizontal offset only, no vertical drop,
-// no rotation), enough to read as a stack without hiding under the
-// front card. =====
+// ===== MOBILE IMAGE VIEWER — active image full-size, up to two more peek
+// out to the right at progressively smaller scale (not just offset), all
+// vertically centered. object-contain + page-matching background so no
+// crop and no visible black letterbox bars. =====
 function MobileStackedImageViewer({
   images, activeIdx, onPrev, onNext, accent, onTapImage,
 }: {
@@ -220,24 +227,25 @@ function MobileStackedImageViewer({
         {images.length > 2 && (
           <div
             aria-hidden="true"
-            className="absolute inset-0 rounded-[16px] overflow-hidden"
-            style={{ transform: "translateX(26px)", opacity: 0.55, zIndex: 1 }}
+            className="absolute inset-0 rounded-[16px] overflow-hidden bg-white dark:bg-zinc-950"
+            style={{ transform: "translateX(24px) scale(0.86)", opacity: 0.5, zIndex: 1 }}
           >
-            <SafeImage src={images[(activeIdx + 2) % images.length]} alt="" accent={accent} fill sizes="20vw" className="object-cover" />
+            <SafeImage src={images[(activeIdx + 2) % images.length]} alt="" accent={accent} fill sizes="20vw" className="object-contain" />
           </div>
         )}
         {hasMultiple && (
           <div
             aria-hidden="true"
-            className="absolute inset-0 rounded-[16px] overflow-hidden"
-            style={{ transform: "translateX(14px)", opacity: 0.82, zIndex: 2 }}
+            className="absolute inset-0 rounded-[16px] overflow-hidden bg-white dark:bg-zinc-950"
+            style={{ transform: "translateX(13px) scale(0.94)", opacity: 0.8, zIndex: 2 }}
           >
-            <SafeImage src={images[(activeIdx + 1) % images.length]} alt="" accent={accent} fill sizes="20vw" className="object-cover" />
+            <SafeImage src={images[(activeIdx + 1) % images.length]} alt="" accent={accent} fill sizes="20vw" className="object-contain" />
           </div>
         )}
 
         <div
-          className="relative z-10 w-full h-full rounded-[16px] overflow-hidden cursor-zoom-in"
+          className="relative z-10 w-full h-full rounded-[16px] overflow-hidden cursor-zoom-in bg-white dark:bg-zinc-950"
+          style={{ boxShadow: "0 18px 40px -14px rgba(0,0,0,0.35), 0 8px 18px -8px rgba(0,0,0,0.2)" }}
           onClick={handleTap}
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
@@ -249,14 +257,17 @@ function MobileStackedImageViewer({
             accent={accent}
             fill
             sizes="90vw"
-            className="object-cover animate-in fade-in duration-200"
+            className="object-contain animate-in fade-in duration-200"
             priority={activeIdx === 0}
           />
-          <div
-            className="absolute inset-x-0 bottom-0 h-14 pointer-events-none"
-            style={{ background: "linear-gradient(to bottom, transparent, rgba(0,0,0,0.28))" }}
-            aria-hidden="true"
-          />
+
+          {/* Floating Like/Share — top-right, over the image */}
+          <div className="absolute top-2.5 right-2.5 z-20 flex flex-col gap-2">
+            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center", CHIP)}>
+              <LikeButton liked={false} onToggle={() => {}} context="header" />
+            </div>
+          </div>
+
           {hasMultiple && (
             <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-sm text-white text-[0.68rem] font-bold tracking-widest" aria-live="polite">
               {activeIdx + 1} / {images.length}
@@ -279,61 +290,62 @@ function MobileStackedImageViewer({
   )
 }
 
-// ===== DESKTOP IMAGE VIEWER — single image only, no stacking. Fills
-// the flex-1 space handed to it by the left panel (real flex sizing,
-// not a percentage-height guess, so it can never collapse to 0px). =====
-function DesktopSingleImageViewer({
-  images, activeIdx, onPrev, onNext, accent, onTapImage,
+// ===== DESKTOP VERTICAL IMAGE STACK — up to 5 images, graduated sizes
+// (fixed pattern, independent of focus), greyscale when unfocused, hover
+// zoom, click behavior: click an unfocused image → focus it; click the
+// already-focused image → open zoom. Mouse wheel over the stack shifts
+// focus like a mini carousel. =====
+function DesktopImageStack({
+  images, activeIdx, setActiveIdx, accent, onOpenZoom,
 }: {
-  images: string[]; activeIdx: number; onPrev: () => void; onNext: () => void
-  accent: string; onTapImage: (i: number) => void
+  images: string[]; activeIdx: number; setActiveIdx: (i: number) => void
+  accent: string; onOpenZoom: (i: number) => void
 }) {
-  const hasMultiple = images.length > 1
+  const handleWheel = (e: React.WheelEvent) => {
+    if (images.length < 2) return
+    if (Math.abs(e.deltaY) < 8) return
+    e.preventDefault()
+    if (e.deltaY > 0) setActiveIdx(activeIdx < images.length - 1 ? activeIdx + 1 : 0)
+    else setActiveIdx(activeIdx > 0 ? activeIdx - 1 : images.length - 1)
+  }
+
   return (
-    <div className="relative flex items-center gap-3 w-full h-full">
-      {hasMultiple && (
-        <button
-          onClick={onPrev}
-          aria-label="Previous image"
-          className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 transition-colors hover:text-current active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          style={{ ["--tw-ring-color" as any]: accent }}
-        >
-          <CaretLeft size={16} weight="bold" />
-        </button>
-      )}
-
-      <div
-        className="relative flex-1 h-full rounded-[16px] overflow-hidden cursor-zoom-in"
-        style={{ boxShadow: "0 24px 48px -18px rgba(0,0,0,0.35), 0 10px 20px -10px rgba(0,0,0,0.18)" }}
-        onClick={() => onTapImage(activeIdx)}
-      >
-        <SafeImage
-          key={activeIdx}
-          src={images[activeIdx]}
-          alt={`Image ${activeIdx + 1} of ${images.length}`}
-          accent={accent}
-          fill
-          sizes="46vw"
-          className="object-cover animate-in fade-in duration-200"
-          priority={activeIdx === 0}
-        />
-        {hasMultiple && (
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-sm text-white text-[0.68rem] font-bold tracking-widest" aria-live="polite">
-            {activeIdx + 1} / {images.length}
+    <div className="flex flex-col gap-2.5 w-full h-full" onWheel={handleWheel}>
+      {images.map((img, idx) => {
+        const isActive = idx === activeIdx
+        return (
+          <div
+            key={idx}
+            onClick={() => (isActive ? onOpenZoom(idx) : setActiveIdx(idx))}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); isActive ? onOpenZoom(idx) : setActiveIdx(idx) } }}
+            aria-label={isActive ? `Open image ${idx + 1} of ${images.length}` : `Focus image ${idx + 1} of ${images.length}`}
+            className="group/stackimg relative w-full rounded-[14px] overflow-hidden cursor-pointer bg-white dark:bg-zinc-950 transition-all duration-300"
+            style={{
+              flexGrow: STACK_SIZE_RATIOS[idx % STACK_SIZE_RATIOS.length],
+              flexBasis: 0,
+              minHeight: 0,
+              boxShadow: isActive ? `0 14px 30px -12px ${accent}55` : "0 4px 12px -6px rgba(0,0,0,0.12)",
+            }}
+          >
+            <SafeImage
+              src={img}
+              alt={`Image ${idx + 1} of ${images.length}`}
+              accent={accent}
+              fill
+              sizes="34vw"
+              className={cn(
+                "object-contain transition-all duration-300 md:group-hover/stackimg:scale-105",
+                !isActive && "grayscale opacity-70"
+              )}
+            />
+            {isActive && (
+              <div className="absolute inset-0 rounded-[14px] pointer-events-none" style={{ boxShadow: `inset 0 0 0 2px ${accent}` }} />
+            )}
           </div>
-        )}
-      </div>
-
-      {hasMultiple && (
-        <button
-          onClick={onNext}
-          aria-label="Next image"
-          className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 transition-colors hover:text-current active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          style={{ ["--tw-ring-color" as any]: accent }}
-        >
-          <CaretRight size={16} weight="bold" />
-        </button>
-      )}
+        )
+      })}
     </div>
   )
 }
@@ -341,7 +353,7 @@ function DesktopSingleImageViewer({
 // ── Header — hub label, title, client-type ──
 function ProjectHeader({ project, accent, onClose }: { project: ProjectData; accent: string; onClose: () => void }) {
   return (
-    <div className="flex items-start justify-between gap-3 px-6 md:px-8 pt-6 pb-4">
+    <div className="flex items-start justify-between gap-3 px-6 md:px-8 pt-8 pb-4">
       <div className="min-w-0">
         <div className="flex items-center gap-1.5">
           <HubIcon id={project.hub as HubId} size={13} color={accent} />
@@ -364,8 +376,9 @@ function ProjectHeader({ project, accent, onClose }: { project: ProjectData; acc
   )
 }
 
-// ── Like • Project X of Y (with switch arrows) • Share ──
-function ActionRow({
+// ── Desktop only: Like • Project X of Y (with switch arrows) • Share,
+// static row directly under the header. ──
+function DesktopActionRow({
   project, likedIds, onToggleLike, shareUrl, currentIdx, siblingCount, onPrevProject, onNextProject,
 }: {
   project: ProjectData
@@ -412,6 +425,36 @@ function ActionRow({
   )
 }
 
+// ── Mobile only: floating "Project X of Y" pill, sits at the bottom of
+// the image area (Like moved up to the image's top-right corner). ──
+function MobileProjectNavPill({ currentIdx, siblingCount, onPrev, onNext, accent, shareUrl, title }: {
+  currentIdx: number; siblingCount: number; onPrev: () => void; onNext: () => void
+  accent: string; shareUrl: string; title: string
+}) {
+  return (
+    <div className="flex items-center justify-center gap-2 px-3 pt-2">
+      <div className={cn("flex items-center gap-2 px-3 py-1.5 rounded-full", "bg-zinc-100 dark:bg-zinc-900")}>
+        {siblingCount > 1 && (
+          <button onClick={onPrev} aria-label="Previous project" className="w-6 h-6 rounded-full flex items-center justify-center text-zinc-400 dark:text-zinc-500 active:scale-90">
+            <CaretLeft size={12} weight="bold" />
+          </button>
+        )}
+        <span className="text-[0.76rem] font-bold text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+          {siblingCount > 1 ? `Project ${currentIdx + 1} of ${siblingCount}` : "1 project"}
+        </span>
+        {siblingCount > 1 && (
+          <button onClick={onNext} aria-label="Next project" className="w-6 h-6 rounded-full flex items-center justify-center text-zinc-400 dark:text-zinc-500 active:scale-90">
+            <CaretRight size={12} weight="bold" />
+          </button>
+        )}
+      </div>
+      <div className={cn("w-8 h-8 rounded-full flex items-center justify-center", "bg-zinc-100 dark:bg-zinc-900")}>
+        <ShareButton url={shareUrl} title={title} />
+      </div>
+    </div>
+  )
+}
+
 export function ProjectViewerModal({
   project, onClose, zoomIndex, setZoomIndex, onCloseZoom, pathname, siblings, onNavigate, likedIds, onToggleLike,
 }: {
@@ -453,8 +496,6 @@ export function ProjectViewerModal({
     onNavigate(siblings[i])
   }, [hasSiblings, currentIdx, siblings, onNavigate])
 
-  // ── Keyboard: Escape closes; Left/Right cycle this project's own
-  // photos (ignored while before/after or the zoom overlay is active). ──
   useEffect(() => {
     if (!project) return
     const total = project.images?.length > 0 ? project.images.length : 1
@@ -495,19 +536,6 @@ export function ProjectViewerModal({
     </button>
   )
 
-  const actionRow = (
-    <ActionRow
-      project={project}
-      likedIds={likedIds}
-      onToggleLike={onToggleLike}
-      shareUrl={shareUrl}
-      currentIdx={currentIdx}
-      siblingCount={siblings.length}
-      onPrevProject={goPrevProject}
-      onNextProject={goNextProject}
-    />
-  )
-
   return (
     <div
       ref={containerRef}
@@ -520,7 +548,7 @@ export function ProjectViewerModal({
 
       {isMobile ? (
         <div className="flex-1 min-h-0 flex flex-col">
-          {/* ── Fixed: header + image + action row ── */}
+          {/* ── Fixed: header + image (Like/Share/nav now float on the image) ── */}
           <div className="shrink-0">
             <ProjectHeader project={project} accent={accent} onClose={onClose} />
             <div className="relative">
@@ -542,10 +570,18 @@ export function ProjectViewerModal({
                 />
               )}
             </div>
-            {actionRow}
+            <MobileProjectNavPill
+              currentIdx={currentIdx}
+              siblingCount={siblings.length}
+              onPrev={goPrevProject}
+              onNext={goNextProject}
+              accent={accent}
+              shareUrl={shareUrl}
+              title={project.title}
+            />
           </div>
 
-          {/* ── Scrollable: text only ── */}
+          {/* ── Scrollable: text only, fades in right below the image ── */}
           <div className="relative flex-1 min-h-0 overflow-y-auto overscroll-contain">
             <ScrollFadeTop />
             <div className="px-6 pt-4 pb-4">
@@ -556,8 +592,8 @@ export function ProjectViewerModal({
         </div>
       ) : (
         <>
-          {/* ── Left panel: image (fixed) + Other Projects (fixed) ── */}
-          <div className="hidden md:flex md:w-[46%] md:h-full md:shrink-0 md:flex-col md:border-r md:border-zinc-100 dark:md:border-zinc-800 md:min-h-0">
+          {/* ── Left panel: image stack, no divider border, symmetric padding ── */}
+          <div className="hidden md:flex md:w-[46%] md:h-full md:shrink-0 md:flex-col md:min-h-0">
             <div className="relative flex-1 min-h-0 p-8">
               {beforeAfterToggle}
               {comparing && hasBA ? (
@@ -565,30 +601,31 @@ export function ProjectViewerModal({
                   <BeforeAfterSlider before={beforeImg!} after={afterImg!} accent={accent} />
                 </div>
               ) : (
-                <DesktopSingleImageViewer
+                <DesktopImageStack
                   images={allImages}
                   activeIdx={activeImg}
-                  onPrev={goPrevImage}
-                  onNext={goNextImage}
+                  setActiveIdx={setActiveImg}
                   accent={accent}
-                  onTapImage={handleTapImage}
+                  onOpenZoom={handleTapImage}
                 />
               )}
             </div>
-            <OtherProjectsPills
-              siblings={siblings}
-              currentId={project.id}
-              accent={accent}
-              onSelect={onNavigate}
-              className="shrink-0 border-t border-zinc-100 dark:border-zinc-800 px-6 py-4"
-            />
           </div>
 
-          {/* ── Right panel: header + action row (fixed), text (scrolls) ── */}
+          {/* ── Right panel: header + action row (fixed), text fades in below ── */}
           <div className="hidden md:flex md:flex-1 md:h-full md:flex-col md:min-h-0">
             <div className="shrink-0 max-w-xl">
               <ProjectHeader project={project} accent={accent} onClose={onClose} />
-              {actionRow}
+              <DesktopActionRow
+                project={project}
+                likedIds={likedIds}
+                onToggleLike={onToggleLike}
+                shareUrl={shareUrl}
+                currentIdx={currentIdx}
+                siblingCount={siblings.length}
+                onPrevProject={goPrevProject}
+                onNextProject={goNextProject}
+              />
             </div>
             <div className="relative flex-1 min-h-0 overflow-y-auto overscroll-contain">
               <ScrollFadeTop />
@@ -601,6 +638,7 @@ export function ProjectViewerModal({
         </>
       )}
 
+      <FloatingOtherProjectsWidget siblings={siblings} currentId={project.id} accent={accent} onSelect={onNavigate} />
       <FloatingCTAPill project={project} onClose={onClose} accent={accent} />
 
       {zoomIndex !== null && (
@@ -608,4 +646,4 @@ export function ProjectViewerModal({
       )}
     </div>
   )
-      } 
+  } 
