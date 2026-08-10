@@ -33,8 +33,8 @@ const poppinsHeading = Poppins({
 // entirely: the files live in /public/fonts/sora and are bundled locally.
 const soraFallback = localFont({
   src: [
-    { path: '../public/fonts/sora/Sora-SemiBold.woff2', weight: '600', style: 'normal' },
-    { path: '../public/fonts/sora/Sora-Bold.woff2', weight: '700', style: 'normal' },
+    { path: '/public/fonts/sora/Sora-SemiBold.woff2', weight: '600', style: 'normal' },
+    { path: '/public/fonts/sora/Sora-Bold.woff2', weight: '700', style: 'normal' },
   ],
   variable: '--font-sora',
   display: 'swap',
