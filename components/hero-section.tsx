@@ -4,12 +4,13 @@
 import React, { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
-import { ArrowRight, Play, Pause } from "@phosphor-icons/react"
+import { ArrowRight, Play, Pause, Sun, Moon, CloudSun, CloudMoon, Cloud, CloudFog, CloudRain, CloudLightning, Snowflake } from "@phosphor-icons/react"
 import { BRAND, BIZ, MARQUEE_ITEMS } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { HUBS_DATA } from "@/lib/hero-data"
 import { ClassicTagline } from "@/components/classic-tagline"
 import { getBusinessStatus, type BusinessStatus } from "@/lib/sa-time"
+import { getWeatherSnapshot, type WeatherCategory } from "@/lib/weather"
 
 function hexToRgbLocal(hex: string) {
   const clean = hex.replace("#", "")
@@ -69,14 +70,49 @@ function buildArrangement() {
   }))
 }
 
-// Turns raw BusinessStatus into the single short line shown in the hero.
-// Kept separate from the JSX so the greeting logic is easy to scan/tweak
-// without wading through the render tree.
+// Icon + color per weather/time category — replaces the old pulsing dot.
+// Purely decorative context now (open/closed state is conveyed by the
+// sentence text next to it, not by this icon), so colors are chosen to
+// read naturally for each condition rather than as a status signal.
+const WEATHER_ICON_MAP: Record<WeatherCategory, { Icon: React.ElementType; color: string }> = {
+  "clear-day": { Icon: Sun, color: "#F59E0B" },
+  "clear-night": { Icon: Moon, color: "#818CF8" },
+  "partly-cloudy-day": { Icon: CloudSun, color: "#F0A93A" },
+  "partly-cloudy-night": { Icon: CloudMoon, color: "#8B93D8" },
+  cloudy: { Icon: Cloud, color: "#9CA3AF" },
+  fog: { Icon: CloudFog, color: "#9CA3AF" },
+  rain: { Icon: CloudRain, color: "#60A5FA" },
+  thunderstorm: { Icon: CloudLightning, color: "#A78BFA" },
+  snow: { Icon: Snowflake, color: "#7DD3FC" },
+}
+
+// Fallback category (used before the weather fetch resolves, or if it
+// fails) — derived from time-of-day alone so the icon still makes sense
+// on first paint rather than showing nothing.
+function fallbackCategory(greeting: BusinessStatus["greeting"]): WeatherCategory {
+  return greeting === "morning" || greeting === "afternoon" ? "clear-day" : "clear-night"
+}
+
+// Hub-specific status sentence — deliberately names which hub group is
+// affected instead of implying the whole business is closed, since on a
+// public holiday only Tech/Design/E-Service actually close (Print & Docu
+// stays open every day per policy).
 function getHeroStatusLine(status: BusinessStatus): string {
-  const anyOpen = status.printAndDoc.open || status.techDesignEservice.open
-  if (status.isHoliday) return `— closed today for ${status.holidayName}`
-  if (anyOpen) return "— we're open right now"
-  return "— we're closed right now, but you can still browse"
+  const { printAndDoc, techDesignEservice, isHoliday, holidayName } = status
+
+  if (isHoliday) {
+    return `— Tech, Design & E-Service are closed today for ${holidayName}, but Print & Docu is open as usual`
+  }
+  if (printAndDoc.open && techDesignEservice.open) {
+    return "— everything's open right now"
+  }
+  if (printAndDoc.open && !techDesignEservice.open) {
+    return `— Print & Docu is open right now, Tech, Design & E-Service ${techDesignEservice.label}`
+  }
+  if (!printAndDoc.open && techDesignEservice.open) {
+    return `— Tech, Design & E-Service is open right now, Print & Docu ${printAndDoc.label}`
+  }
+  return `— we're closed right now, Print & Docu ${printAndDoc.label}`
 }
 
 export function HeroSection() {
@@ -85,6 +121,7 @@ export function HeroSection() {
   const [mounted, setMounted] = useState(false)
   const [marqueePaused, setMarqueePaused] = useState(false)
   const [status, setStatus] = useState<BusinessStatus | null>(null)
+  const [weatherCategory, setWeatherCategory] = useState<WeatherCategory | null>(null)
 
   const [arrangement, setArrangement] = useState(() =>
     COLLAGE_SLOTS.map((slot, i) => ({ hub: HUBS_DATA[i], slot, width: slot.baseWidth }))
@@ -97,6 +134,11 @@ export function HeroSection() {
     setArrangement(buildArrangement())
     setStatus(getBusinessStatus())
     const id = setInterval(() => setStatus(getBusinessStatus()), 60_000)
+
+    getWeatherSnapshot().then((snapshot) => {
+      if (snapshot) setWeatherCategory(snapshot.category)
+    })
+
     return () => clearInterval(id)
   }, [])
 
@@ -109,7 +151,8 @@ export function HeroSection() {
   const activeCircleColor = CTA_FILL_COLOR
   const activeArrowIconColor = getArrowIconColor(activeCircleColor)
 
-  const heroAnyOpen = status ? status.printAndDoc.open || status.techDesignEservice.open : false
+  const displayCategory = weatherCategory ?? (status ? fallbackCategory(status.greeting) : "clear-day")
+  const { Icon: WeatherIcon, color: weatherIconColor } = WEATHER_ICON_MAP[displayCategory]
 
   const handleNavigate = (path: string) => router.push(path)
   const handleCtaClick = () => handleNavigate("/services")
@@ -135,20 +178,13 @@ export function HeroSection() {
           {/* Left column — text + CTA */}
           <div className="text-center md:text-left">
 
-            {/* Time-of-day / holiday-aware greeting — SAST-driven, sourced
-                from lib/sa-time.ts. mounted-gated since server render time
-                and the visitor's local time can differ, avoiding a
-                hydration mismatch on first paint. */}
+            {/* Time-of-day / holiday / weather-aware greeting — SAST-driven
+                via lib/sa-time.ts, icon via lib/weather.ts. mounted-gated
+                since server render time and the visitor's local time can
+                differ, avoiding a hydration mismatch on first paint. */}
             {mounted && status && (
               <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-3">
-                <span
-                  className={
-                    heroAnyOpen
-                      ? "w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"
-                      : "w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-600"
-                  }
-                  aria-hidden="true"
-                />
+                <WeatherIcon size={16} weight="fill" style={{ color: weatherIconColor }} aria-hidden="true" />
                 Good {status.greeting} {getHeroStatusLine(status)}
               </p>
             )}
@@ -300,4 +336,4 @@ export function HeroSection() {
       </div>
     </section>
   )
-      } 
+    } 
