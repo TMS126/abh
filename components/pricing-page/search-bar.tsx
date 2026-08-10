@@ -1,30 +1,47 @@
+// components/pricing-page/search.tsx
+// (Assuming this path based on the relative imports "./lib" and "./shared" —
+// flag me if the actual file lives elsewhere and I'll re-anchor.)
 "use client"
 
-import { MagnifyingGlass } from '@phosphor-icons/react'
+import { MagnifyingGlass, X } from '@phosphor-icons/react'
 import { Check, PlusCircle } from '@phosphor-icons/react'
 import { HubIcon } from '@/components/services-page/shared'
 import { BulkBadge } from './shared'
 import { Result } from './lib'
 
-// ── Search input ──
+// ===== SEARCH INPUT — now matches the Services page's InlineSearchBar
+// exactly: rounded-[14px] boxed container, solid neutral border,
+// brand-blue focus border, white/zinc-900 fill, left-aligned text (not
+// centered), plus the same clear (X) button when there's a query. =====
 export function PricingSearchInput({ query, setQuery }: { query: string; setQuery: (v: string) => void }) {
   return (
-    <div className="flex items-center justify-center gap-1.5 border-b-2 border-zinc-200 dark:border-zinc-800 focus-within:border-zinc-400 dark:focus-within:border-zinc-500 transition-colors">
-      <MagnifyingGlass size={16} weight="bold" className="text-zinc-400 pointer-events-none shrink-0" aria-hidden="true" />
-      <label htmlFor="pricing-search" className="sr-only">Search any service or price</label>
-      <input
-        id="pricing-search"
-        type="text"
-        placeholder="Search any service or price…"
-        value={query}
-        onChange={e => setQuery(e.target.value)}
-        className="min-w-0 flex-1 py-3 bg-transparent text-[1.05rem] font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none text-center"
-      />
+    <div className="relative mx-auto w-full max-w-md">
+      <div className="flex items-center gap-2.5 px-4 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus-within:border-brand-blue transition-all duration-200">
+        <MagnifyingGlass size={16} weight="bold" className="text-zinc-400 pointer-events-none shrink-0" aria-hidden="true" />
+        <label htmlFor="pricing-search" className="sr-only">Search any service or price</label>
+        <input
+          id="pricing-search"
+          type="text"
+          placeholder="Search any service or price…"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          className="min-w-0 flex-1 py-3 pr-8 bg-transparent border-0 ring-0 focus:ring-0 focus:outline-none text-base font-medium text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 outline-none appearance-none [-webkit-appearance:none]"
+        />
+      </div>
+      {query && (
+        <button
+          onClick={() => setQuery("")}
+          aria-label="Clear search"
+          className="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-600"
+        >
+          <X size={12} weight="bold" aria-hidden="true" />
+        </button>
+      )}
     </div>
   )
 }
 
-// ── Search results list ──
+// ── Search results list — unchanged ──
 export function PricingSearchResults({
   results, justAdded, onAdd,
 }: {
