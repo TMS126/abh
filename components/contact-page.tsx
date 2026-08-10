@@ -14,6 +14,7 @@ import { LocationMap } from "@/components/contact/location-map"
 import { FAQAccordion } from "@/components/contact/faq-accordion"
 import { HubSelect } from "@/components/contact/hub-select"
 import { FieldErrorTooltip } from "@/components/contact/field-error-tooltip"
+import { withStatusPrefix } from "@/lib/sa-time"
 
 const CONTACT_ICONS: Record<string, React.ElementType> = {
   "WhatsApp Us": WhatsappLogo,
@@ -77,7 +78,8 @@ function ContactPageInner() {
     const serviceLine = formData.service.startsWith("Not Sure")
       ? "I'm not sure which service I need yet — could you help me figure it out?"
       : `I'm interested in your ${formData.service}.`
-    const msg = `Hi ${BIZ.name}! My name is ${formData.name.trim()}. ${serviceLine} \n\nMessage: ${formData.message.trim()}`
+    const rawMsg = `Hi ${BIZ.name}! My name is ${formData.name.trim()}. ${serviceLine} \n\nMessage: ${formData.message.trim()}`
+    const msg = withStatusPrefix(rawMsg)
     window.open(`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(msg)}`, "_blank")
   }
 
@@ -122,12 +124,6 @@ function ContactPageInner() {
               </div>
             </ScrollBounce>
 
-            {/* Contact cards — icon is now raw (no colored bg chip),
-                and the value text (e.g. the email address) no longer
-                truncates. It wraps cleanly onto a second line instead
-                of being cut off or overflowing the card. Card height is
-                no longer fixed to a single-line assumption, so nothing
-                overlaps below it. */}
             <div className="grid grid-cols-3 gap-3 items-stretch">
               {GRID_CONTACT_LINKS.map((c, index) => {
                 const Icon = CONTACT_ICONS[c.title] ?? Phone
