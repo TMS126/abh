@@ -5,9 +5,6 @@
 // status panel, WhatsApp message prefixes, hero time-of-day copy) should
 // call getBusinessStatus() from here rather than duplicating hour logic.
 
-// ─── SAST time helpers ─────────────────────────────────────────────────
-// South Africa has no daylight saving — SAST is a fixed UTC+2 year-round,
-// so this never needs a timezone library or DST table.
 const SAST_OFFSET_MINUTES = 2 * 60
 
 export function getSASTNow(): Date {
@@ -26,15 +23,6 @@ function addDays(date: Date, days: number): Date {
   return d
 }
 
-// ─── SA Public Holidays — computed, not hardcoded ───────────────────────
-// Generates the correct list for ANY year automatically — no yearly
-// maintenance needed. Two moving parts:
-// 1. Easter Sunday is calculated via the Anonymous Gregorian algorithm
-//    (a standard, well-tested formula) — Good Friday and Family Day are
-//    then derived as fixed offsets from it (-2 days, +1 day).
-// 2. Fixed-date holidays that fall on a Sunday automatically roll to the
-//    following Monday, per South Africa's Public Holidays Act — computed
-//    per-year rather than hardcoded as a separate date.
 function calculateEasterSunday(year: number): Date {
   const a = year % 19
   const b = Math.floor(year / 100)
@@ -97,11 +85,6 @@ export function isPublicHoliday(date: Date = getSASTNow()): boolean {
   return getHolidayFor(date) !== null
 }
 
-// ─── Business status ─────────────────────────────────────────────────
-// Mirrors the two hub groupings from HOURS in lib/brand.ts:
-// - printAndDoc: Mon–Sun 07:00–20:00, open on public holidays
-// - techDesignEservice: Mon–Fri 09:00–17:00, Sat 09:00–12:00, closed
-//   Sun & public holidays
 export type BusinessStatus = {
   isHoliday: boolean
   holidayName: string | null
@@ -110,6 +93,14 @@ export type BusinessStatus = {
   greeting: "morning" | "afternoon" | "evening" | "night"
 }
 
+// `label` on each hub group is deliberately just the "next change" half
+// of the sentence (e.g. "closes at 20:00", "opens tomorrow at 09:00") —
+// it never repeats the word Open/Closed. Every consumer already shows
+// that state separately (a badge, an icon, etc.), so baking it into the
+// label too was producing "Open · Open now" / "Closed · Closed for
+// today" style stutter. The holiday case for Tech/Design/E-Service is
+// just the holiday's name on its own ("Christmas Day"), not "closed for
+// Christmas Day" — same reasoning, the Closed badge already says closed.
 export function getBusinessStatus(now: Date = getSASTNow()): BusinessStatus {
   const day = now.getDay()
   const hour = now.getHours()
@@ -119,34 +110,33 @@ export function getBusinessStatus(now: Date = getSASTNow()): BusinessStatus {
   const holiday = getHolidayFor(now)
   const isHoliday = holiday !== null
 
-  const printOpenWindow = minutesNow >= 7 * 60 && minutesNow < 20 * 60
-  const printAndDocOpen = printOpenWindow
+  const printAndDocOpen = minutesNow >= 7 * 60 && minutesNow < 20 * 60
   const printAndDocLabel = printAndDocOpen
-    ? "Open now · closes 20:00"
+    ? "closes at 20:00"
     : minutesNow < 7 * 60
-      ? "Opens today at 07:00"
-      : "Closed for today · opens 07:00"
+      ? "opens today at 07:00"
+      : "opens tomorrow at 07:00"
 
   let techOpen = false
-  let techLabel = "Closed"
+  let techLabel = "closed for today"
   if (isHoliday) {
-    techLabel = `Closed — ${holiday!.name}`
+    techLabel = holiday!.name
   } else if (day === 0) {
-    techLabel = "Closed — open again Monday"
+    techLabel = "opens Monday at 09:00"
   } else if (day >= 1 && day <= 5) {
     techOpen = minutesNow >= 9 * 60 && minutesNow < 17 * 60
     techLabel = techOpen
-      ? "Open now · closes 17:00"
+      ? "closes at 17:00"
       : minutesNow < 9 * 60
-        ? "Opens today at 09:00"
-        : "Closed for today · opens 09:00 tomorrow"
+        ? "opens today at 09:00"
+        : "opens tomorrow at 09:00"
   } else if (day === 6) {
     techOpen = minutesNow >= 9 * 60 && minutesNow < 12 * 60
     techLabel = techOpen
-      ? "Open now · closes 12:00"
+      ? "closes at 12:00"
       : minutesNow < 9 * 60
-        ? "Opens today at 09:00"
-        : "Closed for the weekend · opens Monday 09:00"
+        ? "opens today at 09:00"
+        : "opens Monday at 09:00"
   }
 
   const greeting: BusinessStatus["greeting"] =
@@ -161,10 +151,6 @@ export function getBusinessStatus(now: Date = getSASTNow()): BusinessStatus {
   }
 }
 
-// ─── WhatsApp message helper ─────────────────────────────────────────
-// Prepends a short status line to any WhatsApp message when relevant, so
-// a message sent outside hours or on a holiday already sets the right
-// expectation instead of needing a manual reply first.
 export function withStatusPrefix(message: string, now: Date = getSASTNow()): string {
   const status = getBusinessStatus(now)
   if (status.isHoliday) {
@@ -174,4 +160,4 @@ export function withStatusPrefix(message: string, now: Date = getSASTNow()): str
     return `[Sent outside business hours — we'll reply first thing] ${message}`
   }
   return message
-}
+} 
