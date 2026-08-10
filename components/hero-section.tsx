@@ -1,3 +1,4 @@
+// components/hero-section.tsx
 "use client"
 
 import React, { useState, useEffect, useRef } from "react"
@@ -8,8 +9,8 @@ import { BRAND, BIZ, MARQUEE_ITEMS } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { HUBS_DATA } from "@/lib/hero-data"
 import { ClassicTagline } from "@/components/classic-tagline"
+import { getBusinessStatus, type BusinessStatus } from "@/lib/sa-time"
 
-// Contrast helper for the arrow icon against its own circle bg
 function hexToRgbLocal(hex: string) {
   const clean = hex.replace("#", "")
   const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean
@@ -30,7 +31,6 @@ function getArrowIconColor(bgHex: string) {
   return contrastWhite >= contrastDark ? "#ffffff" : "#14202b"
 }
 
-// Hub photo collage data
 const HUB_IMAGES: Record<string, string> = {
   print: "/1_PRINT_HUB_white.webp",
   doc: "/2_DOCUMENT_HUB_white.webp",
@@ -39,7 +39,6 @@ const HUB_IMAGES: Record<string, string> = {
   tech: "/5_TECH_HUB_white.webp",
 }
 
-// Five slots in a loose diamond so pill corners never overlap
 const COLLAGE_SLOTS: { top?: string; bottom?: string; left?: string; right?: string; z: number; baseWidth: number }[] = [
   { top: "0%", left: "2%", z: 10, baseWidth: 40 },
   { top: "2%", right: "0%", z: 20, baseWidth: 38 },
@@ -52,7 +51,6 @@ function pillLabel(hubName: string) {
   return hubName.replace(/\s*Hub$/i, "").toUpperCase()
 }
 
-// Fisher–Yates shuffle
 function shuffleArray<T>(arr: T[]): T[] {
   const a = [...arr]
   for (let i = a.length - 1; i > 0; i--) {
@@ -67,8 +65,18 @@ function buildArrangement() {
   return COLLAGE_SLOTS.map((slot, i) => ({
     hub: shuffledHubs[i],
     slot,
-    width: slot.baseWidth + (Math.random() * 6 - 3), // ±3% jitter
+    width: slot.baseWidth + (Math.random() * 6 - 3),
   }))
+}
+
+// Turns raw BusinessStatus into the single short line shown in the hero.
+// Kept separate from the JSX so the greeting logic is easy to scan/tweak
+// without wading through the render tree.
+function getHeroStatusLine(status: BusinessStatus): string {
+  const anyOpen = status.printAndDoc.open || status.techDesignEservice.open
+  if (status.isHoliday) return `— closed today for ${status.holidayName}`
+  if (anyOpen) return "— we're open right now"
+  return "— we're closed right now, but you can still browse"
 }
 
 export function HeroSection() {
@@ -76,6 +84,7 @@ export function HeroSection() {
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [marqueePaused, setMarqueePaused] = useState(false)
+  const [status, setStatus] = useState<BusinessStatus | null>(null)
 
   const [arrangement, setArrangement] = useState(() =>
     COLLAGE_SLOTS.map((slot, i) => ({ hub: HUBS_DATA[i], slot, width: slot.baseWidth }))
@@ -86,6 +95,9 @@ export function HeroSection() {
   React.useEffect(() => {
     setMounted(true)
     setArrangement(buildArrangement())
+    setStatus(getBusinessStatus())
+    const id = setInterval(() => setStatus(getBusinessStatus()), 60_000)
+    return () => clearInterval(id)
   }, [])
 
   const isDark = mounted && resolvedTheme === "dark"
@@ -96,6 +108,8 @@ export function HeroSection() {
 
   const activeCircleColor = CTA_FILL_COLOR
   const activeArrowIconColor = getArrowIconColor(activeCircleColor)
+
+  const heroAnyOpen = status ? status.printAndDoc.open || status.techDesignEservice.open : false
 
   const handleNavigate = (path: string) => router.push(path)
   const handleCtaClick = () => handleNavigate("/services")
@@ -120,6 +134,25 @@ export function HeroSection() {
 
           {/* Left column — text + CTA */}
           <div className="text-center md:text-left">
+
+            {/* Time-of-day / holiday-aware greeting — SAST-driven, sourced
+                from lib/sa-time.ts. mounted-gated since server render time
+                and the visitor's local time can differ, avoiding a
+                hydration mismatch on first paint. */}
+            {mounted && status && (
+              <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-3">
+                <span
+                  className={
+                    heroAnyOpen
+                      ? "w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"
+                      : "w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-600"
+                  }
+                  aria-hidden="true"
+                />
+                Good {status.greeting} {getHeroStatusLine(status)}
+              </p>
+            )}
+
             <h1 className="font-sans font-black text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.1] mb-4 text-balance transition-colors duration-300 text-zinc-900 dark:text-zinc-50">
               <span
                 className="transition-colors duration-200 hover:text-[#1E6FA8] active:text-[#1E6FA8]"
@@ -191,10 +224,6 @@ export function HeroSection() {
             <div className="relative w-full h-[420px] sm:h-[480px] md:h-[560px]">
               {arrangement.map(({ hub, slot, width }) => {
                 const hubAccent = isDark ? hub.colorDark : hub.colorLight
-                // On hover the pill fills with --hub-accent. Its text must
-                // contrast that fill, not be a hardcoded white — several hubs
-                // (E-Service, Tech) use pale accents in dark mode where white
-                // text would be unreadable. Derive a readable fg per accent.
                 const hubAccentFg = getArrowIconColor(hubAccent)
                 return (
                   <div
@@ -237,10 +266,6 @@ export function HeroSection() {
           }}
           className="relative w-full max-w-[1240px] py-4 overflow-hidden select-none group/marquee rounded-[14px] bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800 [mask-image:linear-gradient(to_right,transparent_0%,black_8%,black_92%,transparent_100%)]"
         >
-          {/* Accessibility: hover/touch already pause this, but neither is
-              keyboard-operable — WCAG 2.2.2 requires a pause mechanism for
-              continuously auto-scrolling content that any input method can
-              reach, so this button is the keyboard (and click) equivalent. */}
           <button
             onClick={() => setMarqueePaused((p) => !p)}
             aria-pressed={marqueePaused}
@@ -275,4 +300,4 @@ export function HeroSection() {
       </div>
     </section>
   )
-}  
+      } 
