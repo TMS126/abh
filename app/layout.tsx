@@ -1,5 +1,7 @@
+// app/layout.tsx
 import type { Metadata, Viewport } from 'next'
-import { Poppins, Sora, Instrument_Sans, DM_Sans, JetBrains_Mono } from 'next/font/google'
+import { Poppins, Instrument_Sans, DM_Sans, JetBrains_Mono } from 'next/font/google'
+import localFont from 'next/font/local'
 import Script from 'next/script'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Analytics } from '@vercel/analytics/next'
@@ -23,9 +25,17 @@ const poppinsHeading = Poppins({
   display: 'swap',
 })
 
-const soraFallback = Sora({
-  subsets: ['latin'],
-  weight: ['600', '700'],
+// Sora is now self-hosted (next/font/local) instead of next/font/google.
+// The Google build was failing because Turbopack fetches the actual
+// woff2 files from fonts.gstatic.com at build time, and that request
+// was 404ing — an outage on Google's end, not our code, but it took the
+// whole build down with it. Self-hosting removes that network dependency
+// entirely: the files live in /public/fonts/sora and are bundled locally.
+const soraFallback = localFont({
+  src: [
+    { path: '../public/fonts/sora/Sora-SemiBold.woff2', weight: '600', style: 'normal' },
+    { path: '../public/fonts/sora/Sora-Bold.woff2', weight: '700', style: 'normal' },
+  ],
   variable: '--font-sora',
   display: 'swap',
 })
@@ -118,4 +128,4 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       </body>
     </html>
   )
-  } 
+} 
