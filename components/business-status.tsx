@@ -13,15 +13,11 @@ interface HubStatus {
   holidayNote?: string
 }
 
-// Maps the shared getBusinessStatus() output onto this component's
-// existing pill shape, instead of duplicating hour-checking logic here
-// like before. Holiday awareness comes through automatically:
-// techDesignEservice closes entirely on public holidays (per
-// HOURS.techDesignEservice in lib/brand.ts), while printAndDoc stays
-// open every day including holidays — getBusinessStatus already encodes
-// both rules; this just adds a small explanatory note for the holiday
-// case on printAndDoc, since "Open" alone doesn't explain why it's still
-// open on a day that's usually a red flag for "closed."
+// Pulls the state directly from getBusinessStatus() — no duplicated hour
+// logic here. Since sa-time.ts's labels no longer bake in the word
+// Open/Closed (see comment there), the pill below can safely show
+// "Open · closes at 20:00" or "Closed · opens today at 07:00" without
+// any repeated wording.
 function deriveHubStatuses(status: BusinessStatus): { printDoc: HubStatus; techEtc: HubStatus } {
   const printDoc: HubStatus = {
     open: status.printAndDoc.open,
@@ -177,4 +173,4 @@ export function BusinessStatusFull() {
       <StatusPill status={techEtc} />
     </div>
   )
-    } 
+} 
