@@ -104,6 +104,16 @@ function ContactPageInner() {
         }
       `}</style>
 
+      {/* The sticky mobile WhatsApp bar (bottom of this page) sits in the
+          exact same spot as the global WhatsApp FAB — on mobile only,
+          the sticky bar replaces it entirely so they don't overlap.
+          Desktop has no sticky bar, so the FAB stays untouched there. */}
+      <style>{`
+        @media (max-width: 767px) {
+          [data-widget="whatsapp-fab"] { display: none !important; }
+        }
+      `}</style>
+
       <section className="px-4 md:px-8 pt-[calc(var(--nav-h)+2rem)] pb-8">
         <div className="max-w-[980px] mx-auto">
           <ScrollBounce>
