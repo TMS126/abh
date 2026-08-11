@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import Image from "next/image"
-import { X, ArrowRight, Sparkle } from "@phosphor-icons/react"
+import { X, Sparkle } from "@phosphor-icons/react"
 import { BRAND } from "@/lib/brand"
 
 // ---------------------------------------------------------------------------
@@ -14,62 +14,43 @@ const ORANGE = BRAND.orangeDark
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
-// FIX: this component previously hardcoded `const BLUE = BRAND.blue` and
-// ignored any color passed in — about-page.tsx was already calling
-// <NakedTraderzReveal accentColor={blueOnCard} /> (blueOnCard is BRAND.blue
-// run through ensureAccessible against the card background), but that prop
-// had nowhere to go. Accepting it here is what actually makes the link
-// contrast-safe in dark mode. Default kept so the component still renders
-// sensibly if ever used without the prop.
 interface NakedTraderzRevealProps {
   accentColor?: string
 }
 
 export function NakedTraderzReveal({ accentColor = BRAND.blue }: NakedTraderzRevealProps) {
-  const [previewOpen, setPreviewOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
+  const [animateIn, setAnimateIn] = useState(false)
 
-  const wrapperRef = useRef<HTMLSpanElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const closeBtnRef = useRef<HTMLButtonElement>(null)
 
-  const closeModal = useCallback(() => {
-    setModalOpen(false)
-    triggerRef.current?.focus()
-  }, [])
-
+  // -------------------------------------------------------------------------
+  // Open / close
+  // -------------------------------------------------------------------------
   const openModal = useCallback(() => {
     setModalOpen(true)
-    setPreviewOpen(false)
   }, [])
 
-  // -------------------------------------------------------------------------
-  // Trigger behavior — small popup first, modal on second activation
-  // -------------------------------------------------------------------------
-  // Desktop/mobile unified trigger: first activation reveals the mini
-  // preview, second activation (tap again, or click while hover-preview
-  // is already showing) opens the full modal.
-  function handleTriggerClick() {
-    if (previewOpen) {
-      openModal()
-    } else {
-      setPreviewOpen(true)
-    }
-  }
+  // FIX: previously faded+shrank the modal for 200ms before unmounting,
+  // which left a visible "small shrunk popup" on screen during that
+  // window — that's what read as a stray popup after closing. Now it
+  // closes immediately; only the open transition animates.
+  const closeModal = useCallback(() => {
+    setModalOpen(false)
+    setAnimateIn(false)
+    triggerRef.current?.focus({ preventScroll: true })
+  }, [])
 
-  // Close the mini preview on outside tap/click (mobile + desktop)
+  // Trigger the enter transition on the next frame after mount, so the
+  // browser has a "from" state (opacity-0/scale-96) to animate away from.
   useEffect(() => {
-    if (!previewOpen) return
-    function handlePointerDown(e: PointerEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setPreviewOpen(false)
-      }
-    }
-    document.addEventListener("pointerdown", handlePointerDown)
-    return () => document.removeEventListener("pointerdown", handlePointerDown)
-  }, [previewOpen])
+    if (!modalOpen) return
+    const raf = requestAnimationFrame(() => setAnimateIn(true))
+    return () => cancelAnimationFrame(raf)
+  }, [modalOpen])
 
-  // Modal: Escape to close, lock scroll, focus the close button
+  // Escape to close, lock scroll, focus the close button
   useEffect(() => {
     if (!modalOpen) return
     function handleKey(e: KeyboardEvent) {
@@ -85,27 +66,16 @@ export function NakedTraderzReveal({ accentColor = BRAND.blue }: NakedTraderzRev
   }, [modalOpen, closeModal])
 
   return (
-    <span
-      ref={wrapperRef}
-      className="relative inline-block"
-      onBlur={(e) => {
-        if (!wrapperRef.current?.contains(e.relatedTarget as Node)) {
-          setPreviewOpen(false)
-        }
-      }}
-    >
+    <span className="relative inline-block">
       {/* ----------------------------------------------------------------- */}
-      {/* Trigger link                                                     */}
+      {/* Trigger link — single click opens the modal directly             */}
       {/* ----------------------------------------------------------------- */}
       <button
         ref={triggerRef}
         type="button"
-        onMouseEnter={() => setPreviewOpen(true)}
-        onMouseLeave={() => setPreviewOpen(false)}
-        onFocus={() => setPreviewOpen(true)}
-        onClick={handleTriggerClick}
-        aria-expanded={previewOpen}
+        onClick={openModal}
         aria-haspopup="dialog"
+        aria-expanded={modalOpen}
         aria-label="Naked Traderz — view the first ever logo, before and after"
         className="underline decoration-dotted decoration-1 underline-offset-2 font-semibold outline-none rounded-sm focus-visible:ring-2"
         style={{ color: accentColor, textDecorationColor: `${accentColor}80` }}
@@ -114,69 +84,28 @@ export function NakedTraderzReveal({ accentColor = BRAND.blue }: NakedTraderzRev
       </button>
 
       {/* ----------------------------------------------------------------- */}
-      {/* Mini preview popup                                               */}
-      {/* ----------------------------------------------------------------- */}
-      {previewOpen && (
-        <div className="absolute z-40 left-1/2 -translate-x-1/2 top-full mt-2 w-[220px] rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-elevated border border-zinc-100 dark:border-zinc-800/60 p-3">
-          <div className="flex items-center justify-center mb-2">
-            <span
-              className="text-[0.62rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: `${ORANGE}15`, color: ORANGE }}
-            >
-              1st Ever Logo
-            </span>
-          </div>
-
-          <div className="flex items-center justify-center gap-2">
-            <div className="flex flex-col items-center gap-1">
-              {/* FIX: object-cover cropped these logos to fit the square box.
-                  object-contain + a neutral background shows the logo's real
-                  aspect ratio, letterboxed rather than cropped. */}
-              <div className="relative w-14 h-14 rounded-[10px] overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50">
-                <Image
-                  src="/nts.webp"
-                  alt="Naked Traderz logo — original sketch"
-                  fill
-                  sizes="56px"
-                  className="object-contain"
-                />
-              </div>
-              <span className="text-[0.6rem] font-bold uppercase tracking-wide text-zinc-400">Before</span>
-            </div>
-            <ArrowRight size={14} weight="bold" className="text-zinc-300 dark:text-zinc-600 shrink-0" aria-hidden="true" />
-            <div className="flex flex-col items-center gap-1">
-              <div className="relative w-14 h-14 rounded-[10px] overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50">
-                <Image
-                  src="/nto.webp"
-                  alt="Naked Traderz logo — final design"
-                  fill
-                  sizes="56px"
-                  className="object-contain"
-                />
-              </div>
-              <span className="text-[0.6rem] font-bold uppercase tracking-wide text-zinc-400">After</span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={openModal}
-            className="mt-2.5 w-full text-center text-[0.68rem] font-bold uppercase tracking-widest py-2 rounded-[8px] transition-colors"
-            style={{ color: accentColor, backgroundColor: `${accentColor}10` }}
-          >
-            Tap to zoom
-          </button>
-        </div>
-      )}
-
-      {/* ----------------------------------------------------------------- */}
-      {/* Full modal                                                       */}
+      {/* Modal                                                            */}
       {/* ----------------------------------------------------------------- */}
       {modalOpen && (
-        <div role="dialog" aria-modal="true" aria-labelledby="nt-modal-title" className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} aria-hidden="true" />
+        <div role="dialog" aria-modal="true" aria-labelledby="nt-modal-title" className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-200 ease-out"
+            style={{ opacity: animateIn ? 1 : 0 }}
+            onClick={closeModal}
+            aria-hidden="true"
+          />
 
-          <div className="relative w-full max-w-md rounded-[18px] bg-white dark:bg-zinc-950 shadow-2xl p-6 md:p-7">
+          {/* FIX: was max-w-md — too cramped on phone. Now takes up most
+              of the viewport width (94vw) on mobile, caps at a sensible
+              size on larger screens, and scrolls internally if needed so
+              nothing gets clipped on short phone screens. */}
+          <div
+            className="relative w-[94vw] sm:w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-[20px] bg-white dark:bg-zinc-950 shadow-2xl p-5 sm:p-8 transition-all duration-200 ease-out"
+            style={{
+              opacity: animateIn ? 1 : 0,
+              transform: animateIn ? "scale(1)" : "scale(0.96)",
+            }}
+          >
             <button
               ref={closeBtnRef}
               type="button"
@@ -202,33 +131,35 @@ export function NakedTraderzReveal({ accentColor = BRAND.blue }: NakedTraderzRev
               Market trading group — forex &amp; CFD trading (e.g. EUR/USD)
             </p>
 
-            <div className="grid grid-cols-2 gap-3">
-              {/* FIX: same object-contain swap as the mini preview, so the
-                  zoomed view shows the logos' true proportions instead of a
-                  cropped square. */}
-              <div className="flex flex-col gap-1.5">
-                <div className="relative aspect-square rounded-[12px] overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50">
+            {/* FIX: dropped the inner p-3 on each Image, which was
+                shrinking the visible logo inside an already-small box.
+                Combined with the wider modal, images are now
+                meaningfully bigger. Stacks full-width on mobile
+                (grid-cols-1), side-by-side from sm: up. */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+              <div className="flex flex-col gap-2">
+                <div className="relative w-full aspect-square rounded-[14px] overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50">
                   <Image
                     src="/nts.webp"
                     alt="Naked Traderz logo — original sketch"
                     fill
-                    sizes="200px"
-                    className="object-contain p-2"
+                    sizes="(max-width: 640px) 88vw, 320px"
+                    className="object-contain"
                   />
                 </div>
-                <span className="text-[0.68rem] font-bold uppercase tracking-widest text-zinc-400 text-center">Before</span>
+                <span className="text-[0.72rem] font-bold uppercase tracking-widest text-zinc-400 text-center">Before</span>
               </div>
-              <div className="flex flex-col gap-1.5">
-                <div className="relative aspect-square rounded-[12px] overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50">
+              <div className="flex flex-col gap-2">
+                <div className="relative w-full aspect-square rounded-[14px] overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50">
                   <Image
                     src="/nto.webp"
                     alt="Naked Traderz logo — final design"
                     fill
-                    sizes="200px"
-                    className="object-contain p-2"
+                    sizes="(max-width: 640px) 88vw, 320px"
+                    className="object-contain"
                   />
                 </div>
-                <span className="text-[0.68rem] font-bold uppercase tracking-widest text-zinc-400 text-center">After</span>
+                <span className="text-[0.72rem] font-bold uppercase tracking-widest text-zinc-400 text-center">After</span>
               </div>
             </div>
           </div>
@@ -236,5 +167,4 @@ export function NakedTraderzReveal({ accentColor = BRAND.blue }: NakedTraderzRev
       )}
     </span>
   )
-}
- 
+} 
