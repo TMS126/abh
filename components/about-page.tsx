@@ -1,4 +1,4 @@
-// components/about-page.tsx
+// components/about-page.tsx — top of file
 "use client"
 
 import { useState, useEffect } from "react"
@@ -13,7 +13,12 @@ import { BRAND, BIZ, ABOUT_VALUES, ABOUT_STANDARDS } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { SAMPLE_REVIEWS } from "@/components/testimonials-section"
 import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
-
+// FIX: this file kept its own copy of the full contrast-math block
+// (hexToRgb/relativeLuminance/contrastRatio/rgbToHex/rgbToHsl/hslToRgb/
+// ensureAccessible). lib/color.ts is now the canonical version — importing
+// ensureAccessible from there instead of maintaining a second copy that
+// can drift from it.
+import { ensureAccessible } from "@/lib/color"
 // Contrast-nudging color helpers — distinct from lib/color-utils.ts's
 // getReadableTextColor: this file needs to *adjust* a color until it
 // clears a target ratio, not just pick black/white, so it stays local.
