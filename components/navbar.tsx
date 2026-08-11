@@ -1,4 +1,3 @@
-// components/navbar.tsx
 "use client"
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
@@ -13,11 +12,9 @@ import { MobileMenu } from "@/components/navbar/mobile-menu"
 // Hover accent for plain-text nav links
 const HOVER_ORANGE = "#F4A261"
 
-// Route → accent color, echoed on the active desktop link's underline/text
-// and the mobile menu's active pill. Contact is deliberately excluded —
-// it keeps its existing solid-CTA treatment (blue fill, orange on hover)
-// rather than picking up grey, since weakening the CTA's visual weight
-// wasn't part of this request.
+// Route → accent color. Only used by the scroll-progress bar now — nav
+// links themselves are neutral by default and pick up HOVER_ORANGE when
+// active, regardless of route.
 const NAV_ROUTE_COLORS: Record<string, string> = {
   "/": BRAND.blue,
   "/services": BRAND.green,
@@ -286,7 +283,6 @@ export function Navbar() {
                 >
                   {NAV_ITEMS.map((item, idx) => {
                     const isActive = pathname === item.path
-                    const routeColor = NAV_ROUTE_COLORS[item.path]
 
                     if (item.isCta) {
                       return (
@@ -313,6 +309,8 @@ export function Navbar() {
                       )
                     }
 
+                    // Non-CTA links: neutral by default, brand-orange text
+                    // when active — no per-route color, no underline.
                     return (
                       <button
                         key={item.id}
@@ -320,30 +318,21 @@ export function Navbar() {
                         aria-current={isActive ? "page" : undefined}
                         style={{
                           transitionDelay: desktopNavOpen ? `${idx * 30}ms` : "0ms",
-                          color: isActive ? routeColor ?? HOVER_ORANGE : undefined,
+                          color: isActive ? HOVER_ORANGE : neutralColor,
                         }}
                         className={cn(
-                          "relative px-3.5 py-2 text-base whitespace-nowrap bg-transparent border-2 border-transparent transition-all duration-200",
+                          "px-3.5 py-2 text-base whitespace-nowrap bg-transparent border-2 border-transparent transition-all duration-200",
                           desktopNavOpen ? "opacity-100 scale-100" : "opacity-0 scale-75",
-                          isActive ? "font-black" : "font-medium text-zinc-500 dark:text-zinc-400"
+                          isActive ? "font-black" : "font-medium"
                         )}
                         onMouseEnter={(e) => {
                           if (!isActive) (e.currentTarget as HTMLElement).style.color = HOVER_ORANGE
                         }}
                         onMouseLeave={(e) => {
-                          if (!isActive) (e.currentTarget as HTMLElement).style.color = ""
+                          if (!isActive) (e.currentTarget as HTMLElement).style.color = neutralColor
                         }}
                       >
                         {item.label}
-                        {/* Active-page underline, tinted with that route's
-                            own color rather than a single fixed accent. */}
-                        {isActive && (
-                          <span
-                            aria-hidden="true"
-                            className="absolute left-1/2 -translate-x-1/2 bottom-0.5 w-4 h-[2px] rounded-full"
-                            style={{ backgroundColor: routeColor ?? HOVER_ORANGE }}
-                          />
-                        )}
                       </button>
                     )
                   })}
@@ -415,14 +404,19 @@ export function Navbar() {
 
         {/* Scroll progress bar — thin strip under the header, fills with
             the current page's scroll depth. Tinted with the active
-            route's color when one is defined, brand blue otherwise. */}
+            route's color when one is defined, brand blue otherwise.
+            Opacity is now constant instead of tied to navVisible — it
+            used to hide/fade with the header itself, which meant it only
+            became visible during the reveal-on-scroll-up animation and
+            read as "growing backwards." It now always reflects absolute
+            scroll position. */}
         <div className="w-full h-[2px] bg-transparent pointer-events-none">
           <div
             className="h-full transition-[width] duration-150 ease-out"
             style={{
               width: `${scrollProgress}%`,
               backgroundColor: NAV_ROUTE_COLORS[pathname] ?? BRAND.blue,
-              opacity: navVisible ? 0.7 : 0,
+              opacity: 0.7,
             }}
           />
         </div>
@@ -431,4 +425,4 @@ export function Navbar() {
       <MobileMenu menuOpen={menuOpen} setMenuOpen={setMenuOpen} pathname={pathname} navigate={navigate} neutralColor={neutralColor} />
     </>
   )
-          } 
+                  } 
