@@ -1,3 +1,4 @@
+// lib/color.ts
 /**
  * ────────────────────────────────────────────────────────────────────────────
  * COLOR / WCAG CONTRAST HELPERS
@@ -99,9 +100,23 @@ export function ensureAccessible(hex: string, bgHex: string, minRatio = 4.5) {
   return goingDarker ? "#1a1a1a" : "#fafafa"
 }
 
+/**
+ * Lightens `hex` toward white by a fixed number of HSL-lightness points,
+ * preserving hue and saturation. Unlike ensureAccessible, this has no
+ * early-return — it always shifts the color, even if the input already
+ * clears a contrast target. Use this when you need a color to visibly
+ * pop against a dark surface regardless of whether it's already
+ * "technically" readable.
+ */
+export function lighten(hex: string, amount: number) {
+  const hsl = rgbToHsl(hexToRgb(hex))
+  const l = Math.max(0, Math.min(100, hsl.l + amount))
+  return rgbToHex(hslToRgb(hsl.h, hsl.s, l))
+}
+
 /** Picks whichever of near-black/near-white reads best on a solid `hex` background. */
 export function getContrastText(hex: string) {
   const whiteRatio = contrastRatio(hex, "#ffffff")
   const blackRatio = contrastRatio(hex, "#1a1a1a")
   return whiteRatio >= blackRatio ? "#ffffff" : "#1a1a1a"
-}
+  } 
