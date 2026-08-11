@@ -1,19 +1,11 @@
-// components/navbar/mobile-menu.tsx
 "use client"
 
 import { useEffect, useRef } from "react"
 import { NAV_ITEMS, BRAND } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 
-// Same route-color map as navbar.tsx — Home/Services/Gallery/About get an
-// echoed accent on their active pill; Contact keeps its existing solid-CTA
-// treatment rather than picking up grey.
-const NAV_ROUTE_COLORS: Record<string, string> = {
-  "/": BRAND.blue,
-  "/services": BRAND.green,
-  "/gallery": BRAND.orange,
-  "/about": BRAND.blueDark,
-}
+// Keep in sync with HOVER_ORANGE in navbar.tsx
+const HOVER_ORANGE = "#F4A261"
 
 interface MobileMenuProps {
   menuOpen: boolean
@@ -69,8 +61,34 @@ export function MobileMenu({ menuOpen, setMenuOpen, pathname, navigate, neutralC
         <nav className="w-full max-w-[320px] flex flex-col items-center gap-2.5">
           {NAV_ITEMS.map((item, idx) => {
             const isActive = pathname === item.path
-            const routeColor = NAV_ROUTE_COLORS[item.path]
 
+            // CTA: always a solid blue filled pill, active or not —
+            // matches the desktop treatment exactly.
+            if (item.isCta) {
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => navigate(item.path)}
+                  aria-current={isActive ? "page" : undefined}
+                  tabIndex={menuOpen ? 0 : -1}
+                  style={{
+                    transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms",
+                    backgroundColor: BRAND.blue,
+                    color: "#ffffff",
+                  }}
+                  className={cn(
+                    "py-3 px-8 rounded-[14px] font-sans text-[1.2rem] font-semibold transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
+                    menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+                  )}
+                >
+                  {item.label}
+                </button>
+              )
+            }
+
+            // Non-CTA links: neutral by default, orange-bordered pill
+            // (border + text, transparent fill) when active. No solid
+            // per-route background anymore.
             return (
               <button
                 key={item.id}
@@ -79,21 +97,15 @@ export function MobileMenu({ menuOpen, setMenuOpen, pathname, navigate, neutralC
                 tabIndex={menuOpen ? 0 : -1}
                 style={{
                   transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms",
-                  // Active pill now uses that route's own accent instead
-                  // of a single fixed blue — Contact still falls back to
-                  // brand blue since it's excluded from NAV_ROUTE_COLORS.
-                  ...(isActive ? { backgroundColor: routeColor ?? BRAND.blue, color: "#ffffff" } : {}),
+                  color: isActive ? HOVER_ORANGE : neutralColor,
+                  borderColor: isActive ? HOVER_ORANGE : "transparent",
                 }}
                 className={cn(
-                  "py-3 px-8 rounded-[14px] font-sans text-[1.2rem] transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
-                  isActive ? "font-semibold" : "font-medium text-zinc-700 dark:text-zinc-100 hover:text-brand-blue dark:hover:text-brand-blue bg-transparent",
-                  item.isCta && !isActive && "border-2 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800/60",
+                  "py-3 px-8 rounded-[14px] font-sans text-[1.2rem] border-2 bg-transparent transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
+                  isActive ? "font-semibold" : "font-medium",
                   menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
                 )}
               >
-                {/* Green dot removed per your request — the solid-fill
-                    active pill (now in its own route color) already
-                    communicates "current page" clearly on its own. */}
                 {item.label}
               </button>
             )
@@ -119,4 +131,4 @@ export function MobileMenu({ menuOpen, setMenuOpen, pathname, navigate, neutralC
       </div>
     </div>
   )
-          } 
+        } 
