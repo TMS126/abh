@@ -1,13 +1,18 @@
+// components/about-page.tsx
 "use client"
 
 import { useState, useEffect } from "react"
+import Image from "next/image"
 import { useTheme } from "next-themes"
 import {
   Target, Heart, Lightning, WhatsappLogo, ShieldCheck, Desktop, Printer, DeviceMobile, ArrowRight, UsersThree,
+  Quotes, Star, EnvelopeSimple,
 } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, ABOUT_VALUES, ABOUT_STANDARDS } from "@/lib/brand"
+import { HUB_COLORS, HubKey } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
+import { SAMPLE_REVIEWS } from "@/components/testimonials-section"
 
 // Contrast-nudging color helpers
 function hexToRgb(hex: string) {
@@ -134,6 +139,53 @@ function renderIcon(iconName: string, className: string) {
   }
 }
 
+// ── Compact testimonial cards — small circular-avatar style, distinct
+// from the full carousel on other pages. Same shadow/hover mechanics
+// (lift + shadow bump), just a lighter, denser layout. ──
+function CompactTestimonials({ isDark }: { isDark: boolean }) {
+  const [hovered, setHovered] = useState<number | null>(null)
+  return (
+    <ul className="grid grid-cols-1 sm:grid-cols-3 gap-5" aria-label="What clients say">
+      {SAMPLE_REVIEWS.map((r, i) => {
+        const c = HUB_COLORS[r.hubId as HubKey]
+        const accent = isDark ? c.tagTextDark : c.tagText
+        const isHovered = hovered === i
+        return (
+          <ScrollBounce key={r.name + i} delay={i * 0.1}>
+            <li
+              onMouseEnter={() => setHovered(i)}
+              onMouseLeave={() => setHovered(null)}
+              onFocus={() => setHovered(i)}
+              onBlur={() => setHovered(null)}
+              tabIndex={0}
+              className={cn(
+                "rounded-[14px] bg-white dark:bg-zinc-950 p-5 flex flex-col items-center text-center outline-none transition-all duration-300",
+                isHovered ? "shadow-lg -translate-y-1.5" : "shadow-[0_1px_6px_rgba(0,0,0,0.07)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.28)]"
+              )}
+            >
+              <Quotes size={16} weight="fill" style={{ color: accent }} className="mb-2 opacity-40" aria-hidden="true" />
+              <p className="text-[0.92rem] font-medium text-zinc-600 dark:text-zinc-300 leading-relaxed mb-3">{r.quote}</p>
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center text-[0.82rem] font-black text-white mb-1.5"
+                style={{ backgroundColor: accent }}
+                aria-hidden="true"
+              >
+                {r.initials}
+              </div>
+              <p className="text-[0.9rem] font-black text-zinc-800 dark:text-zinc-200">{r.name}</p>
+              <div className="flex items-center gap-0.5 mt-1">
+                {Array.from({ length: 5 }).map((_, si) => (
+                  <Star key={si} size={11} weight="fill" style={{ color: si < r.rating ? accent : undefined }} className={si < r.rating ? "" : "text-zinc-200 dark:text-zinc-700"} />
+                ))}
+              </div>
+            </li>
+          </ScrollBounce>
+        )
+      })}
+    </ul>
+  )
+}
+
 export function AboutPage() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
   const [statsHovered, setStatsHovered] = useState(false)
@@ -199,11 +251,11 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* Story */}
+      {/* Story — now with storefront photo + origin story */}
       <section className="px-4 md:px-8 py-14 md:py-16" aria-label="Our story">
         <div className="max-w-[980px] mx-auto">
           <ScrollBounce delay={0.15}>
-            <div className="mb-12 text-center max-w-[720px] mx-auto">
+            <div className="mb-10 text-center max-w-[720px] mx-auto">
               <p className="font-sans font-semibold text-xl md:text-2xl leading-snug text-zinc-700 dark:text-zinc-300">
                 "Not everyone is tech-savvy — and that's exactly why we're here."
               </p>
@@ -215,6 +267,40 @@ export function AboutPage() {
                 {BIZ.name} is a family-run, home-based multi-service business operating under the P.D.D.E.T.
                 framework — Print, Docu, Design, E-Service, and Tech — serving Kgotsong and the greater Bothaville
                 area since {BIZ.yearFounded}.
+              </p>
+            </div>
+          </ScrollBounce>
+
+          <ScrollBounce delay={0.18}>
+            <div className="relative rounded-[16px] overflow-hidden max-w-[720px] mx-auto mb-12 abh-shadow-elevated aspect-[16/9]">
+              <Image
+                src="/storefront.webp"
+                alt={`${BIZ.name} storefront in Kgotsong, Bothaville`}
+                fill
+                sizes="(max-width: 768px) 100vw, 720px"
+                className="object-cover"
+              />
+            </div>
+          </ScrollBounce>
+
+          <ScrollBounce delay={0.2}>
+            <div className="max-w-[640px] mx-auto mb-14 rounded-[16px] bg-zinc-50 dark:bg-zinc-900/40 p-7 md:p-8">
+              <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-3">How It Started</h3>
+              <p className="abh-body text-base leading-relaxed">
+                There was no ApexbytesHub yet — just a phone, WhatsApp, and a status update. A friend spotted a
+                simple edited image Theji had posted and asked if he could design a logo. That request was for
+                "Naked Traderz" — the very first thing Theji ever designed with a vector program, and the first
+                logo he'd ever made for anyone.
+              </p>
+              <p className="abh-body text-base leading-relaxed mt-3">
+                It was 2021, maybe early 2022. There was no plan, no brief, no clue where it would lead — just a
+                decision to give the person what they'd asked for. That one logo turned into the realization that
+                this could be more than a favor. Theji kept going, kept learning, and kept saying yes to the next
+                request — until those requests became {BIZ.name}.
+              </p>
+              <p className="abh-body text-base leading-relaxed mt-3">
+                Today he's the owner, the founder — the one who built this from a WhatsApp status into a real hub
+                for the community that asked for it first.
               </p>
             </div>
           </ScrollBounce>
@@ -276,17 +362,31 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* Team */}
+      {/* Team — now with a WhatsApp tap-to-chat link */}
       <section className="px-4 md:px-8 py-14 md:py-16 border-t border-zinc-100 dark:border-zinc-800/60" aria-labelledby="team-title">
         <div className="max-w-[680px] mx-auto">
           <ScrollBounce>
-            <div className="text-center mb-10">
+            <div className="text-center mb-6">
               <h2 id="team-title" className="font-sans font-black text-3xl md:text-4xl tracking-tight text-zinc-900 dark:text-zinc-50 mb-3">
                 Who Runs {BIZ.name}
               </h2>
               <p className="abh-tagline max-w-md mx-auto text-center">
                 Family-run, hands-on service — every hub staffed by someone who lives right here in Kgotsong.
               </p>
+            </div>
+          </ScrollBounce>
+
+          <ScrollBounce delay={0.05}>
+            <div className="flex justify-center mb-10">
+              <a
+                href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(`Hi ${BIZ.name}! I'd like to get in touch.`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 text-[0.88rem] font-bold text-zinc-600 dark:text-zinc-300 hover:border-[#25D366] hover:text-[#25D366] hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-200 shadow-sm"
+              >
+                <WhatsappLogo size={16} weight="fill" style={{ color: "#25D366" }} aria-hidden="true" />
+                Chat with the team on WhatsApp
+              </a>
             </div>
           </ScrollBounce>
 
@@ -373,7 +473,26 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* Mission */}
+      {/* Testimonials — compact cards, distinct from the carousel elsewhere */}
+      <section className="py-14 md:py-16 px-4 md:px-8 border-t border-zinc-100 dark:border-zinc-800/60" aria-labelledby="about-testimonials-title">
+        <div className="max-w-[980px] mx-auto">
+          <ScrollBounce>
+            <div className="text-center mb-10">
+              <h2 id="about-testimonials-title" className="font-sans font-black text-3xl md:text-4xl tracking-tight text-zinc-900 dark:text-zinc-50 mb-3">
+                What Our Clients Say
+              </h2>
+              <p className="abh-tagline max-w-md mx-auto text-center">
+                Real people, real services — a few words from the community we serve.
+              </p>
+              <div className="mt-6 h-px bg-zinc-200 dark:bg-zinc-800 max-w-[120px] mx-auto" />
+            </div>
+          </ScrollBounce>
+
+          <CompactTestimonials isDark={isDark} />
+        </div>
+      </section>
+
+      {/* Mission — now with a secondary Contact CTA alongside Services */}
       <section className="relative overflow-hidden px-4 md:px-8 py-16 md:py-20 text-center" aria-labelledby="mission-title">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div
@@ -403,17 +522,27 @@ export function AboutPage() {
           </ScrollBounce>
 
           <ScrollBounce delay={0.3}>
-            <a
-              href="/services"
-              className="inline-flex items-center gap-2.5 px-8 py-4 rounded-[14px] font-black text-base transition-all duration-300 active:scale-95 hover:-translate-y-0.5 shadow-lg"
-              style={{ backgroundColor: orangeColor, color: orangeText }}
-            >
-              See All Services
-              <ArrowRight size={16} weight="bold" />
-            </a>
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <a
+                href="/services"
+                className="inline-flex items-center gap-2.5 px-8 py-4 rounded-[14px] font-black text-base transition-all duration-300 active:scale-95 hover:-translate-y-0.5 shadow-lg"
+                style={{ backgroundColor: orangeColor, color: orangeText }}
+              >
+                See All Services
+                <ArrowRight size={16} weight="bold" />
+              </a>
+              <a
+                href="/contact"
+                className="inline-flex items-center gap-2.5 px-8 py-4 rounded-[14px] font-black text-base border-2 transition-all duration-300 active:scale-95 hover:-translate-y-0.5"
+                style={{ borderColor: blueOnPage, color: blueOnPage }}
+              >
+                <EnvelopeSimple size={16} weight="bold" />
+                Get in Touch
+              </a>
+            </div>
           </ScrollBounce>
         </div>
       </section>
     </div>
   )
-} 
+    } 
