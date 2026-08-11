@@ -16,14 +16,11 @@ import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
 import { ensureAccessible } from "@/lib/color"
 import { NakedTraderzReveal } from "@/components/about/naked-traderz-reveal"
 
-// ---------------------------------------------------------------------------
-// Page-level color tokens
-// ---------------------------------------------------------------------------
 const PAGE_BG_LIGHT = "#FFFFFF"
 const PAGE_BG_DARK = "#0D1B2A"
 // Solid card background the "How It Started" image fades into. Must be
-// solid (not a translucent zinc-900/40) so the gradient's dark stop color
-// matches the card exactly and the seam disappears.
+// solid (not a translucent zinc-900/40) so the gradient's dark: stop
+// color matches the card exactly and the seam disappears.
 const CARD_BG_LIGHT = "#FAFAFA" // zinc-50
 const CARD_BG_DARK = "#18181B" // zinc-900
 
@@ -115,22 +112,10 @@ export function AboutPage() {
   const neutralColor = isDark ? ABOUT_NEUTRAL.dark : ABOUT_NEUTRAL.light
 
   const blueOnPage = ensureAccessible(blueColor, pageBg, 4.5)
-
-  // ---------------------------------------------------------------------
-  // "Naked Traderz" link color
-  // ---------------------------------------------------------------------
-  // FIX: ensureAccessible likely caps how far it nudges lightness so the
-  // color doesn't drift away from the brand hue — raising the target
-  // ratio (4.5 -> 7) wasn't producing a visible change against the
-  // near-black dark card. Instead of guessing at ratio numbers, dark mode
-  // now blends BRAND.blue toward white using the browser's native
-  // color-mix() — still 100% derived from the brand token (no hardcoded
-  // hex), but guaranteed to read as noticeably brighter regardless of
-  // ensureAccessible's internal cap. Light mode is untouched since that
-  // was already reading correctly.
-  const blueOnCard = isDark
-    ? `color-mix(in srgb, ${blueColor} 55%, white)`
-    : ensureAccessible(blueColor, cardBg, 4.5)
+  // Naked Traderz link sits on the "How It Started" card, not the page
+  // background — check contrast against the card color it actually
+  // renders on, rather than reusing the page-level token.
+  const blueOnCard = ensureAccessible(blueColor, cardBg, 4.5)
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
@@ -209,27 +194,8 @@ export function AboutPage() {
                   sizes="(max-width: 768px) 100vw, 720px"
                   className="object-cover"
                 />
-                {/* -------------------------------------------------------
-                    Photo-to-card fade
-                    -------------------------------------------------------
-                    FIX: the old version was h-24 (96px) with a plain
-                    two-stop gradient. That's too short a runway — the
-                    photo's roofline dips right where the fade used to cut
-                    off, and an abrupt fade over uneven photo content is
-                    exactly what reads as a stray "shape" (the circled
-                    seam). Two changes fix this:
-                    1. Much taller fade zone (h-48/h-56) — more room for
-                       the eye to lose the transition.
-                    2. Multi-stop gradient built from the real cardBg
-                       token via inline style, with gradual alpha easing
-                       instead of one hard start/stop. This removes the
-                       perceptible "edge" entirely rather than just
-                       relocating it further down. */}
                 <div
-                  className="absolute inset-x-0 bottom-0 h-48 md:h-56 pointer-events-none"
-                  style={{
-                    background: `linear-gradient(to top, ${cardBg} 0%, ${cardBg} 12%, ${cardBg}f2 25%, ${cardBg}cc 40%, ${cardBg}80 60%, ${cardBg}33 80%, transparent 100%)`,
-                  }}
+                  className="absolute inset-x-0 bottom-0 h-24 pointer-events-none bg-gradient-to-t from-zinc-50 dark:from-zinc-900 to-transparent"
                   aria-hidden="true"
                 />
               </div>
@@ -273,6 +239,10 @@ export function AboutPage() {
               ))}
             </ul>
 
+            {/* FIX: this card previously repeated Hubs/Services as a
+                second, differently-styled stats block, duplicating the
+                header stats box above with no new numbers. Trimmed to the
+                two badges that aren't shown anywhere else on the page. */}
             <ScrollBounce delay={0.2}>
               <div className="abh-shadow-elevated rounded-[14px] bg-white dark:bg-zinc-950 p-7 flex flex-col h-full" aria-label="Business overview">
                 <div className="flex flex-col items-center text-center gap-2 mb-7 pb-6 border-b border-zinc-100/60 dark:border-zinc-800/40">
@@ -322,6 +292,8 @@ export function AboutPage() {
 
           <ScrollBounce delay={0.05}>
             <div className="flex justify-center mb-10">
+              {/* FIX: hardcoded hover:border-[#25D366]/text-[#25D366] swapped
+                  for the token classes used everywhere else. */}
               <a
                 href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(`Hi ${BIZ.name}! I'd like to get in touch.`)}`}
                 target="_blank"
@@ -375,6 +347,8 @@ export function AboutPage() {
               <p className="abh-tagline max-w-md mx-auto text-center">
                 Professional accuracy, hand-finished local care — how we actually do the work.
               </p>
+              {/* FIX: same invisible-divider bug as ClosingTagline in
+                  services-page — swapped to the shared class. */}
               <div className="abh-divider" style={{ maxWidth: "120px" }} />
             </div>
           </ScrollBounce>
@@ -466,6 +440,10 @@ export function AboutPage() {
             </p>
           </ScrollBounce>
 
+          {/* FIX: both buttons now use the shared button classes instead
+              of hand-rolled inline-style versions — orange CTA class for
+              the emphasis action, primary-style outline kept for the
+              secondary one since outline isn't in the 3-class system. */}
           <ScrollBounce delay={0.3}>
             <div className="flex flex-col sm:flex-row items-center gap-3">
               <a href="/services" className="abh-btn-cta px-8 py-4">
@@ -488,4 +466,4 @@ export function AboutPage() {
       <BackToTopButton visible={showBackToTop} />
     </div>
   )
-      } 
+                       }
