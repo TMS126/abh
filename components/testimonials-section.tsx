@@ -1,6 +1,7 @@
+// components/testimonials-section.tsx
 "use client"
 
-import { useState, useRef, useCallback, useEffect } from "react"
+import { useState, useRef, useCallback } from "react"
 import { Star, Quotes, WhatsappLogo, CaretLeft, CaretRight, Printer, FileText, PaintBrush, Globe, Desktop } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { HUB_COLORS, HubKey, BIZ } from "@/lib/brand"
@@ -117,28 +118,15 @@ export function TestimonialsSection({
   const slotStyle = (offset: number): React.CSSProperties => {
     const abs = Math.abs(offset)
     if (abs === 0) {
-      return {
-        transform: `translateX(${dragX}px) scale(1)`,
-        opacity: 1,
-        zIndex: 30,
-        filter: "none",
-      }
+      return { transform: `translateX(${dragX}px) scale(1)`, opacity: 1, zIndex: 30, filter: "none" }
     }
     if (abs === 1) {
       return {
         transform: `translateX(${offset * 78 + dragX * 0.4}%) scale(0.88) rotate(${offset * 2}deg)`,
-        opacity: 0.55,
-        zIndex: 20,
-        filter: "blur(1.5px)",
+        opacity: 0.55, zIndex: 20, filter: "blur(1.5px)",
       }
     }
-    return {
-      transform: `translateX(${offset * 130}%) scale(0.78)`,
-      opacity: 0,
-      zIndex: 10,
-      filter: "blur(2px)",
-      pointerEvents: "none",
-    }
+    return { transform: `translateX(${offset * 130}%) scale(0.78)`, opacity: 0, zIndex: 10, filter: "blur(2px)", pointerEvents: "none" }
   }
 
   return (
@@ -151,7 +139,6 @@ export function TestimonialsSection({
             </p>
             <h2 className="font-sans font-black text-[1.8rem] md:text-[2.25rem] text-zinc-900 dark:text-zinc-50 mb-3">{title}</h2>
             <p className="text-[1.05rem] md:text-[1.2rem] font-medium text-zinc-500 dark:text-zinc-400 max-w-xl mx-auto mb-5">{subtitle}</p>
-            {/* Kgotsong community trust badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/60 text-[0.78rem] font-bold text-zinc-500 dark:text-zinc-400">
               <span className="w-2 h-2 rounded-full bg-brand-green shrink-0" aria-hidden="true" />
               Real customers from Kgotsong, Bothaville
@@ -262,29 +249,24 @@ export function TestimonialsSection({
                 aria-label={`Show testimonial ${i + 1}`}
                 onClick={() => goTo(i)}
                 className="h-2 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                style={{
-                  width: isActive ? "22px" : "8px",
-                  backgroundColor: isActive ? accent : undefined,
-                  ["--tw-ring-color" as any]: accent,
-                }}
+                style={{ width: isActive ? "22px" : "8px", backgroundColor: isActive ? accent : undefined, ["--tw-ring-color" as any]: accent }}
               >
-                <span
-                  className={isActive ? "sr-only" : "block h-2 w-2 rounded-full bg-zinc-300 dark:bg-zinc-700"}
-                  aria-hidden="true"
-                />
+                <span className={isActive ? "sr-only" : "block h-2 w-2 rounded-full bg-zinc-300 dark:bg-zinc-700"} aria-hidden="true" />
               </button>
             )
           })}
         </div>
 
+        {/* FIX: raw #25D366 hex → token classes, matching the fix applied
+            to About page's identical "Chat with the team" link. */}
         <div className="flex justify-center mt-8">
           <a
             href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent("Hi ApexbytesHub! I'd like to share my experience with you.")}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 text-[0.88rem] font-bold text-zinc-600 dark:text-zinc-300 hover:border-[#25D366] hover:text-[#25D366] hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-200 shadow-sm"
+            className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 text-[0.88rem] font-bold text-zinc-600 dark:text-zinc-300 hover:border-brand-whatsapp hover:text-brand-whatsapp hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-200 shadow-sm"
           >
-            <WhatsappLogo size={16} weight="fill" style={{ color: "#25D366" }} aria-hidden="true" />
+            <WhatsappLogo size={16} weight="fill" className="text-brand-whatsapp" aria-hidden="true" />
             Share your experience on WhatsApp
           </a>
         </div>
