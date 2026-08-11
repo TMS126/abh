@@ -74,7 +74,7 @@ function Stars({ rating, color }: { rating: number; color: string }) {
 export function TestimonialsSection({
   reviews = SAMPLE_REVIEWS,
   title = "What Our Clients Say",
-  subtitle = "Real people, real services — here's how we've helped the Kgotsong community.",
+  subtitle = "Real people, real services — here's how we've helped the communities local and remotely.",
 }: {
   reviews?: Review[]
   title?: string
@@ -141,7 +141,7 @@ export function TestimonialsSection({
             <p className="text-[1.05rem] md:text-[1.2rem] font-medium text-zinc-500 dark:text-zinc-400 max-w-xl mx-auto mb-5">{subtitle}</p>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/60 text-[0.78rem] font-bold text-zinc-500 dark:text-zinc-400">
               <span className="w-2 h-2 rounded-full bg-brand-green shrink-0" aria-hidden="true" />
-              Real customers from Kgotsong, Bothaville
+              Real customers we've helped, local and remotely.
             </div>
           </div>
         </ScrollBounce>
