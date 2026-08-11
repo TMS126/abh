@@ -625,7 +625,8 @@ export function WhatsAppFAB() {
           three line up on the same right edge at desktop widths.
           Bare icon, no filled circle, no ping pulse — matches the
           Quote Calculator / Search FAB treatment. */}
-      <div
+    <div
+        data-widget="whatsapp-fab"
         className={cn(
           "fixed z-[9992] right-4 md:right-6 bottom-6 group/wa",
           "transition-all duration-200 ease-out motion-reduce:transition-none transform-gpu",
