@@ -11,6 +11,7 @@ import { HUBS_DATA } from "@/lib/hero-data"
 import { ClassicTagline } from "@/components/classic-tagline"
 import { getBusinessStatus, type BusinessStatus } from "@/lib/sa-time"
 import { getWeatherSnapshot, type WeatherCategory } from "@/lib/weather"
+import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
 
 function hexToRgbLocal(hex: string) {
   const clean = hex.replace("#", "")
