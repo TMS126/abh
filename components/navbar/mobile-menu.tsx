@@ -1,8 +1,19 @@
+// components/navbar/mobile-menu.tsx
 "use client"
 
 import { useEffect, useRef } from "react"
 import { NAV_ITEMS, BRAND } from "@/lib/brand"
 import { cn } from "@/lib/utils"
+
+// Same route-color map as navbar.tsx — Home/Services/Gallery/About get an
+// echoed accent on their active pill; Contact keeps its existing solid-CTA
+// treatment rather than picking up grey.
+const NAV_ROUTE_COLORS: Record<string, string> = {
+  "/": BRAND.blue,
+  "/services": BRAND.green,
+  "/gallery": BRAND.orange,
+  "/about": BRAND.blueDark,
+}
 
 interface MobileMenuProps {
   menuOpen: boolean
@@ -16,10 +27,6 @@ export function MobileMenu({ menuOpen, setMenuOpen, pathname, navigate, neutralC
   const containerRef = useRef<HTMLDivElement>(null)
   const previouslyFocused = useRef<HTMLElement | null>(null)
 
-  // ── Accessibility: this is a full-screen takeover, so treat it like a
-  // dialog — move focus in on open, restore it on close, trap Tab inside,
-  // and let Escape close it (mirrors the pattern used by the other modals
-  // across the site, e.g. services-page/shared.tsx's useFocusTrap). ──
   useEffect(() => {
     if (!menuOpen) return
     previouslyFocused.current = document.activeElement as HTMLElement
@@ -62,6 +69,7 @@ export function MobileMenu({ menuOpen, setMenuOpen, pathname, navigate, neutralC
         <nav className="w-full max-w-[320px] flex flex-col items-center gap-2.5">
           {NAV_ITEMS.map((item, idx) => {
             const isActive = pathname === item.path
+            const routeColor = NAV_ROUTE_COLORS[item.path]
 
             return (
               <button
@@ -71,23 +79,22 @@ export function MobileMenu({ menuOpen, setMenuOpen, pathname, navigate, neutralC
                 tabIndex={menuOpen ? 0 : -1}
                 style={{
                   transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms",
-                  ...(isActive ? { backgroundColor: BRAND.blue, color: "#ffffff" } : {}),
+                  // Active pill now uses that route's own accent instead
+                  // of a single fixed blue — Contact still falls back to
+                  // brand blue since it's excluded from NAV_ROUTE_COLORS.
+                  ...(isActive ? { backgroundColor: routeColor ?? BRAND.blue, color: "#ffffff" } : {}),
                 }}
                 className={cn(
-                  "relative py-3 px-8 rounded-[14px] font-sans text-[1.2rem] transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm overflow-hidden",
+                  "py-3 px-8 rounded-[14px] font-sans text-[1.2rem] transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
                   isActive ? "font-semibold" : "font-medium text-zinc-700 dark:text-zinc-100 hover:text-brand-blue dark:hover:text-brand-blue bg-transparent",
                   item.isCta && !isActive && "border-2 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800/60",
                   menuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
                 )}
               >
+                {/* Green dot removed per your request — the solid-fill
+                    active pill (now in its own route color) already
+                    communicates "current page" clearly on its own. */}
                 {item.label}
-                {isActive && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute left-1/2 -translate-x-1/2 bottom-1 w-1.5 h-1.5 rounded-full"
-                    style={{ backgroundColor: BRAND.green }}
-                  />
-                )}
               </button>
             )
           })}
@@ -101,21 +108,15 @@ export function MobileMenu({ menuOpen, setMenuOpen, pathname, navigate, neutralC
         )}
         aria-hidden="true"
       >
-        <div
-          className="relative w-8 h-8 shrink-0 transition-colors duration-300"
-          style={{
-            backgroundColor: neutralColor,
-            WebkitMaskImage: "url(/logo.png)",
-            maskImage: "url(/logo.png)",
-            WebkitMaskSize: "contain",
-            maskSize: "contain",
-            WebkitMaskRepeat: "no-repeat",
-            maskRepeat: "no-repeat",
-            WebkitMaskPosition: "center",
-            maskPosition: "center",
-          }}
+        {/* Same mask→img fix applied here for consistency, even though
+            this watermark wasn't the one reported as clipped. */}
+        <img
+          src="/logo.png"
+          alt=""
+          className="relative w-8 h-8 shrink-0 object-contain transition-[filter] duration-300"
+          style={{ filter: "brightness(0) invert(1) contrast(0.6)" }}
         />
       </div>
     </div>
   )
-} 
+          } 
