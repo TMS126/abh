@@ -14,11 +14,11 @@ const ORANGE = BRAND.orangeDark
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
-interface NakedTraderzRevealProps {
+interface TheNakedTradersZARevealProps {
   accentColor?: string
 }
 
-export function NakedTraderzReveal({ accentColor = BRAND.blue }: NakedTraderzRevealProps) {
+export function TheNakedTradersZAReveal({ accentColor = BRAND.blue }: NakedTraderzRevealProps) {
   const [modalOpen, setModalOpen] = useState(false)
   const [animateIn, setAnimateIn] = useState(false)
 
@@ -76,7 +76,7 @@ export function NakedTraderzReveal({ accentColor = BRAND.blue }: NakedTraderzRev
         onClick={openModal}
         aria-haspopup="dialog"
         aria-expanded={modalOpen}
-        aria-label="Naked Traderz — view the first ever logo, before and after"
+        aria-label="The Naked Traders ZA — view the first ever logo, before and after"
         className="underline decoration-dotted decoration-1 underline-offset-2 font-semibold outline-none rounded-sm focus-visible:ring-2"
         style={{ color: accentColor, textDecorationColor: `${accentColor}80` }}
       >
@@ -118,14 +118,14 @@ export function NakedTraderzReveal({ accentColor = BRAND.blue }: NakedTraderzRev
             </button>
 
             <div className="flex items-center gap-2 mb-1">
-              <Sparkle size={14} weight="fill" style={{ color: ORANGE }} aria-hidden="true" />
-              <span className="text-[0.68rem] font-black uppercase tracking-widest" style={{ color: ORANGE }}>
+              <Sparkle size={14} weight="fill" style={{ color: ORANGE.brand }} aria-hidden="true" />
+              <span className="text-[0.68rem] font-black uppercase tracking-widest" style={{ color: ORANGE.brand}}>
                 1st Ever Logo
               </span>
             </div>
 
             <h3 id="nt-modal-title" className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-1">
-              Naked Traderz
+              The Naked Traders ZA
             </h3>
             <p className="text-[0.86rem] font-medium text-zinc-500 dark:text-zinc-400 mb-5">
               Market trading group — forex &amp; CFD trading (e.g. EUR/USD)
@@ -143,7 +143,7 @@ export function NakedTraderzReveal({ accentColor = BRAND.blue }: NakedTraderzRev
                     src="/nts.webp"
                     alt="Naked Traderz logo — original sketch"
                     fill
-                    sizes="(max-width: 640px) 88vw, 320px"
+                    sizes="(max-width: 440px) 68vw, 320px"
                     className="object-contain"
                   />
                 </div>
@@ -155,7 +155,7 @@ export function NakedTraderzReveal({ accentColor = BRAND.blue }: NakedTraderzRev
                     src="/nto.webp"
                     alt="Naked Traderz logo — final design"
                     fill
-                    sizes="(max-width: 640px) 88vw, 320px"
+                    sizes="(max-width: 440px) 68vw, 320px"
                     className="object-contain"
                   />
                 </div>
