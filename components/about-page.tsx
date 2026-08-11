@@ -6,14 +6,17 @@ import Image from "next/image"
 import { useTheme } from "next-themes"
 import {
   Target, Heart, Lightning, WhatsappLogo, ShieldCheck, Desktop, Printer, DeviceMobile, ArrowRight, UsersThree,
-  Quotes, Star, EnvelopeSimple, UserCircle, ArrowUp,
+  Quotes, Star, EnvelopeSimple, UserCircle,
 } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, ABOUT_VALUES, ABOUT_STANDARDS } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { SAMPLE_REVIEWS } from "@/components/testimonials-section"
+import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
 
-// Contrast-nudging color helpers
+// Contrast-nudging color helpers — distinct from lib/color-utils.ts's
+// getReadableTextColor: this file needs to *adjust* a color until it
+// clears a target ratio, not just pick black/white, so it stays local.
 function hexToRgb(hex: string) {
   const clean = hex.replace("#", "")
   const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean
@@ -37,11 +40,8 @@ function rgbToHex({ r, g, b }: { r: number; g: number; b: number }) {
   return "#" + [r, g, b].map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("")
 }
 function rgbToHsl({ r, g, b }: { r: number; g: number; b: number }) {
-  const rn = r / 255,
-    gn = g / 255,
-    bn = b / 255
-  const max = Math.max(rn, gn, bn),
-    min = Math.min(rn, gn, bn)
+  const rn = r / 255, gn = g / 255, bn = b / 255
+  const max = Math.max(rn, gn, bn), min = Math.min(rn, gn, bn)
   let h = 0
   const l = (max + min) / 2
   let s = 0
@@ -49,24 +49,16 @@ function rgbToHsl({ r, g, b }: { r: number; g: number; b: number }) {
     const d = max - min
     s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
     switch (max) {
-      case rn:
-        h = (gn - bn) / d + (gn < bn ? 6 : 0)
-        break
-      case gn:
-        h = (bn - rn) / d + 2
-        break
-      case bn:
-        h = (rn - gn) / d + 4
-        break
+      case rn: h = (gn - bn) / d + (gn < bn ? 6 : 0); break
+      case gn: h = (bn - rn) / d + 2; break
+      case bn: h = (rn - gn) / d + 4; break
     }
     h /= 6
   }
   return { h: h * 360, s: s * 100, l: l * 100 }
 }
 function hslToRgb(h: number, s: number, l: number) {
-  const hn = h / 360,
-    sn = s / 100,
-    ln = l / 100
+  const hn = h / 360, sn = s / 100, ln = l / 100
   let r: number, g: number, b: number
   if (sn === 0) {
     r = g = b = ln
@@ -121,28 +113,16 @@ const TEAM = [
 
 function renderIcon(iconName: string, className: string) {
   switch (iconName) {
-    case "Target":
-      return <Target weight="fill" className={className} aria-hidden="true" />
-    case "Heart":
-      return <Heart weight="fill" className={className} aria-hidden="true" />
-    case "Lightning":
-      return <Lightning weight="fill" className={className} aria-hidden="true" />
-    case "Desktop":
-      return <Desktop weight="fill" className={className} aria-hidden="true" />
-    case "Printer":
-      return <Printer weight="fill" className={className} aria-hidden="true" />
-    case "DeviceMobile":
-      return <DeviceMobile weight="fill" className={className} aria-hidden="true" />
-    default:
-      return <Target weight="fill" className={className} aria-hidden="true" />
+    case "Target": return <Target weight="fill" className={className} aria-hidden="true" />
+    case "Heart": return <Heart weight="fill" className={className} aria-hidden="true" />
+    case "Lightning": return <Lightning weight="fill" className={className} aria-hidden="true" />
+    case "Desktop": return <Desktop weight="fill" className={className} aria-hidden="true" />
+    case "Printer": return <Printer weight="fill" className={className} aria-hidden="true" />
+    case "DeviceMobile": return <DeviceMobile weight="fill" className={className} aria-hidden="true" />
+    default: return <Target weight="fill" className={className} aria-hidden="true" />
   }
 }
 
-// ── Compact testimonial cards — small circular-avatar style, distinct
-// from the full carousel on other pages. Same shadow/hover mechanics
-// (lift + shadow bump), just a lighter, denser layout. Avatars are a
-// neutral generic person icon (no real client photos available), same
-// style across every card rather than hub-colored initials. ──
 function CompactTestimonials({ isDark }: { isDark: boolean }) {
   const [hovered, setHovered] = useState<number | null>(null)
   return (
@@ -158,8 +138,8 @@ function CompactTestimonials({ isDark }: { isDark: boolean }) {
               onBlur={() => setHovered(null)}
               tabIndex={0}
               className={cn(
-                "rounded-[14px] bg-white dark:bg-zinc-950 p-5 flex flex-col items-center text-center outline-none transition-all duration-300",
-                isHovered ? "shadow-lg -translate-y-1.5" : "shadow-[0_1px_6px_rgba(0,0,0,0.07)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.28)]"
+                "rounded-[14px] bg-white dark:bg-zinc-950 p-5 flex flex-col items-center text-center outline-none transition-all duration-300 abh-shadow-elevated",
+                isHovered && "-translate-y-1.5 shadow-lg"
               )}
             >
               <Quotes size={16} weight="fill" className="mb-2 opacity-30 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
@@ -192,7 +172,7 @@ function CompactTestimonials({ isDark }: { isDark: boolean }) {
 export function AboutPage() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
   const [statsHovered, setStatsHovered] = useState(false)
-  const [showBackToTop, setShowBackToTop] = useState(false)
+  const showBackToTop = useBackToTop()
 
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -202,18 +182,10 @@ export function AboutPage() {
 
   const blueColor = ABOUT_BLUE
   const orangeColor = ABOUT_ORANGE
-  const orangeText = "#ffffff"
   const greenColor = ABOUT_GREEN
   const neutralColor = isDark ? ABOUT_NEUTRAL.dark : ABOUT_NEUTRAL.light
 
   const blueOnPage = ensureAccessible(blueColor, pageBg, 4.5)
-
-  // ── Scroll-to-top button visibility — same pattern as contact-page.tsx ──
-  useEffect(() => {
-    const onScroll = () => setShowBackToTop(window.scrollY > 600)
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
-  }, [])
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
@@ -230,8 +202,6 @@ export function AboutPage() {
 
           <div className="abh-divider" />
 
-          {/* ── Top stats box — softer, friendlier hover tint instead of
-              a full-bright solid blue fill ── */}
           <ScrollBounce delay={0.1}>
             <div
               className="mt-8 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x divide-zinc-200 dark:divide-zinc-700 rounded-[14px] overflow-hidden shadow-lg transition-colors duration-300"
@@ -264,8 +234,7 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* Story — storefront photo fused into one card with the origin
-          story, image fading into the text panel below it */}
+      {/* Story */}
       <section className="px-4 md:px-8 py-14 md:py-16" aria-label="Our story">
         <div className="max-w-[980px] mx-auto">
           <ScrollBounce delay={0.15}>
@@ -295,8 +264,6 @@ export function AboutPage() {
                   sizes="(max-width: 768px) 100vw, 720px"
                   className="object-cover"
                 />
-                {/* Fade blending the photo straight into the text panel
-                    below, so they read as one continuous piece */}
                 <div
                   className="absolute inset-x-0 bottom-0 h-24 pointer-events-none bg-gradient-to-t from-zinc-50 dark:from-zinc-900 to-transparent"
                   aria-hidden="true"
@@ -325,8 +292,6 @@ export function AboutPage() {
           </ScrollBounce>
 
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-stretch">
-            {/* ── Values — raw icons, no colored badge, one consistent
-                accent color instead of green ── */}
             <ul className="flex flex-col gap-4 h-full" aria-label="Our values">
               {ABOUT_VALUES.map((item, index) => (
                 <li
@@ -344,7 +309,10 @@ export function AboutPage() {
               ))}
             </ul>
 
-            {/* ── Business overview — header row now centered ── */}
+            {/* FIX: this card previously repeated Hubs/Services as a
+                second, differently-styled stats block, duplicating the
+                header stats box above with no new numbers. Trimmed to the
+                two badges that aren't shown anywhere else on the page. */}
             <ScrollBounce delay={0.2}>
               <div className="abh-shadow-elevated rounded-[14px] bg-white dark:bg-zinc-950 p-7 flex flex-col h-full" aria-label="Business overview">
                 <div className="flex flex-col items-center text-center gap-2 mb-7 pb-6 border-b border-zinc-100/60 dark:border-zinc-800/40">
@@ -359,8 +327,6 @@ export function AboutPage() {
 
                 <div className="grid grid-cols-2 gap-3 flex-1">
                   {[
-                    { value: BIZ.hubCount, label: "Hubs" },
-                    { value: BIZ.serviceCount, label: "Services" },
                     { value: <WhatsappLogo weight="fill" className="w-6 h-6" aria-hidden="true" />, label: "WhatsApp Ready" },
                     { value: <ShieldCheck weight="fill" className="w-6 h-6" aria-hidden="true" />, label: "Community Trusted" },
                   ].map((stat, index) => (
@@ -380,7 +346,7 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* Team — with a WhatsApp tap-to-chat link */}
+      {/* Team */}
       <section className="px-4 md:px-8 py-14 md:py-16 border-t border-zinc-100 dark:border-zinc-800/60" aria-labelledby="team-title">
         <div className="max-w-[680px] mx-auto">
           <ScrollBounce>
@@ -396,13 +362,15 @@ export function AboutPage() {
 
           <ScrollBounce delay={0.05}>
             <div className="flex justify-center mb-10">
+              {/* FIX: hardcoded hover:border-[#25D366]/text-[#25D366] swapped
+                  for the token classes used everywhere else. */}
               <a
                 href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(`Hi ${BIZ.name}! I'd like to get in touch.`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 text-[0.88rem] font-bold text-zinc-600 dark:text-zinc-300 hover:border-[#25D366] hover:text-[#25D366] hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-200 shadow-sm"
+                className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 text-[0.88rem] font-bold text-zinc-600 dark:text-zinc-300 hover:border-brand-whatsapp hover:text-brand-whatsapp hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-200 shadow-sm"
               >
-                <WhatsappLogo size={16} weight="fill" style={{ color: "#25D366" }} aria-hidden="true" />
+                <WhatsappLogo size={16} weight="fill" className="text-brand-whatsapp" aria-hidden="true" />
                 Chat with the team on WhatsApp
               </a>
             </div>
@@ -428,9 +396,7 @@ export function AboutPage() {
                   </div>
                 </li>
               )
-              return index === 0 ? (
-                card
-              ) : (
+              return index === 0 ? card : (
                 <ScrollBounce key={member.initials} delay={index * 0.1}>
                   {card}
                 </ScrollBounce>
@@ -451,7 +417,9 @@ export function AboutPage() {
               <p className="abh-tagline max-w-md mx-auto text-center">
                 Professional accuracy, hand-finished local care — how we actually do the work.
               </p>
-              <div className="mt-6 h-px bg-zinc-200 dark:bg-zinc-800 max-w-[120px] mx-auto" />
+              {/* FIX: same invisible-divider bug as ClosingTagline in
+                  services-page — swapped to the shared class. */}
+              <div className="abh-divider" style={{ maxWidth: "120px" }} />
             </div>
           </ScrollBounce>
 
@@ -467,8 +435,8 @@ export function AboutPage() {
                     onBlur={() => setHoveredCard(null)}
                     tabIndex={0}
                     className={cn(
-                      "abh-card p-6 flex flex-col h-full outline-none transition-all duration-300 rounded-[14px] bg-white dark:bg-zinc-950",
-                      isHovered ? "shadow-lg -translate-y-1.5" : "shadow-[0_1px_6px_rgba(0,0,0,0.07)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.28)]"
+                      "abh-card p-6 flex flex-col h-full outline-none transition-all duration-300 rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-elevated",
+                      isHovered && "-translate-y-1.5 shadow-lg"
                     )}
                   >
                     <div
@@ -491,7 +459,7 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* Testimonials — compact cards, distinct from the carousel elsewhere */}
+      {/* Testimonials */}
       <section className="py-14 md:py-16 px-4 md:px-8 border-t border-zinc-100 dark:border-zinc-800/60" aria-labelledby="about-testimonials-title">
         <div className="max-w-[980px] mx-auto">
           <ScrollBounce>
@@ -502,7 +470,7 @@ export function AboutPage() {
               <p className="abh-tagline max-w-md mx-auto text-center">
                 Real people, real services — a few words from the community we serve.
               </p>
-              <div className="mt-6 h-px bg-zinc-200 dark:bg-zinc-800 max-w-[120px] mx-auto" />
+              <div className="abh-divider" style={{ maxWidth: "120px" }} />
             </div>
           </ScrollBounce>
 
@@ -510,8 +478,7 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* Mission — pill contrast fixed to use the same contrast-ensured
-          blue as the rest of the page instead of the raw brand blue */}
+      {/* Mission */}
       <section className="relative overflow-hidden px-4 md:px-8 py-16 md:py-20 text-center" aria-labelledby="mission-title">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div
@@ -543,13 +510,13 @@ export function AboutPage() {
             </p>
           </ScrollBounce>
 
+          {/* FIX: both buttons now use the shared button classes instead
+              of hand-rolled inline-style versions — orange CTA class for
+              the emphasis action, primary-style outline kept for the
+              secondary one since outline isn't in the 3-class system. */}
           <ScrollBounce delay={0.3}>
             <div className="flex flex-col sm:flex-row items-center gap-3">
-              <a
-                href="/services"
-                className="inline-flex items-center gap-2.5 px-8 py-4 rounded-[14px] font-black text-base transition-all duration-300 active:scale-95 hover:-translate-y-0.5 shadow-lg"
-                style={{ backgroundColor: orangeColor, color: orangeText }}
-              >
+              <a href="/services" className="abh-btn-cta px-8 py-4">
                 See All Services
                 <ArrowRight size={16} weight="bold" />
               </a>
@@ -566,19 +533,7 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* ── Scroll-to-top — same button as contact-page.tsx ── */}
-      <button
-        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        aria-label="Back to top"
-        className={cn(
-          "fixed bottom-6 left-4 z-[9990] w-12 h-12 rounded-full bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-lg flex items-center justify-center transition-all duration-300 active:scale-95 hover:scale-105",
-          showBackToTop
-            ? "opacity-100 translate-y-0 pointer-events-auto"
-            : "opacity-0 translate-y-4 pointer-events-none"
-        )}
-      >
-        <ArrowUp size={20} weight="bold" className="text-brand-blue dark:text-brand-light-blue" />
-      </button>
+      <BackToTopButton visible={showBackToTop} />
     </div>
   )
-                                        } 
+      } 
