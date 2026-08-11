@@ -189,13 +189,14 @@ export function AboutPage() {
                 />
               </div>
               <div className="bg-zinc-50 dark:bg-zinc-900/40 p-7 md:p-8 -mt-px">
-                <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-3">How It Started</h3>
+                <h3 className="font-sans center font-black text-xl text-zinc-900 dark:text-zinc-50 mb-3">How It Started</h3>
                 <p className="abh-body text-base leading-relaxed">
                   There was no ApexbytesHub yet — just a phone, WhatsApp, and a status update. A friend spotted a
                   simple edited image Theji had posted and asked if he could design a logo. That request was for
-                  "Naked Traderz" — the very first thing Theji ever designed with a vector program, and the first
-                  logo he'd ever made for anyone.
+                  "<NakedTraderzReveal />" — the very first thing Theji ever designed with a vector program, and the
+                  first logo he'd ever made for anyone.      
                 </p>
+                
                 <p className="abh-body text-base leading-relaxed mt-3">
                   It was 2021, maybe early 2022. There was no plan, no brief, no clue where it would lead — just a
                   decision to give the person what they'd asked for. That one logo turned into the realization that
