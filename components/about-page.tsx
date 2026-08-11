@@ -6,11 +6,10 @@ import Image from "next/image"
 import { useTheme } from "next-themes"
 import {
   Target, Heart, Lightning, WhatsappLogo, ShieldCheck, Desktop, Printer, DeviceMobile, ArrowRight, UsersThree,
-  Quotes, Star, EnvelopeSimple,
+  Quotes, Star, EnvelopeSimple, UserCircle, ArrowUp,
 } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 import { BRAND, BIZ, ABOUT_VALUES, ABOUT_STANDARDS } from "@/lib/brand"
-import { HUB_COLORS, HubKey } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { SAMPLE_REVIEWS } from "@/components/testimonials-section"
 
@@ -141,14 +140,14 @@ function renderIcon(iconName: string, className: string) {
 
 // ── Compact testimonial cards — small circular-avatar style, distinct
 // from the full carousel on other pages. Same shadow/hover mechanics
-// (lift + shadow bump), just a lighter, denser layout. ──
+// (lift + shadow bump), just a lighter, denser layout. Avatars are a
+// neutral generic person icon (no real client photos available), same
+// style across every card rather than hub-colored initials. ──
 function CompactTestimonials({ isDark }: { isDark: boolean }) {
   const [hovered, setHovered] = useState<number | null>(null)
   return (
     <ul className="grid grid-cols-1 sm:grid-cols-3 gap-5" aria-label="What clients say">
       {SAMPLE_REVIEWS.map((r, i) => {
-        const c = HUB_COLORS[r.hubId as HubKey]
-        const accent = isDark ? c.tagTextDark : c.tagText
         const isHovered = hovered === i
         return (
           <ScrollBounce key={r.name + i} delay={i * 0.1}>
@@ -163,19 +162,23 @@ function CompactTestimonials({ isDark }: { isDark: boolean }) {
                 isHovered ? "shadow-lg -translate-y-1.5" : "shadow-[0_1px_6px_rgba(0,0,0,0.07)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.28)]"
               )}
             >
-              <Quotes size={16} weight="fill" style={{ color: accent }} className="mb-2 opacity-40" aria-hidden="true" />
+              <Quotes size={16} weight="fill" className="mb-2 opacity-30 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
               <p className="text-[0.92rem] font-medium text-zinc-600 dark:text-zinc-300 leading-relaxed mb-3">{r.quote}</p>
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center text-[0.82rem] font-black text-white mb-1.5"
-                style={{ backgroundColor: accent }}
+                className="w-12 h-12 rounded-full flex items-center justify-center mb-1.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500"
                 aria-hidden="true"
               >
-                {r.initials}
+                <UserCircle size={30} weight="fill" />
               </div>
               <p className="text-[0.9rem] font-black text-zinc-800 dark:text-zinc-200">{r.name}</p>
               <div className="flex items-center gap-0.5 mt-1">
                 {Array.from({ length: 5 }).map((_, si) => (
-                  <Star key={si} size={11} weight="fill" style={{ color: si < r.rating ? accent : undefined }} className={si < r.rating ? "" : "text-zinc-200 dark:text-zinc-700"} />
+                  <Star
+                    key={si}
+                    size={11}
+                    weight="fill"
+                    className={si < r.rating ? "text-zinc-400 dark:text-zinc-500" : "text-zinc-200 dark:text-zinc-700"}
+                  />
                 ))}
               </div>
             </li>
@@ -189,6 +192,7 @@ function CompactTestimonials({ isDark }: { isDark: boolean }) {
 export function AboutPage() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
   const [statsHovered, setStatsHovered] = useState(false)
+  const [showBackToTop, setShowBackToTop] = useState(false)
 
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -203,6 +207,13 @@ export function AboutPage() {
   const neutralColor = isDark ? ABOUT_NEUTRAL.dark : ABOUT_NEUTRAL.light
 
   const blueOnPage = ensureAccessible(blueColor, pageBg, 4.5)
+
+  // ── Scroll-to-top button visibility — same pattern as contact-page.tsx ──
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 600)
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
@@ -219,6 +230,8 @@ export function AboutPage() {
 
           <div className="abh-divider" />
 
+          {/* ── Top stats box — softer, friendlier hover tint instead of
+              a full-bright solid blue fill ── */}
           <ScrollBounce delay={0.1}>
             <div
               className="mt-8 w-full max-w-[560px] mx-auto grid grid-cols-3 divide-x divide-zinc-200 dark:divide-zinc-700 rounded-[14px] overflow-hidden shadow-lg transition-colors duration-300"
@@ -233,14 +246,14 @@ export function AboutPage() {
                 <div
                   key={i}
                   className="flex flex-col items-center justify-center py-5 px-3 transition-colors duration-300 cursor-default"
-                  style={{ backgroundColor: statsHovered ? blueColor : "transparent" }}
+                  style={{ backgroundColor: statsHovered ? `${blueColor}12` : "transparent" }}
                 >
-                  <p className="font-sans font-black text-2xl leading-none transition-colors duration-300" style={{ color: statsHovered ? "#ffffff" : blueOnPage }}>
+                  <p className="font-sans font-black text-2xl leading-none transition-colors duration-300" style={{ color: blueOnPage }}>
                     {s.value}
                   </p>
                   <p
                     className="text-[0.74rem] font-medium uppercase tracking-widest mt-1.5 text-center transition-colors duration-300"
-                    style={{ color: statsHovered ? "rgba(255,255,255,0.85)" : `${blueOnPage}cc` }}
+                    style={{ color: `${blueOnPage}cc` }}
                   >
                     {s.label}
                   </p>
@@ -251,7 +264,8 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* Story — now with storefront photo + origin story */}
+      {/* Story — storefront photo fused into one card with the origin
+          story, image fading into the text panel below it */}
       <section className="px-4 md:px-8 py-14 md:py-16" aria-label="Our story">
         <div className="max-w-[980px] mx-auto">
           <ScrollBounce delay={0.15}>
@@ -272,52 +286,55 @@ export function AboutPage() {
           </ScrollBounce>
 
           <ScrollBounce delay={0.18}>
-            <div className="relative rounded-[16px] overflow-hidden max-w-[720px] mx-auto mb-12 abh-shadow-elevated aspect-[16/9]">
-              <Image
-                src="/storefront.webp"
-                alt={`${BIZ.name} storefront in Kgotsong, Bothaville`}
-                fill
-                sizes="(max-width: 768px) 100vw, 720px"
-                className="object-cover"
-              />
-            </div>
-          </ScrollBounce>
-
-          <ScrollBounce delay={0.2}>
-            <div className="max-w-[640px] mx-auto mb-14 rounded-[16px] bg-zinc-50 dark:bg-zinc-900/40 p-7 md:p-8">
-              <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-3">How It Started</h3>
-              <p className="abh-body text-base leading-relaxed">
-                There was no ApexbytesHub yet — just a phone, WhatsApp, and a status update. A friend spotted a
-                simple edited image Theji had posted and asked if he could design a logo. That request was for
-                "Naked Traderz" — the very first thing Theji ever designed with a vector program, and the first
-                logo he'd ever made for anyone.
-              </p>
-              <p className="abh-body text-base leading-relaxed mt-3">
-                It was 2021, maybe early 2022. There was no plan, no brief, no clue where it would lead — just a
-                decision to give the person what they'd asked for. That one logo turned into the realization that
-                this could be more than a favor. Theji kept going, kept learning, and kept saying yes to the next
-                request — until those requests became {BIZ.name}.
-              </p>
-              <p className="abh-body text-base leading-relaxed mt-3">
-                Today he's the owner, the founder — the one who built this from a WhatsApp status into a real hub
-                for the community that asked for it first.
-              </p>
+            <div className="max-w-[720px] mx-auto mb-14 rounded-[16px] overflow-hidden abh-shadow-elevated">
+              <div className="relative aspect-[16/9]">
+                <Image
+                  src="/storefront.webp"
+                  alt={`${BIZ.name} storefront in Kgotsong, Bothaville`}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 720px"
+                  className="object-cover"
+                />
+                {/* Fade blending the photo straight into the text panel
+                    below, so they read as one continuous piece */}
+                <div
+                  className="absolute inset-x-0 bottom-0 h-24 pointer-events-none bg-gradient-to-t from-zinc-50 dark:from-zinc-900 to-transparent"
+                  aria-hidden="true"
+                />
+              </div>
+              <div className="bg-zinc-50 dark:bg-zinc-900/40 p-7 md:p-8 -mt-px">
+                <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-3">How It Started</h3>
+                <p className="abh-body text-base leading-relaxed">
+                  There was no ApexbytesHub yet — just a phone, WhatsApp, and a status update. A friend spotted a
+                  simple edited image Theji had posted and asked if he could design a logo. That request was for
+                  "Naked Traderz" — the very first thing Theji ever designed with a vector program, and the first
+                  logo he'd ever made for anyone.
+                </p>
+                <p className="abh-body text-base leading-relaxed mt-3">
+                  It was 2021, maybe early 2022. There was no plan, no brief, no clue where it would lead — just a
+                  decision to give the person what they'd asked for. That one logo turned into the realization that
+                  this could be more than a favor. Theji kept going, kept learning, and kept saying yes to the next
+                  request — until those requests became {BIZ.name}.
+                </p>
+                <p className="abh-body text-base leading-relaxed mt-3">
+                  Today he's the owner, the founder — the one who built this from a WhatsApp status into a real hub
+                  for the community that asked for it first.
+                </p>
+              </div>
             </div>
           </ScrollBounce>
 
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-stretch">
+            {/* ── Values — raw icons, no colored badge, one consistent
+                accent color instead of green ── */}
             <ul className="flex flex-col gap-4 h-full" aria-label="Our values">
               {ABOUT_VALUES.map((item, index) => (
                 <li
                   key={index}
                   className="abh-card abh-shadow-elevated rounded-[14px] bg-white dark:bg-zinc-950 p-5 flex flex-row items-center text-left gap-4 flex-1"
                 >
-                  <div
-                    className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: `${greenColor}15`, color: greenColor }}
-                    aria-hidden="true"
-                  >
-                    {renderIcon(item.iconName, "w-5 h-5")}
+                  <div className="shrink-0 flex items-center justify-center" style={{ color: blueColor }} aria-hidden="true">
+                    {renderIcon(item.iconName, "w-7 h-7")}
                   </div>
                   <div>
                     <h3 className="font-sans font-semibold text-base text-zinc-800 dark:text-zinc-200 mb-1">{item.title}</h3>
@@ -327,15 +344,16 @@ export function AboutPage() {
               ))}
             </ul>
 
+            {/* ── Business overview — header row now centered ── */}
             <ScrollBounce delay={0.2}>
               <div className="abh-shadow-elevated rounded-[14px] bg-white dark:bg-zinc-950 p-7 flex flex-col h-full" aria-label="Business overview">
-                <div className="flex items-center gap-3 mb-7 pb-6 border-b border-zinc-100/60 dark:border-zinc-800/40">
+                <div className="flex flex-col items-center text-center gap-2 mb-7 pb-6 border-b border-zinc-100/60 dark:border-zinc-800/40">
                   <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${blueColor}15`, color: blueColor }}>
                     <UsersThree size={20} weight="fill" />
                   </div>
                   <div>
                     <p className="font-sans font-semibold text-base text-zinc-800 dark:text-zinc-200 leading-none">{BIZ.name}</p>
-                    <p className="text-[0.74rem] font-medium uppercase tracking-widest text-zinc-400 mt-0.5">Serving Kgotsong &amp; surrounds</p>
+                    <p className="text-[0.74rem] font-medium uppercase tracking-widest text-zinc-400 mt-1.5">Serving Kgotsong &amp; surrounds</p>
                   </div>
                 </div>
 
@@ -362,7 +380,7 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* Team — now with a WhatsApp tap-to-chat link */}
+      {/* Team — with a WhatsApp tap-to-chat link */}
       <section className="px-4 md:px-8 py-14 md:py-16 border-t border-zinc-100 dark:border-zinc-800/60" aria-labelledby="team-title">
         <div className="max-w-[680px] mx-auto">
           <ScrollBounce>
@@ -492,7 +510,8 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* Mission — now with a secondary Contact CTA alongside Services */}
+      {/* Mission — pill contrast fixed to use the same contrast-ensured
+          blue as the rest of the page instead of the raw brand blue */}
       <section className="relative overflow-hidden px-4 md:px-8 py-16 md:py-20 text-center" aria-labelledby="mission-title">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div
@@ -503,7 +522,10 @@ export function AboutPage() {
 
         <div className="relative max-w-[680px] mx-auto flex flex-col items-center">
           <ScrollBounce>
-            <span className="inline-block text-[0.78rem] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-6" style={{ backgroundColor: `${blueColor}12`, color: blueColor }}>
+            <span
+              className="inline-block text-[0.78rem] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-6"
+              style={{ backgroundColor: `${blueOnPage}14`, color: blueOnPage }}
+            >
               Our Mission
             </span>
           </ScrollBounce>
@@ -543,6 +565,20 @@ export function AboutPage() {
           </ScrollBounce>
         </div>
       </section>
+
+      {/* ── Scroll-to-top — same button as contact-page.tsx ── */}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        aria-label="Back to top"
+        className={cn(
+          "fixed bottom-6 left-4 z-[9990] w-12 h-12 rounded-full bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-lg flex items-center justify-center transition-all duration-300 active:scale-95 hover:scale-105",
+          showBackToTop
+            ? "opacity-100 translate-y-0 pointer-events-auto"
+            : "opacity-0 translate-y-4 pointer-events-none"
+        )}
+      >
+        <ArrowUp size={20} weight="bold" className="text-brand-blue dark:text-brand-light-blue" />
+      </button>
     </div>
   )
-    } 
+                                        } 
