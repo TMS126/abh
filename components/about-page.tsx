@@ -1,4 +1,4 @@
-// components/about-page.tsx — top of file
+// components/about-page.tsx
 "use client"
 
 import { useState, useEffect } from "react"
@@ -18,6 +18,11 @@ import { NakedTraderzReveal } from "@/components/about/naked-traderz-reveal"
 
 const PAGE_BG_LIGHT = "#FFFFFF"
 const PAGE_BG_DARK = "#0D1B2A"
+// Solid card background the "How It Started" image fades into. Must be
+// solid (not a translucent zinc-900/40) so the gradient's dark: stop
+// color matches the card exactly and the seam disappears.
+const CARD_BG_LIGHT = "#FAFAFA" // zinc-50
+const CARD_BG_DARK = "#18181B" // zinc-900
 
 const ABOUT_BLUE = BRAND.blue
 const ABOUT_GREEN = BRAND.green
@@ -99,6 +104,7 @@ export function AboutPage() {
   useEffect(() => setMounted(true), [])
   const isDark = mounted && resolvedTheme === "dark"
   const pageBg = isDark ? PAGE_BG_DARK : PAGE_BG_LIGHT
+  const cardBg = isDark ? CARD_BG_DARK : CARD_BG_LIGHT
 
   const blueColor = ABOUT_BLUE
   const orangeColor = ABOUT_ORANGE
@@ -106,6 +112,10 @@ export function AboutPage() {
   const neutralColor = isDark ? ABOUT_NEUTRAL.dark : ABOUT_NEUTRAL.light
 
   const blueOnPage = ensureAccessible(blueColor, pageBg, 4.5)
+  // Naked Traderz link sits on the "How It Started" card, not the page
+  // background — check contrast against the card color it actually
+  // renders on, rather than reusing the page-level token.
+  const blueOnCard = ensureAccessible(blueColor, cardBg, 4.5)
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
@@ -189,15 +199,14 @@ export function AboutPage() {
                   aria-hidden="true"
                 />
               </div>
-              <div className="bg-zinc-50 dark:bg-zinc-900/40 p-7 md:p-8 -mt-px">
-                <h3 className="font-sans center font-black text-xl text-zinc-900 dark:text-zinc-50 mb-3">How It Started</h3>
+              <div className="bg-zinc-50 dark:bg-zinc-900 p-7 md:p-8 -mt-px">
+                <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-3">How It Started</h3>
                 <p className="abh-body text-base leading-relaxed">
                   There was no ApexbytesHub yet — just a phone, WhatsApp, and a status update. A friend spotted a
                   simple edited image Theji had posted and asked if he could design a logo. That request was for
-                  "<NakedTraderzReveal />" — the very first thing Theji ever designed with a vector program, and the
-                  first logo he'd ever made for anyone.      
+                  "<NakedTraderzReveal accentColor={blueOnCard} />" — the very first thing Theji ever designed with
+                  a vector program, and the first logo he'd ever made for anyone.
                 </p>
-                
                 <p className="abh-body text-base leading-relaxed mt-3">
                   It was 2021, maybe early 2022. There was no plan, no brief, no clue where it would lead — just a
                   decision to give the person what they'd asked for. That one logo turned into the realization that
@@ -457,4 +466,5 @@ export function AboutPage() {
       <BackToTopButton visible={showBackToTop} />
     </div>
   )
-      } 
+}
+ 
