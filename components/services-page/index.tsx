@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { AnimatePresence } from "framer-motion"
-import { Megaphone, ArrowUp, ArrowRight, X } from "@phosphor-icons/react"
+import { Megaphone, ArrowRight } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { BRAND, HUB_COLORS, HubKey } from "@/lib/brand"
@@ -16,85 +16,8 @@ import { HubModal } from "./hub-modal"
 import { ServiceDetailModal } from "./service-detail-modal"
 import { HUB_ORDER, HUB_PREVIEWS, NOTICE, trackEvent, getTurnaround, SelectedService } from "./lib"
 import { sectionHasBulk } from "../quote-calculator/lib"
-
-function NoticeNotification({ isDark }: { isDark: boolean }) {
-  const [expanded, setExpanded] = useState(false)
-  const pillBg = isDark ? `${BRAND.orange}cc` : BRAND.orange
-
-  return (
-    <div
-      className="mx-auto w-full overflow-hidden"
-      style={{
-        maxWidth: expanded ? "28rem" : "120px",
-        borderRadius: "14px",
-        border: expanded ? "1px solid rgba(var(--brand-orange-rgb, 249,115,22),0.2)" : "none",
-        backgroundColor: expanded ? undefined : pillBg,
-        boxShadow: expanded
-          ? undefined
-          : "0 4px 14px -4px rgba(0,0,0,0.22), 0 2px 6px -2px rgba(0,0,0,0.14)",
-        transition:
-          "max-width 300ms ease-in-out, box-shadow 300ms ease-in-out, background-color 300ms ease-in-out, border 300ms ease-in-out",
-      }}
-    >
-      <button
-        onClick={() => setExpanded(!expanded)}
-        aria-expanded={expanded}
-        aria-label={expanded ? "Collapse notice" : "Show notice to clients"}
-        className={cn(
-          "w-full flex items-center gap-2 transition-all duration-300 ease-in-out active:scale-[0.97]",
-          expanded
-            ? "px-5 py-3.5 justify-between bg-brand-orange/5 dark:bg-brand-orange/10"
-            : "pl-4 pr-5 py-2.5 justify-center"
-        )}
-      >
-        {!expanded && (
-          <span className="relative flex items-center justify-center w-5 h-5 rounded-full bg-white/25 shrink-0">
-            <Megaphone size={11} weight="fill" color="#fff" aria-hidden="true" />
-          </span>
-        )}
-        {expanded && (
-          <div className="w-7 h-7 rounded-[8px] bg-brand-orange flex items-center justify-center shrink-0">
-            <Megaphone size={14} weight="fill" color="#fff" aria-hidden="true" />
-          </div>
-        )}
-        <span
-          className={cn(
-            "whitespace-nowrap font-black text-[0.9rem] tracking-tight transition-colors duration-300 ease-in-out",
-            expanded ? "text-brand-orange flex-1 text-left" : "text-white"
-          )}
-        >
-          {expanded ? "Notice to Clients" : "Notice"}
-        </span>
-        <X
-          size={14}
-          weight="bold"
-          aria-hidden="true"
-          className={cn(
-            "shrink-0 transition-opacity duration-300 ease-in-out text-zinc-400",
-            expanded ? "opacity-100" : "opacity-0 w-0 h-0"
-          )}
-        />
-      </button>
-
-      <div
-        className={cn(
-          "grid transition-all duration-300 ease-in-out",
-          expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-        )}
-      >
-        <div className="overflow-hidden">
-          <div className="px-5 pb-4 pt-1">
-            <p className="abh-body text-[1rem]">
-              {NOTICE.text}
-              <span className="font-black text-zinc-800 dark:text-zinc-100">{NOTICE.date}</span>
-              {NOTICE.textAfter}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
+import { NoticePill } from "@/components/notice-pill"
+import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
 
 function ClosingTagline() {
   return (
@@ -103,7 +26,11 @@ function ClosingTagline() {
       <p className="font-sans font-black text-2xl md:text-3xl text-zinc-900 dark:text-zinc-50 leading-snug max-w-2xl mx-auto">
         From your first CV to your next big idea — one hub does it all, right here in Bothaville.
       </p>
-      <div className="mt-6 h-px bg-zinc-200 dark:bg-zinc-800 max-w-[160px] mx-auto" />
+      {/* FIX: was a hand-rolled 1px zinc-200/zinc-800 line — invisible in
+          dark mode against the near-black page background (the same bug
+          globals.css already documents fixing for .abh-divider). Swapped
+          to the shared class instead of re-fixing it locally. */}
+      <div className="abh-divider" />
     </div>
   )
 }
@@ -161,7 +88,7 @@ export function ServicesPage() {
   const [activeHub,       setActiveHub]       = useState<HubId | null>(null)
   const [hubOriginSide,   setHubOriginSide]   = useState<"left" | "right">("right")
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
-  const [showBackToTop,   setShowBackToTop]   = useState(false)
+  const showBackToTop = useBackToTop()
 
   const isModalOpen = !!(activeHub || selectedService)
 
@@ -179,12 +106,6 @@ export function ServicesPage() {
     setHubOriginSide(originSide)
     setActiveHub(hubId)
   }
-
-  useEffect(() => {
-    const onScroll = () => setShowBackToTop(window.scrollY > 600)
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
-  }, [])
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -270,7 +191,17 @@ export function ServicesPage() {
         </ScrollBounce>
 
         <ScrollBounce delay={0.08} className="relative z-0 w-full flex justify-center mb-6">
-          <NoticeNotification isDark={isDark} />
+          <NoticePill
+            accentColor={BRAND.orange}
+            Icon={Megaphone}
+            collapsedLabel="Notice"
+            expandedLabel="Notice to Clients"
+            isDark={isDark}
+          >
+            {NOTICE.text}
+            <span className="font-black text-zinc-800 dark:text-zinc-100">{NOTICE.date}</span>
+            {NOTICE.textAfter}
+          </NoticePill>
         </ScrollBounce>
 
         <ScrollBounce delay={0.14} className="relative z-40 w-full mb-12 flex justify-center">
@@ -371,9 +302,6 @@ export function ServicesPage() {
                   </p>
 
                   <div className="relative z-10 flex flex-col items-center gap-1.5">
-                    {/* "Explore" now sits on a subtle dotted underline in
-                        the hub's own accent color — always faintly visible,
-                        fading to full strength on hover/press. */}
                     <span className="inline-flex items-center gap-1 text-[0.88rem] font-black text-zinc-400 dark:text-zinc-500 group-hover/hubcard:text-[var(--hub-accent)] transition-colors duration-200">
                       <span
                         className="border-b-2 border-dotted pb-0.5 opacity-45 group-hover/hubcard:opacity-100 transition-opacity duration-200"
@@ -416,18 +344,7 @@ export function ServicesPage() {
         )}
       </AnimatePresence>
 
-      <button
-        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        aria-label="Back to top"
-        className={cn(
-          "fixed bottom-6 left-4 z-[9990] w-12 h-12 rounded-full bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-lg flex items-center justify-center transition-all duration-300 active:scale-95 hover:scale-105",
-          showBackToTop && !isModalOpen
-            ? "opacity-100 translate-y-0 pointer-events-auto"
-            : "opacity-0 translate-y-4 pointer-events-none"
-        )}
-      >
-        <ArrowUp size={20} weight="bold" className="text-brand-blue dark:text-brand-light-blue" />
-      </button>
+      <BackToTopButton visible={showBackToTop && !isModalOpen} />
     </section>
   )
-      } 
+                                                                           } 
