@@ -1,8 +1,9 @@
+// components/pricing-page/index.tsx
 'use client'
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { useTheme } from 'next-themes'
-import { CaretDown, CaretUp, Lightning, SealPercent } from '@phosphor-icons/react'
+import { CaretDown, CaretUp, Lightning, SealPercent, WhatsappLogo } from '@phosphor-icons/react'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { ScrollBounce } from '@/components/scroll-bounce'
@@ -13,6 +14,7 @@ import { PricingSearchInput, PricingSearchResults } from './search-bar'
 import { HubAccordionCard } from './hub-card'
 import { PdfPillButton } from './shared'
 import { HUB_ORDER, dispatchAddToQuote, bulkDiscountPercent, parsePrice, searchHubs } from './lib'
+import { BackToTopButton, useBackToTop } from '@/components/back-to-top-button'
 
 export default function PricingPage() {
   const { resolvedTheme } = useTheme()
@@ -21,6 +23,7 @@ export default function PricingPage() {
   const [openHubs, setOpenHubs] = useState<Set<HubId>>(new Set())
   const [query, setQuery] = useState('')
   const hubRefs = useRef<Partial<Record<HubId, HTMLDivElement | null>>>({})
+  const showBackToTop = useBackToTop()
 
   const [justAdded, setJustAdded] = useState<string | null>(null)
   const addedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -33,7 +36,6 @@ export default function PricingPage() {
     return isDark ? c.accentDark : c.accentLight
   }
 
-  // ── Accordion state ──
   const toggleHub = useCallback((id: HubId) => {
     setOpenHubs(prev => {
       const next = new Set(prev)
@@ -55,7 +57,6 @@ export default function PricingPage() {
     requestAnimationFrame(() => hubRefs.current[hubId]?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   }, [])
 
-  // ── Quote actions ──
   const handleAdd = useCallback((hubId: HubId, sectionTitle: string, name: string, price: string) => {
     dispatchAddToQuote(hubId, sectionTitle, name, price)
     const key = `${hubId}-${sectionTitle}-${name}`
@@ -64,10 +65,8 @@ export default function PricingPage() {
     addedTimerRef.current = setTimeout(() => setJustAdded(null), 900)
   }, [])
 
-  // ── Search ──
   const results = useMemo(() => (query.trim() ? searchHubs(query, accentFor) : null), [query, isDark])
 
-  // ── PDF downloads ──
   const handleDownload = useCallback(() => {
     const link = document.createElement('a')
     link.href = '/ApexbytesHub_Pricing_Catalog.pdf'
@@ -99,7 +98,6 @@ export default function PricingPage() {
 
         <main className="flex-1">
 
-          {/* ── Hero ── */}
           <section className="px-4 md:px-8 pt-[calc(var(--nav-h)+2rem)] pb-10">
             <div className="max-w-2xl mx-auto">
               <ScrollBounce><h1 className="abh-page-title mb-3">Pricing</h1></ScrollBounce>
@@ -110,14 +108,12 @@ export default function PricingPage() {
 
           <div className="max-w-2xl mx-auto px-4 pb-16 space-y-8">
 
-            {/* ── Search ── */}
             <ScrollBounce delay={0.08}>
               <div className="no-print sticky top-[calc(var(--nav-h,74px)+0.5rem)] z-10 bg-background">
                 <PricingSearchInput query={query} setQuery={setQuery} />
               </div>
             </ScrollBounce>
 
-            {/* ── Jump nav + expand/collapse ── */}
             {results === null && (
               <div className="space-y-5">
                 <ScrollBounce delay={0.1}>
@@ -157,7 +153,6 @@ export default function PricingPage() {
               </div>
             )}
 
-            {/* ── Content ── */}
             {results !== null ? (
               results.length === 0 ? (
                 <ScrollBounce>
@@ -165,13 +160,14 @@ export default function PricingPage() {
                     <p className="abh-body mb-4">
                       No results for <span className="font-semibold text-zinc-700 dark:text-zinc-300">"{query}"</span>
                     </p>
+                    {/* FIX: raw #25D366 → shared .abh-wa-btn class */}
                     <a
                       href={noResultsWaLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-[14px] text-xs font-black text-white transition-all duration-150 active:scale-95 hover:-translate-y-0.5 shadow-md"
-                      style={{ backgroundColor: '#25D366' }}
+                      className="abh-wa-btn inline-flex px-4 py-2.5 text-xs"
                     >
+                      <WhatsappLogo size={14} weight="fill" aria-hidden="true" />
                       Can't find it? Ask us on WhatsApp
                     </a>
                   </div>
@@ -203,14 +199,12 @@ export default function PricingPage() {
               </div>
             )}
 
-            {/* ── Full catalog PDF ── */}
             <ScrollBounce delay={0.24}>
               <div className="no-print flex justify-center pt-2">
                 <PdfPillButton label="Download Full Pricing Catalog" onClick={handleDownload} size="lg" />
               </div>
             </ScrollBounce>
 
-            {/* ── Notices ── */}
             <ScrollBounce delay={0.3}>
               <div className="rounded-[14px] px-5 py-5 space-y-3" style={{ backgroundColor: `${BRAND.orange}0d`, boxShadow: `0 2px 16px -2px ${BRAND.orange}20` }}>
                 <p className="text-xs flex items-start gap-1.5" style={{ color: BRAND.orange }}>
@@ -227,8 +221,14 @@ export default function PricingPage() {
           </div>
         </main>
 
+        {/* FIX: this page had no back-to-top button at all — it's a long
+            scrolling accordion list, the page that probably needs one
+            most. no-print keeps it out of the PDF/print stylesheet like
+            the other floating controls on this page. */}
+        <BackToTopButton visible={showBackToTop} className="no-print" />
+
         <Footer />
       </div>
     </>
   )
-}
+                     } 
