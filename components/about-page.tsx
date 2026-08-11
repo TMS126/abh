@@ -195,15 +195,15 @@ export function AboutPage() {
                   sizes="(max-width: 768px) 100vw, 720px"
                   className="object-cover"
                 />
-                {/* FIX: reverted to roughly the original height (h-24, was
-                    briefly h-56/h-64 which swallowed too much of the photo).
-                    Kept the smooth 4-stop alpha ramp from cardBg instead of
-                    the original blunt 2-stop fade — that's what actually
-                    avoids the hard "seam" edge, independent of height. */}
+                {/* FIX: previous version stacked three mid-opacity stops
+                    over a large chunk of the photo — that's what read as
+                    "fog." Cut down to a short 64px band with one soft
+                    midpoint, just enough to soften the hard edge without
+                    visibly sitting on top of the image. */}
                 <div
-                  className="absolute inset-x-0 bottom-0 h-24 pointer-events-none"
+                  className="absolute inset-x-0 bottom-0 h-16 pointer-events-none"
                   style={{
-                    background: `linear-gradient(to top, ${cardBg} 0%, ${cardBg} 25%, ${cardBg}cc 50%, ${cardBg}66 75%, transparent 100%)`,
+                    background: `linear-gradient(to top, ${cardBg} 0%, ${cardBg}99 45%, transparent 100%)`,
                   }}
                   aria-hidden="true"
                 />
