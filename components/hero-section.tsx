@@ -70,10 +70,9 @@ function buildArrangement() {
   }))
 }
 
-// Icon + color per weather/time category — replaces the old pulsing dot.
-// Purely decorative context now (open/closed state is conveyed by the
-// sentence text next to it, not by this icon), so colors are chosen to
-// read naturally for each condition rather than as a status signal.
+// Icon + color per weather/time category — only ever rendered on a
+// holiday banner now (see below), so this stays purely decorative
+// context rather than a daily fixture.
 const WEATHER_ICON_MAP: Record<WeatherCategory, { Icon: React.ElementType; color: string }> = {
   "clear-day": { Icon: Sun, color: "#F59E0B" },
   "clear-night": { Icon: Moon, color: "#818CF8" },
@@ -86,33 +85,8 @@ const WEATHER_ICON_MAP: Record<WeatherCategory, { Icon: React.ElementType; color
   snow: { Icon: Snowflake, color: "#7DD3FC" },
 }
 
-// Fallback category (used before the weather fetch resolves, or if it
-// fails) — derived from time-of-day alone so the icon still makes sense
-// on first paint rather than showing nothing.
 function fallbackCategory(greeting: BusinessStatus["greeting"]): WeatherCategory {
   return greeting === "morning" || greeting === "afternoon" ? "clear-day" : "clear-night"
-}
-
-// Hub-specific status sentence — deliberately names which hub group is
-// affected instead of implying the whole business is closed, since on a
-// public holiday only Tech/Design/E-Service actually close (Print & Docu
-// stays open every day per policy).
-function getHeroStatusLine(status: BusinessStatus): string {
-  const { printAndDoc, techDesignEservice, isHoliday, holidayName } = status
-
-  if (isHoliday) {
-    return `— Tech, Design & E-Service are closed today for ${holidayName}, but Print & Docu is open as usual`
-  }
-  if (printAndDoc.open && techDesignEservice.open) {
-    return "— everything's open right now"
-  }
-  if (printAndDoc.open && !techDesignEservice.open) {
-    return `— Print & Docu is open right now, Tech, Design & E-Service ${techDesignEservice.label}`
-  }
-  if (!printAndDoc.open && techDesignEservice.open) {
-    return `— Tech, Design & E-Service is open right now, Print & Docu ${printAndDoc.label}`
-  }
-  return `— we're closed right now, Print & Docu ${printAndDoc.label}`
 }
 
 export function HeroSection() {
@@ -133,14 +107,25 @@ export function HeroSection() {
     setMounted(true)
     setArrangement(buildArrangement())
     setStatus(getBusinessStatus())
+    // Only need to keep re-checking status if today could be a holiday —
+    // interval stays cheap (a getBusinessStatus() call, no network) so
+    // this can just run every minute regardless; it's the weather fetch
+    // below that's gated to holidays only.
     const id = setInterval(() => setStatus(getBusinessStatus()), 60_000)
+    return () => clearInterval(id)
+  }, [])
 
+  // Weather is only fetched — and the whole banner only ever shown — on a
+  // public holiday. Every other day, this section of the hero stays
+  // exactly as empty as it was before any of this was added, per your
+  // call: "leave that part on home page empty as before... unless
+  // something comes up. But on holidays show it."
+  useEffect(() => {
+    if (!status?.isHoliday) return
     getWeatherSnapshot().then((snapshot) => {
       if (snapshot) setWeatherCategory(snapshot.category)
     })
-
-    return () => clearInterval(id)
-  }, [])
+  }, [status?.isHoliday])
 
   const isDark = mounted && resolvedTheme === "dark"
 
@@ -151,6 +136,7 @@ export function HeroSection() {
   const activeCircleColor = CTA_FILL_COLOR
   const activeArrowIconColor = getArrowIconColor(activeCircleColor)
 
+  const showHolidayBanner = mounted && status?.isHoliday
   const displayCategory = weatherCategory ?? (status ? fallbackCategory(status.greeting) : "clear-day")
   const { Icon: WeatherIcon, color: weatherIconColor } = WEATHER_ICON_MAP[displayCategory]
 
@@ -178,14 +164,17 @@ export function HeroSection() {
           {/* Left column — text + CTA */}
           <div className="text-center md:text-left">
 
-            {/* Time-of-day / holiday / weather-aware greeting — SAST-driven
-                via lib/sa-time.ts, icon via lib/weather.ts. mounted-gated
-                since server render time and the visitor's local time can
-                differ, avoiding a hydration mismatch on first paint. */}
-            {mounted && status && (
+            {/* Holiday-only notice — hidden entirely on ordinary days
+                (exactly as before this feature existed). Only renders
+                when today is a public holiday per lib/sa-time.ts, names
+                which hub group is actually closed (Print & Docu stays
+                open every day, including holidays), and shows a small
+                weather+time icon just for a bit of life on the one line
+                that does appear. */}
+            {showHolidayBanner && status && (
               <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-3">
                 <WeatherIcon size={16} weight="fill" style={{ color: weatherIconColor }} aria-hidden="true" />
-                Good {status.greeting} {getHeroStatusLine(status)}
+                Tech, Design &amp; E-Service are closed today for {status.holidayName} — Print &amp; Docu is open as usual
               </p>
             )}
 
@@ -336,4 +325,4 @@ export function HeroSection() {
       </div>
     </section>
   )
-    } 
+                } 
