@@ -14,6 +14,7 @@ import { ScrollBounce } from "@/components/scroll-bounce"
 import { SAMPLE_REVIEWS } from "@/components/testimonials-section"
 import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
 import { ensureAccessible } from "@/lib/color"
+import { NakedTraderzReveal } from "@/components/about/naked-traderz-reveal"
 
 const PAGE_BG_LIGHT = "#FFFFFF"
 const PAGE_BG_DARK = "#0D1B2A"
