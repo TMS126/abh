@@ -1,16 +1,15 @@
 // components/hero-section.tsx
 "use client"
 
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
-import { ArrowRight, Play, Pause, Sun, Moon, CloudSun, CloudMoon, Cloud, CloudFog, CloudRain, CloudLightning, Snowflake } from "@phosphor-icons/react"
+import { ArrowRight, ArrowDown, Play, Pause } from "@phosphor-icons/react"
 import { BRAND, BIZ, MARQUEE_ITEMS } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { HUBS_DATA } from "@/lib/hero-data"
 import { ClassicTagline } from "@/components/classic-tagline"
-import { getBusinessStatus, type BusinessStatus } from "@/lib/sa-time"
-import { getWeatherSnapshot, type WeatherCategory } from "@/lib/weather"
+import { getBusinessStatus, getSASTNow, type BusinessStatus } from "@/lib/sa-time"
 
 function hexToRgbLocal(hex: string) {
   const clean = hex.replace("#", "")
@@ -70,23 +69,97 @@ function buildArrangement() {
   }))
 }
 
-// Icon + color per weather/time category — only ever rendered on a
-// holiday banner now (see below), so this stays purely decorative
-// context rather than a daily fixture.
-const WEATHER_ICON_MAP: Record<WeatherCategory, { Icon: React.ElementType; color: string }> = {
-  "clear-day": { Icon: Sun, color: "#F59E0B" },
-  "clear-night": { Icon: Moon, color: "#818CF8" },
-  "partly-cloudy-day": { Icon: CloudSun, color: "#F0A93A" },
-  "partly-cloudy-night": { Icon: CloudMoon, color: "#8B93D8" },
-  cloudy: { Icon: Cloud, color: "#9CA3AF" },
-  fog: { Icon: CloudFog, color: "#9CA3AF" },
-  rain: { Icon: CloudRain, color: "#60A5FA" },
-  thunderstorm: { Icon: CloudLightning, color: "#A78BFA" },
-  snow: { Icon: Snowflake, color: "#7DD3FC" },
+// ── Reduced motion ──────────────────────────────────────────────────────
+// Feature 4. Any component reading this should skip/stagger-less its own
+// entrance animation, stop the marquee's auto-scroll, and drop the scroll
+// cue's bounce — without hiding any content, just the motion itself.
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
+    setReduced(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setReduced(e.matches)
+    mq.addEventListener("change", handler)
+    return () => mq.removeEventListener("change", handler)
+  }, [])
+  return reduced
 }
 
-function fallbackCategory(greeting: BusinessStatus["greeting"]): WeatherCategory {
-  return greeting === "morning" || greeting === "afternoon" ? "clear-day" : "clear-night"
+// ── Feature 1: day/time-aware, randomized CTA copy ──────────────────────
+// Buckets keyed by weekday-vs-weekend + open/closed + rough time of day.
+// Each bucket has several candidate lines (some hub-flavored, some
+// generic) — one is picked at random on every page load, so it's fresh
+// each landing but still makes sense for "right now."
+const CTA_POOLS: Record<string, string[]> = {
+  "weekday-open-morning": [
+    "Start your day with us",
+    "Need something sorted before lunch?",
+    "Kick off the week right",
+    "Need a CV sorted today?",
+  ],
+  "weekday-open-afternoon": [
+    "Still time to get it done today",
+    "Beat the afternoon rush",
+    "Need printing done today?",
+    "Get your documents handled",
+  ],
+  "weekday-closed-evening": [
+    "Plan ahead for tomorrow",
+    "Browse now, visit us tomorrow",
+    "We're closed, but you can still browse",
+  ],
+  "saturday-open": [
+    "Saturday hours — open till 12",
+    "Weekend errand? We've got you",
+  ],
+  "saturday-closed": [
+    "We're closed for the day",
+    "Back open Monday at 09:00",
+  ],
+  "sunday": [
+    "We're closed today — Print & Docu opens 07:00 tomorrow",
+    "Browse now, we'll be open tomorrow",
+  ],
+  "holiday": [
+    "Print & Docu is still open today",
+  ],
+  fallback: ["See Our Services"],
+}
+
+function pickCtaBucket(status: BusinessStatus, day: number): keyof typeof CTA_POOLS {
+  if (status.isHoliday) return "holiday"
+  if (day === 0) return "sunday"
+  if (day === 6) return status.printAndDoc.open || status.techDesignEservice.open ? "saturday-open" : "saturday-closed"
+  if (status.printAndDoc.open || status.techDesignEservice.open) {
+    return status.greeting === "morning" ? "weekday-open-morning" : "weekday-open-afternoon"
+  }
+  return "weekday-closed-evening"
+}
+
+function pickRandomCta(status: BusinessStatus | null): string {
+  if (!status) return "See Our Services"
+  const bucket = pickCtaBucket(status, getSASTNow().getDay())
+  const pool = CTA_POOLS[bucket] ?? CTA_POOLS.fallback
+  return pool[Math.floor(Math.random() * pool.length)]
+}
+
+// ── Feature 2: marquee item → hub mapping ────────────────────────────────
+// Best-guess mapping based on the marquee phrasing from earlier sessions.
+// Links each item to its HUB (opens that hub's modal on /services), not a
+// specific service — deep-linking to one exact service needs the item's
+// precise hub/section/service-name strings from lib/data.ts to match
+// safely, which I don't have in front of me. If MARQUEE_ITEMS has changed
+// since, or you want true per-service links, send the current array plus
+// each item's matching service name and I'll tighten this.
+const MARQUEE_HUB_GUESS: string[] = [
+  "print", "doc", "doc", "doc",
+  "design", "design", "design",
+  "eservice", "eservice", "eservice",
+  "tech",
+]
+
+function getMarqueeHubId(index: number): string {
+  return MARQUEE_HUB_GUESS[index % MARQUEE_HUB_GUESS.length]
 }
 
 export function HeroSection() {
@@ -95,37 +168,42 @@ export function HeroSection() {
   const [mounted, setMounted] = useState(false)
   const [marqueePaused, setMarqueePaused] = useState(false)
   const [status, setStatus] = useState<BusinessStatus | null>(null)
-  const [weatherCategory, setWeatherCategory] = useState<WeatherCategory | null>(null)
+  const [ctaText, setCtaText] = useState("See Our Services")
+  const [showScrollCue, setShowScrollCue] = useState(true)
+  const [hoveredMarqueeIdx, setHoveredMarqueeIdx] = useState<number | null>(null)
+
+  const reducedMotion = usePrefersReducedMotion()
 
   const [arrangement, setArrangement] = useState(() =>
     COLLAGE_SLOTS.map((slot, i) => ({ hub: HUBS_DATA[i], slot, width: slot.baseWidth }))
   )
 
   const ctaBtnRef = useRef<HTMLButtonElement>(null)
+  const marqueeWrapRef = useRef<HTMLDivElement>(null)
 
   React.useEffect(() => {
     setMounted(true)
     setArrangement(buildArrangement())
-    setStatus(getBusinessStatus())
-    // Only need to keep re-checking status if today could be a holiday —
-    // interval stays cheap (a getBusinessStatus() call, no network) so
-    // this can just run every minute regardless; it's the weather fetch
-    // below that's gated to holidays only.
+    const s = getBusinessStatus()
+    setStatus(s)
+    setCtaText(pickRandomCta(s))
     const id = setInterval(() => setStatus(getBusinessStatus()), 60_000)
     return () => clearInterval(id)
   }, [])
 
-  // Weather is only fetched — and the whole banner only ever shown — on a
-  // public holiday. Every other day, this section of the hero stays
-  // exactly as empty as it was before any of this was added, per your
-  // call: "leave that part on home page empty as before... unless
-  // something comes up. But on holidays show it."
+  // Feature 3: scroll-down cue — visible while near the top, hides once
+  // the visitor actually starts scrolling (same "appear/disappear on
+  // scroll position" pattern as Services' back-to-top button, just
+  // inverted: this one shows near 0 instead of past 600px).
   useEffect(() => {
-    if (!status?.isHoliday) return
-    getWeatherSnapshot().then((snapshot) => {
-      if (snapshot) setWeatherCategory(snapshot.category)
-    })
-  }, [status?.isHoliday])
+    const onScroll = () => setShowScrollCue(window.scrollY < 80)
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
+  const handleScrollCueClick = () => {
+    window.scrollBy({ top: window.innerHeight * 0.85, behavior: reducedMotion ? "auto" : "smooth" })
+  }
 
   const isDark = mounted && resolvedTheme === "dark"
 
@@ -136,12 +214,13 @@ export function HeroSection() {
   const activeCircleColor = CTA_FILL_COLOR
   const activeArrowIconColor = getArrowIconColor(activeCircleColor)
 
-  const showHolidayBanner = mounted && status?.isHoliday
-  const displayCategory = weatherCategory ?? (status ? fallbackCategory(status.greeting) : "clear-day")
-  const { Icon: WeatherIcon, color: weatherIconColor } = WEATHER_ICON_MAP[displayCategory]
-
   const handleNavigate = (path: string) => router.push(path)
   const handleCtaClick = () => handleNavigate("/services")
+
+  const handleMarqueeItemClick = (index: number) => {
+    const hubId = getMarqueeHubId(index)
+    handleNavigate(`/services?hub=${hubId}`)
+  }
 
   return (
     <section
@@ -163,21 +242,6 @@ export function HeroSection() {
 
           {/* Left column — text + CTA */}
           <div className="text-center md:text-left">
-
-            {/* Holiday-only notice — hidden entirely on ordinary days
-                (exactly as before this feature existed). Only renders
-                when today is a public holiday per lib/sa-time.ts, names
-                which hub group is actually closed (Print & Docu stays
-                open every day, including holidays), and shows a small
-                weather+time icon just for a bit of life on the one line
-                that does appear. */}
-            {showHolidayBanner && status && (
-              <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-3">
-                <WeatherIcon size={16} weight="fill" style={{ color: weatherIconColor }} aria-hidden="true" />
-                Tech, Design &amp; E-Service are closed today for {status.holidayName} — Print &amp; Docu is open as usual
-              </p>
-            )}
-
             <h1 className="font-sans font-black text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.1] mb-4 text-balance transition-colors duration-300 text-zinc-900 dark:text-zinc-50">
               <span
                 className="transition-colors duration-200 hover:text-[#1E6FA8] active:text-[#1E6FA8]"
@@ -224,8 +288,11 @@ export function HeroSection() {
                   className="relative z-10 flex-1 flex items-center justify-center whitespace-nowrap transition-colors duration-150"
                   style={{ color: REST_COLOR }}
                 >
+                  {/* Feature 1 — text is now dynamic (see ctaText state),
+                      picked once per page load from a day/time-aware
+                      pool via pickRandomCta(). */}
                   <span className="group-hover:text-white group-active:text-white transition-colors duration-150 text-xl sm:text-2xl">
-                    See Our Services
+                    {ctaText}
                   </span>
                 </span>
 
@@ -247,13 +314,16 @@ export function HeroSection() {
           {/* Right column — hub photo collage */}
           <ScrollBounce delay={0.1} className="w-full">
             <div className="relative w-full h-[420px] sm:h-[480px] md:h-[560px]">
-              {arrangement.map(({ hub, slot, width }) => {
+              {arrangement.map(({ hub, slot, width }, i) => {
                 const hubAccent = isDark ? hub.colorDark : hub.colorLight
                 const hubAccentFg = getArrowIconColor(hubAccent)
                 return (
                   <div
                     key={hub.id}
-                    className="group/tile absolute aspect-square rounded-2xl overflow-hidden border-4 border-white dark:border-zinc-900 shadow-[0_6px_18px_rgba(0,0,0,0.10)] dark:shadow-[0_6px_18px_rgba(0,0,0,0.35)] transition-transform duration-300 hover:z-[60] hover:scale-[1.03] animate-in fade-in zoom-in-95"
+                    className={cn2(
+                      "group/tile absolute aspect-square rounded-2xl overflow-hidden border-4 border-white dark:border-zinc-900 shadow-[0_6px_18px_rgba(0,0,0,0.10)] dark:shadow-[0_6px_18px_rgba(0,0,0,0.35)] transition-transform duration-300 hover:z-[60] hover:scale-[1.03]",
+                      !reducedMotion && "animate-in fade-in zoom-in-95"
+                    )}
                     style={{
                       top: slot.top,
                       bottom: slot.bottom,
@@ -261,9 +331,9 @@ export function HeroSection() {
                       right: slot.right,
                       width: `${width}%`,
                       zIndex: slot.z,
-                      animationDelay: `${slot.z * 40}ms`,
-                      animationDuration: "500ms",
-                      animationFillMode: "both",
+                      animationDelay: reducedMotion ? undefined : `${slot.z * 40}ms`,
+                      animationDuration: reducedMotion ? undefined : "500ms",
+                      animationFillMode: reducedMotion ? undefined : "both",
                       ["--hub-accent" as any]: hubAccent,
                       ["--hub-accent-fg" as any]: hubAccentFg,
                     }}
@@ -279,50 +349,128 @@ export function HeroSection() {
           </ScrollBounce>
         </div>
 
-        {/* Marquee */}
+        {/* Marquee — Feature 2: hover reveals a small bubble naming the
+            hub, click navigates there. Tooltip is absolutely positioned
+            above the hovered item, using that hub's own accent color
+            (reusing HUBS_DATA, same source as the collage tiles). */}
         <div
+          ref={marqueeWrapRef}
           role="group"
           aria-label="Our services"
           onMouseEnter={() => setMarqueePaused(true)}
-          onMouseLeave={() => setMarqueePaused(false)}
+          onMouseLeave={() => { setMarqueePaused(false); setHoveredMarqueeIdx(null) }}
           onTouchStart={(e) => {
             e.stopPropagation()
             setMarqueePaused((p) => !p)
           }}
-          className="relative w-full max-w-[1240px] py-4 overflow-hidden select-none group/marquee rounded-[14px] bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800 [mask-image:linear-gradient(to_right,transparent_0%,black_8%,black_92%,transparent_100%)]"
+          className="relative w-full max-w-[1240px] py-4 overflow-visible select-none group/marquee rounded-[14px] bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800"
         >
-          <button
-            onClick={() => setMarqueePaused((p) => !p)}
-            aria-pressed={marqueePaused}
-            aria-label={marqueePaused ? "Play scrolling services list" : "Pause scrolling services list"}
-            className="absolute top-1/2 right-2 -translate-y-1/2 z-10 w-6 h-6 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 bg-zinc-50 dark:bg-zinc-900/80 transition-colors"
-          >
-            {marqueePaused
-              ? <Play size={11} weight="fill" aria-hidden="true" />
-              : <Pause size={11} weight="fill" aria-hidden="true" />}
-          </button>
+          <div className="overflow-hidden rounded-[14px] [mask-image:linear-gradient(to_right,transparent_0%,black_8%,black_92%,transparent_100%)]">
+            <button
+              onClick={() => setMarqueePaused((p) => !p)}
+              aria-pressed={marqueePaused}
+              aria-label={marqueePaused ? "Play scrolling services list" : "Pause scrolling services list"}
+              className="absolute top-1/2 right-2 -translate-y-1/2 z-10 w-6 h-6 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 bg-zinc-50 dark:bg-zinc-900/80 transition-colors"
+            >
+              {marqueePaused
+                ? <Play size={11} weight="fill" aria-hidden="true" />
+                : <Pause size={11} weight="fill" aria-hidden="true" />}
+            </button>
 
-          <div
-            className="flex whitespace-nowrap w-max animate-marquee"
-            style={{ animationPlayState: marqueePaused ? "paused" : "running" }}
-          >
-            {[0, 1].map((copy) => (
-              <div key={copy} className="flex items-center shrink-0" aria-hidden={copy === 1 ? "true" : undefined}>
-                {MARQUEE_ITEMS.map((item, idx) => (
-                  <React.Fragment key={idx}>
-                    <span className="inline-flex items-center px-5 font-semibold text-base text-zinc-600 dark:text-zinc-400 transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100">
-                      {item}
-                    </span>
-                    <span className="font-black text-lg leading-none shrink-0 text-zinc-300 dark:text-zinc-600" aria-hidden="true">
-                      •
-                    </span>
-                  </React.Fragment>
+            <div
+              className="flex whitespace-nowrap w-max"
+              style={{
+                animation: reducedMotion ? "none" : undefined,
+                animationPlayState: marqueePaused ? "paused" : "running",
+              }}
+            >
+              <div className={reducedMotion ? "flex items-center shrink-0" : "flex items-center shrink-0 animate-marquee"}>
+                {[0, 1].map((copy) => (
+                  <div key={copy} className="flex items-center shrink-0" aria-hidden={copy === 1 ? "true" : undefined}>
+                    {MARQUEE_ITEMS.map((item, idx) => {
+                      const hubId = getMarqueeHubId(idx)
+                      const hubData = HUBS_DATA.find((h) => h.id === hubId)
+                      const hubAccent = hubData ? (isDark ? hubData.colorDark : hubData.colorLight) : BRAND.blue
+                      const isHovered = copy === 0 && hoveredMarqueeIdx === idx
+                      return (
+                        <React.Fragment key={idx}>
+                          <span
+                            className="relative inline-flex items-center px-5 font-semibold text-base text-zinc-600 dark:text-zinc-400 transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100 cursor-pointer"
+                            onMouseEnter={() => copy === 0 && setHoveredMarqueeIdx(idx)}
+                            onMouseLeave={() => setHoveredMarqueeIdx(null)}
+                            onClick={() => handleMarqueeItemClick(idx)}
+                            role="link"
+                            tabIndex={0}
+                            onKeyDown={(e) => { if (e.key === "Enter") handleMarqueeItemClick(idx) }}
+                          >
+                            {item}
+                            {isHovered && hubData && (
+                              <span
+                                className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-20 flex flex-col items-center animate-in fade-in zoom-in-95 duration-150"
+                                role="tooltip"
+                              >
+                                <span
+                                  className="whitespace-nowrap px-3 py-1.5 rounded-full text-white text-[0.78rem] font-bold shadow-lg flex items-center gap-1.5"
+                                  style={{ backgroundColor: hubAccent }}
+                                >
+                                  {hubData.name}
+                                  <ArrowRight size={11} weight="bold" aria-hidden="true" />
+                                </span>
+                                <span
+                                  className="w-2.5 h-2.5 -mt-[5px] rotate-45"
+                                  style={{ backgroundColor: hubAccent }}
+                                  aria-hidden="true"
+                                />
+                              </span>
+                            )}
+                          </span>
+                          <span className="font-black text-lg leading-none shrink-0 text-zinc-300 dark:text-zinc-600" aria-hidden="true">
+                            •
+                          </span>
+                        </React.Fragment>
+                      )
+                    })}
+                  </div>
                 ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Feature 3 — scroll-down cue. Same visual recipe as Services'
+          back-to-top button (rounded-full white/zinc-900 pill, border,
+          shadow, w-11/12 sizing) but pointing down and placed at the
+          bottom of the hero rather than fixed to the viewport, since its
+          job is "there's more below," not persistent navigation. Bounce
+          animation is skipped entirely under reduced motion — the arrow
+          still shows, it just doesn't move. */}
+      <button
+        onClick={handleScrollCueClick}
+        aria-label="Scroll down to see more"
+        className={cn2(
+          "absolute bottom-3 left-1/2 -translate-x-1/2 z-20 w-11 h-11 rounded-full bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-lg flex items-center justify-center transition-opacity duration-300",
+          showScrollCue ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+          !reducedMotion && showScrollCue && "abh-scroll-cue-bounce"
+        )}
+      >
+        <style>{`
+          @keyframes abh-scroll-cue-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(5px); }
+          }
+          .abh-scroll-cue-bounce { animation: abh-scroll-cue-bounce 1.6s ease-in-out infinite; }
+        `}</style>
+        <ArrowDown size={20} weight="bold" className="text-brand-blue dark:text-brand-light-blue" aria-hidden="true" />
+      </button>
     </section>
   )
-                } 
+}
+
+// Small local className joiner — avoids importing the shared `cn` util
+// here purely to sidestep guessing its exact export path in this file;
+// swap this for your existing `cn` from "@/lib/utils" if you'd rather
+// keep one utility everywhere (functionally identical for this use).
+function cn2(...args: (string | false | null | undefined)[]) {
+  return args.filter(Boolean).join(" ")
+    } 
