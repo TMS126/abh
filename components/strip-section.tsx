@@ -1,3 +1,4 @@
+// components/strip-section.tsx
 "use client"
 
 import { useState, useEffect } from "react"
@@ -6,6 +7,7 @@ import { Rocket, CurrencyDollar, HandHeart, MapPin, WhatsappLogo } from "@phosph
 import { cn } from "@/lib/utils"
 import { BRAND, WA, STRIP_ITEMS } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
+import { getReadableTextColor } from "@/lib/color-utils"
 
 export function StripSection() {
   return (
@@ -33,19 +35,6 @@ export function StripSection() {
   )
 }
 
-function getReadableTextColor(hex: string): string {
-  const clean = hex.replace("#", "")
-  const r = parseInt(clean.substring(0, 2), 16) / 255
-  const g = parseInt(clean.substring(2, 4), 16) / 255
-  const b = parseInt(clean.substring(4, 6), 16) / 255
-  const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4))
-  const luminance = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
-  const contrastWhite = 1.05 / (luminance + 0.05)
-  const contrastDark = (luminance + 0.05) / 0.062
-  return contrastWhite >= contrastDark ? "#ffffff" : "#18181b"
-}
-
-// Neutral icon at rest, blue fill on hover
 function StripCard({ item }: { item: any }) {
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -124,6 +113,8 @@ export function CtaBar({
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand-blue rounded-full blur-[100px] opacity-20 -mr-32 -mt-32" aria-hidden="true" />
           <div className="absolute bottom-0 left-0 w-56 h-56 bg-brand-blue rounded-full blur-[100px] opacity-10 -ml-28 -mb-28" aria-hidden="true" />
 
+          {/* "Get In Touch" is a label badge, not a WhatsApp action —
+              stays blue on purpose. */}
           <span
             className="text-[0.84rem] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-6 inline-block relative z-10"
             style={{ backgroundColor: ctaBlue, color: ctaTextOnBlue }}
@@ -134,13 +125,16 @@ export function CtaBar({
           <h2 className="abh-section-heading text-3xl mb-4 relative z-10">{title}</h2>
           <p className="abh-body text-xl max-w-[500px] mx-auto mb-10 relative z-10">{description}</p>
           <div className="flex justify-center relative z-10">
+            {/* FIX: this button opens WhatsApp but was styled blue — now
+                the shared .abh-wa-btn class (this is what Home's
+                "WhatsApp Us Now" and Services' "Chat With Us" both render
+                through, so this one swap fixes both pages). */}
             <a
               href={buttonHref || WA.general}
               target="_blank"
               rel="noopener noreferrer"
               onClick={onButtonClick}
-              className="inline-flex items-center gap-3 px-8 py-4 rounded-full font-sans font-black text-lg shadow-xl hover:scale-[1.04] hover:-translate-y-0.5 active:scale-95 active:translate-y-0 transition-all duration-200"
-              style={{ backgroundColor: ctaBlue, color: ctaTextOnBlue }}
+              className="abh-wa-btn text-lg px-8 py-4 shadow-xl hover:scale-[1.04] hover:-translate-y-0.5 active:scale-95 active:translate-y-0"
             >
               <WhatsappLogo weight="fill" className="w-6 h-6 shrink-0" aria-hidden="true" />
               {buttonText}
@@ -150,4 +144,4 @@ export function CtaBar({
       </ScrollBounce>
     </section>
   )
-} 
+          } 
