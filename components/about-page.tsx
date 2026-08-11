@@ -14,7 +14,7 @@ import { ScrollBounce } from "@/components/scroll-bounce"
 import { SAMPLE_REVIEWS } from "@/components/testimonials-section"
 import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
 import { ensureAccessible, lighten } from "@/lib/color"
-import { NakedTraderzReveal } from "@/components/about/naked-traderz-reveal"
+import { TheNakedTradersZAReveal } from "@/components/about/naked-traderz-reveal"
 
 // ---------------------------------------------------------------------------
 // Page-level color tokens
@@ -213,7 +213,7 @@ export function AboutPage() {
                 <p className="abh-body text-base leading-relaxed">
                   There was no ApexbytesHub yet — just a phone, WhatsApp, and a status update. A friend spotted a
                   simple edited image Theji had posted and asked if he could design a logo. That request was for
-                  "<NakedTraderzReveal accentColor={blueOnCard} />" — the very first thing Theji ever designed with
+                  "<TheNakedTradersZAReveal accentColor={blueOnCard} />" — the very first thing Theji ever designed with
                   a vector program, and the first logo he'd ever made for anyone.
                 </p>
                 <p className="abh-body text-base leading-relaxed mt-3">
