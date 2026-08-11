@@ -3,10 +3,10 @@
 
 import { useCallback, useEffect, useRef, useState, Suspense } from "react"
 import { useSearchParams, usePathname } from "next/navigation"
-import { X, Info, MagnifyingGlass, Shuffle, ArrowUp } from "@phosphor-icons/react"
+import { X, Info, MagnifyingGlass, Shuffle } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
-import { HUB_COLORS, HubKey } from "@/lib/brand"
+import { BRAND, HUB_COLORS, HubKey } from "@/lib/brand"
 import { PROJECTS, ProjectData } from "@/lib/data"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { ROW_ORDER, HubId, hubLabelFor, CLIENT_TYPE_LABEL } from "@/lib/gallery-helpers"
@@ -16,85 +16,10 @@ import { SafeImage } from "@/components/gallery/safe-image"
 import { LikeButton, ShareButton } from "@/components/gallery/like-share-buttons"
 import { HubIcon } from "@/components/services-page/shared"
 import { GalleryClosingTagline } from "@/components/gallery/empty-and-tagline"
+import { NoticePill } from "@/components/notice-pill"
+import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
 
 const LIKES_STORAGE_KEY = "apexbytes-gallery-likes"
-
-function NoticePill() {
-  const [expanded, setExpanded] = useState(false)
-  const pillBg = "#1E6FA8"
-
-  return (
-    <div
-      className="mx-auto w-full overflow-hidden"
-      style={{
-        maxWidth: expanded ? "28rem" : "120px",
-        borderRadius: "14px",
-        border: expanded ? "1px solid rgba(30,111,168,0.2)" : "none",
-        backgroundColor: expanded ? undefined : pillBg,
-        boxShadow: expanded
-          ? undefined
-          : "0 4px 14px -4px rgba(0,0,0,0.22), 0 2px 6px -2px rgba(0,0,0,0.14)",
-        transition:
-          "max-width 300ms ease-in-out, box-shadow 300ms ease-in-out, background-color 300ms ease-in-out, border 300ms ease-in-out",
-      }}
-    >
-      <button
-        onClick={() => setExpanded(!expanded)}
-        aria-expanded={expanded}
-        aria-label={expanded ? "Collapse notice" : "Show notice"}
-        className={cn(
-          "w-full flex items-center gap-2 transition-all duration-300 ease-in-out active:scale-[0.97]",
-          expanded
-            ? "px-5 py-3.5 justify-between bg-[#1E6FA8]/5 dark:bg-[#1E6FA8]/10"
-            : "pl-4 pr-5 py-2.5 justify-center"
-        )}
-      >
-        {!expanded && (
-          <span className="relative flex items-center justify-center w-5 h-5 rounded-full bg-white/25 shrink-0">
-            <Info size={10} weight="fill" color="#fff" aria-hidden="true" />
-          </span>
-        )}
-        {expanded && (
-          <div className="w-7 h-7 rounded-[8px] bg-[#1E6FA8] flex items-center justify-center shrink-0">
-            <Info size={14} weight="fill" color="#fff" aria-hidden="true" />
-          </div>
-        )}
-        <span
-          className={cn(
-            "whitespace-nowrap font-black text-[0.9rem] tracking-tight transition-colors duration-300 ease-in-out",
-            expanded ? "text-[#1E6FA8] flex-1 text-left" : "text-white"
-          )}
-        >
-          {expanded ? "Notice" : "Notice"}
-        </span>
-        <X
-          size={14}
-          weight="bold"
-          aria-hidden="true"
-          className={cn(
-            "shrink-0 transition-opacity duration-300 ease-in-out text-zinc-400",
-            expanded ? "opacity-100" : "opacity-0 w-0 h-0"
-          )}
-        />
-      </button>
-
-      <div
-        className={cn(
-          "grid transition-all duration-300 ease-in-out",
-          expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-        )}
-      >
-        <div className="overflow-hidden">
-          <div className="px-5 pb-4 pt-1">
-            <p className="abh-body text-[1rem]">
-              We use high-quality sample photos to represent our services — the professional standard shown is exactly what you receive.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 // ── Hub-filter circles ──
 function HubFilterCircles({
@@ -117,14 +42,14 @@ function HubFilterCircles({
       >
         <span
           className="relative w-16 h-16 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 border-2 transition-colors overflow-hidden"
-          style={{ borderColor: activeFilter === "all" ? "#1E6FA8" : "transparent" }}
+          style={{ borderColor: activeFilter === "all" ? BRAND.blue : "transparent" }}
         >
           <span
             aria-hidden="true"
             className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping"
-            style={{ backgroundColor: "#1E6FA830" }}
+            style={{ backgroundColor: `${BRAND.blue}30` }}
           />
-          <span className={cn("relative text-[0.8rem] font-black", activeFilter === "all" ? "text-[#1E6FA8]" : "text-zinc-500 dark:text-zinc-400")}>All</span>
+          <span className={cn("relative text-[0.8rem] font-black", activeFilter === "all" ? "text-brand-blue" : "text-zinc-500 dark:text-zinc-400")}>All</span>
         </span>
         <span className="text-[0.72rem] font-bold text-zinc-500 dark:text-zinc-400">All</span>
       </button>
@@ -161,10 +86,6 @@ function HubFilterCircles({
   )
 }
 
-// ── Feed-style project grid — image on top with a centered hub-name pill,
-// info row below (hub icon+name/type left, share+heart right). Replaces
-// the old hover-only overlay so this info is always visible, not just on
-// desktop hover. ──
 function ProjectGrid({
   projects, likedIds, onToggleLike, onSelect, pathname,
 }: {
@@ -189,12 +110,11 @@ function ProjectGrid({
               <SafeImage
                 src={p.image}
                 alt={p.title}
-                accent="#1E6FA8"
+                accent={BRAND.blue}
                 fill
                 sizes="(max-width: 640px) 50vw, 33vw"
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
               />
-              {/* Hub name pill — dark translucent + blur reads against any photo regardless of theme */}
               <span
                 className="absolute top-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-full text-[0.68rem] font-black text-white backdrop-blur-md whitespace-nowrap"
                 style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
@@ -203,10 +123,9 @@ function ProjectGrid({
               </span>
             </button>
 
-            {/* Info row below image */}
             <div className="flex items-start justify-between gap-2 mt-2 px-0.5">
               <button onClick={() => onSelect(p)} className="flex items-center gap-1.5 min-w-0 text-left">
-                <HubIcon id={p.hub as HubId} size={14} color="#1E6FA8" />
+                <HubIcon id={p.hub as HubId} size={14} color={BRAND.blue} />
                 <span className="min-w-0">
                   <span className="block text-[0.8rem] font-black text-zinc-800 dark:text-zinc-100 truncate">{p.title}</span>
                   {p.clientType && (
@@ -237,7 +156,7 @@ function GalleryPageInner() {
   const [searchQuery,     setSearchQuery]     = useState("")
   const [surpriseFlash,   setSurpriseFlash]   = useState(false)
   const [likedIds,        setLikedIds]        = useState<Set<string>>(new Set())
-  const [showBackToTop,   setShowBackToTop]   = useState(false)
+  const showBackToTop = useBackToTop()
   const likesHydrated = useRef(false)
 
   useEffect(() => {
@@ -259,12 +178,6 @@ function GalleryPageInner() {
       else next.add(id)
       return next
     })
-  }, [])
-
-  useEffect(() => {
-    const onScroll = () => setShowBackToTop(window.scrollY > 600)
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
   const { closeProject, closeZoom } = useGalleryBackStack(selectedProject, setSelectedProject, zoomIndex, setZoomIndex)
@@ -348,7 +261,19 @@ function GalleryPageInner() {
 
         <ScrollBounce delay={0.06}>
           <div className="flex justify-center max-w-2xl mx-auto mb-6">
-            <NoticePill />
+            {/* FIX: was a hardcoded #1E6FA8 duplicate of NoticeNotification
+                from services-page — now the shared component with an
+                explicit expanded label (previously stuck on "Notice" in
+                both states). */}
+            <NoticePill
+              accentColor={BRAND.blue}
+              Icon={Info}
+              collapsedLabel="Notice"
+              expandedLabel="A Note on Our Photos"
+              isDark={isDark}
+            >
+              We use high-quality sample photos to represent our services — the professional standard shown is exactly what you receive.
+            </NoticePill>
           </div>
         </ScrollBounce>
 
@@ -435,16 +360,7 @@ function GalleryPageInner() {
         onToggleLike={toggleLike}
       />
 
-      <button
-        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        aria-label="Back to top"
-        className={cn(
-          "fixed bottom-6 left-4 z-[9990] w-12 h-12 rounded-full bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-lg flex items-center justify-center transition-all duration-300 active:scale-95 hover:scale-105",
-          showBackToTop ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-4 pointer-events-none"
-        )}
-      >
-        <ArrowUp size={20} weight="bold" className="text-brand-blue dark:text-brand-light-blue" />
-      </button>
+      <BackToTopButton visible={showBackToTop} />
     </section>
   )
 }
@@ -466,4 +382,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-              } 
+          } 
