@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { useTheme } from "next-themes"
-import { DownloadSimple, AddressBook, Clock, Sparkle, WhatsappLogo, Phone, EnvelopeSimple } from "@phosphor-icons/react"
+import { DownloadSimple, AddressBook, Clock, Sparkle, WhatsappLogo, Phone, EnvelopeSimple, ArrowUp, Copy, Check } from "@phosphor-icons/react"
 import { BRAND, BIZ, CONTACT_LINKS, HOURS } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 import { BusinessStatusFull } from "@/components/business-status"
@@ -22,7 +22,21 @@ const CONTACT_ICONS: Record<string, React.ElementType> = {
   "Email Us": EnvelopeSimple,
 }
 
+// Only phone/email are actually worth copying — WhatsApp's value is the
+// same phone number but its card already opens a chat, copying it too is
+// redundant clutter on that one specifically.
+const COPYABLE_TITLES = new Set(["Call Us", "Email Us"])
+
 const GRID_CONTACT_LINKS = CONTACT_LINKS.filter((c) => c.title !== "Visit Us")
+
+const SCROLL_MARGIN = { scrollMarginTop: "calc(var(--nav-h, 74px) + 1rem)" }
+
+const QUICK_LINKS = [
+  { id: "contact-hours", label: "Hours" },
+  { id: "contact-map", label: "Map" },
+  { id: "contact-form", label: "Form" },
+  { id: "contact-faq", label: "FAQ" },
+]
 
 function ContactPageInner() {
   const searchParams = useSearchParams()
@@ -36,9 +50,17 @@ function ContactPageInner() {
   const [vcardDone, setVcardDone] = useState(false)
   const [prefilled, setPrefilled] = useState(false)
   const [glowActive, setGlowActive] = useState(false)
+  const [showBackToTop, setShowBackToTop] = useState(false)
+  const [copiedTitle, setCopiedTitle] = useState<string | null>(null)
   const formCardRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => setMounted(true), [])
+
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 600)
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
 
   useEffect(() => {
     const serviceParam = searchParams.get("service")
@@ -89,8 +111,20 @@ function ContactPageInner() {
     setTimeout(() => setVcardDone(false), 3000)
   }
 
+  const handleCopy = async (title: string, value: string) => {
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopiedTitle(title)
+      setTimeout(() => setCopiedTitle(null), 1800)
+    } catch {}
+  }
+
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-24 md:pb-0">
       <style>{`
         @keyframes abh-inquire-glow {
           0%   { box-shadow: 0 0 0 0 transparent; }
@@ -114,7 +148,7 @@ function ContactPageInner() {
         }
       `}</style>
 
-      <section className="px-4 md:px-8 pt-[calc(var(--nav-h)+2rem)] pb-8">
+      <section className="px-4 md:px-8 pt-[calc(var(--nav-h)+2rem)] pb-6">
         <div className="max-w-[980px] mx-auto">
           <ScrollBounce>
             <h1 className="abh-page-title mb-3">Contact Us</h1>
@@ -123,6 +157,23 @@ function ContactPageInner() {
           <div className="abh-divider" />
         </div>
       </section>
+
+      {/* ── Quick jump nav ── */}
+      <ScrollBounce delay={0.04}>
+        <div className="px-4 md:px-8 pb-8">
+          <div className="max-w-[980px] mx-auto flex items-center justify-center gap-2 flex-wrap">
+            {QUICK_LINKS.map((q) => (
+              <button
+                key={q.id}
+                onClick={() => scrollToSection(q.id)}
+                className="px-4 py-1.5 rounded-full text-sm font-bold text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 hover:border-brand-blue hover:text-brand-blue dark:hover:text-brand-light-blue dark:hover:border-brand-light-blue transition-colors duration-150 active:scale-95"
+              >
+                {q.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </ScrollBounce>
 
       <section className="px-4 md:px-8 pb-16">
         <div className="max-w-[980px] mx-auto grid md:grid-cols-2 gap-10 items-stretch">
@@ -134,35 +185,57 @@ function ContactPageInner() {
               </div>
             </ScrollBounce>
 
-            <div className="grid grid-cols-3 gap-3 items-stretch">
-              {GRID_CONTACT_LINKS.map((c, index) => {
-                const Icon = CONTACT_ICONS[c.title] ?? Phone
-                const dotColor = "dotLight" in c ? (isDark ? c.dotDark : c.dotLight) : c.dot
-                return (
-                  <ScrollBounce key={c.title} delay={index * 0.08}>
-                    <a
-                      href={c.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={c.title}
-                      className="group flex flex-col items-center justify-center text-center gap-2 p-4 h-full min-h-[104px] abh-card abh-shadow-contact-card border-transparent transition-all duration-200 active:scale-[0.97]"
-                      style={{ borderColor: "transparent" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = dotColor)}
-                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "transparent")}
-                    >
-                      <Icon size={22} weight="fill" aria-hidden="true" style={{ color: dotColor }} />
-                      <div className="min-w-0 w-full">
-                        <p className="text-base font-medium text-zinc-800 dark:text-zinc-200 truncate">{c.title}</p>
-                        <p className="abh-muted text-sm leading-snug break-words">{c.value}</p>
+            <div>
+              <div className="grid grid-cols-3 gap-3 items-stretch">
+                {GRID_CONTACT_LINKS.map((c, index) => {
+                  const Icon = CONTACT_ICONS[c.title] ?? Phone
+                  const dotColor = "dotLight" in c ? (isDark ? c.dotDark : c.dotLight) : c.dot
+                  const isCopyable = COPYABLE_TITLES.has(c.title)
+                  const justCopied = copiedTitle === c.title
+                  return (
+                    <ScrollBounce key={c.title} delay={index * 0.08}>
+                      <div className="relative h-full">
+                        <a
+                          href={c.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={c.title}
+                          className="group flex flex-col items-center justify-center text-center gap-2 p-4 h-full min-h-[104px] abh-card abh-shadow-contact-card border-transparent transition-all duration-200 active:scale-[0.97]"
+                          style={{ borderColor: "transparent" }}
+                          onMouseEnter={(e) => (e.currentTarget.style.borderColor = dotColor)}
+                          onMouseLeave={(e) => (e.currentTarget.style.borderColor = "transparent")}
+                        >
+                          <Icon size={22} weight="fill" aria-hidden="true" style={{ color: dotColor }} />
+                          <div className="min-w-0 w-full">
+                            <p className="text-base font-medium text-zinc-800 dark:text-zinc-200 truncate">{c.title}</p>
+                            <p className="abh-muted text-sm leading-snug break-words">{c.value}</p>
+                          </div>
+                        </a>
+                        {isCopyable && (
+                          <button
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCopy(c.title, c.value) }}
+                            aria-label={justCopied ? `${c.title} copied` : `Copy ${c.title.toLowerCase()}`}
+                            className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-all active:scale-90"
+                          >
+                            {justCopied ? <Check size={12} weight="bold" className="text-green-500" /> : <Copy size={12} weight="bold" />}
+                          </button>
+                        )}
                       </div>
-                    </a>
-                  </ScrollBounce>
-                )
-              })}
+                    </ScrollBounce>
+                  )
+                })}
+              </div>
+
+              <ScrollBounce delay={0.28}>
+                <p className="flex items-center justify-center gap-1.5 text-sm font-medium text-zinc-400 dark:text-zinc-500 mt-3">
+                  <Clock size={13} weight="bold" aria-hidden="true" />
+                  We usually reply within 15–30 minutes during business hours
+                </p>
+              </ScrollBounce>
             </div>
 
             <ScrollBounce delay={0.24}>
-              <div className="rounded-[14px] overflow-hidden" style={{ boxShadow: "0 2px 16px -2px rgba(0,0,0,0.10), 0 1px 4px -1px rgba(0,0,0,0.06)" }}>
+              <div id="contact-map" className="rounded-[14px] overflow-hidden" style={{ boxShadow: "0 2px 16px -2px rgba(0,0,0,0.10), 0 1px 4px -1px rgba(0,0,0,0.06)", ...SCROLL_MARGIN }}>
                 <LocationMap />
               </div>
             </ScrollBounce>
@@ -189,7 +262,7 @@ function ContactPageInner() {
             </ScrollBounce>
 
             <ScrollBounce delay={0.15}>
-              <div className="abh-card p-5 flex-1">
+              <div id="contact-hours" className="abh-card p-5 flex-1" style={SCROLL_MARGIN}>
                 <span className="text-[0.78rem] font-black uppercase tracking-widest flex items-center gap-1.5 mb-3" style={{ color: greyColor }}>
                   <Clock weight="fill" size={14} aria-hidden="true" /> Business Hours
                 </span>
@@ -222,7 +295,7 @@ function ContactPageInner() {
           </div>
 
           <ScrollBounce delay={0.2}>
-            <div ref={formCardRef} className="abh-card p-8 flex flex-col h-full rounded-[14px]">
+            <div id="contact-form" ref={formCardRef} className="abh-card p-8 flex flex-col h-full rounded-[14px]" style={SCROLL_MARGIN}>
               <h2 className="abh-section-heading mb-2">Send a Message</h2>
               {prefilled && (
                 <p className="flex items-center gap-1.5 text-[0.84rem] font-bold mb-4" style={{ color: greyColor }}>
@@ -298,7 +371,40 @@ function ContactPageInner() {
         </div>
       </section>
 
-      <FAQAccordion />
+      <div id="contact-faq" style={SCROLL_MARGIN}>
+        <FAQAccordion />
+      </div>
+
+      {/* ── Sticky mobile WhatsApp bar — reachable without scrolling back
+          up. Hidden on desktop, where the header/nav CTA already covers
+          this job. Page gets pb-24 on mobile (top of file) so this never
+          covers the FAQ's last item. ── */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-[9985] px-4 pb-4 pt-2 bg-gradient-to-t from-background via-background to-transparent">
+        <a
+          href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-[14px] font-black text-base text-white shadow-lg active:scale-95 transition-transform"
+          style={{ backgroundColor: "#25D366" }}
+        >
+          <WhatsappLogo size={20} weight="fill" aria-hidden="true" />
+          Chat on WhatsApp
+        </a>
+      </div>
+
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        aria-label="Back to top"
+        className={cn(
+          "fixed left-4 z-[9990] w-12 h-12 rounded-full bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-lg flex items-center justify-center transition-all duration-300 active:scale-95 hover:scale-105",
+          "bottom-24 md:bottom-6",
+          showBackToTop
+            ? "opacity-100 translate-y-0 pointer-events-auto"
+            : "opacity-0 translate-y-4 pointer-events-none"
+        )}
+      >
+        <ArrowUp size={20} weight="bold" className="text-brand-blue dark:text-brand-light-blue" />
+      </button>
     </div>
   )
 }
@@ -322,4 +428,4 @@ export function ContactPage() {
       <ContactPageInner />
     </Suspense>
   )
-} 
+        }  
