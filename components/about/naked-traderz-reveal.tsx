@@ -6,10 +6,26 @@ import Image from "next/image"
 import { X, ArrowRight, Sparkle } from "@phosphor-icons/react"
 import { BRAND } from "@/lib/brand"
 
-const BLUE = BRAND.blue
+// ---------------------------------------------------------------------------
+// Static tokens
+// ---------------------------------------------------------------------------
 const ORANGE = BRAND.orangeDark
 
-export function NakedTraderzReveal() {
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
+// FIX: this component previously hardcoded `const BLUE = BRAND.blue` and
+// ignored any color passed in — about-page.tsx was already calling
+// <NakedTraderzReveal accentColor={blueOnCard} /> (blueOnCard is BRAND.blue
+// run through ensureAccessible against the card background), but that prop
+// had nowhere to go. Accepting it here is what actually makes the link
+// contrast-safe in dark mode. Default kept so the component still renders
+// sensibly if ever used without the prop.
+interface NakedTraderzRevealProps {
+  accentColor?: string
+}
+
+export function NakedTraderzReveal({ accentColor = BRAND.blue }: NakedTraderzRevealProps) {
   const [previewOpen, setPreviewOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
 
@@ -27,6 +43,9 @@ export function NakedTraderzReveal() {
     setPreviewOpen(false)
   }, [])
 
+  // -------------------------------------------------------------------------
+  // Trigger behavior — small popup first, modal on second activation
+  // -------------------------------------------------------------------------
   // Desktop/mobile unified trigger: first activation reveals the mini
   // preview, second activation (tap again, or click while hover-preview
   // is already showing) opens the full modal.
@@ -75,6 +94,9 @@ export function NakedTraderzReveal() {
         }
       }}
     >
+      {/* ----------------------------------------------------------------- */}
+      {/* Trigger link                                                     */}
+      {/* ----------------------------------------------------------------- */}
       <button
         ref={triggerRef}
         type="button"
@@ -86,11 +108,14 @@ export function NakedTraderzReveal() {
         aria-haspopup="dialog"
         aria-label="Naked Traderz — view the first ever logo, before and after"
         className="underline decoration-dotted decoration-1 underline-offset-2 font-semibold outline-none rounded-sm focus-visible:ring-2"
-        style={{ color: BLUE, textDecorationColor: `${BLUE}80` }}
+        style={{ color: accentColor, textDecorationColor: `${accentColor}80` }}
       >
         Naked Traderz
       </button>
 
+      {/* ----------------------------------------------------------------- */}
+      {/* Mini preview popup                                               */}
+      {/* ----------------------------------------------------------------- */}
       {previewOpen && (
         <div className="absolute z-40 left-1/2 -translate-x-1/2 top-full mt-2 w-[220px] rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-elevated border border-zinc-100 dark:border-zinc-800/60 p-3">
           <div className="flex items-center justify-center mb-2">
@@ -104,15 +129,30 @@ export function NakedTraderzReveal() {
 
           <div className="flex items-center justify-center gap-2">
             <div className="flex flex-col items-center gap-1">
-              <div className="relative w-14 h-14 rounded-[10px] overflow-hidden border border-zinc-200 dark:border-zinc-700">
-                <Image src="/nts.webp" alt="Naked Traderz logo — original sketch" fill sizes="56px" className="object-cover" />
+              {/* FIX: object-cover cropped these logos to fit the square box.
+                  object-contain + a neutral background shows the logo's real
+                  aspect ratio, letterboxed rather than cropped. */}
+              <div className="relative w-14 h-14 rounded-[10px] overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50">
+                <Image
+                  src="/nts.webp"
+                  alt="Naked Traderz logo — original sketch"
+                  fill
+                  sizes="56px"
+                  className="object-contain"
+                />
               </div>
               <span className="text-[0.6rem] font-bold uppercase tracking-wide text-zinc-400">Before</span>
             </div>
             <ArrowRight size={14} weight="bold" className="text-zinc-300 dark:text-zinc-600 shrink-0" aria-hidden="true" />
             <div className="flex flex-col items-center gap-1">
-              <div className="relative w-14 h-14 rounded-[10px] overflow-hidden border border-zinc-200 dark:border-zinc-700">
-                <Image src="/nto.webp" alt="Naked Traderz logo — final design" fill sizes="56px" className="object-cover" />
+              <div className="relative w-14 h-14 rounded-[10px] overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50">
+                <Image
+                  src="/nto.webp"
+                  alt="Naked Traderz logo — final design"
+                  fill
+                  sizes="56px"
+                  className="object-contain"
+                />
               </div>
               <span className="text-[0.6rem] font-bold uppercase tracking-wide text-zinc-400">After</span>
             </div>
@@ -122,13 +162,16 @@ export function NakedTraderzReveal() {
             type="button"
             onClick={openModal}
             className="mt-2.5 w-full text-center text-[0.68rem] font-bold uppercase tracking-widest py-2 rounded-[8px] transition-colors"
-            style={{ color: BLUE, backgroundColor: `${BLUE}10` }}
+            style={{ color: accentColor, backgroundColor: `${accentColor}10` }}
           >
             Tap to zoom
           </button>
         </div>
       )}
 
+      {/* ----------------------------------------------------------------- */}
+      {/* Full modal                                                       */}
+      {/* ----------------------------------------------------------------- */}
       {modalOpen && (
         <div role="dialog" aria-modal="true" aria-labelledby="nt-modal-title" className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} aria-hidden="true" />
@@ -140,7 +183,7 @@ export function NakedTraderzReveal() {
               onClick={closeModal}
               aria-label="Close logo preview"
               className="absolute top-3 right-3 w-10 h-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors outline-none focus-visible:ring-2"
-              style={{ ["--tw-ring-color" as string]: BLUE }}
+              style={{ ["--tw-ring-color" as string]: accentColor }}
             >
               <X size={18} weight="bold" aria-hidden="true" />
             </button>
@@ -160,15 +203,30 @@ export function NakedTraderzReveal() {
             </p>
 
             <div className="grid grid-cols-2 gap-3">
+              {/* FIX: same object-contain swap as the mini preview, so the
+                  zoomed view shows the logos' true proportions instead of a
+                  cropped square. */}
               <div className="flex flex-col gap-1.5">
-                <div className="relative aspect-square rounded-[12px] overflow-hidden border border-zinc-200 dark:border-zinc-700">
-                  <Image src="/nts.webp" alt="Naked Traderz logo — original sketch" fill sizes="200px" className="object-cover" />
+                <div className="relative aspect-square rounded-[12px] overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50">
+                  <Image
+                    src="/nts.webp"
+                    alt="Naked Traderz logo — original sketch"
+                    fill
+                    sizes="200px"
+                    className="object-contain p-2"
+                  />
                 </div>
                 <span className="text-[0.68rem] font-bold uppercase tracking-widest text-zinc-400 text-center">Before</span>
               </div>
               <div className="flex flex-col gap-1.5">
-                <div className="relative aspect-square rounded-[12px] overflow-hidden border border-zinc-200 dark:border-zinc-700">
-                  <Image src="/nto.webp" alt="Naked Traderz logo — final design" fill sizes="200px" className="object-cover" />
+                <div className="relative aspect-square rounded-[12px] overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50">
+                  <Image
+                    src="/nto.webp"
+                    alt="Naked Traderz logo — final design"
+                    fill
+                    sizes="200px"
+                    className="object-contain p-2"
+                  />
                 </div>
                 <span className="text-[0.68rem] font-bold uppercase tracking-widest text-zinc-400 text-center">After</span>
               </div>
