@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
+import Image from "next/image"
 import { ArrowRight, Play, Pause, Sun, Moon, CloudSun, CloudMoon, Cloud, CloudFog, CloudRain, CloudLightning, Snowflake } from "@phosphor-icons/react"
 import { BRAND, BIZ, MARQUEE_ITEMS } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
@@ -11,6 +12,7 @@ import { HUBS_DATA } from "@/lib/hero-data"
 import { ClassicTagline } from "@/components/classic-tagline"
 import { getBusinessStatus, type BusinessStatus } from "@/lib/sa-time"
 import { getWeatherSnapshot, type WeatherCategory } from "@/lib/weather"
+import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
 
 function hexToRgbLocal(hex: string) {
   const clean = hex.replace("#", "")
@@ -70,9 +72,6 @@ function buildArrangement() {
   }))
 }
 
-// Icon + color per weather/time category — only ever rendered on a
-// holiday banner now (see below), so this stays purely decorative
-// context rather than a daily fixture.
 const WEATHER_ICON_MAP: Record<WeatherCategory, { Icon: React.ElementType; color: string }> = {
   "clear-day": { Icon: Sun, color: "#F59E0B" },
   "clear-night": { Icon: Moon, color: "#818CF8" },
@@ -96,6 +95,7 @@ export function HeroSection() {
   const [marqueePaused, setMarqueePaused] = useState(false)
   const [status, setStatus] = useState<BusinessStatus | null>(null)
   const [weatherCategory, setWeatherCategory] = useState<WeatherCategory | null>(null)
+  const showBackToTop = useBackToTop()
 
   const [arrangement, setArrangement] = useState(() =>
     COLLAGE_SLOTS.map((slot, i) => ({ hub: HUBS_DATA[i], slot, width: slot.baseWidth }))
@@ -107,19 +107,10 @@ export function HeroSection() {
     setMounted(true)
     setArrangement(buildArrangement())
     setStatus(getBusinessStatus())
-    // Only need to keep re-checking status if today could be a holiday —
-    // interval stays cheap (a getBusinessStatus() call, no network) so
-    // this can just run every minute regardless; it's the weather fetch
-    // below that's gated to holidays only.
     const id = setInterval(() => setStatus(getBusinessStatus()), 60_000)
     return () => clearInterval(id)
   }, [])
 
-  // Weather is only fetched — and the whole banner only ever shown — on a
-  // public holiday. Every other day, this section of the hero stays
-  // exactly as empty as it was before any of this was added, per your
-  // call: "leave that part on home page empty as before... unless
-  // something comes up. But on holidays show it."
   useEffect(() => {
     if (!status?.isHoliday) return
     getWeatherSnapshot().then((snapshot) => {
@@ -164,13 +155,6 @@ export function HeroSection() {
           {/* Left column — text + CTA */}
           <div className="text-center md:text-left">
 
-            {/* Holiday-only notice — hidden entirely on ordinary days
-                (exactly as before this feature existed). Only renders
-                when today is a public holiday per lib/sa-time.ts, names
-                which hub group is actually closed (Print & Docu stays
-                open every day, including holidays), and shows a small
-                weather+time icon just for a bit of life on the one line
-                that does appear. */}
             {showHolidayBanner && status && (
               <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-3">
                 <WeatherIcon size={16} weight="fill" style={{ color: weatherIconColor }} aria-hidden="true" />
@@ -244,7 +228,17 @@ export function HeroSection() {
             </ScrollBounce>
           </div>
 
-          {/* Right column — hub photo collage */}
+          {/* Right column — hub photo collage.
+              FIX: swapped raw <img> tags for next/image's <Image>. Plain
+              <img> here was skipping Next's automatic image pipeline
+              entirely — no resizing to the actual displayed size, no
+              modern-format (webp/avif) negotiation per browser, and no
+              loading priority hint, so on a slow connection these could
+              visibly pop in late. `priority` marks them as above-the-fold
+              so Next preloads them instead of lazy-loading, and `sizes`
+              tells the browser roughly how large they'll render (~40% of
+              a ~500px-wide container) so it doesn't over-fetch a full-res
+              file for a small tile. */}
           <ScrollBounce delay={0.1} className="w-full">
             <div className="relative w-full h-[420px] sm:h-[480px] md:h-[560px]">
               {arrangement.map(({ hub, slot, width }) => {
@@ -268,7 +262,14 @@ export function HeroSection() {
                       ["--hub-accent-fg" as any]: hubAccentFg,
                     }}
                   >
-                    <img src={HUB_IMAGES[hub.id]} alt={`${hub.name} example`} className="w-full h-full object-cover" />
+                    <Image
+                      src={HUB_IMAGES[hub.id]}
+                      alt={`${hub.name} example`}
+                      fill
+                      priority
+                      sizes="(max-width: 768px) 45vw, 220px"
+                      className="object-cover"
+                    />
                     <span className="absolute -top-2 -right-2 px-3 py-1 rounded-full text-[0.72rem] font-black uppercase tracking-widest bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 shadow-md transition-colors duration-200 group-hover/tile:bg-[var(--hub-accent)] group-hover/tile:text-[var(--hub-accent-fg)] group-hover/tile:border-transparent">
                       {pillLabel(hub.name)}
                     </span>
@@ -323,6 +324,11 @@ export function HeroSection() {
           </div>
         </div>
       </div>
+
+      {/* Scroll-to-top button — same shared component/hook as About page,
+          so behavior (appears after scrolling, position, styling) matches
+          site-wide rather than being a one-off recreation. */}
+      <BackToTopButton visible={showBackToTop} />
     </section>
   )
-                }  
+                        } 
