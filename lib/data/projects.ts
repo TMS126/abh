@@ -7,7 +7,7 @@ export const PROJECTS = [
     hub: "design" as HubId, title: "VASEP — Visual Arts Skills Empowerment Projects", tag: HUB_NAMES.design,
     shortDesc: "Full logo for a local arts empowerment organisation, in Kgotsong.",
     image: "/vsp1.webp", 
-    images: ["/Vspsktch.webp", "/vsp1.webp", "/Vspm.webp"], 
+    images: ["/vsp1.webp", "/Vspsktch.webp", "/Vspm.webp"], 
     clientType: "client" as const,
     clientGoal: `VASEP needed a logo that shows what they do — arts, skills, and community. Something colourful, meaningful, and strong enough to put on merch.`,
     whatWeDid: ["Designed a custom logo using a paint palette as the base symbol","Used multiple colours to represent different art disciplines and people","Added paint brushes crossing the palette for that creative feel","Placed a paint bottle on top as the hero element","Set VASEP in bold uppercase with full name underneath","Mocked up the logo on a t-shirt to show how it looks on merch"],
