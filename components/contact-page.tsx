@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { useTheme } from "next-themes"
-import { DownloadSimple, AddressBook, Clock, Sparkle, WhatsappLogo, Phone, EnvelopeSimple, ArrowUp, Copy, Check } from "@phosphor-icons/react"
+import { DownloadSimple, AddressBook, Clock, Sparkle, WhatsappLogo, Phone, EnvelopeSimple, Copy, Check } from "@phosphor-icons/react"
 import { BRAND, BIZ, CONTACT_LINKS, HOURS } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 import { BusinessStatusFull } from "@/components/business-status"
@@ -15,6 +15,7 @@ import { FAQAccordion } from "@/components/contact/faq-accordion"
 import { HubSelect } from "@/components/contact/hub-select"
 import { FieldErrorTooltip } from "@/components/contact/field-error-tooltip"
 import { withStatusPrefix } from "@/lib/sa-time"
+import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
 
 const CONTACT_ICONS: Record<string, React.ElementType> = {
   "WhatsApp Us": WhatsappLogo,
@@ -22,13 +23,8 @@ const CONTACT_ICONS: Record<string, React.ElementType> = {
   "Email Us": EnvelopeSimple,
 }
 
-// Only phone/email are actually worth copying — WhatsApp's value is the
-// same phone number but its card already opens a chat, copying it too is
-// redundant clutter on that one specifically.
 const COPYABLE_TITLES = new Set(["Call Us", "Email Us"])
-
 const GRID_CONTACT_LINKS = CONTACT_LINKS.filter((c) => c.title !== "Visit Us")
-
 const SCROLL_MARGIN = { scrollMarginTop: "calc(var(--nav-h, 74px) + 1rem)" }
 
 const QUICK_LINKS = [
@@ -50,17 +46,11 @@ function ContactPageInner() {
   const [vcardDone, setVcardDone] = useState(false)
   const [prefilled, setPrefilled] = useState(false)
   const [glowActive, setGlowActive] = useState(false)
-  const [showBackToTop, setShowBackToTop] = useState(false)
   const [copiedTitle, setCopiedTitle] = useState<string | null>(null)
   const formCardRef = useRef<HTMLDivElement>(null)
+  const showBackToTop = useBackToTop()
 
   useEffect(() => setMounted(true), [])
-
-  useEffect(() => {
-    const onScroll = () => setShowBackToTop(window.scrollY > 600)
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
-  }, [])
 
   useEffect(() => {
     const serviceParam = searchParams.get("service")
@@ -138,10 +128,8 @@ function ContactPageInner() {
         }
       `}</style>
 
-      {/* The sticky mobile WhatsApp bar (bottom of this page) sits in the
-          exact same spot as the global WhatsApp FAB — on mobile only,
-          the sticky bar replaces it entirely so they don't overlap.
-          Desktop has no sticky bar, so the FAB stays untouched there. */}
+      {/* Sticky mobile WhatsApp bar replaces the global WhatsApp FAB on
+          mobile only, so they don't overlap. Desktop keeps the FAB. */}
       <style>{`
         @media (max-width: 767px) {
           [data-widget="whatsapp-fab"] { display: none !important; }
@@ -158,7 +146,6 @@ function ContactPageInner() {
         </div>
       </section>
 
-      {/* ── Quick jump nav ── */}
       <ScrollBounce delay={0.04}>
         <div className="px-4 md:px-8 pb-8">
           <div className="max-w-[980px] mx-auto flex items-center justify-center gap-2 flex-wrap">
@@ -252,8 +239,7 @@ function ContactPageInner() {
                 <button
                   onClick={handleVCard}
                   aria-label={vcardDone ? "Contact saved" : "Download contact card"}
-                  className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-[14px] font-medium text-base text-white transition-all active:scale-95 hover:-translate-y-0.5"
-                  style={{ backgroundColor: BRAND.blue }}
+                  className="abh-btn-primary shrink-0 px-4 py-2.5 font-medium"
                 >
                   <DownloadSimple size={16} weight="bold" aria-hidden="true" />
                   {vcardDone ? "Saved!" : "Download"}
@@ -357,12 +343,15 @@ function ContactPageInner() {
                   )}
                 </div>
 
+                {/* FIX: was BRAND.blue on a WhatsApp action — now the shared
+                    .abh-wa-btn class (accessible green, matches the WhatsApp
+                    icon cards above and the sticky bar below). */}
                 <button
                   onClick={handleSubmit}
                   disabled={!isFormValid}
-                  className="mt-auto w-full py-4 rounded-[14px] font-black text-base text-white transition-all active:scale-95 disabled:opacity-50 shadow-lg"
-                  style={{ backgroundColor: BRAND.blue }}
+                  className="abh-wa-btn mt-auto w-full py-4 disabled:opacity-50 shadow-lg"
                 >
+                  <WhatsappLogo size={18} weight="fill" aria-hidden="true" />
                   Send via WhatsApp
                 </button>
               </div>
@@ -375,36 +364,22 @@ function ContactPageInner() {
         <FAQAccordion />
       </div>
 
-      {/* ── Sticky mobile WhatsApp bar — reachable without scrolling back
-          up. Hidden on desktop, where the header/nav CTA already covers
-          this job. Page gets pb-24 on mobile (top of file) so this never
-          covers the FAQ's last item. ── */}
+      {/* FIX: raw #25D366 (fails WCAG at ~2:1 with white text) replaced
+          with the shared .abh-wa-btn class, which uses the AA-safe
+          whatsappAccessible pairing. */}
       <div className="md:hidden fixed bottom-0 inset-x-0 z-[9985] px-4 pb-4 pt-2 bg-gradient-to-t from-background via-background to-transparent">
         <a
           href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-[14px] font-black text-base text-white shadow-lg active:scale-95 transition-transform"
-          style={{ backgroundColor: "#25D366" }}
+          className="abh-wa-btn w-full py-3.5 shadow-lg"
         >
           <WhatsappLogo size={20} weight="fill" aria-hidden="true" />
           Chat on WhatsApp
         </a>
       </div>
 
-      <button
-        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        aria-label="Back to top"
-        className={cn(
-          "fixed left-4 z-[9990] w-12 h-12 rounded-full bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-lg flex items-center justify-center transition-all duration-300 active:scale-95 hover:scale-105",
-          "bottom-24 md:bottom-6",
-          showBackToTop
-            ? "opacity-100 translate-y-0 pointer-events-auto"
-            : "opacity-0 translate-y-4 pointer-events-none"
-        )}
-      >
-        <ArrowUp size={20} weight="bold" className="text-brand-blue dark:text-brand-light-blue" />
-      </button>
+      <BackToTopButton visible={showBackToTop} bottomClass="bottom-24 md:bottom-6" />
     </div>
   )
 }
@@ -428,4 +403,4 @@ export function ContactPage() {
       <ContactPageInner />
     </Suspense>
   )
-        }  
+    } 
