@@ -21,9 +21,6 @@ import { NakedTraderzReveal } from "@/components/about/naked-traderz-reveal"
 // ---------------------------------------------------------------------------
 const PAGE_BG_LIGHT = "#FFFFFF"
 const PAGE_BG_DARK = "#0D1B2A"
-// Solid card background the "How It Started" image fades into. Must be
-// solid (not a translucent zinc-900/40) so the gradient's dark stop color
-// matches the card exactly and the seam disappears.
 const CARD_BG_LIGHT = "#FAFAFA" // zinc-50
 const CARD_BG_DARK = "#18181B" // zinc-900
 
@@ -116,20 +113,7 @@ export function AboutPage() {
 
   const blueOnPage = ensureAccessible(blueColor, pageBg, 4.5)
 
-  // -------------------------------------------------------------------------
-  // "Naked Traderz" link color
-  // -------------------------------------------------------------------------
-  // FIX (root cause, confirmed from lib/color.ts): ensureAccessible has an
-  // early return — `if (contrastRatio(hex, bgHex) >= minRatio) return hex`.
-  // BRAND.blue was already clearing the target ratio against the near-black
-  // card, so every prior attempt that routed through ensureAccessible (at
-  // ratio 4.5, then 7) returned the color completely untouched. The
-  // color-mix() attempt after that was a CSS4 function that may not be
-  // supported in the deployed webview, so it silently fell back too.
-  // This now calls `lighten()` first — which has no early-return and always
-  // shifts lightness — then re-checks the floor with ensureAccessible as a
-  // safety net. Pure JS hex math, no CSS functions, guaranteed to render
-  // the same everywhere.
+  // "Naked Traderz" link color — unchanged from last fix, this part works.
   const blueOnCard = isDark
     ? ensureAccessible(lighten(blueColor, 24), cardBg, 4.5)
     : ensureAccessible(blueColor, cardBg, 4.5)
@@ -211,19 +195,15 @@ export function AboutPage() {
                   sizes="(max-width: 768px) 100vw, 720px"
                   className="object-cover"
                 />
-                {/* -------------------------------------------------------
-                    Photo-to-card fade
-                    -------------------------------------------------------
-                    Taller fade zone (h-56/h-64) with a gradual multi-stop
-                    alpha ramp built from the real cardBg token, instead of
-                    a short (96px) two-stop fade that cut off mid-photo.
-                    8-digit hex alpha (#RRGGBBAA) is standard CSS, no
-                    exotic functions — should render identically on every
-                    browser/webview, unlike color-mix(). */}
+                {/* FIX: reverted to roughly the original height (h-24, was
+                    briefly h-56/h-64 which swallowed too much of the photo).
+                    Kept the smooth 4-stop alpha ramp from cardBg instead of
+                    the original blunt 2-stop fade — that's what actually
+                    avoids the hard "seam" edge, independent of height. */}
                 <div
-                  className="absolute inset-x-0 bottom-0 h-56 md:h-64 pointer-events-none"
+                  className="absolute inset-x-0 bottom-0 h-24 pointer-events-none"
                   style={{
-                    background: `linear-gradient(to top, ${cardBg} 0%, ${cardBg} 15%, ${cardBg}f2 30%, ${cardBg}cc 45%, ${cardBg}99 60%, ${cardBg}4d 78%, transparent 100%)`,
+                    background: `linear-gradient(to top, ${cardBg} 0%, ${cardBg} 25%, ${cardBg}cc 50%, ${cardBg}66 75%, transparent 100%)`,
                   }}
                   aria-hidden="true"
                 />
@@ -483,4 +463,4 @@ export function AboutPage() {
       <BackToTopButton visible={showBackToTop} />
     </div>
   )
-                       } 
+      } 
