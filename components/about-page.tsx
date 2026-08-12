@@ -13,7 +13,7 @@ import { BRAND, BIZ, ABOUT_VALUES, ABOUT_STANDARDS } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { SAMPLE_REVIEWS } from "@/components/testimonials-section"
 import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
-import { ensureAccessible, lighten } from "@/lib/color"
+import { ensureAccessible } from "@/lib/color"
 import { TheNakedTradersZAReveal } from "@/components/about/naked-traderz-reveal"
 
 // ---------------------------------------------------------------------------
@@ -24,9 +24,8 @@ const PAGE_BG_DARK = "#0D1B2A"
 const CARD_BG_LIGHT = "#FAFAFA" // zinc-50
 const CARD_BG_DARK = "#18181B" // zinc-900
 
-const ABOUT_BLUE = BRAND.blue
-const ABOUT_GREEN = BRAND.green
 const ABOUT_ORANGE = BRAND.orangeDark
+const ABOUT_GREEN = BRAND.green
 const ABOUT_NEUTRAL = { light: BRAND.dark100, dark: BRAND.techGreyDark }
 
 const TEAM = [
@@ -106,17 +105,24 @@ export function AboutPage() {
   const pageBg = isDark ? PAGE_BG_DARK : PAGE_BG_LIGHT
   const cardBg = isDark ? CARD_BG_DARK : CARD_BG_LIGHT
 
-  const blueColor = ABOUT_BLUE
+  // ---------------------------------------------------------------------
+  // Blue token
+  // ---------------------------------------------------------------------
+  // FIX (root cause): every prior attempt computed a brightened blue from
+  // BRAND.blue by hand (ensureAccessible, lighten, color-mix). That was
+  // solving a problem the codebase already solved — strip-section.tsx
+  // and the CtaBar both already switch to BRAND.lightBlue in dark mode.
+  // Using that same token here means About page's blues now literally
+  // match the ones in the reference screenshot, because they're the same
+  // token. ensureAccessible stays only as a safety net, not the source
+  // of the brightening.
+  const blueColor = isDark ? BRAND.lightBlue : BRAND.blue
   const orangeColor = ABOUT_ORANGE
   const greenColor = ABOUT_GREEN
   const neutralColor = isDark ? ABOUT_NEUTRAL.dark : ABOUT_NEUTRAL.light
 
   const blueOnPage = ensureAccessible(blueColor, pageBg, 4.5)
-
-  // "Naked Traderz" link color — unchanged from last fix, this part works.
-  const blueOnCard = isDark
-    ? ensureAccessible(lighten(blueColor, 24), cardBg, 4.5)
-    : ensureAccessible(blueColor, cardBg, 4.5)
+  const blueOnCard = ensureAccessible(blueColor, cardBg, 4.5)
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
@@ -185,8 +191,15 @@ export function AboutPage() {
             </div>
           </ScrollBounce>
 
+          {/* -----------------------------------------------------------
+              Storefront photo — its own standalone card
+              -----------------------------------------------------------
+              FIX: previously blended into the story card below it with a
+              fade overlay, which is what caused every seam/fog issue
+              across the last several rounds. Now it's a fully separate
+              card — no fade, no blend, nothing to tune. */}
           <ScrollBounce delay={0.18}>
-            <div className="max-w-[720px] mx-auto mb-14 rounded-[16px] overflow-hidden abh-shadow-elevated">
+            <div className="max-w-[720px] mx-auto mb-5 rounded-[16px] overflow-hidden abh-shadow-elevated">
               <div className="relative aspect-[16/9]">
                 <Image
                   src="/storefront.webp"
@@ -195,38 +208,37 @@ export function AboutPage() {
                   sizes="(max-width: 768px) 100vw, 720px"
                   className="object-cover"
                 />
-                {/* FIX: previous version stacked three mid-opacity stops
-                    over a large chunk of the photo — that's what read as
-                    "fog." Cut down to a short 64px band with one soft
-                    midpoint, just enough to soften the hard edge without
-                    visibly sitting on top of the image. */}
-                <div
-                  className="absolute inset-x-0 bottom-0 h-16 pointer-events-none"
-                  style={{
-                    background: `linear-gradient(to top, ${cardBg} 0%, ${cardBg}99 45%, transparent 100%)`,
-                  }}
-                  aria-hidden="true"
-                />
               </div>
-              <div className="bg-zinc-50 dark:bg-zinc-900 p-7 md:p-8 -mt-px">
-                <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-3">How It Started</h3>
-                <p className="abh-body text-base leading-relaxed">
-                  There was no ApexbytesHub yet — just a phone, WhatsApp, and a status update. A friend spotted a
-                  simple edited image Theji had posted and asked if he could design a logo. That request was for
-                  "<TheNakedTradersZAReveal accentColor={blueOnCard} />" — the very first thing Theji ever designed with
-                  a vector program, and the first logo he'd ever made for anyone.
-                </p>
-                <p className="abh-body text-base leading-relaxed mt-3">
-                  It was 2021, maybe early 2022. There was no plan, no brief, no clue where it would lead — just a
-                  decision to give the person what they'd asked for. That one logo turned into the realization that
-                  this could be more than a favor. Theji kept going, kept learning, and kept saying yes to the next
-                  request — until those requests became {BIZ.name}.
-                </p>
-                <p className="abh-body text-base leading-relaxed mt-3">
-                  Today he's the owner, the founder — the one who built this from a WhatsApp status into a real hub
-                  for the community that asked for it first.
+              <div className="bg-zinc-50 dark:bg-zinc-900 px-6 py-3 text-center">
+                <p className="text-[0.76rem] font-bold uppercase tracking-widest text-zinc-400">
+                  Our home — Kgotsong, Bothaville
                 </p>
               </div>
+            </div>
+          </ScrollBounce>
+
+          {/* -----------------------------------------------------------
+              "How It Started" — its own standalone card
+              ----------------------------------------------------------- */}
+          <ScrollBounce delay={0.22}>
+            <div className="max-w-[720px] mx-auto mb-14 rounded-[16px] bg-zinc-50 dark:bg-zinc-900 p-7 md:p-8 abh-shadow-elevated">
+              <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-3">How It Started</h3>
+              <p className="abh-body text-base leading-relaxed">
+                There was no ApexbytesHub yet — just a phone, WhatsApp, and a status update. A friend spotted a
+                simple edited image Theji had posted and asked if he could design a logo. That request was for
+                "<TheNakedTradersZAReveal accentColor={blueOnCard} />" — the very first thing Theji ever designed with
+                a vector program, and the first logo he'd ever made for anyone.
+              </p>
+              <p className="abh-body text-base leading-relaxed mt-3">
+                It was 2021, maybe early 2022. There was no plan, no brief, no clue where it would lead — just a
+                decision to give the person what they'd asked for. That one logo turned into the realization that
+                this could be more than a favor. Theji kept going, kept learning, and kept saying yes to the next
+                request — until those requests became {BIZ.name}.
+              </p>
+              <p className="abh-body text-base leading-relaxed mt-3">
+                Today he's the owner, the founder — the one who built this from a WhatsApp status into a real hub
+                for the community that asked for it first.
+              </p>
             </div>
           </ScrollBounce>
 
@@ -463,4 +475,4 @@ export function AboutPage() {
       <BackToTopButton visible={showBackToTop} />
     </div>
   )
-      } 
+    } 
