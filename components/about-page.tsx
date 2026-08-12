@@ -14,18 +14,16 @@ import { ScrollBounce } from "@/components/scroll-bounce"
 import { SAMPLE_REVIEWS } from "@/components/testimonials-section"
 import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
 import { ensureAccessible } from "@/lib/color"
+import { useCssVar } from "@/lib/use-css-var"
 import { TheNakedTradersZAReveal } from "@/components/about/naked-traderz-reveal"
 
 // ---------------------------------------------------------------------------
-// Page-level color tokens
+// Static tokens with no matching CSS variable
 // ---------------------------------------------------------------------------
-const PAGE_BG_LIGHT = "#FFFFFF"
-const PAGE_BG_DARK = "#0D1B2A"
-const CARD_BG_LIGHT = "#FAFAFA" // zinc-50
-const CARD_BG_DARK = "#18181B" // zinc-900
-
+// Orange has no theme-flipping CSS var (only the static --brand-orange-dark),
+// so it stays sourced from lib/brand.ts directly — that IS its single
+// source of truth, same file globals.css comments say it's synced from.
 const ABOUT_ORANGE = BRAND.orangeDark
-const ABOUT_GREEN = BRAND.green
 const ABOUT_NEUTRAL = { light: BRAND.dark100, dark: BRAND.techGreyDark }
 
 const TEAM = [
@@ -62,7 +60,10 @@ function CompactTestimonials({ isDark }: { isDark: boolean }) {
               onBlur={() => setHovered(null)}
               tabIndex={0}
               className={cn(
-                "rounded-[14px] bg-white dark:bg-zinc-950 p-5 flex flex-col items-center text-center outline-none transition-all duration-300 abh-shadow-elevated",
+                // FIX: was bg-white dark:bg-zinc-950 — bg-card reads the
+                // real --card token in both themes with one class, no
+                // dark: variant needed, no chance of the two drifting.
+                "rounded-[14px] bg-card p-5 flex flex-col items-center text-center outline-none transition-all duration-300 abh-shadow-elevated",
                 isHovered && "-translate-y-1.5 shadow-lg"
               )}
             >
@@ -102,24 +103,29 @@ export function AboutPage() {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   const isDark = mounted && resolvedTheme === "dark"
-  const pageBg = isDark ? PAGE_BG_DARK : PAGE_BG_LIGHT
-  const cardBg = isDark ? CARD_BG_DARK : CARD_BG_LIGHT
-
-  // ---------------------------------------------------------------------
-  // Blue token
-  // ---------------------------------------------------------------------
-  // FIX (root cause): every prior attempt computed a brightened blue from
-  // BRAND.blue by hand (ensureAccessible, lighten, color-mix). That was
-  // solving a problem the codebase already solved — strip-section.tsx
-  // and the CtaBar both already switch to BRAND.lightBlue in dark mode.
-  // Using that same token here means About page's blues now literally
-  // match the ones in the reference screenshot, because they're the same
-  // token. ensureAccessible stays only as a safety net, not the source
-  // of the brightening.
-  const blueColor = isDark ? BRAND.lightBlue : BRAND.blue
-  const orangeColor = ABOUT_ORANGE
-  const greenColor = ABOUT_GREEN
   const neutralColor = isDark ? ABOUT_NEUTRAL.dark : ABOUT_NEUTRAL.light
+
+  // -------------------------------------------------------------------------
+  // Token-sourced colors — the actual single source of truth
+  // -------------------------------------------------------------------------
+  // FIX (root cause): this page used to hardcode its own
+  // PAGE_BG_LIGHT/DARK and CARD_BG_LIGHT/DARK constants, guessed by hand.
+  // CARD_BG_LIGHT was flatly wrong (#FAFAFA vs the real --card of
+  // #FFFFFF) — a genuine light-mode bug. And every fade/seam problem this
+  // session traced back to CARD_BG_DARK being a guess (#18181B) that
+  // didn't match what globals.css actually renders (#1A2C3E, forced via
+  // its `.dark .dark\:bg-zinc-900 { background-color: var(--card)
+  // !important }` rule). Reading the real CSS variables at runtime means
+  // there's nothing left to drift out of sync — ever.
+  //
+  // blueColor/greenColor read --primary/--accent, which globals.css
+  // already flips per-theme (blue/lightBlue, green/lightGreen) — so no
+  // manual isDark branching or lightening is needed here anymore either.
+  const pageBg = useCssVar("--background", resolvedTheme, "#FFFFFF")
+  const cardBg = useCssVar("--card", resolvedTheme, "#FFFFFF")
+  const blueColor = useCssVar("--primary", resolvedTheme, BRAND.blue)
+  const greenColor = useCssVar("--accent", resolvedTheme, BRAND.green)
+  const orangeColor = ABOUT_ORANGE
 
   const blueOnPage = ensureAccessible(blueColor, pageBg, 4.5)
   const blueOnCard = ensureAccessible(blueColor, cardBg, 4.5)
@@ -191,15 +197,8 @@ export function AboutPage() {
             </div>
           </ScrollBounce>
 
-          {/* -----------------------------------------------------------
-              Storefront photo — its own standalone card
-              -----------------------------------------------------------
-              FIX: previously blended into the story card below it with a
-              fade overlay, which is what caused every seam/fog issue
-              across the last several rounds. Now it's a fully separate
-              card — no fade, no blend, nothing to tune. */}
           <ScrollBounce delay={0.18}>
-            <div className="max-w-[720px] mx-auto mb-5 rounded-[16px] overflow-hidden abh-shadow-elevated">
+            <div className="max-w-[720px] mx-auto mb-14 rounded-[16px] overflow-hidden abh-shadow-elevated">
               <div className="relative aspect-[16/9]">
                 <Image
                   src="/storefront.webp"
@@ -208,37 +207,40 @@ export function AboutPage() {
                   sizes="(max-width: 768px) 100vw, 720px"
                   className="object-cover"
                 />
+                {/* Fade now blends into the REAL card color (read live
+                    from --card), so light and dark mode are both
+                    correct by construction, not by a guessed hex. */}
+                <div
+                  className="absolute inset-x-0 bottom-0 h-16 pointer-events-none"
+                  style={{
+                    background: `linear-gradient(to top, ${cardBg} 0%, ${cardBg}99 45%, transparent 100%)`,
+                  }}
+                  aria-hidden="true"
+                />
               </div>
-              <div className="bg-zinc-50 dark:bg-zinc-900 px-6 py-3 text-center">
-                <p className="text-[0.76rem] font-bold uppercase tracking-widest text-zinc-400">
-                  Our home — Kgotsong, Bothaville
+              {/* FIX: was bg-zinc-50 dark:bg-zinc-900. bg-zinc-50 (#FAFAFA-
+                  ish) never matched the real --card token (#FFFFFF) in
+                  light mode — a genuine, visible bug. bg-card fixes both
+                  themes with one class. */}
+              <div className="bg-card px-6 py-3 sm:px-7 sm:py-8 md:p-8 -mt-px">
+                <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-3">How It Started</h3>
+                <p className="abh-body text-base leading-relaxed">
+                  There was no ApexbytesHub yet — just a phone, WhatsApp, and a status update. A friend spotted a
+                  simple edited image Theji had posted and asked if he could design a logo. That request was for
+                  "<TheNakedTradersZAReveal accentColor={blueOnCard} />" — the very first thing Theji ever designed with
+                  a vector program, and the first logo he'd ever made for anyone.
+                </p>
+                <p className="abh-body text-base leading-relaxed mt-3">
+                  It was 2021, maybe early 2022. There was no plan, no brief, no clue where it would lead — just a
+                  decision to give the person what they'd asked for. That one logo turned into the realization that
+                  this could be more than a favor. Theji kept going, kept learning, and kept saying yes to the next
+                  request — until those requests became {BIZ.name}.
+                </p>
+                <p className="abh-body text-base leading-relaxed mt-3">
+                  Today he's the owner, the founder — the one who built this from a WhatsApp status into a real hub
+                  for the community that asked for it first.
                 </p>
               </div>
-            </div>
-          </ScrollBounce>
-
-          {/* -----------------------------------------------------------
-              "How It Started" — its own standalone card
-              ----------------------------------------------------------- */}
-          <ScrollBounce delay={0.22}>
-            <div className="max-w-[720px] mx-auto mb-14 rounded-[16px] bg-zinc-50 dark:bg-zinc-900 p-7 md:p-8 abh-shadow-elevated">
-              <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-3">How It Started</h3>
-              <p className="abh-body text-base leading-relaxed">
-                There was no ApexbytesHub yet — just a phone, WhatsApp, and a status update. A friend spotted a
-                simple edited image Theji had posted and asked if he could design a logo. That request was for
-                "<TheNakedTradersZAReveal accentColor={blueOnCard} />" — the very first thing Theji ever designed with
-                a vector program, and the first logo he'd ever made for anyone.
-              </p>
-              <p className="abh-body text-base leading-relaxed mt-3">
-                It was 2021, maybe early 2022. There was no plan, no brief, no clue where it would lead — just a
-                decision to give the person what they'd asked for. That one logo turned into the realization that
-                this could be more than a favor. Theji kept going, kept learning, and kept saying yes to the next
-                request — until those requests became {BIZ.name}.
-              </p>
-              <p className="abh-body text-base leading-relaxed mt-3">
-                Today he's the owner, the founder — the one who built this from a WhatsApp status into a real hub
-                for the community that asked for it first.
-              </p>
             </div>
           </ScrollBounce>
 
@@ -247,7 +249,11 @@ export function AboutPage() {
               {ABOUT_VALUES.map((item, index) => (
                 <li
                   key={index}
-                  className="abh-card abh-shadow-elevated rounded-[14px] bg-white dark:bg-zinc-950 p-5 flex flex-row items-center text-left gap-4 flex-1"
+                  // FIX: had abh-card (which already sets background: var(--card))
+                  // AND a redundant bg-white dark:bg-zinc-950 on top of it —
+                  // two sources fighting to set the same property. Dropped
+                  // the redundant one; abh-card's own token now applies cleanly.
+                  className="abh-card abh-shadow-elevated rounded-[14px] p-5 flex flex-row items-center text-left gap-4 flex-1"
                 >
                   <div className="shrink-0 flex items-center justify-center" style={{ color: blueColor }} aria-hidden="true">
                     {renderIcon(item.iconName, "w-7 h-7")}
@@ -261,7 +267,7 @@ export function AboutPage() {
             </ul>
 
             <ScrollBounce delay={0.2}>
-              <div className="abh-shadow-elevated rounded-[14px] bg-white dark:bg-zinc-950 p-7 flex flex-col h-full" aria-label="Business overview">
+              <div className="abh-shadow-elevated rounded-[14px] bg-card p-7 flex flex-col h-full" aria-label="Business overview">
                 <div className="flex flex-col items-center text-center gap-2 mb-7 pb-6 border-b border-zinc-100/60 dark:border-zinc-800/40">
                   <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0" style={{ backgroundColor: `${blueColor}15`, color: blueColor }}>
                     <UsersThree size={20} weight="fill" />
@@ -378,7 +384,8 @@ export function AboutPage() {
                     onBlur={() => setHoveredCard(null)}
                     tabIndex={0}
                     className={cn(
-                      "abh-card p-6 flex flex-col h-full outline-none transition-all duration-300 rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-elevated",
+                      // Same abh-card redundancy fix as the values grid above.
+                      "abh-card p-6 flex flex-col h-full outline-none transition-all duration-300 rounded-[14px] abh-shadow-elevated",
                       isHovered && "-translate-y-1.5 shadow-lg"
                     )}
                   >
@@ -475,4 +482,4 @@ export function AboutPage() {
       <BackToTopButton visible={showBackToTop} />
     </div>
   )
-    } 
+                  }
