@@ -1,3 +1,4 @@
+// components/matte-background.tsx
 "use client"
 
 import * as React from "react"
@@ -8,11 +9,18 @@ interface MatteBackgroundProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: "hero" | "standard"
 }
 
+// FIX: was hardcoded bg-white / dark:bg-[#081428] — a navy that matched
+// neither globals.css's real --background token (#0D1B2A) nor
+// services-page's own separately hardcoded #081428. Three different
+// "the background" for what's supposed to be one value. Swapped to
+// bg-background/text-foreground, the real token — this is what actually
+// makes every page consistent, since globals.css is the single source
+// of truth now, not a color picked by eye in three separate files.
 export function MatteBackground({ children, className, variant = "standard", ...props }: MatteBackgroundProps) {
   return (
     <div
       className={cn(
-        "relative w-full overflow-hidden select-none cursor-default bg-white dark:bg-[#081428] transition-colors duration-300",
+        "relative w-full overflow-hidden select-none cursor-default bg-background text-foreground transition-colors duration-300",
         variant === "hero" ? "min-h-[calc(100vh-68px)] flex flex-col items-center justify-center pt-12 md:pt-16 pb-6" : "min-h-screen pt-12 pb-14",
         className
       )}
@@ -35,4 +43,4 @@ export function MatteBackground({ children, className, variant = "standard", ...
       </div>
     </div>
   )
-}
+} 
