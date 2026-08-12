@@ -17,12 +17,14 @@ import { ensureAccessible } from "@/lib/color"
 import { TheNakedTradersZAReveal } from "@/components/about/naked-traderz-reveal"
 
 // ---------------------------------------------------------------------------
-// Static tokens with no matching CSS variable
+// FIX: removed the static ABOUT_ORANGE = BRAND.orangeDark constant that
+// components/about/naked-traderz-reveal.tsx previously imported and used
+// directly — that's what made the "1st Ever Logo" text always render the
+// dark-mode orange regardless of theme. Orange now goes through
+// ensureAccessible() against the real cardBg below, same pattern already
+// used for blue. Still fully sourced from BRAND.orangeDark — no new hex,
+// no new brand token invented, just theme-aware application.
 // ---------------------------------------------------------------------------
-// Orange has no theme-flipping CSS var (only the static --brand-orange-dark),
-// so it stays sourced from lib/brand.ts directly — that IS its single
-// source of truth, same file globals.css comments say it's synced from.
-const ABOUT_ORANGE = BRAND.orangeDark
 const ABOUT_NEUTRAL = { light: BRAND.dark100, dark: BRAND.techGreyDark }
 
 const TEAM = [
@@ -59,9 +61,6 @@ function CompactTestimonials({ isDark }: { isDark: boolean }) {
               onBlur={() => setHovered(null)}
               tabIndex={0}
               className={cn(
-                // FIX: was bg-white dark:bg-zinc-950 — bg-card reads the
-                // real --card token in both themes with one class, no
-                // dark: variant needed, no chance of the two drifting.
                 "rounded-[14px] bg-card p-5 flex flex-col items-center text-center outline-none transition-all duration-300 abh-shadow-elevated",
                 isHovered && "-translate-y-1.5 shadow-lg"
               )}
@@ -93,9 +92,6 @@ function CompactTestimonials({ isDark }: { isDark: boolean }) {
   )
 }
 
-// components/about-page.tsx — only the color-sourcing block changes, rest of file stays as last version
-
-
 export function AboutPage() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
   const [statsHovered, setStatsHovered] = useState(false)
@@ -107,27 +103,18 @@ export function AboutPage() {
   const isDark = mounted && resolvedTheme === "dark"
   const neutralColor = isDark ? ABOUT_NEUTRAL.dark : ABOUT_NEUTRAL.light
 
-  // -------------------------------------------------------------------------
-  // Token-sourced colors
-  // -------------------------------------------------------------------------
-  // FIX: reading CSS variables off the DOM via getComputedStyle (last
-  // version's useCssVar) was untested and produced the wrong value — the
-  // pale/washed-out blue in the screenshot. Reverted to the exact pattern
-  // strip-section.tsx already uses successfully for this same problem:
-  // direct isDark branching against BRAND constants. No DOM reads, no
-  // mount-timing race, no new file needed — and it's still a single
-  // source of truth, since globals.css declares itself synced FROM
-  // lib/brand.ts (see the comment at the top of globals.css).
   const pageBg = isDark ? THEME_BG.dark.page : THEME_BG.light.page
   const cardBg = isDark ? THEME_BG.dark.card : THEME_BG.light.card
   const blueColor = isDark ? BRAND.lightBlue : BRAND.blue
   const greenColor = isDark ? BRAND.lightGreen : BRAND.green
-  const orangeColor = ABOUT_ORANGE
+  const orangeColor = BRAND.orangeDark
 
   const blueOnPage = ensureAccessible(blueColor, pageBg, 4.5)
   const blueOnCard = ensureAccessible(blueColor, cardBg, 4.5)
-
-  // ... everything below this point is unchanged from the last version I gave you
+  // FIX: orange now runs through the same accessibility check as blue,
+  // against the real cardBg — so it adapts to light/dark automatically
+  // instead of being permanently pinned to the dark-mode shade.
+  const orangeOnCard = ensureAccessible(orangeColor, cardBg, 4.5)
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
@@ -206,9 +193,6 @@ export function AboutPage() {
                   sizes="(max-width: 768px) 100vw, 720px"
                   className="object-cover"
                 />
-                {/* Fade now blends into the REAL card color (read live
-                    from --card), so light and dark mode are both
-                    correct by construction, not by a guessed hex. */}
                 <div
                   className="absolute inset-x-0 bottom-0 h-16 pointer-events-none"
                   style={{
@@ -217,17 +201,14 @@ export function AboutPage() {
                   aria-hidden="true"
                 />
               </div>
-              {/* FIX: was bg-zinc-50 dark:bg-zinc-900. bg-zinc-50 (#FAFAFA-
-                  ish) never matched the real --card token (#FFFFFF) in
-                  light mode — a genuine, visible bug. bg-card fixes both
-                  themes with one class. */}
               <div className="bg-card px-6 py-3 sm:px-7 sm:py-8 md:p-8 -mt-px">
                 <h3 className="font-sans font-black text-xl text-zinc-900 dark:text-zinc-50 mb-3">How It Started</h3>
                 <p className="abh-body text-base leading-relaxed">
                   There was no ApexbytesHub yet — just a phone, WhatsApp, and a status update. A friend spotted a
                   simple edited image Theji had posted and asked if he could design a logo. That request was for
-                  "<TheNakedTradersZAReveal accentColor={blueOnCard} />" — the very first thing Theji ever designed with
-                  a vector program, and the first logo he'd ever made for anyone.
+                  "<TheNakedTradersZAReveal accentColor={blueOnCard} accentOrange={orangeOnCard} />" — the very
+                  first thing Theji ever designed with a vector program, and the first logo he'd ever made for
+                  anyone.
                 </p>
                 <p className="abh-body text-base leading-relaxed mt-3">
                   It was 2021, maybe early 2022. There was no plan, no brief, no clue where it would lead — just a
@@ -248,10 +229,6 @@ export function AboutPage() {
               {ABOUT_VALUES.map((item, index) => (
                 <li
                   key={index}
-                  // FIX: had abh-card (which already sets background: var(--card))
-                  // AND a redundant bg-white dark:bg-zinc-950 on top of it —
-                  // two sources fighting to set the same property. Dropped
-                  // the redundant one; abh-card's own token now applies cleanly.
                   className="abh-card abh-shadow-elevated rounded-[14px] p-5 flex flex-row items-center text-left gap-4 flex-1"
                 >
                   <div className="shrink-0 flex items-center justify-center" style={{ color: blueColor }} aria-hidden="true">
@@ -383,7 +360,6 @@ export function AboutPage() {
                     onBlur={() => setHoveredCard(null)}
                     tabIndex={0}
                     className={cn(
-                      // Same abh-card redundancy fix as the values grid above.
                       "abh-card p-6 flex flex-col h-full outline-none transition-all duration-300 rounded-[14px] abh-shadow-elevated",
                       isHovered && "-translate-y-1.5 shadow-lg"
                     )}
@@ -481,4 +457,4 @@ export function AboutPage() {
       <BackToTopButton visible={showBackToTop} />
     </div>
   )
-                  }
+      } 
