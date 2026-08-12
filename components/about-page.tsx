@@ -9,12 +9,11 @@ import {
   Quotes, Star, EnvelopeSimple, UserCircle,
 } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
-import { BRAND, BIZ, ABOUT_VALUES, ABOUT_STANDARDS } from "@/lib/brand"
+import { BRAND, BIZ, ABOUT_VALUES, ABOUT_STANDARDS, THEME_BG } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { SAMPLE_REVIEWS } from "@/components/testimonials-section"
 import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
 import { ensureAccessible } from "@/lib/color"
-import { useCssVar } from "@/lib/use-css-var"
 import { TheNakedTradersZAReveal } from "@/components/about/naked-traderz-reveal"
 
 // ---------------------------------------------------------------------------
@@ -94,6 +93,9 @@ function CompactTestimonials({ isDark }: { isDark: boolean }) {
   )
 }
 
+// components/about-page.tsx — only the color-sourcing block changes, rest of file stays as last version
+
+
 export function AboutPage() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
   const [statsHovered, setStatsHovered] = useState(false)
@@ -106,29 +108,26 @@ export function AboutPage() {
   const neutralColor = isDark ? ABOUT_NEUTRAL.dark : ABOUT_NEUTRAL.light
 
   // -------------------------------------------------------------------------
-  // Token-sourced colors — the actual single source of truth
+  // Token-sourced colors
   // -------------------------------------------------------------------------
-  // FIX (root cause): this page used to hardcode its own
-  // PAGE_BG_LIGHT/DARK and CARD_BG_LIGHT/DARK constants, guessed by hand.
-  // CARD_BG_LIGHT was flatly wrong (#FAFAFA vs the real --card of
-  // #FFFFFF) — a genuine light-mode bug. And every fade/seam problem this
-  // session traced back to CARD_BG_DARK being a guess (#18181B) that
-  // didn't match what globals.css actually renders (#1A2C3E, forced via
-  // its `.dark .dark\:bg-zinc-900 { background-color: var(--card)
-  // !important }` rule). Reading the real CSS variables at runtime means
-  // there's nothing left to drift out of sync — ever.
-  //
-  // blueColor/greenColor read --primary/--accent, which globals.css
-  // already flips per-theme (blue/lightBlue, green/lightGreen) — so no
-  // manual isDark branching or lightening is needed here anymore either.
-  const pageBg = useCssVar("--background", resolvedTheme, "#FFFFFF")
-  const cardBg = useCssVar("--card", resolvedTheme, "#FFFFFF")
-  const blueColor = useCssVar("--primary", resolvedTheme, BRAND.blue)
-  const greenColor = useCssVar("--accent", resolvedTheme, BRAND.green)
+  // FIX: reading CSS variables off the DOM via getComputedStyle (last
+  // version's useCssVar) was untested and produced the wrong value — the
+  // pale/washed-out blue in the screenshot. Reverted to the exact pattern
+  // strip-section.tsx already uses successfully for this same problem:
+  // direct isDark branching against BRAND constants. No DOM reads, no
+  // mount-timing race, no new file needed — and it's still a single
+  // source of truth, since globals.css declares itself synced FROM
+  // lib/brand.ts (see the comment at the top of globals.css).
+  const pageBg = isDark ? THEME_BG.dark.page : THEME_BG.light.page
+  const cardBg = isDark ? THEME_BG.dark.card : THEME_BG.light.card
+  const blueColor = isDark ? BRAND.lightBlue : BRAND.blue
+  const greenColor = isDark ? BRAND.lightGreen : BRAND.green
   const orangeColor = ABOUT_ORANGE
 
   const blueOnPage = ensureAccessible(blueColor, pageBg, 4.5)
   const blueOnCard = ensureAccessible(blueColor, cardBg, 4.5)
+
+  // ... everything below this point is unchanged from the last version I gave you
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
