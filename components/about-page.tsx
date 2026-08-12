@@ -14,17 +14,9 @@ import { ScrollBounce } from "@/components/scroll-bounce"
 import { SAMPLE_REVIEWS } from "@/components/testimonials-section"
 import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
 import { ensureAccessible } from "@/lib/color"
+import { getReadableTextColor } from "@/lib/color-utils"
 import { TheNakedTradersZAReveal } from "@/components/about/naked-traderz-reveal"
 
-// ---------------------------------------------------------------------------
-// FIX: removed the static ABOUT_ORANGE = BRAND.orangeDark constant that
-// components/about/naked-traderz-reveal.tsx previously imported and used
-// directly — that's what made the "1st Ever Logo" text always render the
-// dark-mode orange regardless of theme. Orange now goes through
-// ensureAccessible() against the real cardBg below, same pattern already
-// used for blue. Still fully sourced from BRAND.orangeDark — no new hex,
-// no new brand token invented, just theme-aware application.
-// ---------------------------------------------------------------------------
 const ABOUT_NEUTRAL = { light: BRAND.dark100, dark: BRAND.techGreyDark }
 
 const TEAM = [
@@ -111,10 +103,11 @@ export function AboutPage() {
 
   const blueOnPage = ensureAccessible(blueColor, pageBg, 4.5)
   const blueOnCard = ensureAccessible(blueColor, cardBg, 4.5)
-  // FIX: orange now runs through the same accessibility check as blue,
-  // against the real cardBg — so it adapts to light/dark automatically
-  // instead of being permanently pinned to the dark-mode shade.
   const orangeOnCard = ensureAccessible(orangeColor, cardBg, 4.5)
+
+  // Same tokens CtaBar (strip-section.tsx) uses for its badge.
+  const missionBadgeBg = blueColor
+  const missionBadgeText = getReadableTextColor(missionBadgeBg)
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
@@ -403,58 +396,47 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* Mission */}
-      <section className="relative overflow-hidden px-4 md:px-8 py-16 md:py-20 text-center" aria-labelledby="mission-title">
-        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-          <div
-            className="absolute inset-0 opacity-[0.04] dark:opacity-[0.07]"
-            style={{ background: `linear-gradient(135deg, ${blueColor} 0%, ${greenColor} 50%, ${orangeColor} 100%)` }}
-          />
-        </div>
+      {/* Mission — same card treatment as CtaBar in strip-section.tsx */}
+      <section className="px-4 md:px-8 py-16 transition-colors duration-300" aria-labelledby="mission-title">
+        <ScrollBounce className="max-w-[750px] mx-auto">
+          <div className="abh-card px-10 py-14 text-center bg-brand-blue/10 border-brand-blue/30 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-brand-blue rounded-full blur-[100px] opacity-20 -mr-32 -mt-32" aria-hidden="true" />
+            <div className="absolute bottom-0 left-0 w-56 h-56 bg-brand-blue rounded-full blur-[100px] opacity-10 -ml-28 -mb-28" aria-hidden="true" />
 
-        <div className="relative max-w-[680px] mx-auto flex flex-col items-center">
-          <ScrollBounce>
             <span
-              className="inline-block text-[0.78rem] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-6"
-              style={{ backgroundColor: `${blueOnPage}14`, color: blueOnPage }}
+              className="text-[0.84rem] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-6 inline-block relative z-10"
+              style={{ backgroundColor: missionBadgeBg, color: missionBadgeText }}
             >
               Our Mission
             </span>
-          </ScrollBounce>
 
-          <ScrollBounce delay={0.1}>
-            <h2 id="mission-title" className="font-sans font-black text-3xl md:text-4xl leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 mb-5">
+            <h2 id="mission-title" className="abh-section-heading text-3xl mb-4 relative z-10">
               Bridging the digital gap — one person at a time.
             </h2>
-          </ScrollBounce>
-
-          <ScrollBounce delay={0.2}>
-            <p className="abh-body max-w-lg mx-auto mb-10 text-center text-base leading-relaxed">
+            <p className="abh-body text-xl max-w-[500px] mx-auto mb-10 relative z-10">
               ApexbytesHub is that bridge — printing, design, IT support, and government services brought to people
               who need them most, in a community that deserves better access.
             </p>
-          </ScrollBounce>
 
-          <ScrollBounce delay={0.3}>
-            <div className="flex flex-col sm:flex-row items-center gap-3">
-              <a href="/services" className="abh-btn-cta px-8 py-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
+              <a href="/services" className="abh-btn-cta w-full sm:w-64 justify-center px-8 py-4">
                 See All Services
                 <ArrowRight size={16} weight="bold" />
               </a>
               <a
                 href="/contact"
-                className="inline-flex items-center gap-2.5 px-8 py-4 rounded-[14px] font-black text-base border-2 transition-all duration-300 active:scale-95 hover:-translate-y-0.5"
+                className="inline-flex items-center justify-center gap-2.5 w-full sm:w-64 px-8 py-4 rounded-[14px] font-black text-base border-2 transition-all duration-300 active:scale-95 hover:-translate-y-0.5"
                 style={{ borderColor: blueOnPage, color: blueOnPage }}
               >
                 <EnvelopeSimple size={16} weight="bold" />
                 Get in Touch
               </a>
             </div>
-          </ScrollBounce>
-        </div>
+          </div>
+        </ScrollBounce>
       </section>
 
       <BackToTopButton visible={showBackToTop} />
     </div>
   )
-      } 
+                  } 
