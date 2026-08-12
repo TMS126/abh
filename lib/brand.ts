@@ -74,6 +74,21 @@ export const BRAND = {
   whatsappText: "#0f172a",
 } as const
 
+// lib/brand.ts — ADD near the top, after the BRAND export, nothing else in this file changes
+
+// ─── THEME-FLIPPING BACKGROUND HEX ──────────────────────────────────────────
+// The only two background values that change with theme AND are ever
+// needed as a raw hex string in JS (gradients, alpha-blended fills like
+// `${color}12`). These are hand-verified to exactly match globals.css's
+// --background / --card tokens for each theme — globals.css declares
+// itself synced FROM this file, so this is the correct direction: define
+// once here, CSS mirrors it, JS reads it here too. Never hardcode these
+// values a second time anywhere else in the codebase.
+export const THEME_BG = {
+  light: { page: "#FFFFFF", card: "#FFFFFF" },
+  dark: { page: "#0D1B2A", card: "#1A2C3E" },
+} as const
+
 // ONLY ONE HUB_COLORS EXPORT - WCAG AA COMPLIANT ACTIVE COLORS
 // Sourced from the official brand palette tiers (Bright / Hard / Soft / Dark).
 // Note: the palette has 3 base hues (blue/green/orange) but 5 hubs — E-Service
