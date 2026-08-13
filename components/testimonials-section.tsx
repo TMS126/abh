@@ -71,8 +71,10 @@ function Stars({ rating, color }: { rating: number; color: string }) {
   )
 }
 
-// Plays once when scrolled into view: a droplet falls from behind the
-// pill, "splats", and the pill fades/settles into place right after.
+// Plays once when scrolled into view: the pill itself falls as a
+// squeezed droplet, splats down, then grows sideways from its center
+// out to its full width — one continuous liquid motion, no separate
+// droplet element.
 function DripReveal({ children }: { children: React.ReactNode }) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const [dripped, setDripped] = useState(false)
@@ -95,30 +97,25 @@ function DripReveal({ children }: { children: React.ReactNode }) {
 
   return (
     <div ref={wrapRef} className="relative flex justify-center">
-      <span
-        aria-hidden="true"
-        className={
-          "absolute -top-[110px] left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-brand-whatsapp pointer-events-none z-0 " +
-          (dripped ? "animate-[abh-drip-fall_650ms_cubic-bezier(.55,0,.85,1)_forwards]" : "opacity-0")
-        }
-      />
       <div
-        className="relative z-10 transition-all duration-500 ease-out"
-        style={{
-          opacity: dripped ? 1 : 0,
-          transform: dripped ? "translateY(0) scale(1)" : "translateY(-6px) scale(0.9)",
-          transitionDelay: dripped ? "550ms" : "0ms",
-        }}
+        className={
+          "rounded-full will-change-transform " +
+          (dripped
+            ? "animate-[abh-drip-pill_900ms_cubic-bezier(.4,0,.2,1)_forwards]"
+            : "opacity-0 scale-x-[0.12] scale-y-[0.5] -translate-y-[110px]")
+        }
+        style={{ transformOrigin: "center" }}
       >
         {children}
       </div>
 
       <style>{`
-        @keyframes abh-drip-fall {
-          0%   { transform: translateY(0) scale(1, 1);         opacity: 1; }
-          70%  { transform: translateY(100px) scale(1.3, 0.6); opacity: 1; }
-          85%  { transform: translateY(94px)  scale(0.9, 1.15); opacity: 1; }
-          100% { transform: translateY(98px)  scale(1, 1);     opacity: 0; }
+        @keyframes abh-drip-pill {
+          0%   { transform: translateY(-110px) scaleX(0.12) scaleY(0.5); opacity: 1; }
+          55%  { transform: translateY(6px)    scaleX(0.12) scaleY(1.25); opacity: 1; }
+          72%  { transform: translateY(-2px)   scaleX(0.55) scaleY(0.82); opacity: 1; }
+          88%  { transform: translateY(1px)    scaleX(1.04) scaleY(1.04); opacity: 1; }
+          100% { transform: translateY(0)      scaleX(1)    scaleY(1);   opacity: 1; }
         }
       `}</style>
     </div>
