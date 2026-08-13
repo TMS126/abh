@@ -288,7 +288,7 @@ export const STRIP_ITEMS = [
 export const GALLERY_CATEGORIES = [
   { id: "all", label: "All hubs" },
   { id: "print", label: "Print hub" },
-  { id: "doc", label: "Docu hub" },
+  { id: "doc", label: "Document hub" },
   { id: "design", label: "Design hub" },
   { id: "eservice", label: "E-Service hub" },
   { id: "tech", label: "Tech hub" },
@@ -409,5 +409,6 @@ export const FOOTER_NAV = [
   { label: "Gallery", path: "/gallery" },
   { label: "Pricing", path: "/pricing" },
   { label: "About", path: "/about" },
+  { label: "Tools", path: "/tools/jpg-to-pdf" }, 
   { label: "Contact", path: "/contact" },
 ] as const 
