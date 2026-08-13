@@ -1,7 +1,7 @@
 // components/testimonials-section.tsx
 "use client"
 
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { Star, Quotes, WhatsappLogo, CaretLeft, CaretRight, Printer, FileText, PaintBrush, Globe, Desktop } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { HUB_COLORS, HubKey, BIZ } from "@/lib/brand"
@@ -67,6 +67,60 @@ function Stars({ rating, color }: { rating: number; color: string }) {
           className={i < rating ? "" : "text-zinc-200 dark:text-zinc-700"}
         />
       ))}
+    </div>
+  )
+}
+
+// Plays once when scrolled into view: a droplet falls from behind the
+// pill, "splats", and the pill fades/settles into place right after.
+function DripReveal({ children }: { children: React.ReactNode }) {
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const [dripped, setDripped] = useState(false)
+
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el || dripped) return
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setDripped(true)
+          io.disconnect() // only once
+        }
+      },
+      { threshold: 0.4 }
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [dripped])
+
+  return (
+    <div ref={wrapRef} className="relative flex justify-center">
+      <span
+        aria-hidden="true"
+        className={
+          "absolute -top-[110px] left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-brand-whatsapp pointer-events-none z-0 " +
+          (dripped ? "animate-[abh-drip-fall_650ms_cubic-bezier(.55,0,.85,1)_forwards]" : "opacity-0")
+        }
+      />
+      <div
+        className="relative z-10 transition-all duration-500 ease-out"
+        style={{
+          opacity: dripped ? 1 : 0,
+          transform: dripped ? "translateY(0) scale(1)" : "translateY(-6px) scale(0.9)",
+          transitionDelay: dripped ? "550ms" : "0ms",
+        }}
+      >
+        {children}
+      </div>
+
+      <style>{`
+        @keyframes abh-drip-fall {
+          0%   { transform: translateY(0) scale(1, 1);         opacity: 1; }
+          70%  { transform: translateY(100px) scale(1.3, 0.6); opacity: 1; }
+          85%  { transform: translateY(94px)  scale(0.9, 1.15); opacity: 1; }
+          100% { transform: translateY(98px)  scale(1, 1);     opacity: 0; }
+        }
+      `}</style>
     </div>
   )
 }
@@ -257,20 +311,20 @@ export function TestimonialsSection({
           })}
         </div>
 
-        {/* FIX: raw #25D366 hex → token classes, matching the fix applied
-            to About page's identical "Chat with the team" link. */}
         <div className="flex justify-center mt-8">
-          <a
-            href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent("Hi ApexbytesHub! I'd like to share my experience with you.")}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 text-[0.88rem] font-bold text-zinc-600 dark:text-zinc-300 hover:border-brand-whatsapp hover:text-brand-whatsapp hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-200 shadow-sm"
-          >
-            <WhatsappLogo size={16} weight="fill" className="text-brand-whatsapp" aria-hidden="true" />
-            Share your experience on WhatsApp
-          </a>
+          <DripReveal>
+            <a
+              href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent("Hi ApexbytesHub! I'd like to share my experience with you.")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/60 text-[0.88rem] font-bold text-zinc-600 dark:text-zinc-300 hover:border-brand-whatsapp hover:text-brand-whatsapp hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-200 shadow-sm"
+            >
+              <WhatsappLogo size={16} weight="fill" className="text-brand-whatsapp" aria-hidden="true" />
+              Share your experience on WhatsApp
+            </a>
+          </DripReveal>
         </div>
       </div>
     </section>
   )
-} 
+  } 
