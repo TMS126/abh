@@ -15,7 +15,7 @@ import {
   Spinner,
   WarningCircle,
   CheckCircle,
-  FileStack,
+  Stack,
   Files,
 } from "@phosphor-icons/react"
 import { jsPDF } from "jspdf"
@@ -295,7 +295,7 @@ export default function JpgToPdfPage() {
                     : "text-zinc-500 dark:text-zinc-400"
                 }`}
               >
-                <FileStack weight="bold" className="w-4 h-4" />
+                <Stack weight="bold" className="w-4 h-4" />
                 One combined PDF
               </button>
               <button
