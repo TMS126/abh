@@ -2,6 +2,7 @@
 "use client"
 
 import { useState, useRef, useEffect, useLayoutEffect } from "react"
+import { createPortal } from "react-dom"
 import { CaretDown, Check } from "@phosphor-icons/react"
 
 export interface DropdownOption {
@@ -9,12 +10,13 @@ export interface DropdownOption {
   label: string
 }
 
-// Anchored with position:fixed off the trigger's real screen coordinates
-// (measured via getBoundingClientRect) rather than position:absolute in
-// normal flow. Absolute positioning doesn't reserve layout space, so an
-// open list can visually overlap whatever sits below it — fixed + a
-// full-screen click-catcher fixes that and guarantees it always renders
-// above everything else on the page.
+// Portaled straight into document.body via createPortal. This is the
+// real fix for the overlap bug: any ancestor with a CSS transform
+// (Framer Motion sets these inline, and these dropdowns sit inside
+// ScrollBounce) becomes the containing block for position:fixed
+// descendants instead of the viewport — so the old fixed-positioned
+// list was anchoring to the wrong box. Portaling to <body> sidesteps
+// that entirely, regardless of what wraps the trigger.
 export function SimpleDropdown({
   label, value, options, onChange, accentColor,
 }: {
@@ -25,9 +27,12 @@ export function SimpleDropdown({
   accentColor: string
 }) {
   const [open, setOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const [rect, setRect] = useState<{ top: number; left: number; width: number } | null>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
   const current = options.find((o) => o.value === value)
+
+  useEffect(() => setMounted(true), [])
 
   useLayoutEffect(() => {
     if (!open || !btnRef.current) return
@@ -38,11 +43,17 @@ export function SimpleDropdown({
 
   useEffect(() => {
     if (!open) return
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false)
-    }
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") setOpen(false) }
+    function onScroll() { setOpen(false) } // avoid a stale-position popover
+    function onResize() { setOpen(false) }
     document.addEventListener("keydown", onKey)
-    return () => document.removeEventListener("keydown", onKey)
+    window.addEventListener("scroll", onScroll, true)
+    window.addEventListener("resize", onResize)
+    return () => {
+      document.removeEventListener("keydown", onKey)
+      window.removeEventListener("scroll", onScroll, true)
+      window.removeEventListener("resize", onResize)
+    }
   }, [open])
 
   return (
@@ -60,13 +71,13 @@ export function SimpleDropdown({
         <CaretDown weight="bold" className={`w-3.5 h-3.5 text-zinc-400 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
       </button>
 
-      {open && rect && (
+      {open && rect && mounted && createPortal(
         <>
-          <div className="fixed inset-0 z-[55]" onClick={() => setOpen(false)} aria-hidden="true" />
+          <div className="fixed inset-0 z-[9998]" onClick={() => setOpen(false)} aria-hidden="true" />
           <ul
             role="listbox"
             style={{ position: "fixed", top: rect.top, left: rect.left, minWidth: rect.width }}
-            className="z-[60] w-max max-w-[220px] rounded-[12px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xl p-1.5"
+            className="z-[9999] w-max max-w-[220px] rounded-[12px] border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xl p-1.5"
           >
             {options.map((opt) => (
               <li key={opt.value}>
@@ -83,7 +94,8 @@ export function SimpleDropdown({
               </li>
             ))}
           </ul>
-        </>
+        </>,
+        document.body
       )}
     </>
   )
