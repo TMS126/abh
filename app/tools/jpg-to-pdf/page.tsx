@@ -1,6 +1,4 @@
 // FILE: app/tools/jpg-to-pdf/page.tsx
-// Nav/Footer are rendered globally from app/layout.tsx — this page sits
-// between them automatically, no wrapper needed here.
 // Requires: npm install jspdf (already added)
 "use client"
 
@@ -21,6 +19,8 @@ import {
 import { jsPDF } from "jspdf"
 import { BRAND, BIZ, HUB_NAMES, WA, waLink, type HubKey } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
+import { Navbar } from "@/components/navbar"
+import { Footer } from "@/components/footer"
 
 // ─── TYPES ──────────────────────────────────────────────────────────────
 type ImageItem = { id: string; file: File; previewUrl: string }
@@ -287,213 +287,217 @@ export default function JpgToPdfPage() {
 
   // ─── UI ──────────────────────────────────────────────────────────────
   return (
-    <main id="main-content" className="min-h-screen bg-white dark:bg-zinc-950 pt-32 pb-24 px-6 md:px-8">
-      <div className="max-w-[720px] mx-auto">
-        {/* ── Page header — centered ── */}
-        <ScrollBounce>
-          <div className="text-center mb-12">
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <main id="main-content" className="min-h-screen bg-white dark:bg-zinc-950 pt-32 pb-24 px-6 md:px-8">
+        <div className="max-w-[720px] mx-auto">
+          {/* ── Page header — centered ── */}
+          <ScrollBounce>
+            <div className="text-center mb-12">
+              <div
+                className="inline-flex items-center justify-center w-14 h-14 rounded-[14px] mb-5"
+                style={{ backgroundColor: `${BRAND.blue}14` }}
+              >
+                <FilePdf weight="fill" className="w-7 h-7" style={{ color: BRAND.blue }} />
+              </div>
+              <h1 className="font-sans font-black text-3xl md:text-4xl tracking-tight text-zinc-900 dark:text-white mb-3">
+                JPG to PDF
+              </h1>
+              <p className="text-base leading-relaxed text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
+                Convert images into a PDF right in your browser. Nothing is uploaded — your files
+                never leave your device.
+              </p>
+            </div>
+          </ScrollBounce>
+
+          {/* ── Mode toggle — centered ── */}
+          <ScrollBounce>
+            <div className="flex justify-center mb-2">
+              <div className="inline-flex rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 p-1 gap-1">
+                <button
+                  type="button"
+                  onClick={() => setMode("merge")}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-[10px] text-sm font-black transition-all ${mode === "merge" ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm" : "text-zinc-500 dark:text-zinc-400"}`}
+                >
+                  <Stack weight="bold" className="w-4 h-4" />
+                  One combined PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("separate")}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-[10px] text-sm font-black transition-all ${mode === "separate" ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm" : "text-zinc-500 dark:text-zinc-400"}`}
+                >
+                  <Files weight="bold" className="w-4 h-4" />
+                  Separate PDFs
+                </button>
+              </div>
+            </div>
+          </ScrollBounce>
+          <p className="text-center text-sm text-zinc-400 mb-10">
+            {mode === "merge" ? "All images will be combined into a single PDF file." : "Each image will be saved as its own PDF file."}
+          </p>
+
+          {/* ── Drop zone ── */}
+          <ScrollBounce>
             <div
-              className="inline-flex items-center justify-center w-14 h-14 rounded-[14px] mb-5"
-              style={{ backgroundColor: `${BRAND.blue}14` }}
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={handleDrop}
+              onClick={() => inputRef.current?.click()}
+              className={`rounded-[14px] border-2 border-dashed cursor-pointer transition-colors flex flex-col items-center justify-center gap-3 py-14 px-6 text-center ${isDragging ? "border-brand-blue bg-brand-blue/5" : "border-zinc-200 dark:border-zinc-800 hover:border-brand-blue/50"}`}
             >
-              <FilePdf weight="fill" className="w-7 h-7" style={{ color: BRAND.blue }} />
+              <UploadSimple weight="bold" className="w-8 h-8 text-zinc-400" />
+              <p className="font-medium text-zinc-700 dark:text-zinc-300">Drag & drop images here, or tap to browse</p>
+              <p className="text-sm text-zinc-400">JPG or PNG · up to {MAX_FILES} images · {MAX_FILE_SIZE_MB}MB each</p>
+              <input ref={inputRef} type="file" accept="image/jpeg,image/png" multiple onChange={handleFileInput} className="hidden" />
             </div>
-            <h1 className="font-sans font-black text-3xl md:text-4xl tracking-tight text-zinc-900 dark:text-white mb-3">
-              JPG to PDF
-            </h1>
-            <p className="text-base leading-relaxed text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
-              Convert images into a PDF right in your browser. Nothing is uploaded — your files
-              never leave your device.
-            </p>
-          </div>
-        </ScrollBounce>
+          </ScrollBounce>
 
-        {/* ── Mode toggle — centered ── */}
-        <ScrollBounce>
-          <div className="flex justify-center mb-2">
-            <div className="inline-flex rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 p-1 gap-1">
-              <button
-                type="button"
-                onClick={() => setMode("merge")}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-[10px] text-sm font-black transition-all ${mode === "merge" ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm" : "text-zinc-500 dark:text-zinc-400"}`}
-              >
-                <Stack weight="bold" className="w-4 h-4" />
-                One combined PDF
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode("separate")}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-[10px] text-sm font-black transition-all ${mode === "separate" ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm" : "text-zinc-500 dark:text-zinc-400"}`}
-              >
-                <Files weight="bold" className="w-4 h-4" />
-                Separate PDFs
-              </button>
+          {/* ── Errors — specific, one line per file ── */}
+          {errors.length > 0 && (
+            <div className="mt-6 rounded-[14px] border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <WarningCircle weight="fill" className="w-5 h-5 text-red-500 shrink-0" />
+                <span className="font-black text-sm text-red-700 dark:text-red-300">{errors.length} issue{errors.length > 1 ? "s" : ""} found</span>
+              </div>
+              <ul className="flex flex-col gap-1 pl-7">
+                {errors.map((err, i) => (
+                  <li key={i} className="text-sm text-red-600 dark:text-red-400">
+                    <span className="font-semibold">{err.fileName}:</span> {err.reason}
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
-        </ScrollBounce>
-        <p className="text-center text-sm text-zinc-400 mb-10">
-          {mode === "merge" ? "All images will be combined into a single PDF file." : "Each image will be saved as its own PDF file."}
-        </p>
+          )}
 
-        {/* ── Drop zone ── */}
-        <ScrollBounce>
-          <div
-            onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={handleDrop}
-            onClick={() => inputRef.current?.click()}
-            className={`rounded-[14px] border-2 border-dashed cursor-pointer transition-colors flex flex-col items-center justify-center gap-3 py-14 px-6 text-center ${isDragging ? "border-brand-blue bg-brand-blue/5" : "border-zinc-200 dark:border-zinc-800 hover:border-brand-blue/50"}`}
-          >
-            <UploadSimple weight="bold" className="w-8 h-8 text-zinc-400" />
-            <p className="font-medium text-zinc-700 dark:text-zinc-300">Drag & drop images here, or tap to browse</p>
-            <p className="text-sm text-zinc-400">JPG or PNG · up to {MAX_FILES} images · {MAX_FILE_SIZE_MB}MB each</p>
-            <input ref={inputRef} type="file" accept="image/jpeg,image/png" multiple onChange={handleFileInput} className="hidden" />
-          </div>
-        </ScrollBounce>
+          {/* ── Selected images list ── */}
+          {images.length > 0 && (
+            <div className="mt-10">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-[0.84rem] font-black uppercase tracking-widest text-zinc-400">
+                  {images.length} image{images.length > 1 ? "s" : ""} selected
+                </h2>
+                <button type="button" onClick={clearAll} className="text-sm font-semibold text-zinc-400 hover:text-red-500 transition-colors">
+                  Clear all
+                </button>
+              </div>
 
-        {/* ── Errors — specific, one line per file ── */}
-        {errors.length > 0 && (
-          <div className="mt-6 rounded-[14px] border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <WarningCircle weight="fill" className="w-5 h-5 text-red-500 shrink-0" />
-              <span className="font-black text-sm text-red-700 dark:text-red-300">{errors.length} issue{errors.length > 1 ? "s" : ""} found</span>
-            </div>
-            <ul className="flex flex-col gap-1 pl-7">
-              {errors.map((err, i) => (
-                <li key={i} className="text-sm text-red-600 dark:text-red-400">
-                  <span className="font-semibold">{err.fileName}:</span> {err.reason}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* ── Selected images list ── */}
-        {images.length > 0 && (
-          <div className="mt-10">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[0.84rem] font-black uppercase tracking-widest text-zinc-400">
-                {images.length} image{images.length > 1 ? "s" : ""} selected
-              </h2>
-              <button type="button" onClick={clearAll} className="text-sm font-semibold text-zinc-400 hover:text-red-500 transition-colors">
-                Clear all
-              </button>
-            </div>
-
-            <ul className="flex flex-col gap-3">
-              {images.map((img, index) => (
-                <li key={img.id} className="flex items-center gap-4 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 p-3">
-                  <div className="relative w-14 h-14 rounded-[10px] overflow-hidden shrink-0 bg-zinc-200 dark:bg-zinc-800">
-                    <Image src={img.previewUrl} alt="" fill className="object-cover" unoptimized />
-                  </div>
-                  <span className="flex-1 min-w-0 truncate text-sm font-medium text-zinc-700 dark:text-zinc-300">{img.file.name}</span>
-                  {mode === "merge" && (
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button type="button" onClick={() => moveImage(index, -1)} disabled={index === 0} aria-label="Move up" className="w-8 h-8 rounded-[10px] flex items-center justify-center text-zinc-400 hover:text-brand-blue disabled:opacity-30 transition-colors">
-                        <ArrowUp weight="bold" className="w-4 h-4" />
-                      </button>
-                      <button type="button" onClick={() => moveImage(index, 1)} disabled={index === images.length - 1} aria-label="Move down" className="w-8 h-8 rounded-[10px] flex items-center justify-center text-zinc-400 hover:text-brand-blue disabled:opacity-30 transition-colors">
-                        <ArrowDown weight="bold" className="w-4 h-4" />
-                      </button>
+              <ul className="flex flex-col gap-3">
+                {images.map((img, index) => (
+                  <li key={img.id} className="flex items-center gap-4 rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 p-3">
+                    <div className="relative w-14 h-14 rounded-[10px] overflow-hidden shrink-0 bg-zinc-200 dark:bg-zinc-800">
+                      <Image src={img.previewUrl} alt="" fill className="object-cover" unoptimized />
                     </div>
+                    <span className="flex-1 min-w-0 truncate text-sm font-medium text-zinc-700 dark:text-zinc-300">{img.file.name}</span>
+                    {mode === "merge" && (
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button type="button" onClick={() => moveImage(index, -1)} disabled={index === 0} aria-label="Move up" className="w-8 h-8 rounded-[10px] flex items-center justify-center text-zinc-400 hover:text-brand-blue disabled:opacity-30 transition-colors">
+                          <ArrowUp weight="bold" className="w-4 h-4" />
+                        </button>
+                        <button type="button" onClick={() => moveImage(index, 1)} disabled={index === images.length - 1} aria-label="Move down" className="w-8 h-8 rounded-[10px] flex items-center justify-center text-zinc-400 hover:text-brand-blue disabled:opacity-30 transition-colors">
+                          <ArrowDown weight="bold" className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                    <button type="button" onClick={() => removeImage(img.id)} aria-label="Remove image" className="w-8 h-8 rounded-[10px] flex items-center justify-center text-zinc-400 hover:text-red-500 transition-colors shrink-0">
+                      <X weight="bold" className="w-4 h-4" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+
+              {/* ── Convert button — circular progress + intentionally
+                  narrower than full width so it never sits under the
+                  floating QuoteCalculatorWidget FAB in the bottom corner ── */}
+              <div className="mt-8 flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleConvert}
+                  disabled={isConverting}
+                  className="w-full max-w-[260px] rounded-[14px] font-black py-3.5 flex items-center justify-center gap-3 text-white active:scale-[0.99] transition-all disabled:opacity-80"
+                  style={{ backgroundColor: BRAND.blue }}
+                >
+                  {isConverting ? (
+                    <>
+                      {/* Circular percentage indicator */}
+                      <svg viewBox="0 0 36 36" className="w-6 h-6 shrink-0 -rotate-90">
+                        <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="3" />
+                        <circle
+                          cx="18" cy="18" r="15.5" fill="none" stroke="#ffffff" strokeWidth="3"
+                          strokeDasharray={2 * Math.PI * 15.5}
+                          strokeDashoffset={2 * Math.PI * 15.5 * (1 - progress / 100)}
+                          strokeLinecap="round"
+                          style={{ transition: "stroke-dashoffset 200ms ease-out" }}
+                        />
+                      </svg>
+                      <span className="text-sm">{progress}%</span>
+                    </>
+                  ) : (
+                    <>
+                      <FilePdf weight="fill" className="w-5 h-5" />
+                      {mode === "merge" ? "Convert to PDF" : "Convert to PDFs"}
+                    </>
                   )}
-                  <button type="button" onClick={() => removeImage(img.id)} aria-label="Remove image" className="w-8 h-8 rounded-[10px] flex items-center justify-center text-zinc-400 hover:text-red-500 transition-colors shrink-0">
-                    <X weight="bold" className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Post-conversion: download confirmed + send to a Hub ── */}
+          {convertedFiles.length > 0 && (
+            <div className="mt-10 rounded-[14px] border border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-950/30 p-5 text-center">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <CheckCircle weight="fill" className="w-5 h-5 text-green-600 shrink-0" />
+                <span className="text-sm font-black text-green-700 dark:text-green-300">
+                  {convertedFiles.length} PDF{convertedFiles.length > 1 ? "s" : ""} downloaded to your device
+                </span>
+              </div>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-5">
+                Want ApexbytesHub to help with printing or anything else? Send it straight to a Hub.
+              </p>
+
+              {/* Hub picker */}
+              <div className="flex flex-wrap justify-center gap-2 mb-5">
+                {SENDABLE_HUBS.map((hubKey) => (
+                  <button
+                    key={hubKey}
+                    type="button"
+                    onClick={() => setSelectedHub(hubKey)}
+                    className={`px-3.5 py-2 rounded-[10px] text-sm font-black border-2 transition-all ${
+                      selectedHub === hubKey
+                        ? "text-white border-transparent"
+                        : "text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
+                    }`}
+                    style={selectedHub === hubKey ? { backgroundColor: BRAND.blue } : undefined}
+                  >
+                    {HUB_NAMES[hubKey]}
                   </button>
-                </li>
-              ))}
-            </ul>
+                ))}
+              </div>
 
-            {/* ── Convert button — circular progress + intentionally
-                narrower than full width so it never sits under the
-                floating QuoteCalculatorWidget FAB in the bottom corner ── */}
-            <div className="mt-8 flex justify-center">
-              <button
-                type="button"
-                onClick={handleConvert}
-                disabled={isConverting}
-                className="w-full max-w-[260px] rounded-[14px] font-black py-3.5 flex items-center justify-center gap-3 text-white active:scale-[0.99] transition-all disabled:opacity-80"
-                style={{ backgroundColor: BRAND.blue }}
-              >
-                {isConverting ? (
-                  <>
-                    {/* Circular percentage indicator */}
-                    <svg viewBox="0 0 36 36" className="w-6 h-6 shrink-0 -rotate-90">
-                      <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="3" />
-                      <circle
-                        cx="18" cy="18" r="15.5" fill="none" stroke="#ffffff" strokeWidth="3"
-                        strokeDasharray={2 * Math.PI * 15.5}
-                        strokeDashoffset={2 * Math.PI * 15.5 * (1 - progress / 100)}
-                        strokeLinecap="round"
-                        style={{ transition: "stroke-dashoffset 200ms ease-out" }}
-                      />
-                    </svg>
-                    <span className="text-sm">{progress}%</span>
-                  </>
-                ) : (
-                  <>
-                    <FilePdf weight="fill" className="w-5 h-5" />
-                    {mode === "merge" ? "Convert to PDF" : "Convert to PDFs"}
-                  </>
-                )}
-              </button>
+              {/* Per-file send buttons */}
+              <div className="flex flex-col gap-2 max-w-[360px] mx-auto">
+                {convertedFiles.map((file) => (
+                  <button
+                    key={file.fileName}
+                    type="button"
+                    onClick={() => handleSendToHub(file)}
+                    className="flex items-center justify-center gap-2 rounded-[10px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 py-2.5 px-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:border-brand-blue hover:text-brand-blue transition-colors"
+                  >
+                    <PaperPlaneTilt weight="fill" className="w-4 h-4" />
+                    Send {file.fileName} to {HUB_NAMES[selectedHub]}
+                  </button>
+                ))}
+              </div>
+
+              {sendNotice && (
+                <p className="mt-4 text-sm font-medium text-zinc-500 dark:text-zinc-400">{sendNotice}</p>
+              )}
             </div>
-          </div>
-        )}
-
-        {/* ── Post-conversion: download confirmed + send to a Hub ── */}
-        {convertedFiles.length > 0 && (
-          <div className="mt-10 rounded-[14px] border border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-950/30 p-5 text-center">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <CheckCircle weight="fill" className="w-5 h-5 text-green-600 shrink-0" />
-              <span className="text-sm font-black text-green-700 dark:text-green-300">
-                {convertedFiles.length} PDF{convertedFiles.length > 1 ? "s" : ""} downloaded to your device
-              </span>
-            </div>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-5">
-              Want ApexbytesHub to help with printing or anything else? Send it straight to a Hub.
-            </p>
-
-            {/* Hub picker */}
-            <div className="flex flex-wrap justify-center gap-2 mb-5">
-              {SENDABLE_HUBS.map((hubKey) => (
-                <button
-                  key={hubKey}
-                  type="button"
-                  onClick={() => setSelectedHub(hubKey)}
-                  className={`px-3.5 py-2 rounded-[10px] text-sm font-black border-2 transition-all ${
-                    selectedHub === hubKey
-                      ? "text-white border-transparent"
-                      : "text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
-                  }`}
-                  style={selectedHub === hubKey ? { backgroundColor: BRAND.blue } : undefined}
-                >
-                  {HUB_NAMES[hubKey]}
-                </button>
-              ))}
-            </div>
-
-            {/* Per-file send buttons */}
-            <div className="flex flex-col gap-2 max-w-[360px] mx-auto">
-              {convertedFiles.map((file) => (
-                <button
-                  key={file.fileName}
-                  type="button"
-                  onClick={() => handleSendToHub(file)}
-                  className="flex items-center justify-center gap-2 rounded-[10px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 py-2.5 px-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:border-brand-blue hover:text-brand-blue transition-colors"
-                >
-                  <PaperPlaneTilt weight="fill" className="w-4 h-4" />
-                  Send {file.fileName} to {HUB_NAMES[selectedHub]}
-                </button>
-              ))}
-            </div>
-
-            {sendNotice && (
-              <p className="mt-4 text-sm font-medium text-zinc-500 dark:text-zinc-400">{sendNotice}</p>
-            )}
-          </div>
-        )}
-      </div>
-    </main>
+          )}
+        </div>
+      </main>
+      <Footer />
+    </div>
   )
-} 
+         } 
