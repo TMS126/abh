@@ -1,3 +1,4 @@
+// components/quote-calculator/quote-calculator-widget.tsx
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
@@ -103,6 +104,20 @@ export function QuoteCalculatorWidget() {
     }
     window.addEventListener("abh:add-to-quote", handler)
     return () => window.removeEventListener("abh:add-to-quote", handler)
+  }, [])
+
+  // FIX: new — pairs with the pricing page's minus button
+  // (dispatchRemoveFromQuote). Reuses stepQty's existing -1/remove-at-zero
+  // logic so this plays through the same undo toast as the in-panel minus
+  // button, instead of wiping the whole line in one click.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { hubId, sectionTitle, name } = (e as CustomEvent).detail
+      const id = `${hubId}-${sectionTitle}-${name}`
+      stepQty(id, -1)
+    }
+    window.addEventListener("abh:remove-from-quote", handler)
+    return () => window.removeEventListener("abh:remove-from-quote", handler)
   }, [])
 
   // ─── Step-quantity listener — used by ServiceDetailModal's +/- stepper.
@@ -350,12 +365,6 @@ export function QuoteCalculatorWidget() {
             Quote
           </span>
 
-          {/* Main FAB — no more filled circle. Just the calculator glyph
-              itself, colored in the brand blue (fabColor), sitting on
-              nothing. To keep it from disappearing against busy page
-              content, it gets a soft colored glow (drop-shadow, not a
-              box-shadow, since there's no box) plus a bit of extra size
-              since there's no button padding doing visual weight anymore. */}
           <button
             onClick={() => setIsOpen(o => !o)}
             aria-label={isOpen ? "Close quotation calculator" : "Open quotation calculator"}
@@ -559,4 +568,4 @@ export function QuoteCalculatorWidget() {
       )}
     </>
   )
-} 
+         } 
