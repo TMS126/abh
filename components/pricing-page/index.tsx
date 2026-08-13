@@ -9,11 +9,11 @@ import { Footer } from '@/components/footer'
 import { ScrollBounce } from '@/components/scroll-bounce'
 import { HUBS, type HubId } from '@/lib/data'
 import { BRAND, BIZ, waLink } from '@/lib/brand'
-import { BULK_TIERS, isScanItem, SCAN_BULK_RATE } from '@/components/quote-calculator/lib'
+import { itemHasBulk } from '@/components/quote-calculator/lib'
 import { PricingSearchInput, PricingSearchResults } from './search-bar'
 import { HubAccordionCard } from './hub-card'
 import { PdfPillButton } from './shared'
-import { HUB_ORDER, dispatchAddToQuote, bulkDiscountPercent, parsePrice, searchHubs } from './lib'
+import { HUB_ORDER, dispatchAddToQuote, dispatchRemoveFromQuote, parsePrice, searchHubs } from './lib'
 import { BackToTopButton, useBackToTop } from '@/components/back-to-top-button'
 import { CtaBar } from '@/components/strip-section'
 
@@ -32,9 +32,6 @@ export default function PricingPage() {
   useEffect(() => { setMounted(true) }, [])
   useEffect(() => () => { if (addedTimerRef.current) clearTimeout(addedTimerRef.current) }, [])
 
-  // FIX: single brand-blue accent everywhere on this page instead of each
-  // hub pulling its own HUB_COLORS accent (blue/green/orange/teal all at
-  // once). Cuts the color count way down and lets blue lead like requested.
   const accent = isDark ? BRAND.lightBlue : BRAND.blue
 
   const toggleHub = useCallback((id: HubId) => {
@@ -64,6 +61,11 @@ export default function PricingPage() {
     setJustAdded(key)
     if (addedTimerRef.current) clearTimeout(addedTimerRef.current)
     addedTimerRef.current = setTimeout(() => setJustAdded(null), 900)
+  }, [])
+
+  // FIX: new — mirrors handleAdd, dispatches the matching remove event.
+  const handleRemove = useCallback((hubId: HubId, sectionTitle: string, name: string, price: string) => {
+    dispatchRemoveFromQuote(hubId, sectionTitle, name, price)
   }, [])
 
   const results = useMemo(() => (query.trim() ? searchHubs(query, () => accent) : null), [query, isDark])
@@ -99,8 +101,6 @@ export default function PricingPage() {
 
         <main className="flex-1">
 
-          {/* FIX: max-w-2xl → 980px shell, matching the contact page's
-              container width instead of a narrow mobile-width column. */}
           <section className="px-4 md:px-8 pt-[calc(var(--nav-h)+2rem)] pb-10">
             <div className="max-w-[980px] mx-auto">
               <ScrollBounce><h1 className="abh-page-title mb-3">Pricing</h1></ScrollBounce>
@@ -127,6 +127,7 @@ export default function PricingPage() {
                         <button
                           key={hubId}
                           onClick={() => jumpToHub(hubId)}
+                          aria-pressed={isOpen}
                           className="relative pb-1 text-sm font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150"
                           style={isOpen ? { color: accent } : undefined}
                         >
@@ -134,6 +135,7 @@ export default function PricingPage() {
                           <span
                             className="absolute left-0 right-0 -bottom-0.5 h-[2px] rounded-full transition-opacity duration-200"
                             style={{ backgroundColor: accent, opacity: isOpen ? 1 : 0 }}
+                            aria-hidden="true"
                           />
                         </button>
                       )
@@ -145,9 +147,11 @@ export default function PricingPage() {
                   <div className="no-print flex justify-center">
                     <button
                       onClick={toggleAll}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-[14px] text-xs font-bold border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 shadow-sm transition-all duration-150 active:scale-95 hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-700 dark:hover:text-zinc-200"
+                      aria-label={allOpen ? 'Collapse all pricing hubs' : 'Expand all pricing hubs'}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-[14px] text-xs font-bold border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 shadow-sm transition-all duration-150 active:scale-95 hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-700 dark:hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2"
+                      style={{ ['--tw-ring-color' as any]: accent }}
                     >
-                      {allOpen ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />}
+                      {allOpen ? <CaretUp size={14} weight="bold" aria-hidden="true" /> : <CaretDown size={14} weight="bold" aria-hidden="true" />}
                       {allOpen ? 'Collapse all' : 'Expand all'}
                     </button>
                   </div>
@@ -179,8 +183,6 @@ export default function PricingPage() {
                 </ScrollBounce>
               )
             ) : (
-              // FIX: single stacked column → 2-col grid at md+ so hub cards
-              // sit side by side on desktop instead of one long thin list.
               <div className="grid md:grid-cols-2 gap-4 items-start">
                 {HUB_ORDER.map((hubId, idx) => (
                   <ScrollBounce key={hubId} delay={idx * 0.06}>
@@ -191,10 +193,12 @@ export default function PricingPage() {
                       onToggle={() => toggleHub(hubId)}
                       justAdded={justAdded}
                       onAdd={(section, name, price) => handleAdd(hubId, section, name, price)}
+                      onRemove={(section, name, price) => handleRemove(hubId, section, name, price)}
                       onDownload={() => handleHubDownload(hubId)}
-                      bulkPercentFor={(section, name, price) =>
-                        bulkDiscountPercent(hubId, section, name, parsePrice(price), BULK_TIERS, isScanItem, SCAN_BULK_RATE)
-                      }
+                      // FIX: swapped the percent-computing bulkPercentFor
+                      // prop for a plain boolean check via itemHasBulk —
+                      // matches "only show when bulk applies, no percent".
+                      hasBulk={(section, name) => itemHasBulk(hubId, section, name)}
                       cardRef={(el) => { hubRefs.current[hubId] = el }}
                     />
                   </ScrollBounce>
@@ -208,27 +212,21 @@ export default function PricingPage() {
               </div>
             </ScrollBounce>
 
-            {/* FIX: was a loud orange-tinted card (colored bg + colored
-                shadow) plus a separate green tip line. Now one neutral
-                abh-card, orange and green trimmed down to small icon-only
-                accents so blue stays dominant on the page. */}
             <ScrollBounce delay={0.3}>
               <div className="abh-card px-5 py-5 space-y-3">
                 <p className="text-xs flex items-start gap-1.5 text-zinc-600 dark:text-zinc-300">
-                  <Lightning size={14} weight="fill" className="shrink-0 mt-0.5" style={{ color: BRAND.orange }} />
+                  <Lightning size={14} weight="fill" className="shrink-0 mt-0.5" style={{ color: BRAND.orange }} aria-hidden="true" />
                   <span><span className="font-black">Rush fee:</span> A 50% surcharge applies when same-session or urgent turnaround is required.</span>
                 </p>
                 <p className="text-xs flex items-start gap-1.5 text-zinc-600 dark:text-zinc-300">
-                  <SealPercent size={14} weight="fill" className="shrink-0 mt-0.5" style={{ color: accent }} />
-                  <span>Look for the % badge next to a service — that's how much bulk pricing can save you.</span>
+                  <SealPercent size={14} weight="fill" className="shrink-0 mt-0.5" style={{ color: accent }} aria-hidden="true" />
+                  <span>Look for the "Bulk pricing" tag next to a service — larger quantities get a better rate.</span>
                 </p>
               </div>
             </ScrollBounce>
 
           </div>
 
-          {/* FIX: page had no CTA bar. Added the shared CtaBar (same one
-              Home/Services use) with copy specific to pricing/quotes. */}
           <CtaBar
             title="Not Sure What It'll Cost?"
             description="Send us your job and we'll quote it exactly — no guesswork, no hidden fees."
@@ -244,4 +242,4 @@ export default function PricingPage() {
       </div>
     </>
   )
-                  } 
+    } 
