@@ -137,7 +137,11 @@ export function HeroSection() {
   return (
     <section
       aria-label="Hero"
-      className="relative min-h-[calc(100vh-var(--nav-h))] w-full flex flex-col items-center justify-center px-4 md:px-8 pt-[calc(var(--nav-h)+56px)] md:pt-[104px] pb-10 md:pb-16 overflow-hidden cursor-default select-none bg-background transition-colors duration-300"
+      // FIX: min-h → h (capped, not just a floor) using dvh so mobile
+      // browser chrome doesn't cause jumpiness. Combined with the
+      // existing overflow-hidden below, this guarantees nothing past
+      // this section can peek in before the user scrolls.
+      className="relative h-[calc(100dvh-var(--nav-h))] w-full flex flex-col items-center justify-center px-4 md:px-8 pt-[calc(var(--nav-h)+56px)] md:pt-[104px] pb-10 md:pb-16 overflow-hidden cursor-default select-none bg-background transition-colors duration-300"
     >
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <div
@@ -228,17 +232,7 @@ export function HeroSection() {
             </ScrollBounce>
           </div>
 
-          {/* Right column — hub photo collage.
-              FIX: swapped raw <img> tags for next/image's <Image>. Plain
-              <img> here was skipping Next's automatic image pipeline
-              entirely — no resizing to the actual displayed size, no
-              modern-format (webp/avif) negotiation per browser, and no
-              loading priority hint, so on a slow connection these could
-              visibly pop in late. `priority` marks them as above-the-fold
-              so Next preloads them instead of lazy-loading, and `sizes`
-              tells the browser roughly how large they'll render (~40% of
-              a ~500px-wide container) so it doesn't over-fetch a full-res
-              file for a small tile. */}
+          {/* Right column — hub photo collage */}
           <ScrollBounce delay={0.1} className="w-full">
             <div className="relative w-full h-[420px] sm:h-[480px] md:h-[560px]">
               {arrangement.map(({ hub, slot, width }) => {
@@ -325,10 +319,7 @@ export function HeroSection() {
         </div>
       </div>
 
-      {/* Scroll-to-top button — same shared component/hook as About page,
-          so behavior (appears after scrolling, position, styling) matches
-          site-wide rather than being a one-off recreation. */}
       <BackToTopButton visible={showBackToTop} />
     </section>
   )
-                        } 
+    } 
