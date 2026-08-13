@@ -8,7 +8,7 @@ import {
   UploadSimple,
   X,
   ArrowUp,
-  ArrowDown,
+  ArrowDown, 
   FilePdf,
   WarningCircle,
   CheckCircle,
