@@ -79,7 +79,7 @@ export function TheNakedTradersZAReveal({ accentColor = BRAND.blue }: TheNakedTr
         className="underline decoration-dotted decoration-1 underline-offset-2 font-semibold outline-none rounded-sm focus-visible:ring-2"
         style={{ color: accentColor, textDecorationColor: `${accentColor}80` }}
       >
-        Naked Traderz
+        The Naked Traders ZA
       </button>
 
       {/* ----------------------------------------------------------------- */}
