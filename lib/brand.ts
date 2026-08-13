@@ -221,7 +221,7 @@ export type HubKey = "print" | "doc" | "design" | "eservice" | "tech"
 
 export const HUB_NAMES: Record<HubKey, string> = {
   print: "Print Hub",
-  doc: "Docu Hub",
+  doc: "Document Hub",
   design: "Design Hub",
   eservice: "E-Service Hub",
   tech: "Tech Hub",
@@ -241,6 +241,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "gallery", label: "Gallery", path: "/gallery" },
   { id: "pricing", label: "Pricing", path: "/pricing" },
   { id: "about", label: "About", path: "/about" },
+  { id: "tools", label: "Tools", path: "/tools/jpg-to-pdf" },
   { id: "contact", label: "Contact", path: "/contact", isCta: true },
 ] as const
 
