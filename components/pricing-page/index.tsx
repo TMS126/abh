@@ -8,13 +8,14 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { ScrollBounce } from '@/components/scroll-bounce'
 import { HUBS, type HubId } from '@/lib/data'
-import { HUB_COLORS, BRAND, BIZ, waLink, type HubKey } from '@/lib/brand'
+import { BRAND, BIZ, waLink } from '@/lib/brand'
 import { BULK_TIERS, isScanItem, SCAN_BULK_RATE } from '@/components/quote-calculator/lib'
 import { PricingSearchInput, PricingSearchResults } from './search-bar'
 import { HubAccordionCard } from './hub-card'
 import { PdfPillButton } from './shared'
 import { HUB_ORDER, dispatchAddToQuote, bulkDiscountPercent, parsePrice, searchHubs } from './lib'
 import { BackToTopButton, useBackToTop } from '@/components/back-to-top-button'
+import { CtaBar } from '@/components/strip-section'
 
 export default function PricingPage() {
   const { resolvedTheme } = useTheme()
@@ -31,10 +32,10 @@ export default function PricingPage() {
   useEffect(() => { setMounted(true) }, [])
   useEffect(() => () => { if (addedTimerRef.current) clearTimeout(addedTimerRef.current) }, [])
 
-  const accentFor = (hubId: HubId) => {
-    const c = HUB_COLORS[hubId as HubKey]
-    return isDark ? c.accentDark : c.accentLight
-  }
+  // FIX: single brand-blue accent everywhere on this page instead of each
+  // hub pulling its own HUB_COLORS accent (blue/green/orange/teal all at
+  // once). Cuts the color count way down and lets blue lead like requested.
+  const accent = isDark ? BRAND.lightBlue : BRAND.blue
 
   const toggleHub = useCallback((id: HubId) => {
     setOpenHubs(prev => {
@@ -65,7 +66,7 @@ export default function PricingPage() {
     addedTimerRef.current = setTimeout(() => setJustAdded(null), 900)
   }, [])
 
-  const results = useMemo(() => (query.trim() ? searchHubs(query, accentFor) : null), [query, isDark])
+  const results = useMemo(() => (query.trim() ? searchHubs(query, () => accent) : null), [query, isDark])
 
   const handleDownload = useCallback(() => {
     const link = document.createElement('a')
@@ -98,18 +99,20 @@ export default function PricingPage() {
 
         <main className="flex-1">
 
+          {/* FIX: max-w-2xl → 980px shell, matching the contact page's
+              container width instead of a narrow mobile-width column. */}
           <section className="px-4 md:px-8 pt-[calc(var(--nav-h)+2rem)] pb-10">
-            <div className="max-w-2xl mx-auto">
+            <div className="max-w-[980px] mx-auto">
               <ScrollBounce><h1 className="abh-page-title mb-3">Pricing</h1></ScrollBounce>
               <p className="abh-tagline max-w-xl mx-auto text-center">All services across all hubs — clear prices, no surprises.</p>
               <div className="abh-divider" />
             </div>
           </section>
 
-          <div className="max-w-2xl mx-auto px-4 pb-16 space-y-8">
+          <div className="max-w-[980px] mx-auto px-4 pb-16 space-y-8">
 
             <ScrollBounce delay={0.08}>
-              <div className="no-print sticky top-[calc(var(--nav-h,74px)+0.5rem)] z-10 bg-background">
+              <div className="no-print sticky top-[calc(var(--nav-h,74px)+0.5rem)] z-10 bg-background max-w-2xl mx-auto">
                 <PricingSearchInput query={query} setQuery={setQuery} />
               </div>
             </ScrollBounce>
@@ -120,7 +123,6 @@ export default function PricingPage() {
                   <div className="no-print flex flex-wrap justify-center gap-x-5 gap-y-2.5">
                     {HUB_ORDER.map(hubId => {
                       const isOpen = openHubs.has(hubId)
-                      const accent = accentFor(hubId)
                       return (
                         <button
                           key={hubId}
@@ -160,7 +162,6 @@ export default function PricingPage() {
                     <p className="abh-body mb-4">
                       No results for <span className="font-semibold text-zinc-700 dark:text-zinc-300">"{query}"</span>
                     </p>
-                    {/* FIX: raw #25D366 → shared .abh-wa-btn class */}
                     <a
                       href={noResultsWaLink}
                       target="_blank"
@@ -178,12 +179,14 @@ export default function PricingPage() {
                 </ScrollBounce>
               )
             ) : (
-              <div className="space-y-4">
+              // FIX: single stacked column → 2-col grid at md+ so hub cards
+              // sit side by side on desktop instead of one long thin list.
+              <div className="grid md:grid-cols-2 gap-4 items-start">
                 {HUB_ORDER.map((hubId, idx) => (
                   <ScrollBounce key={hubId} delay={idx * 0.06}>
                     <HubAccordionCard
                       hubId={hubId}
-                      accent={accentFor(hubId)}
+                      accent={accent}
                       isOpen={openHubs.has(hubId)}
                       onToggle={() => toggleHub(hubId)}
                       justAdded={justAdded}
@@ -205,30 +208,40 @@ export default function PricingPage() {
               </div>
             </ScrollBounce>
 
+            {/* FIX: was a loud orange-tinted card (colored bg + colored
+                shadow) plus a separate green tip line. Now one neutral
+                abh-card, orange and green trimmed down to small icon-only
+                accents so blue stays dominant on the page. */}
             <ScrollBounce delay={0.3}>
-              <div className="rounded-[14px] px-5 py-5 space-y-3" style={{ backgroundColor: `${BRAND.orange}0d`, boxShadow: `0 2px 16px -2px ${BRAND.orange}20` }}>
-                <p className="text-xs flex items-start gap-1.5" style={{ color: BRAND.orange }}>
-                  <Lightning size={14} weight="fill" className="shrink-0 mt-0.5" />
+              <div className="abh-card px-5 py-5 space-y-3">
+                <p className="text-xs flex items-start gap-1.5 text-zinc-600 dark:text-zinc-300">
+                  <Lightning size={14} weight="fill" className="shrink-0 mt-0.5" style={{ color: BRAND.orange }} />
                   <span><span className="font-black">Rush fee:</span> A 50% surcharge applies when same-session or urgent turnaround is required.</span>
                 </p>
-                <p className="text-xs flex items-start gap-1.5 text-emerald-600 dark:text-emerald-400">
-                  <SealPercent size={14} weight="fill" className="shrink-0 mt-0.5" />
+                <p className="text-xs flex items-start gap-1.5 text-zinc-600 dark:text-zinc-300">
+                  <SealPercent size={14} weight="fill" className="shrink-0 mt-0.5" style={{ color: accent }} />
                   <span>Look for the % badge next to a service — that's how much bulk pricing can save you.</span>
                 </p>
               </div>
             </ScrollBounce>
 
           </div>
+
+          {/* FIX: page had no CTA bar. Added the shared CtaBar (same one
+              Home/Services use) with copy specific to pricing/quotes. */}
+          <CtaBar
+            title="Not Sure What It'll Cost?"
+            description="Send us your job and we'll quote it exactly — no guesswork, no hidden fees."
+            buttonText="Get a Quick Quote"
+            buttonHref={waLink(`Hi ${BIZ.name}! I'd like a quote for a job — can you help me work out the price?`)}
+          />
+
         </main>
 
-        {/* FIX: this page had no back-to-top button at all — it's a long
-            scrolling accordion list, the page that probably needs one
-            most. no-print keeps it out of the PDF/print stylesheet like
-            the other floating controls on this page. */}
         <BackToTopButton visible={showBackToTop} className="no-print" />
 
         <Footer />
       </div>
     </>
   )
-                     } 
+                  } 
