@@ -1,40 +1,41 @@
 // app/tools/jpg-to-pdf/utils.ts
 import { HISTORY_KEY } from "./constants"
-import type { HistoryEntry } from "./types"
+import type { HistoryEntry, CropRect } from "./types"
 
 const pad2 = (n: number) => String(n).padStart(2, "0")
 
 function stamp(date = new Date()) {
   return {
-    date: `${pad2(date.getDate())}${pad2(date.getMonth() + 1)}${date.getFullYear()}`,
+    date: `${pad2(date.getDate())}${pad2(date.getMonth() + 1)}${String(date.getFullYear()).slice(2)}`,
     time: `${pad2(date.getHours())}${pad2(date.getMinutes())}`,
   }
 }
 
-const shortenName = (fileName: string) => {
-  const base = fileName.replace(/\.[^/.]+$/, "").replace(/\s+/g, "")
-  return (base.slice(0, 6) || "IMG").toUpperCase()
+function slugify(name: string) {
+  const base = name.replace(/\.[^/.]+$/, "")
+  const clean = base.toLowerCase().replace(/[^a-z0-9]+/g, "")
+  return clean.slice(0, 10) || "img"
 }
 
-// Smart naming: date + time baked into every filename, with a
-// collision-safe suffix so a batch converted in the same minute never
-// silently overwrites a sibling file.
-export function buildMergedFileName() {
+// Smart naming: abh_pdf-{original-name-fragment}-{date}{time}[-n].pdf
+// Merged PDFs (no single source name) use abh_pdf-batch{count}-... instead.
+export function buildFileName(sourceLabel: string, usedNames: Set<string>) {
   const { date, time } = stamp()
-  return `ABH-${date}-${time}.pdf`
-}
-
-export function buildSeparateFileName(originalName: string, usedNames: Set<string>) {
-  const { date, time } = stamp()
-  const base = shortenName(originalName)
-  let fileName = `${base}-${date}-${time}.pdf`
+  const slug = slugify(sourceLabel)
+  let name = `abh_pdf-${slug}-${date}${time}.pdf`
   let n = 2
-  while (usedNames.has(fileName)) {
-    fileName = `${base}-${date}-${time}-${n}.pdf`
+  while (usedNames.has(name)) {
+    name = `abh_pdf-${slug}-${date}${time}-${n}.pdf`
     n++
   }
-  usedNames.add(fileName)
-  return fileName
+  usedNames.add(name)
+  return name
+}
+
+export function qualityLabel(q: number) {
+  if (q >= 0.85) return "High quality"
+  if (q >= 0.6) return "Balanced"
+  return "Smaller file"
 }
 
 export const formatBytes = (bytes: number) => {
@@ -43,9 +44,8 @@ export const formatBytes = (bytes: number) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-// Local date + time in whatever timezone/locale the user's device is
-// currently set to — no hardcoded region, so "Recent" always reflects
-// wherever the person actually is.
+// Local date + time in the device's current timezone — reflects wherever
+// the user actually is, not a hardcoded region.
 export function formatLocalDateTime(isoDate: string) {
   const d = new Date(isoDate)
   const datePart = d.toLocaleDateString(undefined, { day: "2-digit", month: "short" })
@@ -76,18 +76,26 @@ export const clearHistory = () => {
 }
 
 // ─── IMAGE PROCESSING ────────────────────────────────────────────────────
+// Crop is applied in the image's ORIGINAL orientation, then rotation is
+// applied on top — matches what the crop modal shows the user.
 export const compressImage = (
   file: File,
   rotation: number,
-  quality: number
+  quality: number,
+  crop?: CropRect
 ): Promise<{ dataUrl: string; width: number; height: number }> =>
   new Promise((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file)
     const img = new window.Image()
     img.onload = () => {
+      const c = crop || { x: 0, y: 0, w: 1, h: 1 }
+      const sx = c.x * img.naturalWidth
+      const sy = c.y * img.naturalHeight
+      const sw = c.w * img.naturalWidth
+      const sh = c.h * img.naturalHeight
       const swap = rotation === 90 || rotation === 270
-      const width = swap ? img.naturalHeight : img.naturalWidth
-      const height = swap ? img.naturalWidth : img.naturalHeight
+      const width = swap ? sh : sw
+      const height = swap ? sw : sh
       const canvas = document.createElement("canvas")
       canvas.width = width
       canvas.height = height
@@ -99,7 +107,7 @@ export const compressImage = (
       }
       ctx.translate(width / 2, height / 2)
       ctx.rotate((rotation * Math.PI) / 180)
-      ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2)
+      ctx.drawImage(img, sx, sy, sw, sh, -sw / 2, -sh / 2, sw, sh)
       resolve({ dataUrl: canvas.toDataURL("image/jpeg", quality), width, height })
     }
     img.onerror = () => {
@@ -117,4 +125,4 @@ export const fitToPage = (width: number, height: number, page: { w: number; h: n
   const renderW = width * ratio
   const renderH = height * ratio
   return { x: (page.w - renderW) / 2, y: (page.h - renderH) / 2, renderW, renderH }
-}
+                                    } 
