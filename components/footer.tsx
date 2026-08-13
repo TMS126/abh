@@ -1,3 +1,4 @@
+// components/footer.tsx 
 "use client"
 
 import { useState, useEffect } from "react"
@@ -76,16 +77,27 @@ function FooterContent() {
           <nav aria-label="Footer navigation">
             <h3 className="text-[0.84rem] font-black uppercase tracking-widest mb-8 text-zinc-400">Quick Links</h3>
             <ul className="flex flex-col gap-4">
-              {FOOTER_NAV.map((page) => (
-                <li key={page.label}>
-                  <Link
-                    href={page.path}
-                    className="text-base text-zinc-600 dark:text-zinc-300 hover:translate-x-1 hover:text-brand-blue transition-all duration-200 font-medium inline-block"
-                  >
-                    {page.label}
-                  </Link>
-                </li>
-              ))}
+              {FOOTER_NAV.map((page) => {
+                // Active-page check: exact match, except home ("/") which
+                // would otherwise match every path via startsWith-style logic.
+                const isActive = pathname === page.path
+
+                return (
+                  <li key={page.label}>
+                    <Link
+                      href={page.path}
+                      aria-current={isActive ? "page" : undefined}
+                      className={`text-base transition-all duration-200 inline-block hover:translate-x-1 hover:text-brand-blue ${
+                        isActive
+                          ? "font-black text-zinc-900 dark:text-white"
+                          : "font-medium text-zinc-600 dark:text-zinc-300"
+                      }`}
+                    >
+                      {page.label}
+                    </Link>
+                  </li>
+                )
+              })}
             </ul>
           </nav>
 
