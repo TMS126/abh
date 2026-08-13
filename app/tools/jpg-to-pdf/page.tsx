@@ -12,7 +12,9 @@ import { Footer } from "@/components/footer"
 import { CtaBar } from "@/components/strip-section"
 import { useJpgToPdf } from "./use-jpg-to-pdf"
 import { SettingsBar } from "./settings-bar"
-import { ImageList } from "./image-list"
+import { ImageGrid } from "./image-grid"
+import { ImageLightbox } from "./image-lightbox"
+import { CropModal } from "./crop-modal"
 import { ReconvertBanner } from "./reconvert-banner"
 import { ResultsPanel } from "./results-panel"
 import { HistoryPanel } from "./history-panel"
@@ -20,6 +22,9 @@ import { HistoryPanel } from "./history-panel"
 export default function JpgToPdfPage() {
   const inputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [zoomId, setZoomId] = useState<string | null>(null)
+  const [cropId, setCropId] = useState<string | null>(null)
+
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -40,6 +45,11 @@ export default function JpgToPdfPage() {
   }
 
   const allSelected = t.images.length > 0 && t.selectedCount === t.images.length
+  const selectedImages = t.images.filter((i) => i.selected)
+  const originalBytes = selectedImages.length > 0 ? selectedImages.reduce((s, i) => s + i.file.size, 0) : null
+
+  const zoomImage = t.images.find((i) => i.id === zoomId)
+  const cropImage = t.images.find((i) => i.id === cropId)
 
   return (
     <div className="min-h-screen bg-background">
@@ -59,100 +69,100 @@ export default function JpgToPdfPage() {
         </section>
 
         <section className="px-4 md:px-8 pb-16">
-          <div className="max-w-[720px] mx-auto">
-            <ScrollBounce>
-              <SettingsBar
-                mode={t.mode} setMode={t.setMode}
-                pageSize={t.pageSize} setPageSize={t.setPageSize}
-                qualityPreset={t.qualityPreset} setQualityPreset={t.setQualityPreset}
-                accentColor={accentColor}
-              />
-            </ScrollBounce>
-
-            <ScrollBounce delay={0.05}>
-              <div
-                onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={handleDrop}
-                onClick={() => inputRef.current?.click()}
-                className={`mt-5 rounded-[14px] border-2 border-dashed cursor-pointer transition-colors flex flex-col items-center justify-center gap-2.5 py-10 px-6 text-center ${isDragging ? "border-brand-blue bg-brand-blue/5" : "border-zinc-200 dark:border-zinc-800 hover:border-brand-blue/50"}`}
-              >
-                <UploadSimple weight="bold" className="w-7 h-7 text-zinc-400" aria-hidden="true" />
-                <p className="font-medium text-sm text-zinc-700 dark:text-zinc-300">Drag & drop, or tap to browse</p>
-                <p className="text-xs text-zinc-400">JPG or PNG · up to 20 images</p>
-                <input ref={inputRef} type="file" accept="image/jpeg,image/png" multiple onChange={handleFileInput} className="hidden" />
-              </div>
-            </ScrollBounce>
-
-            {t.errors.length > 0 && (
-              <div className="mt-4 flex items-center gap-2 rounded-[12px] bg-red-50 dark:bg-red-950/30 px-4 py-2.5" aria-live="polite">
-                <WarningCircle weight="fill" className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" />
-                <span className="text-sm text-red-600 dark:text-red-400">
-                  {t.errors.length} file{t.errors.length > 1 ? "s" : ""} skipped — check thumbnails below for details.
-                </span>
-              </div>
-            )}
-
-            {t.images.length > 0 && (
-              <div className="mt-8">
-                <div className="flex items-center justify-between mb-3">
-                  <button type="button" onClick={() => t.selectAll(!allSelected)} className="text-sm font-black" style={{ color: accentColor }}>
-                    {allSelected ? "Deselect all" : "Select all"}
-                  </button>
-                  <span className="text-sm font-semibold text-zinc-400">{t.selectedCount} of {t.images.length} selected</span>
-                  <button type="button" onClick={t.clearAll} className="text-sm font-semibold text-zinc-400 hover:text-red-500 transition-colors">
-                    Clear
-                  </button>
-                </div>
-
-                <ImageList
-                  images={t.images}
-                  mode={t.mode}
-                  rotations={t.rotations}
-                  errors={t.errors}
-                  convertedIds={t.convertedIds}
+          <div className="max-w-[1100px] mx-auto lg:grid lg:grid-cols-[340px_1fr] lg:gap-10 lg:items-start">
+            {/* Desktop: sticky control sidebar. Mobile: stacks on top. */}
+            <div className="lg:sticky lg:top-24 flex flex-col gap-5">
+              <ScrollBounce>
+                <SettingsBar
+                  mode={t.mode} setMode={t.setMode}
+                  pageSize={t.pageSize} setPageSize={t.setPageSize}
+                  quality={t.quality} setQuality={t.setQuality}
+                  originalBytes={originalBytes} estimatedBytes={t.estimatedBytes}
                   accentColor={accentColor}
-                  onToggleSelect={t.toggleSelect}
-                  onRotate={t.rotateImage}
-                  onMove={t.moveImage}
-                  onRemove={t.removeImage}
-                  onReorder={t.reorder}
                 />
+              </ScrollBounce>
 
-                <ReconvertBanner prompt={t.reconvertPrompt} onResolve={t.resolveReconvert} />
-
-                <div className="mt-6 flex justify-center">
-                  <button
-                    type="button"
-                    onClick={t.requestConvert}
-                    disabled={t.isConverting || t.selectedCount === 0}
-                    className="rounded-[14px] font-black py-3 px-8 flex items-center justify-center gap-2.5 text-white active:scale-[0.99] transition-all disabled:opacity-60"
-                    style={{ backgroundColor: accentColor }}
-                  >
-                    {t.isConverting ? (
-                      <span className="text-sm" aria-live="polite">{t.progress}%</span>
-                    ) : (
-                      <>
-                        <FilePdf weight="fill" className="w-4 h-4" aria-hidden="true" />
-                        <span className="text-sm">Convert</span>
-                      </>
-                    )}
-                  </button>
+              <ScrollBounce delay={0.05}>
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={handleDrop}
+                  onClick={() => inputRef.current?.click()}
+                  className={`rounded-[14px] border-2 border-dashed cursor-pointer transition-colors flex flex-col items-center justify-center gap-2.5 py-10 px-6 text-center ${isDragging ? "border-brand-blue bg-brand-blue/5" : "border-zinc-200 dark:border-zinc-800 hover:border-brand-blue/50"}`}
+                >
+                  <UploadSimple weight="bold" className="w-7 h-7 text-zinc-400" aria-hidden="true" />
+                  <p className="font-medium text-sm text-zinc-700 dark:text-zinc-300">Drag & drop, or tap to browse</p>
+                  <p className="text-xs text-zinc-400">JPG, PNG or WEBP · up to 20 images</p>
+                  <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={handleFileInput} className="hidden" />
                 </div>
-              </div>
-            )}
+              </ScrollBounce>
 
-            <ResultsPanel
-              convertedFiles={t.convertedFiles}
-              selectedHub={t.selectedHub}
-              setSelectedHub={t.setSelectedHub}
-              sendNotice={t.sendNotice}
-              accentColor={accentColor}
-              onSend={t.handleSendToHub}
-              onAddMore={() => inputRef.current?.click()}
-            />
+              {t.errors.length > 0 && (
+                <div className="flex items-center gap-2 rounded-[12px] bg-red-50 dark:bg-red-950/30 px-4 py-2.5" aria-live="polite">
+                  <WarningCircle weight="fill" className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" />
+                  <span className="text-sm text-red-600 dark:text-red-400">
+                    {t.errors.length} file{t.errors.length > 1 ? "s" : ""} skipped — check thumbnails for details.
+                  </span>
+                </div>
+              )}
+            </div>
 
-            <HistoryPanel history={t.history} onClear={t.clearRecents} />
+            <div className="mt-8 lg:mt-0">
+              {t.images.length > 0 && (
+                <>
+                  <div className="flex items-center justify-between mb-3">
+                    <button type="button" onClick={() => t.selectAll(!allSelected)} className="text-sm font-black" style={{ color: accentColor }}>
+                      {allSelected ? "Deselect all" : "Select all"}
+                    </button>
+                    <span className="text-sm font-semibold text-zinc-400">{t.selectedCount} of {t.images.length} selected</span>
+                    <button type="button" onClick={t.clearAll} className="text-sm font-semibold text-zinc-400 hover:text-red-500 transition-colors">
+                      Clear
+                    </button>
+                  </div>
+
+                  <ImageGrid
+                    images={t.images}
+                    rotations={t.rotations}
+                    errors={t.errors}
+                    convertedIds={t.convertedIds}
+                    accentColor={accentColor}
+                    onToggleSelect={t.toggleSelect}
+                    onRotate={t.rotateImage}
+                    onResetRotation={t.resetRotation}
+                    onRemove={t.removeImage}
+                    onZoom={setZoomId}
+                    onCrop={setCropId}
+                    onReorder={t.reorder}
+                  />
+
+                  <ReconvertBanner prompt={t.reconvertPrompt} onResolve={t.resolveReconvert} />
+
+                  <div className="mt-6 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={t.requestConvert}
+                      disabled={t.isConverting || t.selectedCount === 0}
+                      className="rounded-[14px] font-black py-3 px-8 text-white transition-transform active:scale-[0.98] disabled:opacity-60"
+                      style={{ backgroundColor: accentColor }}
+                    >
+                      {t.isConverting ? `Converting… ${t.progress}%` : "Convert to PDF"}
+                    </button>
+                  </div>
+                </>
+              )}
+
+              <ResultsPanel
+                convertedFiles={t.convertedFiles}
+                selectedHub={t.selectedHub}
+                setSelectedHub={t.setSelectedHub}
+                sendNotice={t.sendNotice}
+                accentColor={accentColor}
+                onSend={t.handleSendToHub}
+                onAddMore={() => inputRef.current?.click()}
+              />
+
+              <HistoryPanel history={t.history} onClear={t.clearRecents} />
+            </div>
           </div>
         </section>
 
@@ -163,6 +173,23 @@ export default function JpgToPdfPage() {
         />
       </main>
       <Footer />
+
+      <ImageLightbox
+        imageUrl={zoomImage?.previewUrl || null}
+        fileName={zoomImage?.file.name}
+        rotation={zoomId ? t.rotations[zoomId] : undefined}
+        onClose={() => setZoomId(null)}
+      />
+
+      {cropImage && (
+        <CropModal
+          imageUrl={cropImage.previewUrl}
+          fileName={cropImage.file.name}
+          initialCrop={cropImage.crop}
+          onApply={(crop) => { t.setCrop(cropImage.id, crop); setCropId(null) }}
+          onClose={() => setCropId(null)}
+        />
+      )}
     </div>
   )
-} 
+    } 
