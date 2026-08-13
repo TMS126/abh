@@ -9,7 +9,7 @@ import { BRAND } from "@/lib/brand"
 // ---------------------------------------------------------------------------
 // Static tokens
 // ---------------------------------------------------------------------------
-const ORANGE = BRAND.orange
+const orangeColor = isDark ? BRAND.lightOrange : BRAND.orangeDark 
 
 // ---------------------------------------------------------------------------
 // Props
