@@ -1,3 +1,4 @@
+// components/pricing-page/lib.ts
 import { HUBS, type HubId } from '@/lib/data'
 
 // ── Constants ──
@@ -13,6 +14,13 @@ export function parsePrice(price: string): number {
 // ── Quote calculator bridge ──
 export function dispatchAddToQuote(hubId: HubId, sectionTitle: string, name: string, price: string) {
   window.dispatchEvent(new CustomEvent('abh:add-to-quote', { detail: { hubId, sectionTitle, name, price } }))
+}
+
+// FIX: new — mirrors dispatchAddToQuote. Wire a matching listener for
+// 'abh:remove-from-quote' wherever 'abh:add-to-quote' is currently handled
+// (the quote calculator widget) so the minus button actually removes the line.
+export function dispatchRemoveFromQuote(hubId: HubId, sectionTitle: string, name: string, price: string) {
+  window.dispatchEvent(new CustomEvent('abh:remove-from-quote', { detail: { hubId, sectionTitle, name, price } }))
 }
 
 // ── Bulk discount lookup ──
@@ -63,4 +71,4 @@ export function searchHubs(query: string, accentFor: (id: HubId) => string): Res
     })
   })
   return out.sort((a, b) => parsePrice(a.price) - parsePrice(b.price))
-  }
+  } 
