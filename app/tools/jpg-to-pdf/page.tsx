@@ -1,414 +1,54 @@
-// FILE: app/tools/jpg-to-pdf/page.tsx
-// Requires: npm install jspdf (already added)
+// app/tools/jpg-to-pdf/page.tsx
 "use client"
 
-import { useState, useCallback, useRef, useEffect } from "react"
-import Image from "next/image"
-import {
-  UploadSimple,
-  X,
-  ArrowUp,
-  ArrowDown,
-  ArrowsClockwise,
-  FilePdf,
-  WarningCircle,
-  CheckCircle,
-  Stack,
-  Files,
-  PaperPlaneTilt,
-  Plus,
-  ClockCounterClockwise,
-} from "@phosphor-icons/react"
-import { jsPDF } from "jspdf"
-import { BRAND, BIZ, HUB_NAMES, WA, waLink, type HubKey } from "@/lib/brand"
+import { useRef, useState, useEffect } from "react"
+import { useTheme } from "next-themes"
+import { UploadSimple, FilePdf, WarningCircle } from "@phosphor-icons/react"
+import { BRAND, THEME_BG } from "@/lib/brand"
+import { ensureAccessible } from "@/lib/color"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
-
-// ─── TYPES ──────────────────────────────────────────────────────────────
-type ImageItem = { id: string; file: File; previewUrl: string }
-type ConvertMode = "merge" | "separate"
-type PageSize = "a4" | "letter"
-type ConvertError = { fileName: string; reason: string }
-type ConvertedFile = { fileName: string; blob: Blob }
-type HistoryEntry = { fileName: string; date: string }
-
-const ACCEPTED_TYPES = ["image/jpeg", "image/jpg", "image/png"]
-const MAX_FILES = 20
-const MAX_FILE_SIZE_MB = 15
-const HISTORY_KEY = "abh-jpg-to-pdf-history"
-
-// Hubs that make sense to send a converted PDF to.
-const SENDABLE_HUBS: HubKey[] = ["print", "doc", "design", "eservice", "tech"]
-
-const PAGE_SIZES: Record<PageSize, { w: number; h: number; label: string }> = {
-  a4: { w: 210, h: 297, label: "A4" },
-  letter: { w: 215.9, h: 279.4, label: "Letter" },
-}
-
-// ─── FILENAME / SIZE HELPERS ─────────────────────────────────────────────
-const pad2 = (n: number) => String(n).padStart(2, "0")
-
-const dateStamp = () => {
-  const d = new Date()
-  return `${pad2(d.getDate())}${pad2(d.getMonth() + 1)}${d.getFullYear()}`
-}
-
-const shortenName = (fileName: string) => {
-  const base = fileName.replace(/\.[^/.]+$/, "").replace(/\s+/g, "")
-  return (base.slice(0, 6) || "IMG").toUpperCase()
-}
-
-const buildMergedFileName = () => `ABH-${dateStamp()}.pdf`
-const buildSeparateFileName = (originalName: string) => `${shortenName(originalName)}-ABH-${dateStamp()}.pdf`
-
-const formatBytes = (bytes: number) => {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
-
-// ─── HISTORY (localStorage) ──────────────────────────────────────────────
-const loadHistory = (): HistoryEntry[] => {
-  if (typeof window === "undefined") return []
-  try {
-    const raw = window.localStorage.getItem(HISTORY_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
-}
-
-const saveHistory = (entries: HistoryEntry[]) => {
-  try {
-    window.localStorage.setItem(HISTORY_KEY, JSON.stringify(entries.slice(0, 8)))
-  } catch {}
-}
-
-// ─── IMAGE PROCESSING ────────────────────────────────────────────────────
-// Rotates (if needed) and re-encodes at the chosen JPEG quality in one pass.
-const compressImage = (file: File, rotation: number, quality: number): Promise<{ dataUrl: string; width: number; height: number }> =>
-  new Promise((resolve, reject) => {
-    const objectUrl = URL.createObjectURL(file)
-    const img = new window.Image()
-    img.onload = () => {
-      const swap = rotation === 90 || rotation === 270
-      const width = swap ? img.naturalHeight : img.naturalWidth
-      const height = swap ? img.naturalWidth : img.naturalHeight
-      const canvas = document.createElement("canvas")
-      canvas.width = width
-      canvas.height = height
-      const ctx = canvas.getContext("2d")
-      URL.revokeObjectURL(objectUrl)
-      if (!ctx) {
-        reject(new Error("Canvas not supported on this device."))
-        return
-      }
-      ctx.translate(width / 2, height / 2)
-      ctx.rotate((rotation * Math.PI) / 180)
-      ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2)
-      resolve({ dataUrl: canvas.toDataURL("image/jpeg", quality), width, height })
-    }
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl)
-      reject(new Error("Could not read this image."))
-    }
-    img.src = objectUrl
-  })
-
-const fitToPage = (width: number, height: number, page: { w: number; h: number }) => {
-  const margin = 10
-  const maxW = page.w - margin * 2
-  const maxH = page.h - margin * 2
-  const ratio = Math.min(maxW / width, maxH / height)
-  const renderW = width * ratio
-  const renderH = height * ratio
-  return { x: (page.w - renderW) / 2, y: (page.h - renderH) / 2, renderW, renderH }
-}
+import { CtaBar } from "@/components/strip-section"
+import { useJpgToPdf } from "./use-jpg-to-pdf"
+import { SettingsBar } from "./settings-bar"
+import { ImageList } from "./image-list"
+import { ReconvertBanner } from "./reconvert-banner"
+import { ResultsPanel } from "./results-panel"
+import { HistoryPanel } from "./history-panel"
 
 export default function JpgToPdfPage() {
-  const [images, setImages] = useState<ImageItem[]>([])
-  const [mode, setMode] = useState<ConvertMode>("merge")
-  const [pageSize, setPageSize] = useState<PageSize>("a4")
-  const [quality, setQuality] = useState(0.85)
-  const [rotations, setRotations] = useState<Record<string, number>>({})
-  const [isConverting, setIsConverting] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const [isDragging, setIsDragging] = useState(false)
-  const [errors, setErrors] = useState<ConvertError[]>([])
-  const [convertedFiles, setConvertedFiles] = useState<ConvertedFile[]>([])
-  const [selectedHub, setSelectedHub] = useState<HubKey>("print")
-  const [sendNotice, setSendNotice] = useState<string | null>(null)
-  const [estimatedBytes, setEstimatedBytes] = useState<number | null>(null)
-  const [history, setHistory] = useState<HistoryEntry[]>([])
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const dragIndexRef = useRef<number | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  const isDark = mounted && resolvedTheme === "dark"
+  const pageBg = isDark ? THEME_BG.dark.page : THEME_BG.light.page
+  const accentColor = ensureAccessible(BRAND.blue, pageBg, 4.5)
 
-  useEffect(() => setHistory(loadHistory()), [])
-
-  // ─── LIVE SIZE ESTIMATE ─────────────────────────────────────────────
-  // Samples the first image's compression ratio and extrapolates across
-  // the batch — avoids re-encoding every image just for a preview number.
-  useEffect(() => {
-    if (images.length === 0) {
-      setEstimatedBytes(null)
-      return
-    }
-    let cancelled = false
-    const timer = setTimeout(async () => {
-      try {
-        const sample = images[0]
-        const { dataUrl } = await compressImage(sample.file, rotations[sample.id] || 0, quality)
-        const sampleBytes = Math.round((dataUrl.length * 3) / 4)
-        const ratio = sampleBytes / sample.file.size
-        const totalOriginal = images.reduce((sum, img) => sum + img.file.size, 0)
-        if (!cancelled) setEstimatedBytes(Math.round(totalOriginal * ratio))
-      } catch {
-        if (!cancelled) setEstimatedBytes(null)
-      }
-    }, 400)
-    return () => {
-      cancelled = true
-      clearTimeout(timer)
-    }
-  }, [images, quality, rotations])
-
-  // ─── FILE HANDLING ──────────────────────────────────────────────────
-  const addFiles = useCallback(
-    (fileList: FileList | File[]) => {
-      setConvertedFiles([])
-      setSendNotice(null)
-      const incomingErrors: ConvertError[] = []
-      const accepted: ImageItem[] = []
-      let slotsLeft = MAX_FILES - images.length
-
-      Array.from(fileList).forEach((file) => {
-        if (!ACCEPTED_TYPES.includes(file.type)) {
-          incomingErrors.push({ fileName: file.name, reason: "Unsupported file type — only JPG and PNG images are allowed." })
-          return
-        }
-        if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-          incomingErrors.push({ fileName: file.name, reason: `File is too large (over ${MAX_FILE_SIZE_MB}MB). Try a smaller image.` })
-          return
-        }
-        if (slotsLeft <= 0) {
-          incomingErrors.push({ fileName: file.name, reason: `Skipped — you've reached the ${MAX_FILES} image limit.` })
-          return
-        }
-        slotsLeft -= 1
-        accepted.push({
-          id: `${file.name}-${file.lastModified}-${Math.random().toString(36).slice(2, 8)}`,
-          file,
-          previewUrl: URL.createObjectURL(file),
-        })
-      })
-
-      if (accepted.length > 0) setImages((prev) => [...prev, ...accepted])
-      setErrors(incomingErrors)
-    },
-    [images.length]
-  )
+  const t = useJpgToPdf()
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) addFiles(e.target.files)
+    if (e.target.files) t.addFiles(e.target.files)
     e.target.value = ""
   }
-
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     setIsDragging(false)
-    if (e.dataTransfer.files) addFiles(e.dataTransfer.files)
+    if (e.dataTransfer.files) t.addFiles(e.dataTransfer.files)
   }
 
-  const removeImage = (id: string) => {
-    setImages((prev) => {
-      const target = prev.find((img) => img.id === id)
-      if (target) URL.revokeObjectURL(target.previewUrl)
-      return prev.filter((img) => img.id !== id)
-    })
-    setRotations((prev) => {
-      const { [id]: _drop, ...rest } = prev
-      return rest
-    })
-  }
+  const allSelected = t.images.length > 0 && t.selectedCount === t.images.length
 
-  const moveImage = (index: number, direction: -1 | 1) => {
-    setImages((prev) => {
-      const next = [...prev]
-      const swapIndex = index + direction
-      if (swapIndex < 0 || swapIndex >= next.length) return prev
-      ;[next[index], next[swapIndex]] = [next[swapIndex], next[index]]
-      return next
-    })
-  }
-
-  const rotateImage = (id: string) => {
-    setRotations((prev) => ({ ...prev, [id]: ((prev[id] || 0) + 90) % 360 }))
-  }
-
-  // Drag-to-reorder — merge mode only, since order doesn't matter for separate PDFs.
-  const handleDragStart = (index: number) => { dragIndexRef.current = index }
-  const handleDragOverItem = (e: React.DragEvent, index: number) => { e.preventDefault(); setDragOverIndex(index) }
-  const handleDragEnd = () => { dragIndexRef.current = null; setDragOverIndex(null) }
-  const handleDropReorder = (index: number) => {
-    const from = dragIndexRef.current
-    if (from === null || from === index) { handleDragEnd(); return }
-    setImages((prev) => {
-      const next = [...prev]
-      const [moved] = next.splice(from, 1)
-      next.splice(index, 0, moved)
-      return next
-    })
-    handleDragEnd()
-  }
-
-  const clearAll = () => {
-    images.forEach((img) => URL.revokeObjectURL(img.previewUrl))
-    setImages([])
-    setRotations({})
-    setErrors([])
-    setConvertedFiles([])
-    setSendNotice(null)
-  }
-
-  const triggerDownload = (blob: Blob, fileName: string) => {
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = fileName
-    link.click()
-    URL.revokeObjectURL(url)
-  }
-
-  // ─── CONVERT: MERGE MODE — all images become pages of one PDF ───────
-  const convertMerged = async (): Promise<{ failures: ConvertError[]; results: ConvertedFile[] }> => {
-    const pdf = new jsPDF({ unit: "mm", format: [PAGE_SIZES[pageSize].w, PAGE_SIZES[pageSize].h] })
-    const failures: ConvertError[] = []
-    let addedAny = false
-
-    for (let i = 0; i < images.length; i++) {
-      const { id, file } = images[i]
-      try {
-        const { dataUrl, width, height } = await compressImage(file, rotations[id] || 0, quality)
-        const { x, y, renderW, renderH } = fitToPage(width, height, PAGE_SIZES[pageSize])
-        if (addedAny) pdf.addPage([PAGE_SIZES[pageSize].w, PAGE_SIZES[pageSize].h])
-        pdf.addImage(dataUrl, "JPEG", x, y, renderW, renderH)
-        addedAny = true
-      } catch (err) {
-        failures.push({ fileName: file.name, reason: err instanceof Error ? err.message : "Failed to process this image." })
-      }
-      setProgress(Math.round(((i + 1) / images.length) * 100))
-    }
-
-    if (!addedAny) return { failures, results: [] }
-    const blob = pdf.output("blob") as Blob
-    const fileName = buildMergedFileName()
-    triggerDownload(blob, fileName)
-    return { failures, results: [{ fileName, blob }] }
-  }
-
-  // ─── CONVERT: SEPARATE MODE — each image becomes its own PDF ────────
-  const convertSeparate = async (): Promise<{ failures: ConvertError[]; results: ConvertedFile[] }> => {
-    const failures: ConvertError[] = []
-    const results: ConvertedFile[] = []
-
-    for (let i = 0; i < images.length; i++) {
-      const { id, file } = images[i]
-      try {
-        const { dataUrl, width, height } = await compressImage(file, rotations[id] || 0, quality)
-        const { x, y, renderW, renderH } = fitToPage(width, height, PAGE_SIZES[pageSize])
-        const pdf = new jsPDF({ unit: "mm", format: [PAGE_SIZES[pageSize].w, PAGE_SIZES[pageSize].h] })
-        pdf.addImage(dataUrl, "JPEG", x, y, renderW, renderH)
-        const blob = pdf.output("blob") as Blob
-        const fileName = buildSeparateFileName(file.name)
-        triggerDownload(blob, fileName)
-        results.push({ fileName, blob })
-        if (i < images.length - 1) await new Promise((r) => setTimeout(r, 350))
-      } catch (err) {
-        failures.push({ fileName: file.name, reason: err instanceof Error ? err.message : "Failed to process this image." })
-      }
-      setProgress(Math.round(((i + 1) / images.length) * 100))
-    }
-
-    return { failures, results }
-  }
-
-  const handleConvert = async () => {
-    if (images.length === 0) return
-    setIsConverting(true)
-    setProgress(0)
-    setErrors([])
-    setConvertedFiles([])
-    setSendNotice(null)
-
-    try {
-      const { failures, results } = mode === "merge" ? await convertMerged() : await convertSeparate()
-      if (failures.length > 0) setErrors(failures)
-      setConvertedFiles(results)
-      if (results.length > 0) {
-        const entries = results.map((r) => ({
-          fileName: r.fileName,
-          date: new Date().toLocaleDateString("en-ZA", { day: "2-digit", month: "short" }),
-        }))
-        const updated = [...entries, ...history].slice(0, 8)
-        setHistory(updated)
-        saveHistory(updated)
-      }
-    } catch (err) {
-      setErrors([{ fileName: "General", reason: err instanceof Error ? err.message : "Something went wrong during conversion." }])
-    } finally {
-      setIsConverting(false)
-    }
-  }
-
-  // ─── SEND TO HUB ─────────────────────────────────────────────────────
-  const handleSendToHub = async (file: ConvertedFile) => {
-    setSendNotice(null)
-    const hubLabel = HUB_NAMES[selectedHub]
-    const message = `Hi ${BIZ.name}! I converted a PDF using your JPG to PDF tool (${file.fileName}) and would like help from the ${hubLabel} with it — printing, reference, or whatever you'd recommend.`
-
-    const canNativeShare =
-      typeof navigator !== "undefined" &&
-      "share" in navigator &&
-      "canShare" in navigator &&
-      navigator.canShare({ files: [new File([file.blob], file.fileName, { type: "application/pdf" })] })
-
-    if (canNativeShare) {
-      try {
-        await navigator.share({
-          files: [new File([file.blob], file.fileName, { type: "application/pdf" })],
-          title: file.fileName,
-          text: message,
-        })
-        setSendNotice(`Share sheet opened — pick WhatsApp and send to ${hubLabel}.`)
-        return
-      } catch {
-        // user cancelled the native share — fall through to WhatsApp fallback
-      }
-    }
-
-    window.open(waLink(message), "_blank", "noopener,noreferrer")
-    setSendNotice(`WhatsApp opened — please attach the downloaded "${file.fileName}" before sending to ${hubLabel}.`)
-  }
-
-  const qualityLabel = quality >= 0.9 ? "High quality" : quality >= 0.7 ? "Balanced" : "Smaller file"
-
-  // ─── UI ──────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <main id="main-content">
-        {/* ── Hero — matches contact page's title/tagline/divider pattern ── */}
         <section className="px-4 md:px-8 pt-[calc(var(--nav-h)+2rem)] pb-6">
           <div className="max-w-[720px] mx-auto text-center">
             <ScrollBounce>
-              <div
-                className="inline-flex items-center justify-center w-14 h-14 rounded-[14px] mb-5"
-                style={{ backgroundColor: `${BRAND.blue}14` }}
-              >
-                <FilePdf weight="fill" className="w-7 h-7" style={{ color: BRAND.blue }} />
-              </div>
+              <FilePdf weight="fill" className="w-10 h-10 mx-auto mb-4" style={{ color: accentColor }} aria-hidden="true" />
               <h1 className="abh-page-title mb-3">JPG to PDF</h1>
             </ScrollBounce>
             <p className="abh-tagline max-w-md mx-auto">
@@ -420,195 +60,81 @@ export default function JpgToPdfPage() {
 
         <section className="px-4 md:px-8 pb-16">
           <div className="max-w-[720px] mx-auto">
-            {/* ── Mode toggle ── */}
             <ScrollBounce>
-              <div className="flex justify-center mb-2">
-                <div className="inline-flex rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 p-1 gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setMode("merge")}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-[10px] text-sm font-black transition-all ${mode === "merge" ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm" : "text-zinc-500 dark:text-zinc-400"}`}
-                  >
-                    <Stack weight="bold" className="w-4 h-4" />
-                    One combined PDF
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMode("separate")}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-[10px] text-sm font-black transition-all ${mode === "separate" ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm" : "text-zinc-500 dark:text-zinc-400"}`}
-                  >
-                    <Files weight="bold" className="w-4 h-4" />
-                    Separate PDFs
-                  </button>
-                </div>
-              </div>
+              <SettingsBar
+                mode={t.mode} setMode={t.setMode}
+                pageSize={t.pageSize} setPageSize={t.setPageSize}
+                qualityPreset={t.qualityPreset} setQualityPreset={t.setQualityPreset}
+                accentColor={accentColor}
+              />
             </ScrollBounce>
-            <p className="text-center text-sm text-zinc-400 mb-8">
-              {mode === "merge" ? "All images will be combined into a single PDF file." : "Each image will be saved as its own PDF file."}
-            </p>
 
-            {/* ── PDF settings card ── */}
             <ScrollBounce delay={0.05}>
-              <div className="abh-card p-5 mb-6">
-                <span className="text-[0.78rem] font-black uppercase tracking-widest text-zinc-400 mb-4 block">PDF Settings</span>
-
-                <div className="mb-5">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label htmlFor="quality-slider" className="abh-label">Quality</label>
-                    <span className="text-sm font-bold" style={{ color: BRAND.blue }}>{qualityLabel}</span>
-                  </div>
-                  <input
-                    id="quality-slider"
-                    type="range"
-                    min={0.4}
-                    max={1}
-                    step={0.05}
-                    value={quality}
-                    onChange={(e) => setQuality(Number(e.target.value))}
-                    className="w-full accent-brand-blue"
-                  />
-                  <div className="flex justify-between text-xs text-zinc-400 mt-1">
-                    <span>Smaller file</span>
-                    <span>High quality</span>
-                  </div>
-                </div>
-
-                <div>
-                  <span className="abh-label block mb-1.5">Page Size</span>
-                  <div className="inline-flex rounded-[10px] border border-zinc-100 dark:border-zinc-800 p-1 gap-1">
-                    {(Object.keys(PAGE_SIZES) as PageSize[]).map((key) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => setPageSize(key)}
-                        className={`px-4 py-2 rounded-[8px] text-sm font-black transition-all ${pageSize === key ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm" : "text-zinc-500 dark:text-zinc-400"}`}
-                      >
-                        {PAGE_SIZES[key].label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </ScrollBounce>
-
-            {/* ── Drop zone ── */}
-            <ScrollBounce delay={0.1}>
               <div
                 onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
                 onClick={() => inputRef.current?.click()}
-                className={`rounded-[14px] border-2 border-dashed cursor-pointer transition-colors flex flex-col items-center justify-center gap-3 py-14 px-6 text-center ${isDragging ? "border-brand-blue bg-brand-blue/5" : "border-zinc-200 dark:border-zinc-800 hover:border-brand-blue/50"}`}
+                className={`mt-5 rounded-[14px] border-2 border-dashed cursor-pointer transition-colors flex flex-col items-center justify-center gap-2.5 py-10 px-6 text-center ${isDragging ? "border-brand-blue bg-brand-blue/5" : "border-zinc-200 dark:border-zinc-800 hover:border-brand-blue/50"}`}
               >
-                <UploadSimple weight="bold" className="w-8 h-8 text-zinc-400" />
-                <p className="font-medium text-zinc-700 dark:text-zinc-300">Drag & drop images here, or tap to browse</p>
-                <p className="text-sm text-zinc-400">JPG or PNG · up to {MAX_FILES} images · {MAX_FILE_SIZE_MB}MB each</p>
+                <UploadSimple weight="bold" className="w-7 h-7 text-zinc-400" aria-hidden="true" />
+                <p className="font-medium text-sm text-zinc-700 dark:text-zinc-300">Drag & drop, or tap to browse</p>
+                <p className="text-xs text-zinc-400">JPG or PNG · up to 20 images</p>
                 <input ref={inputRef} type="file" accept="image/jpeg,image/png" multiple onChange={handleFileInput} className="hidden" />
               </div>
             </ScrollBounce>
 
-            {/* ── Errors ── */}
-            {errors.length > 0 && (
-              <div className="mt-6 rounded-[14px] border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <WarningCircle weight="fill" className="w-5 h-5 text-red-500 shrink-0" />
-                  <span className="font-black text-sm text-red-700 dark:text-red-300">{errors.length} issue{errors.length > 1 ? "s" : ""} found</span>
-                </div>
-                <ul className="flex flex-col gap-1 pl-7">
-                  {errors.map((err, i) => (
-                    <li key={i} className="text-sm text-red-600 dark:text-red-400">
-                      <span className="font-semibold">{err.fileName}:</span> {err.reason}
-                    </li>
-                  ))}
-                </ul>
+            {t.errors.length > 0 && (
+              <div className="mt-4 flex items-center gap-2 rounded-[12px] bg-red-50 dark:bg-red-950/30 px-4 py-2.5" aria-live="polite">
+                <WarningCircle weight="fill" className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" />
+                <span className="text-sm text-red-600 dark:text-red-400">
+                  {t.errors.length} file{t.errors.length > 1 ? "s" : ""} skipped — check thumbnails below for details.
+                </span>
               </div>
             )}
 
-            {/* ── Selected images list ── */}
-            {images.length > 0 && (
-              <div className="mt-10">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-[0.84rem] font-black uppercase tracking-widest text-zinc-400">
-                    {images.length} image{images.length > 1 ? "s" : ""} selected
-                  </h2>
-                  <button type="button" onClick={clearAll} className="text-sm font-semibold text-zinc-400 hover:text-red-500 transition-colors">
-                    Clear all
+            {t.images.length > 0 && (
+              <div className="mt-8">
+                <div className="flex items-center justify-between mb-3">
+                  <button type="button" onClick={() => t.selectAll(!allSelected)} className="text-sm font-black" style={{ color: accentColor }}>
+                    {allSelected ? "Deselect all" : "Select all"}
+                  </button>
+                  <span className="text-sm font-semibold text-zinc-400">{t.selectedCount} of {t.images.length} selected</span>
+                  <button type="button" onClick={t.clearAll} className="text-sm font-semibold text-zinc-400 hover:text-red-500 transition-colors">
+                    Clear
                   </button>
                 </div>
 
-                <ul className="flex flex-col gap-3">
-                  {images.map((img, index) => (
-                    <li
-                      key={img.id}
-                      draggable={mode === "merge"}
-                      onDragStart={() => handleDragStart(index)}
-                      onDragOver={(e) => handleDragOverItem(e, index)}
-                      onDrop={() => handleDropReorder(index)}
-                      onDragEnd={handleDragEnd}
-                      className={`flex items-center gap-4 rounded-[14px] border p-3 transition-all ${
-                        dragOverIndex === index
-                          ? "border-brand-blue bg-brand-blue/5"
-                          : "border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40"
-                      } ${mode === "merge" ? "cursor-grab active:cursor-grabbing" : ""}`}
-                    >
-                      <div
-                        className="relative w-14 h-14 rounded-[10px] overflow-hidden shrink-0 bg-zinc-200 dark:bg-zinc-800"
-                        style={{ transform: `rotate(${rotations[img.id] || 0}deg)` }}
-                      >
-                        <Image src={img.previewUrl} alt="" fill className="object-cover" unoptimized />
-                      </div>
-                      <span className="flex-1 min-w-0 truncate text-sm font-medium text-zinc-700 dark:text-zinc-300">{img.file.name}</span>
-                      <button type="button" onClick={() => rotateImage(img.id)} aria-label="Rotate image" className="w-8 h-8 rounded-[10px] flex items-center justify-center text-zinc-400 hover:text-brand-blue transition-colors shrink-0">
-                        <ArrowsClockwise weight="bold" className="w-4 h-4" />
-                      </button>
-                      {mode === "merge" && (
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button type="button" onClick={() => moveImage(index, -1)} disabled={index === 0} aria-label="Move up" className="w-8 h-8 rounded-[10px] flex items-center justify-center text-zinc-400 hover:text-brand-blue disabled:opacity-30 transition-colors">
-                            <ArrowUp weight="bold" className="w-4 h-4" />
-                          </button>
-                          <button type="button" onClick={() => moveImage(index, 1)} disabled={index === images.length - 1} aria-label="Move down" className="w-8 h-8 rounded-[10px] flex items-center justify-center text-zinc-400 hover:text-brand-blue disabled:opacity-30 transition-colors">
-                            <ArrowDown weight="bold" className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                      <button type="button" onClick={() => removeImage(img.id)} aria-label="Remove image" className="w-8 h-8 rounded-[10px] flex items-center justify-center text-zinc-400 hover:text-red-500 transition-colors shrink-0">
-                        <X weight="bold" className="w-4 h-4" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                <ImageList
+                  images={t.images}
+                  mode={t.mode}
+                  rotations={t.rotations}
+                  errors={t.errors}
+                  convertedIds={t.convertedIds}
+                  accentColor={accentColor}
+                  onToggleSelect={t.toggleSelect}
+                  onRotate={t.rotateImage}
+                  onMove={t.moveImage}
+                  onRemove={t.removeImage}
+                  onReorder={t.reorder}
+                />
 
-                {estimatedBytes !== null && (
-                  <p className="text-center text-sm text-zinc-400 mt-4">Estimated size: ~{formatBytes(estimatedBytes)}</p>
-                )}
+                <ReconvertBanner prompt={t.reconvertPrompt} onResolve={t.resolveReconvert} />
 
-                {/* ── Convert button ── */}
                 <div className="mt-6 flex justify-center">
                   <button
                     type="button"
-                    onClick={handleConvert}
-                    disabled={isConverting}
-                    className="w-full max-w-[260px] rounded-[14px] font-black py-3.5 flex items-center justify-center gap-3 text-white active:scale-[0.99] transition-all disabled:opacity-80"
-                    style={{ backgroundColor: BRAND.blue }}
+                    onClick={t.requestConvert}
+                    disabled={t.isConverting || t.selectedCount === 0}
+                    className="rounded-[14px] font-black py-3 px-8 flex items-center justify-center gap-2.5 text-white active:scale-[0.99] transition-all disabled:opacity-60"
+                    style={{ backgroundColor: accentColor }}
                   >
-                    {isConverting ? (
-                      <>
-                        <svg viewBox="0 0 36 36" className="w-6 h-6 shrink-0 -rotate-90">
-                          <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="3" />
-                          <circle
-                            cx="18" cy="18" r="15.5" fill="none" stroke="#ffffff" strokeWidth="3"
-                            strokeDasharray={2 * Math.PI * 15.5}
-                            strokeDashoffset={2 * Math.PI * 15.5 * (1 - progress / 100)}
-                            strokeLinecap="round"
-                            style={{ transition: "stroke-dashoffset 200ms ease-out" }}
-                          />
-                        </svg>
-                        <span className="text-sm">{progress}%</span>
-                      </>
+                    {t.isConverting ? (
+                      <span className="text-sm" aria-live="polite">{t.progress}%</span>
                     ) : (
                       <>
-                        <FilePdf weight="fill" className="w-5 h-5" />
-                        {mode === "merge" ? "Convert to PDF" : "Convert to PDFs"}
+                        <FilePdf weight="fill" className="w-4 h-4" aria-hidden="true" />
+                        <span className="text-sm">Convert</span>
                       </>
                     )}
                   </button>
@@ -616,89 +142,25 @@ export default function JpgToPdfPage() {
               </div>
             )}
 
-            {/* ── Post-conversion: download confirmed + send to a Hub ── */}
-            {convertedFiles.length > 0 && (
-              <ScrollBounce>
-                <div className="mt-10 abh-card p-5 text-center">
-                  <div className="flex items-center justify-center gap-2 mb-1">
-                    <CheckCircle weight="fill" className="w-5 h-5 text-green-600 shrink-0" />
-                    <span className="text-sm font-black text-green-700 dark:text-green-300">
-                      {convertedFiles.length} PDF{convertedFiles.length > 1 ? "s" : ""} downloaded to your device
-                    </span>
-                  </div>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-5">
-                    Want ApexbytesHub to help with printing or anything else? Send it straight to a Hub.
-                  </p>
+            <ResultsPanel
+              convertedFiles={t.convertedFiles}
+              selectedHub={t.selectedHub}
+              setSelectedHub={t.setSelectedHub}
+              sendNotice={t.sendNotice}
+              accentColor={accentColor}
+              onSend={t.handleSendToHub}
+              onAddMore={() => inputRef.current?.click()}
+            />
 
-                  <div className="flex flex-wrap justify-center gap-2 mb-5">
-                    {SENDABLE_HUBS.map((hubKey) => (
-                      <button
-                        key={hubKey}
-                        type="button"
-                        onClick={() => setSelectedHub(hubKey)}
-                        className={`px-3.5 py-2 rounded-[10px] text-sm font-black border-2 transition-all ${
-                          selectedHub === hubKey
-                            ? "text-white border-transparent"
-                            : "text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
-                        }`}
-                        style={selectedHub === hubKey ? { backgroundColor: BRAND.blue } : undefined}
-                      >
-                        {HUB_NAMES[hubKey]}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="flex flex-col gap-2 max-w-[360px] mx-auto">
-                    {convertedFiles.map((file) => (
-                      <button
-                        key={file.fileName}
-                        type="button"
-                        onClick={() => handleSendToHub(file)}
-                        className="flex items-center justify-center gap-2 rounded-[10px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 py-2.5 px-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:border-brand-blue hover:text-brand-blue transition-colors"
-                      >
-                        <PaperPlaneTilt weight="fill" className="w-4 h-4" />
-                        Send {file.fileName} to {HUB_NAMES[selectedHub]}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => inputRef.current?.click()}
-                      className="abh-btn-primary justify-center py-2.5 px-4 font-semibold"
-                    >
-                      <Plus size={16} weight="bold" />
-                      Add more photos
-                    </button>
-                  </div>
-
-                  {sendNotice && (
-                    <p className="mt-4 text-sm font-medium text-zinc-500 dark:text-zinc-400">{sendNotice}</p>
-                  )}
-                </div>
-              </ScrollBounce>
-            )}
-
-            {/* ── Recently converted ── */}
-            {history.length > 0 && (
-              <ScrollBounce delay={0.05}>
-                <div className="mt-6 abh-card p-5">
-                  <span className="text-[0.78rem] font-black uppercase tracking-widest text-zinc-400 mb-3 flex items-center gap-1.5">
-                    <ClockCounterClockwise weight="fill" size={14} />
-                    Recently Converted
-                  </span>
-                  <ul className="flex flex-col gap-2">
-                    {history.map((entry, i) => (
-                      <li key={`${entry.fileName}-${i}`} className="flex items-center justify-between text-sm">
-                        <span className="text-zinc-700 dark:text-zinc-300 truncate">{entry.fileName}</span>
-                        <span className="text-zinc-400 shrink-0 ml-3">{entry.date}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="abh-muted mt-3 text-xs">For reference only — files aren't stored, so re-convert if you need one again.</p>
-                </div>
-              </ScrollBounce>
-            )}
+            <HistoryPanel history={t.history} onClear={t.clearRecents} />
           </div>
         </section>
+
+        <CtaBar
+          title="Need something printed?"
+          description="WhatsApp us or visit us in Kgotsong, Bothaville — we're always happy to help."
+          buttonText="WhatsApp Us Now"
+        />
       </main>
       <Footer />
     </div>
