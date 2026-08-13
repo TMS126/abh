@@ -7,6 +7,7 @@ import { CheckCircle, PaperPlaneTilt, Plus, DownloadSimple } from "@phosphor-ico
 import { HUB_NAMES, type HubKey } from "@/lib/brand"
 import { SimpleDropdown } from "@/components/ui/simple-dropdown"
 import { SENDABLE_HUBS } from "./constants"
+import { formatBytes } from "./utils"
 import type { ConvertedFile } from "./types"
 
 export function ResultsPanel({
@@ -23,6 +24,8 @@ export function ResultsPanel({
   const [fileName, setFileName] = useState(convertedFiles[0]?.fileName || "")
   useEffect(() => { if (convertedFiles.length > 0) setFileName(convertedFiles[0].fileName) }, [convertedFiles])
 
+  const totalActualBytes = convertedFiles.reduce((sum, f) => sum + f.blob.size, 0)
+
   return (
     <AnimatePresence>
       {convertedFiles.length > 0 && (
@@ -33,6 +36,10 @@ export function ResultsPanel({
               {convertedFiles.length} file{convertedFiles.length > 1 ? "s" : ""} converted
             </span>
           </div>
+          {/* Real measured size of the actual output — not an estimate. */}
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">
+            Actual size: {formatBytes(totalActualBytes)}
+          </p>
           <div className="flex items-center justify-center gap-1.5 text-xs text-zinc-400 mb-6">
             <DownloadSimple size={13} weight="bold" aria-hidden="true" />
             Saved to your device automatically
@@ -41,7 +48,7 @@ export function ResultsPanel({
           <div className="flex flex-wrap justify-center gap-2 mb-4">
             {convertedFiles.length > 1 && (
               <SimpleDropdown label="File" value={fileName} accentColor={accentColor} onChange={setFileName}
-                options={convertedFiles.map((f) => ({ value: f.fileName, label: f.fileName }))} />
+                options={convertedFiles.map((f) => ({ value: f.fileName, label: `${f.fileName} · ${formatBytes(f.blob.size)}` }))} />
             )}
             <SimpleDropdown label="Hub" value={selectedHub} accentColor={accentColor}
               onChange={(v) => setSelectedHub(v as HubKey)}
@@ -73,4 +80,4 @@ export function ResultsPanel({
       )}
     </AnimatePresence>
   )
-              } 
+} 
