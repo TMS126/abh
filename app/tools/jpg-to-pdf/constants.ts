@@ -2,11 +2,21 @@
 import type { HubKey } from "@/lib/brand"
 import type { PageSize, ConvertMode } from "./types"
 
-// webp added alongside jpg/png — well-supported, safe to accept as input.
 export const ACCEPTED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
 export const MAX_FILES = 20
 export const MAX_FILE_SIZE_MB = 15
 export const HISTORY_KEY = "abh-jpg-to-pdf-history"
+
+// Phone camera files sometimes report an empty/nonstandard file.type —
+// fall back to the extension so real photos aren't rejected.
+export const EXT_TYPE_FALLBACK: Record<string, string> = {
+  jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp",
+}
+
+// Caps the canvas at 2200px on the long edge — still ~267 DPI on an A4
+// page (print-quality) but stops full-resolution phone camera photos
+// (often 4000px+) from exceeding mobile canvas memory limits.
+export const MAX_CANVAS_DIMENSION = 2200
 
 export const SENDABLE_HUBS: HubKey[] = ["print", "doc", "design", "eservice", "tech"]
 
@@ -18,4 +28,22 @@ export const PAGE_SIZES: Record<PageSize, { w: number; h: number; label: string 
 export const MODE_LABELS: Record<ConvertMode, string> = {
   merge: "One combined PDF",
   separate: "Separate PDFs",
-} 
+}
+
+export const PAGE_TIPS = [
+  "Converted files save straight to your device — no upload, no waiting.",
+  "Crop before converting to trim out backgrounds and clutter.",
+  "Bulk-select photos and merge them into one tidy PDF.",
+  "Drag the quality slider down for WhatsApp-friendly file sizes.",
+  "Rotate sideways photos with one tap before converting.",
+  "Need it printed? Send your PDF straight to ApexbytesHub.",
+]
+
+export const WHATSAPP_MAGIC_PHRASES = [
+  "Chat With Us →",
+  "Say Hi on WhatsApp 👋",
+  "Tap to Chat",
+  "We're Listening 💬",
+  "Ping Us Now",
+  "Let's Talk →",
+] 
