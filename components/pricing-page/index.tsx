@@ -63,7 +63,6 @@ export default function PricingPage() {
     addedTimerRef.current = setTimeout(() => setJustAdded(null), 900)
   }, [])
 
-  // FIX: new — mirrors handleAdd, dispatches the matching remove event.
   const handleRemove = useCallback((hubId: HubId, sectionTitle: string, name: string, price: string) => {
     dispatchRemoveFromQuote(hubId, sectionTitle, name, price)
   }, [])
@@ -195,9 +194,6 @@ export default function PricingPage() {
                       onAdd={(section, name, price) => handleAdd(hubId, section, name, price)}
                       onRemove={(section, name, price) => handleRemove(hubId, section, name, price)}
                       onDownload={() => handleHubDownload(hubId)}
-                      // FIX: swapped the percent-computing bulkPercentFor
-                      // prop for a plain boolean check via itemHasBulk —
-                      // matches "only show when bulk applies, no percent".
                       hasBulk={(section, name) => itemHasBulk(hubId, section, name)}
                       cardRef={(el) => { hubRefs.current[hubId] = el }}
                     />
@@ -242,4 +238,4 @@ export default function PricingPage() {
       </div>
     </>
   )
-    } 
+                                                                       } 
