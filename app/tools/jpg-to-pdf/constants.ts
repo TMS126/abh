@@ -46,4 +46,21 @@ export const WHATSAPP_MAGIC_PHRASES = [
   "We're Listening 💬",
   "Ping Us Now",
   "Let's Talk →",
-] 
+]
+
+// ─── CROP MODAL ─────────────────────────────────────────────────────────
+// Popular rectangular aspect-ratio presets. `null` ratio = free-form
+// rectangle (any width/height). Ratio is width/height.
+export const CROP_ASPECT_PRESETS: { label: string; ratio: number | null }[] = [
+  { label: "Free", ratio: null },
+  { label: "1:1", ratio: 1 },
+  { label: "4:3", ratio: 4 / 3 },
+  { label: "3:4", ratio: 3 / 4 },
+  { label: "16:9", ratio: 16 / 9 },
+  { label: "9:16", ratio: 9 / 16 },
+]
+
+// Grid resolution for the perspective-warp mesh in utils.ts — higher is
+// smoother but costs more canvas draw calls (cells * 2 triangles each).
+// 14 is a good quality/speed balance for a one-off conversion on mobile.
+export const PERSPECTIVE_WARP_GRID = 14
