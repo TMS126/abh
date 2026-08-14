@@ -48,12 +48,20 @@ export function useJpgToPdf() {
   }, [images, quality, rotations])
 
   // ─── FILE INTAKE ────────────────────────────────────────────────────────
+  // Re-uploading a file identical to one already in the grid (same name +
+  // size + lastModified — a reliable enough fingerprint without hashing
+  // file contents) replaces that existing entry in place: fresh preview,
+  // rotation/crop reset, converted/error status cleared. This means
+  // re-uploading the same photo repeatedly never consumes a new slot and
+  // never approaches MAX_FILES, so a long session isn't quietly blocked
+  // by the cap counting stale converted entries the user never removed.
   const addFiles = useCallback((fileList: FileList | File[]) => {
     setConvertedFiles([])
     setSendNotice(null)
     setReconvertPrompt(null)
     const incomingErrors: ConvertError[] = []
-    const accepted: ImageItem[] = []
+    const toAppend: ImageItem[] = []
+    const replacements: { targetId: string; file: File; previewUrl: string }[] = []
     let slotsLeft = MAX_FILES - images.length
 
     Array.from(fileList).forEach((file) => {
@@ -65,12 +73,21 @@ export function useJpgToPdf() {
         incomingErrors.push({ fileName: file.name, reason: `Over ${MAX_FILE_SIZE_MB}MB — try a smaller image.` })
         return
       }
+
+      const existing = images.find(
+        (img) => img.file.name === file.name && img.file.size === file.size && img.file.lastModified === file.lastModified
+      )
+      if (existing) {
+        replacements.push({ targetId: existing.id, file, previewUrl: URL.createObjectURL(file) })
+        return
+      }
+
       if (slotsLeft <= 0) {
         incomingErrors.push({ fileName: file.name, reason: `Skipped — ${MAX_FILES} image limit reached.` })
         return
       }
       slotsLeft -= 1
-      accepted.push({
+      toAppend.push({
         id: `${file.name}-${file.lastModified}-${Math.random().toString(36).slice(2, 8)}`,
         file,
         previewUrl: URL.createObjectURL(file),
@@ -78,24 +95,52 @@ export function useJpgToPdf() {
       })
     })
 
-    if (accepted.length > 0) {
-      setImages((prev) => [...prev, ...accepted])
-      accepted.forEach((item) => {
-        generateThumbnail(item.file)
-          .then((thumbUrl) => {
-            setImages((prev) =>
-              prev.map((img) => {
-                if (img.id !== item.id) return img
-                URL.revokeObjectURL(img.previewUrl)
-                return { ...img, previewUrl: thumbUrl }
-              })
-            )
-          })
-          .catch(() => {})
+    if (replacements.length > 0) {
+      setImages((prev) =>
+        prev.map((img) => {
+          const r = replacements.find((rep) => rep.targetId === img.id)
+          if (!r) return img
+          URL.revokeObjectURL(img.previewUrl)
+          return { ...img, file: r.file, previewUrl: r.previewUrl, selected: true, crop: undefined }
+        })
+      )
+      setRotations((prev) => {
+        const next = { ...prev }
+        replacements.forEach((r) => { delete next[r.targetId] })
+        return next
       })
+      setConvertedIds((prev) => {
+        const next = new Set(prev)
+        replacements.forEach((r) => next.delete(r.targetId))
+        return next
+      })
+      setErrors((prev) => prev.filter((e) => !replacements.some((r) => r.targetId === e.id)))
     }
+
+    if (toAppend.length > 0) setImages((prev) => [...prev, ...toAppend])
+
+    // Generate downscaled thumbnails for both freshly appended and
+    // replaced images.
+    const toThumbnail = [
+      ...toAppend.map((item) => ({ id: item.id, file: item.file })),
+      ...replacements.map((r) => ({ id: r.targetId, file: r.file })),
+    ]
+    toThumbnail.forEach((item) => {
+      generateThumbnail(item.file)
+        .then((thumbUrl) => {
+          setImages((prev) =>
+            prev.map((img) => {
+              if (img.id !== item.id) return img
+              URL.revokeObjectURL(img.previewUrl)
+              return { ...img, previewUrl: thumbUrl }
+            })
+          )
+        })
+        .catch(() => {})
+    })
+
     setErrors(incomingErrors)
-  }, [images.length])
+  }, [images])
 
   // ─── IMAGE ACTIONS ──────────────────────────────────────────────────────
   const removeImage = (id: string) => {
@@ -112,6 +157,8 @@ export function useJpgToPdf() {
   const rotateImage = (id: string) => setRotations((p) => ({ ...p, [id]: ((p[id] || 0) + 90) % 360 }))
   const resetRotation = (id: string) => setRotations((p) => ({ ...p, [id]: 0 }))
   const setCrop = (id: string, crop: CropRect | undefined) => setImages((p) => p.map((i) => (i.id === id ? { ...i, crop } : i)))
+
+  const retryImage = (id: string) => setErrors((prev) => prev.filter((e) => e.id !== id))
 
   const reorder = (from: number, to: number) => {
     if (from === to || Number.isNaN(from)) return
@@ -244,8 +291,6 @@ export function useJpgToPdf() {
   }
 
   // ─── SEND ───────────────────────────────────────────────────────────────
-  // No hub routing — there's one WhatsApp number, so the message is just
-  // a plain, honest heads-up rather than pretending to pick a department.
   const handleSend = async (file: ConvertedFile) => {
     setSendNotice(null)
     const message = `Hi ${BIZ.name}! I converted a PDF using your JPG to PDF tool (${file.fileName}) and would like some help with it.`
@@ -275,7 +320,7 @@ export function useJpgToPdf() {
     images, mode, setMode, pageSize, setPageSize, quality, setQuality,
     rotations, isConverting, progress, errors, convertedFiles, convertedIds, reconvertPrompt,
     sendNotice, history, selectedCount, estimatedBytes,
-    addFiles, removeImage, toggleSelect, selectAll, rotateImage, resetRotation, setCrop, reorder,
+    addFiles, removeImage, toggleSelect, selectAll, rotateImage, resetRotation, setCrop, retryImage, reorder,
     clearAll, requestConvert, resolveReconvert, handleSend, clearRecents,
   }
-                                    } 
+      }
