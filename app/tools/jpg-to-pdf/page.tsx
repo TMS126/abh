@@ -1,3 +1,4 @@
+// app/tools/jpg-to-pdf/page.tsx
 "use client"
 
 import { useRef, useState, useEffect } from "react"
@@ -25,7 +26,6 @@ export default function JpgToPdfPage() {
   const [zoomId, setZoomId] = useState<string | null>(null)
   const [cropId, setCropId] = useState<string | null>(null)
 
-  // ─── RANDOM TIP / WHATSAPP PHRASE (picked once per page load) ─────────
   const [tip] = useState(() => PAGE_TIPS[Math.floor(Math.random() * PAGE_TIPS.length)])
   const [waPhrase] = useState(() => WHATSAPP_MAGIC_PHRASES[Math.floor(Math.random() * WHATSAPP_MAGIC_PHRASES.length)])
 
@@ -76,7 +76,6 @@ export default function JpgToPdfPage() {
         {/* ─── MAIN LAYOUT: SIDEBAR + GRID ───────────────────────────── */}
         <section className="px-4 md:px-8 pb-16">
           <div className="max-w-[1100px] mx-auto lg:grid lg:grid-cols-[340px_1fr] lg:gap-10 lg:items-start">
-            {/* Desktop: sticky control sidebar. Mobile: stacks on top. */}
             <div className="lg:sticky lg:top-24 flex flex-col gap-5">
               <ScrollBounce>
                 <SettingsBar
@@ -94,16 +93,19 @@ export default function JpgToPdfPage() {
                   onDragLeave={() => setIsDragging(false)}
                   onDrop={handleDrop}
                   onClick={() => inputRef.current?.click()}
-                  className={`rounded-[14px] border-2 border-dashed cursor-pointer transition-colors flex flex-col items-center justify-center gap-2.5 py-10 px-6 text-center ${isDragging ? "border-brand-blue bg-brand-blue/5" : "border-zinc-200 dark:border-zinc-800 hover:border-brand-blue/50"}`}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") inputRef.current?.click() }}
+                  aria-label="Upload images: drag and drop, or press Enter to browse"
+                  className={`rounded-[14px] border-2 border-dashed cursor-pointer transition-colors flex flex-col items-center justify-center gap-2.5 py-10 px-6 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue ${isDragging ? "border-brand-blue bg-brand-blue/5" : "border-zinc-200 dark:border-zinc-800 hover:border-brand-blue/50"}`}
                 >
                   <UploadSimple weight="bold" className="w-7 h-7 text-zinc-400" aria-hidden="true" />
                   <p className="font-medium text-sm text-zinc-700 dark:text-zinc-300">Drag & drop, or tap to browse</p>
                   <p className="text-xs text-zinc-400">JPG, PNG or WEBP · up to 20 images</p>
-                  <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={handleFileInput} className="hidden" />
+                  <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={handleFileInput} className="hidden" aria-hidden="true" tabIndex={-1} />
                 </div>
               </ScrollBounce>
 
-              {/* ─── ERROR BANNER ───────────────────────────────────── */}
               {t.errors.length > 0 && (
                 <div className="flex items-center gap-2 rounded-[12px] bg-red-50 dark:bg-red-950/30 px-4 py-2.5" aria-live="polite">
                   <WarningCircle weight="fill" className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" />
@@ -139,6 +141,7 @@ export default function JpgToPdfPage() {
                     onRemove={t.removeImage}
                     onZoom={setZoomId}
                     onCrop={setCropId}
+                    onRetry={t.retryImage}
                     onReorder={t.reorder}
                   />
 
@@ -171,7 +174,6 @@ export default function JpgToPdfPage() {
           </div>
         </section>
 
-        {/* ─── CTA: RANDOM TIP + WHATSAPP PHRASE ─────────────────────── */}
         <CtaBar
           pillLabel="Tips"
           title="While You're Here"
@@ -199,4 +201,4 @@ export default function JpgToPdfPage() {
       )}
     </div>
   )
-} 
+                  }
