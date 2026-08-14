@@ -3,7 +3,7 @@
 
 import { useState, useCallback, useEffect } from "react"
 import { jsPDF } from "jspdf"
-import { BIZ, HUB_NAMES, waLink, type HubKey } from "@/lib/brand"
+import { BIZ, waLink } from "@/lib/brand"
 import { ACCEPTED_TYPES, MAX_FILES, MAX_FILE_SIZE_MB, PAGE_SIZES } from "./constants"
 import { buildFileName, compressImage, fitToPage, loadHistory, saveHistory, clearHistory, resolveFileType, generateThumbnail } from "./utils"
 import type { ImageItem, ConvertMode, PageSize, ConvertError, ConvertedFile, HistoryEntry, ReconvertPrompt, CropRect } from "./types"
@@ -21,7 +21,6 @@ export function useJpgToPdf() {
   const [convertedFiles, setConvertedFiles] = useState<ConvertedFile[]>([])
   const [convertedIds, setConvertedIds] = useState<Set<string>>(new Set())
   const [reconvertPrompt, setReconvertPrompt] = useState<ReconvertPrompt>(null)
-  const [selectedHub, setSelectedHub] = useState<HubKey>("print")
   const [sendNotice, setSendNotice] = useState<string | null>(null)
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [estimatedBytes, setEstimatedBytes] = useState<number | null>(null)
@@ -74,8 +73,6 @@ export function useJpgToPdf() {
       accepted.push({
         id: `${file.name}-${file.lastModified}-${Math.random().toString(36).slice(2, 8)}`,
         file,
-        // Immediate full-file preview for responsiveness — swapped for a
-        // downscaled thumbnail below as soon as it's ready.
         previewUrl: URL.createObjectURL(file),
         selected: true,
       })
@@ -83,10 +80,6 @@ export function useJpgToPdf() {
 
     if (accepted.length > 0) {
       setImages((prev) => [...prev, ...accepted])
-
-      // Downscale each preview in the background and swap it in, revoking
-      // the heavy full-file blob URL. Keeps the session's memory footprint
-      // low even after many images and repeat conversions.
       accepted.forEach((item) => {
         generateThumbnail(item.file)
           .then((thumbUrl) => {
@@ -98,10 +91,7 @@ export function useJpgToPdf() {
               })
             )
           })
-          .catch(() => {
-            // Keep the original full-file preview if thumbnailing fails —
-            // still functional, just heavier.
-          })
+          .catch(() => {})
       })
     }
     setErrors(incomingErrors)
@@ -253,11 +243,12 @@ export function useJpgToPdf() {
     if (ids.length > 0) runConvert(ids)
   }
 
-  // ─── SEND TO HUB ────────────────────────────────────────────────────────
-  const handleSendToHub = async (file: ConvertedFile) => {
+  // ─── SEND ───────────────────────────────────────────────────────────────
+  // No hub routing — there's one WhatsApp number, so the message is just
+  // a plain, honest heads-up rather than pretending to pick a department.
+  const handleSend = async (file: ConvertedFile) => {
     setSendNotice(null)
-    const hubLabel = HUB_NAMES[selectedHub]
-    const message = `Hi ${BIZ.name}! I converted a PDF using your JPG to PDF tool (${file.fileName}) and would like help from the ${hubLabel} with it — printing, reference, or whatever you'd recommend.`
+    const message = `Hi ${BIZ.name}! I converted a PDF using your JPG to PDF tool (${file.fileName}) and would like some help with it.`
 
     const canNativeShare =
       typeof navigator !== "undefined" && "share" in navigator && "canShare" in navigator &&
@@ -266,14 +257,14 @@ export function useJpgToPdf() {
     if (canNativeShare) {
       try {
         await navigator.share({ files: [new File([file.blob], file.fileName, { type: "application/pdf" })], title: file.fileName, text: message })
-        setSendNotice(`Share sheet opened — pick WhatsApp and send to ${hubLabel}.`)
+        setSendNotice("Share sheet opened — pick WhatsApp to send it over.")
         return
       } catch {
         // user cancelled — fall through to WhatsApp fallback
       }
     }
     window.open(waLink(message), "_blank", "noopener,noreferrer")
-    setSendNotice(`WhatsApp opened — attach "${file.fileName}" before sending to ${hubLabel}.`)
+    setSendNotice(`WhatsApp opened — attach "${file.fileName}" before sending.`)
   }
 
   const clearRecents = () => { clearHistory(); setHistory([]) }
@@ -283,8 +274,8 @@ export function useJpgToPdf() {
   return {
     images, mode, setMode, pageSize, setPageSize, quality, setQuality,
     rotations, isConverting, progress, errors, convertedFiles, convertedIds, reconvertPrompt,
-    selectedHub, setSelectedHub, sendNotice, history, selectedCount, estimatedBytes,
+    sendNotice, history, selectedCount, estimatedBytes,
     addFiles, removeImage, toggleSelect, selectAll, rotateImage, resetRotation, setCrop, reorder,
-    clearAll, requestConvert, resolveReconvert, handleSendToHub, clearRecents,
+    clearAll, requestConvert, resolveReconvert, handleSend, clearRecents,
   }
-        } 
+                                    } 
