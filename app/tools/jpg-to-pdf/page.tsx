@@ -1,4 +1,3 @@
-// app/tools/jpg-to-pdf/page.tsx
 "use client"
 
 import { useRef, useState, useEffect } from "react"
@@ -18,12 +17,17 @@ import { CropModal } from "./crop-modal"
 import { ReconvertBanner } from "./reconvert-banner"
 import { ResultsPanel } from "./results-panel"
 import { HistoryPanel } from "./history-panel"
+import { PAGE_TIPS, WHATSAPP_MAGIC_PHRASES } from "./constants"
 
 export default function JpgToPdfPage() {
   const inputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [zoomId, setZoomId] = useState<string | null>(null)
   const [cropId, setCropId] = useState<string | null>(null)
+
+  // ─── RANDOM TIP / WHATSAPP PHRASE (picked once per page load) ─────────
+  const [tip] = useState(() => PAGE_TIPS[Math.floor(Math.random() * PAGE_TIPS.length)])
+  const [waPhrase] = useState(() => WHATSAPP_MAGIC_PHRASES[Math.floor(Math.random() * WHATSAPP_MAGIC_PHRASES.length)])
 
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -55,6 +59,7 @@ export default function JpgToPdfPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main id="main-content">
+        {/* ─── HERO ───────────────────────────────────────────────────── */}
         <section className="px-4 md:px-8 pt-[calc(var(--nav-h)+2rem)] pb-6">
           <div className="max-w-[720px] mx-auto text-center">
             <ScrollBounce>
@@ -68,6 +73,7 @@ export default function JpgToPdfPage() {
           </div>
         </section>
 
+        {/* ─── MAIN LAYOUT: SIDEBAR + GRID ───────────────────────────── */}
         <section className="px-4 md:px-8 pb-16">
           <div className="max-w-[1100px] mx-auto lg:grid lg:grid-cols-[340px_1fr] lg:gap-10 lg:items-start">
             {/* Desktop: sticky control sidebar. Mobile: stacks on top. */}
@@ -97,11 +103,12 @@ export default function JpgToPdfPage() {
                 </div>
               </ScrollBounce>
 
+              {/* ─── ERROR BANNER ───────────────────────────────────── */}
               {t.errors.length > 0 && (
                 <div className="flex items-center gap-2 rounded-[12px] bg-red-50 dark:bg-red-950/30 px-4 py-2.5" aria-live="polite">
                   <WarningCircle weight="fill" className="w-4 h-4 text-red-500 shrink-0" aria-hidden="true" />
                   <span className="text-sm text-red-600 dark:text-red-400">
-                    {t.errors.length} file{t.errors.length > 1 ? "s" : ""} skipped — check thumbnails for details.
+                    {t.errors.length} issue{t.errors.length > 1 ? "s" : ""} found — check thumbnails for details.
                   </span>
                 </div>
               )}
@@ -166,10 +173,12 @@ export default function JpgToPdfPage() {
           </div>
         </section>
 
+        {/* ─── CTA: RANDOM TIP + WHATSAPP PHRASE ─────────────────────── */}
         <CtaBar
-          title="Need something printed?"
-          description="WhatsApp us or visit us in Kgotsong, Bothaville — we're always happy to help."
-          buttonText="WhatsApp Us Now"
+          pillLabel="Tips"
+          title="While You're Here"
+          description={tip}
+          buttonText={waPhrase}
         />
       </main>
       <Footer />
@@ -192,4 +201,4 @@ export default function JpgToPdfPage() {
       )}
     </div>
   )
-    } 
+} 
