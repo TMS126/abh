@@ -1,3 +1,4 @@
+// app/tools/jpg-to-pdf/image-grid.tsx
 "use client"
 
 import Image from "next/image"
@@ -23,13 +24,17 @@ export function ImageGrid({
   onCrop: (id: string) => void
   onReorder: (from: number, to: number) => void
 }) {
-  const errorFor = (fileName: string) => errors.find((e) => e.fileName === fileName)
+  // Matches by id when the error has one (conversion failures always do),
+  // so duplicate filenames don't cross-contaminate each other's overlay.
+  // Falls back to filename only for the rare case of an id-less error.
+  const errorFor = (img: ImageItem) =>
+    errors.find((e) => (e.id ? e.id === img.id : e.fileName === img.file.name))
 
   return (
     <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
       <AnimatePresence initial={false}>
         {images.map((img, index) => {
-          const err = errorFor(img.file.name)
+          const err = errorFor(img)
           const wasConverted = convertedIds.has(img.id)
           const rotation = rotations[img.id] || 0
           return (
@@ -88,9 +93,8 @@ export function ImageGrid({
 
               {/* ─── ERROR OVERLAY ───────────────────────────────────── */}
               {/* pointer-events-none lets taps pass through to the zoom
-                  button underneath; reason text is now shown directly
-                  instead of just an icon, so tapping isn't required to
-                  see the problem. */}
+                  button underneath; reason text is shown directly instead
+                  of just an icon. */}
               {err && (
                 <div
                   className="absolute inset-0 bg-red-600/70 flex flex-col items-center justify-center gap-1.5 px-3 text-center pointer-events-none"
@@ -128,4 +132,4 @@ export function ImageGrid({
       </AnimatePresence>
     </ul>
   )
-              } 
+} 
