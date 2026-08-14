@@ -4,18 +4,14 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { CheckCircle, PaperPlaneTilt, Plus, DownloadSimple } from "@phosphor-icons/react"
-import { HUB_NAMES, type HubKey } from "@/lib/brand"
 import { SimpleDropdown } from "@/components/ui/simple-dropdown"
-import { SENDABLE_HUBS } from "./constants"
 import { formatBytes } from "./utils"
 import type { ConvertedFile } from "./types"
 
 export function ResultsPanel({
-  convertedFiles, selectedHub, setSelectedHub, sendNotice, accentColor, onSend, onAddMore,
+  convertedFiles, sendNotice, accentColor, onSend, onAddMore,
 }: {
   convertedFiles: ConvertedFile[]
-  selectedHub: HubKey
-  setSelectedHub: (h: HubKey) => void
   sendNotice: string | null
   accentColor: string
   onSend: (file: ConvertedFile) => void
@@ -45,15 +41,16 @@ export function ResultsPanel({
             Saved to your device automatically
           </div>
 
-          <div className="flex flex-wrap justify-center gap-2 mb-4">
-            {convertedFiles.length > 1 && (
+          {/* Hub dropdown removed — one WhatsApp number means it never
+              routed anywhere different, it just relabeled the send
+              button. File picker (when there's more than one result)
+              is the only dropdown left. */}
+          {convertedFiles.length > 1 && (
+            <div className="flex flex-wrap justify-center gap-2 mb-4">
               <SimpleDropdown label="File" value={fileName} accentColor={accentColor} onChange={setFileName}
                 options={convertedFiles.map((f) => ({ value: f.fileName, label: `${f.fileName} · ${formatBytes(f.blob.size)}` }))} />
-            )}
-            <SimpleDropdown label="Hub" value={selectedHub} accentColor={accentColor}
-              onChange={(v) => setSelectedHub(v as HubKey)}
-              options={SENDABLE_HUBS.map((hub) => ({ value: hub, label: HUB_NAMES[hub] }))} />
-          </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-2.5 max-w-[380px] mx-auto">
             <button
@@ -63,7 +60,7 @@ export function ResultsPanel({
               style={{ backgroundColor: accentColor }}
             >
               <PaperPlaneTilt weight="fill" className="w-4 h-4" aria-hidden="true" />
-              Send to ApexbytesHub · {HUB_NAMES[selectedHub]}
+              Send to ApexbytesHub
             </button>
             <button
               type="button"
@@ -80,4 +77,4 @@ export function ResultsPanel({
       )}
     </AnimatePresence>
   )
-} 
+            } 
