@@ -21,6 +21,7 @@ export function SettingsBar({
 }) {
   return (
     <div className="flex flex-col gap-4">
+      {/* ─── OUTPUT / SIZE DROPDOWNS ────────────────────────────────────── */}
       <div className="flex flex-wrap justify-center lg:justify-start gap-2">
         <SimpleDropdown
           label="Output" value={mode} accentColor={accentColor}
@@ -34,11 +35,18 @@ export function SettingsBar({
         />
       </div>
 
+      {/* ─── QUALITY SLIDER ─────────────────────────────────────────────── */}
       <div className="rounded-[14px] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 p-4">
         <div className="flex items-center justify-between mb-1.5">
           <label htmlFor="quality-slider" className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">Quality</label>
           <span className="text-sm font-bold" style={{ color: accentColor }}>{qualityLabel(quality)}</span>
         </div>
+
+        {/* Native accentColor only lets us set ONE color for both track
+            and thumb, which can't satisfy "green track / orange thumb" —
+            so the slider is restyled directly via the vendor pseudo-
+            elements instead. Both -webkit- and -moz- variants are covered
+            for cross-browser support. */}
         <input
           id="quality-slider"
           type="range"
@@ -47,9 +55,17 @@ export function SettingsBar({
           step={0.05}
           value={quality}
           onChange={(e) => setQuality(Number(e.target.value))}
+          aria-label="Conversion quality"
           aria-valuetext={qualityLabel(quality)}
-          className="w-full"
-          style={{ accentColor }}
+          className="w-full h-2 rounded-full appearance-none cursor-pointer bg-transparent
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange focus-visible:ring-offset-2
+            [&::-webkit-slider-runnable-track]:h-2 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-brand-green
+            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5
+            [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-brand-orange [&::-webkit-slider-thumb]:border-2
+            [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow [&::-webkit-slider-thumb]:-mt-1.5 [&::-webkit-slider-thumb]:cursor-pointer
+            [&::-moz-range-track]:h-2 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-brand-green
+            [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-brand-orange
+            [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:cursor-pointer"
         />
         <div className="flex justify-between text-[0.7rem] text-zinc-400 mt-1">
           <span>Smaller file</span>
@@ -63,4 +79,4 @@ export function SettingsBar({
       </div>
     </div>
   )
-} 
+      } 
