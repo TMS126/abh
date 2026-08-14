@@ -5,7 +5,7 @@ import { useState, useCallback, useEffect } from "react"
 import { jsPDF } from "jspdf"
 import { BIZ, HUB_NAMES, waLink, type HubKey } from "@/lib/brand"
 import { ACCEPTED_TYPES, MAX_FILES, MAX_FILE_SIZE_MB, PAGE_SIZES } from "./constants"
-import { buildFileName, compressImage, fitToPage, loadHistory, saveHistory, clearHistory, resolveFileType } from "./utils"
+import { buildFileName, compressImage, fitToPage, loadHistory, saveHistory, clearHistory, resolveFileType, generateThumbnail } from "./utils"
 import type { ImageItem, ConvertMode, PageSize, ConvertError, ConvertedFile, HistoryEntry, ReconvertPrompt, CropRect } from "./types"
 
 export function useJpgToPdf() {
@@ -29,8 +29,6 @@ export function useJpgToPdf() {
   useEffect(() => setHistory(loadHistory()), [])
 
   // ─── LIVE SIZE ESTIMATE ─────────────────────────────────────────────────
-  // Sample the first selected image at the current quality/rotation/crop
-  // and extrapolate across the selection.
   useEffect(() => {
     const selected = images.filter((img) => img.selected)
     if (selected.length === 0) { setEstimatedBytes(null); return }
@@ -60,8 +58,6 @@ export function useJpgToPdf() {
     let slotsLeft = MAX_FILES - images.length
 
     Array.from(fileList).forEach((file) => {
-      // Falls back to file extension when the browser reports an empty or
-      // nonstandard MIME type — common with some Android camera captures.
       if (!resolveFileType(file, ACCEPTED_TYPES)) {
         incomingErrors.push({ fileName: file.name, reason: "Unsupported type — JPG, PNG or WEBP only." })
         return
@@ -78,12 +74,36 @@ export function useJpgToPdf() {
       accepted.push({
         id: `${file.name}-${file.lastModified}-${Math.random().toString(36).slice(2, 8)}`,
         file,
+        // Immediate full-file preview for responsiveness — swapped for a
+        // downscaled thumbnail below as soon as it's ready.
         previewUrl: URL.createObjectURL(file),
         selected: true,
       })
     })
 
-    if (accepted.length > 0) setImages((prev) => [...prev, ...accepted])
+    if (accepted.length > 0) {
+      setImages((prev) => [...prev, ...accepted])
+
+      // Downscale each preview in the background and swap it in, revoking
+      // the heavy full-file blob URL. Keeps the session's memory footprint
+      // low even after many images and repeat conversions.
+      accepted.forEach((item) => {
+        generateThumbnail(item.file)
+          .then((thumbUrl) => {
+            setImages((prev) =>
+              prev.map((img) => {
+                if (img.id !== item.id) return img
+                URL.revokeObjectURL(img.previewUrl)
+                return { ...img, previewUrl: thumbUrl }
+              })
+            )
+          })
+          .catch(() => {
+            // Keep the original full-file preview if thumbnailing fails —
+            // still functional, just heavier.
+          })
+      })
+    }
     setErrors(incomingErrors)
   }, [images.length])
 
@@ -161,9 +181,6 @@ export function useJpgToPdf() {
             pdf.addImage(dataUrl, "JPEG", x, y, renderW, renderH)
             addedAny = true
           } catch (err) {
-            // id ties this failure to the exact image instance, so two
-            // images sharing a filename don't cross-contaminate each
-            // other's error overlay.
             failures.push({ fileName: file.name, reason: err instanceof Error ? err.message : "Failed to process.", id })
           }
           setProgress(Math.round(((i + 1) / targets.length) * 100))
@@ -197,9 +214,6 @@ export function useJpgToPdf() {
       if (failures.length > 0) setErrors(failures)
       setConvertedFiles(results)
 
-      // Only mark images that actually succeeded as "converted" — matched
-      // by id, not filename, so a failure on one duplicate-named image
-      // doesn't wrongly withhold "converted" from its successful twin.
       const failedIds = new Set(failures.map((f) => f.id))
       const succeededIds = targets.filter((tg) => !failedIds.has(tg.id)).map((tg) => tg.id)
       if (succeededIds.length > 0) {
