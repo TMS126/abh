@@ -160,11 +160,9 @@ export default function JpgToPdfPage() {
 
               <ResultsPanel
                 convertedFiles={t.convertedFiles}
-                selectedHub={t.selectedHub}
-                setSelectedHub={t.setSelectedHub}
                 sendNotice={t.sendNotice}
                 accentColor={accentColor}
-                onSend={t.handleSendToHub}
+                onSend={t.handleSend}
                 onAddMore={() => inputRef.current?.click()}
               />
 
