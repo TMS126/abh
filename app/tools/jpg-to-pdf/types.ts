@@ -1,7 +1,22 @@
 // app/tools/jpg-to-pdf/types.ts
 import type { HubKey } from "@/lib/brand"
 
-export type CropRect = { x: number; y: number; w: number; h: number } // relative 0..1 of original image
+export type CropPoint = { x: number; y: number } // relative 0..1 of original image
+
+// x/y/w/h: axis-aligned bounding box, relative 0..1 of original image —
+// always present, used for rectangular crops and as the fallback/output
+// size for a perspective (quad) crop.
+// corners: present only for a non-rectangular crop (trapezium, rhombus,
+// any free four-corner shape). Order is TL, TR, BR, BL. When present, the
+// image is perspective-warped so those four points map onto a clean
+// rectangle matching w/h — not padded or masked into that shape.
+export type CropRect = {
+  x: number
+  y: number
+  w: number
+  h: number
+  corners?: [CropPoint, CropPoint, CropPoint, CropPoint]
+}
 
 export type ImageItem = {
   id: string
