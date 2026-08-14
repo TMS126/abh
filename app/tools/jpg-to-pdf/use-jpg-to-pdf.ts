@@ -1,3 +1,4 @@
+// app/tools/jpg-to-pdf/use-jpg-to-pdf.ts
 "use client"
 
 import { useState, useCallback, useEffect } from "react"
@@ -160,7 +161,10 @@ export function useJpgToPdf() {
             pdf.addImage(dataUrl, "JPEG", x, y, renderW, renderH)
             addedAny = true
           } catch (err) {
-            failures.push({ fileName: file.name, reason: err instanceof Error ? err.message : "Failed to process." })
+            // id ties this failure to the exact image instance, so two
+            // images sharing a filename don't cross-contaminate each
+            // other's error overlay.
+            failures.push({ fileName: file.name, reason: err instanceof Error ? err.message : "Failed to process.", id })
           }
           setProgress(Math.round(((i + 1) / targets.length) * 100))
         }
@@ -184,7 +188,7 @@ export function useJpgToPdf() {
             results.push({ fileName, blob, sourceIds: [id] })
             if (i < targets.length - 1) await new Promise((r) => setTimeout(r, 300))
           } catch (err) {
-            failures.push({ fileName: file.name, reason: err instanceof Error ? err.message : "Failed to process." })
+            failures.push({ fileName: file.name, reason: err instanceof Error ? err.message : "Failed to process.", id })
           }
           setProgress(Math.round(((i + 1) / targets.length) * 100))
         }
@@ -193,12 +197,11 @@ export function useJpgToPdf() {
       if (failures.length > 0) setErrors(failures)
       setConvertedFiles(results)
 
-      // Only mark images that actually succeeded as "converted" — a
-      // partial failure in the batch should not silently tag failed
-      // images as done.
-      const succeededIds = targets
-        .filter((tg) => !failures.some((f) => f.fileName === tg.file.name))
-        .map((tg) => tg.id)
+      // Only mark images that actually succeeded as "converted" — matched
+      // by id, not filename, so a failure on one duplicate-named image
+      // doesn't wrongly withhold "converted" from its successful twin.
+      const failedIds = new Set(failures.map((f) => f.id))
+      const succeededIds = targets.filter((tg) => !failedIds.has(tg.id)).map((tg) => tg.id)
       if (succeededIds.length > 0) {
         setConvertedIds((prev) => new Set([...prev, ...succeededIds]))
       }
