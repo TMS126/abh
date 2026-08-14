@@ -1,9 +1,9 @@
-// app/tools/jpg-to-pdf/image-grid.tsx
 "use client"
 
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
 import { CheckCircle, ArrowsClockwise, ArrowCounterClockwise, Crop, X, WarningCircle } from "@phosphor-icons/react"
+import { formatBytes } from "./utils"
 import type { ImageItem, ConvertError } from "./types"
 
 export function ImageGrid({
@@ -46,6 +46,7 @@ export function ImageGrid({
               onDrop={(e) => onReorder(Number(e.dataTransfer.getData("text/plain")), index)}
               className={`relative rounded-[14px] overflow-hidden border bg-zinc-100 dark:bg-zinc-900 ${!img.selected ? "opacity-45" : ""} ${err ? "border-red-300 dark:border-red-800" : "border-zinc-200 dark:border-zinc-800"}`}
             >
+              {/* ─── IMAGE / ZOOM TRIGGER ────────────────────────────── */}
               <button type="button" onClick={() => onZoom(img.id)} aria-label={`View ${img.file.name} full size`} className="relative block w-full aspect-square">
                 <Image
                   src={img.previewUrl}
@@ -63,6 +64,7 @@ export function ImageGrid({
                 )}
               </button>
 
+              {/* ─── SELECT TOGGLE ───────────────────────────────────── */}
               <button
                 type="button"
                 onClick={() => onToggleSelect(img.id)}
@@ -74,6 +76,7 @@ export function ImageGrid({
                 {img.selected && <CheckCircle weight="fill" className="w-full h-full text-white" aria-hidden="true" />}
               </button>
 
+              {/* ─── REMOVE ──────────────────────────────────────────── */}
               <button
                 type="button"
                 onClick={() => onRemove(img.id)}
@@ -83,14 +86,17 @@ export function ImageGrid({
                 <X size={14} weight="bold" aria-hidden="true" />
               </button>
 
+              {/* ─── ERROR OVERLAY ───────────────────────────────────── */}
               {err && (
                 <div className="absolute inset-0 bg-red-600/60 flex items-center justify-center" role="alert">
                   <WarningCircle weight="fill" className="w-6 h-6 text-white" aria-hidden="true" />
                 </div>
               )}
 
+              {/* ─── BOTTOM OVERLAY: NAME, SIZE, ACTIONS ─────────────── */}
               <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/75 to-transparent px-2 pt-7 pb-1.5">
                 <p className="text-[0.68rem] font-semibold text-white truncate mb-1">{img.file.name}</p>
+                <p className="text-[0.6rem] text-white/60 mb-1">{formatBytes(img.file.size)}</p>
                 <div className="flex items-center justify-between">
                   {wasConverted ? <span className="text-[0.62rem] font-bold uppercase tracking-wide text-white/70">Converted</span> : <span />}
                   <div className="flex items-center gap-0.5">
@@ -114,4 +120,4 @@ export function ImageGrid({
       </AnimatePresence>
     </ul>
   )
-}
+              } 
