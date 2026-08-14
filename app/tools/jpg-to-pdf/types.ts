@@ -14,7 +14,11 @@ export type ImageItem = {
 export type ConvertMode = "merge" | "separate"
 export type PageSize = "a4" | "letter"
 
-export type ConvertError = { fileName: string; reason: string }
+// id is present for conversion failures (tied to a specific ImageItem) so
+// duplicate filenames don't misattribute an error/overlay onto the wrong
+// thumbnail. id is absent for intake-time rejections (oversized/unsupported
+// files never become an ImageItem, so there's nothing to tie them to).
+export type ConvertError = { fileName: string; reason: string; id?: string }
 export type ConvertedFile = { fileName: string; blob: Blob; sourceIds: string[] }
 export type HistoryEntry = { fileName: string; isoDate: string }
 export type ReconvertPrompt = { overlapCount: number; totalCount: number } | null
