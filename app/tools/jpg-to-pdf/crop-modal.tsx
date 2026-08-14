@@ -294,7 +294,7 @@ export function CropModal({
         </button>
       </div>
 
-      {/* ─── ASPECT PRESETS (rect mode only) ───────────────────────────── */}
+      {/* ─── ASPECT PRESETS───────────────────────────── */}
       {mode === "rect" && (
         <div role="group" aria-label="Aspect ratio" className="flex flex-wrap justify-center gap-1.5 px-4 pb-2 shrink-0">
           {CROP_ASPECT_PRESETS.map((preset) => (
@@ -303,7 +303,11 @@ export function CropModal({
               type="button"
               aria-pressed={aspect === preset.ratio}
               onClick={() => applyAspect(preset.ratio)}
-              className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${aspect === preset.ratio ? "bg-brand-orange text-white" : "bg-white/10 text-white/70 hover:bg-white/20"}`}
+              className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors border ${
+                aspect === preset.ratio
+                  ? "bg-brand-orange border-brand-orange text-white"
+                  : "bg-white/15 border-white/25 text-white hover:bg-white/25 hover:border-white/40"
+              }`}
             >
               {preset.label}
             </button>
