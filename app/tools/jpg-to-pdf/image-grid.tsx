@@ -87,9 +87,17 @@ export function ImageGrid({
               </button>
 
               {/* ─── ERROR OVERLAY ───────────────────────────────────── */}
+              {/* pointer-events-none lets taps pass through to the zoom
+                  button underneath; reason text is now shown directly
+                  instead of just an icon, so tapping isn't required to
+                  see the problem. */}
               {err && (
-                <div className="absolute inset-0 bg-red-600/60 flex items-center justify-center" role="alert">
-                  <WarningCircle weight="fill" className="w-6 h-6 text-white" aria-hidden="true" />
+                <div
+                  className="absolute inset-0 bg-red-600/70 flex flex-col items-center justify-center gap-1.5 px-3 text-center pointer-events-none"
+                  role="alert"
+                >
+                  <WarningCircle weight="fill" className="w-6 h-6 text-white shrink-0" aria-hidden="true" />
+                  <p className="text-[0.68rem] font-semibold text-white leading-tight">{err.reason}</p>
                 </div>
               )}
 
