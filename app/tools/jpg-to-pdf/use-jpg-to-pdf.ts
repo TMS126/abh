@@ -1,14 +1,14 @@
-// app/tools/jpg-to-pdf/use-jpg-to-pdf.ts
 "use client"
 
 import { useState, useCallback, useEffect } from "react"
 import { jsPDF } from "jspdf"
 import { BIZ, HUB_NAMES, waLink, type HubKey } from "@/lib/brand"
 import { ACCEPTED_TYPES, MAX_FILES, MAX_FILE_SIZE_MB, PAGE_SIZES } from "./constants"
-import { buildFileName, compressImage, fitToPage, loadHistory, saveHistory, clearHistory } from "./utils"
+import { buildFileName, compressImage, fitToPage, loadHistory, saveHistory, clearHistory, resolveFileType } from "./utils"
 import type { ImageItem, ConvertMode, PageSize, ConvertError, ConvertedFile, HistoryEntry, ReconvertPrompt, CropRect } from "./types"
 
 export function useJpgToPdf() {
+  // ─── STATE ──────────────────────────────────────────────────────────────
   const [images, setImages] = useState<ImageItem[]>([])
   const [mode, setMode] = useState<ConvertMode>("merge")
   const [pageSize, setPageSize] = useState<PageSize>("a4")
@@ -27,8 +27,9 @@ export function useJpgToPdf() {
 
   useEffect(() => setHistory(loadHistory()), [])
 
-  // Live size estimate: sample the first selected image at the current
-  // quality/rotation/crop and extrapolate across the selection.
+  // ─── LIVE SIZE ESTIMATE ─────────────────────────────────────────────────
+  // Sample the first selected image at the current quality/rotation/crop
+  // and extrapolate across the selection.
   useEffect(() => {
     const selected = images.filter((img) => img.selected)
     if (selected.length === 0) { setEstimatedBytes(null); return }
@@ -48,6 +49,7 @@ export function useJpgToPdf() {
     return () => { cancelled = true; clearTimeout(timer) }
   }, [images, quality, rotations])
 
+  // ─── FILE INTAKE ────────────────────────────────────────────────────────
   const addFiles = useCallback((fileList: FileList | File[]) => {
     setConvertedFiles([])
     setSendNotice(null)
@@ -57,7 +59,9 @@ export function useJpgToPdf() {
     let slotsLeft = MAX_FILES - images.length
 
     Array.from(fileList).forEach((file) => {
-      if (!ACCEPTED_TYPES.includes(file.type)) {
+      // Falls back to file extension when the browser reports an empty or
+      // nonstandard MIME type — common with some Android camera captures.
+      if (!resolveFileType(file, ACCEPTED_TYPES)) {
         incomingErrors.push({ fileName: file.name, reason: "Unsupported type — JPG, PNG or WEBP only." })
         return
       }
@@ -82,6 +86,7 @@ export function useJpgToPdf() {
     setErrors(incomingErrors)
   }, [images.length])
 
+  // ─── IMAGE ACTIONS ──────────────────────────────────────────────────────
   const removeImage = (id: string) => {
     setImages((prev) => {
       const target = prev.find((img) => img.id === id)
@@ -117,6 +122,7 @@ export function useJpgToPdf() {
     setReconvertPrompt(null)
   }
 
+  // ─── DOWNLOAD HELPER ────────────────────────────────────────────────────
   const triggerDownload = (blob: Blob, fileName: string) => {
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
@@ -126,6 +132,7 @@ export function useJpgToPdf() {
     URL.revokeObjectURL(url)
   }
 
+  // ─── CONVERSION ─────────────────────────────────────────────────────────
   const runConvert = async (idsToConvert: string[]) => {
     const targets = images.filter((img) => idsToConvert.includes(img.id))
     if (targets.length === 0) return
@@ -185,7 +192,16 @@ export function useJpgToPdf() {
 
       if (failures.length > 0) setErrors(failures)
       setConvertedFiles(results)
-      setConvertedIds((prev) => new Set([...prev, ...idsToConvert]))
+
+      // Only mark images that actually succeeded as "converted" — a
+      // partial failure in the batch should not silently tag failed
+      // images as done.
+      const succeededIds = targets
+        .filter((tg) => !failures.some((f) => f.fileName === tg.file.name))
+        .map((tg) => tg.id)
+      if (succeededIds.length > 0) {
+        setConvertedIds((prev) => new Set([...prev, ...succeededIds]))
+      }
 
       if (results.length > 0) {
         const nowIso = new Date().toISOString()
@@ -220,6 +236,7 @@ export function useJpgToPdf() {
     if (ids.length > 0) runConvert(ids)
   }
 
+  // ─── SEND TO HUB ────────────────────────────────────────────────────────
   const handleSendToHub = async (file: ConvertedFile) => {
     setSendNotice(null)
     const hubLabel = HUB_NAMES[selectedHub]
@@ -245,6 +262,7 @@ export function useJpgToPdf() {
   const clearRecents = () => { clearHistory(); setHistory([]) }
   const selectedCount = images.filter((img) => img.selected).length
 
+  // ─── RETURN ─────────────────────────────────────────────────────────────
   return {
     images, mode, setMode, pageSize, setPageSize, quality, setQuality,
     rotations, isConverting, progress, errors, convertedFiles, convertedIds, reconvertPrompt,
@@ -252,4 +270,4 @@ export function useJpgToPdf() {
     addFiles, removeImage, toggleSelect, selectAll, rotateImage, resetRotation, setCrop, reorder,
     clearAll, requestConvert, resolveReconvert, handleSendToHub, clearRecents,
   }
-      } 
+        } 
