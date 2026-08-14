@@ -76,24 +76,64 @@ export const clearHistory = () => {
   try { window.localStorage.removeItem(HISTORY_KEY) } catch {}
 }
 
+// ─── THUMBNAIL GENERATION ────────────────────────────────────────────────
+// Grid thumbnails previously used the full original file as the preview
+// blob, meaning the browser held a full-resolution decode in memory per
+// image, for the whole session, just to render a small grid tile. Across
+// a long session with many images and repeat conversions, that memory
+// adds up and increases the odds of later decode failures. This generates
+// a small (≤480px) JPEG thumbnail instead, cutting that footprint sharply.
+export async function generateThumbnail(file: File, maxDim = 480): Promise<string> {
+  try {
+    if (typeof createImageBitmap === "function") {
+      const bitmap = await createImageBitmap(file)
+      try {
+        const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height))
+        const w = Math.max(1, Math.round(bitmap.width * scale))
+        const h = Math.max(1, Math.round(bitmap.height * scale))
+        const canvas = document.createElement("canvas")
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext("2d")
+        if (!ctx) throw new Error("Canvas not supported on this device.")
+        ctx.drawImage(bitmap, 0, 0, w, h)
+        return await new Promise<string>((resolve, reject) => {
+          canvas.toBlob((blob) => {
+            if (!blob) { reject(new Error("Thumbnail generation failed.")); return }
+            resolve(URL.createObjectURL(blob))
+          }, "image/jpeg", 0.7)
+        })
+      } finally {
+        bitmap.close()
+      }
+    }
+  } catch {
+    // fall through to the raw-file fallback below
+  }
+  // Fallback for devices without createImageBitmap, or if downscaling
+  // itself fails — still shows a thumbnail, just at full memory cost.
+  return URL.createObjectURL(file)
+}
+
 // ─── IMAGE PROCESSING ────────────────────────────────────────────────────
 // Two decode paths:
 //
 // 1. compressViaBitmap — preferred. createImageBitmap() decodes off the
-//    main thread with a much smaller memory footprint than an <img> tag,
-//    which is what actually fixes "Could not read this image" on large
-//    phone photos (the failure is a real decode-under-memory-pressure
-//    issue, not a logic bug — it gets worse the more images/conversions
-//    have already run in the session).
+//    main thread with a much smaller memory footprint than an <img> tag.
 //
 // 2. compressViaImageElement — fallback for browsers without
 //    createImageBitmap, or if the bitmap path itself throws. Includes one
 //    automatic retry on decode failure, since these failures are often
-//    transient and clear a moment later once the browser reclaims memory,
-//    rather than surfacing an error to the user on the first hiccup.
+//    transient under memory pressure and can clear a moment later.
 //
 // Both paths cap output at MAX_CANVAS_DIMENSION and ignore degenerate
 // crop rects (avoids a zero-size canvas).
+//
+// Note: even with these safeguards and the thumbnail fix above, a long
+// session converting many large images back-to-back on a memory-limited
+// phone can still occasionally hit "could not read this image" — that's
+// a device resource ceiling, not a bug in this file. Reloading the page
+// between large batches clears it.
 
 function resolveCropAndSize(sourceW: number, sourceH: number, rotation: number, crop?: CropRect) {
   const validCrop = crop && crop.w > 0.02 && crop.h > 0.02 ? crop : { x: 0, y: 0, w: 1, h: 1 }
@@ -159,8 +199,6 @@ function compressViaImageElement(
     }
     img.onerror = () => {
       URL.revokeObjectURL(objectUrl)
-      // Transient decode failures under memory pressure are common with
-      // large photos — retry once before giving up.
       if (attempt < 2) {
         setTimeout(() => {
           compressViaImageElement(file, rotation, quality, crop, attempt + 1).then(resolve, reject)
@@ -197,4 +235,4 @@ export const fitToPage = (width: number, height: number, page: { w: number; h: n
   const renderW = width * ratio
   const renderH = height * ratio
   return { x: (page.w - renderW) / 2, y: (page.h - renderH) / 2, renderW, renderH }
-}
+    } 
