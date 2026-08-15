@@ -33,14 +33,16 @@ function deriveHubStatuses(status: BusinessStatus): { printDoc: HubStatus; techE
   return { printDoc, techEtc }
 }
 
-// Closed state: plain text, no pill (no border/background/dot).
-// Open state: unchanged pill styling.
+// Closed state: plain text, no pill (no border/background). The dot span
+// stays in the markup but invisible, so the text sits at the same spot
+// it would inside the open pill — nothing shifts left.
 function StatusPill({ status }: { status: HubStatus }) {
   if (!status.open) {
     return (
       <div className="flex flex-col gap-1 text-[0.74rem] font-bold tracking-wide text-zinc-500 dark:text-zinc-400">
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
           <span className="flex items-center gap-1.5 shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full shrink-0 invisible" />
             <span className="font-black">{status.label}</span>
             <span className="font-normal opacity-70">Closed</span>
           </span>
@@ -134,6 +136,7 @@ export function BusinessStatusNavbar() {
           </div>
         ) : (
           <div className="flex items-center gap-1 text-[0.74rem] font-bold whitespace-nowrap text-zinc-500 dark:text-zinc-400">
+            <span className="w-1.5 h-1.5 rounded-full shrink-0 invisible" />
             <span className="font-black">{printDoc.label}</span>
             <span className="opacity-70 font-normal">Closed</span>
             <span className="opacity-40">·</span>
@@ -150,6 +153,7 @@ export function BusinessStatusNavbar() {
           </div>
         ) : (
           <div className="flex items-center gap-1 text-[0.74rem] font-bold whitespace-nowrap text-zinc-500 dark:text-zinc-400">
+            <span className="w-1.5 h-1.5 rounded-full shrink-0 invisible" />
             <span className="font-black">{techEtc.label}</span>
             <span className="opacity-70 font-normal">Closed</span>
             <span className="opacity-40">·</span>
