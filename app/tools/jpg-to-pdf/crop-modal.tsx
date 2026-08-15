@@ -6,10 +6,10 @@ import { X, Check, ArrowCounterClockwise, Rectangle, Shapes } from "@phosphor-ic
 import { CROP_ASPECT_PRESETS } from "./constants"
 import type { CropRect, CropPoint } from "./types"
 
-type Inset = { top: number; left: number; right: number; bottom: number } // percent, 0-100, relative to the IMAGE content (not the frame)
-type Corners = [CropPoint, CropPoint, CropPoint, CropPoint] // TL, TR, BR, BL — fraction 0..1 of the image content
+type Inset = { top: number; left: number; right: number; bottom: number }
+type Corners = [CropPoint, CropPoint, CropPoint, CropPoint]
 type Mode = "rect" | "quad"
-type ImageRect = { top: number; left: number; width: number; height: number } // percent of frame occupied by the actual rendered image (object-contain letterboxing)
+type ImageRect = { top: number; left: number; width: number; height: number }
 
 const DEFAULT_INSET: Inset = { top: 8, left: 8, right: 8, bottom: 8 }
 const clamp = (n: number, min: number, max: number) => Math.min(Math.max(n, min), max)
@@ -43,12 +43,42 @@ export function CropModal({
   const imgElRef = useRef<HTMLImageElement>(null)
   const dragRef = useRef<{ kind: "inset" | "corner"; handle: string; startX: number; startY: number; startInset: Inset; startCorners: Corners } | null>(null)
 
+  // ─── CLOSE HANDLING: BACKDROP TAP, ESC, X, DEVICE BACK GESTURE ────────
+  // Mirrors ImageLightbox's pattern: push a history entry on open so the
+  // browser/device back gesture closes this modal (instead of navigating
+  // away from the page), and pop it cleanly if the modal is closed some
+  // other way first, so back-button state doesn't drift out of sync.
+  const pushedRef = useRef(false)
+
+  useEffect(() => {
+    window.history.pushState({ abhCrop: true }, "")
+    pushedRef.current = true
+    function onPopState() { pushedRef.current = false; onClose() }
+    window.addEventListener("popstate", onPopState)
+    document.body.style.overflow = "hidden"
+    return () => {
+      window.removeEventListener("popstate", onPopState)
+      document.body.style.overflow = ""
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const requestClose = useCallback(() => {
+    if (pushedRef.current) {
+      pushedRef.current = false
+      window.history.back()
+    } else {
+      onClose()
+    }
+  }, [onClose])
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") requestClose() }
+    document.addEventListener("keydown", onKey)
+    return () => document.removeEventListener("keydown", onKey)
+  }, [requestClose])
+
   // ─── MEASURE ACTUAL IMAGE BOUNDS WITHIN THE FRAME ──────────────────────
-  // object-contain letterboxes the image inside the frame whenever the
-  // frame and image aspect ratios differ. Crop math needs to be relative
-  // to that rendered image rect, not the full frame — otherwise a crop
-  // near an edge silently includes/excludes letterbox padding, which was
-  // the cause of the "cut where I didn't crop" bug.
   const recomputeImageRect = useCallback(() => {
     const frame = frameRef.current
     if (!frame || !naturalSize) return
@@ -70,15 +100,6 @@ export function CropModal({
     return () => window.removeEventListener("resize", recomputeImageRect)
   }, [recomputeImageRect])
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose() }
-    document.addEventListener("keydown", onKey)
-    document.body.style.overflow = "hidden"
-    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = "" }
-  }, [onClose])
-
-  // Converts an image-content-relative percent into a frame-relative
-  // percent, for CSS positioning of the crop box/handles.
   const toFrame = useCallback((xPct: number, axis: "x" | "y") => {
     return axis === "x" ? imageRect.left + (xPct / 100) * imageRect.width : imageRect.top + (xPct / 100) * imageRect.height
   }, [imageRect])
@@ -89,9 +110,6 @@ export function CropModal({
     const frame = frameRef.current
     if (!drag || drag.kind !== "inset" || !frame) return
     const rect = frame.getBoundingClientRect()
-    // Convert pixel movement into image-content-relative percent (not
-    // frame-relative), since imageRect.width/height in pixels is what the
-    // dragged distance actually maps onto.
     const imgPxW = (imageRect.width / 100) * rect.width
     const imgPxH = (imageRect.height / 100) * rect.height
     const dx = ((e.clientX - drag.startX) / imgPxW) * 100
@@ -109,24 +127,17 @@ export function CropModal({
       if (drag.handle.includes("w")) next.left = clamp(drag.startInset.left + dx, 0, 100 - drag.startInset.right - 10)
       if (drag.handle.includes("e")) next.right = clamp(drag.startInset.right - dx, 0, 100 - drag.startInset.left - 10)
 
-      // Lock aspect ratio when a preset is active: adjust the
-      // perpendicular edge from the same corner so w/h keeps the target
-      // ratio, using actual pixel dimensions (naturalSize) so the ratio
-      // is correct in real terms, not raw percent terms.
       if (aspect && naturalSize) {
-        const fracRatio = aspect * (naturalSize.h / naturalSize.w) // target frac_w / frac_h
-        const fracW = (100 - next.left - next.right) / 100
-        const targetFracH = fracW / fracRatio
-        const targetBottomOrTop = (1 - targetFracH) * 100
+        const fracRatio = aspect * (naturalSize.h / naturalSize.w)
         if (drag.handle.includes("n") || drag.handle.includes("s")) {
-          // height changed by hand -> recompute width from height, anchored left
           const fracH = (100 - next.top - next.bottom) / 100
           const targetFracW = fracH * fracRatio
           next.right = clamp(100 - next.left - targetFracW * 100, 0, 100 - next.left - 5)
         } else {
-          // width changed by hand -> recompute height, anchored top
+          const fracW = (100 - next.left - next.right) / 100
+          const targetFracH = fracW / fracRatio
           if (drag.handle.includes("n")) next.top = clamp(100 - next.bottom - targetFracH * 100, 0, 100 - next.bottom - 5)
-          else next.bottom = clamp(targetBottomOrTop, 0, 100 - next.top - 5)
+          else next.bottom = clamp((1 - targetFracH) * 100, 0, 100 - next.top - 5)
         }
       }
     }
@@ -207,7 +218,7 @@ export function CropModal({
   const applyAspect = (ratio: number | null) => {
     setAspect(ratio)
     if (ratio === null || !naturalSize) return
-    const fracRatio = ratio * (naturalSize.h / naturalSize.w) // target frac_w / frac_h
+    const fracRatio = ratio * (naturalSize.h / naturalSize.w)
     let fracW = 0.86, fracH = fracW / fracRatio
     if (fracH > 0.86) { fracH = 0.86; fracW = fracH * fracRatio }
     const left = ((1 - fracW) / 2) * 100
@@ -266,16 +277,21 @@ export function CropModal({
 
   return (
     <div role="dialog" aria-modal="true" aria-label={`Crop ${fileName}`} className="fixed inset-0 z-[200] flex flex-col bg-black/95">
+      {/* Backdrop tap-to-close: covers the whole modal beneath the
+          interactive content, so tapping anywhere outside the frame,
+          header, or button bar closes it — same as the lightbox. */}
+      <div className="absolute inset-0" onClick={requestClose} aria-hidden="true" />
+
       {/* ─── HEADER ─────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-4 py-3 text-white shrink-0">
+      <div className="relative flex items-center justify-between px-4 py-3 text-white shrink-0">
         <span className="text-sm font-semibold truncate">{fileName}</span>
-        <button type="button" onClick={onClose} aria-label="Cancel crop" className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10">
+        <button type="button" onClick={requestClose} aria-label="Cancel crop" className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10">
           <X size={18} weight="bold" aria-hidden="true" />
         </button>
       </div>
 
       {/* ─── MODE TOGGLE ────────────────────────────────────────────────── */}
-      <div role="tablist" aria-label="Crop shape" className="flex justify-center gap-1.5 px-4 pb-2 shrink-0">
+      <div role="tablist" aria-label="Crop shape" className="relative flex justify-center gap-1.5 px-4 pb-2 shrink-0">
         <button
           type="button" role="tab" aria-selected={mode === "rect"}
           onClick={() => switchMode("rect")}
@@ -294,9 +310,9 @@ export function CropModal({
         </button>
       </div>
 
-      {/* ─── ASPECT PRESETS───────────────────────────── */}
+      {/* ─── ASPECT PRESETS (rect mode only) ───────────────────────────── */}
       {mode === "rect" && (
-        <div role="group" aria-label="Aspect ratio" className="flex flex-wrap justify-center gap-1.5 px-4 pb-2 shrink-0">
+        <div role="group" aria-label="Aspect ratio" className="relative flex flex-wrap justify-center gap-1.5 px-4 pb-2 shrink-0">
           {CROP_ASPECT_PRESETS.map((preset) => (
             <button
               key={preset.label}
@@ -316,8 +332,13 @@ export function CropModal({
       )}
 
       {/* ─── CROP FRAME ─────────────────────────────────────────────────── */}
-      <div className="flex-1 flex items-center justify-center p-4 min-h-0">
-        <div ref={frameRef} className="relative" style={{ width: "min(90vw, 600px)", height: "min(60vh, 600px)" }}>
+      <div className="relative flex-1 flex items-center justify-center p-4 min-h-0">
+        <div
+          ref={frameRef}
+          className="relative"
+          style={{ width: "min(90vw, 600px)", height: "min(60vh, 600px)" }}
+          onClick={(e) => e.stopPropagation()}
+        >
           <img
             ref={imgElRef}
             src={imageUrl}
@@ -366,7 +387,6 @@ export function CropModal({
             </>
           ) : (
             <>
-              {/* Quad outline connecting the four free corners */}
               <svg className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
                 <polygon
                   points={corners.map((c) => `${toFrame(c.x * 100, "x")}%,${toFrame(c.y * 100, "y")}%`).join(" ")}
@@ -393,16 +413,16 @@ export function CropModal({
         </div>
       </div>
 
-      {/* ─── DIMENSIONS (accessibility: announces current crop size) ────── */}
-      <p className="text-center text-xs text-white/50 shrink-0" aria-live="polite">{cropDimsLabel}</p>
+      {/* ─── DIMENSIONS ─────────────────────────────────────────────────── */}
+      <p className="relative text-center text-xs text-white/50 shrink-0" aria-live="polite">{cropDimsLabel}</p>
       {mode === "quad" && (
-        <p className="text-center text-[0.7rem] text-white/40 px-6 pt-1 shrink-0">
+        <p className="relative text-center text-[0.7rem] text-white/40 px-6 pt-1 shrink-0">
           The area inside the shape will be straightened into a rectangle — useful for photos taken at an angle.
         </p>
       )}
 
       {/* ─── ACTIONS ────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-center gap-3 px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shrink-0">
+      <div className="relative flex items-center justify-center gap-3 px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shrink-0">
         <button type="button" onClick={handleReset} className="flex items-center gap-1.5 px-4 py-2.5 rounded-[10px] text-sm font-semibold text-white/70 hover:text-white transition-colors">
           <ArrowCounterClockwise size={16} weight="bold" aria-hidden="true" />
           Reset
@@ -414,4 +434,4 @@ export function CropModal({
       </div>
     </div>
   )
-    } 
+                                 } 
