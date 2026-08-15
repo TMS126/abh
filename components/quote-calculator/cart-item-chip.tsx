@@ -3,7 +3,6 @@
 
 import { X, Minus, Plus } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
-import { GLASS } from "./shared"
 import { CartItem, getDisplayName, getEffectiveRate } from "./lib"
 
 interface CartItemChipProps {
@@ -30,18 +29,20 @@ export function CartItemChip({
       ref={chipRef}
       role="listitem"
       className={cn(
-        "shrink-0 flex items-center gap-1.5 pl-2.5 pr-1.5 py-1.5 rounded-full border-l-[3px] shadow-sm snap-start transition-all duration-300 ease-out motion-reduce:transition-none",
-        GLASS.item,
+        "shrink-0 flex items-center gap-2 pl-3 pr-1.5 py-2 rounded-full border-l-[3px] snap-start bg-white dark:bg-zinc-800 transition-all duration-300 ease-out motion-reduce:transition-none",
         isHighlighted && "ring-2 scale-[1.03]"
       )}
       style={{
         borderLeftColor: accent,
+        // ── Pop-out shadow: accent-tinted alpha glow so it lifts off the
+        // background in both light and dark mode, not just a flat black shadow ──
+        boxShadow: `0 4px 12px -2px ${accent}40, 0 2px 6px -1px rgba(0,0,0,0.18)`,
         ...(isHighlighted ? { ["--tw-ring-color" as any]: accent } : {}),
       }}
     >
-      <div className="flex flex-col leading-tight min-w-0 max-w-[92px]">
-        <span className="text-[0.68rem] font-black text-zinc-800 dark:text-zinc-200 truncate">{displayName}</span>
-        <span className="text-[0.62rem] font-bold" style={{ color: accent }}>R{lineTotal}</span>
+      <div className="flex flex-col leading-tight min-w-0 max-w-[104px]">
+        <span className="text-[0.7rem] font-black text-zinc-800 dark:text-zinc-200 truncate">{displayName}</span>
+        <span className="text-[0.64rem] font-bold" style={{ color: accent }}>R{lineTotal}</span>
       </div>
 
       <div className="flex items-center rounded-full overflow-hidden bg-black/5 dark:bg-white/10 shrink-0">
@@ -52,11 +53,11 @@ export function CartItemChip({
           onPointerLeave={() => onPressEnd(item.id)}
           onPointerCancel={() => onPressEnd(item.id)}
           aria-label={`Decrease quantity for ${displayName}`}
-          className="w-6 h-6 flex items-center justify-center active:bg-black/10 dark:active:bg-white/20 transition-colors duration-150 select-none touch-none"
+          className="w-7 h-7 flex items-center justify-center active:bg-black/10 dark:active:bg-white/20 transition-colors duration-150 select-none touch-none"
         >
-          <Minus size={10} weight="bold" aria-hidden="true" />
+          <Minus size={11} weight="bold" aria-hidden="true" />
         </button>
-        <span className="text-[0.65rem] font-black w-4 text-center text-zinc-800 dark:text-zinc-100" aria-label={`Quantity ${qty}`}>{qty}</span>
+        <span className="text-[0.68rem] font-black w-4 text-center text-zinc-800 dark:text-zinc-100" aria-label={`Quantity ${qty}`}>{qty}</span>
         <button
           onClick={() => onClickStep(item.id, 1)}
           onPointerDown={() => onPressStart(item.id, 1)}
@@ -64,18 +65,18 @@ export function CartItemChip({
           onPointerLeave={() => onPressEnd(item.id)}
           onPointerCancel={() => onPressEnd(item.id)}
           aria-label={`Increase quantity for ${displayName}`}
-          className="w-6 h-6 flex items-center justify-center active:bg-black/10 dark:active:bg-white/20 transition-colors duration-150 select-none touch-none"
+          className="w-7 h-7 flex items-center justify-center active:bg-black/10 dark:active:bg-white/20 transition-colors duration-150 select-none touch-none"
         >
-          <Plus size={10} weight="bold" aria-hidden="true" />
+          <Plus size={11} weight="bold" aria-hidden="true" />
         </button>
       </div>
 
       <button
         onClick={() => onRemove(item.id)}
         aria-label={`Remove ${displayName} from quote`}
-        className="w-5 h-5 flex items-center justify-center text-zinc-400 hover:text-red-500 shrink-0 transition-colors duration-150"
+        className="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-red-500 shrink-0 transition-colors duration-150"
       >
-        <X size={11} weight="bold" aria-hidden="true" />
+        <X size={12} weight="bold" aria-hidden="true" />
       </button>
     </div>
   )
