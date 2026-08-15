@@ -1,11 +1,11 @@
 // app/tools/jpg-to-pdf/use-jpg-to-pdf.ts
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { jsPDF } from "jspdf"
 import { BIZ, waLink } from "@/lib/brand"
 import { ACCEPTED_TYPES, MAX_FILES, MAX_FILE_SIZE_MB, PAGE_SIZES } from "./constants"
-import { buildFileName, compressImage, fitToPage, loadHistory, saveHistory, clearHistory, resolveFileType, generateThumbnail } from "./utils"
+import { buildFileName, compressImage, fitToPage, loadHistory, saveHistory, clearHistory, resolveFileType, generateThumbnail, generateCroppedPreview, hashFile } from "./utils"
 import type { ImageItem, ConvertMode, PageSize, ConvertError, ConvertedFile, HistoryEntry, ReconvertPrompt, CropRect } from "./types"
 
 export function useJpgToPdf() {
@@ -26,13 +26,14 @@ export function useJpgToPdf() {
   const [estimatedBytes, setEstimatedBytes] = useState<number | null>(null)
   const [retryingIds, setRetryingIds] = useState<Set<string>>(new Set())
 
+  // Always-fresh snapshot of images, readable from inside async work
+  // (hashing, preview regeneration) without depending on stale closures.
+  const imagesRef = useRef<ImageItem[]>(images)
+  useEffect(() => { imagesRef.current = images }, [images])
+
   useEffect(() => setHistory(loadHistory()), [])
 
   // ─── LIVE SIZE ESTIMATE ─────────────────────────────────────────────────
-  // Guards against a stale estimate finishing after a newer one has
-  // already started — since the decode cascade can now take a few
-  // attempts on a large file, this avoids wasted work being computed and
-  // applied after it's no longer relevant.
   useEffect(() => {
     const selected = images.filter((img) => img.selected)
     if (selected.length === 0) { setEstimatedBytes(null); return }
@@ -54,14 +55,17 @@ export function useJpgToPdf() {
   }, [images, quality, rotations])
 
   // ─── FILE INTAKE ────────────────────────────────────────────────────────
+  // Identity is decided by SHA-256 of the file's actual bytes (see
+  // hashFile in utils.ts), not name/size/lastModified — a re-uploaded
+  // photo replaces its existing grid entry in place no matter what the
+  // OS renamed it to; two different files are never confused just
+  // because their metadata happens to match.
   const addFiles = useCallback((fileList: FileList | File[]) => {
     setConvertedFiles([])
     setSendNotice(null)
     setReconvertPrompt(null)
     const incomingErrors: ConvertError[] = []
-    const toAppend: ImageItem[] = []
-    const replacements: { targetId: string; file: File; previewUrl: string }[] = []
-    let slotsLeft = MAX_FILES - images.length
+    const candidates: File[] = []
 
     Array.from(fileList).forEach((file) => {
       if (!resolveFileType(file, ACCEPTED_TYPES)) {
@@ -72,72 +76,62 @@ export function useJpgToPdf() {
         incomingErrors.push({ fileName: file.name, reason: `Over ${MAX_FILE_SIZE_MB}MB — try a smaller image.` })
         return
       }
-
-      const existing = images.find(
-        (img) => img.file.name === file.name && img.file.size === file.size && img.file.lastModified === file.lastModified
-      )
-      if (existing) {
-        replacements.push({ targetId: existing.id, file, previewUrl: URL.createObjectURL(file) })
-        return
-      }
-
-      if (slotsLeft <= 0) {
-        incomingErrors.push({ fileName: file.name, reason: `Skipped — ${MAX_FILES} image limit reached.` })
-        return
-      }
-      slotsLeft -= 1
-      toAppend.push({
-        id: `${file.name}-${file.lastModified}-${Math.random().toString(36).slice(2, 8)}`,
-        file,
-        previewUrl: URL.createObjectURL(file),
-        selected: true,
-      })
+      candidates.push(file)
     })
 
-    if (replacements.length > 0) {
-      setImages((prev) =>
-        prev.map((img) => {
-          const r = replacements.find((rep) => rep.targetId === img.id)
-          if (!r) return img
-          URL.revokeObjectURL(img.previewUrl)
-          return { ...img, file: r.file, previewUrl: r.previewUrl, selected: true, crop: undefined }
-        })
-      )
-      setRotations((prev) => {
-        const next = { ...prev }
-        replacements.forEach((r) => { delete next[r.targetId] })
-        return next
-      })
-      setConvertedIds((prev) => {
-        const next = new Set(prev)
-        replacements.forEach((r) => next.delete(r.targetId))
-        return next
-      })
-      setErrors((prev) => prev.filter((e) => !replacements.some((r) => r.targetId === e.id)))
-    }
+    if (candidates.length === 0) { setErrors(incomingErrors); return }
 
-    if (toAppend.length > 0) setImages((prev) => [...prev, ...toAppend])
+    ;(async () => {
+      const hashed = await Promise.all(candidates.map(async (file) => ({ file, hash: await hashFile(file) })))
 
-    const toThumbnail = [
-      ...toAppend.map((item) => ({ id: item.id, file: item.file })),
-      ...replacements.map((r) => ({ id: r.targetId, file: r.file })),
-    ]
-    toThumbnail.forEach((item) => {
-      generateThumbnail(item.file)
-        .then((thumbUrl) => {
-          setImages((prev) =>
-            prev.map((img) => {
+      const working = [...imagesRef.current]
+      const toThumbnail: { id: string; file: File }[] = []
+      const replacedIds: string[] = []
+      let slotsLeft = MAX_FILES - working.length
+
+      hashed.forEach(({ file, hash }) => {
+        const existingIdx = working.findIndex((img) => img.hash === hash)
+        if (existingIdx !== -1) {
+          const existing = working[existingIdx]
+          URL.revokeObjectURL(existing.previewUrl)
+          working[existingIdx] = { ...existing, file, hash, previewUrl: URL.createObjectURL(file), selected: true, crop: undefined }
+          replacedIds.push(existing.id)
+          toThumbnail.push({ id: existing.id, file })
+          return
+        }
+        if (slotsLeft <= 0) {
+          incomingErrors.push({ fileName: file.name, reason: `Skipped — ${MAX_FILES} image limit reached.` })
+          return
+        }
+        slotsLeft -= 1
+        const id = `${file.name}-${file.lastModified}-${Math.random().toString(36).slice(2, 8)}`
+        working.push({ id, file, hash, previewUrl: URL.createObjectURL(file), selected: true })
+        toThumbnail.push({ id, file })
+      })
+
+      setImages(working)
+      imagesRef.current = working
+
+      if (replacedIds.length > 0) {
+        setRotations((prev) => { const next = { ...prev }; replacedIds.forEach((id) => { delete next[id] }); return next })
+        setConvertedIds((prev) => { const next = new Set(prev); replacedIds.forEach((id) => next.delete(id)); return next })
+      }
+
+      toThumbnail.forEach((item) => {
+        generateThumbnail(item.file)
+          .then((thumbUrl) => {
+            setImages((prev) => prev.map((img) => {
               if (img.id !== item.id) return img
               URL.revokeObjectURL(img.previewUrl)
               return { ...img, previewUrl: thumbUrl }
-            })
-          )
-        })
-        .catch(() => {})
-    })
+            }))
+          })
+          .catch(() => {})
+      })
 
-    setErrors(incomingErrors)
-  }, [images])
+      setErrors(incomingErrors)
+    })()
+  }, [])
 
   // ─── IMAGE ACTIONS ──────────────────────────────────────────────────────
   const removeImage = (id: string) => {
@@ -151,9 +145,44 @@ export function useJpgToPdf() {
 
   const toggleSelect = (id: string) => setImages((p) => p.map((i) => (i.id === id ? { ...i, selected: !i.selected } : i)))
   const selectAll = (value: boolean) => setImages((p) => p.map((i) => ({ ...i, selected: value })))
-  const rotateImage = (id: string) => setRotations((p) => ({ ...p, [id]: ((p[id] || 0) + 90) % 360 }))
-  const resetRotation = (id: string) => setRotations((p) => ({ ...p, [id]: 0 }))
-  const setCrop = (id: string, crop: CropRect | undefined) => setImages((p) => p.map((i) => (i.id === id ? { ...i, crop } : i)))
+
+  // Grid thumbnail must reflect what will actually be converted — if the
+  // image has a crop applied, regenerate the preview from the real
+  // crop/rotation instead of leaving the original photo showing.
+  const regeneratePreview = useCallback(async (id: string, rotationOverride?: number) => {
+    const target = imagesRef.current.find((img) => img.id === id)
+    if (!target) return
+    try {
+      const thumbUrl = target.crop
+        ? await generateCroppedPreview(target.file, target.crop, rotationOverride ?? 0)
+        : await generateThumbnail(target.file)
+      setImages((prev) => prev.map((img) => {
+        if (img.id !== id) return img
+        URL.revokeObjectURL(img.previewUrl)
+        return { ...img, previewUrl: thumbUrl }
+      }))
+    } catch {
+      // Leave the existing preview in place rather than breaking the thumbnail.
+    }
+  }, [])
+
+  const rotateImage = (id: string) => {
+    const next = ((rotations[id] || 0) + 90) % 360
+    setRotations((p) => ({ ...p, [id]: next }))
+    const target = imagesRef.current.find((img) => img.id === id)
+    if (target?.crop) regeneratePreview(id, next)
+  }
+
+  const resetRotation = (id: string) => {
+    setRotations((p) => ({ ...p, [id]: 0 }))
+    const target = imagesRef.current.find((img) => img.id === id)
+    if (target?.crop) regeneratePreview(id, 0)
+  }
+
+  const setCrop = (id: string, crop: CropRect | undefined) => {
+    setImages((p) => p.map((i) => (i.id === id ? { ...i, crop } : i)))
+    regeneratePreview(id, rotations[id] || 0)
+  }
 
   const retryImage = async (id: string) => {
     const target = images.find((img) => img.id === id)
@@ -165,11 +194,7 @@ export function useJpgToPdf() {
     } catch {
       setErrors((prev) => [
         ...prev.filter((e) => e.id !== id),
-        {
-          fileName: target.file.name,
-          id,
-          reason: "Still can't read this image. Try re-saving or re-exporting the photo, then re-upload it.",
-        },
+        { fileName: target.file.name, id, reason: "Still can't read this image. Try re-saving or re-exporting the photo, then re-upload it." },
       ])
     } finally {
       setRetryingIds((prev) => { const next = new Set(prev); next.delete(id); return next })
@@ -269,9 +294,7 @@ export function useJpgToPdf() {
 
       const failedIds = new Set(failures.map((f) => f.id))
       const succeededIds = targets.filter((tg) => !failedIds.has(tg.id)).map((tg) => tg.id)
-      if (succeededIds.length > 0) {
-        setConvertedIds((prev) => new Set([...prev, ...succeededIds]))
-      }
+      if (succeededIds.length > 0) setConvertedIds((prev) => new Set([...prev, ...succeededIds]))
 
       if (results.length > 0) {
         const nowIso = new Date().toISOString()
@@ -339,4 +362,4 @@ export function useJpgToPdf() {
     addFiles, removeImage, toggleSelect, selectAll, rotateImage, resetRotation, setCrop, retryImage, reorder,
     clearAll, requestConvert, resolveReconvert, handleSend, clearRecents,
   }
-          } 
+    } 
