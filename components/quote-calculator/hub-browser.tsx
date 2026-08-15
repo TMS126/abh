@@ -92,78 +92,102 @@ export function HubBrowser({
               )}
             >
               <div className="overflow-hidden">
-                {/* Hub-level bracket line: encloses the whole section list while the hub is open */}
-                <div className="relative border-t border-zinc-100 dark:border-white/10 pl-3">
-                  <div
-                    className="absolute left-1.5 top-2 bottom-2 w-0.5 rounded-full"
-                    style={{ backgroundColor: `${accent}50` }}
-                    aria-hidden="true"
-                  />
+                {/* Hub → Sections → Items hierarchy tree. Each row draws its own
+                    "arrives from above" + "branches to next sibling" segments so
+                    the trunk stays continuous regardless of which rows/panels
+                    are expanded above it. */}
+                <div className="border-t border-zinc-100 dark:border-white/10 py-1">
                   {hub.sections.map((section, sIdx) => {
                     const isSectionOpen = openSections[hubId] === sIdx
                     const anySectionOpen = openSections[hubId] != null
                     const secSub = sectionSubtotal(hubId, section.title)
                     const sectionBulk = sectionHasBulk(hubId, section.title, section.items)
                     const sectionPanelId = `section-panel-${hubId}-${sIdx}`
+                    const isLastSection = sIdx === hub.sections.length - 1
 
                     return (
-                      <div
-                        key={sIdx}
-                        className={cn(sIdx > 0 && "border-t border-zinc-100 dark:border-white/[0.07]")}
-                      >
-                        <button
-                          onClick={() => toggleSection(hubId, sIdx)}
-                          aria-expanded={isSectionOpen}
-                          aria-controls={sectionPanelId}
-                          className="w-full flex items-center justify-between px-3 py-2 transition-colors duration-150 hover:bg-zinc-100/70 dark:hover:bg-white/5"
-                        >
-                          <span className="flex items-center gap-1.5">
-                            {/* Pill only for the selected section; colored-flat when a sibling
-                                is open; neutral when nothing in this hub is open */}
-                            <span
-                              className={cn(
-                                "text-[0.78rem] font-black uppercase tracking-[0.15em] transition-colors duration-200",
-                                isSectionOpen ? "px-2.5 py-1 rounded-full" : "px-0 py-1",
-                                !isSectionOpen && !anySectionOpen && "text-zinc-500 dark:text-zinc-400"
-                              )}
-                              style={
-                                isSectionOpen
-                                  ? { backgroundColor: solidAccent, color: "#fff" }
-                                  : anySectionOpen
-                                    ? { color: accent }
-                                    : undefined
-                              }
-                            >
-                              {section.title}
-                            </span>
-
-                            {!isSectionOpen && sectionBulk && (
-                              <span
-                                className="flex items-center gap-0.5 text-[0.58rem] font-black px-1.5 py-0.5 rounded-full"
-                                style={{ backgroundColor: `${accent}18`, color: accent }}
-                                aria-label="Bulk pricing available in this section"
-                              >
-                                <Tag size={9} weight="fill" aria-hidden="true" /> Bulk
-                              </span>
-                            )}
-
-                            {!isSectionOpen && secSub && (
-                              <span
-                                className="flex items-center gap-0.5 text-[0.6rem] font-black px-1.5 py-0.5 rounded-full"
-                                style={{ backgroundColor: `${accent}18`, color: accent }}
-                                aria-label={`${secSub.count} item${secSub.count === 1 ? "" : "s"} in cart from ${section.title}`}
-                              >
-                                <ShoppingBagOpen size={10} weight="fill" aria-hidden="true" />
-                                {secSub.count}
-                              </span>
-                            )}
-                          </span>
-                          <CaretDown
-                            size={12}
-                            className="mr-1 transition-transform duration-200 ease-out motion-reduce:transition-none"
-                            style={{ color: accent, transform: isSectionOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+                      <div key={sIdx} className="relative">
+                        {/* Trunk continuing past this node to the next section (skips the last) */}
+                        {!isLastSection && (
+                          <span
+                            className="absolute left-3 top-5 bottom-0 w-0.5 pointer-events-none"
+                            style={{ backgroundColor: `${accent}50` }}
+                            aria-hidden="true"
                           />
-                        </button>
+                        )}
+
+                        <div className="relative">
+                          <button
+                            onClick={() => toggleSection(hubId, sIdx)}
+                            aria-expanded={isSectionOpen}
+                            aria-controls={sectionPanelId}
+                            className="w-full flex items-center justify-between pl-8 pr-3 py-2 min-h-[2.5rem] transition-colors duration-150 hover:bg-zinc-100/70 dark:hover:bg-white/5"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              {/* Pill only for the selected section; colored-flat when a sibling
+                                  is open; neutral when nothing in this hub is open */}
+                              <span
+                                className={cn(
+                                  "text-[0.78rem] font-black uppercase tracking-[0.15em] transition-colors duration-200",
+                                  isSectionOpen ? "px-2.5 py-1 rounded-full" : "px-0 py-1",
+                                  !isSectionOpen && !anySectionOpen && "text-zinc-500 dark:text-zinc-400"
+                                )}
+                                style={
+                                  isSectionOpen
+                                    ? { backgroundColor: solidAccent, color: "#fff" }
+                                    : anySectionOpen
+                                      ? { color: accent }
+                                      : undefined
+                                }
+                              >
+                                {section.title}
+                              </span>
+
+                              {!isSectionOpen && sectionBulk && (
+                                <span
+                                  className="flex items-center gap-0.5 text-[0.58rem] font-black px-1.5 py-0.5 rounded-full"
+                                  style={{ backgroundColor: `${accent}18`, color: accent }}
+                                  aria-label="Bulk pricing available in this section"
+                                >
+                                  <Tag size={9} weight="fill" aria-hidden="true" /> Bulk
+                                </span>
+                              )}
+
+                              {!isSectionOpen && secSub && (
+                                <span
+                                  className="flex items-center gap-0.5 text-[0.6rem] font-black px-1.5 py-0.5 rounded-full"
+                                  style={{ backgroundColor: `${accent}18`, color: accent }}
+                                  aria-label={`${secSub.count} item${secSub.count === 1 ? "" : "s"} in cart from ${section.title}`}
+                                >
+                                  <ShoppingBagOpen size={10} weight="fill" aria-hidden="true" />
+                                  {secSub.count}
+                                </span>
+                              )}
+                            </span>
+                            <CaretDown
+                              size={12}
+                              className="mr-1 transition-transform duration-200 ease-out motion-reduce:transition-none"
+                              style={{ color: accent, transform: isSectionOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+                            />
+                          </button>
+
+                          {/* Connector segments render after the button so they paint above its hover fill */}
+                          <span
+                            className="absolute left-3 top-0 h-5 w-0.5 pointer-events-none"
+                            style={{ backgroundColor: `${accent}50` }}
+                            aria-hidden="true"
+                          />
+                          <span
+                            className="absolute left-3 top-5 -translate-y-1/2 w-2.5 h-0.5 pointer-events-none"
+                            style={{ backgroundColor: `${accent}50` }}
+                            aria-hidden="true"
+                          />
+                          <span
+                            className="absolute left-[1.4rem] top-5 -translate-y-1/2 w-1.5 h-1.5 rounded-full pointer-events-none"
+                            style={{ backgroundColor: accent }}
+                            aria-hidden="true"
+                          />
+                        </div>
 
                         <div
                           id={sectionPanelId}
@@ -173,63 +197,77 @@ export function HubBrowser({
                           )}
                         >
                           <div className="overflow-hidden">
-                            <div className="relative px-3 pb-3 pt-1 pl-6 space-y-1.5">
-                              <div
-                                className="absolute left-3 top-1 bottom-3 w-0.5 rounded-full"
-                                style={{ backgroundColor: `${accent}70` }}
-                                aria-hidden="true"
-                              />
+                            <div className="pl-8 pb-2 space-y-1">
                               {section.items.map((item, iIdx) => {
                                 const itemId = `${hubId}-${section.title}-${item.name}`
                                 const hasBulk = !!BULK_TIERS[itemId] || isScanItem(item.name)
                                 const itemQty = getItemQty(itemId)
+                                const isLastItem = iIdx === section.items.length - 1
                                 return (
-                                  <div
-                                    key={iIdx}
-                                    className={cn("relative overflow-hidden flex items-center gap-2 p-2 rounded-[10px] shadow-sm transition-colors duration-150", GLASS.item)}
-                                    style={{ backgroundColor: `${accent}08` }}
-                                  >
-                                    {hasBulk && (
+                                  <div key={iIdx} className="relative">
+                                    {!isLastItem && (
                                       <span
-                                        className="absolute -right-7 top-1.5 rotate-45 text-[0.55rem] font-black uppercase tracking-wider px-7 py-0.5 text-white"
-                                        style={{ backgroundColor: solidAccent }}
+                                        className="absolute left-3 top-[22px] bottom-0 w-0.5 pointer-events-none"
+                                        style={{ backgroundColor: `${accent}70` }}
                                         aria-hidden="true"
-                                      >
-                                        Bulk
-                                      </span>
+                                      />
                                     )}
-                                    {/* Item marker: dot instead of the old left border */}
                                     <span
-                                      className="w-1.5 h-1.5 rounded-full shrink-0"
+                                      className="absolute left-3 top-0 h-[22px] w-0.5 pointer-events-none"
+                                      style={{ backgroundColor: `${accent}70` }}
+                                      aria-hidden="true"
+                                    />
+                                    <span
+                                      className="absolute left-3 top-[22px] -translate-y-1/2 w-2 h-0.5 pointer-events-none"
+                                      style={{ backgroundColor: `${accent}70` }}
+                                      aria-hidden="true"
+                                    />
+                                    <span
+                                      className="absolute left-[1.15rem] top-[22px] -translate-y-1/2 w-1.5 h-1.5 rounded-full pointer-events-none"
                                       style={{ backgroundColor: accent }}
                                       aria-hidden="true"
                                     />
-                                    <div className="min-w-0 flex-1">
-                                      <p className="text-[0.9rem] font-bold text-zinc-700 dark:text-zinc-300 truncate">
-                                        {getDisplayName(section.title, item.name)}
-                                        {hasBulk && <span className="sr-only"> — bulk pricing available</span>}
-                                      </p>
-                                      <p className="text-[0.78rem] font-medium text-zinc-400">{item.price}</p>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 shrink-0">
-                                      {itemQty > 0 && (
+
+                                    <div
+                                      className={cn("relative overflow-hidden ml-6 flex items-center gap-2 p-2 rounded-[10px] shadow-sm transition-colors duration-150", GLASS.item)}
+                                      style={{ backgroundColor: `${accent}08` }}
+                                    >
+                                      {hasBulk && (
                                         <span
-                                          className="flex items-center gap-0.5 text-[0.6rem] font-black px-1.5 py-0.5 rounded-full"
-                                          style={{ backgroundColor: `${accent}18`, color: accent }}
-                                          aria-label={`${itemQty} already in your quote`}
+                                          className="absolute -right-7 top-1.5 rotate-45 text-[0.55rem] font-black uppercase tracking-wider px-7 py-0.5 text-white"
+                                          style={{ backgroundColor: solidAccent }}
+                                          aria-hidden="true"
                                         >
-                                          <ShoppingBagOpen size={10} weight="fill" aria-hidden="true" />
-                                          {itemQty}
+                                          Bulk
                                         </span>
                                       )}
-                                      <button
-                                        onClick={() => onAddItem(hubId, section.title, item.name, item.price)}
-                                        className="w-7 h-7 rounded-full flex items-center justify-center text-white shadow-sm active:scale-90 transition-transform duration-150 transform-gpu"
-                                        style={{ backgroundColor: solidAccent }}
-                                        aria-label={`Add ${item.name}`}
-                                      >
-                                        <Plus size={13} weight="bold" aria-hidden="true" />
-                                      </button>
+                                      <div className="min-w-0 flex-1">
+                                        <p className="text-[0.9rem] font-bold text-zinc-700 dark:text-zinc-300 truncate">
+                                          {getDisplayName(section.title, item.name)}
+                                          {hasBulk && <span className="sr-only"> — bulk pricing available</span>}
+                                        </p>
+                                        <p className="text-[0.78rem] font-medium text-zinc-400">{item.price}</p>
+                                      </div>
+                                      <div className="flex items-center gap-1.5 shrink-0">
+                                        {itemQty > 0 && (
+                                          <span
+                                            className="flex items-center gap-0.5 text-[0.6rem] font-black px-1.5 py-0.5 rounded-full"
+                                            style={{ backgroundColor: `${accent}18`, color: accent }}
+                                            aria-label={`${itemQty} already in your quote`}
+                                          >
+                                            <ShoppingBagOpen size={10} weight="fill" aria-hidden="true" />
+                                            {itemQty}
+                                          </span>
+                                        )}
+                                        <button
+                                          onClick={() => onAddItem(hubId, section.title, item.name, item.price)}
+                                          className="w-7 h-7 rounded-full flex items-center justify-center text-white shadow-sm active:scale-90 transition-transform duration-150 transform-gpu"
+                                          style={{ backgroundColor: solidAccent }}
+                                          aria-label={`Add ${item.name}`}
+                                        >
+                                          <Plus size={13} weight="bold" aria-hidden="true" />
+                                        </button>
+                                      </div>
                                     </div>
                                   </div>
                                 )
@@ -248,4 +286,4 @@ export function HubBrowser({
       })}
     </div>
   )
-                        }
+                            } 
