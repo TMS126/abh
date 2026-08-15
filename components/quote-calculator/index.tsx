@@ -106,10 +106,6 @@ export function QuoteCalculatorWidget() {
     return () => window.removeEventListener("abh:add-to-quote", handler)
   }, [])
 
-  // FIX: new — pairs with the pricing page's minus button
-  // (dispatchRemoveFromQuote). Reuses stepQty's existing -1/remove-at-zero
-  // logic so this plays through the same undo toast as the in-panel minus
-  // button, instead of wiping the whole line in one click.
   useEffect(() => {
     const handler = (e: Event) => {
       const { hubId, sectionTitle, name } = (e as CustomEvent).detail
@@ -120,10 +116,6 @@ export function QuoteCalculatorWidget() {
     return () => window.removeEventListener("abh:remove-from-quote", handler)
   }, [])
 
-  // ─── Step-quantity listener — used by ServiceDetailModal's +/- stepper.
-  // Separate from "abh:add-to-quote" (which always adds a fresh item at
-  // qty 1); this adjusts an EXISTING item's quantity up or down by a
-  // delta, reusing stepQty's existing remove-at-zero logic. ────────────
   useEffect(() => {
     const handler = (e: Event) => {
       const { id, delta } = (e as CustomEvent).detail
@@ -300,18 +292,17 @@ export function QuoteCalculatorWidget() {
   }
   const deleteSavedQuote = (id: string) => setSavedQuotes(prev => prev.filter(q => q.id !== id))
 
-  const fabVisible = !(scrolled && !isOpen) && !isOtherOpen
+  // ── FIX: FAB now fully hides while the panel is open — it was previously
+  // staying visible (as an X) and colliding with the panel's own close X /
+  // sitting near the WhatsApp CTA. The panel header X is the only close
+  // control while open. ──
+  const fabVisible = !isOpen && !(scrolled && !isOpen) && !isOtherOpen
   const showMiniBar = cart.length > 0 && !isOpen && fabVisible
 
   return (
     <>
       <span className="sr-only" role="status" aria-live="polite">{announce}</span>
 
-      {/* Panel "grow from widget" open animation — scales up from the
-          bottom-right corner (where the FAB icon sits) instead of
-          sliding up from the bottom, so the panel reads as one thing
-          unfurling out of the button rather than a separate box
-          appearing elsewhere. */}
       <style>{`
         @keyframes abh-calc-grow {
           0% { opacity: 0; transform: scale(0.08); }
@@ -326,9 +317,11 @@ export function QuoteCalculatorWidget() {
         }
       `}</style>
 
+      {/* ── FIX: overlay bumped from black/45 to black/70 + backdrop-blur
+          so page content behind the panel stops reading as legible/noisy ── */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-[9989] bg-black/45 transition-opacity duration-200 ease-out motion-reduce:transition-none"
+          className="fixed inset-0 z-[9989] bg-black/70 backdrop-blur transition-opacity duration-200 ease-out motion-reduce:transition-none"
           onClick={() => setIsOpen(false)}
           aria-hidden="true"
         />
@@ -375,42 +368,29 @@ export function QuoteCalculatorWidget() {
               "bg-white dark:bg-zinc-900",
               "px-2.5 py-1 rounded-full shadow-md border border-zinc-100 dark:border-zinc-800",
               "transition-all duration-200 ease-out origin-right motion-reduce:transition-none transform-gpu",
-              isOpen
-                ? "max-w-0 opacity-0 scale-x-0"
-                : "max-w-0 opacity-0 scale-x-0 group-hover/calc:max-w-[100px] group-hover/calc:opacity-100 group-hover/calc:scale-x-100"
+              "max-w-0 opacity-0 scale-x-0 group-hover/calc:max-w-[100px] group-hover/calc:opacity-100 group-hover/calc:scale-x-100"
             )}
             style={{ color: fabColor }}
           >
             Quote
           </span>
 
-          {/* Main FAB — no more filled circle. Just the calculator glyph
-              itself, colored in the brand blue (fabColor), sitting on
-              nothing. To keep it from disappearing against busy page
-              content, it gets a soft colored glow (drop-shadow, not a
-              box-shadow, since there's no box) plus a bit of extra size
-              since there's no button padding doing visual weight anymore. */}
+          {/* ── FIX: since the FAB now only ever renders while closed,
+              this can go back to always showing the calculator glyph —
+              no more X state to manage/collide with the panel's X ── */}
           <button
-            onClick={() => setIsOpen(o => !o)}
-            aria-label={isOpen ? "Close quotation calculator" : "Open quotation calculator"}
+            onClick={() => setIsOpen(true)}
+            aria-label="Open quotation calculator"
             className="relative w-14 h-14 flex items-center justify-center active:scale-90 hover:scale-110 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
           >
-            {isOpen ? (
-              <X
-                size={30}
-                weight="bold"
-                style={{ color: fabColor, filter: `drop-shadow(0 4px 10px ${fabColor}80) drop-shadow(0 2px 4px rgba(0,0,0,0.3))` }}
-              />
-            ) : (
-              <Calculator
-                size={34}
-                weight="fill"
-                style={{ color: fabColor, filter: `drop-shadow(0 4px 10px ${fabColor}80) drop-shadow(0 2px 4px rgba(0,0,0,0.3))` }}
-              />
-            )}
+            <Calculator
+              size={34}
+              weight="fill"
+              style={{ color: fabColor, filter: `drop-shadow(0 4px 10px ${fabColor}80) drop-shadow(0 2px 4px rgba(0,0,0,0.3))` }}
+            />
           </button>
 
-          {!isOpen && itemCount > 0 && (
+          {itemCount > 0 && (
             <button
               onClick={(e) => { e.stopPropagation(); setMiniExpanded(v => !v) }}
               aria-label={miniExpanded ? "Hide quote total" : "Show quote total"}
@@ -458,18 +438,19 @@ export function QuoteCalculatorWidget() {
 
             {cart.length > 0 && (
               <div className="p-4 border-b border-zinc-100 dark:border-white/10 space-y-2">
+                {/* ── FIX: contrast — labels bumped from zinc-400 (near WCAG fail) to zinc-500/zinc-300 ── */}
                 <div className="flex items-center justify-between mb-1 gap-2">
-                  <span className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-400">
+                  <span className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-300">
                     Your Quote · {itemCount} item{itemCount === 1 ? "" : "s"}
                   </span>
                   <div className="flex items-center gap-3 shrink-0">
                     <button
                       onClick={() => setShowSaveForm(v => !v)}
-                      className="flex items-center gap-1 text-[0.65rem] font-bold text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
+                      className="flex items-center gap-1 text-[0.65rem] font-bold text-zinc-500 dark:text-zinc-300 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
                     >
                       <FloppyDisk size={13} weight="bold" /> Save
                     </button>
-                    <button onClick={clearCart} className="text-[0.65rem] font-bold text-zinc-400 hover:text-red-500 transition-colors duration-150">Clear all</button>
+                    <button onClick={clearCart} className="text-[0.65rem] font-bold text-zinc-500 dark:text-zinc-300 hover:text-red-500 transition-colors duration-150">Clear all</button>
                   </div>
                 </div>
 
@@ -517,7 +498,7 @@ export function QuoteCalculatorWidget() {
               <div className="px-4 pt-4">
                 <button
                   onClick={() => setShowSavedList(v => !v)}
-                  className="w-full flex items-center justify-between gap-2 text-[0.65rem] font-black uppercase tracking-widest text-zinc-400 px-1 mb-2"
+                  className="w-full flex items-center justify-between gap-2 text-[0.65rem] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-300 px-1 mb-2"
                 >
                   <span className="flex items-center gap-1.5"><BookmarkSimple size={13} weight="bold" /> Saved Quotes ({savedQuotes.length})</span>
                   <CaretDown size={12} className={cn("transition-transform duration-200", showSavedList ? "rotate-180" : "rotate-0")} />
@@ -558,8 +539,10 @@ export function QuoteCalculatorWidget() {
             />
           </div>
 
+          {/* ── FIX: added top shadow so the sticky total/CTA footer visibly
+              lifts off the scrolling list above it ── */}
           {cart.length > 0 && (
-            <div className="px-4 pb-4 pt-3 shrink-0 border-t border-zinc-100 dark:border-white/10 space-y-3">
+            <div className="px-4 pb-4 pt-3 shrink-0 border-t border-zinc-100 dark:border-white/10 space-y-3 shadow-[0_-6px_14px_-6px_rgba(0,0,0,0.15)] dark:shadow-[0_-6px_14px_-6px_rgba(0,0,0,0.5)]">
               {totalSavings > 0 && (
                 <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-emerald-600 dark:text-emerald-400">
                   <SealPercent size={14} weight="fill" />
@@ -593,4 +576,4 @@ export function QuoteCalculatorWidget() {
       )}
     </>
   )
-                 } 
+    } 
