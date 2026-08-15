@@ -1,9 +1,10 @@
+// components/quote-calculator/hub-browser.tsx
 "use client"
 
-import { CaretDown, SealPercent, Plus } from "@phosphor-icons/react"
+import { CaretDown, SealPercent, Plus, ShoppingBagOpen } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 import { HUBS, HubId } from "@/lib/data"
-import { GLASS, HubIcon } from "./shared"
+import { GLASS, getDisplayName as _unused } from "./shared" // GLASS only — HubIcon dropped per icon-removal request
 import { HUB_ORDER, BULK_TIERS, isScanItem, hubHasBulk, sectionHasBulk, getDisplayName } from "./lib"
 
 interface HubBrowserProps {
@@ -38,17 +39,32 @@ export function HubBrowser({
               onClick={() => setOpenHub(isHubOpen ? null : hubId)}
               className="w-full flex items-center gap-3 p-3 text-left hover:bg-zinc-100/70 dark:hover:bg-white/5 transition-colors duration-150"
             >
-              <div
-                className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0"
-                style={{ backgroundColor: `${accent}20`, color: accent }}
-              >
-                <HubIcon id={hubId} />
-              </div>
+              {/* ── Hub icon box removed — text-only per no-icons request ── */}
               <span className="flex-1 min-w-0">
                 <span className="flex items-center gap-1.5">
-                  <span className="text-[0.9rem] font-black truncate" style={{ color: accent }}>{hub.title}</span>
+                  {/* ── Bumped: bigger + bolder. Neutral when closed, accent only when open ── */}
+                  <span
+                    className={cn(
+                      "text-[1.05rem] font-black truncate transition-colors duration-150",
+                      !isHubOpen && "text-zinc-700 dark:text-zinc-200"
+                    )}
+                    style={isHubOpen ? { color: accent } : undefined}
+                  >
+                    {hub.title}
+                  </span>
                   {hubBulk && (
-                    <SealPercent size={12} weight="fill" style={{ color: accent }} className="shrink-0" aria-label="Bulk pricing available" />
+                    <SealPercent size={12} weight="fill" style={{ color: isHubOpen ? accent : undefined }} className={cn("shrink-0", !isHubOpen && "text-zinc-400")} aria-label="Bulk pricing available" />
+                  )}
+                  {/* ── Cart indicator: bag icon + count, keeps hub accent even when closed (functional, not decorative) ── */}
+                  {subtotal && (
+                    <span
+                      className="flex items-center gap-0.5 text-[0.68rem] font-black shrink-0"
+                      style={{ color: accent }}
+                      aria-label={`${subtotal.count} item${subtotal.count === 1 ? "" : "s"} in cart from ${hub.title}`}
+                    >
+                      <ShoppingBagOpen size={12} weight="fill" />
+                      {subtotal.count}
+                    </span>
                   )}
                 </span>
                 {subtotal && (
@@ -158,4 +174,4 @@ export function HubBrowser({
       })}
     </div>
   )
-} 
+                                    } 
