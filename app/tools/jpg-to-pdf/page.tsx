@@ -133,6 +133,7 @@ export default function JpgToPdfPage() {
                     images={t.images}
                     rotations={t.rotations}
                     errors={t.errors}
+                    retryingIds={t.retryingIds}
                     convertedIds={t.convertedIds}
                     accentColor={accentColor}
                     onToggleSelect={t.toggleSelect}
