@@ -1,4 +1,3 @@
-// components/quote-calculator/hub-browser.tsx
 "use client"
 
 import { CaretDown, Plus, ShoppingBagOpen, Tag } from "@phosphor-icons/react"
@@ -47,7 +46,6 @@ export function HubBrowser({
               className="w-full flex items-center gap-3 p-3 text-left hover:bg-zinc-100/70 dark:hover:bg-white/5 transition-colors duration-150"
             >
               <span className="flex-1 min-w-0 flex items-center gap-1.5">
-                {/* ── Bumped: bigger + bolder. Neutral when closed, accent only when open ── */}
                 <span
                   className={cn(
                     "text-[1.05rem] font-black truncate transition-colors duration-150",
@@ -58,9 +56,6 @@ export function HubBrowser({
                   {hub.title}
                 </span>
 
-                {/* ── Bulk ribbon — HUB level: only while hub is CLOSED.
-                    Cascades down to section level once opened, same
-                    pattern as the cart badge below. ── */}
                 {!isHubOpen && hubBulk && (
                   <span
                     className="flex items-center gap-0.5 text-[0.6rem] font-black px-1.5 py-0.5 rounded-full shrink-0"
@@ -71,7 +66,6 @@ export function HubBrowser({
                   </span>
                 )}
 
-                {/* ── Floating cart badge: only visible while hub is CLOSED ── */}
                 {!isHubOpen && hubSub && (
                   <span
                     className="ml-auto shrink-0 flex items-center gap-1 text-[0.66rem] font-black px-2 py-0.5 rounded-full"
@@ -98,9 +92,16 @@ export function HubBrowser({
               )}
             >
               <div className="overflow-hidden">
-                <div className="border-t border-zinc-100 dark:border-white/10">
+                {/* Hub-level bracket line: encloses the whole section list while the hub is open */}
+                <div className="relative border-t border-zinc-100 dark:border-white/10 pl-3">
+                  <div
+                    className="absolute left-1.5 top-2 bottom-2 w-0.5 rounded-full"
+                    style={{ backgroundColor: `${accent}50` }}
+                    aria-hidden="true"
+                  />
                   {hub.sections.map((section, sIdx) => {
                     const isSectionOpen = openSections[hubId] === sIdx
+                    const anySectionOpen = openSections[hubId] != null
                     const secSub = sectionSubtotal(hubId, section.title)
                     const sectionBulk = sectionHasBulk(hubId, section.title, section.items)
                     const sectionPanelId = `section-panel-${hubId}-${sIdx}`
@@ -117,20 +118,25 @@ export function HubBrowser({
                           className="w-full flex items-center justify-between px-3 py-2 transition-colors duration-150 hover:bg-zinc-100/70 dark:hover:bg-white/5"
                         >
                           <span className="flex items-center gap-1.5">
+                            {/* Pill only for the selected section; colored-flat when a sibling
+                                is open; neutral when nothing in this hub is open */}
                             <span
-                              className="text-[0.78rem] font-black uppercase tracking-[0.15em] px-2.5 py-1 rounded-full transition-colors duration-200"
+                              className={cn(
+                                "text-[0.78rem] font-black uppercase tracking-[0.15em] transition-colors duration-200",
+                                isSectionOpen ? "px-2.5 py-1 rounded-full" : "px-0 py-1",
+                                !isSectionOpen && !anySectionOpen && "text-zinc-500 dark:text-zinc-400"
+                              )}
                               style={
                                 isSectionOpen
                                   ? { backgroundColor: solidAccent, color: "#fff" }
-                                  : { backgroundColor: `${accent}18`, color: accent }
+                                  : anySectionOpen
+                                    ? { color: accent }
+                                    : undefined
                               }
                             >
                               {section.title}
                             </span>
 
-                            {/* ── Bulk ribbon — SECTION level: only while hub is open
-                                AND this section is closed. Cascades further down to
-                                item-level diagonal ribbons once the section opens. ── */}
                             {!isSectionOpen && sectionBulk && (
                               <span
                                 className="flex items-center gap-0.5 text-[0.58rem] font-black px-1.5 py-0.5 rounded-full"
@@ -141,7 +147,6 @@ export function HubBrowser({
                               </span>
                             )}
 
-                            {/* ── Section-level cart badge: only while section is CLOSED (and hub open) ── */}
                             {!isSectionOpen && secSub && (
                               <span
                                 className="flex items-center gap-0.5 text-[0.6rem] font-black px-1.5 py-0.5 rounded-full"
@@ -168,8 +173,6 @@ export function HubBrowser({
                           )}
                         >
                           <div className="overflow-hidden">
-                            {/* ── Bracket line: thin accent line connecting the pill down
-                                through its items ── */}
                             <div className="relative px-3 pb-3 pt-1 pl-6 space-y-1.5">
                               <div
                                 className="absolute left-3 top-1 bottom-3 w-0.5 rounded-full"
@@ -183,11 +186,9 @@ export function HubBrowser({
                                 return (
                                   <div
                                     key={iIdx}
-                                    className={cn("relative overflow-hidden flex items-center justify-between gap-2 p-2 rounded-[10px] shadow-sm border-l-2 transition-colors duration-150", GLASS.item)}
-                                    style={{ backgroundColor: `${accent}08`, borderLeftColor: `${accent}70` }}
+                                    className={cn("relative overflow-hidden flex items-center gap-2 p-2 rounded-[10px] shadow-sm transition-colors duration-150", GLASS.item)}
+                                    style={{ backgroundColor: `${accent}08` }}
                                   >
-                                    {/* ── Bulk ribbon — ITEM level: end of the cascade, only
-                                        visible once its section is open ── */}
                                     {hasBulk && (
                                       <span
                                         className="absolute -right-7 top-1.5 rotate-45 text-[0.55rem] font-black uppercase tracking-wider px-7 py-0.5 text-white"
@@ -197,7 +198,13 @@ export function HubBrowser({
                                         Bulk
                                       </span>
                                     )}
-                                    <div className="min-w-0">
+                                    {/* Item marker: dot instead of the old left border */}
+                                    <span
+                                      className="w-1.5 h-1.5 rounded-full shrink-0"
+                                      style={{ backgroundColor: accent }}
+                                      aria-hidden="true"
+                                    />
+                                    <div className="min-w-0 flex-1">
                                       <p className="text-[0.9rem] font-bold text-zinc-700 dark:text-zinc-300 truncate">
                                         {getDisplayName(section.title, item.name)}
                                         {hasBulk && <span className="sr-only"> — bulk pricing available</span>}
@@ -241,4 +248,4 @@ export function HubBrowser({
       })}
     </div>
   )
-                } 
+                        }
