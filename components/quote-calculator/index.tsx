@@ -13,7 +13,7 @@ import {
   CartItem, SavedQuote, STORAGE_KEY, STORAGE_KEY_SAVED,
   getDisplayName, getEffectiveRate, parsePrice, quoteTotals,
 } from "./lib"
-import { CartItemRow } from "./cart-item-row"
+import { CartItemChip } from "./cart-item-chip"
 import { HubBrowser } from "./hub-browser"
 import { exportQuotePdf } from "./pdf-export"
 
@@ -28,7 +28,7 @@ export function QuoteCalculatorWidget() {
   const [scrolled, setScrolled] = useState(false)
 
   const [highlightId, setHighlightId] = useState<string | null>(null)
-  const qtyInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
+  const chipRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const [announce, setAnnounce] = useState("")
 
   const [undoStack, setUndoStack] = useState<{ item: CartItem; index: number } | null>(null)
@@ -96,7 +96,6 @@ export function QuoteCalculatorWidget() {
     if (isOpen || cart.length === 0) setMiniExpanded(false)
   }, [isOpen, cart.length])
 
-  // ─── Add-to-quote listener (no longer auto-opens the panel) ────────────
   useEffect(() => {
     const handler = (e: Event) => {
       const { hubId, sectionTitle, name, price } = (e as CustomEvent).detail
@@ -125,14 +124,15 @@ export function QuoteCalculatorWidget() {
     return () => window.removeEventListener("abh:step-quote-qty", handler)
   }, [])
 
+  // ── FIX: highlight now scrolls the horizontal chip strip (inline, not vertical) ──
   useEffect(() => {
     if (!highlightId) return
     const id = highlightId
     let raf1: number, raf2: number
     const tryScroll = () => {
-      const el = qtyInputRefs.current[id]
+      const el = chipRefs.current[id]
       if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" })
+        el.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" })
       } else {
         raf2 = requestAnimationFrame(tryScroll)
       }
@@ -195,19 +195,6 @@ export function QuoteCalculatorWidget() {
     setUndoStack(null)
   }
 
-  const updateQty  = (id: string, qty: number) => {
-    if (qty < 1) { removeItem(id); return }
-    setCart(prev => prev.map(i => i.id === id ? { ...i, qty } : i))
-  }
-  const setQtyDraft = (id: string, raw: string) => {
-    if (raw === "") { setCart(prev => prev.map(i => i.id === id ? { ...i, qty: 0 } : i)); return }
-    const n = parseInt(raw, 10)
-    if (!isNaN(n) && n >= 0) setCart(prev => prev.map(i => i.id === id ? { ...i, qty: n } : i))
-  }
-  const handleQtyBlur = (id: string, qty: number) => {
-    if (qty < 1) setCart(prev => prev.map(i => i.id === id ? { ...i, qty: 1 } : i))
-  }
-
   const stepQty = (id: string, delta: number) => {
     setCart(prev => {
       const item = prev.find(i => i.id === id)
@@ -257,6 +244,14 @@ export function QuoteCalculatorWidget() {
     if (items.length === 0) return null
     return quoteTotals(items)
   }
+  // ── NEW: needed for the section-level cascading badge ──
+  const sectionSubtotal = (hubId: HubId, sectionTitle: string) => {
+    const items = cart.filter(i => i.hubId === hubId && i.sectionTitle === sectionTitle)
+    if (items.length === 0) return null
+    return quoteTotals(items)
+  }
+  // ── NEW: needed for the item-level cascading indicator ──
+  const getItemQty = (id: string) => cart.find(i => i.id === id)?.qty ?? 0
 
   const buildQuoteMessage = (items: CartItem[]) => {
     const t = quoteTotals(items)
@@ -292,10 +287,6 @@ export function QuoteCalculatorWidget() {
   }
   const deleteSavedQuote = (id: string) => setSavedQuotes(prev => prev.filter(q => q.id !== id))
 
-  // ── FIX: FAB now fully hides while the panel is open — it was previously
-  // staying visible (as an X) and colliding with the panel's own close X /
-  // sitting near the WhatsApp CTA. The panel header X is the only close
-  // control while open. ──
   const fabVisible = !isOpen && !(scrolled && !isOpen) && !isOtherOpen
   const showMiniBar = cart.length > 0 && !isOpen && fabVisible
 
@@ -315,10 +306,12 @@ export function QuoteCalculatorWidget() {
         @media (prefers-reduced-motion: reduce) {
           .abh-calc-grow { animation: none; }
         }
+        /* Speed: hint the browser this scroller will animate, and hide
+           its native scrollbar without extra JS/plugins */
+        .abh-chip-strip { scrollbar-width: none; -ms-overflow-style: none; }
+        .abh-chip-strip::-webkit-scrollbar { display: none; }
       `}</style>
 
-      {/* ── FIX: overlay bumped from black/45 to black/70 + backdrop-blur
-          so page content behind the panel stops reading as legible/noisy ── */}
       {isOpen && (
         <div
           className="fixed inset-0 z-[9989] bg-black/70 backdrop-blur transition-opacity duration-200 ease-out motion-reduce:transition-none"
@@ -375,12 +368,10 @@ export function QuoteCalculatorWidget() {
             Quote
           </span>
 
-          {/* ── FIX: since the FAB now only ever renders while closed,
-              this can go back to always showing the calculator glyph —
-              no more X state to manage/collide with the panel's X ── */}
           <button
             onClick={() => setIsOpen(true)}
             aria-label="Open quotation calculator"
+            aria-haspopup="dialog"
             className="relative w-14 h-14 flex items-center justify-center active:scale-90 hover:scale-110 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
           >
             <Calculator
@@ -404,6 +395,9 @@ export function QuoteCalculatorWidget() {
 
       {isOpen && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Quotation Calculator"
           className={cn(
             "fixed bottom-24 right-4 left-4 md:left-auto md:right-6 z-[9991] md:w-[400px] max-h-[75vh] rounded-[20px] shadow-2xl flex flex-col overflow-hidden transform-gpu abh-calc-grow",
             GLASS.panel
@@ -416,81 +410,90 @@ export function QuoteCalculatorWidget() {
             <h3 className="font-sans font-black text-lg" style={{ color: titleAccent }}>Quotation Calculator</h3>
             <button
               onClick={() => setIsOpen(false)}
+              aria-label="Close quotation calculator"
               className={cn("w-8 h-8 rounded-full flex items-center justify-center text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150", GLASS.btn)}
             >
-              <X size={16} weight="bold" />
+              <X size={16} weight="bold" aria-hidden="true" />
             </button>
           </div>
 
           <div className="flex-1 overflow-y-auto min-h-0">
 
-            {undoStack && (
-              <div className="mx-4 mt-4 flex items-center justify-between gap-3 p-3 rounded-[12px] bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-lg animate-in fade-in slide-in-from-top-1 duration-200">
-                <span className="text-xs font-bold truncate">{getDisplayName(undoStack.item.sectionTitle, undoStack.item.name)} - {undoStack.item.sectionTitle} removed</span>
-                <button
-                  onClick={undoRemove}
-                  className="shrink-0 flex items-center gap-1.5 text-xs font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/15 dark:bg-black/10 hover:bg-white/25 dark:hover:bg-black/20 transition-colors"
-                >
-                  <ArrowCounterClockwise size={13} weight="bold" /> Undo
-                </button>
-              </div>
-            )}
-
+            {/* ── Sticky quote block: header + horizontal chip strip stay pinned
+                while only "Add a Service" scrolls beneath, per confirmed decision ── */}
             {cart.length > 0 && (
-              <div className="p-4 border-b border-zinc-100 dark:border-white/10 space-y-2">
-                {/* ── FIX: contrast — labels bumped from zinc-400 (near WCAG fail) to zinc-500/zinc-300 ── */}
-                <div className="flex items-center justify-between mb-1 gap-2">
-                  <span className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-300">
-                    Your Quote · {itemCount} item{itemCount === 1 ? "" : "s"}
-                  </span>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <button
-                      onClick={() => setShowSaveForm(v => !v)}
-                      className="flex items-center gap-1 text-[0.65rem] font-bold text-zinc-500 dark:text-zinc-300 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
-                    >
-                      <FloppyDisk size={13} weight="bold" /> Save
-                    </button>
-                    <button onClick={clearCart} className="text-[0.65rem] font-bold text-zinc-500 dark:text-zinc-300 hover:text-red-500 transition-colors duration-150">Clear all</button>
+              <div className="sticky top-0 z-20 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm border-b border-zinc-100 dark:border-white/10 shadow-[0_4px_10px_-6px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_10px_-6px_rgba(0,0,0,0.4)]">
+                <div className="p-3 space-y-2">
+
+                  {undoStack && (
+                    <div className="flex items-center justify-between gap-3 p-2.5 rounded-[12px] bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-lg animate-in fade-in slide-in-from-top-1 duration-200">
+                      <span className="text-[0.7rem] font-bold truncate">{getDisplayName(undoStack.item.sectionTitle, undoStack.item.name)} removed</span>
+                      <button
+                        onClick={undoRemove}
+                        className="shrink-0 flex items-center gap-1.5 text-[0.65rem] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/15 dark:bg-black/10 hover:bg-white/25 dark:hover:bg-black/20 transition-colors"
+                      >
+                        <ArrowCounterClockwise size={12} weight="bold" aria-hidden="true" /> Undo
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-300">
+                      Your Quote · {itemCount} item{itemCount === 1 ? "" : "s"} · R{total}
+                    </span>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <button
+                        onClick={() => setShowSaveForm(v => !v)}
+                        className="flex items-center gap-1 text-[0.65rem] font-bold text-zinc-500 dark:text-zinc-300 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
+                      >
+                        <FloppyDisk size={13} weight="bold" aria-hidden="true" /> Save
+                      </button>
+                      <button onClick={clearCart} className="text-[0.65rem] font-bold text-zinc-500 dark:text-zinc-300 hover:text-red-500 transition-colors duration-150">Clear all</button>
+                    </div>
+                  </div>
+
+                  {showSaveForm && (
+                    <div className="flex items-center gap-2 p-2 rounded-[12px] bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/10 animate-in fade-in slide-in-from-top-1 duration-150">
+                      <label htmlFor="save-quote-name" className="sr-only">Name this quote (optional)</label>
+                      <input
+                        id="save-quote-name"
+                        autoFocus
+                        value={saveNameDraft}
+                        onChange={e => setSaveNameDraft(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") confirmSaveQuote() }}
+                        placeholder="Name this quote (optional)"
+                        className="flex-1 min-w-0 px-2.5 py-1.5 rounded-[8px] bg-white dark:bg-zinc-900 text-xs font-medium text-zinc-800 dark:text-zinc-200 outline-none border border-zinc-100 dark:border-zinc-800"
+                      />
+                      <button
+                        onClick={confirmSaveQuote}
+                        className="shrink-0 px-3 py-1.5 rounded-[8px] text-xs font-black"
+                        style={{ backgroundColor: fabColor, color: fabTextColor }}
+                      >
+                        Save
+                      </button>
+                    </div>
+                  )}
+
+                  <div
+                    role="list"
+                    aria-label="Items in your quote"
+                    className="abh-chip-strip flex gap-2 overflow-x-auto snap-x snap-mandatory pb-0.5"
+                  >
+                    {cart.map(item => (
+                      <CartItemChip
+                        key={item.id}
+                        item={item}
+                        accent={getAccent(item.hubId)}
+                        isHighlighted={highlightId === item.id}
+                        chipRef={(el) => { chipRefs.current[item.id] = el }}
+                        onRemove={removeItem}
+                        onClickStep={handleClickStep}
+                        onPressStart={handlePressStart}
+                        onPressEnd={handlePressEnd}
+                      />
+                    ))}
                   </div>
                 </div>
-
-                {showSaveForm && (
-                  <div className="flex items-center gap-2 p-2 rounded-[12px] bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/10 animate-in fade-in slide-in-from-top-1 duration-150">
-                    <label htmlFor="save-quote-name" className="sr-only">Name this quote (optional)</label>
-                    <input
-                      id="save-quote-name"
-                      autoFocus
-                      value={saveNameDraft}
-                      onChange={e => setSaveNameDraft(e.target.value)}
-                      onKeyDown={e => { if (e.key === "Enter") confirmSaveQuote() }}
-                      placeholder="Name this quote (optional)"
-                      className="flex-1 min-w-0 px-2.5 py-1.5 rounded-[8px] bg-white dark:bg-zinc-900 text-xs font-medium text-zinc-800 dark:text-zinc-200 outline-none border border-zinc-100 dark:border-zinc-800"
-                    />
-                    <button
-                      onClick={confirmSaveQuote}
-                      className="shrink-0 px-3 py-1.5 rounded-[8px] text-xs font-black"
-                      style={{ backgroundColor: fabColor, color: fabTextColor }}
-                    >
-                      Save
-                    </button>
-                  </div>
-                )}
-
-                {cart.map(item => (
-                  <CartItemRow
-                    key={item.id}
-                    item={item}
-                    accent={getAccent(item.hubId)}
-                    isHighlighted={highlightId === item.id}
-                    qtyInputRef={(el) => { qtyInputRefs.current[item.id] = el }}
-                    onRemove={removeItem}
-                    onClickStep={handleClickStep}
-                    onPressStart={handlePressStart}
-                    onPressEnd={handlePressEnd}
-                    onQtyDraft={setQtyDraft}
-                    onQtyBlur={handleQtyBlur}
-                  />
-                ))}
               </div>
             )}
 
@@ -498,12 +501,14 @@ export function QuoteCalculatorWidget() {
               <div className="px-4 pt-4">
                 <button
                   onClick={() => setShowSavedList(v => !v)}
+                  aria-expanded={showSavedList}
+                  aria-controls="saved-quotes-panel"
                   className="w-full flex items-center justify-between gap-2 text-[0.65rem] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-300 px-1 mb-2"
                 >
-                  <span className="flex items-center gap-1.5"><BookmarkSimple size={13} weight="bold" /> Saved Quotes ({savedQuotes.length})</span>
-                  <CaretDown size={12} className={cn("transition-transform duration-200", showSavedList ? "rotate-180" : "rotate-0")} />
+                  <span className="flex items-center gap-1.5"><BookmarkSimple size={13} weight="bold" aria-hidden="true" /> Saved Quotes ({savedQuotes.length})</span>
+                  <CaretDown size={12} className={cn("transition-transform duration-200", showSavedList ? "rotate-180" : "rotate-0")} aria-hidden="true" />
                 </button>
-                <div className={cn("grid transition-[grid-template-rows] duration-250 ease-out motion-reduce:transition-none", showSavedList ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
+                <div id="saved-quotes-panel" className={cn("grid transition-[grid-template-rows] duration-250 ease-out motion-reduce:transition-none", showSavedList ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
                   <div className="overflow-hidden">
                     <div className="space-y-1.5 pb-3">
                       {savedQuotes.map(q => {
@@ -516,7 +521,7 @@ export function QuoteCalculatorWidget() {
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
                               <button onClick={() => loadSavedQuote(q)} className="px-2.5 py-1 rounded-[8px] text-[0.65rem] font-black" style={{ backgroundColor: fabColor, color: fabTextColor }}>Load</button>
-                              <button onClick={() => deleteSavedQuote(q.id)} className="w-6 h-6 rounded-full flex items-center justify-center text-zinc-400 hover:text-red-500 transition-colors"><Trash size={12} weight="bold" /></button>
+                              <button onClick={() => deleteSavedQuote(q.id)} aria-label={`Delete saved quote ${q.name}`} className="w-6 h-6 rounded-full flex items-center justify-center text-zinc-400 hover:text-red-500 transition-colors"><Trash size={12} weight="bold" aria-hidden="true" /></button>
                             </div>
                           </div>
                         )
@@ -535,17 +540,17 @@ export function QuoteCalculatorWidget() {
               getAccent={getAccent}
               getSolid={getSolid}
               hubSubtotal={hubSubtotal}
+              sectionSubtotal={sectionSubtotal}
+              getItemQty={getItemQty}
               onAddItem={addItem}
             />
           </div>
 
-          {/* ── FIX: added top shadow so the sticky total/CTA footer visibly
-              lifts off the scrolling list above it ── */}
           {cart.length > 0 && (
             <div className="px-4 pb-4 pt-3 shrink-0 border-t border-zinc-100 dark:border-white/10 space-y-3 shadow-[0_-6px_14px_-6px_rgba(0,0,0,0.15)] dark:shadow-[0_-6px_14px_-6px_rgba(0,0,0,0.5)]">
               {totalSavings > 0 && (
                 <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-emerald-600 dark:text-emerald-400">
-                  <SealPercent size={14} weight="fill" />
+                  <SealPercent size={14} weight="fill" aria-hidden="true" />
                   Saving R{totalSavings} with bulk pricing
                 </div>
               )}
@@ -560,14 +565,14 @@ export function QuoteCalculatorWidget() {
                   aria-label="Download or print quote as PDF"
                   title="Download / print as PDF"
                 >
-                  <FilePdf size={20} weight="bold" className="text-zinc-600 dark:text-zinc-300" />
+                  <FilePdf size={20} weight="bold" className="text-zinc-600 dark:text-zinc-300" aria-hidden="true" />
                 </button>
                 <button
                   onClick={sendQuote}
                   className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-[14px] font-black text-sm text-white active:scale-95 transition-transform duration-150 shadow-lg transform-gpu"
                   style={{ backgroundColor: "#25D366" }}
                 >
-                  <WhatsappLogo size={20} weight="fill" /> Send Quote via WhatsApp
+                  <WhatsappLogo size={20} weight="fill" aria-hidden="true" /> Send Quote via WhatsApp
                 </button>
               </div>
             </div>
