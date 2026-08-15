@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
-import { Calculator, X, WhatsappLogo, CaretDown, SealPercent, ArrowCounterClockwise, FloppyDisk, FilePdf, BookmarkSimple, Trash } from "@phosphor-icons/react"
+import { Calculator, X, WhatsappLogo, CaretDown, SealPercent, ArrowCounterClockwise, FloppyDisk, FilePdf, BookmarkSimple, Trash, ArrowsOutSimple, ArrowsInSimple } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { HUB_COLORS, HubKey, BIZ, waLink } from "@/lib/brand"
@@ -14,8 +14,11 @@ import {
   getDisplayName, getEffectiveRate, parsePrice, quoteTotals,
 } from "./lib"
 import { CartItemChip } from "./cart-item-chip"
+import { CartItemCard } from "./cart-item-card"
 import { HubBrowser } from "./hub-browser"
 import { exportQuotePdf } from "./pdf-export"
+
+const VIEW_KEY = "apexbytes-quote-view"
 
 export function QuoteCalculatorWidget() {
   const { resolvedTheme } = useTheme(); const isDark = resolvedTheme === "dark"
@@ -41,6 +44,15 @@ export function QuoteCalculatorWidget() {
   const [showSavedList, setShowSavedList] = useState(false)
 
   const [miniExpanded, setMiniExpanded] = useState(false)
+
+  // ── Expand view toggle: compact chip strip (default) vs full horizontal cards ──
+  const [expandView, setExpandView] = useState(false)
+  useEffect(() => {
+    try { const s = localStorage.getItem(VIEW_KEY); if (s === "expanded") setExpandView(true) } catch {}
+  }, [])
+  useEffect(() => {
+    try { localStorage.setItem(VIEW_KEY, expandView ? "expanded" : "compact") } catch {}
+  }, [expandView])
 
   const pressState = useRef<Record<string, { timeout?: ReturnType<typeof setTimeout>; interval?: ReturnType<typeof setInterval>; longPressed?: boolean }>>({})
 
@@ -77,7 +89,6 @@ export function QuoteCalculatorWidget() {
     return () => { document.body.style.overflow = "" }
   }, [isOpen])
 
-  // ─── Back-button close ──────────────────────────────────────────────────
   const wasOpenRef = useRef(false)
   useEffect(() => {
     if (isOpen && !wasOpenRef.current) {
@@ -124,7 +135,6 @@ export function QuoteCalculatorWidget() {
     return () => window.removeEventListener("abh:step-quote-qty", handler)
   }, [])
 
-  // ── FIX: highlight now scrolls the horizontal chip strip (inline, not vertical) ──
   useEffect(() => {
     if (!highlightId) return
     const id = highlightId
@@ -244,13 +254,11 @@ export function QuoteCalculatorWidget() {
     if (items.length === 0) return null
     return quoteTotals(items)
   }
-  // ── NEW: needed for the section-level cascading badge ──
   const sectionSubtotal = (hubId: HubId, sectionTitle: string) => {
     const items = cart.filter(i => i.hubId === hubId && i.sectionTitle === sectionTitle)
     if (items.length === 0) return null
     return quoteTotals(items)
   }
-  // ── NEW: needed for the item-level cascading indicator ──
   const getItemQty = (id: string) => cart.find(i => i.id === id)?.qty ?? 0
 
   const buildQuoteMessage = (items: CartItem[]) => {
@@ -306,8 +314,6 @@ export function QuoteCalculatorWidget() {
         @media (prefers-reduced-motion: reduce) {
           .abh-calc-grow { animation: none; }
         }
-        /* Speed: hint the browser this scroller will animate, and hide
-           its native scrollbar without extra JS/plugins */
         .abh-chip-strip { scrollbar-width: none; -ms-overflow-style: none; }
         .abh-chip-strip::-webkit-scrollbar { display: none; }
       `}</style>
@@ -419,11 +425,19 @@ export function QuoteCalculatorWidget() {
 
           <div className="flex-1 overflow-y-auto min-h-0">
 
-            {/* ── Sticky quote block: header + horizontal chip strip stay pinned
-                while only "Add a Service" scrolls beneath, per confirmed decision ── */}
+            {/* ── Sticky quote block: enlarged default padding/type, aesthetic
+                gradient wash behind it, Expand-view toggle next to Save/Clear ── */}
             {cart.length > 0 && (
-              <div className="sticky top-0 z-20 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm border-b border-zinc-100 dark:border-white/10 shadow-[0_4px_10px_-6px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_10px_-6px_rgba(0,0,0,0.4)]">
-                <div className="p-3 space-y-2">
+              <div
+                className="sticky top-0 z-20 border-b border-zinc-100 dark:border-white/10 shadow-[0_4px_10px_-6px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_10px_-6px_rgba(0,0,0,0.4)]"
+                style={{
+                  background: isDark
+                    ? `linear-gradient(180deg, ${fabColor}14 0%, rgba(24,24,27,0.97) 70%)`
+                    : `linear-gradient(180deg, ${fabColor}0d 0%, rgba(255,255,255,0.97) 70%)`,
+                  backdropFilter: "blur(6px)",
+                }}
+              >
+                <div className="p-4 space-y-2.5">
 
                   {undoStack && (
                     <div className="flex items-center justify-between gap-3 p-2.5 rounded-[12px] bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-lg animate-in fade-in slide-in-from-top-1 duration-200">
@@ -438,17 +452,26 @@ export function QuoteCalculatorWidget() {
                   )}
 
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[0.65rem] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-300">
+                    <span className="text-[0.72rem] font-black uppercase tracking-widest text-zinc-600 dark:text-zinc-200">
                       Your Quote · {itemCount} item{itemCount === 1 ? "" : "s"} · R{total}
                     </span>
                     <div className="flex items-center gap-3 shrink-0">
+                      <button
+                        onClick={() => setExpandView(v => !v)}
+                        aria-pressed={expandView}
+                        className="flex items-center gap-1 text-[0.65rem] font-bold text-zinc-500 dark:text-zinc-300 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
+                      >
+                        {expandView
+                          ? <><ArrowsInSimple size={13} weight="bold" aria-hidden="true" /> Compact</>
+                          : <><ArrowsOutSimple size={13} weight="bold" aria-hidden="true" /> Expand view</>}
+                      </button>
                       <button
                         onClick={() => setShowSaveForm(v => !v)}
                         className="flex items-center gap-1 text-[0.65rem] font-bold text-zinc-500 dark:text-zinc-300 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
                       >
                         <FloppyDisk size={13} weight="bold" aria-hidden="true" /> Save
                       </button>
-                      <button onClick={clearCart} className="text-[0.65rem] font-bold text-zinc-500 dark:text-zinc-300 hover:text-red-500 transition-colors duration-150">Clear all</button>
+                      <button onClick={clearCart} className="text-[0.65rem] font-bold text-zinc-500 dark:text-zinc-300 hover:text-red-500 transition-colors duration-150">Clear</button>
                     </div>
                   </div>
 
@@ -477,21 +500,35 @@ export function QuoteCalculatorWidget() {
                   <div
                     role="list"
                     aria-label="Items in your quote"
-                    className="abh-chip-strip flex gap-2 overflow-x-auto snap-x snap-mandatory pb-0.5"
+                    className="abh-chip-strip flex gap-2.5 overflow-x-auto snap-x snap-mandatory pb-1"
                   >
-                    {cart.map(item => (
-                      <CartItemChip
-                        key={item.id}
-                        item={item}
-                        accent={getAccent(item.hubId)}
-                        isHighlighted={highlightId === item.id}
-                        chipRef={(el) => { chipRefs.current[item.id] = el }}
-                        onRemove={removeItem}
-                        onClickStep={handleClickStep}
-                        onPressStart={handlePressStart}
-                        onPressEnd={handlePressEnd}
-                      />
-                    ))}
+                    {cart.map(item =>
+                      expandView ? (
+                        <CartItemCard
+                          key={item.id}
+                          item={item}
+                          accent={getAccent(item.hubId)}
+                          isHighlighted={highlightId === item.id}
+                          cardRef={(el) => { chipRefs.current[item.id] = el }}
+                          onRemove={removeItem}
+                          onClickStep={handleClickStep}
+                          onPressStart={handlePressStart}
+                          onPressEnd={handlePressEnd}
+                        />
+                      ) : (
+                        <CartItemChip
+                          key={item.id}
+                          item={item}
+                          accent={getAccent(item.hubId)}
+                          isHighlighted={highlightId === item.id}
+                          chipRef={(el) => { chipRefs.current[item.id] = el }}
+                          onRemove={removeItem}
+                          onClickStep={handleClickStep}
+                          onPressStart={handlePressStart}
+                          onPressEnd={handlePressEnd}
+                        />
+                      )
+                    )}
                   </div>
                 </div>
               </div>
@@ -581,4 +618,4 @@ export function QuoteCalculatorWidget() {
       )}
     </>
   )
-    } 
+                                            } 
