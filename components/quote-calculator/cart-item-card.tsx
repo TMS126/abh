@@ -1,4 +1,3 @@
-// components/quote-calculator/cart-item-card.tsx
 "use client"
 
 import { Trash, Minus, Plus } from "@phosphor-icons/react"
@@ -35,7 +34,7 @@ export function CartItemCard({
       ref={cardRef}
       role="listitem"
       className={cn(
-        "shrink-0 w-[230px] p-3.5 rounded-[16px] snap-start bg-white dark:bg-zinc-800 space-y-2 transition-all duration-300 ease-out motion-reduce:transition-none",
+        "shrink-0 w-[250px] p-3.5 rounded-[16px] snap-start bg-white dark:bg-zinc-800 space-y-2 transition-all duration-300 ease-out motion-reduce:transition-none",
         isHighlighted && "ring-2 scale-[1.02]"
       )}
       style={{
@@ -45,15 +44,15 @@ export function CartItemCard({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 leading-tight">{displayName}</p>
-          <p className="text-[0.62rem] font-bold mt-0.5" style={{ color: accent }}>{hubLabel}</p>
+          <p className="text-sm font-black text-zinc-800 dark:text-zinc-200 leading-tight">{displayName}</p>
+          <p className="text-[0.68rem] font-bold mt-0.5" style={{ color: accent }}>{hubLabel}</p>
         </div>
         <button onClick={() => onRemove(item.id)} aria-label={`Remove ${displayName} from quote`} className="text-zinc-400 hover:text-red-500 shrink-0 transition-colors duration-150">
           <Trash size={14} weight="bold" aria-hidden="true" />
         </button>
       </div>
 
-      <div className="flex items-center gap-2 text-xs">
+      <div className="flex items-center gap-2 text-sm">
         {discounted && <span className="text-red-400 line-through">R{item.unitPrice}{item.unit ? `/${item.unit}` : ""}</span>}
         <span className="font-bold text-zinc-700 dark:text-zinc-200" style={{ color: discounted ? accent : undefined }}>R{effRate}{item.unit ? `/${item.unit}` : ""}</span>
       </div>
@@ -71,7 +70,7 @@ export function CartItemCard({
           >
             <Minus size={13} weight="bold" aria-hidden="true" />
           </button>
-          <span className="text-xs font-black w-6 text-center text-zinc-800 dark:text-zinc-100" aria-label={`Quantity ${qty}`}>{qty}</span>
+          <span className="text-sm font-black w-6 text-center text-zinc-800 dark:text-zinc-100" aria-label={`Quantity ${qty}`}>{qty}</span>
           <button
             onClick={() => onClickStep(item.id, 1)}
             onPointerDown={() => onPressStart(item.id, 1)}
@@ -84,7 +83,7 @@ export function CartItemCard({
             <Plus size={13} weight="bold" aria-hidden="true" />
           </button>
         </div>
-        <span className="text-sm font-black text-zinc-900 dark:text-zinc-50">R{lineTotal}</span>
+        <span className="text-base font-black text-zinc-900 dark:text-zinc-50">R{lineTotal}</span>
       </div>
 
       {progress?.showDots && (
@@ -96,14 +95,14 @@ export function CartItemCard({
               style={{ backgroundColor: i < progress.current ? accent : `${accent}30` }}
             />
           ))}
-          <span className="text-[0.6rem] font-black ml-1" style={{ color: accent }}>
+          <span className="text-[0.68rem] font-black ml-1" style={{ color: accent }}>
             {progress.current}/{progress.target}
           </span>
         </div>
       )}
 
       {hint && (
-        <p className={cn("text-[0.62rem] font-bold leading-snug", discounted ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400")} role="status">
+        <p className={cn("text-[0.68rem] font-bold leading-snug", discounted ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400")} role="status">
           {hint}
         </p>
       )}
