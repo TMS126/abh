@@ -44,10 +44,6 @@ export function CropModal({
   const dragRef = useRef<{ kind: "inset" | "corner"; handle: string; startX: number; startY: number; startInset: Inset; startCorners: Corners } | null>(null)
 
   // ─── CLOSE HANDLING: BACKDROP TAP, ESC, X, DEVICE BACK GESTURE ────────
-  // Mirrors ImageLightbox's pattern: push a history entry on open so the
-  // browser/device back gesture closes this modal (instead of navigating
-  // away from the page), and pop it cleanly if the modal is closed some
-  // other way first, so back-button state doesn't drift out of sync.
   const pushedRef = useRef(false)
 
   useEffect(() => {
@@ -277,9 +273,6 @@ export function CropModal({
 
   return (
     <div role="dialog" aria-modal="true" aria-label={`Crop ${fileName}`} className="fixed inset-0 z-[200] flex flex-col bg-black/95">
-      {/* Backdrop tap-to-close: covers the whole modal beneath the
-          interactive content, so tapping anywhere outside the frame,
-          header, or button bar closes it — same as the lightbox. */}
       <div className="absolute inset-0" onClick={requestClose} aria-hidden="true" />
 
       {/* ─── HEADER ─────────────────────────────────────────────────────── */}
@@ -387,14 +380,30 @@ export function CropModal({
             </>
           ) : (
             <>
-              <svg className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
+              {/* Dims everything outside the quad, exactly like rect
+                  mode's box-shadow — the previous version had NO dimming
+                  for free-shape crops, which is why it looked "bright/
+                  normal" compared to rect mode. evenodd fill-rule with an
+                  outer full-frame rect and the inner polygon punches a
+                  clear "hole" over the selected quad. */}
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
+                <path
+                  d={`M0,0 H100 V100 H0 Z M ${corners.map((c) => `${toFrame(c.x * 100, "x")},${toFrame(c.y * 100, "y")}`).join(" L ")} Z`}
+                  fill="rgba(0,0,0,0.6)"
+                  fillRule="evenodd"
+                />
                 <polygon
-                  points={corners.map((c) => `${toFrame(c.x * 100, "x")}%,${toFrame(c.y * 100, "y")}%`).join(" ")}
-                  fill="rgba(255,255,255,0.12)"
+                  points={corners.map((c) => `${toFrame(c.x * 100, "x")},${toFrame(c.y * 100, "y")}`).join(" ")}
+                  fill="rgba(255,255,255,0.06)"
                   stroke="white"
-                  strokeWidth={2}
+                  strokeWidth={0.6}
+                  vectorEffect="non-scaling-stroke"
                 />
               </svg>
+              {/* Handles colored brand-orange (with a white ring for
+                  contrast on any photo) so free-shape mode reads
+                  visually distinct from rectangle mode's plain white
+                  dots. */}
               {corners.map((c, idx) => (
                 <div
                   key={idx}
@@ -404,7 +413,7 @@ export function CropModal({
                   aria-label={`Move corner ${idx + 1} of 4`}
                   aria-valuetext={cropDimsLabel}
                   tabIndex={0}
-                  className="absolute w-5 h-5 -mt-2.5 -ml-2.5 rounded-full bg-white shadow touch-none cursor-move focus:ring-2 focus:ring-brand-orange focus:outline-none"
+                  className="absolute w-5 h-5 -mt-2.5 -ml-2.5 rounded-full bg-brand-orange border-2 border-white shadow touch-none cursor-move focus:ring-2 focus:ring-white focus:outline-none"
                   style={{ top: `${toFrame(c.y * 100, "y")}%`, left: `${toFrame(c.x * 100, "x")}%` }}
                 />
               ))}
@@ -434,4 +443,4 @@ export function CropModal({
       </div>
     </div>
   )
-                                 } 
+  } 
