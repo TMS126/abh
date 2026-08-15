@@ -307,6 +307,25 @@ export function QuoteCalculatorWidget() {
     <>
       <span className="sr-only" role="status" aria-live="polite">{announce}</span>
 
+      {/* Panel "grow from widget" open animation — scales up from the
+          bottom-right corner (where the FAB icon sits) instead of
+          sliding up from the bottom, so the panel reads as one thing
+          unfurling out of the button rather than a separate box
+          appearing elsewhere. */}
+      <style>{`
+        @keyframes abh-calc-grow {
+          0% { opacity: 0; transform: scale(0.08); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        .abh-calc-grow {
+          animation: abh-calc-grow 280ms cubic-bezier(0.16, 1, 0.3, 1);
+          transform-origin: calc(100% - 26px) 100%;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .abh-calc-grow { animation: none; }
+        }
+      `}</style>
+
       {isOpen && (
         <div
           className="fixed inset-0 z-[9989] bg-black/45 transition-opacity duration-200 ease-out motion-reduce:transition-none"
@@ -365,6 +384,12 @@ export function QuoteCalculatorWidget() {
             Quote
           </span>
 
+          {/* Main FAB — no more filled circle. Just the calculator glyph
+              itself, colored in the brand blue (fabColor), sitting on
+              nothing. To keep it from disappearing against busy page
+              content, it gets a soft colored glow (drop-shadow, not a
+              box-shadow, since there's no box) plus a bit of extra size
+              since there's no button padding doing visual weight anymore. */}
           <button
             onClick={() => setIsOpen(o => !o)}
             aria-label={isOpen ? "Close quotation calculator" : "Open quotation calculator"}
@@ -400,7 +425,7 @@ export function QuoteCalculatorWidget() {
       {isOpen && (
         <div
           className={cn(
-            "fixed bottom-24 right-4 left-4 md:left-auto md:right-6 z-[9991] md:w-[400px] max-h-[75vh] rounded-[20px] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-220 ease-out motion-reduce:animate-none transform-gpu",
+            "fixed bottom-24 right-4 left-4 md:left-auto md:right-6 z-[9991] md:w-[400px] max-h-[75vh] rounded-[20px] shadow-2xl flex flex-col overflow-hidden transform-gpu abh-calc-grow",
             GLASS.panel
           )}
           style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}
@@ -568,4 +593,4 @@ export function QuoteCalculatorWidget() {
       )}
     </>
   )
-         } 
+                 } 
