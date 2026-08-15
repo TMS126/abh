@@ -1,3 +1,4 @@
+// components/quote-calculator/lib.ts
 import { HUBS, HubId } from "@/lib/data"
 
 // ─── Hub order ────────────────────────────────────────────────────────────────
@@ -56,6 +57,21 @@ export function getBulkHint(id: string, name: string, qty: number, effRate: numb
       : `Add ${needed} more to unlock R${next.rate} each`
   }
   return discounted ? "Best bulk rate applied" : null
+}
+
+// ─── Bulk progress chip — dots only for tiers with min ≤ 10; larger
+// tiers (e.g. the 100-unit Colour Copying tier) get text only, no dots,
+// per confirmed decision. ──
+export interface BulkProgress {
+  current: number
+  target: number
+  rate: number
+  showDots: boolean
+}
+export function getBulkProgress(id: string, name: string, qty: number): BulkProgress | null {
+  const next = getNextTier(id, name, qty)
+  if (!next) return null
+  return { current: Math.min(qty, next.min), target: next.min, rate: next.rate, showDots: next.min <= 10 }
 }
 
 export function itemHasBulk(hubId: HubId, sectionTitle: string, itemName: string): boolean {
