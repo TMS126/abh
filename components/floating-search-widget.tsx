@@ -1,3 +1,4 @@
+// components/floating-search-widget.tsx
 "use client"
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
@@ -5,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { MagnifyingGlass, X, Printer, FileText, PaintBrush, Globe, Desktop } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
-import { HUB_COLORS, HubKey, BRAND } from "@/lib/brand"
+import { BRAND } from "@/lib/brand"
 import { HUBS, HubId } from "@/lib/data"
 import { useExclusiveWidget } from "@/hooks/use-exclusive-widget"
 
@@ -16,25 +17,24 @@ const SERVICES_PATH = "/services"
 
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
-// Gallery's dedicated orange pair — same light/dark values as the Navbar's
-// "/gallery" entry and PageEdgeGlow's "/gallery" entry, so this widget's
-// color matches that identity exactly in both themes instead of a single
-// flat hex that only worked in one theme.
+// Single theme-adaptive accent — the whole widget (icon, ring, highlights,
+// prices) now uses only this orange pair instead of per-hub colors, per
+// the simplified single-accent design.
 const SEARCH_ORANGE = { light: BRAND.orange, dark: BRAND.lightOrange }
 
-// ── Distinct glass tokens — heavier blur/saturation and a warm orange
-// wash, so this panel reads as its own "search" identity rather than
-// reusing the neutral glass from the Quote Calculator / WhatsApp panels. ──
-const GLASS = {
-  panel: "bg-white/55 dark:bg-zinc-900/45 backdrop-blur-2xl backdrop-saturate-150 border border-white/50 dark:border-white/10",
-  item:  "bg-white/85 dark:bg-white/[0.07] border border-white/70 dark:border-white/10",
-} as const
-
-// Compact height fits roughly one result row before typing starts; once
-// there's a query, the viewport eases open to the fixed "expanded" height
-// so the panel doesn't keep resizing as the match count changes.
-const RESULTS_HEIGHT_COMPACT  = "76px"
-const RESULTS_HEIGHT_EXPANDED = "360px"
+// ── Idle pill sizing ─────────────────────────────────────────────────
+// "130%" of a normal ~44px/220px search bar. Bump these if you want the
+// pill bigger/smaller — every animation offset below is derived from them.
+const IDLE_HEIGHT = 44
+const IDLE_WIDTH = 220
+const ICON_SIZE = 20
+const ICON_DOCKED_LEFT = 20 // resting (left) position of the icon, in px
+// Distance the icon travels from its docked-left spot to dead-center of
+// the idle pill — this is what "moves left from its current position"
+// animates between.
+const ICON_CENTER_OFFSET = IDLE_WIDTH / 2 - ICON_DOCKED_LEFT - ICON_SIZE / 2
+// How long the "ApexbytesHub" wording stays visible / hidden per loop.
+const LABEL_CYCLE_MS = 2200
 
 interface SearchableService {
   hubId: HubId; sectionTitle: string; name: string
@@ -89,9 +89,9 @@ function HubIcon({ id, size = 16, color }: { id: HubId; size?: number; color?: s
   }
 }
 
-// Highlights the matched substring of `text` in the hub's own accent
-// color and bold weight, so as the person types they can see exactly
-// which part of a result is matching.
+// Highlights the matched substring of `text` in the widget's single
+// accent color and bold weight, so as the person types they can see
+// exactly which part of a result is matching.
 function HighlightMatch({ text, query, color }: { text: string; query: string; color: string }) {
   const q = query.trim()
   if (!q) return <>{text}</>
@@ -140,6 +140,11 @@ export function FloatingSearchWidget() {
   const [query, setQuery]         = useState("")
   const [pastTrigger, setPastTrigger] = useState(false)
 
+  // Idle-pill "ApexbytesHub" wording loop. true = label visible / icon
+  // docked left. false = label hidden / icon centered. Only runs while
+  // the pill is closed — the panel takes over once open.
+  const [showLabel, setShowLabel] = useState(false)
+
   const inputRef     = useRef<HTMLInputElement>(null)
   const pushedRef    = useRef(false)
   const index        = useMemo(buildSearchIndex, [])
@@ -180,6 +185,16 @@ export function FloatingSearchWidget() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onServicesPage])
 
+  // "ApexbytesHub" in/out loop — toggles every LABEL_CYCLE_MS while the
+  // pill is idle (closed). The icon's left/center position and the
+  // wording's opacity are both driven off this single boolean so they
+  // move in lockstep. Stops entirely once the panel is open.
+  useEffect(() => {
+    if (isOpen) { setShowLabel(false); return }
+    const id = setInterval(() => setShowLabel((v) => !v), LABEL_CYCLE_MS)
+    return () => clearInterval(id)
+  }, [isOpen])
+
   // Body scroll lock while open — same as WhatsApp panel
   useEffect(() => {
     if (!isOpen) return
@@ -198,13 +213,18 @@ export function FloatingSearchWidget() {
   // state — pushes one history entry on open, and any close path (backdrop,
   // X, Escape, picking a result) collapses it again. Doesn't touch anything
   // else on the page.
+  //
+  // NOTE: no auto-focus here anymore. The input is left unfocused on open
+  // so mobile browsers don't pop the keyboard the instant the panel
+  // appears — the person taps the pill (1st tap, opens panel), then taps
+  // the input itself (2nd tap) to focus it and bring up the keyboard,
+  // which is just the input's normal native click-to-focus behavior.
   useEffect(() => {
     if (isOpen) {
       if (!pushedRef.current) {
         window.history.pushState({ abhSearch: true }, "")
         pushedRef.current = true
       }
-      setTimeout(() => inputRef.current?.focus(), 200)
     }
     // NOTE: no `else` branch here anymore. Cleanup of the pushed history
     // entry now happens explicitly at each close site instead (see
@@ -224,9 +244,9 @@ export function FloatingSearchWidget() {
     return () => window.removeEventListener("popstate", onPop)
   }, [setIsOpen])
 
-  // Manual close (backdrop click / X button / Escape / FAB toggle). Nothing
-  // else has been pushed to history since we opened, so it's safe to pop
-  // our own entry here.
+  // Manual close (backdrop click / X button / Escape). Nothing else has
+  // been pushed to history since we opened, so it's safe to pop our own
+  // entry here.
   const handleClose = useCallback(() => {
     setIsOpen(false)
     setTimeout(() => setQuery(""), 300)
@@ -283,112 +303,87 @@ export function FloatingSearchWidget() {
       {/* ── Backdrop ─────────────────────────────────────────────────── */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-[9989] bg-black/30 backdrop-blur-sm transition-opacity duration-200 ease-out motion-reduce:transition-none"
+          className="fixed inset-0 z-[9989] bg-black/25 transition-opacity duration-200 ease-out motion-reduce:transition-none"
           onClick={handleClose}
           aria-hidden="true"
         />
       )}
 
-      {/* ── FAB ──────────────────────────────────────────────────────────
-          Bare icon, no filled circle — matches the Quote Calculator FAB
-          treatment. Colored in accentColor with a soft drop-shadow glow
-          instead of a background pill, since there's no button surface
-          doing visual weight anymore. Toggles between the search glyph
-          and an X to double as the close control while open. */}
-      <div
-        className={cn(
-          "fixed z-[9993] right-4 md:right-6 group/search transition-all duration-200 ease-out motion-reduce:transition-none transform-gpu",
-          isOpen
-            ? "bottom-24 opacity-100 scale-100 pointer-events-auto"
-            : pastTrigger && !isOtherOpen
-              ? "bottom-[9.5rem] opacity-100 scale-100 pointer-events-auto"
-              : "bottom-[9.5rem] opacity-0 scale-90 pointer-events-none"
-        )}
-      >
-        <div className="flex items-center justify-end gap-2">
-          {/* Slide-out label — only ever shown while closed */}
-          <span
-            className={cn(
-              "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap pointer-events-none overflow-hidden",
-              "bg-white dark:bg-zinc-900 px-2.5 py-1 rounded-full shadow-md border border-zinc-100 dark:border-zinc-800",
-              "transition-all duration-200 ease-out origin-right motion-reduce:transition-none transform-gpu",
-              isOpen
-                ? "max-w-0 opacity-0 scale-x-0"
-                : "max-w-0 opacity-0 scale-x-0 group-hover/search:max-w-[100px] group-hover/search:opacity-100 group-hover/search:scale-x-100"
-            )}
-            style={{ color: accentColor }}
-          >
-            Search
-          </span>
-
-          <button
-            onClick={() => (isOpen ? handleClose() : setIsOpen(true))}
-            className="relative w-14 h-14 flex items-center justify-center active:scale-90 hover:scale-110 transition-transform duration-150 ease-out motion-reduce:transition-none transform-gpu"
-            aria-label={isOpen ? "Close search" : "Search services"}
-          >
-            {isOpen ? (
-              <X
-                size={28}
-                weight="bold"
-                style={{ color: accentColor, filter: `drop-shadow(0 4px 10px ${accentColor}80) drop-shadow(0 2px 4px rgba(0,0,0,0.3))` }}
-              />
-            ) : (
-              <MagnifyingGlass
-                size={28}
-                weight="bold"
-                style={{ color: accentColor, filter: `drop-shadow(0 4px 10px ${accentColor}80) drop-shadow(0 2px 4px rgba(0,0,0,0.3))` }}
-              />
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Panel ────────────────────────────────────────────────────── */}
-      {isOpen && (
+      {/* ── Idle pill ────────────────────────────────────────────────────
+          Simple flat search bar (no glass, no glow) matching the
+          reference look: white/zinc-900 rounded pill, plain shadow, a
+          single theme-adaptive orange icon. While idle it loops the
+          "ApexbytesHub" wording in/out — the icon docks left when the
+          wording is visible and drifts back to center when it isn't. */}
+      {!isOpen && (
         <div
           className={cn(
-            "fixed bottom-24 right-4 left-4 md:left-auto md:right-6 z-[9991] md:w-[400px] max-h-[75vh] rounded-[18px] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200 ease-out motion-reduce:animate-none transform-gpu",
-            GLASS.panel
+            "fixed z-[9993] right-4 md:right-6 transition-all duration-200 ease-out motion-reduce:transition-none transform-gpu",
+            pastTrigger && !isOtherOpen
+              ? "bottom-[9.5rem] opacity-100 scale-100 pointer-events-auto"
+              : "bottom-[9.5rem] opacity-0 scale-90 pointer-events-none"
           )}
-          style={{
-            boxShadow: `0 10px 40px ${accentColor}2e, 0 8px 28px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.35)`,
-          }}
         >
-          {/* Warm tinted wash — gives this panel its own distinct glass
-              identity rather than reusing the neutral glass elsewhere. */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{ background: `linear-gradient(160deg, ${accentColor}14 0%, transparent 55%)` }}
-            aria-hidden="true"
-          />
-          {/* Specular highlight strip */}
-          <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent pointer-events-none" />
-
-          {/* Header */}
-          <div
-            className="relative flex items-center justify-between px-5 py-4 shrink-0 border-b border-white/20 dark:border-white/10"
-            style={{ background: "linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.05) 100%)" }}
+          <button
+            onClick={() => setIsOpen(true)}
+            aria-label="Search services"
+            className="relative flex items-center rounded-full bg-white dark:bg-zinc-900 shadow-lg border border-zinc-200 dark:border-white/10 active:scale-95 hover:shadow-xl transition-[transform,box-shadow] duration-150 ease-out motion-reduce:transition-none"
+            style={{ width: IDLE_WIDTH, height: IDLE_HEIGHT }}
           >
+            <MagnifyingGlass
+              size={ICON_SIZE}
+              weight="bold"
+              aria-hidden="true"
+              className="absolute transition-transform duration-500 ease-out motion-reduce:transition-none"
+              style={{
+                left: ICON_DOCKED_LEFT,
+                top: "50%",
+                color: accentColor,
+                transform: `translate(${showLabel ? 0 : ICON_CENTER_OFFSET}px, -50%)`,
+              }}
+            />
+            <span
+              className="absolute font-sans font-black text-sm whitespace-nowrap transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none"
+              aria-hidden="true"
+              style={{
+                left: ICON_DOCKED_LEFT + ICON_SIZE + 10,
+                top: "50%",
+                color: accentColor,
+                opacity: showLabel ? 1 : 0,
+                transform: `translate(${showLabel ? 0 : 6}px, -50%)`,
+              }}
+            >
+              ApexbytesHub
+            </span>
+          </button>
+        </div>
+      )}
+
+      {/* ── Panel ────────────────────────────────────────────────────────
+          Plain rounded card — white/zinc-900, one flat border, one plain
+          shadow. No blur, no saturation boost, no tinted wash, no glow. */}
+      {isOpen && (
+        <div
+          className="fixed bottom-24 right-4 left-4 md:left-auto md:right-6 z-[9991] md:w-[400px] max-h-[75vh] rounded-[18px] shadow-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200 ease-out motion-reduce:animate-none transform-gpu"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 shrink-0 border-b border-zinc-100 dark:border-white/10">
             <h3 className="font-sans font-black text-lg" style={{ color: accentColor }}>Search Services</h3>
             <button
               onClick={handleClose}
               aria-label="Close search"
-              className="w-8 h-8 rounded-[14px] shadow-sm flex items-center justify-center text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150 bg-zinc-100/70 dark:bg-white/[0.07]"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150 bg-zinc-100 dark:bg-white/[0.07]"
             >
               <X size={16} weight="bold" aria-hidden="true" />
             </button>
           </div>
 
-          {/* Search input — simple premium pill: soft glass field, icon
-              inline, no default-looking underline/border. */}
-          <div className="relative px-5 pt-4 pb-2 shrink-0">
-            <div
-              className={cn(
-                "flex items-center gap-2.5 rounded-full px-4 py-2.5 transition-shadow duration-200 ease-out motion-reduce:transition-none",
-                "bg-white/75 dark:bg-white/10 border border-white/70 dark:border-white/10 shadow-sm focus-within:shadow-md"
-              )}
-            >
-              <MagnifyingGlass size={16} weight="bold" className="shrink-0 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
+          {/* Search input — same flat pill language as the idle control,
+              icon permanently docked left (settled, no more sliding).
+              Deliberately not autofocused; see the effect above. */}
+          <div className="px-5 pt-4 pb-2 shrink-0">
+            <div className="flex items-center gap-2.5 rounded-full px-4 h-11 bg-zinc-100 dark:bg-white/[0.07] border border-zinc-200 dark:border-white/10 focus-within:border-zinc-300 dark:focus-within:border-white/20 transition-colors duration-150">
+              <MagnifyingGlass size={ICON_SIZE} weight="bold" className="shrink-0" style={{ color: accentColor }} aria-hidden="true" />
               <label htmlFor="floating-search-input" className="sr-only">Search a service</label>
               <input
                 id="floating-search-input"
@@ -402,7 +397,7 @@ export function FloatingSearchWidget() {
               {query && (
                 <button
                   onClick={() => setQuery("")}
-                  className="shrink-0 w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 transition-colors duration-150"
+                  className="shrink-0 w-5 h-5 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-zinc-500 hover:text-zinc-700 transition-colors duration-150"
                   aria-label="Clear search"
                 >
                   <X size={11} weight="bold" />
@@ -411,52 +406,45 @@ export function FloatingSearchWidget() {
             </div>
           </div>
 
-          {/* Results — compact by default (room for ~1 row), eases open
-              to a fixed expanded height once the user starts typing so
-              the panel doesn't keep resizing as the match count changes. */}
+          {/* Results — plain divided list, no glass cards. */}
           <div
-            className="relative overflow-y-auto px-5 pb-5 pt-2 transition-[height] duration-200 ease-out motion-reduce:transition-none"
-            style={{ height: hasQuery ? RESULTS_HEIGHT_EXPANDED : RESULTS_HEIGHT_COMPACT }}
+            className="overflow-y-auto px-5 pb-5 pt-2 transition-[height] duration-200 ease-out motion-reduce:transition-none"
+            style={{ height: hasQuery ? "360px" : "76px" }}
           >
             {!hasQuery ? null : results.length > 0 ? (
-              <div className="space-y-1.5">
-                {results.map((s, idx) => {
-                  const colors = HUB_COLORS[s.hubId as HubKey]
-                  const accent = isDark ? colors.tagTextDark : colors.tagText
-                  return (
-                    <button
-                      key={`${s.hubId}-${s.name}-${idx}`}
-                      onClick={() => pick(s)}
-                      style={{ animationDelay: `${idx * 30}ms`, animationFillMode: "backwards" }}
-                      className={cn(
-                        "w-full flex items-center gap-3 p-2.5 rounded-[14px] shadow-sm transition-colors duration-150 text-left hover:bg-white/50 dark:hover:bg-white/10 animate-in fade-in slide-in-from-bottom-1 duration-200 ease-out motion-reduce:animate-none",
-                        GLASS.item
-                      )}
+              <div className="divide-y divide-zinc-100 dark:divide-white/10">
+                {results.map((s, idx) => (
+                  <button
+                    key={`${s.hubId}-${s.name}-${idx}`}
+                    onClick={() => pick(s)}
+                    className="w-full flex items-center gap-3 py-2.5 text-left hover:bg-zinc-50 dark:hover:bg-white/[0.05] transition-colors duration-150"
+                  >
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: `${accentColor}1f`, color: accentColor }}
                     >
-                      <div className="w-9 h-9 rounded-[14px] flex items-center justify-center shrink-0 shadow-sm" style={{ backgroundColor: `${accent}20`, color: accent }}>
-                        <HubIcon id={s.hubId} size={18} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">
-                          {s.matchField === "name"
-                            ? <HighlightMatch text={s.name} query={query} color={accent} />
-                            : s.name}
+                      <HubIcon id={s.hubId} size={18} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">
+                        {s.matchField === "name"
+                          ? <HighlightMatch text={s.name} query={query} color={accentColor} />
+                          : s.name}
+                      </p>
+                      <p className="text-[0.65rem] font-bold uppercase tracking-wider text-zinc-400 truncate">
+                        {s.matchField === "section"
+                          ? <HighlightMatch text={s.sectionTitle} query={query} color={accentColor} />
+                          : s.sectionTitle} · {HUBS[s.hubId].title}
+                      </p>
+                      {s.matchField === "description" && (
+                        <p className="text-[0.64rem] font-medium text-zinc-400 dark:text-zinc-500 truncate mt-0.5 normal-case">
+                          <HighlightMatch text={matchSnippet(s.description, query)} query={query} color={accentColor} />
                         </p>
-                        <p className="text-[0.65rem] font-bold uppercase tracking-wider text-zinc-400 truncate">
-                          {s.matchField === "section"
-                            ? <HighlightMatch text={s.sectionTitle} query={query} color={accent} />
-                            : s.sectionTitle} · {HUBS[s.hubId].title}
-                        </p>
-                        {s.matchField === "description" && (
-                          <p className="text-[0.64rem] font-medium text-zinc-400 dark:text-zinc-500 truncate mt-0.5 normal-case">
-                            <HighlightMatch text={matchSnippet(s.description, query)} query={query} color={accent} />
-                          </p>
-                        )}
-                      </div>
-                      <span className="text-xs font-black shrink-0" style={{ color: accent }}>{s.price}</span>
-                    </button>
-                  )
-                })}
+                      )}
+                    </div>
+                    <span className="text-xs font-black shrink-0" style={{ color: accentColor }}>{s.price}</span>
+                  </button>
+                ))}
               </div>
             ) : (
               <div key="empty" className="text-center py-8 animate-in fade-in duration-200 motion-reduce:animate-none">
@@ -469,4 +457,4 @@ export function FloatingSearchWidget() {
       )}
     </>
   )
-} 
+      } 
