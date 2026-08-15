@@ -1,3 +1,4 @@
+// components/quote-calculator/cart-item-row.tsx
 "use client"
 
 import { Trash, Minus, Plus } from "@phosphor-icons/react"
@@ -45,6 +46,7 @@ export function CartItemRow({
           <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">{displayName}</p>
           <p className="text-[0.62rem] font-bold mt-0.5" style={{ color: accent }}>{hubLabel}</p>
         </div>
+        {/* ── Trash: kept at original small size per confirmation ── */}
         <button onClick={() => onRemove(item.id)} aria-label={`Remove ${displayName} from quote`} className="text-zinc-400 hover:text-red-500 shrink-0 transition-colors duration-150">
           <Trash size={14} weight="bold" aria-hidden="true" />
         </button>
@@ -54,7 +56,8 @@ export function CartItemRow({
         <span className="font-bold text-zinc-700 dark:text-zinc-200" style={{ color: discounted ? accent : undefined }}>R{effRate}{item.unit ? `/${item.unit}` : ""}</span>
       </div>
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5">
+        {/* ── Pill-shaped segmented stepper: [ − qty + ], 44px tap targets ── */}
+        <div className={cn("flex items-center rounded-full overflow-hidden", GLASS.btn)}>
           <button
             onClick={() => onClickStep(item.id, -1)}
             onPointerDown={() => onPressStart(item.id, -1)}
@@ -62,9 +65,9 @@ export function CartItemRow({
             onPointerLeave={() => onPressEnd(item.id)}
             onPointerCancel={() => onPressEnd(item.id)}
             aria-label={`Decrease quantity for ${displayName}`}
-            className={cn("w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-150 select-none touch-none", GLASS.btn)}
+            className="w-11 h-11 flex items-center justify-center shrink-0 active:bg-black/5 dark:active:bg-white/10 transition-colors duration-150 select-none touch-none"
           >
-            <Minus size={12} weight="bold" aria-hidden="true" />
+            <Minus size={14} weight="bold" aria-hidden="true" />
           </button>
           <input
             ref={qtyInputRef}
@@ -74,7 +77,7 @@ export function CartItemRow({
             onBlur={() => onQtyBlur(item.id, item.qty)}
             placeholder="1"
             aria-label={`Quantity for ${displayName}`}
-            className="w-10 text-center text-xs font-black bg-transparent border-none outline-none text-zinc-900 dark:text-zinc-100"
+            className="w-9 h-11 text-center text-xs font-black bg-transparent border-none outline-none text-zinc-900 dark:text-zinc-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
           <button
             onClick={() => onClickStep(item.id, 1)}
@@ -83,9 +86,9 @@ export function CartItemRow({
             onPointerLeave={() => onPressEnd(item.id)}
             onPointerCancel={() => onPressEnd(item.id)}
             aria-label={`Increase quantity for ${displayName}`}
-            className={cn("w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-150 select-none touch-none", GLASS.btn)}
+            className="w-11 h-11 flex items-center justify-center shrink-0 active:bg-black/5 dark:active:bg-white/10 transition-colors duration-150 select-none touch-none"
           >
-            <Plus size={12} weight="bold" aria-hidden="true" />
+            <Plus size={14} weight="bold" aria-hidden="true" />
           </button>
         </div>
         <span className="text-sm font-black text-zinc-900 dark:text-zinc-50">R{lineTotal}</span>
@@ -95,4 +98,4 @@ export function CartItemRow({
       )}
     </div>
   )
-} 
+                                      } 
