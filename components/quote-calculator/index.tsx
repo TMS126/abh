@@ -1,4 +1,3 @@
-// components/quote-calculator/quote-calculator-widget.tsx
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
@@ -182,16 +181,17 @@ export function QuoteCalculatorWidget() {
     setAnnounce(`${getDisplayName(sectionTitle, name)} added — now ${nextQty} in your quote`)
   }
 
+  // Fixed: side effects (undo state + timer) now run outside the setCart
+  // updater, using the current `cart` closure directly — avoids the undo
+  // banner state getting tangled up with React re-invoking the updater.
   const removeItem = (id: string) => {
-    setCart(prev => {
-      const index = prev.findIndex(i => i.id === id)
-      if (index === -1) return prev
-      const item = prev[index]
-      setUndoStack({ item, index })
-      if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
-      undoTimerRef.current = setTimeout(() => setUndoStack(null), 6000)
-      return prev.filter(i => i.id !== id)
-    })
+    const index = cart.findIndex(i => i.id === id)
+    if (index === -1) return
+    const item = cart[index]
+    setCart(prev => prev.filter(i => i.id !== id))
+    setUndoStack({ item, index })
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
+    undoTimerRef.current = setTimeout(() => setUndoStack(null), 6000)
   }
 
   const undoRemove = () => {
@@ -206,19 +206,18 @@ export function QuoteCalculatorWidget() {
   }
 
   const stepQty = (id: string, delta: number) => {
-    setCart(prev => {
-      const item = prev.find(i => i.id === id)
-      if (!item) return prev
-      const newQty = (item.qty || 1) + delta
-      if (newQty < 1) {
-        const index = prev.findIndex(i => i.id === id)
-        setUndoStack({ item, index })
-        if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
-        undoTimerRef.current = setTimeout(() => setUndoStack(null), 6000)
-        return prev.filter(i => i.id !== id)
-      }
-      return prev.map(i => i.id === id ? { ...i, qty: newQty } : i)
-    })
+    const item = cart.find(i => i.id === id)
+    if (!item) return
+    const newQty = (item.qty || 1) + delta
+    if (newQty < 1) {
+      const index = cart.findIndex(i => i.id === id)
+      setCart(prev => prev.filter(i => i.id !== id))
+      setUndoStack({ item, index })
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
+      undoTimerRef.current = setTimeout(() => setUndoStack(null), 6000)
+      return
+    }
+    setCart(prev => prev.map(i => i.id === id ? { ...i, qty: newQty } : i))
   }
 
   const HOLD_DELAY = 420
@@ -425,11 +424,26 @@ export function QuoteCalculatorWidget() {
 
           <div className="flex-1 overflow-y-auto min-h-0">
 
-            {/* ── Sticky quote block: enlarged default padding/type, aesthetic
-                gradient wash behind it, Expand-view toggle next to Save/Clear ── */}
+            {/* Undo banner: independent of cart.length so it still shows
+                after removing the last item in the cart. */}
+            {undoStack && (
+              <div className="sticky top-0 z-20 p-3 border-b border-zinc-100 dark:border-white/10 bg-white/95 dark:bg-zinc-900/95 backdrop-blur">
+                <div className="flex items-center justify-between gap-3 p-2.5 rounded-[12px] bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-lg animate-in fade-in slide-in-from-top-1 duration-200">
+                  <span className="text-[0.7rem] font-bold truncate">{getDisplayName(undoStack.item.sectionTitle, undoStack.item.name)} removed</span>
+                  <button
+                    onClick={undoRemove}
+                    className="shrink-0 flex items-center gap-1.5 text-[0.65rem] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/15 dark:bg-black/10 hover:bg-white/25 dark:hover:bg-black/20 transition-colors"
+                  >
+                    <ArrowCounterClockwise size={12} weight="bold" aria-hidden="true" /> Undo
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── Sticky quote block ── */}
             {cart.length > 0 && (
               <div
-                className="sticky top-0 z-20 border-b border-zinc-100 dark:border-white/10 shadow-[0_4px_10px_-6px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_10px_-6px_rgba(0,0,0,0.4)]"
+                className="sticky top-0 z-10 border-b border-zinc-100 dark:border-white/10 shadow-[0_4px_10px_-6px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_10px_-6px_rgba(0,0,0,0.4)]"
                 style={{
                   background: isDark
                     ? `linear-gradient(180deg, ${fabColor}14 0%, rgba(24,24,27,0.97) 70%)`
@@ -439,39 +453,40 @@ export function QuoteCalculatorWidget() {
               >
                 <div className="p-4 space-y-2.5">
 
-                  {undoStack && (
-                    <div className="flex items-center justify-between gap-3 p-2.5 rounded-[12px] bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-lg animate-in fade-in slide-in-from-top-1 duration-200">
-                      <span className="text-[0.7rem] font-bold truncate">{getDisplayName(undoStack.item.sectionTitle, undoStack.item.name)} removed</span>
-                      <button
-                        onClick={undoRemove}
-                        className="shrink-0 flex items-center gap-1.5 text-[0.65rem] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/15 dark:bg-black/10 hover:bg-white/25 dark:hover:bg-black/20 transition-colors"
-                      >
-                        <ArrowCounterClockwise size={12} weight="bold" aria-hidden="true" /> Undo
-                      </button>
-                    </div>
-                  )}
-
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[0.72rem] font-black uppercase tracking-widest text-zinc-600 dark:text-zinc-200">
                       Your Quote · {itemCount} item{itemCount === 1 ? "" : "s"} · R{total}
                     </span>
-                    <div className="flex items-center gap-3 shrink-0">
+
+                    {/* Expand / Save / Clear — icon-only, grouped in a pill container */}
+                    <div className="flex items-center gap-1 p-1 rounded-full bg-zinc-100/80 dark:bg-white/5 shrink-0">
                       <button
                         onClick={() => setExpandView(v => !v)}
                         aria-pressed={expandView}
-                        className="flex items-center gap-1 text-[0.65rem] font-bold text-zinc-500 dark:text-zinc-300 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
+                        aria-label={expandView ? "Switch to compact view" : "Switch to expanded view"}
+                        title={expandView ? "Compact view" : "Expand view"}
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-zinc-500 dark:text-zinc-300 hover:text-zinc-800 dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-white/10 transition-colors"
                       >
                         {expandView
-                          ? <><ArrowsInSimple size={13} weight="bold" aria-hidden="true" /> Compact</>
-                          : <><ArrowsOutSimple size={13} weight="bold" aria-hidden="true" /> Expand view</>}
+                          ? <ArrowsInSimple size={14} weight="bold" aria-hidden="true" />
+                          : <ArrowsOutSimple size={14} weight="bold" aria-hidden="true" />}
                       </button>
                       <button
                         onClick={() => setShowSaveForm(v => !v)}
-                        className="flex items-center gap-1 text-[0.65rem] font-bold text-zinc-500 dark:text-zinc-300 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
+                        aria-label="Save quote"
+                        title="Save quote"
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-zinc-500 dark:text-zinc-300 hover:text-zinc-800 dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-white/10 transition-colors"
                       >
-                        <FloppyDisk size={13} weight="bold" aria-hidden="true" /> Save
+                        <FloppyDisk size={14} weight="bold" aria-hidden="true" />
                       </button>
-                      <button onClick={clearCart} className="text-[0.65rem] font-bold text-zinc-500 dark:text-zinc-300 hover:text-red-500 transition-colors duration-150">Clear</button>
+                      <button
+                        onClick={clearCart}
+                        aria-label="Clear quote"
+                        title="Clear quote"
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-zinc-500 dark:text-zinc-300 hover:text-red-500 hover:bg-white dark:hover:bg-white/10 transition-colors"
+                      >
+                        <Trash size={14} weight="bold" aria-hidden="true" />
+                      </button>
                     </div>
                   </div>
 
@@ -598,7 +613,7 @@ export function QuoteCalculatorWidget() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => exportQuotePdf(cart)}
-                  className={cn("shrink-0 w-12 h-12 rounded-[14px] flex items-center justify-center transition-transform duration-150 active:scale-95 transform-gpu", GLASS.btn)}
+                  className={cn("shrink-0 w-12 h-12 rounded-[14px] flex items-center justify-center transition-all duration-150 active:scale-95 shadow-md hover:shadow-lg transform-gpu", GLASS.btn)}
                   aria-label="Download or print quote as PDF"
                   title="Download / print as PDF"
                 >
@@ -606,7 +621,7 @@ export function QuoteCalculatorWidget() {
                 </button>
                 <button
                   onClick={sendQuote}
-                  className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-[14px] font-black text-sm text-white active:scale-95 transition-transform duration-150 shadow-lg transform-gpu"
+                  className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-[14px] font-black text-sm text-emerald-950 active:scale-95 transition-transform duration-150 shadow-lg transform-gpu"
                   style={{ backgroundColor: "#25D366" }}
                 >
                   <WhatsappLogo size={20} weight="fill" aria-hidden="true" /> Send Quote via WhatsApp
@@ -618,4 +633,4 @@ export function QuoteCalculatorWidget() {
       )}
     </>
   )
-                                            } 
+} 
