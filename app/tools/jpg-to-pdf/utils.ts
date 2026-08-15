@@ -76,59 +76,171 @@ export const clearHistory = () => {
   try { window.localStorage.removeItem(HISTORY_KEY) } catch {}
 }
 
+// ─── ADAPTIVE DECODE PIPELINE ────────────────────────────────────────────
+// This exists specifically to make "could not read this image" as close
+// to impossible as the browser allows. The old approach decoded the file
+// at full native resolution first, and only capped the OUTPUT canvas
+// size afterward — but on a large photo or a tall scrolling screenshot,
+// it's that initial full-resolution decode itself that exhausts memory
+// and throws, before any capping logic ever runs.
+//
+// Fix: ask the browser to decode AT a reduced size directly, using
+// createImageBitmap's native resize options — this avoids ever
+// materializing the full-resolution pixel buffer in memory at all. If
+// that still fails, the pipeline retries at progressively smaller
+// targets, then falls back to a manual <img>+canvas path with the same
+// cascade, and only reports failure after every rung of both strategies
+// is exhausted.
+
+const DECODE_SIZE_CASCADE = [MAX_CANVAS_DIMENSION, 1600, 1200, 900, 600, 400] as const
+
+// Cheap dimension probe: reading naturalWidth/naturalHeight from an <img>
+// only requires the browser to parse the file's header/metadata, not
+// perform a full raster decode — this is what lets us compute an
+// aspect-correct resize target before committing to any expensive work.
+function probeDimensions(file: File): Promise<{ w: number; h: number }> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file)
+    const img = new window.Image()
+    img.onload = () => {
+      const w = img.naturalWidth, h = img.naturalHeight
+      URL.revokeObjectURL(url)
+      if (w > 0 && h > 0) resolve({ w, h })
+      else reject(new Error("Image reported zero dimensions."))
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Could not read this image's dimensions.")) }
+    img.src = url
+  })
+}
+
+function cappedDims(naturalW: number, naturalH: number, maxDim: number) {
+  const scale = Math.min(1, maxDim / Math.max(naturalW, naturalH))
+  return { w: Math.max(1, Math.round(naturalW * scale)), h: Math.max(1, Math.round(naturalH * scale)) }
+}
+
+type DecodedSource = { source: CanvasImageSource; width: number; height: number; cleanup: () => void }
+
+// Tries createImageBitmap with explicit, aspect-correct resize targets,
+// walking DECODE_SIZE_CASCADE from largest to smallest until one decodes
+// successfully.
+async function decodeViaBitmapCascade(file: File, naturalW: number, naturalH: number): Promise<DecodedSource> {
+  if (typeof createImageBitmap !== "function") throw new Error("createImageBitmap unsupported")
+  let lastErr: unknown
+  for (const target of DECODE_SIZE_CASCADE) {
+    const { w, h } = cappedDims(naturalW, naturalH, target)
+    try {
+      const bitmap = await createImageBitmap(file, { resizeWidth: w, resizeHeight: h, resizeQuality: "medium" })
+      return { source: bitmap, width: bitmap.width, height: bitmap.height, cleanup: () => bitmap.close() }
+    } catch (err) {
+      lastErr = err
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error("Bitmap decode failed at every size.")
+}
+
+// Fallback for browsers without createImageBitmap (or where every resize
+// attempt above still failed): loads the file into a plain <img> once,
+// then draws it onto a canvas at progressively smaller target sizes —
+// the canvas allocation is what's capped here.
+function decodeViaImageElementCascade(file: File, naturalW: number, naturalH: number): Promise<DecodedSource> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file)
+    const img = new window.Image()
+    img.onload = () => {
+      let lastErr: unknown
+      for (const target of DECODE_SIZE_CASCADE) {
+        const { w, h } = cappedDims(naturalW, naturalH, target)
+        try {
+          const canvas = document.createElement("canvas")
+          canvas.width = w
+          canvas.height = h
+          const ctx = canvas.getContext("2d")
+          if (!ctx) throw new Error("Canvas not supported on this device.")
+          ctx.drawImage(img, 0, 0, w, h)
+          URL.revokeObjectURL(url)
+          resolve({ source: canvas, width: w, height: h, cleanup: () => {} })
+          return
+        } catch (err) {
+          lastErr = err
+        }
+      }
+      URL.revokeObjectURL(url)
+      reject(lastErr instanceof Error ? lastErr : new Error("Could not process this image at any size."))
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error("Could not read this image."))
+    }
+    img.src = url
+  })
+}
+
+// One blind retry after a short pause — catches purely transient
+// failures (e.g. a momentary memory spike from something else in the
+// tab) that aren't actually about this file's size at all.
+async function withTransientRetry<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn()
+  } catch {
+    await new Promise((r) => setTimeout(r, 300))
+    return fn()
+  }
+}
+
+async function decodeSourceAdaptive(file: File): Promise<DecodedSource> {
+  const { w: naturalW, h: naturalH } = await probeDimensions(file)
+  try {
+    return await withTransientRetry(() => decodeViaBitmapCascade(file, naturalW, naturalH))
+  } catch {
+    return await withTransientRetry(() => decodeViaImageElementCascade(file, naturalW, naturalH))
+  }
+              }
+
 // ─── THUMBNAIL GENERATION ────────────────────────────────────────────────
-// Grid thumbnails use a small (≤480px) downscaled JPEG instead of the raw
-// original file, so the browser isn't holding a full-resolution decode in
-// memory per image for the whole session just to render a grid tile.
+// Grid thumbnails use the same adaptive pipeline, capped much smaller
+// (≤480px) — this avoids holding the full file in memory just for a grid
+// tile, and shares the same hardened decode path as conversion, so a
+// thumbnail failing is no more likely than a conversion failing.
 export async function generateThumbnail(file: File, maxDim = 480): Promise<string> {
   try {
-    if (typeof createImageBitmap === "function") {
-      const bitmap = await createImageBitmap(file)
-      try {
-        const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height))
-        const w = Math.max(1, Math.round(bitmap.width * scale))
-        const h = Math.max(1, Math.round(bitmap.height * scale))
-        const canvas = document.createElement("canvas")
-        canvas.width = w
-        canvas.height = h
-        const ctx = canvas.getContext("2d")
-        if (!ctx) throw new Error("Canvas not supported on this device.")
-        ctx.drawImage(bitmap, 0, 0, w, h)
-        return await new Promise<string>((resolve, reject) => {
-          canvas.toBlob((blob) => {
-            if (!blob) { reject(new Error("Thumbnail generation failed.")); return }
-            resolve(URL.createObjectURL(blob))
-          }, "image/jpeg", 0.7)
-        })
-      } finally {
-        bitmap.close()
-      }
+    const { source, width, height, cleanup } = await decodeSourceAdaptive(file)
+    try {
+      const scale = Math.min(1, maxDim / Math.max(width, height))
+      const w = Math.max(1, Math.round(width * scale))
+      const h = Math.max(1, Math.round(height * scale))
+      const canvas = document.createElement("canvas")
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext("2d")
+      if (!ctx) throw new Error("Canvas not supported on this device.")
+      ctx.drawImage(source, 0, 0, w, h)
+      return await new Promise<string>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (!blob) { reject(new Error("Thumbnail generation failed.")); return }
+          resolve(URL.createObjectURL(blob))
+        }, "image/jpeg", 0.7)
+      })
+    } finally {
+      cleanup()
     }
   } catch {
-    // fall through to the raw-file fallback below
+    // Absolute last resort so a thumbnail always renders something, even
+    // if every decode strategy above failed.
+    return URL.createObjectURL(file)
   }
-  return URL.createObjectURL(file)
 }
 
 // ─── PERSPECTIVE WARP (for free four-corner crops) ─────────────────────
 // Canvas 2D has no native projective-transform draw call, so a quad crop
-// (trapezium, rhombus, any four free corners) is approximated by
-// subdividing the output rectangle into a fine grid, bilinearly
-// interpolating each grid vertex's matching source point from the four
-// corners, and drawing each grid cell as two affine-warped triangles.
-// This is the standard technique for perspective correction on canvas
-// without WebGL, and is visually indistinguishable from a true projective
-// warp at this grid resolution for photographed-document use cases.
+// is approximated by subdividing the output rectangle into a fine grid,
+// bilinearly interpolating each grid vertex's matching source point, and
+// drawing each grid cell as two affine-warped triangles.
 
 function lerp(a: number, b: number, t: number) { return a + (b - a) * t }
 function lerpPoint(a: CropPoint, b: CropPoint, t: number): CropPoint {
   return { x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) }
 }
 
-// Draws one affine-warped triangle: clips to the destination triangle,
-// then applies the unique affine transform that maps the three source
-// points onto the three destination points, and draws the full source
-// image through that clip/transform (only the clipped triangle survives).
 function drawAffineTriangle(
   ctx: CanvasRenderingContext2D,
   source: CanvasImageSource,
@@ -139,7 +251,7 @@ function drawAffineTriangle(
   const [d0, d1, d2] = dst
 
   const denom = (s1.x - s0.x) * (s2.y - s0.y) - (s2.x - s0.x) * (s1.y - s0.y)
-  if (Math.abs(denom) < 1e-8) return // degenerate triangle, skip
+  if (Math.abs(denom) < 1e-8) return
 
   const a = ((d1.x - d0.x) * (s2.y - s0.y) - (d2.x - d0.x) * (s1.y - s0.y)) / denom
   const b = ((d1.y - d0.y) * (s2.y - s0.y) - (d2.y - d0.y) * (s1.y - s0.y)) / denom
@@ -160,7 +272,6 @@ function drawAffineTriangle(
   ctx.restore()
 }
 
-// corners are in source-image pixel space, order TL, TR, BR, BL.
 function warpQuadToCanvas(
   source: CanvasImageSource,
   corners: [CropPoint, CropPoint, CropPoint, CropPoint],
@@ -177,8 +288,6 @@ function warpQuadToCanvas(
   const grid = PERSPECTIVE_WARP_GRID
   for (let gy = 0; gy < grid; gy++) {
     const t0 = gy / grid, t1 = (gy + 1) / grid
-    // Source-space edge points for this row, via bilinear interpolation
-    // of the quad's left/right edges.
     const srcLeft0 = lerpPoint(tl, bl, t0), srcRight0 = lerpPoint(tr, br, t0)
     const srcLeft1 = lerpPoint(tl, bl, t1), srcRight1 = lerpPoint(tr, br, t1)
 
@@ -202,15 +311,6 @@ function warpQuadToCanvas(
 }
 
 // ─── IMAGE PROCESSING ────────────────────────────────────────────────────
-// Two decode paths, both used by both crop styles:
-//
-// 1. compressViaBitmap — preferred. createImageBitmap() decodes off the
-//    main thread with a much smaller memory footprint than an <img> tag.
-//
-// 2. compressViaImageElement — fallback for browsers without
-//    createImageBitmap, or if the bitmap path itself throws. Includes one
-//    automatic retry on decode failure, since these failures are often
-//    transient under memory pressure and can clear a moment later.
 
 function rectRegion(sourceW: number, sourceH: number, rotation: number, crop?: CropRect) {
   const validCrop = crop && crop.w > 0.02 && crop.h > 0.02 ? crop : { x: 0, y: 0, w: 1, h: 1 }
@@ -244,8 +344,6 @@ function drawRectToDataUrl(
   return canvas.toDataURL("image/jpeg", quality)
 }
 
-// Renders a quad (perspective) crop: warps the four corners flat, then
-// applies rotation as a second pass on the warped result.
 function drawQuadToDataUrl(
   source: CanvasImageSource,
   sourceW: number, sourceH: number,
@@ -276,78 +374,28 @@ function drawQuadToDataUrl(
   return { dataUrl: canvas.toDataURL("image/jpeg", quality), width, height }
 }
 
-async function compressViaBitmap(
-  file: File, rotation: number, quality: number, crop?: CropRect
-): Promise<{ dataUrl: string; width: number; height: number }> {
-  const bitmap = await createImageBitmap(file)
-  try {
-    if (crop?.corners) {
-      const boundingW = Math.max(1, crop.w * bitmap.width)
-      const boundingH = Math.max(1, crop.h * bitmap.height)
-      return drawQuadToDataUrl(bitmap, bitmap.width, bitmap.height, crop.corners, boundingW, boundingH, rotation, quality)
-    }
-    const { sx, sy, sw, sh, scale, width, height } = rectRegion(bitmap.width, bitmap.height, rotation, crop)
-    const dataUrl = drawRectToDataUrl(bitmap, sx, sy, sw, sh, width, height, scale, rotation, quality)
-    return { dataUrl, width, height }
-  } finally {
-    bitmap.close()
-  }
-}
-
-function compressViaImageElement(
-  file: File, rotation: number, quality: number, crop: CropRect | undefined, attempt = 1
-): Promise<{ dataUrl: string; width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const objectUrl = URL.createObjectURL(file)
-    const img = new window.Image()
-    img.onload = () => {
-      try {
-        let result: { dataUrl: string; width: number; height: number }
-        if (crop?.corners) {
-          const boundingW = Math.max(1, crop.w * img.naturalWidth)
-          const boundingH = Math.max(1, crop.h * img.naturalHeight)
-          result = drawQuadToDataUrl(img, img.naturalWidth, img.naturalHeight, crop.corners, boundingW, boundingH, rotation, quality)
-        } else {
-          const { sx, sy, sw, sh, scale, width, height } = rectRegion(img.naturalWidth, img.naturalHeight, rotation, crop)
-          result = { dataUrl: drawRectToDataUrl(img, sx, sy, sw, sh, width, height, scale, rotation, quality), width, height }
-        }
-        URL.revokeObjectURL(objectUrl)
-        resolve(result)
-      } catch (err) {
-        URL.revokeObjectURL(objectUrl)
-        reject(err instanceof Error ? err : new Error("Failed to process this image on this device."))
-      }
-    }
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl)
-      // Transient decode failures under memory pressure are common with
-      // large photos — retry once before giving up.
-      if (attempt < 2) {
-        setTimeout(() => {
-          compressViaImageElement(file, rotation, quality, crop, attempt + 1).then(resolve, reject)
-        }, 250)
-        return
-      }
-      reject(new Error("Could not read this image. Tap refresh to try again."))
-    }
-    img.src = objectUrl
-  })
-}
-
+// Single entry point used by both live-estimate and real conversion —
+// every call goes through the adaptive decode cascade above, so the same
+// hardened path protects the whole tool, not just the final convert step.
 export const compressImage = async (
   file: File,
   rotation: number,
   quality: number,
   crop?: CropRect
 ): Promise<{ dataUrl: string; width: number; height: number }> => {
-  if (typeof createImageBitmap === "function") {
-    try {
-      return await compressViaBitmap(file, rotation, quality, crop)
-    } catch {
-      // fall through to the <img>-based path below
+  const { source, width: srcW, height: srcH, cleanup } = await decodeSourceAdaptive(file)
+  try {
+    if (crop?.corners) {
+      const boundingW = Math.max(1, crop.w * srcW)
+      const boundingH = Math.max(1, crop.h * srcH)
+      return drawQuadToDataUrl(source, srcW, srcH, crop.corners, boundingW, boundingH, rotation, quality)
     }
+    const { sx, sy, sw, sh, scale, width, height } = rectRegion(srcW, srcH, rotation, crop)
+    const dataUrl = drawRectToDataUrl(source, sx, sy, sw, sh, width, height, scale, rotation, quality)
+    return { dataUrl, width, height }
+  } finally {
+    cleanup()
   }
-  return compressViaImageElement(file, rotation, quality, crop)
 }
 
 export const fitToPage = (width: number, height: number, page: { w: number; h: number }) => {
@@ -358,4 +406,4 @@ export const fitToPage = (width: number, height: number, page: { w: number; h: n
   const renderW = width * ratio
   const renderH = height * ratio
   return { x: (page.w - renderW) / 2, y: (page.h - renderH) / 2, renderW, renderH }
-      } 
+    }
