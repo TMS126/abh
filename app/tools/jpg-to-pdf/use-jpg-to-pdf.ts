@@ -24,6 +24,7 @@ export function useJpgToPdf() {
   const [sendNotice, setSendNotice] = useState<string | null>(null)
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [estimatedBytes, setEstimatedBytes] = useState<number | null>(null)
+  const [retryingIds, setRetryingIds] = useState<Set<string>>(new Set())
 
   useEffect(() => setHistory(loadHistory()), [])
 
@@ -49,12 +50,10 @@ export function useJpgToPdf() {
 
   // ─── FILE INTAKE ────────────────────────────────────────────────────────
   // Re-uploading a file identical to one already in the grid (same name +
-  // size + lastModified — a reliable enough fingerprint without hashing
-  // file contents) replaces that existing entry in place: fresh preview,
-  // rotation/crop reset, converted/error status cleared. This means
-  // re-uploading the same photo repeatedly never consumes a new slot and
-  // never approaches MAX_FILES, so a long session isn't quietly blocked
-  // by the cap counting stale converted entries the user never removed.
+  // size + lastModified) replaces that existing entry in place: fresh
+  // preview, rotation/crop reset, converted/error status cleared. This
+  // means re-uploading the same photo repeatedly never consumes a new
+  // slot and never approaches MAX_FILES.
   const addFiles = useCallback((fileList: FileList | File[]) => {
     setConvertedFiles([])
     setSendNotice(null)
@@ -119,8 +118,6 @@ export function useJpgToPdf() {
 
     if (toAppend.length > 0) setImages((prev) => [...prev, ...toAppend])
 
-    // Generate downscaled thumbnails for both freshly appended and
-    // replaced images.
     const toThumbnail = [
       ...toAppend.map((item) => ({ id: item.id, file: item.file })),
       ...replacements.map((r) => ({ id: r.targetId, file: r.file })),
@@ -158,7 +155,33 @@ export function useJpgToPdf() {
   const resetRotation = (id: string) => setRotations((p) => ({ ...p, [id]: 0 }))
   const setCrop = (id: string, crop: CropRect | undefined) => setImages((p) => p.map((i) => (i.id === id ? { ...i, crop } : i)))
 
-  const retryImage = (id: string) => setErrors((prev) => prev.filter((e) => e.id !== id))
+  // ─── ERROR RETRY ────────────────────────────────────────────────────────
+  // Actually re-attempts decoding the image (not just clearing the error
+  // text) — hitting Convert afterward would otherwise re-run the exact
+  // same failing decode and surface the identical error again. Only
+  // clears the error if the fresh attempt genuinely succeeds. If the
+  // browser truly can't decode this file, that's reported honestly rather
+  // than silently "fixed."
+  const retryImage = async (id: string) => {
+    const target = images.find((img) => img.id === id)
+    if (!target) return
+    setRetryingIds((prev) => new Set([...prev, id]))
+    try {
+      await compressImage(target.file, rotations[id] || 0, quality, target.crop)
+      setErrors((prev) => prev.filter((e) => e.id !== id))
+    } catch (err) {
+      setErrors((prev) => [
+        ...prev.filter((e) => e.id !== id),
+        {
+          fileName: target.file.name,
+          id,
+          reason: "Still can't read this image. Try re-saving or re-exporting the photo, then re-upload it.",
+        },
+      ])
+    } finally {
+      setRetryingIds((prev) => { const next = new Set(prev); next.delete(id); return next })
+    }
+  }
 
   const reorder = (from: number, to: number) => {
     if (from === to || Number.isNaN(from)) return
@@ -319,8 +342,8 @@ export function useJpgToPdf() {
   return {
     images, mode, setMode, pageSize, setPageSize, quality, setQuality,
     rotations, isConverting, progress, errors, convertedFiles, convertedIds, reconvertPrompt,
-    sendNotice, history, selectedCount, estimatedBytes,
+    sendNotice, history, selectedCount, estimatedBytes, retryingIds,
     addFiles, removeImage, toggleSelect, selectAll, rotateImage, resetRotation, setCrop, retryImage, reorder,
     clearAll, requestConvert, resolveReconvert, handleSend, clearRecents,
   }
-      }
+} 
