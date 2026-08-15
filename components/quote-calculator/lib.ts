@@ -1,10 +1,8 @@
 // components/quote-calculator/lib.ts
 import { HUBS, HubId } from "@/lib/data"
 
-// ─── Hub order ────────────────────────────────────────────────────────────────
 export const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
-// ─── Bulk pricing tiers ─────────────────────────────────────────────────────
 export const BULK_TIERS: Record<string, { min: number; rate: number }[]> = {
   "print-Copying-Black & White":        [{ min: 10, rate: 2 }, { min: 100, rate: 1 }],
   "print-Copying-Colour":               [{ min: 10, rate: 4 }, { min: 50,  rate: 3 }],
@@ -47,21 +45,30 @@ export function getNextTier(id: string, name: string, qty: number) {
   return null
 }
 
-export function getBulkHint(id: string, name: string, qty: number, effRate: number, baseRate: number): string | null {
+// ── Natural-language bulk hint. `unit` is optional — when given (e.g. "page",
+// "copy"), the copy reads like a person wrote it: "Add 9 more pages and it's
+// just R2 each" instead of the old generic "Add 9 more to unlock R2 each".
+// Pluralization is a simple +s heuristic (page→pages); flag if any unit needs
+// an irregular plural and I'll special-case it. ──
+function pluralize(unit: string, n: number): string {
+  if (n === 1) return unit
+  return unit.endsWith("s") ? unit : `${unit}s`
+}
+export function getBulkHint(
+  id: string, name: string, qty: number, effRate: number, baseRate: number, unit?: string | null
+): string | null {
   const next = getNextTier(id, name, qty)
   const discounted = effRate < baseRate
+  const word = (n: number) => unit ? pluralize(unit, n) : (n === 1 ? "item" : "items")
   if (next) {
     const needed = next.min - qty
     return discounted
-      ? `Bulk rate applied — add ${needed} more for R${next.rate} each`
-      : `Add ${needed} more to unlock R${next.rate} each`
+      ? `Already at the bulk rate — add ${needed} more ${word(needed)} and it drops to R${next.rate} each`
+      : `Add ${needed} more ${word(needed)} and it's just R${next.rate} each`
   }
-  return discounted ? "Best bulk rate applied" : null
+  return discounted ? "You've hit the best price on this one" : null
 }
 
-// ─── Bulk progress chip — dots only for tiers with min ≤ 10; larger
-// tiers (e.g. the 100-unit Colour Copying tier) get text only, no dots,
-// per confirmed decision. ──
 export interface BulkProgress {
   current: number
   target: number
@@ -93,7 +100,6 @@ export function parsePrice(price: string): { amount: number; unit: string | null
   return { amount: parseFloat(match[1]), unit: match[2] ?? null }
 }
 
-// ─── Types ──────────────────────────────────────────────────────────────────
 export interface CartItem {
   id: string; hubId: HubId; sectionTitle: string; name: string
   unitPrice: number; unit: string | null; qty: number
@@ -113,7 +119,6 @@ export function quoteTotals(items: CartItem[]) {
   return { total, savings, count }
 }
 
-// ─── Cart lookup (used by service-detail-modal to show "already in quote") ──
 export function getCartQtyForItem(id: string): number {
   if (typeof window === "undefined") return 0
   try {
@@ -124,4 +129,4 @@ export function getCartQtyForItem(id: string): number {
   } catch {
     return 0
   }
-                            } 
+} 
