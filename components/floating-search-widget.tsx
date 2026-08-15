@@ -17,17 +17,12 @@ const SERVICES_PATH = "/services"
 
 const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
-// Single theme-adaptive accent — the whole widget (icon, highlights,
-// prices) uses only this orange pair, no per-hub colors, no glow.
+// Single theme-adaptive accent for the icon and result highlights.
 const SEARCH_ORANGE = { light: BRAND.orange, dark: BRAND.lightOrange }
 
 // ── Sizing ───────────────────────────────────────────────────────────
-// Idle pill: "130%" of a normal ~44px/220px search bar.
-const IDLE_WIDTH = 220
-const IDLE_HEIGHT = 44
-const ICON_SIZE = 20
-const ICON_LEFT = 20
-const ICON_TOP = (IDLE_HEIGHT - ICON_SIZE) / 2 // vertically centered in the collapsed pill
+const CLOSED_SIZE = 56  // bare icon hit-area, matches the other FABs
+const PILL_WIDTH = 272  // modest open width — not a full panel
 
 interface SearchableService {
   hubId: HubId; sectionTitle: string; name: string
@@ -138,16 +133,18 @@ export function FloatingSearchWidget() {
   const index        = useMemo(buildSearchIndex, [])
 
   const accentColor = isDark ? SEARCH_ORANGE.dark : SEARCH_ORANGE.light
+  // Same drop-shadow glow the original icon had — theme-adaptive since
+  // it's built from accentColor.
+  const iconGlow = `drop-shadow(0 4px 10px ${accentColor}80) drop-shadow(0 2px 4px rgba(0,0,0,0.3))`
 
   const onServicesPage = pathname === SERVICES_PATH
   const hasQuery = query.trim().length > 0
 
   // Base visibility mirrors the inline search bar's scroll position on the
-  // Services page — that bar carries id="abh-inline-search". Unlike the
-  // Quote Calculator and WhatsApp FABs, this widget does NOT flicker while
-  // actively scrolling — it stays visible continuously once past the
-  // trigger point, and only hides again if the inline search bar scrolls
-  // back into view (or another widget opens, via useExclusiveWidget).
+  // Services page — that bar carries id="abh-inline-search". This widget
+  // stays visible continuously once past the trigger point, and only
+  // hides again if the inline search bar scrolls back into view (or
+  // another widget opens, via useExclusiveWidget).
   useEffect(() => {
     if (!onServicesPage) { setPastTrigger(false); return }
     const check = () => {
@@ -173,41 +170,20 @@ export function FloatingSearchWidget() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onServicesPage])
 
-  // Body scroll lock while open — same as WhatsApp panel
-  useEffect(() => {
-    if (!isOpen) return
-    const scrollY = window.scrollY
-    const { style } = document.body
-    style.position = "fixed"; style.top = `-${scrollY}px`
-    style.left = "0"; style.right = "0"; style.width = "100%"; style.overflow = "hidden"
-    return () => {
-      style.position = ""; style.top = ""; style.left = ""
-      style.right = ""; style.width = ""; style.overflow = ""
-      window.scrollTo(0, scrollY)
-    }
-  }, [isOpen])
-
-  // Back-button / history handling, scoped only to this widget's own open
-  // state — pushes one history entry on open, and any close path (backdrop,
-  // X, Escape, picking a result) collapses it again. Doesn't touch anything
-  // else on the page.
+  // Back-button handling, scoped only to this widget's own open state —
+  // pushes one history entry on open, and any close path (outside click,
+  // Escape, picking a result) collapses it again.
   //
-  // NOTE: no auto-focus here. The input stays unfocused on open so mobile
-  // browsers don't pop the keyboard the instant the pill unfolds — tapping
-  // the pill (1st tap) unfolds the panel, tapping the input itself (2nd
-  // tap) focuses it and brings up the keyboard, via the input's own
+  // NOTE: no auto-focus here. The input is left unfocused on open so
+  // mobile browsers don't pop the keyboard the instant the pill grows —
+  // tapping the icon (1st tap) grows the pill, tapping the input itself
+  // (2nd tap) focuses it and brings up the keyboard, via the input's own
   // native click-to-focus behavior.
   useEffect(() => {
     if (isOpen && !pushedRef.current) {
       window.history.pushState({ abhSearch: true }, "")
       pushedRef.current = true
     }
-    // NOTE: no `else` branch here. Cleanup of the pushed history entry
-    // happens explicitly at each close site instead (see handleClose /
-    // pick below) — calling history.back() unconditionally here raced
-    // with ServicesPage's own modal history stack: picking a result
-    // pushes a NEW entry for the modal, and this effect would then pop
-    // THAT entry instead of ours, instantly closing the modal.
   }, [isOpen])
 
   useEffect(() => {
@@ -220,17 +196,18 @@ export function FloatingSearchWidget() {
     return () => window.removeEventListener("popstate", onPop)
   }, [setIsOpen])
 
-  // Manual close (backdrop click / X button / Escape). Nothing else has
-  // been pushed to history since we opened, so it's safe to pop our own
-  // entry here.
   const handleClose = useCallback(() => {
     setIsOpen(false)
-    setTimeout(() => setQuery(""), 300)
+    setTimeout(() => setQuery(""), 200)
     if (pushedRef.current) {
       pushedRef.current = false
       window.history.back()
     }
   }, [setIsOpen])
+
+  const handleOpen = useCallback(() => {
+    if (!isOpen) setIsOpen(true)
+  }, [isOpen, setIsOpen])
 
   useEffect(() => {
     if (!isOpen) return
@@ -276,75 +253,59 @@ export function FloatingSearchWidget() {
 
   return (
     <>
-      {/* ── Backdrop ─────────────────────────────────────────────────── */}
+      {/* Invisible outside-click catcher — no visual dimming, this is a
+          small popover now, not a full-screen modal. */}
       {isOpen && (
-        <div
-          className="fixed inset-0 z-[9989] bg-black/25 transition-opacity duration-200 ease-out motion-reduce:transition-none"
-          onClick={handleClose}
-          aria-hidden="true"
-        />
+        <div className="fixed inset-0 z-[9989]" onClick={handleClose} aria-hidden="true" />
       )}
 
-      {/* ── The widget itself ───────────────────────────────────────────
-          One element that folds/unfolds in place — same mechanism as the
-          navbar logo's text reveal: an overflow-hidden box whose
-          width/max-height/radius transition between a small and large
-          value, with the content simply clipped or revealed as it grows,
-          instead of swapping between two separate elements. Collapsed,
-          it's a clean empty pill (icon only, no wording, no placeholder)
-          matching the reference look exactly. */}
       <div
         className={cn(
-          "fixed z-[9993] right-4 md:right-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 shadow-lg overflow-hidden transition-all duration-500 ease-out motion-reduce:transition-none transform-gpu",
-          isOpen
-            ? "bottom-24 w-[calc(100vw-2rem)] md:w-[400px] max-h-[520px] rounded-[20px] opacity-100 scale-100 pointer-events-auto"
-            : cn(
-                "bottom-[9.5rem] rounded-full",
-                pastTrigger && !isOtherOpen
-                  ? "opacity-100 scale-100 pointer-events-auto"
-                  : "opacity-0 scale-90 pointer-events-none"
-              )
+          "fixed z-[9993] right-4 md:right-6 transition-all duration-200 ease-out motion-reduce:transition-none transform-gpu",
+          pastTrigger && !isOtherOpen
+            ? "bottom-[9.5rem] opacity-100 scale-100 pointer-events-auto"
+            : "bottom-[9.5rem] opacity-0 scale-90 pointer-events-none"
         )}
-        style={!isOpen ? { width: IDLE_WIDTH, maxHeight: IDLE_HEIGHT } : undefined}
       >
-        {/* Search icon — fixed at the same top-left spot whether the
-            widget is collapsed or unfolded. Doubles as the open trigger
-            while collapsed; purely decorative once unfolded (the header
-            icon of the open panel). */}
-        <button
-          onClick={() => !isOpen && setIsOpen(true)}
-          aria-label="Search services"
-          tabIndex={isOpen ? -1 : 0}
-          className="absolute flex items-center justify-center"
-          style={{ left: ICON_LEFT, top: ICON_TOP, width: ICON_SIZE, height: ICON_SIZE }}
-        >
-          <MagnifyingGlass size={ICON_SIZE} weight="bold" style={{ color: accentColor }} aria-hidden="true" />
-        </button>
-
-        {/* Close X — only usable once unfolded */}
-        <button
-          onClick={handleClose}
-          aria-label="Close search"
-          tabIndex={isOpen ? 0 : -1}
-          className={cn(
-            "absolute right-4 top-4 w-8 h-8 rounded-full flex items-center justify-center text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 bg-zinc-100 dark:bg-white/[0.07] transition-opacity duration-200 ease-out",
-            isOpen ? "opacity-100 delay-300" : "opacity-0 pointer-events-none"
-          )}
-        >
-          <X size={16} weight="bold" aria-hidden="true" />
-        </button>
-
-        {/* Unfolded content — input + results. Revealed by the fold
-            growing around it, faded in slightly after so it doesn't
-            appear mid-animation. */}
+        {/* ── The pill ─────────────────────────────────────────────────
+            Right-anchored, so animating `width` alone makes it grow
+            leftward. Bare icon at rest (no visible background — "icon
+            only before touch"); on hover/click the background/border/
+            shadow fade in and the box widens into the exact plain pill
+            from the reference screenshot, with the icon sliding to the
+            left edge as the flex layout reflows. */}
         <div
-          aria-hidden={!isOpen}
-          className={cn(
-            "flex flex-col h-[520px] pt-[52px] px-5 pb-5 transition-opacity duration-200 ease-out motion-reduce:transition-none",
-            isOpen ? "opacity-100 delay-300" : "opacity-0 pointer-events-none"
-          )}
+          onMouseEnter={handleOpen}
+          className="relative flex items-center rounded-full overflow-hidden transition-[width] duration-300 ease-out motion-reduce:transition-none"
+          style={{ width: isOpen ? PILL_WIDTH : CLOSED_SIZE, height: CLOSED_SIZE }}
         >
-          <div className="flex items-center gap-2.5 rounded-full px-4 h-11 bg-zinc-100 dark:bg-white/[0.07] border border-zinc-200 dark:border-white/10 focus-within:border-zinc-300 dark:focus-within:border-white/20 transition-colors duration-150 shrink-0">
+          <div
+            className={cn(
+              "absolute inset-0 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 shadow-lg transition-opacity duration-300 ease-out motion-reduce:transition-none",
+              isOpen ? "opacity-100" : "opacity-0"
+            )}
+            aria-hidden="true"
+          />
+
+          <button
+            onClick={handleOpen}
+            aria-label="Search services"
+            className="relative z-10 w-14 h-14 shrink-0 flex items-center justify-center active:scale-90 hover:scale-110 transition-transform duration-150 ease-out motion-reduce:transition-none"
+          >
+            <MagnifyingGlass
+              size={22}
+              weight="bold"
+              aria-hidden="true"
+              style={{ color: accentColor, filter: iconGlow }}
+            />
+          </button>
+
+          <div
+            className={cn(
+              "relative z-10 flex-1 min-w-0 flex items-center gap-2 pr-4 transition-opacity duration-200 ease-out motion-reduce:transition-none",
+              isOpen ? "opacity-100 delay-150" : "opacity-0 pointer-events-none"
+            )}
+          >
             <label htmlFor="floating-search-input" className="sr-only">Search a service</label>
             <input
               id="floating-search-input"
@@ -365,52 +326,63 @@ export function FloatingSearchWidget() {
               </button>
             )}
           </div>
-
-          <div className="flex-1 overflow-y-auto pt-3">
-            {!hasQuery ? null : results.length > 0 ? (
-              <div className="divide-y divide-zinc-100 dark:divide-white/10">
-                {results.map((s, idx) => (
-                  <button
-                    key={`${s.hubId}-${s.name}-${idx}`}
-                    onClick={() => pick(s)}
-                    className="w-full flex items-center gap-3 py-2.5 text-left hover:bg-zinc-50 dark:hover:bg-white/[0.05] transition-colors duration-150"
-                  >
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: `${accentColor}1f`, color: accentColor }}
-                    >
-                      <HubIcon id={s.hubId} size={18} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">
-                        {s.matchField === "name"
-                          ? <HighlightMatch text={s.name} query={query} color={accentColor} />
-                          : s.name}
-                      </p>
-                      <p className="text-[0.65rem] font-bold uppercase tracking-wider text-zinc-400 truncate">
-                        {s.matchField === "section"
-                          ? <HighlightMatch text={s.sectionTitle} query={query} color={accentColor} />
-                          : s.sectionTitle} · {HUBS[s.hubId].title}
-                      </p>
-                      {s.matchField === "description" && (
-                        <p className="text-[0.64rem] font-medium text-zinc-400 dark:text-zinc-500 truncate mt-0.5 normal-case">
-                          <HighlightMatch text={matchSnippet(s.description, query)} query={query} color={accentColor} />
-                        </p>
-                      )}
-                    </div>
-                    <span className="text-xs font-black shrink-0" style={{ color: accentColor }}>{s.price}</span>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div key="empty" className="text-center py-8 animate-in fade-in duration-200 motion-reduce:animate-none">
-                <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">No services found</p>
-                <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-1">Try a different word or WhatsApp us directly.</p>
-              </div>
-            )}
-          </div>
         </div>
+
+        {/* ── Results dropdown ─────────────────────────────────────────
+            Sits just below the pill, sized to its content — no fixed
+            height, grows only as tall as the result list needs (capped
+            with a max-height + scroll as a safety net). */}
+        {isOpen && hasQuery && (
+          <div
+            className="absolute top-[calc(100%+8px)] right-0 rounded-[16px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150 ease-out motion-reduce:animate-none"
+            style={{ width: PILL_WIDTH }}
+          >
+            <div className="max-h-[280px] overflow-y-auto p-2">
+              {results.length > 0 ? (
+                <div className="divide-y divide-zinc-100 dark:divide-white/10">
+                  {results.map((s, idx) => (
+                    <button
+                      key={`${s.hubId}-${s.name}-${idx}`}
+                      onClick={() => pick(s)}
+                      className="w-full flex items-center gap-3 py-2.5 px-1 text-left hover:bg-zinc-50 dark:hover:bg-white/[0.05] transition-colors duration-150"
+                    >
+                      <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: `${accentColor}1f`, color: accentColor }}
+                      >
+                        <HubIcon id={s.hubId} size={18} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-black text-zinc-800 dark:text-zinc-200 truncate">
+                          {s.matchField === "name"
+                            ? <HighlightMatch text={s.name} query={query} color={accentColor} />
+                            : s.name}
+                        </p>
+                        <p className="text-[0.65rem] font-bold uppercase tracking-wider text-zinc-400 truncate">
+                          {s.matchField === "section"
+                            ? <HighlightMatch text={s.sectionTitle} query={query} color={accentColor} />
+                            : s.sectionTitle} · {HUBS[s.hubId].title}
+                        </p>
+                        {s.matchField === "description" && (
+                          <p className="text-[0.64rem] font-medium text-zinc-400 dark:text-zinc-500 truncate mt-0.5 normal-case">
+                            <HighlightMatch text={matchSnippet(s.description, query)} query={query} color={accentColor} />
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-xs font-black shrink-0" style={{ color: accentColor }}>{s.price}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400">No services found</p>
+                  <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-1">Try a different word.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </>
   )
-            } 
+        } 
