@@ -4,18 +4,19 @@
 import { memo } from "react"
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
-import { CheckCircle, ArrowsClockwise, ArrowCounterClockwise, Crop, X, WarningCircle } from "@phosphor-icons/react"
+import { CheckCircle, ArrowsClockwise, ArrowCounterClockwise, Crop, X, WarningCircle, CircleNotch } from "@phosphor-icons/react"
 import { formatBytes } from "./utils"
 import type { ImageItem, ConvertError } from "./types"
 
 function GridItem({
-  img, index, rotation, err, wasConverted, accentColor,
+  img, index, rotation, err, isRetrying, wasConverted, accentColor,
   onToggleSelect, onRotate, onResetRotation, onRemove, onZoom, onCrop, onRetry, onReorder,
 }: {
   img: ImageItem
   index: number
   rotation: number
   err: ConvertError | undefined
+  isRetrying: boolean
   wasConverted: boolean
   accentColor: string
   onToggleSelect: (id: string) => void
@@ -81,10 +82,10 @@ function GridItem({
       </button>
 
       {/* ─── ERROR OVERLAY ───────────────────────────────────────────── */}
-      {/* Container stays pointer-events-none so the zoom button underneath
-          remains reachable; the refresh button re-enables pointer events
-          for itself specifically. Refresh clears the error in place —
-          the File object was never dropped, so no re-upload is needed. */}
+      {/* Refresh now actually re-attempts decoding this file (see
+          retryImage in the hook) rather than just hiding the error text —
+          shows a spinner while that check runs, and only clears once a
+          real decode succeeds. */}
       {err && (
         <div
           className="absolute inset-0 bg-red-600/70 flex flex-col items-center justify-center gap-2 px-3 text-center pointer-events-none"
@@ -95,11 +96,17 @@ function GridItem({
           <button
             type="button"
             onClick={() => onRetry(img.id)}
+            disabled={isRetrying}
             aria-label={`Retry ${img.file.name}`}
-            className="pointer-events-auto flex items-center gap-1 rounded-full bg-white/25 hover:bg-white/40 text-white text-[0.62rem] font-bold px-3 py-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            aria-busy={isRetrying}
+            className="pointer-events-auto flex items-center gap-1 rounded-full bg-white/25 hover:bg-white/40 disabled:opacity-70 text-white text-[0.62rem] font-bold px-3 py-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
-            <ArrowsClockwise size={12} weight="bold" aria-hidden="true" />
-            Refresh
+            {isRetrying ? (
+              <CircleNotch size={12} weight="bold" className="animate-spin" aria-hidden="true" />
+            ) : (
+              <ArrowsClockwise size={12} weight="bold" aria-hidden="true" />
+            )}
+            {isRetrying ? "Checking…" : "Refresh"}
           </button>
         </div>
       )}
@@ -129,18 +136,16 @@ function GridItem({
   )
 }
 
-// Memoized so an unrelated state change elsewhere in the grid (selecting
-// a different image, dragging, converting) doesn't re-render every
-// thumbnail — a meaningful win once the grid is near its 20-image cap.
 const MemoGridItem = memo(GridItem)
 
 export function ImageGrid({
-  images, rotations, errors, convertedIds, accentColor,
+  images, rotations, errors, retryingIds, convertedIds, accentColor,
   onToggleSelect, onRotate, onResetRotation, onRemove, onZoom, onCrop, onRetry, onReorder,
 }: {
   images: ImageItem[]
   rotations: Record<string, number>
   errors: ConvertError[]
+  retryingIds: Set<string>
   convertedIds: Set<string>
   accentColor: string
   onToggleSelect: (id: string) => void
@@ -152,8 +157,6 @@ export function ImageGrid({
   onRetry: (id: string) => void
   onReorder: (from: number, to: number) => void
 }) {
-  // Matches by id when the error has one (conversion failures always do),
-  // so duplicate filenames don't cross-contaminate each other's overlay.
   const errorFor = (img: ImageItem) =>
     errors.find((e) => (e.id ? e.id === img.id : e.fileName === img.file.name))
 
@@ -167,6 +170,7 @@ export function ImageGrid({
             index={index}
             rotation={rotations[img.id] || 0}
             err={errorFor(img)}
+            isRetrying={retryingIds.has(img.id)}
             wasConverted={convertedIds.has(img.id)}
             accentColor={accentColor}
             onToggleSelect={onToggleSelect}
@@ -182,4 +186,4 @@ export function ImageGrid({
       </AnimatePresence>
     </ul>
   )
-  }
+                               }
