@@ -11,7 +11,7 @@ type Inset = { top: number; left: number; right: number; bottom: number }
 type Corners = [CropPoint, CropPoint, CropPoint, CropPoint]
 type Mode = "rect" | "quad"
 type ImageRect = { top: number; left: number; width: number; height: number }
-type MagnifierPos = { x: number; y: number } // frame-relative percent
+type MagnifierPos = { x: number; y: number }
 
 const DEFAULT_INSET: Inset = { top: 8, left: 8, right: 8, bottom: 8 }
 const MAG_SIZE = 132
@@ -49,7 +49,6 @@ export function CropModal({
   const magnifierCanvasRef = useRef<HTMLCanvasElement>(null)
   const dragRef = useRef<{ kind: "inset" | "corner"; handle: string; startX: number; startY: number; startInset: Inset; startCorners: Corners } | null>(null)
 
-  // ─── CLOSE HANDLING: BACKDROP TAP, ESC, X, DEVICE BACK GESTURE ────────
   const pushedRef = useRef(false)
 
   useEffect(() => {
@@ -80,7 +79,6 @@ export function CropModal({
     return () => document.removeEventListener("keydown", onKey)
   }, [requestClose])
 
-  // ─── MEASURE ACTUAL IMAGE BOUNDS WITHIN THE FRAME ──────────────────────
   const recomputeImageRect = useCallback(() => {
     const frame = frameRef.current
     if (!frame || !naturalSize) return
@@ -106,11 +104,6 @@ export function CropModal({
     return axis === "x" ? imageRect.left + (xPct / 100) * imageRect.width : imageRect.top + (xPct / 100) * imageRect.height
   }, [imageRect])
 
-  // ─── MAGNIFIER ──────────────────────────────────────────────────────────
-  // While dragging any handle, shows a zoomed, crosshair-marked circular
-  // preview of exactly where the crop edge is, so the actual crop point
-  // is never hidden under a finger — most useful on the free-shape mode
-  // where precision on a photographed document matters most.
   const drawMagnifier = useCallback((fracX: number, fracY: number) => {
     const canvas = magnifierCanvasRef.current
     const imgEl = imgElRef.current
@@ -140,8 +133,7 @@ export function CropModal({
     drawMagnifier(fracX, fracY)
   }, [toFrame, drawMagnifier])
 
-// ─── RECT MODE DRAG ─────────────────────────────────────────────────────
-  const onDragRect = useCallback((e: PointerEvent) => {
+const onDragRect = useCallback((e: PointerEvent) => {
     const drag = dragRef.current
     const frame = frameRef.current
     if (!drag || drag.kind !== "inset" || !frame) return
@@ -204,7 +196,6 @@ export function CropModal({
     window.addEventListener("pointerup", endDragRect)
   }
 
-  // ─── QUAD MODE DRAG ─────────────────────────────────────────────────────
   const onDragQuad = useCallback((e: PointerEvent) => {
     const drag = dragRef.current
     const frame = frameRef.current
@@ -238,7 +229,6 @@ export function CropModal({
     window.addEventListener("pointerup", endDragQuad)
   }
 
-  // ─── KEYBOARD NUDGE (accessibility) ─────────────────────────────────────
   const NUDGE = 1.5
   const onRectKeyDown = (handle: string) => (e: React.KeyboardEvent) => {
     const deltas: Record<string, [number, number]> = {
@@ -263,7 +253,6 @@ export function CropModal({
     setCorners(next)
   }
 
-  // ─── ASPECT PRESETS (rect mode only) ────────────────────────────────────
   const applyAspect = (ratio: number | null) => {
     setAspect(ratio)
     if (ratio === null || !naturalSize) return
@@ -275,7 +264,6 @@ export function CropModal({
     setInset({ top, left, right: left, bottom: top })
   }
 
-  // ─── MODE SWITCH ────────────────────────────────────────────────────────
   const switchMode = (next: Mode) => {
     if (next === "quad" && mode === "rect") setCorners(insetToCorners(inset))
     if (next === "rect" && mode === "quad") {
@@ -328,7 +316,6 @@ export function CropModal({
     <div role="dialog" aria-modal="true" aria-label={`Crop ${fileName}`} className="fixed inset-0 z-[200] flex flex-col bg-black/95">
       <div className="absolute inset-0" onClick={requestClose} aria-hidden="true" />
 
-      {/* ─── HEADER ─────────────────────────────────────────────────────── */}
       <div className="relative flex items-center justify-between px-4 py-3 text-white shrink-0">
         <span className="text-sm font-semibold truncate">{fileName}</span>
         <button type="button" onClick={requestClose} aria-label="Cancel crop" className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10">
@@ -337,14 +324,21 @@ export function CropModal({
       </div>
 
       {/* ─── MODE TOGGLE ────────────────────────────────────────────────── */}
-      {/* Both states now full-opacity text with a visible pill so neither
-          reads as disabled/dim — inactive tab gets a translucent
-          background instead of floating unstyled text. */}
+      {/* Inline-styled instead of Tailwind conditional classes — same fix
+          as the aspect pills below. Selected = solid white pill with dark
+          text; unselected = translucent white on dark. This can't
+          silently fail to a dim/dead state the way a bg-white Tailwind
+          class evidently was doing. */}
       <div role="tablist" aria-label="Crop shape" className="relative flex justify-center gap-1.5 px-4 pb-2 shrink-0">
         <button
           type="button" role="tab" aria-selected={mode === "rect"}
           onClick={() => switchMode("rect")}
-          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors border ${mode === "rect" ? "bg-white text-zinc-900 border-white" : "bg-white/10 border-white/25 text-white hover:bg-white/20"}`}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors border"
+          style={
+            mode === "rect"
+              ? { backgroundColor: "#ffffff", borderColor: "#ffffff", color: "#18181b" }
+              : { backgroundColor: "rgba(255,255,255,0.14)", borderColor: "rgba(255,255,255,0.32)", color: "#ffffff" }
+          }
         >
           <Rectangle size={14} weight="bold" aria-hidden="true" />
           Rectangle
@@ -352,7 +346,12 @@ export function CropModal({
         <button
           type="button" role="tab" aria-selected={mode === "quad"}
           onClick={() => switchMode("quad")}
-          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors border ${mode === "quad" ? "bg-white text-zinc-900 border-white" : "bg-white/10 border-white/25 text-white hover:bg-white/20"}`}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors border"
+          style={
+            mode === "quad"
+              ? { backgroundColor: "#ffffff", borderColor: "#ffffff", color: "#18181b" }
+              : { backgroundColor: "rgba(255,255,255,0.14)", borderColor: "rgba(255,255,255,0.32)", color: "#ffffff" }
+          }
         >
           <Shapes size={14} weight="bold" aria-hidden="true" />
           Free shape
@@ -360,11 +359,6 @@ export function CropModal({
       </div>
 
       {/* ─── ASPECT PRESETS (rect mode only) ───────────────────────────── */}
-      {/* Colors set via inline style using the real BRAND.orange hex,
-          not a bg-brand-orange Tailwind class — that class only renders
-          if "brand-orange" is registered as a theme color, and if it
-          isn't, the class silently does nothing, which is what made
-          these look dim/dead before. This can't silently fail. */}
       {mode === "rect" && (
         <div role="group" aria-label="Aspect ratio" className="relative flex flex-wrap justify-center gap-1.5 px-4 pb-2 shrink-0">
           {CROP_ASPECT_PRESETS.map((preset) => {
@@ -445,10 +439,6 @@ export function CropModal({
             </>
           ) : (
             <>
-              {/* Dims everything outside the quad, matching rect mode's
-                  box-shadow treatment — this was previously missing
-                  entirely for free-shape crops, which is why it looked
-                  bright/undimmed next to rectangle mode. */}
               <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
                 <path
                   d={`M0,0 H100 V100 H0 Z M ${corners.map((c) => `${toFrame(c.x * 100, "x")},${toFrame(c.y * 100, "y")}`).join(" L ")} Z`}
@@ -479,7 +469,6 @@ export function CropModal({
             </>
           )}
 
-          {/* ─── MAGNIFIER ──────────────────────────────────────────────── */}
           {magnifierActive && magnifierPos && (
             <div
               aria-hidden="true"
@@ -497,7 +486,6 @@ export function CropModal({
         </div>
       </div>
 
-      {/* ─── DIMENSIONS ─────────────────────────────────────────────────── */}
       <p className="relative text-center text-xs text-white/50 shrink-0" aria-live="polite">{cropDimsLabel}</p>
       {mode === "quad" && (
         <p className="relative text-center text-[0.7rem] text-white/40 px-6 pt-1 shrink-0">
@@ -505,7 +493,6 @@ export function CropModal({
         </p>
       )}
 
-      {/* ─── ACTIONS ────────────────────────────────────────────────────── */}
       <div className="relative flex items-center justify-center gap-3 px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shrink-0">
         <button type="button" onClick={handleReset} className="flex items-center gap-1.5 px-4 py-2.5 rounded-[10px] text-sm font-semibold text-white/70 hover:text-white transition-colors">
           <ArrowCounterClockwise size={16} weight="bold" aria-hidden="true" />
