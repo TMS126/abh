@@ -71,8 +71,8 @@ export default function PricingPage() {
 
   const handleDownload = useCallback(() => {
     const link = document.createElement('a')
-    link.href = '/ApexbytesHub_Pricing_Catalog.pdf'
-    link.download = 'ApexbytesHub_Pricing_Catalog.pdf'
+    link.href = '/ApexbytesHub_Pricing_Catalog_v2.pdf'
+    link.download = 'ApexbytesHub_Pricing_Catalog_v2.pdf'
     link.click()
   }, [])
 
