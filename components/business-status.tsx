@@ -33,15 +33,16 @@ function deriveHubStatuses(status: BusinessStatus): { printDoc: HubStatus; techE
   return { printDoc, techEtc }
 }
 
-// Closed state: plain text, no pill (no border/background). The dot span
-// stays in the markup but invisible, so the text sits at the same spot
-// it would inside the open pill — nothing shifts left.
+// The dot+label span carries -ml-3 while the wrapping row carries pl-3:
+// the first line is unaffected (they cancel out), but if the row wraps,
+// the second line starts at the padded position — aligned with the
+// label text instead of the container's left edge.
 function StatusPill({ status }: { status: HubStatus }) {
   if (!status.open) {
     return (
       <div className="flex flex-col gap-1 text-[0.74rem] font-bold tracking-wide text-zinc-500 dark:text-zinc-400">
-        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-          <span className="flex items-center gap-1.5 shrink-0">
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 pl-3">
+          <span className="flex items-center gap-1.5 shrink-0 -ml-3">
             <span className="w-1.5 h-1.5 rounded-full shrink-0 invisible" />
             <span className="font-black">{status.label}</span>
             <span className="font-normal opacity-70">Closed</span>
@@ -56,8 +57,8 @@ function StatusPill({ status }: { status: HubStatus }) {
 
   return (
     <div className="inline-flex flex-col gap-1 px-2.5 py-1.5 rounded-2xl border text-[0.74rem] font-bold tracking-wide bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400">
-      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-        <span className="flex items-center gap-1.5 shrink-0">
+      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 pl-3">
+        <span className="flex items-center gap-1.5 shrink-0 -ml-3">
           <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-green-500 animate-pulse" />
           <span className="font-black">{status.label}</span>
           <span className="font-normal opacity-70">Open</span>
