@@ -1,4 +1,4 @@
-// app/globals.css — PART 1 of 2 (paste first, then append Part 2)
+/* app/globals.css — PART 1 of 2 (paste first, then append Part 2)*/
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
@@ -221,7 +221,7 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-// app/globals.css — PART 2 of 2 (append directly after Part 1)
+/* app/globals.css — PART 2 of 2 (append directly after Part 1)*/
 
 @layer base {
   * { @apply border-border outline-ring/50; }
