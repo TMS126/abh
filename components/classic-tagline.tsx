@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useTheme } from "next-themes"
 import { BRAND } from "@/lib/brand"
-import { ensureAccessible } from "@/lib/color-contrast"
+import { ensureAccessible } from "@/lib/color"
 
 const WORDS = [
   { text: "Design.",  key: "orange" as const },
