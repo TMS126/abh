@@ -1,7 +1,7 @@
 // components/whatsapp-fab.tsx
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import {
@@ -16,16 +16,16 @@ import { useExclusiveWidget } from "@/hooks/use-exclusive-widget"
 
 const WA_NUMBER  = "27753338260"
 const GREETING   = "Hi there 👋 Tell us what you need and we'll get back to you right away!"
+const REPLY_TIME_NOTE = "We usually reply within 15–30 minutes."
 const NAME_STORAGE_KEY = "apexbytes-wa-name"
 
-// Exactly 1.8s per request — the typing bubble is shown for this long
-// before the real greeting/form bubbles appear, regardless of how fast
-// anything else on the page loads.
-const TYPING_DURATION = 1800
+// Shown once, only at open — exactly 2.6s, never replayed before later
+// bubbles (name/hub/message all reveal together right after this).
+const TYPING_DURATION = 2600
+const SHAKE_DURATION  = 420
 
 // ── Flat WhatsApp palette — solid hex only, no rgba/backdrop-blur glass.
-// This widget deliberately mimics a real WhatsApp chat screen, so every
-// surface is a plain solid color exactly like the reference screenshots. ──
+// This widget deliberately mimics a real WhatsApp chat screen. ──
 const WA = {
   headerLight:   "#075E54",
   headerDark:    "#1F2C34",
@@ -49,6 +49,16 @@ const WA = {
   avatarBgDark:   "#2A3942",
 } as const
 
+// ── Consistent type scale — everything in the panel now traces back to
+// one of these four sizes instead of a dozen slightly-different rem
+// values, per the "consistency in font sizing" request. ──
+const TXT = {
+  body:   "text-[0.86rem]",                 // greeting, inputs, textarea, dropdown option title
+  label:  "text-[0.66rem] uppercase tracking-widest font-black", // "Your Name", section labels
+  hint:   "text-[0.72rem]",                 // dropdown option subtext, hub hint
+  time:   "text-[0.6rem]",                  // timestamps
+} as const
+
 const HUBS = [
   { id: "print",    label: "Print Hub",     hint: "Printing, copying, photos" },
   { id: "doc",      label: "Docu Hub",      hint: "CVs, typing, laminating" },
@@ -58,37 +68,19 @@ const HUBS = [
   { id: "other",    label: "Not sure yet",  hint: "We'll help you figure it out" },
 ]
 
-// Pool of up to 26 quick-reply phrases for the optional note. Only ONE is
-// shown at a time (in a single chip) rather than all of them at once —
-// tapping the shuffle icon beside it swaps in a different random phrase;
-// tapping the chip itself appends the currently-shown phrase to the note.
+// Pool of quick-reply phrases for the optional note. Only ONE is shown at
+// a time — tapping the shuffle icon swaps in a different random phrase;
+// tapping the chip appends the currently-shown phrase to the note.
 const QUICK_NOTES = [
-  "Need it today",
-  "Can I WhatsApp a photo?",
-  "What time do you close?",
-  "How much will this cost?",
-  "Do I need to book first?",
-  "Can you collect from me?",
-  "Is this urgent?",
-  "I'm not sure what I need",
-  "Can I pay online?",
-  "How long will it take?",
-  "Do you deliver?",
-  "Can I send the file now?",
-  "I need this by tomorrow",
-  "What documents should I bring?",
-  "Is walk-in okay?",
-  "Can someone call me instead?",
-  "I have a few questions",
-  "Can you quote me first?",
-  "Do you work weekends?",
-  "I need this urgently",
-  "Can I collect later today?",
-  "Do you accept cash only?",
-  "Is there a discount for bulk?",
-  "Can I get this printed too?",
-  "I'll send more info shortly",
-  "Just checking availability",
+  "Need it today", "Can I WhatsApp a photo?", "What time do you close?",
+  "How much will this cost?", "Do I need to book first?", "Can you collect from me?",
+  "Is this urgent?", "I'm not sure what I need", "Can I pay online?",
+  "How long will it take?", "Do you deliver?", "Can I send the file now?",
+  "I need this by tomorrow", "What documents should I bring?", "Is walk-in okay?",
+  "Can someone call me instead?", "I have a few questions", "Can you quote me first?",
+  "Do you work weekends?", "I need this urgently", "Can I collect later today?",
+  "Do you accept cash only?", "Is there a discount for bulk?", "Can I get this printed too?",
+  "I'll send more info shortly", "Just checking availability",
 ]
 
 function buildWallpaperPattern(strokeColor: string) {
@@ -129,6 +121,72 @@ function randomQuickNoteIdx(exclude?: number) {
   return next as number
 }
 
+// ── Typing loader — "typing" spells itself out letter by letter on a
+// loop, three orbiting dots (big blue / medium green / small orange) spin
+// around a shared center, and both the dot order and spin speed/direction
+// are randomized once per mount so it plays a little differently every
+// time the widget opens. Shown ONLY at the very start, for TYPING_DURATION. ──
+function TypingLoader({ subColor }: { subColor: string }) {
+  const word = "typing"
+  const [letters, setLetters] = useState(1)
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setLetters(prev => (prev >= word.length ? 1 : prev + 1))
+    }, 180)
+    return () => clearInterval(id)
+  }, [])
+
+  const spin = useMemo(() => ({
+    duration: (0.9 + Math.random() * 0.5).toFixed(2),
+    direction: Math.random() > 0.5 ? "normal" : "reverse",
+    startRotate: Math.floor(Math.random() * 360),
+  }), [])
+
+  const dots = useMemo(() => {
+    const base = [
+      { color: BRAND.blue,   size: 9, angle: 0   },
+      { color: BRAND.green,  size: 7, angle: 120 },
+      { color: BRAND.orange, size: 5, angle: 240 },
+    ]
+    for (let i = base.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[base[i], base[j]] = [base[j], base[i]]
+    }
+    return base
+  }, [])
+
+  return (
+    <span className="inline-flex items-center gap-2.5">
+      <span className={cn(TXT.body, "font-semibold tabular-nums w-[3.6em] inline-block")} style={{ color: subColor }}>
+        {word.slice(0, letters)}
+      </span>
+      <span
+        className="wa-spin-container relative inline-block"
+        style={{
+          width: 20, height: 20,
+          animationDuration: `${spin.duration}s`,
+          animationDirection: spin.direction,
+          transform: `rotate(${spin.startRotate}deg)`,
+        }}
+      >
+        {dots.map((d, i) => (
+          <span
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              width: d.size, height: d.size,
+              backgroundColor: d.color,
+              top: "50%", left: "50%",
+              transform: `rotate(${d.angle}deg) translate(8px) translate(-50%, -50%)`,
+            }}
+          />
+        ))}
+      </span>
+    </span>
+  )
+}
+
 export function WhatsAppFAB() {
   const router = useRouter()
   const { resolvedTheme }           = useTheme()
@@ -144,16 +202,26 @@ export function WhatsAppFAB() {
   const [openTime, setOpenTime]      = useState("")
   const [openDate, setOpenDate]      = useState<Date | null>(null)
   const [sentTime, setSentTime]      = useState("")
-  const [showGreeting, setShowGreeting] = useState(false) // gated by the 1.8s typing bubble
+  const [showGreeting, setShowGreeting] = useState(false) // gated by the 2.6s typing loader, shown once only
   const [nameRemembered, setNameRemembered] = useState(false)
   const [quickNoteIdx, setQuickNoteIdx] = useState(() => randomQuickNoteIdx())
+
+  // Dead-button shake — any control with no real action (kebab menu,
+  // paperclip, camera, or the send button while the form's incomplete)
+  // triggers a brief shake instead of silently doing nothing.
+  const [shakeKey, setShakeKey] = useState<string | null>(null)
+  const shakeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const triggerShake = (key: string) => {
+    if (shakeTimerRef.current) clearTimeout(shakeTimerRef.current)
+    setShakeKey(key)
+    shakeTimerRef.current = setTimeout(() => setShakeKey(null), SHAKE_DURATION)
+  }
 
   const nameRef                      = useRef<HTMLInputElement>(null)
   const scrollTimer                  = useRef<ReturnType<typeof setTimeout> | null>(null)
   const greetingTimer                = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Remember the person's name across visits — loaded once on mount, and
-  // saved whenever it changes so returning users never have to retype it.
+  // Remember the person's name across visits.
   useEffect(() => {
     try {
       const saved = localStorage.getItem(NAME_STORAGE_KEY)
@@ -192,8 +260,8 @@ export function WhatsAppFAB() {
       setShowGreeting(false)
       setQuickNoteIdx(randomQuickNoteIdx())
       if (greetingTimer.current) clearTimeout(greetingTimer.current)
-      // Typing bubble shown for exactly TYPING_DURATION (1.8s) before the
-      // greeting and form bubbles land.
+      // Typing loader shown for exactly TYPING_DURATION (2.6s), once,
+      // before greeting/name/hub/message all reveal together.
       greetingTimer.current = setTimeout(() => setShowGreeting(true), TYPING_DURATION)
       setTimeout(() => nameRef.current?.focus(), TYPING_DURATION + 150)
     }
@@ -231,8 +299,6 @@ export function WhatsAppFAB() {
     }, 400)
   }
 
-  // Lets someone send a second message in the same session without
-  // closing/reopening the whole widget — keeps name, resets hub/note.
   const handleSendAnother = () => {
     setStep("form")
     setHub("")
@@ -243,6 +309,13 @@ export function WhatsAppFAB() {
     setOpenDate(now)
     setShowGreeting(true)
     setQuickNoteIdx(randomQuickNoteIdx())
+  }
+
+  // Gallery button: navigates AND closes the widget, rather than leaving
+  // the panel open behind the new page.
+  const handleGalleryClick = () => {
+    handleClose()
+    router.push("/gallery")
   }
 
   const isValid     = name.trim().length > 1 && hub !== ""
@@ -256,7 +329,7 @@ export function WhatsAppFAB() {
   }
 
   const handleSend = () => {
-    if (!isValid) return
+    if (!isValid) { triggerShake("send"); return }
     const message = [
       `Hi ${BIZ.name}! 👋`,
       `My name is ${name.trim()}.`,
@@ -268,8 +341,6 @@ export function WhatsAppFAB() {
     setStep("sent")
   }
 
-  // Flat solid colors only — no transparency, no backdrop-blur, matching
-  // the reference screenshots exactly.
   const headerBg      = isDark ? WA.headerDark      : WA.headerLight
   const wallpaperBg    = isDark ? WA.wallpaperDark    : WA.wallpaperLight
   const bubbleIn       = isDark ? WA.bubbleInDark     : WA.bubbleInLight
@@ -286,7 +357,7 @@ export function WhatsAppFAB() {
   const DateDivider = () => (
     <div className="flex justify-center mb-1">
       <span
-        className="text-[0.62rem] font-bold uppercase tracking-wide px-3 py-1 rounded-full shadow-sm"
+        className={cn(TXT.time, "font-bold uppercase tracking-wide px-3 py-1 rounded-full shadow-sm")}
         style={{
           backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.7)",
           color: subColor,
@@ -300,16 +371,19 @@ export function WhatsAppFAB() {
   return (
     <>
       <style>{`
-        @keyframes wa-typing-glow {
-          0%, 100% { box-shadow: 0 0 0 0 ${BRAND.orange}00, 0 4px 14px rgba(0,0,0,0.12); }
-          50%      { box-shadow: 0 0 14px 3px ${BRAND.orange}55, 0 4px 14px rgba(0,0,0,0.12); }
+        @keyframes wa-spin-container { to { transform: rotate(360deg); } }
+        .wa-spin-container {
+          animation-name: wa-spin-container;
+          animation-timing-function: linear;
+          animation-iteration-count: infinite;
         }
-        .wa-typing-bubble { animation: wa-typing-glow 1.2s ease-in-out infinite; }
-        @keyframes wa-dot-bounce {
-          0%, 60%, 100% { transform: translateY(0); opacity: 0.6; }
-          30%           { transform: translateY(-5px); opacity: 1; }
+        @keyframes wa-shake {
+          10%, 90% { transform: translateX(-1px); }
+          20%, 80% { transform: translateX(2px); }
+          30%, 50%, 70% { transform: translateX(-4px); }
+          40%, 60% { transform: translateX(4px); }
         }
-        .wa-dot { animation: wa-dot-bounce 1s ease-in-out infinite; }
+        .wa-shake { animation: wa-shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
       `}</style>
 
       {/* ── Backdrop ──────────────────────────────────────────────── */}
@@ -331,8 +405,7 @@ export function WhatsAppFAB() {
           )}
           style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.25)" }}
         >
-          {/* ── Header — matches real WhatsApp: back arrow, avatar, name
-              + status, three right-side icons (gallery, call, menu). ── */}
+          {/* ── Header ── */}
           <div
             className="relative flex items-center gap-2.5 px-3 py-3 shrink-0"
             style={{ backgroundColor: headerBg }}
@@ -358,7 +431,7 @@ export function WhatsAppFAB() {
             </div>
 
             <div className="flex-1 min-w-0">
-              <h3 className="font-sans font-black text-[0.92rem] leading-tight tracking-tight text-white truncate">
+              <h3 className="font-sans font-black text-[0.9rem] leading-tight tracking-tight text-white truncate">
                 {BIZ.name}
               </h3>
               <div className="flex items-center gap-1.5 mt-0.5">
@@ -366,20 +439,20 @@ export function WhatsAppFAB() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-400" />
                 </span>
-                <p className="text-[0.66rem] font-medium text-white/80">
-                  online
-                </p>
+                <p className={cn(TXT.hint, "font-medium text-white/80")}>online</p>
               </div>
             </div>
 
             <div className="flex items-center gap-0.5 shrink-0">
+              {/* Functional — navigates AND closes the widget */}
               <button
-                onClick={() => router.push("/gallery")}
+                onClick={handleGalleryClick}
                 aria-label="View our gallery"
                 className="w-8 h-8 rounded-full flex items-center justify-center text-white/85 hover:bg-white/10 transition-colors duration-150"
               >
                 <ImageSquare size={18} weight="fill" />
               </button>
+              {/* Functional — real phone call */}
               <a
                 href={`tel:${BIZ.phoneE164}`}
                 aria-label="Call us"
@@ -387,15 +460,17 @@ export function WhatsAppFAB() {
               >
                 <Phone size={18} weight="fill" />
               </a>
-              <a
-                href={`https://wa.me/${WA_NUMBER}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Open in WhatsApp app"
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white/85 hover:bg-white/10 transition-colors duration-150"
+              {/* Dead — no longer opens WhatsApp. Shakes on tap instead. */}
+              <button
+                onClick={() => triggerShake("kebab")}
+                aria-label="More options"
+                className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center text-white/85 hover:bg-white/10 transition-colors duration-150",
+                  shakeKey === "kebab" && "wa-shake"
+                )}
               >
                 <DotsThreeVertical size={20} weight="bold" />
-              </a>
+              </button>
             </div>
           </div>
 
@@ -409,20 +484,14 @@ export function WhatsAppFAB() {
 
                 {openDate && <DateDivider />}
 
-                {/* Typing indicator — shown for exactly 1.8s, orange glow,
-                    dots alternating blue / green only, per request. */}
+                {/* Typing loader — shown exactly once, for 2.6s, never
+                    repeated before later bubbles. */}
                 {!showGreeting && (
                   <div
-                    className="wa-typing-bubble self-start px-4 py-3.5 rounded-lg rounded-tl-none flex items-center gap-1.5"
+                    className="self-start px-4 py-3 rounded-lg rounded-tl-none shadow-sm"
                     style={{ backgroundColor: bubbleIn }}
                   >
-                    {[BRAND.blue, BRAND.green, BRAND.blue].map((color, i) => (
-                      <span
-                        key={i}
-                        className="wa-dot w-2 h-2 rounded-full"
-                        style={{ backgroundColor: color, animationDelay: `${i * 160}ms` }}
-                      />
-                    ))}
+                    <TypingLoader subColor={subColor} />
                   </div>
                 )}
 
@@ -431,10 +500,13 @@ export function WhatsAppFAB() {
                     className="relative self-start max-w-[85%] px-4 py-3 rounded-lg rounded-tl-none shadow-sm animate-in fade-in slide-in-from-left-1 duration-200 ease-out motion-reduce:animate-none"
                     style={{ backgroundColor: bubbleIn }}
                   >
-                    <p className="text-[0.84rem] leading-relaxed pr-10" style={{ color: textColor }}>
+                    <p className={cn(TXT.body, "leading-relaxed pr-10")} style={{ color: textColor }}>
                       {GREETING}
                     </p>
-                    <span className="absolute bottom-1.5 right-3 text-[0.6rem]" style={{ color: subColor }}>
+                    <p className={cn(TXT.hint, "font-medium mt-1.5")} style={{ color: subColor }}>
+                      {REPLY_TIME_NOTE}
+                    </p>
+                    <span className={cn(TXT.time, "absolute bottom-1.5 right-3")} style={{ color: subColor }}>
                       {openTime}
                     </span>
                   </div>
@@ -447,7 +519,7 @@ export function WhatsAppFAB() {
                   )}
                   style={{ backgroundColor: bubbleIn }}
                 >
-                  <label className="text-[0.62rem] font-black uppercase tracking-widest block mb-1.5" style={{ color: subColor }}>
+                  <label className={cn(TXT.label, "block mb-1.5")} style={{ color: subColor }}>
                     Your Name
                   </label>
                   <input
@@ -456,17 +528,19 @@ export function WhatsAppFAB() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Thembi"
-                    className="w-full bg-transparent text-[0.86rem] font-semibold outline-none border-none"
+                    className={cn(TXT.body, "w-full bg-transparent font-semibold outline-none border-none")}
                     style={{ color: textColor }}
                   />
                   <div className="flex items-center justify-between mt-1.5">
                     {nameRemembered && name.trim().length > 1 ? (
-                      <span className="text-[0.6rem] font-bold" style={{ color: WA.accent }}>Remembered from last time</span>
+                      <span className={cn(TXT.time, "font-bold")} style={{ color: WA.accent }}>Remembered from last time</span>
                     ) : <span />}
-                    <span className="text-[0.6rem]" style={{ color: subColor }}>{openTime}</span>
+                    <span className={TXT.time} style={{ color: subColor }}>{openTime}</span>
                   </div>
                 </div>
 
+                {/* Hub picker — same bubble/label layout as before, but
+                    now a simple dropdown instead of accordion-of-pills. */}
                 <div
                   className={cn(
                     "relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-lg rounded-tl-none shadow-sm transition-opacity duration-200 ease-out motion-reduce:transition-none",
@@ -474,7 +548,7 @@ export function WhatsAppFAB() {
                   )}
                   style={{ backgroundColor: bubbleIn }}
                 >
-                  <label className="text-[0.62rem] font-black uppercase tracking-widest block mb-1.5" style={{ color: subColor }}>
+                  <label className={cn(TXT.label, "block mb-1.5")} style={{ color: subColor }}>
                     What do you need help with?
                   </label>
 
@@ -486,15 +560,15 @@ export function WhatsAppFAB() {
                     <div className="flex flex-col min-w-0">
                       {selectedHub ? (
                         <>
-                          <span className="text-[0.84rem] font-black leading-tight" style={{ color: textColor }}>
+                          <span className={cn(TXT.body, "font-black leading-tight")} style={{ color: textColor }}>
                             {selectedHub.label}
                           </span>
-                          <span className="text-[0.66rem] font-semibold mt-0.5 truncate" style={{ color: subColor }}>
+                          <span className={cn(TXT.hint, "font-semibold mt-0.5 truncate")} style={{ color: subColor }}>
                             {selectedHub.hint}
                           </span>
                         </>
                       ) : (
-                        <span className="text-[0.86rem] font-semibold" style={{ color: subColor }}>
+                        <span className={cn(TXT.body, "font-semibold")} style={{ color: subColor }}>
                           Tap to choose...
                         </span>
                       )}
@@ -507,50 +581,43 @@ export function WhatsAppFAB() {
                     />
                   </button>
 
-                  <div
-                    className={cn(
-                      "grid transition-[grid-template-rows] duration-250 ease-out motion-reduce:transition-none",
-                      hubPicking ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-                    )}
-                  >
-                    <div className="overflow-hidden">
-                      <div
-                        className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t"
-                        style={{ borderColor: `${subColor}30` }}
-                      >
-                        {HUBS.map((h, idx) => {
-                          const isSelected = hub === h.id
-                          return (
-                            <button
-                              key={h.id}
-                              type="button"
-                              onClick={() => { setHub(h.id); setHubPicking(false) }}
-                              style={{
-                                backgroundColor: isSelected ? WA.accent : "transparent",
-                                borderColor:     isSelected ? WA.accent : `${subColor}40`,
-                                color:           isSelected ? "#fff" : textColor,
-                                transitionDelay: hubPicking ? `${idx * 25}ms` : "0ms",
-                              }}
-                              className={cn(
-                                "px-2.5 py-1.5 rounded-full text-[0.6rem] font-black border transition-all duration-150 ease-out motion-reduce:transition-none",
-                                "shadow-sm hover:-translate-y-0.5 hover:shadow-md active:scale-95 transform-gpu",
-                                hubPicking ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1",
-                                !isSelected && "hover:bg-black/5 dark:hover:bg-white/5"
-                              )}
-                            >
+                  {/* Simple dropdown list — replaces the old inline-pill
+                      accordion, floats over the content below it. */}
+                  {hubPicking && (
+                    <div
+                      className="absolute left-0 right-0 top-full mt-2 z-30 rounded-[14px] shadow-xl overflow-hidden border animate-in fade-in slide-in-from-top-1 duration-150 ease-out motion-reduce:animate-none"
+                      style={{ backgroundColor: bubbleIn, borderColor: `${subColor}30` }}
+                    >
+                      {HUBS.map((h) => {
+                        const isSelected = hub === h.id
+                        return (
+                          <button
+                            key={h.id}
+                            type="button"
+                            onClick={() => { setHub(h.id); setHubPicking(false) }}
+                            className="w-full text-left px-3.5 py-2.5 transition-colors duration-150"
+                            style={{
+                              backgroundColor: isSelected ? `${WA.accent}18` : "transparent",
+                            }}
+                          >
+                            <span className={cn(TXT.body, "font-bold block")} style={{ color: isSelected ? WA.accent : textColor }}>
                               {h.label}
-                            </button>
-                          )
-                        })}
-                      </div>
+                            </span>
+                            <span className={cn(TXT.hint, "block mt-0.5")} style={{ color: subColor }}>
+                              {h.hint}
+                            </span>
+                          </button>
+                        )
+                      })}
                     </div>
-                  </div>
+                  )}
 
                   <div className="flex justify-end mt-1.5">
-                    <span className="text-[0.6rem]" style={{ color: subColor }}>{openTime}</span>
+                    <span className={TXT.time} style={{ color: subColor }}>{openTime}</span>
                   </div>
                 </div>
 
+                {/* Message bubble — real WhatsApp-style free typing */}
                 <div
                   className={cn(
                     "relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-lg rounded-tl-none shadow-sm transition-opacity duration-200 ease-out motion-reduce:transition-none",
@@ -558,26 +625,24 @@ export function WhatsAppFAB() {
                   )}
                   style={{ backgroundColor: bubbleIn }}
                 >
-                  <label className="text-[0.62rem] font-black uppercase tracking-widest block mb-1.5" style={{ color: subColor }}>
+                  <label className={cn(TXT.label, "block mb-1.5")} style={{ color: subColor }}>
                     Anything else? <span className="normal-case font-semibold opacity-60">(optional)</span>
                   </label>
                   <textarea
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    placeholder="e.g. I need a CV today and want to collect by 3pm…"
+                    placeholder="Anything else? Message here"
                     rows={2}
-                    className="w-full bg-transparent text-[0.86rem] font-semibold outline-none border-none resize-none"
+                    className={cn(TXT.body, "w-full bg-transparent font-semibold outline-none border-none resize-none")}
                     style={{ color: textColor }}
                   />
 
-                  {/* Single random quick-reply chip, drawn from a pool of
-                      26 — tap the chip to append it to the note, tap the
-                      shuffle icon beside it to swap in a different one. */}
+                  {/* Single random quick-reply chip */}
                   <div className="flex items-center gap-1.5 mt-2">
                     <button
                       type="button"
                       onClick={() => addQuickNote(QUICK_NOTES[quickNoteIdx])}
-                      className="flex-1 min-w-0 flex items-center gap-1 px-2 py-1 rounded-full text-[0.62rem] font-bold border transition-all duration-150 ease-out motion-reduce:transition-none active:scale-95 hover:-translate-y-0.5"
+                      className={cn(TXT.hint, "flex-1 min-w-0 flex items-center gap-1 px-2 py-1 rounded-full font-bold border transition-all duration-150 ease-out motion-reduce:transition-none active:scale-95 hover:-translate-y-0.5")}
                       style={{ borderColor: `${subColor}35`, color: textColor, backgroundColor: `${WA.accent}12` }}
                     >
                       <Lightning size={9} weight="fill" style={{ color: WA.accent }} className="shrink-0" />
@@ -595,7 +660,7 @@ export function WhatsAppFAB() {
                   </div>
 
                   <div className="flex justify-end mt-1.5">
-                    <span className="text-[0.6rem]" style={{ color: subColor }}>{openTime}</span>
+                    <span className={TXT.time} style={{ color: subColor }}>{openTime}</span>
                   </div>
                 </div>
 
@@ -607,10 +672,10 @@ export function WhatsAppFAB() {
                   className="relative max-w-[85%] px-4 py-3 rounded-lg rounded-tr-none shadow-sm animate-in fade-in slide-in-from-right-1 duration-200 ease-out motion-reduce:animate-none"
                   style={{ backgroundColor: bubbleOut }}
                 >
-                  <p className="text-[0.84rem] leading-relaxed pr-14" style={{ color: isDark ? WA.textDark : WA.textLight }}>
+                  <p className={cn(TXT.body, "leading-relaxed pr-14")} style={{ color: isDark ? WA.textDark : WA.textLight }}>
                     Message ready — opening WhatsApp now…
                   </p>
-                  <span className="absolute bottom-1.5 right-3 flex items-center gap-0.5 text-[0.6rem]" style={{ color: subColor }}>
+                  <span className={cn(TXT.time, "absolute bottom-1.5 right-3 flex items-center gap-0.5")} style={{ color: subColor }}>
                     {sentTime}
                     <span className="relative w-3.5 h-2.5 inline-block ml-0.5">
                       <Check size={11} weight="bold" className="absolute left-0" style={{ color: WA.tick }} />
@@ -621,14 +686,14 @@ export function WhatsAppFAB() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleSendAnother}
-                    className="px-4 py-2.5 rounded-full text-[0.78rem] font-bold shadow-sm transition-transform duration-150 active:scale-95"
+                    className={cn(TXT.hint, "px-4 py-2.5 rounded-full font-bold shadow-sm transition-transform duration-150 active:scale-95")}
                     style={{ backgroundColor: `${WA.accent}20`, color: isDark ? WA.textDark : WA.textLight }}
                   >
                     Send another
                   </button>
                   <button
                     onClick={handleClose}
-                    className="px-5 py-2.5 rounded-full text-[0.78rem] font-bold shadow-sm transition-transform duration-150 active:scale-95"
+                    className={cn(TXT.hint, "px-5 py-2.5 rounded-full font-bold shadow-sm transition-transform duration-150 active:scale-95")}
                     style={{ backgroundColor: composeField, color: textColor }}
                   >
                     Close
@@ -638,10 +703,7 @@ export function WhatsAppFAB() {
             )}
           </div>
 
-          {/* ── Compose bar — matches real WhatsApp: pill with smiley,
-              input, paperclip and camera, plus a separate circular
-              mic/send button outside the pill that swaps based on
-              whether the form is valid yet. ── */}
+          {/* ── Compose bar ── */}
           {step === "form" && (
             <div
               className="relative shrink-0 flex items-end gap-2 px-2.5 py-2"
@@ -652,16 +714,34 @@ export function WhatsAppFAB() {
                 style={{ backgroundColor: composeField }}
               >
                 <Smiley size={20} weight="regular" style={{ color: subColor }} className="shrink-0" />
-                <span className="flex-1 min-w-0 text-[0.82rem] font-medium truncate" style={{ color: isValid ? textColor : subColor }}>
+                <span className={cn(TXT.body, "flex-1 min-w-0 font-medium truncate")} style={{ color: isValid ? textColor : subColor }}>
                   {isValid ? "Ready to send your message" : "Fill in your name & topic to continue"}
                 </span>
-                <Paperclip size={18} weight="regular" style={{ color: subColor }} className="shrink-0" />
-                <Camera size={19} weight="regular" style={{ color: subColor }} className="shrink-0" />
+                {/* Dead decorative icons — shake instead of doing nothing silently */}
+                <button
+                  type="button"
+                  onClick={() => triggerShake("paperclip")}
+                  aria-label="Attach"
+                  className={cn("shrink-0", shakeKey === "paperclip" && "wa-shake")}
+                >
+                  <Paperclip size={18} weight="regular" style={{ color: subColor }} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => triggerShake("camera")}
+                  aria-label="Camera"
+                  className={cn("shrink-0", shakeKey === "camera" && "wa-shake")}
+                >
+                  <Camera size={19} weight="regular" style={{ color: subColor }} />
+                </button>
               </div>
               <button
                 onClick={handleSend}
-                disabled={!isValid}
-                className="w-11 h-11 rounded-full flex items-center justify-center text-white shrink-0 transition-transform duration-150 ease-out active:scale-90 disabled:opacity-60 disabled:active:scale-100 transform-gpu"
+                className={cn(
+                  "w-11 h-11 rounded-full flex items-center justify-center text-white shrink-0 transition-transform duration-150 ease-out active:scale-90 transform-gpu",
+                  !isValid && "opacity-60",
+                  shakeKey === "send" && "wa-shake"
+                )}
                 style={{ backgroundColor: WA.accent }}
                 aria-label={isValid ? "Send" : "Complete the form to send"}
               >
@@ -686,7 +766,8 @@ export function WhatsAppFAB() {
       >
         <div className="flex items-center justify-end gap-2">
           <span className={cn(
-            "text-[0.65rem] font-black uppercase tracking-widest whitespace-nowrap pointer-events-none overflow-hidden",
+            TXT.hint,
+            "font-black uppercase tracking-widest whitespace-nowrap pointer-events-none overflow-hidden",
             "bg-white dark:bg-zinc-900 text-[#25D366]",
             "px-2.5 py-1 rounded-full shadow-md border border-zinc-100 dark:border-zinc-800",
             "transition-all duration-200 ease-out origin-right motion-reduce:transition-none transform-gpu",
@@ -709,4 +790,4 @@ export function WhatsAppFAB() {
       </div>
     </>
   )
-    } 
+  } 
