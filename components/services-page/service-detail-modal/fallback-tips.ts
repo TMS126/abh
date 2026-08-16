@@ -294,15 +294,29 @@ const ITEM_TIPS_MAP: Record<string, string[]> = {
     "What you get: Bursary application submitted with professional typed motivation letter.",
     "Best result: Include why you deserve the bursary and your future plans — helps strengthen application.",
   ],
+"eservice|nsfas status check": [
+    "What to bring: ID and email address used for NSFAS application.",
+    "What you get: Current status checked and explained — what 'submitted' vs 'provisionally funded' means.",
+    "Best result: Screenshot status for your records — portal can be offline later.",
+    "Heads up: NSFAS is currently working through a large backlog of funding investigations, so some statuses may take longer than usual to update.",
+  ],
+  "eservice|nsfas banking update": [
+    "What to bring: ID and bank letter not older than 3 months — account must be in your name, not eWallet.",
+    "What you get: Banking details updated on NSFAS portal.",
+    "Turnaround: Takes about 14 days to reflect — personal bank account usually pays faster than NSFAS wallet.",
+    "Heads up: NSFAS is currently under administration with ongoing system delays, so allow extra time beyond the usual 14 days if payments are affected.",
+  ],
   "eservice|nsfas appeal": [
     "What to bring: ID and new supporting documents — not same documents as before, plus reason for appeal.",
     "What you get: Appeal submitted with improved motivation explaining change in circumstances.",
     "Best result: Specific reasons with proof — for example household income proof or affidavit — work better than general requests.",
+    "Heads up: NSFAS is currently reviewing a large number of investigation cases, so appeal turnaround may be slower than normal — keep your reference number to follow up.",
   ],
   "eservice|nsfas application": [
     "What to bring: ID, parents' IDs, proof of income, and your own email you can access long-term.",
     "What you get: NSFAS application submitted with all documents uploaded as PDFs.",
     "Best result: Upload clear PDFs, not blurry photos — the NSFAS system often rejects blurry uploads without notifying you.",
+    "Heads up: NSFAS is currently under administration while its funding model is reviewed, so processing times may run longer than usual.",
   ],
   "eservice|university application": [
     "What to bring: Certified ID less than 3 months, Grade 11 or 12 results, and ID of parent/guardian if required.",
