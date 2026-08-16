@@ -5,8 +5,7 @@ import { useState, useEffect } from "react"
 import { useTheme } from "next-themes"
 import { BRAND, THEME_BG } from "@/lib/brand"
 import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
-import { ensureAccessible } from "@/lib/color"
-import { getContrastText } from "@/lib/color"
+import { ensureAccessible, getContrastText } from "@/lib/color"
 import { AboutHeader } from "@/components/about/about-header"
 import { AboutStory } from "@/components/about/about-story"
 import { AboutTeam } from "@/components/about/about-team"
@@ -35,7 +34,7 @@ export function AboutPage() {
 
   // Same tokens CtaBar (strip-section.tsx) uses for its badge.
   const missionBadgeBg = blueColor
-  const missionBadgeText = getReadableTextColor(missionBadgeBg)
+  const missionBadgeText = getContrastText(missionBadgeBg)
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
@@ -48,4 +47,4 @@ export function AboutPage() {
       <BackToTopButton visible={showBackToTop} />
     </div>
   )
-}
+} 
