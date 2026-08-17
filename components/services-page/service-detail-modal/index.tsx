@@ -531,6 +531,17 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           >
             Request {naturalLabel}
           </a>
+
+          {/* NSFAS 2027 ANNOUNCEMENT — only shown on E-Service Hub services.
+              Not tied to any specific item's `notice` field; this is a
+              general heads-up shown across the whole hub, separate from
+              the per-item notice system. Remove this block (and nothing
+              else) once NSFAS officially confirms/passes the 2027 dates. */}
+          {svc.hubId === "eservice" && (
+            <p className="text-[0.78rem] text-center text-zinc-400 dark:text-zinc-500 leading-relaxed pt-1">
+              NSFAS 2027 applications are expected to open around September 2026 (exact date not yet officially confirmed). Ask us for the latest details.
+            </p>
+          )}
         </div>
       </div>
 
