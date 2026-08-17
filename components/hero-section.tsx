@@ -5,15 +5,15 @@ import React, { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import Image from "next/image"
-import { ArrowRight, Play, Pause, Sun, Moon, CloudSun, CloudMoon, Cloud, CloudFog, CloudRain, CloudLightning, Snowflake } from "@phosphor-icons/react"
+import { ArrowRight, Play, Pause, Megaphone } from "@phosphor-icons/react"
 import { BRAND, BIZ, MARQUEE_ITEMS } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { HUBS_DATA } from "@/lib/hero-data"
 import { ClassicTagline } from "@/components/classic-tagline"
 import { getBusinessStatus, type BusinessStatus } from "@/lib/sa-time"
-import { getWeatherSnapshot, type WeatherCategory } from "@/lib/weather"
 import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
 
+// ─── COLOR HELPERS ───────────────────────────────────────────────────────────
 function hexToRgbLocal(hex: string) {
   const clean = hex.replace("#", "")
   const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean
@@ -34,6 +34,7 @@ function getArrowIconColor(bgHex: string) {
   return contrastWhite >= contrastDark ? "#ffffff" : "#14202b"
 }
 
+// ─── HUB COLLAGE DATA ────────────────────────────────────────────────────────
 const HUB_IMAGES: Record<string, string> = {
   print: "/1_PRINT_HUB_white.webp",
   doc: "/2_DOCUMENT_HUB_white.webp",
@@ -72,29 +73,13 @@ function buildArrangement() {
   }))
 }
 
-const WEATHER_ICON_MAP: Record<WeatherCategory, { Icon: React.ElementType; color: string }> = {
-  "clear-day": { Icon: Sun, color: "#F59E0B" },
-  "clear-night": { Icon: Moon, color: "#818CF8" },
-  "partly-cloudy-day": { Icon: CloudSun, color: "#F0A93A" },
-  "partly-cloudy-night": { Icon: CloudMoon, color: "#8B93D8" },
-  cloudy: { Icon: Cloud, color: "#9CA3AF" },
-  fog: { Icon: CloudFog, color: "#9CA3AF" },
-  rain: { Icon: CloudRain, color: "#60A5FA" },
-  thunderstorm: { Icon: CloudLightning, color: "#A78BFA" },
-  snow: { Icon: Snowflake, color: "#7DD3FC" },
-}
-
-function fallbackCategory(greeting: BusinessStatus["greeting"]): WeatherCategory {
-  return greeting === "morning" || greeting === "afternoon" ? "clear-day" : "clear-night"
-}
-
+// ─── COMPONENT ───────────────────────────────────────────────────────────────
 export function HeroSection() {
   const router = useRouter()
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [marqueePaused, setMarqueePaused] = useState(false)
   const [status, setStatus] = useState<BusinessStatus | null>(null)
-  const [weatherCategory, setWeatherCategory] = useState<WeatherCategory | null>(null)
   const showBackToTop = useBackToTop()
 
   const [arrangement, setArrangement] = useState(() =>
@@ -111,13 +96,6 @@ export function HeroSection() {
     return () => clearInterval(id)
   }, [])
 
-  useEffect(() => {
-    if (!status?.isHoliday) return
-    getWeatherSnapshot().then((snapshot) => {
-      if (snapshot) setWeatherCategory(snapshot.category)
-    })
-  }, [status?.isHoliday])
-
   const isDark = mounted && resolvedTheme === "dark"
 
   const STROKE_COLOR = BRAND.blue
@@ -127,9 +105,11 @@ export function HeroSection() {
   const activeCircleColor = CTA_FILL_COLOR
   const activeArrowIconColor = getArrowIconColor(activeCircleColor)
 
+  // Announcement pill fill — theme-aware, WCAG-verified BRAND tokens only.
+  // orangeAccessible = 6.2:1 vs white (light mode) · orangeAccessibleDark = 8.5:1 vs white (dark mode)
+  const ANNOUNCEMENT_FILL = isDark ? BRAND.orangeAccessibleDark : BRAND.orangeAccessible
+
   const showHolidayBanner = mounted && status?.isHoliday
-  const displayCategory = weatherCategory ?? (status ? fallbackCategory(status.greeting) : "clear-day")
-  const { Icon: WeatherIcon, color: weatherIconColor } = WEATHER_ICON_MAP[displayCategory]
 
   const handleNavigate = (path: string) => router.push(path)
   const handleCtaClick = () => handleNavigate("/services")
@@ -153,17 +133,32 @@ export function HeroSection() {
       </div>
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center relative z-10 w-full mb-6">
+
+        {/* ─── IMPORTANT ANNOUNCEMENT PILL ───────────────────────────────── */}
+        {/* Orange = sitewide warning/alert color (never used elsewhere).   */}
+        {/* Fill is theme-aware via BRAND tokens only — no hardcoded hex.   */}
+        {showHolidayBanner && status && (
+          <div className="w-full flex justify-center mb-8 md:mb-10">
+            <div
+              role="status"
+              className="flex flex-col items-center gap-1.5 px-6 py-4 rounded-full text-white text-center shadow-[0_6px_18px_rgba(0,0,0,0.14)] dark:shadow-[0_6px_18px_rgba(0,0,0,0.4)] max-w-[440px] transition-colors duration-300"
+              style={{ backgroundColor: ANNOUNCEMENT_FILL }}
+            >
+              <Megaphone size={22} weight="fill" aria-hidden="true" />
+              <span className="text-[0.7rem] font-black uppercase tracking-widest">
+                Important Announcement
+              </span>
+              <span className="text-sm font-semibold leading-snug">
+                Tech, Design &amp; E-Service are closed today for {status.holidayName} — Print &amp; Docu is open as usual
+              </span>
+            </div>
+          </div>
+        )}
+
         <div className="w-full max-w-[1100px] mx-auto grid md:grid-cols-2 gap-10 md:gap-16 items-center mb-10 md:mb-14">
 
           {/* Left column — text + CTA */}
           <div className="text-center md:text-left">
-
-            {showHolidayBanner && status && (
-              <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-3">
-                <WeatherIcon size={16} weight="fill" style={{ color: weatherIconColor }} aria-hidden="true" />
-                Tech, Design &amp; E-Service are closed today for {status.holidayName} — Print &amp; Docu is open as usual
-              </p>
-            )}
 
             <h1 className="font-sans font-black text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.1] mb-4 text-balance transition-colors duration-300 text-zinc-900 dark:text-zinc-50">
               <span
@@ -321,4 +316,4 @@ export function HeroSection() {
       <BackToTopButton visible={showBackToTop} />
     </section>
   )
-    } 
+} 
