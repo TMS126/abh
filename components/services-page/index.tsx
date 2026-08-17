@@ -1,10 +1,23 @@
-// components/services-page/index.tsx
+/* components/services-page/index.tsx */
 "use client"
+
+/**
+ * ════════════════════════════════════════════════════════════════════════
+ * SERVICES PAGE — the main /services page showing all 5 hub cards.
+ *
+ * NOTICE BADGE ADDED IN THIS FILE:
+ *   A small round orange "!" badge appears in the top-right corner of a
+ *   hub's card (both the desktop grid and the mobile stacked list) if ANY
+ *   service inside ANY section of that hub currently has a `notice` set.
+ *   This is fully dynamic — no hub name is hardcoded, it just checks the
+ *   data.
+ * ════════════════════════════════════════════════════════════════════════
+ */
 
 import { useState, useEffect, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { AnimatePresence } from "framer-motion"
-import { Megaphone, ArrowRight } from "@phosphor-icons/react"
+import { Megaphone, ArrowRight, WarningCircle } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { BRAND, HUB_COLORS, HubKey } from "@/lib/brand"
@@ -26,10 +39,6 @@ function ClosingTagline() {
       <p className="font-sans font-black text-2xl md:text-3xl text-zinc-900 dark:text-zinc-50 leading-snug max-w-2xl mx-auto">
         From your first CV to your next big idea — one hub does it all, right here in Bothaville.
       </p>
-      {/* FIX: was a hand-rolled 1px zinc-200/zinc-800 line — invisible in
-          dark mode against the near-black page background (the same bug
-          globals.css already documents fixing for .abh-divider). Swapped
-          to the shared class instead of re-fixing it locally. */}
       <div className="abh-divider" />
     </div>
   )
@@ -78,6 +87,24 @@ function BulkRibbon() {
   )
 }
 
+// NEW — small round orange badge shown on a hub card when at least one
+// service inside that hub currently has a notice set. Positioned in the
+// top-right corner, doesn't block clicks (pointer-events-none) since the
+// whole card itself is already clickable.
+function NoticeBadge() {
+  return (
+    <div className="absolute top-3 right-3 z-20 pointer-events-none">
+      <div
+        className="w-7 h-7 rounded-full flex items-center justify-center"
+        style={{ backgroundColor: "#ffffff", color: BRAND.orange, boxShadow: "0 2px 6px -1px rgba(0,0,0,0.2)" }}
+        aria-label="Notice for some services in this hub"
+      >
+        <WarningCircle size={16} weight="bold" aria-hidden="true" />
+      </div>
+    </div>
+  )
+}
+
 export function ServicesPage() {
   const { resolvedTheme } = useTheme()
   const isDark       = resolvedTheme === "dark"
@@ -116,6 +143,8 @@ export function ServicesPage() {
     return () => window.removeEventListener("abh:selectService", handler)
   }, [])
 
+  // Handles opening a specific hub/section/service directly from a URL
+  // (e.g. when someone taps a shared link)
   useEffect(() => {
     const hubParam     = searchParams.get("hub")
     const sectionParam = searchParams.get("section")
@@ -135,6 +164,7 @@ export function ServicesPage() {
           sectionTitle: section.title, requirements: item.requirements,
           desc: item.description, turnaround: getTurnaround(section.title, item.name),
           tips: item.tips ? [...item.tips] : undefined,
+          notice: item.notice,   // Carries the notice through deep links too
         })
         router.replace("/services", { scroll: false })
         return
@@ -147,6 +177,7 @@ export function ServicesPage() {
 
   const { closeHub, closeService } = useModalBackStack(activeHub, setActiveHub, selectedService, setSelectedService)
 
+  // Locks page scroll while any modal is open
   useEffect(() => {
     if (!isModalOpen) return
     const scrollY = window.scrollY
@@ -210,13 +241,18 @@ export function ServicesPage() {
           </div>
         </ScrollBounce>
 
-        {/* ── Desktop grid ── */}
+        {/* ══════════════════ DESKTOP GRID ══════════════════ */}
         <div className="hidden md:grid md:grid-cols-6 gap-6 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub    = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
             const accent = isDark ? colors.accentDark : colors.accentLight
             const hubHasBulk = hub.sections.some((s) => sectionHasBulk(hubId, s.title, s.items))
+
+            // NOTICE CHECK: true if ANY item in ANY section of this hub
+            // has a notice set. Same pattern as HubModal's section check,
+            // just rolled up one level higher (hub instead of section).
+            const hubHasNotice = hub.sections.some((s) => s.items.some((i) => !!i.notice))
 
             return (
               <div
@@ -239,6 +275,7 @@ export function ServicesPage() {
                   >
                     <HubCornerIcon hubId={hubId} accent={accent} />
                     {hubHasBulk && <BulkRibbon />}
+                    {hubHasNotice && <NoticeBadge />}
 
                     <h3 className="relative z-10 font-sans font-black text-[1.45rem] leading-tight mb-1.5 text-zinc-900 dark:text-zinc-50 group-hover/hubcard:text-[var(--hub-accent)] transition-colors duration-200">
                       {hub.title}
@@ -266,13 +303,16 @@ export function ServicesPage() {
           })}
         </div>
 
-        {/* ── Mobile stacked cards ── */}
+        {/* ══════════════════ MOBILE STACKED CARDS ══════════════════ */}
         <div className="flex md:hidden flex-col gap-6 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub    = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
             const accent = isDark ? colors.accentDark : colors.accentLight
             const hubHasBulk = hub.sections.some((s) => sectionHasBulk(hubId, s.title, s.items))
+
+            // Same notice check as the desktop grid above
+            const hubHasNotice = hub.sections.some((s) => s.items.some((i) => !!i.notice))
 
             return (
               <ScrollBounce key={hubId} delay={index * 0.08}>
@@ -284,6 +324,7 @@ export function ServicesPage() {
                 >
                   <HubCornerIcon hubId={hubId} accent={accent} />
                   {hubHasBulk && <BulkRibbon />}
+                  {hubHasNotice && <NoticeBadge />}
 
                   <h3 className="relative z-10 font-sans font-black text-[1.45rem] leading-tight mb-1.5 text-zinc-900 dark:text-zinc-50 group-hover/hubcard:text-[var(--hub-accent)] transition-colors duration-200">
                     {hub.title}
@@ -347,4 +388,4 @@ export function ServicesPage() {
       <BackToTopButton visible={showBackToTop && !isModalOpen} />
     </section>
   )
-                                                                           } 
+      } 
