@@ -1,3 +1,23 @@
+/* lib/data/hubs/eservice.ts */
+/**
+ * ════════════════════════════════════════════════════════════════════════
+ * E-SERVICE HUB DATA — every government/online service ApexbytesHub
+ * offers, grouped into sections (SASSA, SARS, Online Applications, etc.)
+ *
+ * NOTICE FIELD USAGE IN THIS FILE:
+ * Four NSFAS items below have a `notice` set. This is because NSFAS is
+ * currently under government administration with a large case backlog
+ * (per BusinessTech, 16 Aug 2026 — ~10,000 unresolved funding
+ * investigations, some taking up to 5 months). The notice warns customers
+ * up front so they aren't surprised by slower-than-usual processing.
+ *
+ * TO REMOVE A NOTICE LATER (once the backlog clears): just delete the
+ * `notice: "..."` line from that item — nothing else needs to change,
+ * the orange "!" badges everywhere on the site will disappear
+ * automatically since they're all computed from this field.
+ * ════════════════════════════════════════════════════════════════════════
+ */
+
 import { HUB_COLORS, HUB_NAMES } from '@/lib/brand'
 import type { Hub } from '../types'
 
@@ -9,6 +29,8 @@ export const eserviceHub: Hub = {
   tagStyleDark: { bg: HUB_COLORS.eservice.tagBgDark, color: HUB_COLORS.eservice.tagTextDark },
   previews: ['SASSA', 'SARS eFiling', 'UIF & CSD'],
   sections: [
+
+    // ══════════════════ SASSA SECTION ══════════════════
     { title: 'SASSA', desc: `Grant status checks, applications, updates, and appeals — handled through the official SASSA channels.`, items: [
       { name: 'SASSA Status Check', price: 'R20', description: `We log into the SASSA portal or use the official channels to check the current status of your grant or application — whether it's approved, pending, declined, or under review. You'll know exactly where things stand before you leave.`, requirements: ['Bring your ID document', 'Bring your SASSA reference number or application number if you have one'] },
       { name: 'UPDATE Details', price: 'R40', description: `Changed your phone number, address, or personal details? We update your SASSA profile on the official system so your account stays current and payments or communications don't get disrupted.`, requirements: ['Bring your ID document', 'Bring proof of the new details (e.g. new address, new phone number)', 'Bring your SASSA reference number'] },
@@ -18,6 +40,8 @@ export const eserviceHub: Hub = {
       { name: 'SASSA Banking Update', price: 'R50', description: `Need your SASSA grant paid into a different bank account? We update your banking details on the SASSA system so your next payment goes to the right place — avoiding delays or missed payments.`, requirements: ['Bring your ID document', 'Bring your bank account details or bank confirmation letter', 'Bring your SASSA reference number'] },
       { name: 'Grant Application', price: 'R80', description: `Applying for a formal SASSA grant — such as the Child Support Grant, Older Persons Grant, or Disability Grant? We complete the full application with all required supporting documents and submit it correctly.`, requirements: ['Bring your ID document', "Bring supporting documents (e.g. child's birth certificate, disability assessment, proof of income)", 'Have your active cellphone number ready for OTP/SMS confirmations'] },
     ]},
+
+    // ══════════════════ SARS SECTION ══════════════════
     { title: 'SARS', desc: `Tax registration, statements, clearance certificates, and returns filed correctly on eFiling.`, items: [
       { name: 'Enquiry / Statement / Updates', price: 'R50', description: `Need to know your tax status, get a statement of account, or update basic details on your SARS profile? We log into eFiling and handle the enquiry or update on your behalf — no queues, no confusion.`, requirements: ['Bring your ID document', 'Bring your tax reference number if you have one'] },
       { name: 'New Taxpayer / eFiling', price: 'R70', description: `Never registered with SARS before? We register you as a new taxpayer, get your tax reference number, and set up your eFiling profile — so you're officially in the system and ready to file returns.`, requirements: ['Bring your ID document', 'Bring proof of address (utility bill, lease, or affidavit)', 'Have your active cellphone number and email ready'] },
@@ -26,6 +50,7 @@ export const eserviceHub: Hub = {
       { name: 'Pin Submission', price: 'R120', description: `Some SARS processes require you to submit a specific PIN or reference. We handle the submission correctly through eFiling so the right information reaches SARS without errors that could delay your matter.`, requirements: ['Bring your ID document', 'Bring your tax reference number', 'Bring the relevant SARS request/letter'] },
       { name: 'Tax Return / VAT / PAYE', price: 'R200', description: `Your annual tax return, VAT201, or PAYE submission completed and filed on eFiling. We work through your income, expenses, and supporting documents to ensure your return is accurate, compliant, and submitted on time.`, requirements: ['Bring your ID document', 'Bring your tax reference number', 'Bring income/expense documents (payslips, invoices, IRP5, bank statements as relevant)'] },
     ]},
+
     /* PSIRA — temporarily disabled, re-enable by uncommenting this section
     { title: 'PSIRA', items: [
       { name: 'PSIRA Status Check', price: 'R30', description: `We check your PSIRA registration status online — whether your certificate is active, expired, or pending renewal. Important to know before starting work at any security-regulated site.`, requirements: ['Bring your ID document', 'Bring your PSIRA registration number'] },
@@ -35,19 +60,54 @@ export const eserviceHub: Hub = {
       { name: 'ID Application', price: 'R100', description: `Applying for your PSIRA identity card — the physical ID required on duty. We submit the application through the PSIRA portal with the required documentation and a recent photo.`, requirements: ['Bring your ID document', 'Bring your PSIRA registration number', 'Bring a recent passport-style photo if required'] },
     ]},
     */
+
+    // ══════════════════ ONLINE APPLICATIONS SECTION ══════════════════
+    // NOTE: 4 of the NSFAS items below carry a `notice` — see file header
+    // comment for why. Non-NSFAS items in this same section (Learnership,
+    // Job/DPSA, Bursary, University) are untouched and show no badge.
     { title: 'Online Applications', desc: `NSFAS, learnerships, bursaries, and job applications completed accurately online.`, items: [
-      { name: 'NSFAS Status Check', price: 'R20', description: `We check your NSFAS application or funding status on myNSFAS — whether you're approved, awaiting verification, or declined. Know your status before registration so you can plan accordingly.`, requirements: ['Bring your ID document', 'Bring your NSFAS reference number or login details if you have them'] },
-      { name: 'NSFAS Banking Update', price: 'R40', description: `NSFAS requires accurate banking details to pay your allowances. If your bank details have changed or were entered incorrectly, we update them on myNSFAS so your money reaches you without delays.`, requirements: ['Bring your ID document', 'Bring your bank account details or confirmation letter', 'Bring your NSFAS reference number'] },
+      {
+        name: 'NSFAS Status Check',
+        price: 'R20',
+        description: `We check your NSFAS application or funding status on myNSFAS — whether you're approved, awaiting verification, or declined. Know your status before registration so you can plan accordingly.`,
+        requirements: ['Bring your ID document', 'Bring your NSFAS reference number or login details if you have them'],
+        // NOTICE — shows the orange "!" badge on this item everywhere
+        // it appears (hub card, section tab, item row, service modal)
+        notice: "NSFAS is currently working through a large backlog of funding investigations, so some statuses may take longer than usual to update.",
+      },
+      {
+        name: 'NSFAS Banking Update',
+        price: 'R40',
+        description: `NSFAS requires accurate banking details to pay your allowances. If your bank details have changed or were entered incorrectly, we update them on myNSFAS so your money reaches you without delays.`,
+        requirements: ['Bring your ID document', 'Bring your bank account details or confirmation letter', 'Bring your NSFAS reference number'],
+        notice: "NSFAS is currently under administration with ongoing system delays, so allow extra time beyond the usual processing window if payments are affected.",
+      },
       { name: 'Learnership Application', price: 'R40', description: `Learnerships are government-backed training programmes that pay you while you learn a skill. We find the right opportunity and complete the online application on your behalf with your CV and supporting documents.`, requirements: ['Bring your ID document', 'Bring your highest qualification/certificate', 'Bring your CV if available'] },
       { name: 'Job / DPSA Application', price: 'R40', description: `Applying for a government or public service position? We complete your online job application on the DPSA or relevant portal — accurately filling in the Z83 form and attaching your CV and qualifications correctly.`, requirements: ['Bring your ID document', 'Bring your CV and certified qualifications', 'Have details of the specific position/post number ready'] },
       { name: 'Bursary Application', price: 'R40', description: `Bursary applications are competitive and detail-sensitive — a single mistake can disqualify you. We complete your bursary application online, ensuring all fields are correct and all required documents are attached.`, requirements: ['Bring your ID document', 'Bring your academic results/qualifications', 'Bring proof of household income if required', 'Bring acceptance letter from institution if applicable'] },
-      { name: 'NSFAS Appeal', price: 'R50', description: `If NSFAS declined your application and you believe it was unfair, you have the right to appeal. We submit your appeal through myNSFAS with a clear motivation and supporting documents to give you the best chance of a reversal.`, requirements: ['Bring your ID document', 'Bring the NSFAS rejection/decline notification', 'Bring supporting documents (e.g. proof of income, motivation letter)'] },
-      { name: 'NSFAS Application', price: 'R80', description: `Applying for NSFAS funding for the first time? We complete your full application on myNSFAS — personal details, household income, institution choice, and all supporting documents — submitted correctly to avoid rejections.`, requirements: ['Bring your ID document', 'Bring proof of household income or relevant supporting documents', 'Bring your academic results', 'Have your active cellphone number and email ready'] },
+      {
+        name: 'NSFAS Appeal',
+        price: 'R50',
+        description: `If NSFAS declined your application and you believe it was unfair, you have the right to appeal. We submit your appeal through myNSFAS with a clear motivation and supporting documents to give you the best chance of a reversal.`,
+        requirements: ['Bring your ID document', 'Bring the NSFAS rejection/decline notification', 'Bring supporting documents (e.g. proof of income, motivation letter)'],
+        notice: "NSFAS is currently reviewing a large number of investigation cases, so appeal turnaround may be slower than normal — keep your reference number to follow up.",
+      },
+      {
+        name: 'NSFAS Application',
+        price: 'R80',
+        description: `Applying for NSFAS funding for the first time? We complete your full application on myNSFAS — personal details, household income, institution choice, and all supporting documents — submitted correctly to avoid rejections.`,
+        requirements: ['Bring your ID document', 'Bring proof of household income or relevant supporting documents', 'Bring your academic results', 'Have your active cellphone number and email ready'],
+        notice: "NSFAS is currently under administration while its funding model is reviewed, so processing times may run longer than usual.",
+      },
       { name: 'University Application', price: 'R100', description: `Applying to university through the CAO, institutional portals, or directly? We complete the full online application — programme selection, personal information, academic records, and required uploads — giving your application the best possible presentation.`, requirements: ['Bring your ID document', 'Bring certified academic results/matric certificate', 'Have application fee details ready if applicable', 'Have your active cellphone number and email ready'] },
     ]},
+
+    // ══════════════════ EMAIL SERVICES SECTION ══════════════════
     { title: 'Email Services', desc: `A working email address, set up and ready — plus help sending or receiving what you need.`, items: [
       { name: 'Setup / Send / Receive', price: 'R15', description: `Don't have an email address yet, or need help accessing one? We create a new Gmail or similar account for you, or help you log in and send/receive specific emails. Many government applications require an email — we've got you covered.`, requirements: ['Bring your ID document', 'Have an active cellphone number ready for verification', 'If sending/receiving, bring the document or details to be emailed'] },
     ]},
+
+    // ══════════════════ BUSINESS SERVICES SECTION ══════════════════
     { title: 'Business Services', desc: `CIPC, UIF, CSD, and Google Business — the admin that keeps a business compliant and visible.`, items: [
       { name: 'Good Standing Letter', price: 'R60', description: `A CIPC Good Standing Letter (Compliance Checklist) confirms your company is registered and compliant. Commonly required for tenders and contracts. We retrieve it from the CIPC portal and hand it to you ready to use.`, requirements: ['Bring your ID document', 'Bring your company registration number', 'Bring CIPC login details if available'] },
       { name: 'Google Business Setup', price: 'R80', description: `Get your business listed on Google Maps and visible in local searches. We create and verify your Google Business Profile — business name, address, hours, photos, and contact details — so customers can find you when they search.`, requirements: ['Bring your business name and physical address', 'Bring contact details (phone, email, website if any)', 'Bring your business logo and a few photos if available'] },
@@ -57,10 +117,12 @@ export const eserviceHub: Hub = {
       { name: 'UIF Claims', price: 'R200', description: `Lost your job or went on maternity leave? You may be entitled to UIF benefits. We complete and submit your UIF claim online — UI2.1, UI19, and all required documents — giving you the best chance of a successful payout.`, requirements: ['Bring your ID document', 'Bring your UIF reference number', 'Bring termination letter/UI19 form and bank account details'] },
       { name: 'CSD Registration', price: 'R300', description: `Register your business on the Central Supplier Database to qualify for government contracts and tenders. We complete the full CSD registration — company details, tax status, banking info, and BEE level — so you're ready to do business with the state.`, requirements: ['Bring your company registration documents (CIPC)', 'Bring your tax clearance certificate', 'Bring bank confirmation letter', 'Bring BEE certificate/affidavit if applicable'] },
     ]},
+
+    // ══════════════════ DIGITAL SETUP SECTION ══════════════════
     { title: 'Digital Setup', desc: `Social media, WhatsApp Business, and learner's licence bookings, set up properly from the start.`, items: [
       { name: 'Social Media Setup', price: 'R60', description: `Get your business on Facebook, Instagram, or any other platform with a properly set-up profile — logo, bio, contact details, and category all configured correctly from the start. First impressions online matter.`, requirements: ['Bring your business name and logo', 'Bring contact details and a short business description', 'Specify which platforms you want set up (Facebook, Instagram, etc.)'] },
       { name: "Learner's Licence Booking", price: 'R60', description: `We book your learner's licence test at the traffic department through the online booking system, selecting your preferred testing centre and date. Skip the walk-in queues — book it properly the first time.`, requirements: ['Bring your ID document', 'Have your active cellphone number ready for booking confirmation', 'Know your preferred testing centre and date range'] },
       { name: 'WhatsApp Business Setup', price: 'R80', description: `WhatsApp Business lets you run a professional presence on the world's most-used messaging app — automated replies, business hours, product catalogue, and a verified business name. We set the whole thing up on your dedicated business number.`, requirements: ['Bring your business name and logo', 'Have the dedicated business phone number ready', 'Bring a short business description and catalog items/prices if available'] },
     ]},
   ],
-}
+       } 
