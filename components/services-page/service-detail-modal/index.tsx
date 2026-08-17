@@ -1,11 +1,33 @@
-// components/services-page/service-detail-modal/index.tsx
+/* components/services-page/service-detail-modal/index.tsx — PART 1 OF 2 */
+/**
+ * ════════════════════════════════════════════════════════════════════════
+ * SERVICE DETAIL MODAL — the popup that opens when a customer taps a
+ * single service (e.g. "NSFAS Status Check") from inside a hub.
+ *
+ * FILE IS SPLIT INTO 2 PARTS because of its length + heavy commenting:
+ *   PART 1 (this block)  = imports, constants, all state/handlers/logic
+ *   PART 2 (next block)  = the actual JSX that gets rendered on screen
+ * They belong in ONE file — just paste Part 1 then Part 2 underneath it.
+ *
+ * WHAT THIS FILE SHOWS THE CUSTOMER:
+ *   - Service name, price, turnaround time
+ *   - A lightbulb icon -> opens TipsModal (helpful tips for this service)
+ *   - NEW: an orange "!" icon -> opens NoticeModal, but ONLY if this
+ *     specific service has a `notice` set on it (e.g. a live SASSA/NSFAS
+ *     delay warning). Most services never show this icon at all.
+ *   - "Needs" tab (what to bring) and "Description" tab
+ *   - File upload button, Add-to-Quote button
+ *   - Final "Request via WhatsApp" button
+ * ════════════════════════════════════════════════════════════════════════
+ */
 "use client"
 
 import { useState, useEffect, useRef, type ChangeEvent, type TouchEvent } from "react"
-import { X, ShareNetwork, Clock, Lightbulb } from "@phosphor-icons/react"
+// WarningCircle added here — this is the orange "!" icon used for notices
+import { X, ShareNetwork, Clock, Lightbulb, WarningCircle } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
-import { HUB_COLORS, HubKey, BIZ } from "@/lib/brand"
+import { HUB_COLORS, HubKey, BIZ, BRAND } from "@/lib/brand"
 import { HUBS } from "@/lib/data"
 import { useFocusTrap, HubIcon } from "../shared"
 import {
@@ -17,14 +39,16 @@ import { UploadButton, UploadStatus } from "./UploadControl"
 import { QuoteControl } from "./QuoteControl"
 import { BulkHint } from "./BulkHint"
 import { TipsModal } from "./TipsModal"
+import { NoticeModal } from "./NoticeModal"   // NEW — the notice popup component
 import { getServiceTips } from "./fallback-tips"
 
-import { BRAND } from "@/lib/brand"
+// ── Layout constants ──
 const BULK_RIBBON_BLUE = BRAND.blue
-
+// 3-column header grid: left spacer | center content | right icon buttons
 const HEADER_GRID = "grid grid-cols-[36px_1fr_36px] gap-2"
-
+// Minimum horizontal swipe distance (px) before we treat it as a tab-swap swipe
 const SWIPE_MIN_DX = 48
+// How much more horizontal than vertical a swipe must be, to avoid mistaking a scroll for a swipe
 const SWIPE_DOMINANCE = 1.4
 
 type Tab = "bring" | "about"
@@ -32,25 +56,37 @@ type Tab = "bring" | "about"
 export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onClose: () => void }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
+
+  // ── UI state ──
   const [tab, setTab] = useState<Tab>("bring")
   const [tipsOpen, setTipsOpen] = useState(false)
+  const [noticeOpen, setNoticeOpen] = useState(false)   // NEW — controls the NoticeModal popup
+
+  // ── File upload state ──
   const [file, setFile] = useState<File | null>(null)
   const [uploadPhase, setUploadPhase] = useState<"idle" | "uploading" | "done" | "error">("idle")
   const [uploadProgress, setUploadProgress] = useState(0)
   const [fileUrl, setFileUrl] = useState<string | null>(null)
   const [uploadErr, setUploadErr] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+  // ── Small feedback/toast state ──
   const [shareCopied, setShareCopied] = useState(false)
   const [tipsCopied, setTipsCopied] = useState(false)
   const [addedToQuote, setAddedToQuote] = useState(false)
   const [quoteQty, setQuoteQty] = useState(0)
+
   const fileRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const touchStartRef = useRef<{ x: number; y: number } | null>(null)
 
+  // Every time a DIFFERENT service is opened, reset everything back to
+  // default — otherwise leftover state (e.g. an uploaded file) from the
+  // previous service would incorrectly show up on the new one.
   useEffect(() => {
     setTab("bring")
     setTipsOpen(false)
+    setNoticeOpen(false)   // NEW — make sure the notice popup is closed for the new service too
     setAddedToQuote(false)
     setFile(null)
     setFileUrl(null)
@@ -65,14 +101,17 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
     if (svc) setQuoteQty(getCartQtyForItem(`${svc.hubId}-${svc.sectionTitle}-${svc.name}`))
   }, [svc?.name])
 
+  // Clean up any leftover object URL (image preview) when the component unmounts
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl)
     }
   }, [previewUrl])
 
+  // Traps keyboard focus inside this modal while it's open (accessibility)
   useFocusTrap(!!svc, containerRef)
 
+  // ── Upload logic — sends the picked file to Cloudinary ──
   const doUpload = (f: File) => {
     setUploadPhase("uploading")
     setUploadProgress(0)
@@ -103,14 +142,17 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
     xhr.send(fd)
   }
 
+  // Runs whenever the customer picks a file from their device
   const handleFilePick = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
     if (!f) return
+    // Reject dangerous file types outright
     if (BLOCKED_MIME_TYPES.has(f.type) || BLOCKED_EXTENSIONS.test(f.name)) {
       setUploadErr("That file type isn't allowed. Please send a document, image, or PDF only.")
       setUploadPhase("error")
       return
     }
+    // Reject files that are too large
     if (f.size > CLD_MAX_MB * 1024 * 1024) {
       setUploadErr(`File too large — please keep it under ${CLD_MAX_MB}MB.`)
       setUploadPhase("error")
@@ -126,6 +168,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
     doUpload(f)
   }
 
+  // Clears the currently selected/uploaded file, back to empty state
   const clearFile = () => {
     setFile(null)
     setFileUrl(null)
@@ -139,8 +182,10 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
     if (fileRef.current) fileRef.current.value = ""
   }
 
+  // If no service is selected, render nothing at all
   if (!svc) return null
 
+  // ── Derived values used throughout the JSX below ──
   const colors = HUB_COLORS[svc.hubId as HubKey]
   const accent = isDark ? colors.accentDark : colors.accentLight
   const hubTitle = HUBS[svc.hubId]?.title || svc.sectionTitle
@@ -149,9 +194,11 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
   const itemId = `${svc.hubId}-${svc.sectionTitle}-${svc.name}`
   const hasBulk = itemHasBulk(svc.hubId, svc.sectionTitle, svc.name)
 
+  // Tips shown in the lightbulb popup — comes from fallback-tips.ts logic
   const { tips, isGeneric } = getServiceTips(svc.hubId, svc.sectionTitle, svc.name, svc.tips)
   const tabs: Tab[] = ["bring", "about"]
 
+  // Bulk pricing math
   const { amount: baseUnitPrice, unit: priceUnit } = parsePrice(svc.price)
   const effectiveQty = Math.max(quoteQty, 1)
   const effRate = getEffectiveRate(itemId, svc.name, effectiveQty, baseUnitPrice)
@@ -183,6 +230,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
     }
   }
 
+  // Copies the tips list to clipboard when the customer taps "Copy" inside TipsModal
   const handleCopyTips = async () => {
     if (!tips.length) return
     const text = tips.map((t) => `• ${t}`).join("\n")
@@ -195,6 +243,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
     }
   }
 
+  // Adds this service to the floating Quote Calculator cart
   const handleAddToQuote = () => {
     window.dispatchEvent(
       new CustomEvent("abh:add-to-quote", { detail: { hubId: svc.hubId, sectionTitle: svc.sectionTitle, name: svc.name, price: svc.price } })
@@ -205,12 +254,15 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
     setQuoteQty((prev) => prev + 1)
   }
 
+  // Increments/decrements quantity in the quote cart
   const handleStepQty = (delta: number) => {
     const nextQty = Math.max(0, quoteQty + delta)
     window.dispatchEvent(new CustomEvent("abh:step-quote-qty", { detail: { id: itemId, delta } }))
     setQuoteQty(nextQty)
   }
 
+  // ── Swipe handling — lets the customer swipe left/right to switch
+  // between the "Needs" and "Description" tabs on mobile ──
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
     const t = e.touches[0]
     touchStartRef.current = { x: t.clientX, y: t.clientY }
@@ -229,6 +281,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
     else if (dx > 0 && idx > 0) setTab(tabs[idx - 1])
   }
 
+  // The WhatsApp message text sent when the customer taps the final green button
   const waMessage = fileUrl
     ? `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). Price shown: ${svc.price}. My file: ${fileUrl}`
     : `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). Price shown: ${svc.price}. Can you assist?`
@@ -238,8 +291,17 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
   const inQuote = quoteQty > 0
   const neutralIconColor = isDark ? "#e4e4e7" : "#3f3f46"
 
+
+  // ── PART 2 continues below with the actual JSX (the `return (...)` block) ──
+/* components/services-page/service-detail-modal/index.tsx — PART 2 OF 2 */
+/**
+ * This is the continuation of ServiceDetailModal from Part 1.
+ * Everything below is what actually gets drawn on screen.
+ */
+
   return (
     <div className="fixed inset-0 z-[10200] flex items-center justify-center p-3 md:p-4">
+      {/* Dark backdrop behind the modal — tapping it closes the modal */}
       <div className="absolute inset-0 bg-black/55 animate-in fade-in duration-200" onClick={onClose} />
 
       <div
@@ -251,6 +313,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         className="relative w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         style={{ boxShadow: "0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4)" }}
       >
+        {/* ── Diagonal "Bulk" ribbon — only shows if this service has bulk pricing ── */}
         {hasBulk && (
           <div className="absolute top-0 right-0 w-[104px] h-[104px] overflow-hidden pointer-events-none z-10" aria-hidden="true">
             <span
@@ -266,8 +329,10 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           </div>
         )}
 
-        {/* ── Header ── */}
+        {/* ══════════════════ HEADER ══════════════════ */}
         <div className="px-6 pt-6 pb-5 flex-shrink-0">
+
+          {/* Hub name, section name, service name */}
           <div className={cn(HEADER_GRID, "items-start mb-2")}>
             <div aria-hidden="true" />
             <div className="min-w-0 text-center">
@@ -285,8 +350,11 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
 
           <div className="h-px bg-zinc-100 dark:bg-zinc-800 mb-4" />
 
+          {/* Price row + turnaround, plus the icon button(s) on the right */}
           <div className={cn(HEADER_GRID, "items-start")}>
             <div aria-hidden="true" />
+
+            {/* Center column: big price + turnaround pill */}
             <div className="flex flex-col items-center gap-1.5">
               <span className="text-5xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
               {svc.turnaround && (
@@ -299,18 +367,36 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                 </span>
               )}
             </div>
-            <button
-              type="button"
-              onClick={() => setTipsOpen(true)}
-              aria-label="View helpful tips"
-              className="w-9 h-9 flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors duration-150 active:scale-95"
-            >
-              <Lightbulb size={18} weight="fill" aria-hidden="true" />
-            </button>
+
+            {/* Right column: icon buttons. The orange "!" (notice) button
+                ONLY renders when svc.notice has been set in the data file
+                for this specific service — otherwise this column shows
+                just the usual yellow Lightbulb (tips) button, same as always. */}
+            <div className="flex items-center justify-end gap-1">
+              {svc.notice && (
+                <button
+                  type="button"
+                  onClick={() => setNoticeOpen(true)}
+                  aria-label="View service notice"
+                  className="w-9 h-9 flex items-center justify-center transition-colors duration-150 active:scale-95"
+                  style={{ color: BRAND.orange }}
+                >
+                  <WarningCircle size={18} weight="fill" aria-hidden="true" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setTipsOpen(true)}
+                aria-label="View helpful tips"
+                className="w-9 h-9 flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors duration-150 active:scale-95"
+              >
+                <Lightbulb size={18} weight="fill" aria-hidden="true" />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* ── Tabs ── */}
+        {/* ══════════════════ TABS ("Needs" / "Description") ══════════════════ */}
         <div className="px-6 pt-1">
           <div className={cn(HEADER_GRID, "items-center")}>
             <div aria-hidden="true" />
@@ -336,6 +422,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
               })}
             </div>
 
+            {/* Close + Share buttons, top right of the tab row */}
             <div className="relative flex flex-col items-center gap-1.5">
               <button
                 onClick={onClose}
@@ -361,7 +448,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           </div>
         </div>
 
-        {/* ── Tab content ── */}
+        {/* ══════════════════ TAB CONTENT (scrollable, swipeable) ══════════════════ */}
         <div
           className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 min-h-0 text-center"
           onTouchStart={handleTouchStart}
@@ -392,7 +479,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           )}
         </div>
 
-        {/* ── Footer ── */}
+        {/* ══════════════════ FOOTER (upload, quote, WhatsApp button) ══════════════════ */}
         <div className="px-6 pb-8 pt-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
           <input ref={fileRef} type="file" accept={HUB_ACCEPT[svc.hubId]} onChange={handleFilePick} className="hidden" />
 
@@ -447,6 +534,10 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         </div>
       </div>
 
+      {/* ══════════════════ POPUPS — mounted outside the main card ══════════════════ */}
+
+      {/* Tips popup — always available (falls back to generic hub tips if this
+          specific item has none) */}
       <TipsModal
         open={tipsOpen}
         onClose={() => setTipsOpen(false)}
@@ -457,6 +548,18 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         onCopy={handleCopyTips}
         hubTitle={hubTitle}
       />
+
+      {/* Notice popup — ONLY exists in the DOM when this service actually
+          has a notice set. For every normal service, this whole block is
+          skipped entirely. */}
+      {svc.notice && (
+        <NoticeModal
+          open={noticeOpen}
+          onClose={() => setNoticeOpen(false)}
+          notice={svc.notice}
+          hubTitle={hubTitle}
+        />
+      )}
     </div>
   )
-} 
+                }
