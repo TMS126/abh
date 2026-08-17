@@ -1,13 +1,30 @@
-// components/services-page/hub-modal.tsx
+/* components/services-page/hub-modal.tsx */
 "use client"
+
+/**
+ * ════════════════════════════════════════════════════════════════════════
+ * HUB MODAL — the popup that opens when a customer taps a whole hub card
+ * (e.g. "E-Service Hub") from the main Services page. Shows section tabs
+ * (SASSA, SARS, Online Applications, etc.) and, underneath, the list of
+ * individual services in whichever tab is currently open.
+ *
+ * NOTICE BADGES ADDED IN THIS FILE:
+ *   1. Next to a SECTION TAB name (e.g. "Online Applications ❗") —
+ *      shows if ANY service inside that section currently has a notice.
+ *   2. Next to an individual ITEM ROW (e.g. "❗ NSFAS Status Check") —
+ *      shows only for that specific service.
+ * Both badges are computed automatically from the data — nothing here
+ * is hardcoded to "NSFAS" or any other specific service name.
+ * ════════════════════════════════════════════════════════════════════════
+ */
 
 import { useState, useEffect, useRef, type TouchEvent } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Info, ArrowSquareOut } from "@phosphor-icons/react"
+import { Info, ArrowSquareOut, WarningCircle } from "@phosphor-icons/react"
 import { X as XIcon } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
-import { HUB_COLORS, HubKey } from "@/lib/brand"
+import { HUB_COLORS, HubKey, BRAND } from "@/lib/brand"
 import { HUBS, HubId, HUB_DISCLAIMERS } from "@/lib/data"
 import { HubIcon, useFocusTrap } from "./shared"
 import { getTurnaround, HUB_ORDER, SelectedService } from "./lib"
@@ -32,6 +49,7 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
   const bodyRef = useRef<HTMLDivElement>(null)
   const touchStartRef = useRef<{ x: number; y: number } | null>(null)
 
+  // Reset state whenever a different hub is opened
   useEffect(() => {
     setOpenSectionIdx(0)
     setIsScrolled(false)
@@ -54,6 +72,7 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
     setIsScrolled(bodyRef.current.scrollTop > 4)
   }
 
+  // ── Swipe left/right between sections on mobile ──
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
     const t = e.touches[0]
     touchStartRef.current = { x: t.clientX, y: t.clientY }
@@ -93,10 +112,7 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
         transition={{ duration: 0.2 }}
       />
 
-      {/* ===== MODAL CONTAINER — overflow-hidden added so every child
-          (header block, disclaimer footer) actually gets clipped to
-          this rounded-[14px] shape instead of squaring off the top
-          corners where the header's own flat bg met the edge. ===== */}
+      {/* ===== MODAL CONTAINER ===== */}
       <motion.div
         ref={containerRef}
         tabIndex={-1}
@@ -110,8 +126,7 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
         className="relative z-10 w-full max-w-2xl bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[76vh] flex flex-col outline-none rounded-[14px] overflow-hidden"
         style={{ boxShadow: "0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4)" }}
       >
-        {/* ===== GLUED HEADER — title row + section selector, static,
-            solid bg ===== */}
+        {/* ===== GLUED HEADER — title row + section selector ===== */}
         <div
           className="relative z-10 shrink-0 bg-white dark:bg-zinc-950 transition-shadow duration-200"
           style={{ boxShadow: isScrolled ? "0 10px 20px -14px rgba(0,0,0,0.35)" : "none" }}
@@ -148,6 +163,7 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
             </div>
           </div>
 
+          {/* ── Section tabs (SASSA / SARS / Online Applications / etc.) ── */}
           <div
             role="tablist"
             aria-label="Service categories"
@@ -156,6 +172,12 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
             {hub.sections.map((section, sIdx) => {
               const isOpen = openSectionIdx === sIdx
               const hasBulk = sectionHasBulk(hubId, section.title, section.items)
+
+              // NOTICE CHECK: true if ANY item inside this section has a
+              // notice set. Fully dynamic — works for any hub/section
+              // without needing to name specific services here.
+              const hasNotice = section.items.some((i) => !!i.notice)
+
               return (
                 <button
                   key={sIdx}
@@ -168,6 +190,18 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
                     style={{ borderColor: isOpen ? accent : "transparent", color: isOpen ? accent : (isDark ? "#a1a1aa" : "#71717a") }}
                   >
                     {section.title}
+
+                    {/* Orange "!" badge next to the section tab name */}
+                    {hasNotice && (
+                      <WarningCircle
+                        size={11}
+                        weight="fill"
+                        aria-label="Notice for some services in this section"
+                        className="inline-block align-super ml-1"
+                        style={{ color: BRAND.orange }}
+                      />
+                    )}
+
                     {hasBulk && (
                       <span aria-label="Bulk pricing available" className="ml-1.5 text-[0.6rem] font-black uppercase tracking-wide opacity-60">
                         · Bulk
@@ -180,7 +214,7 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
           </div>
         </div>
 
-        {/* ===== BODY ===== */}
+        {/* ===== BODY (scrollable) ===== */}
         <div
           ref={bodyRef}
           onScroll={handleBodyScroll}
@@ -216,6 +250,10 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
                         desc: item.description,
                         turnaround: getTurnaround(activeSection.title, item.name),
                         tips: item.tips ? [...item.tips] : undefined,
+                        // Pass the notice straight through — if this item
+                        // has no notice, this is simply `undefined`, and
+                        // the detail modal's notice icon won't render.
+                        notice: item.notice,
                       })
                     }
                     className="flex items-center justify-between px-4 py-3.5 rounded-[10px] bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/70 transition-colors duration-150 active:scale-[0.99] w-full"
@@ -226,6 +264,18 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
                           Bulk ·
                         </span>
                       )}
+
+                      {/* Orange "!" badge next to this specific item's name */}
+                      {item.notice && (
+                        <WarningCircle
+                          size={12}
+                          weight="fill"
+                          aria-label="Notice"
+                          className="shrink-0"
+                          style={{ color: BRAND.orange }}
+                        />
+                      )}
+
                       {item.name}
                     </span>
 
@@ -257,10 +307,7 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
           )}
         </div>
 
-        {/* ===== TURNAROUND / DISCLAIMER FOOTER — moved OUT of the
-            scrollable body entirely, into its own shrink-0 block below
-            it. It's now fixed in place within the card: it never
-            scrolls with the item list, regardless of section length. ===== */}
+        {/* ===== TURNAROUND / DISCLAIMER FOOTER — fixed, never scrolls ===== */}
         {hubDisclaimer && (
           <div className="shrink-0 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-6 md:px-8 py-4 flex items-start gap-2">
             <Info size={13} weight="bold" aria-hidden="true" className="text-zinc-400 dark:text-zinc-500 shrink-0 mt-0.5" />
@@ -269,7 +316,7 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
         )}
       </motion.div>
 
-      {/* ===== OTHER HUBS ===== */}
+      {/* ===== OTHER HUBS quick-switch row ===== */}
       {otherHubs.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -306,4 +353,4 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
       )}
     </div>
   )
-                                     } 
+    } 
