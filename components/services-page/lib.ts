@@ -1,5 +1,17 @@
+/* components/services-page/lib.ts */
+/**
+ * ────────────────────────────────────────────────────────────────────────
+ * SHARED HELPERS FOR THE SERVICES PAGE
+ *
+ * This file has no UI in it — it's constants, small pure functions, and
+ * the SelectedService type that gets passed around between HubModal and
+ * ServiceDetailModal whenever someone taps a service.
+ * ────────────────────────────────────────────────────────────────────────
+ */
+
 import { HUBS, HubId, TURNAROUND, TURNAROUND_OVERRIDE } from "@/lib/data"
-// ─── Constants ────────────────────────────────────────────────────────────────
+
+// ─── Constants ────────────────────────────────────────────────────────────
 export const HUB_ORDER: HubId[] = ["print", "doc", "design", "eservice", "tech"]
 
 export const HUB_PREVIEWS: Record<HubId, [string, string, string]> = {
@@ -36,12 +48,12 @@ export const NOTICE = {
   textAfter: ". Minor price adjustments have also been made across some services. We appreciate your continued support and will keep you updated as we grow.",
 }
 
-// ─── Turnaround lookup ────────────────────────────────────────────────────────
+// ─── Turnaround lookup ────────────────────────────────────────────────────
 export function getTurnaround(sectionTitle: string, itemName: string): string {
   return TURNAROUND_OVERRIDE[itemName] ?? TURNAROUND[sectionTitle] ?? "Same day"
 }
 
-// ─── Lightweight analytics stub ───────────────────────────────────────────────
+// ─── Lightweight analytics stub ───────────────────────────────────────────
 export function trackEvent(name: string, payload: Record<string, unknown> = {}) {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("abh:track", { detail: { name, ...payload } }))
@@ -52,7 +64,7 @@ export function trackEvent(name: string, payload: Record<string, unknown> = {}) 
   }
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────
 export function getCldUrl(file: File) {
   return `https://api.cloudinary.com/v1_1/${CLD_CLOUD}/${file.type.startsWith("image/") ? "image" : "raw"}/upload`
 }
@@ -91,7 +103,7 @@ export function naturalServiceLabel(name: string, sectionTitle: string) {
   return cleanName
 }
 
-// ─── WCAG contrast helpers ────────────────────────────────────────────────────
+// ─── WCAG contrast helpers ─────────────────────────────────────────────────
 function hexToRgb(hex: string) {
   const clean = hex.replace("#", "")
   const full = clean.length === 3 ? clean.split("").map(c => c + c).join("") : clean
@@ -120,7 +132,7 @@ export function getContrastText(hex: string) {
   return whiteRatio >= blackRatio ? "#ffffff" : "#1a1a1a"
 }
 
-// ─── Search ───────────────────────────────────────────────────────────────────
+// ─── Search ─────────────────────────────────────────────────────────────────
 export interface SearchableService {
   hubId: HubId; sectionTitle: string; name: string
   price: string; description: string; requirements: string[]; turnaround?: string
@@ -144,11 +156,14 @@ export function buildSearchIndex(): SearchableService[] {
   return all
 }
 
-// ── Added `tips` ──
-// Optional — mirrors ServiceItem.tips in lib/data.ts. Only present when
-// the underlying item actually has tips; the modal's Tips tab checks for
-// this before rendering, so every other service is unaffected.
+// ─── SelectedService ──────────────────────────────────────────────────────
+// This is the shape passed from HubModal -> ServicesPage -> ServiceDetailModal
+// whenever someone taps a service. `tips` and `notice` are both optional —
+// most services have neither, some have tips, and a rare few (like an
+// NSFAS item during a known delay) also carry a `notice`.
 export interface SelectedService {
   name: string; price: string; hubId: HubId
-  sectionTitle: string; requirements: string[]; desc?: string; turnaround?: string; tips?: string[]
+  sectionTitle: string; requirements: string[]; desc?: string; turnaround?: string
+  tips?: string[]
+  notice?: string   // Set only when this specific service has an active warning to show
 } 
