@@ -45,7 +45,6 @@ export function AboutPage() {
       <AboutStandards blueColor={blueColor} neutralColor={neutralColor} />
       <AboutTestimonials isDark={isDark} />
       <AboutMission blueOnPage={blueOnPage} missionBadgeBg={missionBadgeBg} missionBadgeText={missionBadgeText} />
-      <ScrollToBottomButton visible={showScrollToBottom} />
       <BackToTopButton visible={showBackToTop} />
     </div>
   )
