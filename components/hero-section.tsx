@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import Image from "next/image"
 import { ArrowRight, Play, Pause, Warning, X, Sun, Moon, CloudSun, CloudMoon, Cloud, CloudFog, CloudRain, CloudLightning, Snowflake } from "@phosphor-icons/react"
-import { BRAND, BIZ, MARQUEE_ITEMS } from "@/lib/brand"
+import { BRAND, BIZ, MARQUEE_ITEMS, TOKEN, pickHex } from "@/lib/brand"
 import { eserviceHub } from "@/lib/data/hubs/eservice"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { HUBS_DATA } from "@/lib/hero-data"
@@ -75,7 +75,6 @@ function buildArrangement() {
   }))
 }
 
-// ─── WEATHER ICON MAP (drives the holiday-banner icon) ──────────────────────
 const WEATHER_ICON_MAP: Record<WeatherCategory, { Icon: React.ElementType; color: string }> = {
   "clear-day": { Icon: Sun, color: "#F59E0B" },
   "clear-night": { Icon: Moon, color: "#818CF8" },
@@ -96,18 +95,6 @@ function fallbackCategory(greeting: BusinessStatus["greeting"]): WeatherCategory
 const NOTICE_ITEMS = eserviceHub.sections.flatMap((section) => section.items.filter((item) => item.notice))
 const HAS_BACKLOG_NOTICE = NOTICE_ITEMS.length > 0
 const BACKLOG_MESSAGE = NOTICE_ITEMS[0]?.notice ?? ""
-
-// FIX: BRAND.orangeAccessibleDark (#7A3B0E) is an AAA color verified against
-// WHITE (8.54:1) — it's the "extra-safe orange for light backgrounds" token,
-// NOT a dark-mode-surface token, despite the name. The collapsed pill used it
-// as text/icon-chip color on dark:bg-zinc-900, which globals.css's dark-mode
-// unification rule forces to var(--card) = #1A2C3E. Actual pairing measured:
-// contrastRatio('#7A3B0E', '#1A2C3E') = 1.67:1 — this was the circled badge.
-// This value IS verified against both dark surfaces (--card #1A2C3E: 4.55:1,
-// --background #0D1B2A: 5.56:1). TODO: move into lib/brand.ts as a proper
-// mirrored token (e.g. BRAND.warningDark) once you share that file — for now
-// it's local so the fix ships without guessing at brand.ts's structure.
-const PILL_TEXT_DARK_SAFE = "#e5711d"
 
 // ─── COMPONENT ───────────────────────────────────────────────────────────────
 export function HeroSection() {
@@ -151,16 +138,12 @@ export function HeroSection() {
   const activeCircleColor = CTA_FILL_COLOR
   const activeArrowIconColor = getArrowIconColor(activeCircleColor)
 
-  // Backlog notice colors — theme-aware, WCAG-verified tokens only.
-  // ANNOUNCEMENT_FILL: icon-chip background always (verified vs white icon:
-  // orangeAccessible 6.20:1 light, orangeAccessibleDark 8.54:1 dark — both
-  // fine, since the icon chip's own background pairing was never the bug).
-  // In dark mode it is now ALSO reused as the collapsed-pill text/border
-  // color, which is the pairing that was broken — see PILL_TEXT_DARK_SAFE.
-  const ANNOUNCEMENT_FILL = isDark ? BRAND.orangeAccessibleDark : BRAND.orangeAccessible
-  const ANNOUNCEMENT_TINT = isDark ? `${BRAND.orangeAccessibleDark}26` : BRAND.lightOrange
-  const ANNOUNCEMENT_TEXT = isDark ? BRAND.white : BRAND.orangeAccessible
-  const PILL_TEXT_COLOR = isDark ? PILL_TEXT_DARK_SAFE : BRAND.orangeAccessible
+  // Backlog notice — every color below is a TOKEN (CSS var). No isDark
+  // branching for color anymore: the var resolves itself in globals.css.
+  // ANNOUNCEMENT_TINT is the one exception, since it needs a raw hex for
+  // string-based alpha blending in dark mode — sourced from pickHex, which
+  // mirrors the SAME verified values as the tokens above, not a guess.
+  const ANNOUNCEMENT_TINT = isDark ? `${pickHex("warningBg", true)}26` : BRAND.lightOrange
 
   const showHolidayBanner = mounted && status?.isHoliday
   const displayCategory = weatherCategory ?? (status ? fallbackCategory(status.greeting) : "clear-day")
@@ -193,17 +176,17 @@ export function HeroSection() {
                 onClick={() => setBacklogExpanded(true)}
                 aria-expanded={false}
                 aria-label="Expand important announcement"
-                style={{ borderColor: ANNOUNCEMENT_FILL }}
+                style={{ borderColor: TOKEN.warningBg }}
                 className="flex items-center gap-2 pl-2 pr-1.5 py-1.5 rounded-full border bg-white dark:bg-zinc-900 shadow-[0_4px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all duration-200 hover:shadow-[0_6px_16px_rgba(0,0,0,0.12)]"
               >
                 <span
                   className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: ANNOUNCEMENT_FILL }}
+                  style={{ backgroundColor: TOKEN.warningBg }}
                   aria-hidden="true"
                 >
-                  <Warning size={13} weight="fill" style={{ color: BRAND.white }} />
+                  <Warning size={13} weight="fill" style={{ color: TOKEN.white }} />
                 </span>
-                <span className="text-sm font-bold" style={{ color: PILL_TEXT_COLOR }}>
+                <span className="text-sm font-bold" style={{ color: TOKEN.orangeText }}>
                   Important Announcement
                 </span>
                 <span
@@ -232,16 +215,16 @@ export function HeroSection() {
                 >
                   <span
                     className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: ANNOUNCEMENT_FILL }}
+                    style={{ backgroundColor: TOKEN.warningBg }}
                     aria-hidden="true"
                   >
-                    <Warning size={16} weight="fill" style={{ color: BRAND.white }} />
+                    <Warning size={16} weight="fill" style={{ color: TOKEN.white }} />
                   </span>
                   <span className="flex flex-col gap-0.5">
-                    <span className="text-[0.7rem] font-black uppercase tracking-widest" style={{ color: ANNOUNCEMENT_TEXT }}>
+                    <span className="text-[0.7rem] font-black uppercase tracking-widest" style={{ color: TOKEN.orangeText }}>
                       Important Announcement
                     </span>
-                    <span className="text-sm font-semibold leading-snug" style={{ color: ANNOUNCEMENT_TEXT }}>
+                    <span className="text-sm font-semibold leading-snug" style={{ color: TOKEN.orangeText }}>
                       {BACKLOG_MESSAGE}
                     </span>
                   </span>
@@ -250,7 +233,7 @@ export function HeroSection() {
                   onClick={() => setBacklogDismissed(true)}
                   aria-label="Dismiss announcement"
                   className="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center transition-opacity hover:opacity-70"
-                  style={{ color: ANNOUNCEMENT_TEXT }}
+                  style={{ color: TOKEN.orangeText }}
                 >
                   <X size={14} weight="bold" aria-hidden="true" />
                 </button>
@@ -261,7 +244,6 @@ export function HeroSection() {
 
         <div className="w-full max-w-[1100px] mx-auto grid md:grid-cols-2 gap-10 md:gap-16 items-center mb-10 md:mb-14">
 
-          {/* Left column — text + CTA */}
           <div className="text-center md:text-left">
 
             {showHolidayBanner && status && (
@@ -313,7 +295,6 @@ export function HeroSection() {
             </ScrollBounce>
           </div>
 
-          {/* Right column — hub photo collage */}
           <ScrollBounce delay={0.1} className="w-full">
             <div className="relative w-full h-[420px] sm:h-[480px] md:h-[560px]">
               {arrangement.map(({ hub, slot, width }) => {
@@ -342,7 +323,6 @@ export function HeroSection() {
           </ScrollBounce>
         </div>
 
-        {/* Marquee */}
         <div
           role="group"
           aria-label="Our services"
