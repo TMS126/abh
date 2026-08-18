@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import { useTheme } from "next-themes"
 import { BRAND, THEME_BG } from "@/lib/brand"
 import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
+import { ScrollToBottomButton, useScrollToBottom } from "@/components/scroll-to-bottom-button"
 import { ensureAccessible, getContrastText } from "@/lib/color"
 import { AboutHeader } from "@/components/about/about-header"
 import { AboutStory } from "@/components/about/about-story"
@@ -17,6 +18,7 @@ const ABOUT_NEUTRAL = { light: BRAND.dark100, dark: BRAND.techGreyDark }
 
 export function AboutPage() {
   const showBackToTop = useBackToTop()
+  const showScrollToBottom = useScrollToBottom()
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -32,7 +34,6 @@ export function AboutPage() {
   const blueOnCard = ensureAccessible(blueColor, cardBg, 4.5)
   const orangeOnCard = ensureAccessible(orangeColor, cardBg, 4.5)
 
-  // Same tokens CtaBar (strip-section.tsx) uses for its badge.
   const missionBadgeBg = blueColor
   const missionBadgeText = getContrastText(missionBadgeBg)
 
@@ -44,7 +45,8 @@ export function AboutPage() {
       <AboutStandards blueColor={blueColor} neutralColor={neutralColor} />
       <AboutTestimonials isDark={isDark} />
       <AboutMission blueOnPage={blueOnPage} missionBadgeBg={missionBadgeBg} missionBadgeText={missionBadgeText} />
+      <ScrollToBottomButton visible={showScrollToBottom} />
       <BackToTopButton visible={showBackToTop} />
     </div>
   )
-} 
+      } 
