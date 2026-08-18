@@ -132,6 +132,7 @@ export default function JpgToPdfPage() {
                   <ImageGrid
                     images={t.images}
                     rotations={t.rotations}
+                    filters={t.filters}
                     errors={t.errors}
                     retryingIds={t.retryingIds}
                     convertedIds={t.convertedIds}
@@ -144,6 +145,7 @@ export default function JpgToPdfPage() {
                     onCrop={setCropId}
                     onRetry={t.retryImage}
                     onReorder={t.reorder}
+                    onSetFilter={t.setFilter}
                   />
 
                   <ReconvertBanner prompt={t.reconvertPrompt} onResolve={t.resolveReconvert} />
@@ -202,4 +204,4 @@ export default function JpgToPdfPage() {
       )}
     </div>
   )
-                  }
+        } 
