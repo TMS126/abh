@@ -4,17 +4,24 @@
 import { memo } from "react"
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
-import { CheckCircle, ArrowsClockwise, ArrowCounterClockwise, Crop, X, WarningCircle, CircleNotch } from "@phosphor-icons/react"
+import { CheckCircle, ArrowsClockwise, ArrowCounterClockwise, Crop, X, WarningCircle, CircleNotch, Palette } from "@phosphor-icons/react"
 import { formatBytes } from "./utils"
-import type { ImageItem, ConvertError } from "./types"
+import { FILTER_CYCLE, FILTER_LABELS } from "./constants"
+import type { ImageItem, ConvertError, ImageFilter } from "./types"
+
+function nextFilterIn(current: ImageFilter): ImageFilter {
+  const idx = FILTER_CYCLE.indexOf(current)
+  return FILTER_CYCLE[(idx + 1) % FILTER_CYCLE.length]
+}
 
 function GridItem({
-  img, index, rotation, err, isRetrying, wasConverted, accentColor,
-  onToggleSelect, onRotate, onResetRotation, onRemove, onZoom, onCrop, onRetry, onReorder,
+  img, index, rotation, filter, err, isRetrying, wasConverted, accentColor,
+  onToggleSelect, onRotate, onResetRotation, onRemove, onZoom, onCrop, onRetry, onReorder, onSetFilter,
 }: {
   img: ImageItem
   index: number
   rotation: number
+  filter: ImageFilter
   err: ConvertError | undefined
   isRetrying: boolean
   wasConverted: boolean
@@ -27,7 +34,15 @@ function GridItem({
   onCrop: (id: string) => void
   onRetry: (id: string) => void
   onReorder: (from: number, to: number) => void
+  onSetFilter: (id: string, filter: ImageFilter) => void
 }) {
+  // A cropped image already has its rotation baked into the thumbnail
+  // pixels (see rotateImage in use-jpg-to-pdf.ts) — applying the CSS
+  // transform on top of that would double-rotate it. Uncropped images
+  // still rotate live via CSS since nothing's baked in yet.
+  const cssRotation = img.crop ? 0 : rotation
+  const upcoming = nextFilterIn(filter)
+
   return (
     <motion.li
       layout
@@ -49,7 +64,7 @@ function GridItem({
           fill
           sizes="(max-width: 640px) 50vw, 25vw"
           className="object-cover"
-          style={{ transform: `rotate(${rotation}deg)` }}
+          style={{ transform: `rotate(${cssRotation}deg)` }}
           unoptimized
         />
         {img.crop && (
@@ -114,10 +129,21 @@ function GridItem({
       {/* ─── BOTTOM OVERLAY: NAME, SIZE, ACTIONS ─────────────────────── */}
       <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/75 to-transparent px-2 pt-7 pb-1.5">
         <p className="text-[0.68rem] font-semibold text-white truncate mb-1">{img.file.name}</p>
-        <p className="text-[0.6rem] text-white/60 mb-1">{formatBytes(img.file.size)}</p>
+        <p className="text-[0.6rem] text-white/60 mb-1">
+          {formatBytes(img.file.size)}
+          {filter !== "none" && <span className="text-white/85"> · {FILTER_LABELS[filter]}</span>}
+        </p>
         <div className="flex items-center justify-between">
           {wasConverted ? <span className="text-[0.62rem] font-bold uppercase tracking-wide text-white/70">Converted</span> : <span />}
           <div className="flex items-center gap-0.5">
+            <button
+              type="button"
+              onClick={() => onSetFilter(img.id, upcoming)}
+              aria-label={`Filter for ${img.file.name}: ${FILTER_LABELS[filter]}. Tap for ${FILTER_LABELS[upcoming]}.`}
+              className="w-7 h-7 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <Palette size={14} weight={filter !== "none" ? "fill" : "bold"} aria-hidden="true" />
+            </button>
             <button type="button" onClick={() => onCrop(img.id)} aria-label={`Crop ${img.file.name}`} className="w-7 h-7 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-colors">
               <Crop size={14} weight="bold" aria-hidden="true" />
             </button>
@@ -139,11 +165,12 @@ function GridItem({
 const MemoGridItem = memo(GridItem)
 
 export function ImageGrid({
-  images, rotations, errors, retryingIds, convertedIds, accentColor,
-  onToggleSelect, onRotate, onResetRotation, onRemove, onZoom, onCrop, onRetry, onReorder,
+  images, rotations, filters, errors, retryingIds, convertedIds, accentColor,
+  onToggleSelect, onRotate, onResetRotation, onRemove, onZoom, onCrop, onRetry, onReorder, onSetFilter,
 }: {
   images: ImageItem[]
   rotations: Record<string, number>
+  filters: Record<string, ImageFilter>
   errors: ConvertError[]
   retryingIds: Set<string>
   convertedIds: Set<string>
@@ -156,6 +183,7 @@ export function ImageGrid({
   onCrop: (id: string) => void
   onRetry: (id: string) => void
   onReorder: (from: number, to: number) => void
+  onSetFilter: (id: string, filter: ImageFilter) => void
 }) {
   const errorFor = (img: ImageItem) =>
     errors.find((e) => (e.id ? e.id === img.id : e.fileName === img.file.name))
@@ -169,6 +197,7 @@ export function ImageGrid({
             img={img}
             index={index}
             rotation={rotations[img.id] || 0}
+            filter={filters[img.id] || "none"}
             err={errorFor(img)}
             isRetrying={retryingIds.has(img.id)}
             wasConverted={convertedIds.has(img.id)}
@@ -181,9 +210,10 @@ export function ImageGrid({
             onCrop={onCrop}
             onRetry={onRetry}
             onReorder={onReorder}
+            onSetFilter={onSetFilter}
           />
         ))}
       </AnimatePresence>
     </ul>
   )
-                               }
+  } 
