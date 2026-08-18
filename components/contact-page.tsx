@@ -16,7 +16,7 @@ import { HubSelect } from "@/components/contact/hub-select"
 import { FieldErrorTooltip } from "@/components/contact/field-error-tooltip"
 import { withStatusPrefix } from "@/lib/sa-time"
 import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
-//import { ScrollToBottomButton, useScrollToBottom } from "@/components/scroll-to-bottom-button"
+import { ScrollToBottomButton, useScrollToBottom } from "@/components/scroll-to-bottom-button"
 
 const CONTACT_ICONS: Record<string, React.ElementType> = {
   "WhatsApp Us": WhatsappLogo,
@@ -50,7 +50,7 @@ function ContactPageInner() {
   const [copiedTitle, setCopiedTitle] = useState<string | null>(null)
   const formCardRef = useRef<HTMLDivElement>(null)
   const showBackToTop = useBackToTop()
-
+  const showScrollToBottom = useScrollToBottom()
 
   useEffect(() => setMounted(true), [])
 
@@ -400,4 +400,4 @@ export function ContactPage() {
       <ContactPageInner />
     </Suspense>
   )
-    } 
+    }  
