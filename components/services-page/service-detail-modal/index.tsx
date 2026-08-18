@@ -476,6 +476,214 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                 Have questions? Switch to the <span className="font-black" style={{ color: accent }}>Needs</span> tab or chat with us directly.
               </p>
             </div>
+
+      /* components/services-page/service-detail-modal/index.tsx — PART 2 OF 2 */
+/**
+ * This is the continuation of ServiceDetailModal from Part 1.
+ *
+ * ICON LAYOUT CHANGE:
+ * All four action icons (Notice, Tips, Share, Close) now live together in
+ * ONE vertical column pinned to the top-right corner of the card, instead
+ * of being split across two separate header rows. Order top -> bottom:
+ *   1. Notice  (orange "!" circle) — only rendered if svc.notice is set
+ *   2. Tips    (lightbulb)          — always shown
+ *   3. Share
+ *   4. Close   (X)                  — always at the very bottom
+ * All four buttons are the same 36x36px (w-9 h-9) size so they line up
+ * in a clean, evenly-spaced column.
+ */
+
+  return (
+    <div className="fixed inset-0 z-[10200] flex items-center justify-center p-3 md:p-4">
+      {/* Dark backdrop — tapping it closes the modal */}
+      <div className="absolute inset-0 bg-black/55 animate-in fade-in duration-200" onClick={onClose} />
+
+      <div
+        ref={containerRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={svc.name}
+        className="relative w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        style={{ boxShadow: "0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4)" }}
+      >
+        {/* ── Diagonal "Bulk" ribbon — only shows if this service has bulk pricing.
+            Sits at z-10, one layer BELOW the icon stack (z-20) below, so if
+            they ever overlap in a corner the icons stay tappable on top. ── */}
+        {hasBulk && (
+          <div className="absolute top-0 right-0 w-[104px] h-[104px] overflow-hidden pointer-events-none z-10" aria-hidden="true">
+            <span
+              className="absolute block text-center text-[0.66rem] font-black uppercase text-white"
+              style={{
+                top: "28px", right: "-34px", width: "150px", transform: "rotate(45deg)",
+                backgroundColor: BULK_RIBBON_BLUE, padding: "6px 0",
+                boxShadow: "0 4px 10px -2px rgba(30,111,168,0.55), 0 2px 4px -1px rgba(0,0,0,0.25)",
+              }}
+            >
+              Bulk
+            </span>
+          </div>
+        )}
+
+        {/* ══════════════════ TOP-RIGHT ICON STACK ══════════════════
+            All four action buttons, vertically stacked, pinned to the
+            top-right corner of the card — positioned OUTSIDE the normal
+            header grid so it stays fixed near the top regardless of how
+            tall the title/price section grows. */}
+        <div className="absolute top-5 right-5 z-20 flex flex-col items-center gap-1.5">
+
+          {/* 1. NOTICE — orange "!" in a circle. Only exists in the DOM
+                 when this specific service actually has a notice. */}
+          {svc.notice && (
+            <button
+              type="button"
+              onClick={() => setNoticeOpen(true)}
+              aria-label="View service notice"
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+              style={{ backgroundColor: `${BRAND.orange}15`, color: BRAND.orange }}
+            >
+              <WarningCircle size={18} weight="fill" aria-hidden="true" />
+            </button>
+          )}
+
+          {/* 2. TIPS — the lightbulb, always shown */}
+          <button
+            type="button"
+            onClick={() => setTipsOpen(true)}
+            aria-label="View helpful tips"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors duration-150 active:scale-95"
+          >
+            <Lightbulb size={18} weight="fill" aria-hidden="true" />
+          </button>
+
+          {/* 3. SHARE — wrapped in its own relative div so the "Copied!"
+                 toast can position itself off to the side of this exact button */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={handleShare}
+              aria-label="Share this service"
+              className="w-9 h-9 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150 active:scale-95"
+            >
+              <ShareNetwork size={16} weight="bold" aria-hidden="true" />
+            </button>
+            {shareCopied && (
+              <span className="absolute top-1/2 -translate-y-1/2 right-11 whitespace-nowrap text-[0.74rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full shadow-lg animate-in fade-in zoom-in-95 duration-150">
+                Copied!
+              </span>
+            )}
+          </div>
+
+          {/* 4. CLOSE — always last, at the bottom of the stack */}
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="w-9 h-9 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150 active:scale-95"
+          >
+            <X size={16} weight="bold" aria-hidden="true" />
+          </button>
+        </div>
+
+        {/* ══════════════════ HEADER ══════════════════
+            Right-side grid cells are now just empty spacers — the icons
+            that used to live here moved into the icon stack above. Keeping
+            these empty divs preserves the center-column alignment. */}
+        <div className="px-6 pt-6 pb-5 flex-shrink-0">
+
+          <div className={cn(HEADER_GRID, "items-start mb-2")}>
+            <div aria-hidden="true" />
+            <div className="min-w-0 text-center">
+              <div className="flex items-center justify-center gap-1.5 mb-1.5">
+                <HubIcon id={svc.hubId} size={11} color={accent} />
+                <span className="text-[0.72rem] font-black uppercase tracking-widest" style={{ color: accent }}>{hubTitle}</span>
+              </div>
+              <span className="text-[0.72rem] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide mb-2.5 inline-block">
+                {cleanText(svc.sectionTitle)}
+              </span>
+              <h3 className="abh-card-heading text-[1.28rem] leading-tight">{svc.name}</h3>
+            </div>
+            <div aria-hidden="true" />
+          </div>
+
+          <div className="h-px bg-zinc-100 dark:bg-zinc-800 mb-4" />
+
+          <div className={cn(HEADER_GRID, "items-start")}>
+            <div aria-hidden="true" />
+            <div className="flex flex-col items-center gap-1.5">
+              <span className="text-5xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
+              {svc.turnaround && (
+                <span
+                  className="flex items-center gap-1 text-[0.82rem] font-bold pb-0.5 border-b"
+                  style={{ color: accent, borderColor: `${accent}50` }}
+                >
+                  <Clock size={12} weight="bold" aria-hidden="true" />
+                  {svc.turnaround}
+                </span>
+              )}
+            </div>
+            <div aria-hidden="true" />
+          </div>
+        </div>
+
+        {/* ══════════════════ TABS ("Needs" / "Description") ══════════════════
+            Right-side cell here is also now just an empty spacer — X and
+            Share used to live here, now they're both up in the icon stack. */}
+        <div className="px-6 pt-1">
+          <div className={cn(HEADER_GRID, "items-center")}>
+            <div aria-hidden="true" />
+            <div role="tablist" aria-label="Service info sections" className="flex items-center justify-center gap-6 border-b border-zinc-100 dark:border-zinc-800">
+              {tabs.map((t) => {
+                const isActive = tab === t
+                const label = t === "bring" ? "Needs" : "Description"
+                return (
+                  <button
+                    key={t}
+                    role="tab"
+                    aria-selected={isActive}
+                    onClick={() => setTab(t)}
+                    className={cn(
+                      "py-2.5 text-[0.95rem] font-black uppercase tracking-wider transition-colors duration-200 border-b-2 -mb-px",
+                      isActive ? "border-current" : "border-transparent text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300"
+                    )}
+                    style={isActive ? { color: accent } : undefined}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+            <div aria-hidden="true" />
+          </div>
+        </div>
+
+        {/* ══════════════════ TAB CONTENT (scrollable, swipeable) ══════════════════ */}
+        <div
+          className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 min-h-0 text-center"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          {tab === "bring" && (
+            <div className="animate-in fade-in duration-150 flex flex-col items-center w-full">
+              <ul className="w-full">
+                {requirements.map((req, idx) => (
+                  <li key={idx} className="flex items-start gap-3 py-2 text-left">
+                    <span className="shrink-0 font-black text-[0.8rem] text-zinc-400 dark:text-zinc-500 mt-0.5 w-4 text-right">
+                      {idx + 1}.
+                    </span>
+                    <span className="abh-body text-[0.95rem] leading-relaxed">{req}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="abh-muted text-[0.88rem] mt-4 text-center">Not sure? Don&apos;t worry — just WhatsApp us first and we&apos;ll guide you step by step.</p>
+            </div>
+          )}
+          {tab === "about" && (
+            <div className="animate-in fade-in duration-150">
+              {desc ? <p className="abh-body text-base">{desc}</p> : <p className="abh-muted text-base">No description available for this service yet.</p>}
+              <p className="abh-muted mt-5">
+                Have questions? Switch to the <span className="font-black" style={{ color: accent }}>Needs</span> tab or chat with us directly.
+              </p>
+            </div>
           )}
         </div>
 
@@ -533,10 +741,9 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           </a>
 
           {/* NSFAS 2027 ANNOUNCEMENT — only shown on E-Service Hub services.
-              Not tied to any specific item's `notice` field; this is a
-              general heads-up shown across the whole hub, separate from
-              the per-item notice system. Remove this block (and nothing
-              else) once NSFAS officially confirms/passes the 2027 dates. */}
+              General hub-wide heads-up, separate from the per-item notice
+              system. Remove this block once NSFAS officially confirms/
+              passes the 2027 application window. */}
           {svc.hubId === "eservice" && (
             <p className="text-[0.78rem] text-center text-zinc-400 dark:text-zinc-500 leading-relaxed pt-1">
               NSFAS 2027 applications are expected to open around September 2026 (exact date not yet officially confirmed). Ask us for the latest details.
@@ -547,8 +754,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
 
       {/* ══════════════════ POPUPS — mounted outside the main card ══════════════════ */}
 
-      {/* Tips popup — always available (falls back to generic hub tips if this
-          specific item has none) */}
       <TipsModal
         open={tipsOpen}
         onClose={() => setTipsOpen(false)}
@@ -560,9 +765,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         hubTitle={hubTitle}
       />
 
-      {/* Notice popup — ONLY exists in the DOM when this service actually
-          has a notice set. For every normal service, this whole block is
-          skipped entirely. */}
       {svc.notice && (
         <NoticeModal
           open={noticeOpen}
@@ -573,4 +775,4 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
       )}
     </div>
   )
-                }
+          }
