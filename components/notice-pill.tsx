@@ -1,13 +1,7 @@
 // components/notice-pill.tsx
 // Unified notice/announcement pill — canonical style is the Hero's old
-// NSFAS backlog notice. Used by hero-section, gallery-page, services-page.
-//
-// Structure fix: the dismiss X is now ALWAYS a sibling <button>, never an
-// icon living inside the same clickable region as the expand/collapse
-// trigger (that was the "x button inside a button" bug in the old
-// NoticePill — the X sat inside the trigger <button>, so clicking it
-// couldn't do its own thing independently and screen readers announced
-// one confusing nested interactive target instead of two clear ones).
+// NSFAS backlog notice. One component, one style, color only changes by
+// variant. Used by hero-section, gallery-page, services-page.
 "use client"
 
 import { useState } from "react"
@@ -17,44 +11,25 @@ import { BRAND, TOKEN } from "@/lib/brand"
 
 export type NoticeVariant = "success" | "info" | "warning" | "error"
 
-// success/error aren't in lib/brand.ts yet — add them there and swap
-// these out whenever you want a single source of truth for all four.
-const VARIANT_COLOR: Record<NoticeVariant, string> = {
-  success: "#4A8011", // matches your existing brand green (Documents hover accent)
+// Every bg/text/icon triple below is a TOKEN.* or BRAND.* reference, never
+// a raw hex — all four pairs are pre-verified in globals.css.
+const VARIANT_BG: Record<NoticeVariant, string> = {
+  success: BRAND.green,
   info: BRAND.blue,
   warning: TOKEN.warningBg,
-  error: "#B91C1C",
+  error: TOKEN.errorBg,
 }
-
-// warning is the only variant with a pre-verified accessible text color
-// (TOKEN.orangeText, since raw warningBg is too light/amber for text).
-// The other three colors above were chosen dark enough to pass on white
-// or on their own ~8-13% tint — worth a contrast check if you ever swap them.
+const VARIANT_ICON: Record<NoticeVariant, string> = {
+  success: TOKEN.onBrandGreen,
+  info: TOKEN.onBrandBlue,
+  warning: TOKEN.onBrandOrange,
+  error: TOKEN.onDestructive,
+}
 const VARIANT_TEXT: Record<NoticeVariant, string> = {
-  success: VARIANT_COLOR.success,
-  info: VARIANT_COLOR.info,
+  success: TOKEN.greenText,
+  info: TOKEN.blueText,
   warning: TOKEN.orangeText,
-  error: VARIANT_COLOR.error,
-}
-
-function hexToRgbLocal(hex: string) {
-  const clean = hex.replace("#", "")
-  const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean
-  const bigint = parseInt(full, 16)
-  return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 }
-}
-function relativeLuminanceLocal({ r, g, b }: { r: number; g: number; b: number }) {
-  const [rs, gs, bs] = [r, g, b].map((c) => {
-    const s = c / 255
-    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
-  })
-  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs
-}
-function getReadableIconColor(bgHex: string) {
-  const lum = relativeLuminanceLocal(hexToRgbLocal(bgHex))
-  const contrastWhite = 1.05 / (lum + 0.05)
-  const contrastDark = (lum + 0.05) / 0.062
-  return contrastWhite >= contrastDark ? "#ffffff" : "#14202b"
+  error: TOKEN.errorText,
 }
 
 export function NoticePill({
@@ -79,9 +54,9 @@ export function NoticePill({
 }) {
   const [expanded, setExpanded] = useState(false)
 
-  const accent = VARIANT_COLOR[variant]
+  const accent = VARIANT_BG[variant]
+  const iconColor = VARIANT_ICON[variant]
   const textColor = VARIANT_TEXT[variant]
-  const iconOnAccent = getReadableIconColor(accent)
   const tint = isDark ? `${accent}26` : `${accent}14`
 
   return (
@@ -103,7 +78,7 @@ export function NoticePill({
               style={{ backgroundColor: accent }}
               aria-hidden="true"
             >
-              <Icon size={13} weight="fill" style={{ color: iconOnAccent }} />
+              <Icon size={13} weight="fill" style={{ color: iconColor }} />
             </span>
             <span className="text-sm font-bold" style={{ color: textColor }}>
               {collapsedLabel}
@@ -143,7 +118,7 @@ export function NoticePill({
               style={{ backgroundColor: accent }}
               aria-hidden="true"
             >
-              <Icon size={16} weight="fill" style={{ color: iconOnAccent }} />
+              <Icon size={16} weight="fill" style={{ color: iconColor }} />
             </span>
             <span className="flex flex-col gap-0.5">
               <span className="text-[0.7rem] font-black uppercase tracking-widest" style={{ color: textColor }}>
