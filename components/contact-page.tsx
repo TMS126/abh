@@ -16,6 +16,7 @@ import { HubSelect } from "@/components/contact/hub-select"
 import { FieldErrorTooltip } from "@/components/contact/field-error-tooltip"
 import { withStatusPrefix } from "@/lib/sa-time"
 import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
+import { ScrollToBottomButton, useScrollToBottom } from "@/components/scroll-to-bottom-button"
 
 const CONTACT_ICONS: Record<string, React.ElementType> = {
   "WhatsApp Us": WhatsappLogo,
@@ -49,6 +50,7 @@ function ContactPageInner() {
   const [copiedTitle, setCopiedTitle] = useState<string | null>(null)
   const formCardRef = useRef<HTMLDivElement>(null)
   const showBackToTop = useBackToTop()
+  const showScrollToBottom = useScrollToBottom()
 
   useEffect(() => setMounted(true), [])
 
@@ -343,9 +345,6 @@ function ContactPageInner() {
                   )}
                 </div>
 
-                {/* FIX: was BRAND.blue on a WhatsApp action — now the shared
-                    .abh-wa-btn class (accessible green, matches the WhatsApp
-                    icon cards above and the sticky bar below). */}
                 <button
                   onClick={handleSubmit}
                   disabled={!isFormValid}
@@ -364,9 +363,6 @@ function ContactPageInner() {
         <FAQAccordion />
       </div>
 
-      {/* FIX: raw #25D366 (fails WCAG at ~2:1 with white text) replaced
-          with the shared .abh-wa-btn class, which uses the AA-safe
-          whatsappAccessible pairing. */}
       <div className="md:hidden fixed bottom-0 inset-x-0 z-[9985] px-4 pb-4 pt-2 bg-gradient-to-t from-background via-background to-transparent">
         <a
           href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}`}
@@ -379,6 +375,7 @@ function ContactPageInner() {
         </a>
       </div>
 
+      <ScrollToBottomButton visible={showScrollToBottom} />
       <BackToTopButton visible={showBackToTop} bottomClass="bottom-24 md:bottom-6" />
     </div>
   )
