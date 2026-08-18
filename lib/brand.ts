@@ -50,6 +50,10 @@ export const TOKEN = {
   // Add to the TOKEN object if not already present:
 errorBg: "var(--brand-error-bg)",
 errorText: "var(--brand-error-text)",
+onBrandGreen: "var(--on-brand-green)",
+onBrandBlue: "var(--on-brand-blue)",
+onBrandOrange: "var(--on-brand-orange)",
+onDestructive: "var(--on-destructive)",
 } as const
 
 // ─── RAW HEX — ONLY for JS math that CSS vars can't do (alpha-blended
