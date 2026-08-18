@@ -1,13 +1,11 @@
-/* app/globals.css — PART 1 of 2 (paste first, then append Part 2)*/
+/* app/globals.css — full file (paste over the current one) */
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-/* ── Global layout force ── */
 *, *::before, *::after { box-sizing: border-box; min-width: 0; }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-behavior: smooth; overflow-x: hidden; }
 body { overflow-x: hidden; min-height: 100dvh; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
-/* Scroll lock — applied by Gallery modal */
 html[data-scroll-locked] body { overflow: hidden; }
 
 img, video, svg, canvas { max-width: 100%; display: block; }
@@ -17,30 +15,22 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
 
 /* ═════════════════════════════════════════════════════════════════════════════
    BRAND TOKEN SYSTEM — SUPER SOURCE
-   This file (mirrored in lib/brand.ts) is the ONLY place color decisions get
-   made. No component may hardcode a hex value, a Tailwind color utility
-   (bg-green-500, text-white, etc.), or invent a new brand color inline.
+   Two-layer rule unchanged (raw palette + --on-* semantic pairs).
 
-   ── THE TWO-LAYER RULE ──
-   1. RAW PALETTE  — swatches only. Never use directly as a text color on
-      a matching-family background without checking layer 2.
-   2. SEMANTIC PAIRS ("--on-*") — for every color used as a solid
-      background/surface anywhere in the app, there is a matching --on-*
-      token below with its exact WCAG contrast ratio documented in a
-      comment. If you introduce a NEW background color, you must add its
-      --on-* pair here — computed, not guessed — before using it.
-
-   ── KNOWN TRAP ──
-   --brand-green (#4A8011, deep/muted) and --brand-whatsapp (#25D366,
-   bright) are BOTH "green" but are NOT interchangeable as button
-   backgrounds:
-     - white text on --brand-green   → 4.79:1 (AA pass)
-     - white text on --brand-whatsapp → ~1.98:1 (FAIL, unreadable)
-   Always use var(--on-whatsapp) (dark navy) on raw WhatsApp green, never
-   white. If a component needs white text on a WhatsApp-family button
-   (e.g. a solid CTA where white reads better than navy), use
-   --brand-whatsapp-accessible instead — a same-hue, AA-safe variant
-   built for exactly that, paired with var(--on-whatsapp-accessible).
+   ── NEW: THEME-AWARE TEXT TOKENS ──
+   --brand-blue-text / --brand-orange-text / --brand-green-text used to be
+   measured against white ONLY, then used as inline text color anywhere on
+   the page — including dark mode, where nothing ever overrode them. Verified
+   with contrastRatio() against #0D1B2A (page) and #1A2C3E (card):
+     --brand-orange-text  vs dark bg = 3.79  vs dark card = 3.11  (FAIL both)
+     --brand-blue-text    vs dark bg = 1.37  vs dark card = 1.12  (FAIL both)
+     --brand-green-text   vs dark bg = 3.01  vs dark card = 2.46  (FAIL both)
+   Fixed the same way --primary/--accent already are: the SAME variable name
+   gets a hue-preserving override inside .dark below, verified ≥4.5:1 against
+   BOTH dark surfaces. Any component using var(--brand-orange-text) etc. is
+   now correct in both themes automatically — no per-component dark: class
+   needed, and no new-component can reintroduce this bug by using the token
+   normally.
 ───────────────────────────────────────────────────────────────────────────── */
 :root {
   /* ── Raw palette ── */
@@ -51,53 +41,54 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --brand-light-orange: #F9D1B0;
 
   --brand-blue: #1E6FA8;         /* WCAG AA — 5.39:1 vs white */
-  --brand-blue-mid: #15537D;
-  --brand-blue-dark: #0F3F66;
+  --brand-blue-mid: #15537D;     /* WCAG AA — 8.19:1 vs white */
+  --brand-blue-dark: #0F3F66;    /* WCAG AA — 10.92:1 vs white */
   --brand-green-dark: #4C8212;   /* WCAG AA — 4.66:1 vs white */
   --brand-orange-dark: #B06225;  /* WCAG AA — 4.55:1 vs white */
 
-  --brand-teal: #0F766E;
-  --brand-teal-dark: #115E59;
-  --brand-teal-light: #99F6E4;
+  --brand-teal: #0F766E;         /* WCAG AA — 5.47:1 vs white */
+  --brand-teal-dark: #115E59;    /* WCAG AA — 7.58:1 vs white */
+  --brand-teal-light: #99F6E4;   /* WCAG AA — 10.02:1 vs --brand-dark-100 */
 
   --brand-neutral-100: #EDEDED;
   --brand-neutral-200: #F4F4F4;
   --brand-neutral-300: #D6D6D6;
-  --brand-neutral-400: #9A9A9A;
+  --brand-neutral-400: #9A9A9A;  /* on-pastel text = 4.49:1 — LARGE TEXT/ICONS ONLY, not body copy */
   --brand-neutral-500: #747474;  /* WCAG AA — 4.67:1 vs white */
 
-  --brand-dark-100: #333333;
-  --brand-dark-200: #555555;
+  --brand-dark-100: #333333;     /* WCAG AA — 12.63:1 vs white */
+  --brand-dark-200: #555555;     /* WCAG AA — 7.46:1 vs white */
   --brand-tech-grey-dark: #B8CCE0;  /* Tech Hub dark-mode accent — icon/text use only, not a background */
-  --brand-green-deep: #3E6B0E;
+  --brand-green-deep: #3E6B0E;   /* WCAG AA — 6.34:1 vs white */
   --brand-orange-brown: #A86530; /* WCAG AA — 4.60:1 vs white */
   --brand-orange-accessible: #9A4B12;      /* WCAG AA — 6.2:1 vs white */
   --brand-orange-accessible-dark: #7A3B0E; /* WCAG AAA — 8.5:1 vs white */
   --brand-white: #FFFFFF;
 
   --brand-whatsapp: #25D366;     /* white text FAILS (~1.98:1) — see --on-whatsapp below */
-  --brand-whatsapp-dark: #1ebe5a;
+  --brand-whatsapp-dark: #1ebe5a; /* hover state — --on-whatsapp text still 7.28:1 here, verified */
 
-  /* Same-hue, WCAG AA-safe variants for solid buttons that need WHITE
-     text instead of the navy pairing above. Mirrors lib/brand.ts's
-     whatsappAccessible / whatsappAccessibleDark exactly — do not let
-     these two files drift again. */
   --brand-whatsapp-accessible: #178540;      /* WCAG AA — 4.70:1 with white text */
   --brand-whatsapp-accessible-dark: #125F2F; /* hover state — 7.77:1 with white text */
 
-  --brand-blue-text: #16325f;
-  --brand-orange-text: #b85c17;
-  --brand-green-text: #4d6f2f;
+  /* Theme-aware — overridden in .dark below, verified ≥4.5:1 against both
+     dark surfaces there. Light-mode values below are the original, still
+     verified vs white. */
+  --brand-blue-text: #16325f;    /* 12.68:1 vs white */
+  --brand-orange-text: #b85c17;  /* 4.58:1 vs white */
+  --brand-green-text: #4d6f2f;   /* 5.78:1 vs white */
 
-  --brand-whatsapp-text: #0f172a; /* AAA — 9.0:1 on --brand-whatsapp */
+  --brand-whatsapp-text: #0f172a; /* AAA — 9.0:1 on --brand-whatsapp (fixed pairing, not page text — no dark variant needed) */
 
   /* ── Semantic pairs (surface → on-surface). Every entry = verified ratio. ── */
-  --on-brand-blue: #FFFFFF;       /* 5.39:1 AA — for brand-blue / blue-mid / blue-dark bg */
-  --on-brand-green: #FFFFFF;      /* 4.79:1 AA — for brand-green bg (NOT whatsapp green) */
-  --on-brand-orange: #FFFFFF;     /* 4.67:1 AA — for brand-orange bg */
+  --on-brand-blue: #FFFFFF;       /* 5.39–10.92:1 AA — for brand-blue / blue-mid / blue-dark bg */
+  --on-brand-green: #FFFFFF;      /* 4.66–6.34:1 AA — for brand-green / green-dark / green-deep bg (NOT whatsapp green) */
+  --on-brand-orange: #FFFFFF;     /* 4.55–8.54:1 AA — for brand-orange / orange-dark / orange-brown / orange-accessible(-dark) bg */
+  --on-brand-teal: #FFFFFF;       /* 5.47–7.58:1 AA — for brand-teal / teal-dark bg */
   --on-whatsapp: var(--brand-whatsapp-text);            /* 9.0:1 AAA — for raw brand-whatsapp bg. Never white. */
   --on-whatsapp-accessible: #FFFFFF;                    /* 4.70:1 AA (7.77:1 on the -dark hover variant) */
-  --on-pastel: var(--brand-dark-100);        /* dark navy for light-blue/light-green/light-orange/neutral-100/200/300 bg chips */
+  --on-pastel: var(--brand-dark-100);        /* dark navy for light-blue/light-green/light-orange/neutral-100/200/300/teal-light bg chips. Vs neutral-400: 4.49:1 — large text/icons only. */
+  --on-neutral-dark: #FFFFFF;     /* 7.46–12.63:1 AA — for brand-dark-100 / brand-dark-200 / neutral-500 bg */
   --on-destructive: #FFFFFF;      /* 4.83:1 AA — paired with corrected --destructive below */
 
   --radius: 14px;
@@ -153,6 +144,15 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --footer-bg: #091524;
   --shadow: 0 4px 28px rgba(0, 0, 0, 0.3);
   --card-border: #243648;
+
+  /* FIX — the actual bug in the screenshot. These three were previously
+     unset in .dark, so they silently inherited the light-mode value and
+     rendered as low-contrast text on dark surfaces anywhere they were
+     used directly (badges, eyebrows, inline labels). Each verified ≥4.5:1
+     against BOTH #0D1B2A and #1A2C3E. */
+  --brand-blue-text: #6693db;    /* 5.60:1 vs dark bg, 4.59:1 vs dark card */
+  --brand-orange-text: #e3731f;  /* 5.58:1 vs dark bg, 4.57:1 vs dark card */
+  --brand-green-text: #70a144;   /* 5.69:1 vs dark bg, 4.66:1 vs dark card */
 }
 
 /* ── Tailwind theme mapping ── */
@@ -224,26 +224,26 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --color-on-brand-blue: var(--on-brand-blue);
   --color-on-brand-green: var(--on-brand-green);
   --color-on-brand-orange: var(--on-brand-orange);
+  --color-on-brand-teal: var(--on-brand-teal);
   --color-on-whatsapp: var(--on-whatsapp);
   --color-on-whatsapp-accessible: var(--on-whatsapp-accessible);
   --color-on-pastel: var(--on-pastel);
+  --color-on-neutral-dark: var(--on-neutral-dark);
   --color-on-destructive: var(--on-destructive);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-     }
-   
-/* app/globals.css — PART 2 of 2 (append directly after Part 1)*/
+}
 
 @layer base {
   * { @apply border-border outline-ring/50; }
   body {
-  @apply bg-background text-foreground;
-  font-size: 20px;
-  line-height: 1.65;
-     }
+    @apply bg-background text-foreground;
+    font-size: 20px;
+    line-height: 1.65;
+  }
 }
 
 /* ── Skip link ── */
@@ -292,52 +292,52 @@ button, a, [role="button"] {
 /* ── Component system ── */
 @layer components {
 
-  /* Headings — Jost (display/impact) */
-.abh-page-title {
-  @apply font-heading font-black text-4xl md:text-5xl tracking-tight leading-tight text-center;
-  color: var(--brand-blue-dark);
-}
-.dark .abh-page-title { color: var(--brand-light-blue); }
+  .abh-page-title {
+    @apply font-heading font-black text-4xl md:text-5xl tracking-tight leading-tight text-center;
+    color: var(--brand-blue-dark);
+  }
+  .dark .abh-page-title { color: var(--brand-light-blue); }
 
-.abh-section-heading {
-  @apply font-heading font-black text-2xl md:text-3xl tracking-tight leading-snug;
-  color: var(--foreground);
-}
+  .abh-section-heading {
+    @apply font-heading font-black text-2xl md:text-3xl tracking-tight leading-snug;
+    color: var(--foreground);
+  }
 
-.abh-card-heading {
-  @apply font-heading font-black text-base tracking-tight leading-snug;
-  color: var(--card-foreground);
-}
+  .abh-card-heading {
+    @apply font-heading font-black text-base tracking-tight leading-snug;
+    color: var(--card-foreground);
+  }
 
+  /* NOTE: --brand-blue-text is now theme-aware (see .dark block above), so
+     this manual override is redundant but harmless — kept as-is. */
   .abh-eyebrow {
-  @apply font-heading font-black text-xs uppercase tracking-widest;
-  color: var(--brand-blue-text);
-}
-.dark .abh-eyebrow { color: var(--brand-light-blue); }
+    @apply font-heading font-black text-xs uppercase tracking-widest;
+    color: var(--brand-blue-text);
+  }
+  .dark .abh-eyebrow { color: var(--brand-light-blue); }
 
-.abh-btn-label {
-  @apply font-heading font-black text-base tracking-wide;
-}
+  .abh-btn-label {
+    @apply font-heading font-black text-base tracking-wide;
+  }
 
-  /* Body copy — Inter (readable) */
   .abh-body {
-  @apply font-sans font-medium text-base md:text-lg leading-relaxed;
-  color: var(--muted-foreground);
-}
+    @apply font-sans font-medium text-base md:text-lg leading-relaxed;
+    color: var(--muted-foreground);
+  }
 
-.abh-muted {
-  @apply font-sans font-medium text-sm md:text-base leading-relaxed;
-  color: var(--muted-foreground);
-}
+  .abh-muted {
+    @apply font-sans font-medium text-sm md:text-base leading-relaxed;
+    color: var(--muted-foreground);
+  }
 
-.abh-tagline {
-  @apply font-sans font-medium text-base md:text-lg;
-  color: var(--muted-foreground);
-}
+  .abh-tagline {
+    @apply font-sans font-medium text-base md:text-lg;
+    color: var(--muted-foreground);
+  }
 
-.abh-price {
-  @apply font-heading font-black text-[1.35rem] md:text-[1.5rem] leading-none;
-}
+  .abh-price {
+    @apply font-heading font-black text-[1.35rem] md:text-[1.5rem] leading-none;
+  }
 
   .abh-page-header {
     @apply px-4 md:px-8 py-8 md:py-12 text-center;
@@ -352,9 +352,6 @@ button, a, [role="button"] {
     box-shadow: 0 2px 20px -2px rgba(0, 0, 0, 0.55), 0 1px 6px -1px rgba(0, 0, 0, 0.3);
   }
 
-  /* Interactive card shadow — unified resting weight used on ALL cards
-     across every page (hub cards, strip cards, contact cards, etc).
-     Hover lifts slightly. Kept intentionally subtle for a minimal feel. */
   .abh-shadow-card {
     box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.09), 0 1px 4px -1px rgba(0, 0, 0, 0.05);
   }
@@ -368,7 +365,6 @@ button, a, [role="button"] {
     box-shadow: 0 8px 28px -4px rgba(0, 0, 0, 0.60), 0 3px 10px -2px rgba(0, 0, 0, 0.38);
   }
 
-  /* Container shadow for a group of small nested rows (e.g. HubModal service list) */
   .abh-shadow-nested-group {
     box-shadow: 0 2px 10px -2px rgba(0, 0, 0, 0.06);
   }
@@ -376,7 +372,6 @@ button, a, [role="button"] {
     box-shadow: 0 2px 14px -2px rgba(0, 0, 0, 0.4);
   }
 
-  /* Individual small row inside a nested group */
   .abh-shadow-nested-item {
     box-shadow: 0 1px 6px -1px rgba(0, 0, 0, 0.06);
   }
@@ -384,14 +379,12 @@ button, a, [role="button"] {
     box-shadow: 0 1px 8px -1px rgba(0, 0, 0, 0.35);
   }
 
-  /* Full-screen modal shadow — clean neutral drop shadow only. */
   .abh-shadow-modal {
     box-shadow:
       0 45px 100px -20px rgba(0, 0, 0, 0.55),
       0 20px 48px -14px rgba(0, 0, 0, 0.4);
   }
 
-  /* Small floating popover/dropdown panel shadow, both themes */
   .abh-shadow-popover {
     box-shadow: 0 20px 44px -12px rgba(0, 0, 0, 0.22);
   }
@@ -399,10 +392,6 @@ button, a, [role="button"] {
     box-shadow: 0 20px 44px -12px rgba(0, 0, 0, 0.65);
   }
 
-  /* Gallery project carousel card — resting shadow + accent-tinted hover glow
-     via the --hub-shadow custom property set inline per-project by the
-     component (already-set CSS var, just now actually consumed by CSS
-     instead of being duplicated in a JS onMouseEnter handler). */
   .abh-shadow-project-card {
     box-shadow: 0 16px 30px -14px rgba(0, 0, 0, 0.45), 0 6px 14px -8px rgba(0, 0, 0, 0.3);
     transition: box-shadow 0.3s ease;
@@ -410,17 +399,11 @@ button, a, [role="button"] {
   .abh-shadow-project-card:hover {
     box-shadow: 0 20px 36px -14px rgba(0, 0, 0, 0.55), 0 8px 16px -8px rgba(0, 0, 0, 0.35);
   }
-/* Overlay/lightbox image shadow — backdrop is already near-black, so a
-     dark shadow is invisible regardless of alpha. Uses a subtle light glow
-     instead to separate the image from the black backdrop. */
+
   .abh-shadow-zoom-image {
     box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 50px rgba(255, 255, 255, 0.05);
   }
 
-   /* Named equivalents of Tailwind's built-in shadow/xl/inner utilities —
-     same visual values, just brought under the abh- naming convention so
-     every shadow in the codebase is named and centralized, not a mix of
-     custom classes and framework defaults. */
   .abh-shadow-badge {
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
   }
@@ -430,38 +413,26 @@ button, a, [role="button"] {
   .abh-shadow-handle {
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   }
-   /* Contact page's 4 quick-link cards — .abh-card's own shadow (0.08 alpha)
-   is too faint to read against a light background, and pure black at low
-   alpha disappears against the dark navy page bg in dark mode. This gives
-   both themes a clearly visible resting shadow, plus a subtle light-alpha
-   edge in dark mode (black shadows can't separate a card from a
-   near-black page, a faint white-ish ring does). */
-.abh-shadow-contact-card {
-  box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.09), 0 1px 4px -1px rgba(0, 0, 0, 0.05);
-}
-.dark .abh-shadow-contact-card {
-  box-shadow: 0 2px 16px -2px rgba(0, 0, 0, 0.50), 0 0 0 1px rgba(255, 255, 255, 0.04), 0 1px 4px -1px rgba(0, 0, 0, 0.28);
-}
-.abh-shadow-contact-card:hover {
-  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.13), 0 3px 8px -2px rgba(0, 0, 0, 0.07);
-}
-.dark .abh-shadow-contact-card:hover {
-  box-shadow: 0 8px 28px -4px rgba(0, 0, 0, 0.60), 0 0 0 1px rgba(255, 255, 255, 0.06), 0 3px 10px -2px rgba(0, 0, 0, 0.38);
-}
-   .abh-shadow-elevated {
-  box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.09), 0 1px 4px -1px rgba(0, 0, 0, 0.05);
-}
-.dark .abh-shadow-elevated {
-  box-shadow: 0 2px 16px -2px rgba(0, 0, 0, 0.50), 0 1px 4px -1px rgba(0, 0, 0, 0.28);
-}
 
+  .abh-shadow-contact-card {
+    box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.09), 0 1px 4px -1px rgba(0, 0, 0, 0.05);
+  }
+  .dark .abh-shadow-contact-card {
+    box-shadow: 0 2px 16px -2px rgba(0, 0, 0, 0.50), 0 0 0 1px rgba(255, 255, 255, 0.04), 0 1px 4px -1px rgba(0, 0, 0, 0.28);
+  }
+  .abh-shadow-contact-card:hover {
+    box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.13), 0 3px 8px -2px rgba(0, 0, 0, 0.07);
+  }
+  .dark .abh-shadow-contact-card:hover {
+    box-shadow: 0 8px 28px -4px rgba(0, 0, 0, 0.60), 0 0 0 1px rgba(255, 255, 255, 0.06), 0 3px 10px -2px rgba(0, 0, 0, 0.38);
+  }
+  .abh-shadow-elevated {
+    box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.09), 0 1px 4px -1px rgba(0, 0, 0, 0.05);
+  }
+  .dark .abh-shadow-elevated {
+    box-shadow: 0 2px 16px -2px rgba(0, 0, 0, 0.50), 0 1px 4px -1px rgba(0, 0, 0, 0.28);
+  }
 
-  /* FIX: was `background: var(--border)` at 1px — in dark mode --border
-     (#243648) sits almost flush against the page's dark navy background
-     (#0D1B2A), making this divider effectively invisible. Now a solid
-     2px brand-blue line (light-blue in dark mode) with a soft glow, so it
-     reads clearly in both themes. Affects every page using .abh-divider,
-     not just one — this was a shared bug, not a per-page styling choice. */
   .abh-divider {
     @apply mt-6 h-[2px] w-[160px] max-w-full mx-auto rounded-full;
     background: var(--brand-blue);
@@ -472,56 +443,40 @@ button, a, [role="button"] {
     box-shadow: 0 0 8px rgba(169, 214, 242, 0.5);
   }
 
-
-/* FIX: color now pulls from --on-whatsapp instead of hardcoding a hex.
-   This IS the correct pairing (9.0:1 AAA) — do not change to white text. */
-.abh-wa-btn {
-  @apply font-heading flex items-center justify-center gap-2 font-black text-base rounded-[14px] px-6 py-3 transition-all duration-200 active:scale-95 hover:-translate-y-0.5;
-  background: var(--brand-whatsapp);
-  color: var(--on-whatsapp);
-}
-.abh-wa-btn:hover { background: var(--brand-whatsapp-dark); }
-
-/* FIX: dropped hardcoded `text-white` @apply in favor of var(--on-brand-blue)
-   so this button automatically stays correct if the blue swatch ever changes. */
-.abh-btn-primary {
-  @apply font-heading inline-flex items-center justify-center gap-2 font-black text-base rounded-[14px] px-6 py-3 transition-all duration-200 active:scale-95 hover:-translate-y-0.5 shadow-sm;
-  background: var(--brand-blue);
-  color: var(--on-brand-blue);
-}
-
-/* FIX: same as above, now pulls from var(--on-brand-orange) instead of
-   a hardcoded `text-white` utility. */
-.abh-btn-cta {
-  @apply font-heading inline-flex items-center justify-center gap-3 font-black text-base rounded-[14px] px-6 py-4 transition-all duration-300 active:scale-95;
-  background: var(--brand-orange);
-  color: var(--on-brand-orange);
-}
-  .abh-btn-cta:hover { background: var(--brand-orange-dark); }
-   }
-
-   /* ── Dark-mode card color unification ──
-     Many components historically hardcoded dark:bg-zinc-900 / dark:bg-zinc-950
-     directly instead of using the --card token, so "cards" across the site
-     ended up as several different near-black shades instead of one
-     consistent navy. This forces every one of those Tailwind utility
-     classes back to the single --card color in dark mode only — light mode
-     is completely untouched, since these rules are scoped under .dark. */
-  .dark .dark\:bg-zinc-900,
-  .dark .dark\:bg-zinc-950,
-  .dark .dark\:bg-zinc-900\/95,
-  .dark .dark\:bg-zinc-900\/60,
-  .dark .dark\:bg-zinc-950\/95,
-  .dark .dark\:bg-zinc-950\/60,
-  .dark .dark\:bg-zinc-900\/40,
-  .dark .dark\:bg-zinc-900\/50 {
-    background-color: var(--card) !important;
+  .abh-wa-btn {
+    @apply font-heading flex items-center justify-center gap-2 font-black text-base rounded-[14px] px-6 py-3 transition-all duration-200 active:scale-95 hover:-translate-y-0.5;
+    background: var(--brand-whatsapp);
+    color: var(--on-whatsapp);
   }
+  .abh-wa-btn:hover { background: var(--brand-whatsapp-dark); }
+
+  .abh-btn-primary {
+    @apply font-heading inline-flex items-center justify-center gap-2 font-black text-base rounded-[14px] px-6 py-3 transition-all duration-200 active:scale-95 hover:-translate-y-0.5 shadow-sm;
+    background: var(--brand-blue);
+    color: var(--on-brand-blue);
+  }
+
+  .abh-btn-cta {
+    @apply font-heading inline-flex items-center justify-center gap-3 font-black text-base rounded-[14px] px-6 py-4 transition-all duration-300 active:scale-95;
+    background: var(--brand-orange);
+    color: var(--on-brand-orange);
+  }
+  .abh-btn-cta:hover { background: var(--brand-orange-dark); }
+}
+
+.dark .dark\:bg-zinc-900,
+.dark .dark\:bg-zinc-950,
+.dark .dark\:bg-zinc-900\/95,
+.dark .dark\:bg-zinc-900\/60,
+.dark .dark\:bg-zinc-950\/95,
+.dark .dark\:bg-zinc-950\/60,
+.dark .dark\:bg-zinc-900\/40,
+.dark .dark\:bg-zinc-900\/50 {
+  background-color: var(--card) !important;
+}
 
 /* ═════════════════════════════════════════════════════════════════════════════
    SEMANTIC ON-COLOR UTILITIES — SUPER SOURCE
-   Drop-in replacements for hardcoded `text-white` / `text-black` on any
-   brand-colored background. Use these instead of guessing.
    e.g. <div className="bg-brand-whatsapp abh-on-whatsapp"> not
         <div className="bg-brand-whatsapp text-white">
 ───────────────────────────────────────────────────────────────────────────── */
@@ -529,8 +484,10 @@ button, a, [role="button"] {
   .abh-on-blue      { color: var(--on-brand-blue); }
   .abh-on-green     { color: var(--on-brand-green); }
   .abh-on-orange    { color: var(--on-brand-orange); }
+  .abh-on-teal      { color: var(--on-brand-teal); }
   .abh-on-whatsapp  { color: var(--on-whatsapp); }   /* dark navy — NEVER white */
-  .abh-on-pastel    { color: var(--on-pastel); }     /* for light-blue/light-green/light-orange/neutral-100-300 chips */
+  .abh-on-pastel    { color: var(--on-pastel); }     /* for light-blue/light-green/light-orange/neutral-100-300/teal-light chips */
+  .abh-on-neutral-dark { color: var(--on-neutral-dark); } /* for dark-100/dark-200/neutral-500 bg */
   .abh-on-destructive { color: var(--on-destructive); }
   .abh-on-whatsapp-accessible { color: var(--on-whatsapp-accessible); }
-   }
+     } 
