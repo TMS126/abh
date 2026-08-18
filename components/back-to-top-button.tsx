@@ -1,4 +1,4 @@
-components/back-to-top-button.tsx// components/back-to-top-button.tsx
+// components/back-to-top-button.tsx
 // Shared scroll-to-top button — previously copy-pasted identically across
 // contact-page.tsx, services-page/index.tsx, about-page.tsx, and
 // gallery-page.tsx. bottomClass lets contact-page clear its sticky mobile
