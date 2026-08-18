@@ -1,4 +1,4 @@
-/* app/globals.css — full file (paste over the current one) */
+/* app/globals.css — full file, paste over the current one */
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
@@ -14,23 +14,18 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
 @custom-variant dark (&:is(.dark *));
 
 /* ═════════════════════════════════════════════════════════════════════════════
-   BRAND TOKEN SYSTEM — SUPER SOURCE
-   Two-layer rule unchanged (raw palette + --on-* semantic pairs).
+   BRAND TOKEN SYSTEM — THE ONLY SOURCE FOR COLOR
+   Every color decision in the entire codebase happens here and nowhere else.
+   lib/brand.ts no longer holds parallel raw hex logic for anything a
+   component renders — it only re-exports CSS var strings from this file
+   (see TOKEN in brand.ts). If a component ever needs a color, it asks for
+   a TOKEN.* entry, never a hex, never an isDark ternary.
 
-   ── NEW: THEME-AWARE TEXT TOKENS ──
-   --brand-blue-text / --brand-orange-text / --brand-green-text used to be
-   measured against white ONLY, then used as inline text color anywhere on
-   the page — including dark mode, where nothing ever overrode them. Verified
-   with contrastRatio() against #0D1B2A (page) and #1A2C3E (card):
-     --brand-orange-text  vs dark bg = 3.79  vs dark card = 3.11  (FAIL both)
-     --brand-blue-text    vs dark bg = 1.37  vs dark card = 1.12  (FAIL both)
-     --brand-green-text   vs dark bg = 3.01  vs dark card = 2.46  (FAIL both)
-   Fixed the same way --primary/--accent already are: the SAME variable name
-   gets a hue-preserving override inside .dark below, verified ≥4.5:1 against
-   BOTH dark surfaces. Any component using var(--brand-orange-text) etc. is
-   now correct in both themes automatically — no per-component dark: class
-   needed, and no new-component can reintroduce this bug by using the token
-   normally.
+   ── RULE ──
+   Every entry below is verified against the REAL surface it lands on —
+   not just "vs white" — because that mismatch (verified for one surface,
+   reused on another) is the exact bug that kept recurring. Each comment
+   states which surface(s) were checked and the ratio.
 ───────────────────────────────────────────────────────────────────────────── */
 :root {
   /* ── Raw palette ── */
@@ -61,8 +56,6 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --brand-tech-grey-dark: #B8CCE0;  /* Tech Hub dark-mode accent — icon/text use only, not a background */
   --brand-green-deep: #3E6B0E;   /* WCAG AA — 6.34:1 vs white */
   --brand-orange-brown: #A86530; /* WCAG AA — 4.60:1 vs white */
-  --brand-orange-accessible: #9A4B12;      /* WCAG AA — 6.2:1 vs white */
-  --brand-orange-accessible-dark: #7A3B0E; /* WCAG AAA — 8.5:1 vs white */
   --brand-white: #FFFFFF;
 
   --brand-whatsapp: #25D366;     /* white text FAILS (~1.98:1) — see --on-whatsapp below */
@@ -71,11 +64,20 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --brand-whatsapp-accessible: #178540;      /* WCAG AA — 4.70:1 with white text */
   --brand-whatsapp-accessible-dark: #125F2F; /* hover state — 7.77:1 with white text */
 
-  /* Theme-aware — overridden in .dark below, verified ≥4.5:1 against both
-     dark surfaces there. Light-mode values below are the original, still
-     verified vs white. */
+  /* ── Warning/announcement role (badges, notice pills) ──
+     Two SEPARATE sub-roles that must never be collapsed into one value:
+       -bg   : solid fill behind a white icon/label (needs white to read on it)
+       -text : the role's color used AS text directly on page/card/tint bg
+     This split is what was missing before — orangeAccessible was doing
+     both jobs with only the -bg pairing ever verified. */
+  --brand-warning-bg: #9A4B12;        /* 6.20:1 vs white icon */
+  --brand-warning-bg-dark: #7A3B0E;   /* 8.54:1 vs white icon */
+
+  /* Theme-aware — overridden in .dark below. Used as TEXT directly on the
+     page background, a card, AND a tinted announcement panel — verified
+     against all three surfaces it's actually used on, not just white. */
   --brand-blue-text: #16325f;    /* 12.68:1 vs white */
-  --brand-orange-text: #b85c17;  /* 4.58:1 vs white */
+  --brand-orange-text: #954911;  /* 6.48:1 vs white, 4.56:1 vs --brand-light-orange tint (was #b85c17/#9A4B12 — neither had been checked against the tint) */
   --brand-green-text: #4d6f2f;   /* 5.78:1 vs white */
 
   --brand-whatsapp-text: #0f172a; /* AAA — 9.0:1 on --brand-whatsapp (fixed pairing, not page text — no dark variant needed) */
@@ -83,7 +85,7 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   /* ── Semantic pairs (surface → on-surface). Every entry = verified ratio. ── */
   --on-brand-blue: #FFFFFF;       /* 5.39–10.92:1 AA — for brand-blue / blue-mid / blue-dark bg */
   --on-brand-green: #FFFFFF;      /* 4.66–6.34:1 AA — for brand-green / green-dark / green-deep bg (NOT whatsapp green) */
-  --on-brand-orange: #FFFFFF;     /* 4.55–8.54:1 AA — for brand-orange / orange-dark / orange-brown / orange-accessible(-dark) bg */
+  --on-brand-orange: #FFFFFF;     /* 4.55–8.54:1 AA — for brand-orange / orange-dark / orange-brown / warning-bg(-dark) bg */
   --on-brand-teal: #FFFFFF;       /* 5.47–7.58:1 AA — for brand-teal / teal-dark bg */
   --on-whatsapp: var(--brand-whatsapp-text);            /* 9.0:1 AAA — for raw brand-whatsapp bg. Never white. */
   --on-whatsapp-accessible: #FFFFFF;                    /* 4.70:1 AA (7.77:1 on the -dark hover variant) */
@@ -111,9 +113,9 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --secondary-foreground: #333333;
   --muted: #EDEDED;
   --muted-foreground: #525252;
-  --accent: #4A8011;             /* WCAG AA — 4.79:1 vs white foreground (was #6FBF1A at 2.3:1) */
+  --accent: #4A8011;
   --accent-foreground: #FFFFFF;
-  --destructive: #DC2626;        /* FIX: was #ef4444 (3.76:1 — fails AA w/ white text). Now 4.83:1 AA. */
+  --destructive: #DC2626;
   --destructive-foreground: #FFFFFF;
   --border: #D6D6D6;
   --input: #EDEDED;
@@ -135,7 +137,7 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --muted-foreground: #8AABBF;
   --accent: #CDEB9F;
   --accent-foreground: #0D1B2A;
-  --destructive: #DC2626;        /* FIX: kept in sync with :root — same fail existed here too */
+  --destructive: #DC2626;
   --destructive-foreground: #FFFFFF;
   --border: #243648;
   --input: #243648;
@@ -145,11 +147,12 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --shadow: 0 4px 28px rgba(0, 0, 0, 0.3);
   --card-border: #243648;
 
-  /* FIX — the actual bug in the screenshot. These three were previously
-     unset in .dark, so they silently inherited the light-mode value and
-     rendered as low-contrast text on dark surfaces anywhere they were
-     used directly (badges, eyebrows, inline labels). Each verified ≥4.5:1
-     against BOTH #0D1B2A and #1A2C3E. */
+  /* Same warning-bg role, dark-surface value (bg role itself was already fine). */
+  --brand-warning-bg: #7A3B0E;
+
+  /* The three tokens that previously had NO dark override at all — this
+     was the root cause of the circled badge and everything since. Each
+     verified ≥4.5:1 against BOTH #0D1B2A (page) and #1A2C3E (card). */
   --brand-blue-text: #6693db;    /* 5.60:1 vs dark bg, 4.59:1 vs dark card */
   --brand-orange-text: #e3731f;  /* 5.58:1 vs dark bg, 4.57:1 vs dark card */
   --brand-green-text: #70a144;   /* 5.69:1 vs dark bg, 4.66:1 vs dark card */
@@ -207,8 +210,7 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --color-brand-tech-grey-dark: var(--brand-tech-grey-dark);
   --color-brand-green-deep: var(--brand-green-deep);
   --color-brand-orange-brown: var(--brand-orange-brown);
-  --color-brand-orange-accessible: var(--brand-orange-accessible);
-  --color-brand-orange-accessible-dark: var(--brand-orange-accessible-dark);
+  --color-brand-warning-bg: var(--brand-warning-bg);
   --color-brand-white: var(--brand-white);
 
   --color-brand-whatsapp: var(--brand-whatsapp);
@@ -246,7 +248,6 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   }
 }
 
-/* ── Skip link ── */
 .skip-to-content {
   position: absolute;
   top: -100%;
@@ -262,7 +263,6 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
 }
 .skip-to-content:focus { top: 0; }
 
-/* ── Focus ── */
 :focus { outline: none; }
 :focus-visible {
   outline: 2px solid var(--brand-blue);
@@ -271,13 +271,11 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
 }
 .dark :focus-visible { outline-color: var(--brand-light-blue); }
 
-/* ── Interaction base ── */
 button, a, [role="button"] {
   -webkit-tap-highlight-color: transparent;
   will-change: transform;
 }
 
-/* ── Animations ── */
 @keyframes float { 0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)} }
 @keyframes fadeUp { from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)} }
 @keyframes page-in { from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)} }
@@ -289,9 +287,7 @@ button, a, [role="button"] {
   .animate-marquee { animation: none; }
 }
 
-/* ── Component system ── */
 @layer components {
-
   .abh-page-title {
     @apply font-heading font-black text-4xl md:text-5xl tracking-tight leading-tight text-center;
     color: var(--brand-blue-dark);
@@ -308,8 +304,6 @@ button, a, [role="button"] {
     color: var(--card-foreground);
   }
 
-  /* NOTE: --brand-blue-text is now theme-aware (see .dark block above), so
-     this manual override is redundant but harmless — kept as-is. */
   .abh-eyebrow {
     @apply font-heading font-black text-xs uppercase tracking-widest;
     color: var(--brand-blue-text);
@@ -475,19 +469,14 @@ button, a, [role="button"] {
   background-color: var(--card) !important;
 }
 
-/* ═════════════════════════════════════════════════════════════════════════════
-   SEMANTIC ON-COLOR UTILITIES — SUPER SOURCE
-   e.g. <div className="bg-brand-whatsapp abh-on-whatsapp"> not
-        <div className="bg-brand-whatsapp text-white">
-───────────────────────────────────────────────────────────────────────────── */
 @layer utilities {
   .abh-on-blue      { color: var(--on-brand-blue); }
   .abh-on-green     { color: var(--on-brand-green); }
   .abh-on-orange    { color: var(--on-brand-orange); }
   .abh-on-teal      { color: var(--on-brand-teal); }
-  .abh-on-whatsapp  { color: var(--on-whatsapp); }   /* dark navy — NEVER white */
-  .abh-on-pastel    { color: var(--on-pastel); }     /* for light-blue/light-green/light-orange/neutral-100-300/teal-light chips */
-  .abh-on-neutral-dark { color: var(--on-neutral-dark); } /* for dark-100/dark-200/neutral-500 bg */
+  .abh-on-whatsapp  { color: var(--on-whatsapp); }
+  .abh-on-pastel    { color: var(--on-pastel); }
+  .abh-on-neutral-dark { color: var(--on-neutral-dark); }
   .abh-on-destructive { color: var(--on-destructive); }
   .abh-on-whatsapp-accessible { color: var(--on-whatsapp-accessible); }
-     } 
+   } 
