@@ -1,4 +1,4 @@
-// components/hero-section.tsx
+// components/hero-section.tsx — full file, paste over the current one
 "use client"
 
 import React, { useState, useEffect, useRef } from "react"
@@ -93,13 +93,21 @@ function fallbackCategory(greeting: BusinessStatus["greeting"]): WeatherCategory
 }
 
 // ─── NSFAS BACKLOG NOTICE — DATA-DRIVEN ──────────────────────────────────────
-// Reads directly from the same source that powers the orange "!" badges in
-// eservice.ts. Zero hardcoded service/hub names: if every `notice` field is
-// removed from eservice.ts once the backlog clears, this pill disappears on
-// its own — nothing in this component needs to change.
 const NOTICE_ITEMS = eserviceHub.sections.flatMap((section) => section.items.filter((item) => item.notice))
 const HAS_BACKLOG_NOTICE = NOTICE_ITEMS.length > 0
 const BACKLOG_MESSAGE = NOTICE_ITEMS[0]?.notice ?? ""
+
+// FIX: BRAND.orangeAccessibleDark (#7A3B0E) is an AAA color verified against
+// WHITE (8.54:1) — it's the "extra-safe orange for light backgrounds" token,
+// NOT a dark-mode-surface token, despite the name. The collapsed pill used it
+// as text/icon-chip color on dark:bg-zinc-900, which globals.css's dark-mode
+// unification rule forces to var(--card) = #1A2C3E. Actual pairing measured:
+// contrastRatio('#7A3B0E', '#1A2C3E') = 1.67:1 — this was the circled badge.
+// This value IS verified against both dark surfaces (--card #1A2C3E: 4.55:1,
+// --background #0D1B2A: 5.56:1). TODO: move into lib/brand.ts as a proper
+// mirrored token (e.g. BRAND.warningDark) once you share that file — for now
+// it's local so the fix ships without guessing at brand.ts's structure.
+const PILL_TEXT_DARK_SAFE = "#e5711d"
 
 // ─── COMPONENT ───────────────────────────────────────────────────────────────
 export function HeroSection() {
@@ -143,15 +151,16 @@ export function HeroSection() {
   const activeCircleColor = CTA_FILL_COLOR
   const activeArrowIconColor = getArrowIconColor(activeCircleColor)
 
-  // Backlog notice colors — theme-aware, WCAG-verified BRAND tokens only.
-  // ANNOUNCEMENT_FILL: solid icon-chip / pill-border color.
-  // ANNOUNCEMENT_TINT: expanded-card background (light = existing lightOrange
-  // token; dark = same orangeAccessibleDark token alpha-blended, matching the
-  // alpha-fill convention already established for THEME_BG in lib/brand.ts).
-  // ANNOUNCEMENT_TEXT: text color inside the expanded card.
+  // Backlog notice colors — theme-aware, WCAG-verified tokens only.
+  // ANNOUNCEMENT_FILL: icon-chip background always (verified vs white icon:
+  // orangeAccessible 6.20:1 light, orangeAccessibleDark 8.54:1 dark — both
+  // fine, since the icon chip's own background pairing was never the bug).
+  // In dark mode it is now ALSO reused as the collapsed-pill text/border
+  // color, which is the pairing that was broken — see PILL_TEXT_DARK_SAFE.
   const ANNOUNCEMENT_FILL = isDark ? BRAND.orangeAccessibleDark : BRAND.orangeAccessible
   const ANNOUNCEMENT_TINT = isDark ? `${BRAND.orangeAccessibleDark}26` : BRAND.lightOrange
   const ANNOUNCEMENT_TEXT = isDark ? BRAND.white : BRAND.orangeAccessible
+  const PILL_TEXT_COLOR = isDark ? PILL_TEXT_DARK_SAFE : BRAND.orangeAccessible
 
   const showHolidayBanner = mounted && status?.isHoliday
   const displayCategory = weatherCategory ?? (status ? fallbackCategory(status.greeting) : "clear-day")
@@ -177,9 +186,6 @@ export function HeroSection() {
       <div className="max-w-[1240px] mx-auto flex flex-col items-center relative z-10 w-full mb-6">
 
         {/* ─── NOTIFICATION 1: NSFAS BACKLOG — collapsed pill / expanded card ─── */}
-        {/* Collapsed: small rounded-full pill, click to expand.               */}
-        {/* Expanded: 14px-radius tinted card, click to collapse.              */}
-        {/* Dismiss button (X) works from either state and hides for session. */}
         {HAS_BACKLOG_NOTICE && !backlogDismissed && (
           <div className="w-full flex justify-center mb-8 md:mb-10">
             {!backlogExpanded ? (
@@ -197,7 +203,7 @@ export function HeroSection() {
                 >
                   <Warning size={13} weight="fill" style={{ color: BRAND.white }} />
                 </span>
-                <span className="text-sm font-bold" style={{ color: ANNOUNCEMENT_FILL }}>
+                <span className="text-sm font-bold" style={{ color: PILL_TEXT_COLOR }}>
                   Important Announcement
                 </span>
                 <span
@@ -258,7 +264,6 @@ export function HeroSection() {
           {/* Left column — text + CTA */}
           <div className="text-center md:text-left">
 
-            {/* ─── NOTIFICATION 2: HOLIDAY BANNER — unchanged ─────────────── */}
             {showHolidayBanner && status && (
               <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-3">
                 <WeatherIcon size={16} weight="fill" style={{ color: weatherIconColor }} aria-hidden="true" />
@@ -374,4 +379,4 @@ export function HeroSection() {
       <BackToTopButton visible={showBackToTop} />
     </section>
   )
-            } 
+    } 
