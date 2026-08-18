@@ -158,6 +158,7 @@ function GalleryPageInner() {
   const [likedIds,        setLikedIds]        = useState<Set<string>>(new Set())
   const showBackToTop = useBackToTop()
   const likesHydrated = useRef(false)
+  const [photoNoticeDismissed, setPhotoNoticeDismissed] = useState(false)
 
   useEffect(() => {
     try {
@@ -259,23 +260,22 @@ function GalleryPageInner() {
           </div>
         </ScrollBounce>
 
-        <ScrollBounce delay={0.06}>
-          <div className="flex justify-center max-w-2xl mx-auto mb-6">
-            {/* FIX: was a hardcoded #1E6FA8 duplicate of NoticeNotification
-                from services-page — now the shared component with an
-                explicit expanded label (previously stuck on "Notice" in
-                both states). */}
-            <NoticePill
-              accentColor={BRAND.blue}
-              Icon={Info}
-              collapsedLabel="Notice"
-              expandedLabel="A Note on Our Photos"
-              isDark={isDark}
-            >
-              We use high-quality sample photos to represent our services — the professional standard shown is exactly what you receive.
-            </NoticePill>
-          </div>
-        </ScrollBounce>
+        {!photoNoticeDismissed && (
+          <ScrollBounce delay={0.06}>
+            <div className="flex justify-center max-w-2xl mx-auto mb-6">
+              <NoticePill
+                variant="info"
+                Icon={Info}
+                collapsedLabel="Notice"
+                expandedLabel="A Note on Our Photos"
+                isDark={isDark}
+                onDismiss={() => setPhotoNoticeDismissed(true)}
+              >
+                We use high-quality sample photos to represent our services — the professional standard shown is exactly what you receive.
+              </NoticePill>
+            </div>
+          </ScrollBounce>
+        )}
 
         <ScrollBounce delay={0.1}>
           <div className="max-w-md mx-auto mb-8">
