@@ -1,3 +1,20 @@
+/* app/globals.css — PART 1 of 2 (paste first, then append Part 2)*/
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* ── Global layout force ── */
+*, *::before, *::after { box-sizing: border-box; min-width: 0; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-behavior: smooth; overflow-x: hidden; }
+body { overflow-x: hidden; min-height: 100dvh; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+/* Scroll lock — applied by Gallery modal */
+html[data-scroll-locked] body { overflow: hidden; }
+
+img, video, svg, canvas { max-width: 100%; display: block; }
+input, button, textarea, select { font: inherit; max-width: 100%; }
+
+@custom-variant dark (&:is(.dark *));
+
 /* ═════════════════════════════════════════════════════════════════════════════
    BRAND TOKEN SYSTEM — SUPER SOURCE
    This file (mirrored in lib/brand.ts) is the ONLY place color decisions get
