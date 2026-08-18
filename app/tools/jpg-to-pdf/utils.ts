@@ -1,6 +1,6 @@
 // app/tools/jpg-to-pdf/utils.ts
 import { HISTORY_KEY, EXT_TYPE_FALLBACK, MAX_CANVAS_DIMENSION, PERSPECTIVE_WARP_GRID } from "./constants"
-import type { HistoryEntry, CropRect, CropPoint } from "./types"
+import type { HistoryEntry, CropRect, CropPoint, ImageFilter } from "./types"
 
 const pad2 = (n: number) => String(n).padStart(2, "0")
 
@@ -214,7 +214,42 @@ export async function generateThumbnail(file: File, maxDim = 480): Promise<strin
   } catch {
     return URL.createObjectURL(file)
   }
+}
+
+// ─── FILTERS ──────────────────────────────────────────────────────────────
+// Manual pixel manipulation (getImageData/putImageData) instead of the
+// CSS-style `ctx.filter` string — this guarantees identical, predictable
+// output across every mobile browser rather than trusting each engine's
+// own grayscale/sepia math. Wrapped so a failure (e.g. a browser that
+// blocks getImageData in some edge case) never throws — it just leaves
+// the canvas unfiltered instead of breaking the conversion.
+function applyCanvasFilter(canvas: HTMLCanvasElement, filter: ImageFilter | undefined) {
+  if (!filter || filter === "none") return
+  try {
+    const ctx = canvas.getContext("2d")
+    if (!ctx || canvas.width === 0 || canvas.height === 0) return
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    const data = imageData.data
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i], g = data[i + 1], b = data[i + 2]
+      if (filter === "grayscale") {
+        const gray = r * 0.299 + g * 0.587 + b * 0.114
+        data[i] = data[i + 1] = data[i + 2] = gray
+      } else if (filter === "bw") {
+        const gray = r * 0.299 + g * 0.587 + b * 0.114
+        const v = gray > 128 ? 255 : 0
+        data[i] = data[i + 1] = data[i + 2] = v
+      } else if (filter === "sepia") {
+        data[i] = Math.min(255, r * 0.393 + g * 0.769 + b * 0.189)
+        data[i + 1] = Math.min(255, r * 0.349 + g * 0.686 + b * 0.168)
+        data[i + 2] = Math.min(255, r * 0.272 + g * 0.534 + b * 0.131)
+      }
     }
+    ctx.putImageData(imageData, 0, 0)
+  } catch {
+    // Leave the canvas unfiltered rather than breaking the conversion.
+  }
+}
 
 // ─── PERSPECTIVE WARP (for free four-corner crops) ─────────────────────
 function lerp(a: number, b: number, t: number) { return a + (b - a) * t }
@@ -351,7 +386,8 @@ export const compressImage = async (
   file: File,
   rotation: number,
   quality: number,
-  crop?: CropRect
+  crop?: CropRect,
+  filter?: ImageFilter
 ): Promise<{ dataUrl: string; width: number; height: number }> => {
   const { source, width: srcW, height: srcH, cleanup } = await decodeSourceAdaptive(file)
   try {
@@ -364,20 +400,29 @@ export const compressImage = async (
       const plan = computeRectPlan(srcW, srcH, rotation, crop, MAX_CANVAS_DIMENSION)
       canvas = renderRectCanvas(source, plan, rotation)
     }
+    applyCanvasFilter(canvas, filter)
     return { dataUrl: canvas.toDataURL("image/jpeg", quality), width: canvas.width, height: canvas.height }
   } finally {
     cleanup()
   }
 }
 
-// Produces a small preview reflecting the ACTUAL crop/rotation that will
-// be converted — used to update the grid thumbnail after a crop is
-// applied, so the person sees what they cropped, not the original photo.
-export async function generateCroppedPreview(file: File, crop: CropRect, rotation: number, maxDim = 480): Promise<string> {
+// Produces a small preview reflecting the ACTUAL crop/rotation/filter that
+// will be converted — used to update the grid thumbnail after a crop or
+// filter is applied, so the person sees what they'll actually get, not
+// the original photo. `crop` is optional now (filter-only changes on an
+// uncropped image still need to bake through the same pipeline).
+export async function generateCroppedPreview(
+  file: File,
+  crop: CropRect | undefined,
+  rotation: number,
+  filter?: ImageFilter,
+  maxDim = 480
+): Promise<string> {
   const { source, width: srcW, height: srcH, cleanup } = await decodeSourceAdaptive(file)
   try {
     let canvas: HTMLCanvasElement
-    if (crop.corners) {
+    if (crop?.corners) {
       const boundingW = Math.max(1, crop.w * srcW)
       const boundingH = Math.max(1, crop.h * srcH)
       canvas = renderQuadCanvas(source, srcW, srcH, crop.corners, boundingW, boundingH, rotation, maxDim)
@@ -385,6 +430,7 @@ export async function generateCroppedPreview(file: File, crop: CropRect, rotatio
       const plan = computeRectPlan(srcW, srcH, rotation, crop, maxDim)
       canvas = renderRectCanvas(source, plan, rotation)
     }
+    applyCanvasFilter(canvas, filter)
     return await new Promise<string>((resolve, reject) => {
       canvas.toBlob((blob) => {
         if (!blob) { reject(new Error("Preview generation failed.")); return }
@@ -404,4 +450,4 @@ export const fitToPage = (width: number, height: number, page: { w: number; h: n
   const renderW = width * ratio
   const renderH = height * ratio
   return { x: (page.w - renderW) / 2, y: (page.h - renderH) / 2, renderW, renderH }
-      }
+      } 
