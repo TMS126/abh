@@ -23,6 +23,12 @@ export type ImageItem = {
   hash?: string
 }
 
+// ─── FILTERS ──────────────────────────────────────────────────────────────
+// "bw" = high-contrast black & white (hard threshold), distinct from
+// "grayscale" which keeps mid-tones. Stored per-image in the hook, same
+// pattern as `rotations` — not on ImageItem itself.
+export type ImageFilter = "none" | "grayscale" | "bw" | "sepia"
+
 export type ConvertMode = "merge" | "separate"
 export type PageSize = "a4" | "letter"
 
