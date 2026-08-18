@@ -6,7 +6,7 @@ import { jsPDF } from "jspdf"
 import { BIZ, waLink } from "@/lib/brand"
 import { ACCEPTED_TYPES, MAX_FILES, MAX_FILE_SIZE_MB, PAGE_SIZES } from "./constants"
 import { buildFileName, compressImage, fitToPage, loadHistory, saveHistory, clearHistory, resolveFileType, generateThumbnail, generateCroppedPreview, hashFile } from "./utils"
-import type { ImageItem, ConvertMode, PageSize, ConvertError, ConvertedFile, HistoryEntry, ReconvertPrompt, CropRect } from "./types"
+import type { ImageItem, ConvertMode, PageSize, ConvertError, ConvertedFile, HistoryEntry, ReconvertPrompt, CropRect, ImageFilter } from "./types"
 
 export function useJpgToPdf() {
   // ─── STATE ──────────────────────────────────────────────────────────────
@@ -15,6 +15,7 @@ export function useJpgToPdf() {
   const [pageSize, setPageSize] = useState<PageSize>("a4")
   const [quality, setQuality] = useState(0.75)
   const [rotations, setRotations] = useState<Record<string, number>>({})
+  const [filters, setFilters] = useState<Record<string, ImageFilter>>({})
   const [isConverting, setIsConverting] = useState(false)
   const [progress, setProgress] = useState(0)
   const [errors, setErrors] = useState<ConvertError[]>([])
@@ -41,7 +42,7 @@ export function useJpgToPdf() {
     const timer = setTimeout(async () => {
       try {
         const sample = selected[0]
-        const { dataUrl } = await compressImage(sample.file, rotations[sample.id] || 0, quality, sample.crop)
+        const { dataUrl } = await compressImage(sample.file, rotations[sample.id] || 0, quality, sample.crop, filters[sample.id])
         if (cancelled) return
         const sampleBytes = Math.round((dataUrl.length * 3) / 4)
         const ratio = sampleBytes / sample.file.size
@@ -52,7 +53,7 @@ export function useJpgToPdf() {
       }
     }, 350)
     return () => { cancelled = true; clearTimeout(timer) }
-  }, [images, quality, rotations])
+  }, [images, quality, rotations, filters])
 
   // ─── FILE INTAKE ────────────────────────────────────────────────────────
   // Identity is decided by SHA-256 of the file's actual bytes (see
@@ -113,7 +114,10 @@ export function useJpgToPdf() {
       imagesRef.current = working
 
       if (replacedIds.length > 0) {
+        // Re-uploaded content is treated as a fresh photo — rotation,
+        // filter, and "already converted" status don't carry over.
         setRotations((prev) => { const next = { ...prev }; replacedIds.forEach((id) => { delete next[id] }); return next })
+        setFilters((prev) => { const next = { ...prev }; replacedIds.forEach((id) => { delete next[id] }); return next })
         setConvertedIds((prev) => { const next = new Set(prev); replacedIds.forEach((id) => next.delete(id)); return next })
       }
 
@@ -141,21 +145,23 @@ export function useJpgToPdf() {
       return prev.filter((img) => img.id !== id)
     })
     setRotations((prev) => { const { [id]: _d, ...rest } = prev; return rest })
+    setFilters((prev) => { const { [id]: _f, ...rest } = prev; return rest })
+    // A removed image's id could otherwise linger in convertedIds forever.
+    setConvertedIds((prev) => { const next = new Set(prev); next.delete(id); return next })
   }
 
   const toggleSelect = (id: string) => setImages((p) => p.map((i) => (i.id === id ? { ...i, selected: !i.selected } : i)))
   const selectAll = (value: boolean) => setImages((p) => p.map((i) => ({ ...i, selected: value })))
 
-  // Grid thumbnail must reflect what will actually be converted — if the
-  // image has a crop applied, regenerate the preview from the real
-  // crop/rotation instead of leaving the original photo showing.
-  const regeneratePreview = useCallback(async (id: string, rotationOverride?: number) => {
+  // Grid thumbnail must reflect what will actually be converted — crop,
+  // rotation (when cropped — see rotateImage note below), and filter are
+  // all passed explicitly by the caller rather than re-read off a
+  // possibly-stale ref, so a preview never lags one state update behind.
+  const regeneratePreview = useCallback(async (id: string, crop: CropRect | undefined, rotation: number, filter: ImageFilter) => {
     const target = imagesRef.current.find((img) => img.id === id)
     if (!target) return
     try {
-      const thumbUrl = target.crop
-        ? await generateCroppedPreview(target.file, target.crop, rotationOverride ?? 0)
-        : await generateThumbnail(target.file)
+      const thumbUrl = await generateCroppedPreview(target.file, crop, rotation, filter)
       setImages((prev) => prev.map((img) => {
         if (img.id !== id) return img
         URL.revokeObjectURL(img.previewUrl)
@@ -166,22 +172,40 @@ export function useJpgToPdf() {
     }
   }, [])
 
+  // Rotation is normally shown via a CSS transform in the grid (cheap,
+  // instant). It only gets BAKED into the thumbnail pixels here when the
+  // image is cropped — because a quad/perspective crop's math depends on
+  // rotation, the crop itself has to be redrawn. (image-grid.tsx applies
+  // 0deg of CSS rotation for cropped images specifically to avoid double-
+  // rotating an image that's already baked.)
   const rotateImage = (id: string) => {
     const next = ((rotations[id] || 0) + 90) % 360
     setRotations((p) => ({ ...p, [id]: next }))
     const target = imagesRef.current.find((img) => img.id === id)
-    if (target?.crop) regeneratePreview(id, next)
+    if (target?.crop) regeneratePreview(id, target.crop, next, filters[id] || "none")
   }
 
   const resetRotation = (id: string) => {
     setRotations((p) => ({ ...p, [id]: 0 }))
     const target = imagesRef.current.find((img) => img.id === id)
-    if (target?.crop) regeneratePreview(id, 0)
+    if (target?.crop) regeneratePreview(id, target.crop, 0, filters[id] || "none")
   }
 
   const setCrop = (id: string, crop: CropRect | undefined) => {
     setImages((p) => p.map((i) => (i.id === id ? { ...i, crop } : i)))
-    regeneratePreview(id, rotations[id] || 0)
+    regeneratePreview(id, crop, rotations[id] || 0, filters[id] || "none")
+  }
+
+  // Filter changes always bake through the canvas (grayscale/B&W/sepia
+  // aren't representable as a simple CSS transform on the thumbnail).
+  // Rotation is only baked alongside it if the image is also cropped —
+  // otherwise the uncropped thumbnail keeps rotating live via CSS.
+  const setFilter = (id: string, filter: ImageFilter) => {
+    setFilters((p) => ({ ...p, [id]: filter }))
+    const target = imagesRef.current.find((img) => img.id === id)
+    if (!target) return
+    const bakedRotation = target.crop ? (rotations[id] || 0) : 0
+    regeneratePreview(id, target.crop, bakedRotation, filter)
   }
 
   const retryImage = async (id: string) => {
@@ -189,7 +213,7 @@ export function useJpgToPdf() {
     if (!target) return
     setRetryingIds((prev) => new Set([...prev, id]))
     try {
-      await compressImage(target.file, rotations[id] || 0, quality, target.crop)
+      await compressImage(target.file, rotations[id] || 0, quality, target.crop, filters[id])
       setErrors((prev) => prev.filter((e) => e.id !== id))
     } catch {
       setErrors((prev) => [
@@ -215,6 +239,7 @@ export function useJpgToPdf() {
     images.forEach((img) => URL.revokeObjectURL(img.previewUrl))
     setImages([])
     setRotations({})
+    setFilters({})
     setErrors([])
     setConvertedFiles([])
     setSendNotice(null)
@@ -253,7 +278,7 @@ export function useJpgToPdf() {
         for (let i = 0; i < targets.length; i++) {
           const { id, file, crop } = targets[i]
           try {
-            const { dataUrl, width, height } = await compressImage(file, rotations[id] || 0, quality, crop)
+            const { dataUrl, width, height } = await compressImage(file, rotations[id] || 0, quality, crop, filters[id])
             const { x, y, renderW, renderH } = fitToPage(width, height, PAGE_SIZES[pageSize])
             if (addedAny) pdf.addPage([PAGE_SIZES[pageSize].w, PAGE_SIZES[pageSize].h])
             pdf.addImage(dataUrl, "JPEG", x, y, renderW, renderH)
@@ -273,7 +298,7 @@ export function useJpgToPdf() {
         for (let i = 0; i < targets.length; i++) {
           const { id, file, crop } = targets[i]
           try {
-            const { dataUrl, width, height } = await compressImage(file, rotations[id] || 0, quality, crop)
+            const { dataUrl, width, height } = await compressImage(file, rotations[id] || 0, quality, crop, filters[id])
             const { x, y, renderW, renderH } = fitToPage(width, height, PAGE_SIZES[pageSize])
             const pdf = new jsPDF({ unit: "mm", format: [PAGE_SIZES[pageSize].w, PAGE_SIZES[pageSize].h] })
             pdf.addImage(dataUrl, "JPEG", x, y, renderW, renderH)
@@ -357,9 +382,9 @@ export function useJpgToPdf() {
   // ─── RETURN ─────────────────────────────────────────────────────────────
   return {
     images, mode, setMode, pageSize, setPageSize, quality, setQuality,
-    rotations, isConverting, progress, errors, convertedFiles, convertedIds, reconvertPrompt,
+    rotations, filters, isConverting, progress, errors, convertedFiles, convertedIds, reconvertPrompt,
     sendNotice, history, selectedCount, estimatedBytes, retryingIds,
-    addFiles, removeImage, toggleSelect, selectAll, rotateImage, resetRotation, setCrop, retryImage, reorder,
+    addFiles, removeImage, toggleSelect, selectAll, rotateImage, resetRotation, setCrop, setFilter, retryImage, reorder,
     clearAll, requestConvert, resolveReconvert, handleSend, clearRecents,
   }
-    } 
+          } 
