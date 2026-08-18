@@ -1,165 +1,173 @@
+// lib/brand.ts — full file, paste over the current one
 /**
  * ────────────────────────────────────────────────────────────────────────────
  * APEXBYTES HUB — CORE BUSINESS LAYER
  * lib/brand.ts
  *
  * PURPOSE:
- * This file contains business logic, content, and UI structure.
- * All visual styling is handled by CSS variables (single source of truth).
+ * Business logic, content, and UI structure. Visual color is NEVER decided
+ * here anymore — globals.css is the only source. This file only re-exports
+ * CSS var strings via TOKEN below.
+ *
+ * ── RULE FOR EVERY COMPONENT ──
+ * Never write `isDark ? someHex : someOtherHex` for a color again. Use
+ * `TOKEN.*` — each one is a CSS var string, the browser resolves light/dark
+ * automatically because the var itself flips inside `.dark` in globals.css.
+ * If TOKEN doesn't have the role you need, add it to globals.css first
+ * (verified against the real surface it lands on), then add it here —
+ * never invent a one-off hex inline in a component.
  * ────────────────────────────────────────────────────────────────────────────
  */
 
-// ─── BUSINESS INFO ───────────────────────────────────────────────────────────
-export const BRAND = {
-  green: "#4A8011",        // WCAG AA — 4.79:1 vs white (was #6FBF1A at 2.3:1)
-  orange: "#B9590D",       // WCAG AA — 4.67:1 vs white (was #F4A261 at 2.06:1)
-  lightBlue: "#A9D6F2",
-  lightGreen: "#CDEB9F",
-  lightOrange: "#F9D1B0",
+// ─── THEME-AWARE COLOR TOKENS — use these in components ─────────────────────
+// Plain CSS var strings. Drop directly into `style={{ color: TOKEN.x }}` or
+// `style={{ backgroundColor: TOKEN.x }}`. No isDark check needed — ever.
+export const TOKEN = {
+  // solid backgrounds (verified for a white icon/label on top)
+  brandBlue: "var(--brand-blue)",
+  brandOrange: "var(--brand-orange)",
+  brandGreen: "var(--brand-green)",
+  warningBg: "var(--brand-warning-bg)",
 
-  blue: "#1E6FA8",
-  blueMid: "#15537D",
-  blueDark: "#0F3F66",
+  // on-color pairs for the backgrounds above
+  onBrandBlue: "var(--on-brand-blue)",
+  onBrandOrange: "var(--on-brand-orange)",
+  onBrandGreen: "var(--on-brand-green)",
+  onBrandTeal: "var(--on-brand-teal)",
+  onWhatsapp: "var(--on-whatsapp)",
+  onWhatsappAccessible: "var(--on-whatsapp-accessible)",
+  onPastel: "var(--on-pastel)",
+  onNeutralDark: "var(--on-neutral-dark)",
+  onDestructive: "var(--on-destructive)",
 
-  // E-Service Hub's accent — kept out of the blue family on purpose so it
-  // doesn't collide with Print Hub's blue at small sizes (icon chips, tags).
-  teal: "#0F766E",
-  tealDark: "#115E59",
-  tealLight: "#99F6E4",
+  // text-on-page/card/tint roles — the ones that used to break in dark mode
+  blueText: "var(--brand-blue-text)",
+  orangeText: "var(--brand-orange-text)",   // also covers the warning-badge label role
+  greenText: "var(--brand-green-text)",
 
-  greenDark: "#4C8212",    // WCAG AA — 4.66:1 vs white (was #548F14 at 3.95:1)
-  greenDeep: "#3E6B0E",
+  white: "var(--brand-white)",
+} as const
 
-  orangeDark: "#B06225",   // WCAG AA — 4.55:1 vs white (was #D9894B at 2.75:1)
-  orangeBrown: "#A86530",  // WCAG AA — 4.60:1 vs white (was #B86F34 at 3.92:1)
-  orangeAccessible: "#9A4B12",     // WCAG AA — 6.2:1 with white text
-  orangeAccessibleDark: "#7A3B0E", // WCAG AAA — 8.5:1 with white text
-
-  neutral100: "#EDEDED",
-  neutral200: "#F4F4F4",
-  neutral300: "#D6D6D6",
-  neutral400: "#9A9A9A",   // fixed invalid hex (was "#9A9A" — missing 2 digits)
-  neutral500: "#747474",   // WCAG AA — 4.67:1 vs white (was #777777 at 4.48:1, just under)
-
-  dark100: "#333333",
-  dark200: "#555555",
-  // Dark-mode-safe companion for dark100 — #333333 is ~12.6:1 vs white
-  // (great in light mode) but only ~1.4:1 against dark UI surfaces,
-  // failing WCAG's 3:1 icon/UI-component minimum. This is the same
-  // #B8CCE0 Tech Hub already uses as its own colorDark in HUBS_DATA
-  // (hero-section.tsx) — named here so other components (e.g. Navbar)
-  // can reference it instead of reusing dark100 flat across both themes.
-  // Verified ~10.7:1 against dark surfaces — passes AAA.
-  techGreyDark: "#B8CCE0",
-
+// ─── RAW HEX — ONLY for JS math that CSS vars can't do (alpha-blended
+// strings like `${hex}26`, canvas, gradients built at render time). If you
+// don't need string math, use TOKEN above instead. This object mirrors
+// globals.css exactly — do not let it drift; if you change a value here,
+// change it in globals.css too, same names.
+export const HEX = {
+  light: {
+    blue: "#1E6FA8", blueMid: "#15537D", blueDark: "#0F3F66",
+    green: "#4A8011", greenDeep: "#3E6B0E",
+    orange: "#B9590D", orangeDark: "#B06225", orangeBrown: "#A86530",
+    teal: "#0F766E", tealDark: "#115E59", tealLight: "#99F6E4",
+    warningBg: "#9A4B12",
+    lightBlue: "#A9D6F2", lightGreen: "#CDEB9F", lightOrange: "#F9D1B0",
+    dark100: "#333333", dark200: "#555555", techGreyDark: "#B8CCE0",
+  },
+  dark: {
+    blue: "#1E6FA8", blueMid: "#15537D", blueDark: "#0F3F66", // theme-invariant raw swatches stay identical
+    green: "#4A8011", greenDeep: "#3E6B0E",
+    orange: "#B9590D", orangeDark: "#B06225", orangeBrown: "#A86530",
+    teal: "#0F766E", tealDark: "#115E59", tealLight: "#99F6E4",
+    warningBg: "#7A3B0E", // the one raw swatch with an actual dark-surface variant
+    lightBlue: "#A9D6F2", lightGreen: "#CDEB9F", lightOrange: "#F9D1B0",
+    dark100: "#333333", dark200: "#555555", techGreyDark: "#B8CCE0",
+  },
+  neutral100: "#EDEDED", neutral200: "#F4F4F4", neutral300: "#D6D6D6",
+  neutral400: "#9A9A9A", neutral500: "#747474",
   white: "#FFFFFF",
-
-  // WhatsApp's official brand green — intentionally left unchanged.
-  // Logos/brand marks are exempt from WCAG 1.4.3; altering it would break
-  // brand recognition. Only ~2:1 vs white — avoid pairing with pure white
-  // text/icons if strict AA compliance matters for a given use.
-  whatsapp: "#25D366",
-  whatsappDark: "#1ebe5a",
-
-  // Same-hue, WCAG AA-safe variants for solid buttons with white text
-  // (the raw `whatsapp`/`whatsappDark` pair above only reaches ~2:1 and
-  // ~2.45:1 against white — well under the 4.5:1 minimum for text).
-  whatsappAccessible: "#178540",     // WCAG AA — 4.70:1 with white text
-  whatsappAccessibleDark: "#125F2F", // hover state — 7.77:1 with white text
-
-  // text-safe variants
-  blueText: "#16325f",
-  orangeText: "#b85c17",
-  greenText: "#4d6f2f",
+  whatsapp: "#25D366", whatsappDark: "#1ebe5a",
+  whatsappAccessible: "#178540", whatsappAccessibleDark: "#125F2F",
   whatsappText: "#0f172a",
 } as const
 
-// lib/brand.ts — ADD near the top, after the BRAND export, nothing else in this file changes
+/** Pick the right raw hex for the current theme. Only reach for this when
+ *  you genuinely need a hex string (alpha blending, gradients) — everything
+ *  else should use TOKEN. */
+export function pickHex<K extends keyof typeof HEX.light>(role: K, isDark: boolean): string {
+  return isDark ? HEX.dark[role] : HEX.light[role]
+}
+
+// ─── BUSINESS INFO ───────────────────────────────────────────────────────────
+// Kept for anything still reading BRAND.* directly by name (dot indicators,
+// non-contrast-critical decorative colors). Prefer TOKEN for anything that
+// needs to be legible as text or on a solid fill.
+export const BRAND = {
+  green: HEX.light.green,
+  orange: HEX.light.orange,
+  lightBlue: HEX.light.lightBlue,
+  lightGreen: HEX.light.lightGreen,
+  lightOrange: HEX.light.lightOrange,
+  blue: HEX.light.blue,
+  blueMid: HEX.light.blueMid,
+  blueDark: HEX.light.blueDark,
+  teal: HEX.light.teal,
+  tealDark: HEX.light.tealDark,
+  tealLight: HEX.light.tealLight,
+  greenDark: "#4C8212",
+  greenDeep: HEX.light.greenDeep,
+  orangeDark: HEX.light.orangeDark,
+  orangeBrown: HEX.light.orangeBrown,
+  neutral100: HEX.neutral100,
+  neutral200: HEX.neutral200,
+  neutral300: HEX.neutral300,
+  neutral400: HEX.neutral400,
+  neutral500: HEX.neutral500,
+  dark100: HEX.light.dark100,
+  dark200: HEX.light.dark200,
+  techGreyDark: HEX.light.techGreyDark,
+  white: HEX.white,
+  whatsapp: HEX.whatsapp,
+  whatsappDark: HEX.whatsappDark,
+  whatsappAccessible: HEX.whatsappAccessible,
+  whatsappAccessibleDark: HEX.whatsappAccessibleDark,
+  whatsappText: HEX.whatsappText,
+} as const
 
 // ─── THEME-FLIPPING BACKGROUND HEX ──────────────────────────────────────────
-// The only two background values that change with theme AND are ever
-// needed as a raw hex string in JS (gradients, alpha-blended fills like
-// `${color}12`). These are hand-verified to exactly match globals.css's
-// --background / --card tokens for each theme — globals.css declares
-// itself synced FROM this file, so this is the correct direction: define
-// once here, CSS mirrors it, JS reads it here too. Never hardcode these
-// values a second time anywhere else in the codebase.
 export const THEME_BG = {
   light: { page: "#FFFFFF", card: "#FFFFFF" },
   dark: { page: "#0D1B2A", card: "#1A2C3E" },
 } as const
 
-// ONLY ONE HUB_COLORS EXPORT - WCAG AA COMPLIANT ACTIVE COLORS
-// Sourced from the official brand palette tiers (Bright / Hard / Soft / Dark).
-// Note: the palette has 3 base hues (blue/green/orange) but 5 hubs — E-Service
-// uses teal as the one color outside the palette, since reusing blue would
-// make it indistinguishable from Print Hub at small sizes (icon chips, tags).
+// ─── HUB COLORS ───────────────────────────────────────────────────────────────
 export const HUB_COLORS = {
   print: {
-    primary: BRAND.blue,        // Hard: #1E6FA8
-    light: BRAND.lightBlue,     // Bright: #A9D6F2
+    primary: BRAND.blue,
+    light: BRAND.lightBlue,
     gradient: `linear-gradient(135deg, ${BRAND.blue} 0%, ${BRAND.blueMid} 100%)`,
-    tagBg: 'transparent',
-    tagText: '#374151',
-    tagBgDark: '#1e40af',
-    tagTextDark: '#ffffff',
-    accentLight: BRAND.blue,
-    accentDark: BRAND.lightBlue,
+    tagBg: 'transparent', tagText: '#374151', tagBgDark: '#1e40af', tagTextDark: '#ffffff',
+    accentLight: BRAND.blue, accentDark: BRAND.lightBlue,
   },
-
   doc: {
-    primary: BRAND.green,       // Hard (AA-adjusted): #4A8011
-    light: BRAND.lightGreen,    // Bright: #CDEB9F
+    primary: BRAND.green,
+    light: BRAND.lightGreen,
     gradient: `linear-gradient(135deg, ${BRAND.greenDeep} 0%, ${BRAND.green} 100%)`,
-    tagBg: 'transparent',
-    tagText: '#374151',
-    tagBgDark: '#166534',
-    tagTextDark: '#ffffff',
-    accentLight: BRAND.green,
-    accentDark: BRAND.lightGreen,
+    tagBg: 'transparent', tagText: '#374151', tagBgDark: '#166534', tagTextDark: '#ffffff',
+    accentLight: BRAND.green, accentDark: BRAND.lightGreen,
   },
-
   design: {
-    primary: BRAND.orangeDark,  // Hard (AA-adjusted): #B06225
-    light: BRAND.lightOrange,   // Bright: #F9D1B0
+    primary: BRAND.orangeDark,
+    light: BRAND.lightOrange,
     gradient: `linear-gradient(135deg, ${BRAND.orangeBrown} 0%, ${BRAND.orange} 100%)`,
-    tagBg: 'transparent',
-    tagText: '#374151',
-    tagBgDark: '#9a3412',
-    tagTextDark: '#ffffff',
-    accentLight: BRAND.orangeDark,
-    accentDark: BRAND.lightOrange,
+    tagBg: 'transparent', tagText: '#374151', tagBgDark: '#9a3412', tagTextDark: '#ffffff',
+    accentLight: BRAND.orangeDark, accentDark: BRAND.lightOrange,
   },
-
   eservice: {
     primary: BRAND.teal,
     light: BRAND.tealLight,
     gradient: `linear-gradient(135deg, ${BRAND.teal} 0%, ${BRAND.tealDark} 100%)`,
-    tagBg: 'transparent',
-    tagText: '#374151',
-    tagBgDark: BRAND.tealDark,
-    tagTextDark: '#ffffff',
-    accentLight: BRAND.teal,
-    accentDark: BRAND.tealLight,
+    tagBg: 'transparent', tagText: '#374151', tagBgDark: BRAND.tealDark, tagTextDark: '#ffffff',
+    accentLight: BRAND.teal, accentDark: BRAND.tealLight,
   },
-
   tech: {
-    primary: BRAND.dark100,       // Dark tier: #333333
-    light: BRAND.techGreyDark,    // #B8CCE0 (existing dark-mode-safe pairing)
+    primary: BRAND.dark100,
+    light: BRAND.techGreyDark,
     gradient: `linear-gradient(135deg, ${BRAND.dark100} 0%, ${BRAND.dark200} 100%)`,
-    tagBg: 'transparent',
-    tagText: '#374151',
-    tagBgDark: '#1f2937',
-    tagTextDark: '#ffffff',
-    accentLight: BRAND.dark100,
-    accentDark: BRAND.techGreyDark,
+    tagBg: 'transparent', tagText: '#374151', tagBgDark: '#1f2937', tagTextDark: '#ffffff',
+    accentLight: BRAND.dark100, accentDark: BRAND.techGreyDark,
   },
 } as const
 
-  // Icon accent for generic (non-hub) trust badges like StripSection.
-// Deliberately neutral, not tied to blue/green/orange hierarchy, since
-// these 4 items aren't hub-specific and shouldn't visually compete with
-// hub branding elsewhere on the page.
 export const NEUTRAL_ICON_COLOR = {
   light: BRAND.dark100,
   dark: BRAND.techGreyDark,
@@ -184,7 +192,6 @@ export const BIZ = {
   serviceCount: "70+",
 } as const
 
-// ─── WHATSAPP HELPERS ───────────────────────────────────────────────────────
 export const waLink = (message: string) =>
   `https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(message)}`
 
@@ -199,7 +206,6 @@ export const WA = {
   contact: waLink(`Hi ${BIZ.name}! I'd like to get in touch.`),
 } as const
 
-// ─── BUSINESS HOURS ──────────────────────────────────────────────────────────
 export const HOURS = {
   printAndDoc: {
     label: "Print Hub · Document Hub",
@@ -216,7 +222,6 @@ export const HOURS = {
   responseTime: "We typically reply within 15 minutes during business hours.",
 } as const
 
-// ─── HUB TYPES ───────────────────────────────────────────────────────────────
 export type HubKey = "print" | "doc" | "design" | "eservice" | "tech"
 
 export const HUB_NAMES: Record<HubKey, string> = {
@@ -227,7 +232,6 @@ export const HUB_NAMES: Record<HubKey, string> = {
   tech: "Tech Hub",
 } as const
 
-// ─── NAVIGATION ──────────────────────────────────────────────────────────────
 export type NavItem = {
   id: string
   label: string
@@ -245,7 +249,6 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "contact", label: "Contact", path: "/contact", isCta: true },
 ] as const
 
-// ─── MARQUEE CONTENT ─────────────────────────────────────────────────────────
 export const MARQUEE_ITEMS = [
   "Print & Copy While You Wait",
   "CVs That Help You Get Hired",
@@ -260,31 +263,13 @@ export const MARQUEE_ITEMS = [
   "Computer Setup, Software Installation & Tech Support",
 ] as const
 
-// ─── STRIP CONTENT ───────────────────────────────────────────────────────────
 export const STRIP_ITEMS = [
-  {
-    iconName: "Rocket",
-    title: "Fast Turnaround",
-    desc: "No long waits, quick service",
-  },
-  {
-    iconName: "CurrencyDollar",
-    title: "Affordable Rates",
-    desc: "Fair pricing for everyone",
-  },
-  {
-    iconName: "HandHeart",
-    title: "Friendly Help",
-    desc: "We explain, never judge",
-  },
-  {
-    iconName: "MapPin",
-    title: "Walk-ins Welcome",
-    desc: `${BIZ.location}`,
-  },
+  { iconName: "Rocket", title: "Fast Turnaround", desc: "No long waits, quick service" },
+  { iconName: "CurrencyDollar", title: "Affordable Rates", desc: "Fair pricing for everyone" },
+  { iconName: "HandHeart", title: "Friendly Help", desc: "We explain, never judge" },
+  { iconName: "MapPin", title: "Walk-ins Welcome", desc: `${BIZ.location}` },
 ] as const
 
-// ─── GALLERY ────────────────────────────────────────────────────────────────
 export const GALLERY_CATEGORIES = [
   { id: "all", label: "All hubs" },
   { id: "print", label: "Print hub" },
@@ -297,103 +282,46 @@ export const GALLERY_CATEGORIES = [
 export const GALLERY_ALERT =
   "We are currently curating our gallery to feature our latest local business success stories. The current imagery demonstrates the visual aesthetic and service style of ApexbytesHub. Check back often for fresh project work!"
 
-// ─── FAQ ─────────────────────────────────────────────────────────────────────
 export const FAQS = [
   {
     question: "How do I send my files, photos, or CV information to you?",
-    answer:
-      "All services connect via WhatsApp where you can upload documents, notes, or images directly.",
+    answer: "All services connect via WhatsApp where you can upload documents, notes, or images directly.",
   },
   {
     question: "Where do I collect my completed documents or prints?",
-    answer:
-      `${BIZ.name} operates from ${BIZ.location}. We notify you when items are ready for collection.`,
+    answer: `${BIZ.name} operates from ${BIZ.location}. We notify you when items are ready for collection.`,
   },
   {
     question: "How long does it take to complete a design or document task?",
-    answer:
-      "Print and Document Hub tasks are same-day. Design Hub work (logos, flyers, business cards, invitations) takes 2–3 business days.",
+    answer: "Print and Document Hub tasks are same-day. Design Hub work (logos, flyers, business cards, invitations) takes 2–3 business days.",
   },
   {
     question: "What are your payment terms?",
-    answer:
-      "Clear upfront pricing. Payment is required before or upon completion depending on service type.",
+    answer: "Clear upfront pricing. Payment is required before or upon completion depending on service type.",
   },
   {
     question: "Do you use templates for design projects?",
-    answer:
-      "No. All design work is custom-built using professional design tools.",
+    answer: "No. All design work is custom-built using professional design tools.",
   },
 ] as const
 
-// ─── ABOUT CONTENT ───────────────────────────────────────────────────────────
 export const ABOUT_VALUES = [
-  {
-    iconName: "Target",
-    title: "We Keep It Simple",
-    desc: "No confusing jargon. Everything is explained clearly.",
-  },
-  {
-    iconName: "Heart",
-    title: "Community First",
-    desc: "We serve our neighbourhood with care and respect.",
-  },
-  {
-    iconName: "Lightning",
-    title: "Fast & Reliable",
-    desc: "We deliver consistently and on time.",
-  },
+  { iconName: "Target", title: "We Keep It Simple", desc: "No confusing jargon. Everything is explained clearly." },
+  { iconName: "Heart", title: "Community First", desc: "We serve our neighbourhood with care and respect." },
+  { iconName: "Lightning", title: "Fast & Reliable", desc: "We deliver consistently and on time." },
 ] as const
 
 export const ABOUT_STANDARDS = [
-  {
-    id: 1,
-    iconName: "Desktop",
-    title: "Premium Vector Accuracy",
-    description:
-      "All design work is created professionally with no generic templates.",
-  },
-  {
-    id: 2,
-    iconName: "Printer",
-    title: "Megatank Economy Prints",
-    description:
-      "High-quality printing using continuous ink systems for affordability.",
-  },
-  {
-    id: 3,
-    iconName: "DeviceMobile",
-    title: "Direct WhatsApp Pipeline",
-    description:
-      "Fast communication and order handling through WhatsApp.",
-  },
+  { id: 1, iconName: "Desktop", title: "Premium Vector Accuracy", description: "All design work is created professionally with no generic templates." },
+  { id: 2, iconName: "Printer", title: "Megatank Economy Prints", description: "High-quality printing using continuous ink systems for affordability." },
+  { id: 3, iconName: "DeviceMobile", title: "Direct WhatsApp Pipeline", description: "Fast communication and order handling through WhatsApp." },
 ] as const
 
-  // ─── CONTACT ────────────────────────────────────────────────────────────────
 export const CONTACT_LINKS = [
+  { title: "WhatsApp Us", value: BIZ.phone, href: WA.contact, dot: BRAND.whatsapp },
+  { title: "Call Us", value: BIZ.phone, href: `tel:${BIZ.phoneE164}`, dot: BRAND.blue },
+  { title: "Email Us", value: BIZ.email, href: `mailto:${BIZ.email}`, dot: BRAND.orange },
   {
-    title: "WhatsApp Us",
-    value: BIZ.phone,
-    href: WA.contact,
-    dot: BRAND.whatsapp, // brand logo color, exempt from contrast rules
-  },
-  {
-    title: "Call Us",
-    value: BIZ.phone,
-    href: `tel:${BIZ.phoneE164}`,
-    dot: BRAND.blue,
-  },
-  {
-    title: "Email Us",
-    value: BIZ.email,
-    href: `mailto:${BIZ.email}`,
-    dot: BRAND.orange,
-  },
-  {
-    // BRAND.blueDark used flat here previously — passed ~10.9:1 in light
-    // mode but only ~1.6:1 in dark mode (dark navy on a dark chip fails
-    // the 3:1 icon minimum). Now a proper pair, matching the same
-    // blueDark/lightBlue pairing already used for "/about" elsewhere.
     title: "Visit Us",
     value: BIZ.addressFull,
     href: BIZ.mapsUrl,
@@ -402,13 +330,12 @@ export const CONTACT_LINKS = [
   },
 ] as const
 
-// ─── FOOTER ─────────────────────────────────────────────────────────────────
 export const FOOTER_NAV = [
   { label: "Home", path: "/" },
   { label: "Services", path: "/services" },
   { label: "Gallery", path: "/gallery" },
   { label: "Pricing", path: "/pricing" },
   { label: "About", path: "/about" },
-  { label: "Tools", path: "/tools/jpg-to-pdf" }, 
+  { label: "Tools", path: "/tools/jpg-to-pdf" },
   { label: "Contact", path: "/contact" },
 ] as const 
