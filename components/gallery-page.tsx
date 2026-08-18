@@ -6,7 +6,7 @@ import { useSearchParams, usePathname } from "next/navigation"
 import { X, Info, MagnifyingGlass, Shuffle } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
-import { BRAND, HUB_COLORS, HubKey } from "@/lib/brand"
+import { BRAND, TOKEN, HUB_COLORS, HubKey } from "@/lib/brand"
 import { PROJECTS, ProjectData } from "@/lib/data"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { ROW_ORDER, HubId, hubLabelFor, CLIENT_TYPE_LABEL } from "@/lib/gallery-helpers"
@@ -362,6 +362,20 @@ function GalleryPageInner() {
 
       <BackToTopButton visible={showBackToTop} />
     </section>
+  )
+}
+
+function NoticeBadge() {
+  return (
+    <div className="absolute top-3 right-3 z-20 pointer-events-none">
+      <div
+        className="w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm"
+        style={{ backgroundColor: `${TOKEN.warningBg}1a` }}
+        aria-label="Notice for some services in this hub"
+      >
+        <WarningCircle size={17} weight="fill" style={{ color: TOKEN.warningBg }} aria-hidden="true" />
+      </div>
+    </div>
   )
 }
 
