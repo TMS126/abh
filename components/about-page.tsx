@@ -18,7 +18,7 @@ const ABOUT_NEUTRAL = { light: BRAND.dark100, dark: BRAND.techGreyDark }
 
 export function AboutPage() {
   const showBackToTop = useBackToTop()
-  const showScrollToBottom = useScrollToBottom()
+  
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
