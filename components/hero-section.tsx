@@ -5,12 +5,14 @@ import React, { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import Image from "next/image"
-import { ArrowRight, Play, Pause, Megaphone } from "@phosphor-icons/react"
+import { ArrowRight, Play, Pause, Megaphone, Sun, Moon, CloudSun, CloudMoon, Cloud, CloudFog, CloudRain, CloudLightning, Snowflake } from "@phosphor-icons/react"
 import { BRAND, BIZ, MARQUEE_ITEMS } from "@/lib/brand"
+import { eserviceHub } from "@/lib/data/hubs/eservice"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { HUBS_DATA } from "@/lib/hero-data"
 import { ClassicTagline } from "@/components/classic-tagline"
 import { getBusinessStatus, type BusinessStatus } from "@/lib/sa-time"
+import { getWeatherSnapshot, type WeatherCategory } from "@/lib/weather"
 import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
 
 // ─── COLOR HELPERS ───────────────────────────────────────────────────────────
@@ -73,6 +75,32 @@ function buildArrangement() {
   }))
 }
 
+// ─── WEATHER ICON MAP (drives the holiday-banner icon) ──────────────────────
+const WEATHER_ICON_MAP: Record<WeatherCategory, { Icon: React.ElementType; color: string }> = {
+  "clear-day": { Icon: Sun, color: "#F59E0B" },
+  "clear-night": { Icon: Moon, color: "#818CF8" },
+  "partly-cloudy-day": { Icon: CloudSun, color: "#F0A93A" },
+  "partly-cloudy-night": { Icon: CloudMoon, color: "#8B93D8" },
+  cloudy: { Icon: Cloud, color: "#9CA3AF" },
+  fog: { Icon: CloudFog, color: "#9CA3AF" },
+  rain: { Icon: CloudRain, color: "#60A5FA" },
+  thunderstorm: { Icon: CloudLightning, color: "#A78BFA" },
+  snow: { Icon: Snowflake, color: "#7DD3FC" },
+}
+
+function fallbackCategory(greeting: BusinessStatus["greeting"]): WeatherCategory {
+  return greeting === "morning" || greeting === "afternoon" ? "clear-day" : "clear-night"
+}
+
+// ─── NSFAS BACKLOG NOTICE — DATA-DRIVEN ──────────────────────────────────────
+// Reads directly from the same source that powers the orange "!" badges in
+// eservice.ts. Zero hardcoded service/hub names: if every `notice` field is
+// removed from eservice.ts once the backlog clears, this pill disappears on
+// its own — nothing in this component needs to change.
+const NOTICE_ITEMS = eserviceHub.sections.flatMap((section) => section.items.filter((item) => item.notice))
+const HAS_BACKLOG_NOTICE = NOTICE_ITEMS.length > 0
+const BACKLOG_MESSAGE = NOTICE_ITEMS[0]?.notice ?? ""
+
 // ─── COMPONENT ───────────────────────────────────────────────────────────────
 export function HeroSection() {
   const router = useRouter()
@@ -80,6 +108,7 @@ export function HeroSection() {
   const [mounted, setMounted] = useState(false)
   const [marqueePaused, setMarqueePaused] = useState(false)
   const [status, setStatus] = useState<BusinessStatus | null>(null)
+  const [weatherCategory, setWeatherCategory] = useState<WeatherCategory | null>(null)
   const showBackToTop = useBackToTop()
 
   const [arrangement, setArrangement] = useState(() =>
@@ -96,6 +125,13 @@ export function HeroSection() {
     return () => clearInterval(id)
   }, [])
 
+  useEffect(() => {
+    if (!status?.isHoliday) return
+    getWeatherSnapshot().then((snapshot) => {
+      if (snapshot) setWeatherCategory(snapshot.category)
+    })
+  }, [status?.isHoliday])
+
   const isDark = mounted && resolvedTheme === "dark"
 
   const STROKE_COLOR = BRAND.blue
@@ -105,11 +141,13 @@ export function HeroSection() {
   const activeCircleColor = CTA_FILL_COLOR
   const activeArrowIconColor = getArrowIconColor(activeCircleColor)
 
-  // Announcement pill fill — theme-aware, WCAG-verified BRAND tokens only.
-  // orangeAccessible = 6.2:1 vs white (light mode) · orangeAccessibleDark = 8.5:1 vs white (dark mode)
+  // Backlog pill fill — theme-aware, WCAG-verified BRAND tokens only.
+  // orangeAccessible = 6.2:1 vs white (light) · orangeAccessibleDark = 8.5:1 vs white (dark)
   const ANNOUNCEMENT_FILL = isDark ? BRAND.orangeAccessibleDark : BRAND.orangeAccessible
 
   const showHolidayBanner = mounted && status?.isHoliday
+  const displayCategory = weatherCategory ?? (status ? fallbackCategory(status.greeting) : "clear-day")
+  const { Icon: WeatherIcon, color: weatherIconColor } = WEATHER_ICON_MAP[displayCategory]
 
   const handleNavigate = (path: string) => router.push(path)
   const handleCtaClick = () => handleNavigate("/services")
@@ -117,10 +155,6 @@ export function HeroSection() {
   return (
     <section
       aria-label="Hero"
-      // FIX: min-h → h (capped, not just a floor) using dvh so mobile
-      // browser chrome doesn't cause jumpiness. Combined with the
-      // existing overflow-hidden below, this guarantees nothing past
-      // this section can peek in before the user scrolls.
       className="relative min-h-[calc(100vh-var(--nav-h))] w-full flex flex-col items-center justify-center px-4 md:px-8 pt-[calc(var(--nav-h)+56px)] md:pt-[104px] pb-10 md:pb-16 overflow-hidden cursor-default select-none bg-background transition-colors duration-300">
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <div
@@ -134,10 +168,10 @@ export function HeroSection() {
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center relative z-10 w-full mb-6">
 
-        {/* ─── IMPORTANT ANNOUNCEMENT PILL ───────────────────────────────── */}
-        {/* Orange = sitewide warning/alert color (never used elsewhere).   */}
-        {/* Fill is theme-aware via BRAND tokens only — no hardcoded hex.   */}
-        {showHolidayBanner && status && (
+        {/* ─── NOTIFICATION 1: NSFAS BACKLOG PILL — data-driven, centered ─── */}
+        {/* Independent of the holiday banner below. Visible for as long as */}
+        {/* eservice.ts carries any `notice` field; needs no manual toggle. */}
+        {HAS_BACKLOG_NOTICE && (
           <div className="w-full flex justify-center mb-8 md:mb-10">
             <div
               role="status"
@@ -149,7 +183,7 @@ export function HeroSection() {
                 Important Announcement
               </span>
               <span className="text-sm font-semibold leading-snug">
-                Tech, Design &amp; E-Service are closed today for {status.holidayName} — Print &amp; Docu is open as usual
+                {BACKLOG_MESSAGE}
               </span>
             </div>
           </div>
@@ -160,22 +194,20 @@ export function HeroSection() {
           {/* Left column — text + CTA */}
           <div className="text-center md:text-left">
 
+            {/* ─── NOTIFICATION 2: HOLIDAY BANNER — restored as-is ────────── */}
+            {showHolidayBanner && status && (
+              <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-3">
+                <WeatherIcon size={16} weight="fill" style={{ color: weatherIconColor }} aria-hidden="true" />
+                Tech, Design &amp; E-Service are closed today for {status.holidayName} — Print &amp; Docu is open as usual
+              </p>
+            )}
+
             <h1 className="font-sans font-black text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.1] mb-4 text-balance transition-colors duration-300 text-zinc-900 dark:text-zinc-50">
-              <span
-                className="transition-colors duration-200 hover:text-[#1E6FA8] active:text-[#1E6FA8]"
-              >Printing</span>,{" "}
-              <span
-                className="transition-colors duration-200 hover:text-[#B06225] active:text-[#B06225]"
-              >Design</span>,{" "}
-              <span
-                className="transition-colors duration-200 hover:text-[#4A8011] active:text-[#4A8011]"
-              >Documents</span>,{" "}
-              <span
-                className="transition-colors duration-200 hover:text-[#0F766E] active:text-[#0F766E]"
-              >E-Services</span>{" "}&amp;{" "}
-              <span
-                className="transition-colors duration-200 hover:text-[#333333] dark:hover:text-[#B8CCE0] active:text-[#333333] dark:active:text-[#B8CCE0]"
-              >Tech</span>
+              <span className="transition-colors duration-200 hover:text-[#1E6FA8] active:text-[#1E6FA8]">Printing</span>,{" "}
+              <span className="transition-colors duration-200 hover:text-[#B06225] active:text-[#B06225]">Design</span>,{" "}
+              <span className="transition-colors duration-200 hover:text-[#4A8011] active:text-[#4A8011]">Documents</span>,{" "}
+              <span className="transition-colors duration-200 hover:text-[#0F766E] active:text-[#0F766E]">E-Services</span>{" "}&amp;{" "}
+              <span className="transition-colors duration-200 hover:text-[#333333] dark:hover:text-[#B8CCE0] active:text-[#333333] dark:active:text-[#B8CCE0]">Tech</span>
               <span className="text-zinc-900 dark:text-zinc-50"> — All in One Place</span>
             </h1>
 
@@ -199,28 +231,14 @@ export function HeroSection() {
                   className="absolute inset-0 origin-bottom scale-y-0 transition-transform duration-150 ease-out group-hover:scale-y-100 group-active:scale-y-100"
                   style={{ backgroundColor: CTA_FILL_COLOR }}
                 />
-
                 <span className="relative z-10 w-8 h-8 shrink-0" aria-hidden="true" />
-
-                <span
-                  className="relative z-10 flex-1 flex items-center justify-center whitespace-nowrap transition-colors duration-150"
-                  style={{ color: REST_COLOR }}
-                >
+                <span className="relative z-10 flex-1 flex items-center justify-center whitespace-nowrap transition-colors duration-150" style={{ color: REST_COLOR }}>
                   <span className="group-hover:text-white group-active:text-white transition-colors duration-150 text-xl sm:text-2xl">
                     See Our Services
                   </span>
                 </span>
-
-                <span
-                  className="relative z-10 w-8 h-8 shrink-0 inline-flex items-center justify-center rounded-full shadow-sm"
-                  style={{ backgroundColor: activeCircleColor }}
-                  aria-hidden="true"
-                >
-                  <ArrowRight
-                    weight="bold"
-                    style={{ color: activeArrowIconColor }}
-                    className="w-4 h-4 transition-all duration-300 group-hover:translate-x-0.5"
-                  />
+                <span className="relative z-10 w-8 h-8 shrink-0 inline-flex items-center justify-center rounded-full shadow-sm" style={{ backgroundColor: activeCircleColor }} aria-hidden="true">
+                  <ArrowRight weight="bold" style={{ color: activeArrowIconColor }} className="w-4 h-4 transition-all duration-300 group-hover:translate-x-0.5" />
                 </span>
               </button>
             </ScrollBounce>
@@ -237,27 +255,14 @@ export function HeroSection() {
                     key={hub.id}
                     className="group/tile absolute aspect-square rounded-2xl overflow-hidden border-4 border-white dark:border-zinc-900 shadow-[0_6px_18px_rgba(0,0,0,0.10)] dark:shadow-[0_6px_18px_rgba(0,0,0,0.35)] transition-transform duration-300 hover:z-[60] hover:scale-[1.03] animate-in fade-in zoom-in-95"
                     style={{
-                      top: slot.top,
-                      bottom: slot.bottom,
-                      left: slot.left,
-                      right: slot.right,
-                      width: `${width}%`,
-                      zIndex: slot.z,
-                      animationDelay: `${slot.z * 40}ms`,
-                      animationDuration: "500ms",
-                      animationFillMode: "both",
+                      top: slot.top, bottom: slot.bottom, left: slot.left, right: slot.right,
+                      width: `${width}%`, zIndex: slot.z,
+                      animationDelay: `${slot.z * 40}ms`, animationDuration: "500ms", animationFillMode: "both",
                       ["--hub-accent" as any]: hubAccent,
                       ["--hub-accent-fg" as any]: hubAccentFg,
                     }}
                   >
-                    <Image
-                      src={HUB_IMAGES[hub.id]}
-                      alt={`${hub.name} example`}
-                      fill
-                      priority
-                      sizes="(max-width: 768px) 45vw, 220px"
-                      className="object-cover"
-                    />
+                    <Image src={HUB_IMAGES[hub.id]} alt={`${hub.name} example`} fill priority sizes="(max-width: 768px) 45vw, 220px" className="object-cover" />
                     <span className="absolute -top-2 -right-2 px-3 py-1 rounded-full text-[0.72rem] font-black uppercase tracking-widest bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 shadow-md transition-colors duration-200 group-hover/tile:bg-[var(--hub-accent)] group-hover/tile:text-[var(--hub-accent-fg)] group-hover/tile:border-transparent">
                       {pillLabel(hub.name)}
                     </span>
@@ -274,10 +279,7 @@ export function HeroSection() {
           aria-label="Our services"
           onMouseEnter={() => setMarqueePaused(true)}
           onMouseLeave={() => setMarqueePaused(false)}
-          onTouchStart={(e) => {
-            e.stopPropagation()
-            setMarqueePaused((p) => !p)
-          }}
+          onTouchStart={(e) => { e.stopPropagation(); setMarqueePaused((p) => !p) }}
           className="relative w-full max-w-[1240px] py-4 overflow-hidden select-none group/marquee rounded-[14px] bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800 [mask-image:linear-gradient(to_right,transparent_0%,black_8%,black_92%,transparent_100%)]"
         >
           <button
@@ -286,15 +288,9 @@ export function HeroSection() {
             aria-label={marqueePaused ? "Play scrolling services list" : "Pause scrolling services list"}
             className="absolute top-1/2 right-2 -translate-y-1/2 z-10 w-6 h-6 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 bg-zinc-50 dark:bg-zinc-900/80 transition-colors"
           >
-            {marqueePaused
-              ? <Play size={11} weight="fill" aria-hidden="true" />
-              : <Pause size={11} weight="fill" aria-hidden="true" />}
+            {marqueePaused ? <Play size={11} weight="fill" aria-hidden="true" /> : <Pause size={11} weight="fill" aria-hidden="true" />}
           </button>
-
-          <div
-            className="flex whitespace-nowrap w-max animate-marquee"
-            style={{ animationPlayState: marqueePaused ? "paused" : "running" }}
-          >
+          <div className="flex whitespace-nowrap w-max animate-marquee" style={{ animationPlayState: marqueePaused ? "paused" : "running" }}>
             {[0, 1].map((copy) => (
               <div key={copy} className="flex items-center shrink-0" aria-hidden={copy === 1 ? "true" : undefined}>
                 {MARQUEE_ITEMS.map((item, idx) => (
@@ -302,9 +298,7 @@ export function HeroSection() {
                     <span className="inline-flex items-center px-5 font-semibold text-base text-zinc-600 dark:text-zinc-400 transition-opacity duration-300 group-hover/marquee:opacity-70 hover:!opacity-100">
                       {item}
                     </span>
-                    <span className="font-black text-lg leading-none shrink-0 text-zinc-300 dark:text-zinc-600" aria-hidden="true">
-                      •
-                    </span>
+                    <span className="font-black text-lg leading-none shrink-0 text-zinc-300 dark:text-zinc-600" aria-hidden="true">•</span>
                   </React.Fragment>
                 ))}
               </div>
@@ -316,4 +310,4 @@ export function HeroSection() {
       <BackToTopButton visible={showBackToTop} />
     </section>
   )
-} 
+}
