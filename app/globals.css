@@ -72,6 +72,10 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
      both jobs with only the -bg pairing ever verified. */
   --brand-warning-bg: #9A4B12;        /* 6.20:1 vs white icon */
   --brand-warning-bg-dark: #7A3B0E;   /* 8.54:1 vs white icon */
+   
+   /* Error role — same bg/text split as warning above. */
+  --brand-error-bg: var(--destructive);       /* 4.83:1 vs white icon (same red, already verified) */
+  --brand-error-text: #DC2626;                /* 4.83:1 vs white — text-on-light-tint use */
 
   /* Theme-aware — overridden in .dark below. Used as TEXT directly on the
      page background, a card, AND a tinted announcement panel — verified
@@ -156,6 +160,7 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --brand-blue-text: #6693db;    /* 5.60:1 vs dark bg, 4.59:1 vs dark card */
   --brand-orange-text: #e3731f;  /* 5.58:1 vs dark bg, 4.57:1 vs dark card */
   --brand-green-text: #70a144;   /* 5.69:1 vs dark bg, 4.66:1 vs dark card */
+  --brand-error-text: #F87171;   /* 6.29:1 vs dark bg, 5.15:1 vs dark card — DC2626 only hit 3.6:1 in dark, failed AA */
 }
 
 /* ── Tailwind theme mapping ── */
@@ -194,6 +199,8 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --color-brand-blue-dark: var(--brand-blue-dark);
   --color-brand-green-dark: var(--brand-green-dark);
   --color-brand-orange-dark: var(--brand-orange-dark);
+  --color-brand-error-bg: var(--brand-error-bg);
+  --color-brand-error-text: var(--brand-error-text);
 
   --color-brand-teal: var(--brand-teal);
   --color-brand-teal-dark: var(--brand-teal-dark);
