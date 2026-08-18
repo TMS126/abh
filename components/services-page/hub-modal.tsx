@@ -4,17 +4,19 @@
 /**
  * ════════════════════════════════════════════════════════════════════════
  * HUB MODAL — the popup that opens when a customer taps a whole hub card
- * (e.g. "E-Service Hub") from the main Services page. Shows section tabs
- * (SASSA, SARS, Online Applications, etc.) and, underneath, the list of
- * individual services in whichever tab is currently open.
+ * (e.g. "E-Service Hub"). Shows section tabs (SASSA, SARS, etc.) and the
+ * list of individual services inside whichever tab is currently open.
  *
- * NOTICE BADGES ADDED IN THIS FILE:
- *   1. Next to a SECTION TAB name (e.g. "Online Applications ❗") —
- *      shows if ANY service inside that section currently has a notice.
- *   2. Next to an individual ITEM ROW (e.g. "❗ NSFAS Status Check") —
- *      shows only for that specific service.
- * Both badges are computed automatically from the data — nothing here
- * is hardcoded to "NSFAS" or any other specific service name.
+ * NOTICE BADGES — TWO DIFFERENT STYLES ON PURPOSE:
+ *   1. SECTION TAB badge (e.g. "Online Applications ⓘ") — a small SOLID
+ *      CIRCLE sitting at the top-right corner of the tab label, like a
+ *      notification dot on an app icon. Shows if ANY item in that
+ *      section has a notice.
+ *   2. ITEM ROW badge (e.g. "! NSFAS Status Check") — a plain, RAW "!"
+ *      character, no circle or background behind it. Shows only for
+ *      that specific item.
+ * Both are computed dynamically from `item.notice` — nothing here is
+ * hardcoded to any specific service name.
  * ════════════════════════════════════════════════════════════════════════
  */
 
@@ -174,8 +176,7 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
               const hasBulk = sectionHasBulk(hubId, section.title, section.items)
 
               // NOTICE CHECK: true if ANY item inside this section has a
-              // notice set. Fully dynamic — works for any hub/section
-              // without needing to name specific services here.
+              // notice set. Fully dynamic — no service name is hardcoded.
               const hasNotice = section.items.some((i) => !!i.notice)
 
               return (
@@ -185,21 +186,25 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
                   aria-selected={isOpen}
                   onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)}
                 >
+                  {/* `relative` wrapper lets the notification dot below be
+                      absolutely positioned at this label's top-right corner */}
                   <span
                     className="relative pb-1.5 text-[1.05rem] font-black tracking-tight whitespace-nowrap transition-colors duration-200 border-b-2 -mb-[17px]"
                     style={{ borderColor: isOpen ? accent : "transparent", color: isOpen ? accent : (isDark ? "#a1a1aa" : "#71717a") }}
                   >
                     {section.title}
 
-                    {/* Orange "!" badge next to the section tab name */}
+                    {/* CIRCULAR notification dot — sits at the TOP-RIGHT
+                        CORNER of the section name, like an app badge.
+                        This is the "category-level" notice indicator. */}
                     {hasNotice && (
-                      <WarningCircle
-                        size={11}
-                        weight="fill"
+                      <span
                         aria-label="Notice for some services in this section"
-                        className="inline-block align-super ml-1"
-                        style={{ color: BRAND.orange }}
-                      />
+                        className="absolute -top-1 -right-3 w-3.5 h-3.5 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: BRAND.orange }}
+                      >
+                        <WarningCircle size={9} weight="fill" color="#ffffff" aria-hidden="true" />
+                      </span>
                     )}
 
                     {hasBulk && (
@@ -250,9 +255,6 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
                         desc: item.description,
                         turnaround: getTurnaround(activeSection.title, item.name),
                         tips: item.tips ? [...item.tips] : undefined,
-                        // Pass the notice straight through — if this item
-                        // has no notice, this is simply `undefined`, and
-                        // the detail modal's notice icon won't render.
                         notice: item.notice,
                       })
                     }
@@ -265,15 +267,18 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
                         </span>
                       )}
 
-                      {/* Orange "!" badge next to this specific item's name */}
+                      {/* RAW "!" — plain text character, deliberately NOT
+                          wrapped in a circle or icon component. This is the
+                          "item-level" notice indicator, distinct in style
+                          from the circular section-tab badge above. */}
                       {item.notice && (
-                        <WarningCircle
-                          size={12}
-                          weight="fill"
+                        <span
                           aria-label="Notice"
-                          className="shrink-0"
+                          className="shrink-0 font-black text-[0.95rem] leading-none"
                           style={{ color: BRAND.orange }}
-                        />
+                        >
+                          !
+                        </span>
                       )}
 
                       {item.name}
@@ -353,4 +358,4 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
       )}
     </div>
   )
-    } 
+        } 
