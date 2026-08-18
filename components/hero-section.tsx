@@ -5,8 +5,8 @@ import React, { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import Image from "next/image"
-import { ArrowRight, Play, Pause, Warning, X, Sun, Moon, CloudSun, CloudMoon, Cloud, CloudFog, CloudRain, CloudLightning, Snowflake } from "@phosphor-icons/react"
-import { BRAND, BIZ, MARQUEE_ITEMS, TOKEN, pickHex } from "@/lib/brand"
+import { ArrowRight, Play, Pause, Warning, Sun, Moon, CloudSun, CloudMoon, Cloud, CloudFog, CloudRain, CloudLightning, Snowflake } from "@phosphor-icons/react"
+import { BRAND, BIZ, MARQUEE_ITEMS } from "@/lib/brand"
 import { eserviceHub } from "@/lib/data/hubs/eservice"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { HUBS_DATA } from "@/lib/hero-data"
@@ -14,6 +14,7 @@ import { ClassicTagline } from "@/components/classic-tagline"
 import { getBusinessStatus, type BusinessStatus } from "@/lib/sa-time"
 import { getWeatherSnapshot, type WeatherCategory } from "@/lib/weather"
 import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
+import { NoticePill } from "@/components/notice-pill"
 
 // ─── COLOR HELPERS ───────────────────────────────────────────────────────────
 function hexToRgbLocal(hex: string) {
@@ -104,7 +105,6 @@ export function HeroSection() {
   const [marqueePaused, setMarqueePaused] = useState(false)
   const [status, setStatus] = useState<BusinessStatus | null>(null)
   const [weatherCategory, setWeatherCategory] = useState<WeatherCategory | null>(null)
-  const [backlogExpanded, setBacklogExpanded] = useState(false)
   const [backlogDismissed, setBacklogDismissed] = useState(false)
   const showBackToTop = useBackToTop()
 
@@ -138,13 +138,6 @@ export function HeroSection() {
   const activeCircleColor = CTA_FILL_COLOR
   const activeArrowIconColor = getArrowIconColor(activeCircleColor)
 
-  // Backlog notice — every color below is a TOKEN (CSS var). No isDark
-  // branching for color anymore: the var resolves itself in globals.css.
-  // ANNOUNCEMENT_TINT is the one exception, since it needs a raw hex for
-  // string-based alpha blending in dark mode — sourced from pickHex, which
-  // mirrors the SAME verified values as the tokens above, not a guess.
-  const ANNOUNCEMENT_TINT = isDark ? `${pickHex("warningBg", true)}26` : BRAND.lightOrange
-
   const showHolidayBanner = mounted && status?.isHoliday
   const displayCategory = weatherCategory ?? (status ? fallbackCategory(status.greeting) : "clear-day")
   const { Icon: WeatherIcon, color: weatherIconColor } = WEATHER_ICON_MAP[displayCategory]
@@ -168,77 +161,19 @@ export function HeroSection() {
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center relative z-10 w-full mb-6">
 
-        {/* ─── NOTIFICATION 1: NSFAS BACKLOG — collapsed pill / expanded card ─── */}
+        {/* ─── NOTIFICATION 1: NSFAS BACKLOG — now the shared NoticePill ─── */}
         {HAS_BACKLOG_NOTICE && !backlogDismissed && (
-          <div className="w-full flex justify-center mb-8 md:mb-10">
-            {!backlogExpanded ? (
-              <button
-                onClick={() => setBacklogExpanded(true)}
-                aria-expanded={false}
-                aria-label="Expand important announcement"
-                style={{ borderColor: TOKEN.warningBg }}
-                className="flex items-center gap-2 pl-2 pr-1.5 py-1.5 rounded-full border bg-white dark:bg-zinc-900 shadow-[0_4px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all duration-200 hover:shadow-[0_6px_16px_rgba(0,0,0,0.12)]"
-              >
-                <span
-                  className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: TOKEN.warningBg }}
-                  aria-hidden="true"
-                >
-                  <Warning size={13} weight="fill" style={{ color: TOKEN.white }} />
-                </span>
-                <span className="text-sm font-bold" style={{ color: TOKEN.orangeText }}>
-                  Important Announcement
-                </span>
-                <span
-                  role="button"
-                  tabIndex={0}
-                  aria-label="Dismiss announcement"
-                  onClick={(e) => { e.stopPropagation(); setBacklogDismissed(true) }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setBacklogDismissed(true) }
-                  }}
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
-                >
-                  <X size={13} weight="bold" aria-hidden="true" />
-                </span>
-              </button>
-            ) : (
-              <div
-                role="status"
-                className="relative w-full max-w-[440px] rounded-[14px] pl-4 pr-10 py-4 transition-colors duration-300"
-                style={{ backgroundColor: ANNOUNCEMENT_TINT }}
-              >
-                <button
-                  onClick={() => setBacklogExpanded(false)}
-                  aria-label="Collapse announcement"
-                  className="flex items-start gap-3 text-left w-full"
-                >
-                  <span
-                    className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: TOKEN.warningBg }}
-                    aria-hidden="true"
-                  >
-                    <Warning size={16} weight="fill" style={{ color: TOKEN.white }} />
-                  </span>
-                  <span className="flex flex-col gap-0.5">
-                    <span className="text-[0.7rem] font-black uppercase tracking-widest" style={{ color: TOKEN.orangeText }}>
-                      Important Announcement
-                    </span>
-                    <span className="text-sm font-semibold leading-snug" style={{ color: TOKEN.orangeText }}>
-                      {BACKLOG_MESSAGE}
-                    </span>
-                  </span>
-                </button>
-                <button
-                  onClick={() => setBacklogDismissed(true)}
-                  aria-label="Dismiss announcement"
-                  className="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center transition-opacity hover:opacity-70"
-                  style={{ color: TOKEN.orangeText }}
-                >
-                  <X size={14} weight="bold" aria-hidden="true" />
-                </button>
-              </div>
-            )}
+          <div className="w-full mb-8 md:mb-10">
+            <NoticePill
+              variant="warning"
+              Icon={Warning}
+              collapsedLabel="Important Announcement"
+              expandedLabel="Important Announcement"
+              isDark={isDark}
+              onDismiss={() => setBacklogDismissed(true)}
+            >
+              {BACKLOG_MESSAGE}
+            </NoticePill>
           </div>
         )}
 
@@ -359,4 +294,4 @@ export function HeroSection() {
       <BackToTopButton visible={showBackToTop} />
     </section>
   )
-    } 
+  } 
