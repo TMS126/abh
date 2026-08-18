@@ -1,6 +1,6 @@
 // app/tools/jpg-to-pdf/constants.ts
 import type { HubKey } from "@/lib/brand"
-import type { PageSize, ConvertMode } from "./types"
+import type { PageSize, ConvertMode, ImageFilter } from "./types"
 
 export const ACCEPTED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
 export const MAX_FILES = 20
@@ -64,3 +64,13 @@ export const CROP_ASPECT_PRESETS: { label: string; ratio: number | null }[] = [
 // smoother but costs more canvas draw calls (cells * 2 triangles each).
 // 14 is a good quality/speed balance for a one-off conversion on mobile.
 export const PERSPECTIVE_WARP_GRID = 14
+
+// ─── FILTERS ──────────────────────────────────────────────────────────────
+// Tap-to-cycle order used by the per-image filter button in image-grid.tsx.
+export const FILTER_CYCLE: ImageFilter[] = ["none", "grayscale", "bw", "sepia"]
+export const FILTER_LABELS: Record<ImageFilter, string> = {
+  none: "Original",
+  grayscale: "Grayscale",
+  bw: "B&W",
+  sepia: "Sepia",
+} 
