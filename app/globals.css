@@ -186,6 +186,207 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --color-brand-neutral-100: var(--brand-neutral-100);
   --color-brand-neutral-200: var(--brand-neutral-200);
   --color-brand-neutral-300: var(--brand-neutral-300);
+/* app/globals.css — PART 1 of 2 (paste first, then append Part 2) */
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* ── Global layout force ── */
+*, *::before, *::after { box-sizing: border-box; min-width: 0; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-behavior: smooth; overflow-x: hidden; }
+body { overflow-x: hidden; min-height: 100dvh; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+/* Scroll lock — applied by Gallery modal */
+html[data-scroll-locked] body { overflow: hidden; }
+
+img, video, svg, canvas { max-width: 100%; display: block; }
+input, button, textarea, select { font: inherit; max-width: 100%; }
+
+@custom-variant dark (&:is(.dark *));
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   BRAND TOKEN SYSTEM — SUPER SOURCE
+   This file (mirrored in lib/brand.ts) is the ONLY place color decisions get
+   made. No component may hardcode a hex value, a Tailwind color utility
+   (bg-green-500, text-white, etc.), or invent a new brand color inline.
+
+   ── THE TWO-LAYER RULE ──
+   1. RAW PALETTE  — swatches only. Never use directly as a text color on
+      a matching-family background without checking layer 2.
+   2. SEMANTIC PAIRS ("--on-*") — for every color used as a solid
+      background/surface anywhere in the app, there is a matching --on-*
+      token below with its exact WCAG contrast ratio documented in a
+      comment. If you introduce a NEW background color, you must add its
+      --on-* pair here — computed, not guessed — before using it.
+
+   ── KNOWN TRAP ──
+   --brand-green (#4A8011, deep/muted) and --brand-whatsapp (#25D366,
+   bright) are BOTH "green" but are NOT interchangeable as button
+   backgrounds:
+     - white text on --brand-green   → 4.79:1 (AA pass)
+     - white text on --brand-whatsapp → ~1.98:1 (FAIL, unreadable)
+   Always use var(--on-whatsapp) (dark navy) on raw WhatsApp green, never
+   white. If a component needs white text on a WhatsApp-family button
+   (e.g. a solid CTA where white reads better than navy), use
+   --brand-whatsapp-accessible instead — a same-hue, AA-safe variant
+   built for exactly that, paired with var(--on-whatsapp-accessible).
+───────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* ── Raw palette ── */
+  --brand-green: #4A8011;        /* WCAG AA — 4.79:1 vs white */
+  --brand-orange: #B9590D;       /* WCAG AA — 4.67:1 vs white */
+  --brand-light-blue: #A9D6F2;
+  --brand-light-green: #CDEB9F;
+  --brand-light-orange: #F9D1B0;
+
+  --brand-blue: #1E6FA8;         /* WCAG AA — 5.39:1 vs white */
+  --brand-blue-mid: #15537D;
+  --brand-blue-dark: #0F3F66;
+  --brand-green-dark: #4C8212;   /* WCAG AA — 4.66:1 vs white */
+  --brand-orange-dark: #B06225;  /* WCAG AA — 4.55:1 vs white */
+
+  --brand-teal: #0F766E;
+  --brand-teal-dark: #115E59;
+  --brand-teal-light: #99F6E4;
+
+  --brand-neutral-100: #EDEDED;
+  --brand-neutral-200: #F4F4F4;
+  --brand-neutral-300: #D6D6D6;
+  --brand-neutral-400: #9A9A9A;
+  --brand-neutral-500: #747474;  /* WCAG AA — 4.67:1 vs white */
+
+  --brand-dark-100: #333333;
+  --brand-dark-200: #555555;
+  --brand-tech-grey-dark: #B8CCE0;  /* Tech Hub dark-mode accent — icon/text use only, not a background */
+  --brand-green-deep: #3E6B0E;
+  --brand-orange-brown: #A86530; /* WCAG AA — 4.60:1 vs white */
+  --brand-orange-accessible: #9A4B12;      /* WCAG AA — 6.2:1 vs white */
+  --brand-orange-accessible-dark: #7A3B0E; /* WCAG AAA — 8.5:1 vs white */
+  --brand-white: #FFFFFF;
+
+  --brand-whatsapp: #25D366;     /* white text FAILS (~1.98:1) — see --on-whatsapp below */
+  --brand-whatsapp-dark: #1ebe5a;
+
+  /* Same-hue, WCAG AA-safe variants for solid buttons that need WHITE
+     text instead of the navy pairing above. Mirrors lib/brand.ts's
+     whatsappAccessible / whatsappAccessibleDark exactly — do not let
+     these two files drift again. */
+  --brand-whatsapp-accessible: #178540;      /* WCAG AA — 4.70:1 with white text */
+  --brand-whatsapp-accessible-dark: #125F2F; /* hover state — 7.77:1 with white text */
+
+  --brand-blue-text: #16325f;
+  --brand-orange-text: #b85c17;
+  --brand-green-text: #4d6f2f;
+
+  --brand-whatsapp-text: #0f172a; /* AAA — 9.0:1 on --brand-whatsapp */
+
+  /* ── Semantic pairs (surface → on-surface). Every entry = verified ratio. ── */
+  --on-brand-blue: #FFFFFF;       /* 5.39:1 AA — for brand-blue / blue-mid / blue-dark bg */
+  --on-brand-green: #FFFFFF;      /* 4.79:1 AA — for brand-green bg (NOT whatsapp green) */
+  --on-brand-orange: #FFFFFF;     /* 4.67:1 AA — for brand-orange bg */
+  --on-whatsapp: var(--brand-whatsapp-text);            /* 9.0:1 AAA — for raw brand-whatsapp bg. Never white. */
+  --on-whatsapp-accessible: #FFFFFF;                    /* 4.70:1 AA (7.77:1 on the -dark hover variant) */
+  --on-pastel: var(--brand-dark-100);        /* dark navy for light-blue/light-green/light-orange/neutral-100/200/300 bg chips */
+  --on-destructive: #FFFFFF;      /* 4.83:1 AA — paired with corrected --destructive below */
+
+  --radius: 14px;
+
+  --nav-h: 74px;
+  --nav-bg: rgba(255, 255, 255, 0.97);
+  --footer-bg: #0F3F66;
+  --shadow: 0 4px 28px rgba(30, 111, 168, 0.07);
+  --card-border: transparent;
+
+  --background: #FFFFFF;
+  --foreground: #333333;
+  --card: #FFFFFF;
+  --card-foreground: #333333;
+  --popover: #FFFFFF;
+  --popover-foreground: #333333;
+  --primary: #1E6FA8;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F4F4F4;
+  --secondary-foreground: #333333;
+  --muted: #EDEDED;
+  --muted-foreground: #525252;
+  --accent: #4A8011;             /* WCAG AA — 4.79:1 vs white foreground (was #6FBF1A at 2.3:1) */
+  --accent-foreground: #FFFFFF;
+  --destructive: #DC2626;        /* FIX: was #ef4444 (3.76:1 — fails AA w/ white text). Now 4.83:1 AA. */
+  --destructive-foreground: #FFFFFF;
+  --border: #D6D6D6;
+  --input: #EDEDED;
+  --ring: #1E6FA8;
+}
+
+.dark {
+  --background: #0D1B2A;
+  --foreground: #E8EFF6;
+  --card: #1A2C3E;
+  --card-foreground: #E8EFF6;
+  --popover: #1A2C3E;
+  --popover-foreground: #E8EFF6;
+  --primary: #A9D6F2;
+  --primary-foreground: #0D1B2A;
+  --secondary: #1A2C3E;
+  --secondary-foreground: #E8EFF6;
+  --muted: #142233;
+  --muted-foreground: #8AABBF;
+  --accent: #CDEB9F;
+  --accent-foreground: #0D1B2A;
+  --destructive: #DC2626;        /* FIX: kept in sync with :root — same fail existed here too */
+  --destructive-foreground: #FFFFFF;
+  --border: #243648;
+  --input: #243648;
+  --ring: #A9D6F2;
+  --nav-bg: rgba(13, 27, 42, 0.97);
+  --footer-bg: #091524;
+  --shadow: 0 4px 28px rgba(0, 0, 0, 0.3);
+  --card-border: #243648;
+}
+
+/* ── Tailwind theme mapping ── */
+@theme inline {
+  --font-sans: var(--font-body), 'Inter Fallback', sans-serif;
+  --font-heading: var(--font-heading), 'Jost Fallback', sans-serif;
+  --font-mono: var(--font-mono), 'JetBrains Mono Fallback', monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-brand-green: var(--brand-green);
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-light-blue: var(--brand-light-blue);
+  --color-brand-light-green: var(--brand-light-green);
+  --color-brand-light-orange: var(--brand-light-orange);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-blue-mid: var(--brand-blue-mid);
+  --color-brand-blue-dark: var(--brand-blue-dark);
+  --color-brand-green-dark: var(--brand-green-dark);
+  --color-brand-orange-dark: var(--brand-orange-dark);
+
+  --color-brand-teal: var(--brand-teal);
+  --color-brand-teal-dark: var(--brand-teal-dark);
+  --color-brand-teal-light: var(--brand-teal-light);
+
+  --color-brand-neutral-100: var(--brand-neutral-100);
+  --color-brand-neutral-200: var(--brand-neutral-200);
+  --color-brand-neutral-300: var(--brand-neutral-300);
   --color-brand-neutral-400: var(--brand-neutral-400);
   --color-brand-neutral-500: var(--brand-neutral-500);
 
@@ -201,17 +402,18 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --color-brand-whatsapp: var(--brand-whatsapp);
   --color-brand-whatsapp-dark: var(--brand-whatsapp-dark);
   --color-brand-whatsapp-text: var(--brand-whatsapp-text);
+  --color-brand-whatsapp-accessible: var(--brand-whatsapp-accessible);
+  --color-brand-whatsapp-accessible-dark: var(--brand-whatsapp-accessible-dark);
 
   --color-brand-blue-text: var(--brand-blue-text);
   --color-brand-orange-text: var(--brand-orange-text);
   --color-brand-green-text: var(--brand-green-text);
 
-  /* Semantic on-* pairs exposed to Tailwind as color-on-* utilities (bg-on-whatsapp etc. not needed —
-     use text-on-whatsapp / the .abh-on-* helper classes in Part 2 instead) */
   --color-on-brand-blue: var(--on-brand-blue);
   --color-on-brand-green: var(--on-brand-green);
   --color-on-brand-orange: var(--on-brand-orange);
   --color-on-whatsapp: var(--on-whatsapp);
+  --color-on-whatsapp-accessible: var(--on-whatsapp-accessible);
   --color-on-pastel: var(--on-pastel);
   --color-on-destructive: var(--on-destructive);
 
@@ -219,8 +421,8 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-}
-
+     }
+   
 /* app/globals.css — PART 2 of 2 (append directly after Part 1)*/
 
 @layer base {
@@ -518,4 +720,5 @@ button, a, [role="button"] {
   .abh-on-whatsapp  { color: var(--on-whatsapp); }   /* dark navy — NEVER white */
   .abh-on-pastel    { color: var(--on-pastel); }     /* for light-blue/light-green/light-orange/neutral-100-300 chips */
   .abh-on-destructive { color: var(--on-destructive); }
+  .abh-on-whatsapp-accessible { color: var(--on-whatsapp-accessible); }
    }
