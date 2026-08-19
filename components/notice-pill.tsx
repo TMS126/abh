@@ -44,7 +44,6 @@ export function NoticePill({
   expandedLabel: string
   isDark: boolean
   children: React.ReactNode
-  /** Omit to disable dismissal entirely (expand/collapse only, no X). */
   onDismiss?: () => void
   className?: string
 }) {
@@ -56,14 +55,12 @@ export function NoticePill({
   const tint = isDark ? `${accent}26` : `${accent}14`
 
   return (
-    <div className={cn("w-full flex justify-center", className)}>
-      {/* AnimatePresence with mode="wait" — only ONE of the two states is
-          ever mounted. Each keeps its own natural size (the pill stays
-          shrink-to-fit, the card stays w-full max-w-[440px]) instead of
-          sharing a grid cell and inheriting the wider one's width. The
-          outgoing state finishes its exit animation before the incoming
-          one mounts, so it's still a crossfade, just sequenced instead of
-          simultaneous — no layout jump, no oversized pill. */}
+    // FIX: this outer box now has `layout` — it tracks its own height as
+    // the child swaps from pill to card and animates the change instead
+    // of snapping. Combined with the page-level `layout` wrapper (see
+    // gallery-page.tsx / services-page/index.tsx), everything after this
+    // component in the page now slides down smoothly too.
+    <motion.div layout className={cn("w-full flex justify-center", className)} transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}>
       <AnimatePresence mode="wait" initial={false}>
         {!expanded ? (
           <motion.div
@@ -158,6 +155,6 @@ export function NoticePill({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   )
-                                                                                             } 
+}
