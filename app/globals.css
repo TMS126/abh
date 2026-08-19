@@ -441,6 +441,22 @@ button, a, [role="button"] {
     box-shadow: 0 2px 16px -2px rgba(0, 0, 0, 0.50), 0 1px 4px -1px rgba(0, 0, 0, 0.28);
   }
 
+   /* Hero collage tile shadow — deliberately quieter than .abh-shadow-card;
+     these sit densely stacked with pill badges layered on top, so a strong
+     shadow would compete rather than add "life". */
+  .abh-shadow-tile {
+    box-shadow: 0 4px 14px -6px rgba(0, 0, 0, 0.12);
+  }
+  .dark .abh-shadow-tile {
+    box-shadow: 0 4px 14px -6px rgba(0, 0, 0, 0.5);
+  }
+  .abh-shadow-tile:hover {
+    box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.18);
+  }
+  .dark .abh-shadow-tile:hover {
+    box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.65);
+  }
+   
   .abh-divider {
     @apply mt-6 h-[2px] w-[160px] max-w-full mx-auto rounded-full;
     background: var(--brand-blue);
