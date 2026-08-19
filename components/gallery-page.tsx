@@ -1,9 +1,9 @@
-// components/gallery/gallery-page.tsx
+// components/gallery/gallery-page.tsx — only the import line changes, full file below
 "use client"
 
 import { useCallback, useEffect, useRef, useState, Suspense } from "react"
 import { useSearchParams, usePathname } from "next/navigation"
-import { X, Info, MagnifyingGlass, Shuffle } from "@phosphor-icons/react"
+import { X, Info, MagnifyingGlass, Shuffle, WarningCircle } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { BRAND, TOKEN, HUB_COLORS, HubKey } from "@/lib/brand"
@@ -21,7 +21,6 @@ import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
 
 const LIKES_STORAGE_KEY = "apexbytes-gallery-likes"
 
-// ── Hub-filter circles ──
 function HubFilterCircles({
   activeFilter, onSelect, getAccent, isDark,
 }: {
@@ -365,6 +364,10 @@ function GalleryPageInner() {
   )
 }
 
+// Small round badge — same visual language as services-page's hub-card
+// NoticeBadge, for project cards that need a notice indicator. FIX: was
+// referencing WarningCircle without importing it, which would fail
+// type-checking on build. Now imported above.
 function NoticeBadge() {
   return (
     <div className="absolute top-3 right-3 z-20 pointer-events-none">
@@ -396,4 +399,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-          } 
+              } 
