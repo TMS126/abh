@@ -38,12 +38,14 @@ function getArrowIconColor(bgHex: string) {
 }
 
 // ─── HUB COLLAGE DATA ────────────────────────────────────────────────────────
+// FIX: renamed to the 5 new webp assets (phub/dochub/dhub/ehub/thub),
+// replacing the old numbered "_white" filenames.
 const HUB_IMAGES: Record<string, string> = {
-  print: "/1_PRINT_HUB_white.webp",
-  doc: "/2_DOCUMENT_HUB_white.webp",
-  design: "/3_DESIGN_HUB_white.webp",
-  eservice: "/4_APPLICATIONS_HUB_white.webp",
-  tech: "/5_TECH_HUB_white.webp",
+  print: "/phub.png",
+  doc: "/dochub.png",
+  design: "/dhub.png",
+  eservice: "/ehub.png",
+  tech: "/thub.png",
 }
 
 const COLLAGE_SLOTS: { top?: string; bottom?: string; left?: string; right?: string; z: number; baseWidth: number }[] = [
@@ -148,7 +150,7 @@ export function HeroSection() {
   return (
     <section
       aria-label="Hero"
-      className="relative min-h-[calc(100vh-var(--nav-h))] w-full flex flex-col items-center justify-center px-4 md:px-8 pt-[calc(var(--nav-h)+56px)] md:pt-[104px] pb-10 md:pb-16 overflow-hidden cursor-default select-none bg-background transition-colors duration-300">
+      className="relative min-h-[calc(100vh-var(--nav-h))] w-full flex flex-col items-center justify-center px-4 md:px-8 pt-[calc(var(--nav-h)+56px)] md:pt-[104px] pb-10 md:pb-16 overflow-hidden cursor-default bg-background transition-colors duration-300">
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <div
           className="absolute inset-0 opacity-[0.03] dark:opacity-[0.06]"
@@ -223,8 +225,23 @@ export function HeroSection() {
                     See Our Services
                   </span>
                 </span>
-                <span className="relative z-10 w-8 h-8 shrink-0 inline-flex items-center justify-center rounded-full shadow-sm" style={{ backgroundColor: activeCircleColor }} aria-hidden="true">
-                  <ArrowRight weight="bold" style={{ color: activeArrowIconColor }} className="w-4 h-4 transition-all duration-300 group-hover:translate-x-0.5" />
+
+                {/* FIX: touched/clicked state — circle flips to white, arrow
+                    flips to brand orange. Inline style backgroundColor always
+                    beats a Tailwind class in specificity, so this can't be a
+                    single element with a group-active: class override — it's
+                    two stacked layers crossfading via opacity instead, same
+                    technique as the button's own fill-swap above. */}
+                <span className="relative z-10 w-8 h-8 shrink-0 rounded-full shadow-sm overflow-hidden" aria-hidden="true">
+                  <span
+                    className="absolute inset-0 rounded-full inline-flex items-center justify-center transition-opacity duration-150 group-active:opacity-0"
+                    style={{ backgroundColor: activeCircleColor }}
+                  >
+                    <ArrowRight weight="bold" style={{ color: activeArrowIconColor }} className="w-4 h-4 transition-all duration-300 group-hover:translate-x-0.5" />
+                  </span>
+                  <span className="absolute inset-0 rounded-full inline-flex items-center justify-center bg-white opacity-0 transition-opacity duration-150 group-active:opacity-100">
+                    <ArrowRight weight="bold" style={{ color: BRAND.orange }} className="w-4 h-4 group-active:translate-x-0.5" />
+                  </span>
                 </span>
               </button>
             </ScrollBounce>
@@ -238,7 +255,7 @@ export function HeroSection() {
                 return (
                   <div
                     key={hub.id}
-                    className="group/tile absolute aspect-square rounded-2xl overflow-hidden border-4 border-white dark:border-zinc-900 shadow-[0_6px_18px_rgba(0,0,0,0.10)] dark:shadow-[0_6px_18px_rgba(0,0,0,0.35)] transition-transform duration-300 hover:z-[60] hover:scale-[1.03] animate-in fade-in zoom-in-95"
+                    className="group/tile absolute aspect-square rounded-2xl overflow-hidden border-4 border-white dark:border-zinc-900 shadow-[0_6px_18px_rgba(0,0,0,0.10)] dark:shadow-[0_6px_18px_rgba(0,0,0,0.35)] transition-transform duration-300 hover:z-[60] hover:scale-[1.03] animate-in fade-in zoom-in-95 select-none"
                     style={{
                       top: slot.top, bottom: slot.bottom, left: slot.left, right: slot.right,
                       width: `${width}%`, zIndex: slot.z,
@@ -247,7 +264,12 @@ export function HeroSection() {
                       ["--hub-accent-fg" as any]: hubAccentFg,
                     }}
                   >
-                    <Image src={HUB_IMAGES[hub.id]} alt={`${hub.name} example`} fill priority sizes="(max-width: 768px) 45vw, 220px" className="object-cover" />
+                    {/* FIX: removed `priority` — having all 5 collage tiles
+                        preload as high-priority images at once competed with
+                        the headline/fonts for bandwidth on first paint. These
+                        are decorative, not the LCP candidate, so they now
+                        load lazily like any other below-priority image. */}
+                    <Image src={HUB_IMAGES[hub.id]} alt={`${hub.name} example`} fill sizes="(max-width: 768px) 45vw, 220px" className="object-cover" />
                     <span className="absolute -top-2 -right-2 px-3 py-1 rounded-full text-[0.72rem] font-black uppercase tracking-widest bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 shadow-md transition-colors duration-200 group-hover/tile:bg-[var(--hub-accent)] group-hover/tile:text-[var(--hub-accent-fg)] group-hover/tile:border-transparent">
                       {pillLabel(hub.name)}
                     </span>
@@ -294,4 +316,4 @@ export function HeroSection() {
       <BackToTopButton visible={showBackToTop} />
     </section>
   )
-  } 
+}
