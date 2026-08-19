@@ -75,7 +75,8 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
    
    /* Error role — same bg/text split as warning above. */
   --brand-error-bg: var(--destructive);       /* 4.83:1 vs white icon (same red, already verified) */
-  --brand-error-text: #DC2626;                /* 4.83:1 vs white — text-on-light-tint use */
+/* ── add inside :root, near --brand-warning-bg ── */
+--brand-error-text: #d52222;   /* 5.15:1 vs white, 4.56:1 vs light red tint (was #DC2626 — 4.28:1 on the tint, just under AA) */
 
   /* Theme-aware — overridden in .dark below. Used as TEXT directly on the
      page background, a card, AND a tinted announcement panel — verified
@@ -127,6 +128,9 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
 }
 
 .dark {
+   
+/* ── add inside .dark ── */
+  --brand-error-text: #e76c6c;   /* 5.60:1 vs dark card, 5.14:1 vs dark red tint */
   --background: #0D1B2A;
   --foreground: #E8EFF6;
   --card: #1A2C3E;
@@ -218,6 +222,8 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --color-brand-green-deep: var(--brand-green-deep);
   --color-brand-orange-brown: var(--brand-orange-brown);
   --color-brand-warning-bg: var(--brand-warning-bg);
+   /* ── add inside @theme inline, near --color-brand-warning-bg ── */
+  --color-brand-error-text: var(--brand-error-text);
   --color-brand-white: var(--brand-white);
 
   --color-brand-whatsapp: var(--brand-whatsapp);
