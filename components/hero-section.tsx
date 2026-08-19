@@ -38,8 +38,6 @@ function getArrowIconColor(bgHex: string) {
 }
 
 // ─── HUB COLLAGE DATA ────────────────────────────────────────────────────────
-// FIX: renamed to the 5 new webp assets (phub/dochub/dhub/ehub/thub),
-// replacing the old numbered "_white" filenames.
 const HUB_IMAGES: Record<string, string> = {
   print: "/phub.png",
   doc: "/dochub.png",
@@ -48,12 +46,16 @@ const HUB_IMAGES: Record<string, string> = {
   tech: "/thub.png",
 }
 
+// FIX: redesigned from a loosely-scattered arrangement into a clean, aligned
+// bento pattern — 4 corners + 1 centered tile overlapping all of them. All
+// 5 slots now share one baseWidth (no more per-tile size drift), so every
+// tile reads as equal scale instead of visually random sizes.
 const COLLAGE_SLOTS: { top?: string; bottom?: string; left?: string; right?: string; z: number; baseWidth: number }[] = [
-  { top: "0%", left: "2%", z: 10, baseWidth: 40 },
-  { top: "2%", right: "0%", z: 20, baseWidth: 38 },
-  { top: "36%", left: "16%", z: 30, baseWidth: 38 },
-  { top: "32%", right: "12%", z: 40, baseWidth: 40 },
-  { bottom: "0%", left: "28%", z: 50, baseWidth: 38 },
+  { top: "0%", left: "0%", z: 10, baseWidth: 38 },
+  { top: "0%", right: "0%", z: 20, baseWidth: 38 },
+  { top: "31%", left: "31%", z: 50, baseWidth: 38 },
+  { bottom: "0%", left: "0%", z: 30, baseWidth: 38 },
+  { bottom: "0%", right: "0%", z: 40, baseWidth: 38 },
 ]
 
 function pillLabel(hubName: string) {
@@ -69,12 +71,15 @@ function shuffleArray<T>(arr: T[]): T[] {
   return a
 }
 
+// FIX: dropped the `Math.random() * 6 - 3` width jitter — every tile now
+// renders at the exact same size (slot.baseWidth), per "equal size/scale,
+// keep consistency".
 function buildArrangement() {
   const shuffledHubs = shuffleArray(HUBS_DATA)
   return COLLAGE_SLOTS.map((slot, i) => ({
     hub: shuffledHubs[i],
     slot,
-    width: slot.baseWidth + (Math.random() * 6 - 3),
+    width: slot.baseWidth,
   }))
 }
 
@@ -225,13 +230,6 @@ export function HeroSection() {
                     See Our Services
                   </span>
                 </span>
-
-                {/* FIX: touched/clicked state — circle flips to white, arrow
-                    flips to brand orange. Inline style backgroundColor always
-                    beats a Tailwind class in specificity, so this can't be a
-                    single element with a group-active: class override — it's
-                    two stacked layers crossfading via opacity instead, same
-                    technique as the button's own fill-swap above. */}
                 <span className="relative z-10 w-8 h-8 shrink-0 rounded-full shadow-sm overflow-hidden" aria-hidden="true">
                   <span
                     className="absolute inset-0 rounded-full inline-flex items-center justify-center transition-opacity duration-150 group-active:opacity-0"
@@ -255,7 +253,14 @@ export function HeroSection() {
                 return (
                   <div
                     key={hub.id}
-                    className="group/tile absolute aspect-square rounded-2xl overflow-hidden border-4 border-white dark:border-zinc-900 shadow-[0_6px_18px_rgba(0,0,0,0.10)] dark:shadow-[0_6px_18px_rgba(0,0,0,0.35)] transition-transform duration-300 hover:z-[60] hover:scale-[1.03] animate-in fade-in zoom-in-95 select-none"
+                    /* FIX: removed border-4 border-white/zinc-900 frame per
+                       "leave only raw images". Shadow swapped from an
+                       arbitrary inline value to the shared, deliberately
+                       subtle .abh-shadow-tile class. Hover is now a simple,
+                       cheap transform (scale + lift) — no filter/blur, just
+                       GPU-friendly transform + the class's own box-shadow
+                       swap, kept smooth via transition-all. */
+                    className="group/tile absolute aspect-square rounded-2xl overflow-hidden abh-shadow-tile transition-all duration-300 ease-out hover:z-[60] hover:scale-[1.05] hover:-translate-y-1 animate-in fade-in zoom-in-95 select-none"
                     style={{
                       top: slot.top, bottom: slot.bottom, left: slot.left, right: slot.right,
                       width: `${width}%`, zIndex: slot.z,
@@ -264,13 +269,14 @@ export function HeroSection() {
                       ["--hub-accent-fg" as any]: hubAccentFg,
                     }}
                   >
-                    {/* FIX: removed `priority` — having all 5 collage tiles
-                        preload as high-priority images at once competed with
-                        the headline/fonts for bandwidth on first paint. These
-                        are decorative, not the LCP candidate, so they now
-                        load lazily like any other below-priority image. */}
                     <Image src={HUB_IMAGES[hub.id]} alt={`${hub.name} example`} fill sizes="(max-width: 768px) 45vw, 220px" className="object-cover" />
-                    <span className="absolute -top-2 -right-2 px-3 py-1 rounded-full text-[0.72rem] font-black uppercase tracking-widest bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 shadow-md transition-colors duration-200 group-hover/tile:bg-[var(--hub-accent)] group-hover/tile:text-[var(--hub-accent-fg)] group-hover/tile:border-transparent">
+                    {/* FIX: pill moved from an overhanging -top-2/-right-2
+                        position (which relied on the now-removed border for
+                        visual anchoring) to an inset top-2/right-2 position,
+                        sitting cleanly inside the raw image corner. Border
+                        dropped, background made semi-opaque + blurred so it
+                        stays legible over any image content underneath. */}
+                    <span className="absolute top-2 right-2 px-3 py-1 rounded-full text-[0.7rem] font-black uppercase tracking-widest bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm text-zinc-700 dark:text-zinc-200 shadow-sm transition-colors duration-200 group-hover/tile:bg-[var(--hub-accent)] group-hover/tile:text-[var(--hub-accent-fg)]">
                       {pillLabel(hub.name)}
                     </span>
                   </div>
@@ -316,4 +322,4 @@ export function HeroSection() {
       <BackToTopButton visible={showBackToTop} />
     </section>
   )
-}
+    } 
