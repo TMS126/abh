@@ -63,7 +63,7 @@ export function NoticePill({
     <div className={cn("w-full flex justify-center", className)}>
       {!expanded ? (
         <div
-          style={{ borderColor: accent }}
+          style={{ borderColor: textColor }}
           className="flex items-center gap-2 pl-2 pr-1.5 py-1.5 rounded-full border bg-white dark:bg-zinc-900 shadow-[0_4px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-shadow duration-200 hover:shadow-[0_6px_16px_rgba(0,0,0,0.12)]"
         >
           <button
