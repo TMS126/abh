@@ -1,18 +1,5 @@
-/* components/services-page/index.tsx */
+// components/services-page/index.tsx — full file, paste over the current one
 "use client"
-
-/**
- * ════════════════════════════════════════════════════════════════════════
- * SERVICES PAGE — the main /services page showing all 5 hub cards.
- *
- * NOTICE BADGE ADDED IN THIS FILE:
- *   A small round orange "!" badge appears in the top-right corner of a
- *   hub's card (both the desktop grid and the mobile stacked list) if ANY
- *   service inside ANY section of that hub currently has a `notice` set.
- *   This is fully dynamic — no hub name is hardcoded, it just checks the
- *   data.
- * ════════════════════════════════════════════════════════════════════════
- */
 
 import { useState, useEffect, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
@@ -20,7 +7,7 @@ import { AnimatePresence } from "framer-motion"
 import { Megaphone, ArrowRight, WarningCircle } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
-import { BRAND, HUB_COLORS, HubKey } from "@/lib/brand"
+import { BRAND, TOKEN, HUB_COLORS, HubKey } from "@/lib/brand"
 import { HUBS, HubId } from "@/lib/data"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { useModalBackStack, HubIcon } from "./shared"
@@ -87,16 +74,19 @@ function BulkRibbon() {
   )
 }
 
-// NEW — small round orange badge shown on a hub card when at least one
-// service inside that hub currently has a notice set. Positioned in the
-// top-right corner, doesn't block clicks (pointer-events-none) since the
-// whole card itself is already clickable.
+// Small round badge shown on a hub card when at least one service inside
+// that hub currently has a notice set. FIX: was hardcoding `color:
+// BRAND.orange` on an always-white circle — worked, but wasn't running
+// through the token system at all, so it wouldn't inherit any future
+// theming. Now uses TOKEN.warningBg the same way NoticeBadge in
+// gallery-page.tsx does, for one consistent "notice" visual language
+// across both pages.
 function NoticeBadge() {
   return (
     <div className="absolute top-3 right-3 z-20 pointer-events-none">
       <div
         className="w-7 h-7 rounded-full flex items-center justify-center"
-        style={{ backgroundColor: "#ffffff", color: BRAND.orange, boxShadow: "0 2px 6px -1px rgba(0,0,0,0.2)" }}
+        style={{ backgroundColor: "#ffffff", color: TOKEN.warningBg, boxShadow: "0 2px 6px -1px rgba(0,0,0,0.2)" }}
         aria-label="Notice for some services in this hub"
       >
         <WarningCircle size={16} weight="bold" aria-hidden="true" />
@@ -115,6 +105,7 @@ export function ServicesPage() {
   const [activeHub,       setActiveHub]       = useState<HubId | null>(null)
   const [hubOriginSide,   setHubOriginSide]   = useState<"left" | "right">("right")
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
+  const [clientNoticeDismissed, setClientNoticeDismissed] = useState(false)
   const showBackToTop = useBackToTop()
 
   const isModalOpen = !!(activeHub || selectedService)
@@ -143,8 +134,6 @@ export function ServicesPage() {
     return () => window.removeEventListener("abh:selectService", handler)
   }, [])
 
-  // Handles opening a specific hub/section/service directly from a URL
-  // (e.g. when someone taps a shared link)
   useEffect(() => {
     const hubParam     = searchParams.get("hub")
     const sectionParam = searchParams.get("section")
@@ -164,7 +153,7 @@ export function ServicesPage() {
           sectionTitle: section.title, requirements: item.requirements,
           desc: item.description, turnaround: getTurnaround(section.title, item.name),
           tips: item.tips ? [...item.tips] : undefined,
-          notice: item.notice,   // Carries the notice through deep links too
+          notice: item.notice,
         })
         router.replace("/services", { scroll: false })
         return
@@ -177,7 +166,6 @@ export function ServicesPage() {
 
   const { closeHub, closeService } = useModalBackStack(activeHub, setActiveHub, selectedService, setSelectedService)
 
-  // Locks page scroll while any modal is open
   useEffect(() => {
     if (!isModalOpen) return
     const scrollY = window.scrollY
@@ -221,19 +209,29 @@ export function ServicesPage() {
           </div>
         </ScrollBounce>
 
-        <ScrollBounce delay={0.08} className="relative z-0 w-full flex justify-center mb-6">
-          <NoticePill
-            accentColor={BRAND.orange}
-            Icon={Megaphone}
-            collapsedLabel="Notice"
-            expandedLabel="Notice to Clients"
-            isDark={isDark}
-          >
-            {NOTICE.text}
-            <span className="font-black text-zinc-800 dark:text-zinc-100">{NOTICE.date}</span>
-            {NOTICE.textAfter}
-          </NoticePill>
-        </ScrollBounce>
+        {/* FIX: was calling NoticePill with the old `accentColor` prop,
+            which no longer exists on the component — it takes `variant`
+            now. Every color lookup inside NoticePill was resolving to
+            undefined, which is why this rendered as a flat, colorless
+            pill with no icon color, no border, and no dismiss X (onDismiss
+            wasn't passed either). Now matches Gallery's notice exactly:
+            same variant system, same dismiss behavior. */}
+        {!clientNoticeDismissed && (
+          <ScrollBounce delay={0.08} className="relative z-0 w-full flex justify-center mb-6">
+            <NoticePill
+              variant="warning"
+              Icon={Megaphone}
+              collapsedLabel="Notice"
+              expandedLabel="Notice to Clients"
+              isDark={isDark}
+              onDismiss={() => setClientNoticeDismissed(true)}
+            >
+              {NOTICE.text}
+              <span className="font-black text-zinc-800 dark:text-zinc-100">{NOTICE.date}</span>
+              {NOTICE.textAfter}
+            </NoticePill>
+          </ScrollBounce>
+        )}
 
         <ScrollBounce delay={0.14} className="relative z-40 w-full mb-12 flex justify-center">
           <div id="abh-inline-search" className="w-full flex justify-center">
@@ -241,17 +239,12 @@ export function ServicesPage() {
           </div>
         </ScrollBounce>
 
-        {/* ══════════════════ DESKTOP GRID ══════════════════ */}
         <div className="hidden md:grid md:grid-cols-6 gap-6 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub    = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
             const accent = isDark ? colors.accentDark : colors.accentLight
             const hubHasBulk = hub.sections.some((s) => sectionHasBulk(hubId, s.title, s.items))
-
-            // NOTICE CHECK: true if ANY item in ANY section of this hub
-            // has a notice set. Same pattern as HubModal's section check,
-            // just rolled up one level higher (hub instead of section).
             const hubHasNotice = hub.sections.some((s) => s.items.some((i) => !!i.notice))
 
             return (
@@ -303,15 +296,12 @@ export function ServicesPage() {
           })}
         </div>
 
-        {/* ══════════════════ MOBILE STACKED CARDS ══════════════════ */}
         <div className="flex md:hidden flex-col gap-6 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub    = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
             const accent = isDark ? colors.accentDark : colors.accentLight
             const hubHasBulk = hub.sections.some((s) => sectionHasBulk(hubId, s.title, s.items))
-
-            // Same notice check as the desktop grid above
             const hubHasNotice = hub.sections.some((s) => s.items.some((i) => !!i.notice))
 
             return (
