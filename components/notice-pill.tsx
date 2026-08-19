@@ -9,23 +9,19 @@ import { BRAND, TOKEN } from "@/lib/brand"
 
 export type NoticeVariant = "success" | "info" | "warning" | "error"
 
-const VARIANT_BG: Record<NoticeVariant, string> = {
-  success: BRAND.green,
-  info: BRAND.blue,
-  warning: TOKEN.warningBg,
-  error: TOKEN.errorBg,
-}
-const VARIANT_ICON: Record<NoticeVariant, string> = {
-  success: TOKEN.onBrandGreen,
-  info: TOKEN.onBrandBlue,
-  warning: TOKEN.onBrandOrange,
-  error: TOKEN.onDestructive,
-}
+// ── Header/icon color only — severity lives here, nowhere else ──
 const VARIANT_TEXT: Record<NoticeVariant, string> = {
   success: TOKEN.greenText,
   info: TOKEN.blueText,
   warning: TOKEN.orangeText,
   error: TOKEN.errorText,
+}
+// ── Tint background for the expanded card ──
+const VARIANT_BG: Record<NoticeVariant, string> = {
+  success: BRAND.green,
+  info: BRAND.blue,
+  warning: TOKEN.warningBg,
+  error: TOKEN.errorBg,
 }
 
 export function NoticePill({
@@ -50,43 +46,37 @@ export function NoticePill({
   const [expanded, setExpanded] = useState(false)
 
   const accent = VARIANT_BG[variant]
-  const iconColor = VARIANT_ICON[variant]
-  const textColor = VARIANT_TEXT[variant]
-  const tint = isDark ? `${accent}26` : `${accent}14`
+  // ── Raw icon: colored by severity, no circle behind it ──
+  const iconColor = VARIANT_TEXT[variant]
+  const headerColor = VARIANT_TEXT[variant]
+  // ── Card tint — a touch stronger in dark mode so it reads against the near-black page bg ──
+  const tint = isDark ? `${accent}30` : `${accent}12`
+  // ── Border stays muted/subtle everywhere; only ties to severity faintly ──
+  const subtleBorder = isDark ? `${accent}40` : `${accent}26`
 
   return (
-    // FIX: this outer box now has `layout` — it tracks its own height as
-    // the child swaps from pill to card and animates the change instead
-    // of snapping. Combined with the page-level `layout` wrapper (see
-    // gallery-page.tsx / services-page/index.tsx), everything after this
-    // component in the page now slides down smoothly too.
     <motion.div layout className={cn("w-full flex justify-center", className)} transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}>
       <AnimatePresence mode="wait" initial={false}>
         {!expanded ? (
           <motion.div
             key="collapsed"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            style={{ borderColor: textColor }}
-            className="inline-flex items-center gap-2 pl-2 pr-1.5 py-1.5 rounded-full border bg-white dark:bg-zinc-900 shadow-[0_4px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            style={{ borderColor: subtleBorder }}
+            className="inline-flex items-center gap-2 pl-2.5 pr-1.5 py-1.5 rounded-full border bg-white dark:bg-zinc-900 shadow-[0_4px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
           >
             <button
               type="button"
               onClick={() => setExpanded(true)}
               aria-expanded={false}
               aria-label={`Expand: ${collapsedLabel}`}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[var(--pill-accent)]"
+              style={{ ["--pill-accent" as any]: accent }}
             >
-              <span
-                className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
-                style={{ backgroundColor: accent }}
-                aria-hidden="true"
-              >
-                <Icon size={13} weight="fill" style={{ color: iconColor }} />
-              </span>
-              <span className="text-sm font-bold whitespace-nowrap" style={{ color: textColor }}>
+              <Icon size={16} weight="bold" style={{ color: iconColor }} aria-hidden="true" />
+              <span className="text-[0.92rem] font-bold whitespace-nowrap" style={{ color: headerColor }}>
                 {collapsedLabel}
               </span>
             </button>
@@ -96,7 +86,7 @@ export function NoticePill({
                 type="button"
                 onClick={onDismiss}
                 aria-label={`Dismiss: ${collapsedLabel}`}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-zinc-400"
               >
                 <X size={13} weight="bold" aria-hidden="true" />
               </button>
@@ -107,12 +97,12 @@ export function NoticePill({
             key="expanded"
             role="status"
             aria-live="polite"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="relative w-full max-w-[440px] rounded-[14px]"
-            style={{ backgroundColor: tint }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className="relative w-full max-w-[440px] rounded-[14px] border"
+            style={{ backgroundColor: tint, borderColor: subtleBorder }}
           >
             <button
               type="button"
@@ -120,22 +110,18 @@ export function NoticePill({
               aria-expanded={true}
               aria-label={`Collapse: ${expandedLabel}`}
               className={cn(
-                "flex items-start gap-3 text-left w-full pl-4 py-4",
+                "flex items-start gap-3 text-left w-full pl-4 py-4 rounded-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--pill-accent)]",
                 onDismiss ? "pr-10" : "pr-4"
               )}
+              style={{ ["--pill-accent" as any]: accent }}
             >
-              <span
-                className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                style={{ backgroundColor: accent }}
-                aria-hidden="true"
-              >
-                <Icon size={16} weight="fill" style={{ color: iconColor }} />
-              </span>
-              <span className="flex flex-col gap-0.5">
-                <span className="text-[0.7rem] font-black uppercase tracking-widest" style={{ color: textColor }}>
+              <Icon size={20} weight="bold" style={{ color: iconColor }} className="shrink-0 mt-0.5" aria-hidden="true" />
+              <span className="flex flex-col gap-1">
+                <span className="text-[0.75rem] font-black uppercase tracking-widest" style={{ color: headerColor }}>
                   {expandedLabel}
                 </span>
-                <span className="text-sm font-semibold leading-snug abh-body" style={{ color: textColor }}>
+                {/* ── Neutral body text — adapts light/dark, no severity tint ── */}
+                <span className="text-[0.95rem] font-semibold leading-snug abh-body text-zinc-700 dark:text-zinc-200">
                   {children}
                 </span>
               </span>
@@ -146,8 +132,7 @@ export function NoticePill({
                 type="button"
                 onClick={onDismiss}
                 aria-label={`Dismiss: ${expandedLabel}`}
-                className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-70"
-                style={{ color: textColor }}
+                className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-zinc-500 dark:text-zinc-400 transition-opacity hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-zinc-400"
               >
                 <X size={14} weight="bold" aria-hidden="true" />
               </button>
