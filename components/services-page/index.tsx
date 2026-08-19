@@ -232,7 +232,7 @@ export function ServicesPage() {
               onDismiss={() => setClientNoticeDismissed(true)}
             >
               {NOTICE.text}
-              <span className="font-black" style={{ color: TOKEN.blueText }}</span>
+              <span className="font-black" style={{ color: TOKEN.blueText }}>{NOTICE.date}</span>
               {NOTICE.textAfter}
             </NoticePill>
           </ScrollBounce>
