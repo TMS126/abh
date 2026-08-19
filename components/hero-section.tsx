@@ -37,7 +37,9 @@ function getArrowIconColor(bgHex: string) {
   return contrastWhite >= contrastDark ? "#ffffff" : "#14202b"
 }
 
-// ─── HUB COLLAGE DATA ────────────────────────────────────────────────────────
+// ─── HUB ICON IMAGES — already-transparent PNGs (verified: full alpha=0
+// border, 28–42% subject-pixel coverage). No frame, no crop, no chip
+// needed — rendered raw with object-contain. ─────────────────────────────
 const HUB_IMAGES: Record<string, string> = {
   print: "/phub.png",
   doc: "/dochub.png",
@@ -45,18 +47,6 @@ const HUB_IMAGES: Record<string, string> = {
   eservice: "/ehub.png",
   tech: "/thub.png",
 }
-
-// FIX: redesigned from a loosely-scattered arrangement into a clean, aligned
-// bento pattern — 4 corners + 1 centered tile overlapping all of them. All
-// 5 slots now share one baseWidth (no more per-tile size drift), so every
-// tile reads as equal scale instead of visually random sizes.
-const COLLAGE_SLOTS: { top?: string; bottom?: string; left?: string; right?: string; z: number; baseWidth: number }[] = [
-  { top: "0%", left: "0%", z: 10, baseWidth: 38 },
-  { top: "0%", right: "0%", z: 20, baseWidth: 38 },
-  { top: "31%", left: "31%", z: 50, baseWidth: 38 },
-  { bottom: "0%", left: "0%", z: 30, baseWidth: 38 },
-  { bottom: "0%", right: "0%", z: 40, baseWidth: 38 },
-]
 
 function pillLabel(hubName: string) {
   return hubName.replace(/\s*Hub$/i, "").toUpperCase()
@@ -71,16 +61,23 @@ function shuffleArray<T>(arr: T[]): T[] {
   return a
 }
 
-// FIX: dropped the `Math.random() * 6 - 3` width jitter — every tile now
-// renders at the exact same size (slot.baseWidth), per "equal size/scale,
-// keep consistency".
+// Tight center cluster — icons sit close together with small breathing
+// gaps ("cluttered but with breathing space"). Each slot carries its own
+// `scatter` vector: the short-distance direction + rotation that icon
+// flies to on hover (desktop) / touch (mobile), pointing roughly away
+// from the cluster's own center so the motion reads as icons fleeing
+// each other, not a random jitter.
+const CLUSTER_SLOTS: { top: string; left: string; z: number; scatter: { x: number; y: number; rotate: number } }[] = [
+  { top: "16%", left: "34%", z: 10, scatter: { x: -70, y: -50, rotate: -8 } },
+  { top: "20%", left: "64%", z: 20, scatter: { x: 65,  y: -45, rotate: 8 } },
+  { top: "48%", left: "20%", z: 30, scatter: { x: -75, y: 35,  rotate: -10 } },
+  { top: "52%", left: "50%", z: 50, scatter: { x: 0,   y: 75,  rotate: 4 } },
+  { top: "46%", left: "78%", z: 40, scatter: { x: 75,  y: 30,  rotate: 10 } },
+]
+
 function buildArrangement() {
   const shuffledHubs = shuffleArray(HUBS_DATA)
-  return COLLAGE_SLOTS.map((slot, i) => ({
-    hub: shuffledHubs[i],
-    slot,
-    width: slot.baseWidth,
-  }))
+  return CLUSTER_SLOTS.map((slot, i) => ({ hub: shuffledHubs[i], slot }))
 }
 
 const WEATHER_ICON_MAP: Record<WeatherCategory, { Icon: React.ElementType; color: string }> = {
@@ -113,10 +110,14 @@ export function HeroSection() {
   const [status, setStatus] = useState<BusinessStatus | null>(null)
   const [weatherCategory, setWeatherCategory] = useState<WeatherCategory | null>(null)
   const [backlogDismissed, setBacklogDismissed] = useState(false)
+  // Drives the "expel apart" cluster animation. True while hovered
+  // (desktop) or actively touched (mobile); false snaps everyone back to
+  // their clustered rest position.
+  const [scattered, setScattered] = useState(false)
   const showBackToTop = useBackToTop()
 
   const [arrangement, setArrangement] = useState(() =>
-    COLLAGE_SLOTS.map((slot, i) => ({ hub: HUBS_DATA[i], slot, width: slot.baseWidth }))
+    CLUSTER_SLOTS.map((slot, i) => ({ hub: HUBS_DATA[i], slot }))
   )
 
   const ctaBtnRef = useRef<HTMLButtonElement>(null)
@@ -168,7 +169,7 @@ export function HeroSection() {
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center relative z-10 w-full mb-6">
 
-        {/* ─── NOTIFICATION 1: NSFAS BACKLOG — now the shared NoticePill ─── */}
+        {/* ─── NOTIFICATION 1: NSFAS BACKLOG — shared NoticePill ─── */}
         {HAS_BACKLOG_NOTICE && !backlogDismissed && (
           <div className="w-full mb-8 md:mb-10">
             <NoticePill
@@ -245,38 +246,63 @@ export function HeroSection() {
             </ScrollBounce>
           </div>
 
+          {/* Right column — hub icon cluster. Raw transparent PNGs, no
+              frame/crop/chip. Whole container is the scatter trigger:
+              hover (desktop) or touch (mobile) sends all 5 icons flying
+              a short distance apart with a springy overshoot, release
+              snaps them back into their clustered rest position. */}
           <ScrollBounce delay={0.1} className="w-full">
-            <div className="relative w-full h-[420px] sm:h-[480px] md:h-[560px]">
-              {arrangement.map(({ hub, slot, width }) => {
+            <div
+              className="relative w-full h-[300px] sm:h-[340px] md:h-[400px] touch-none"
+              onMouseEnter={() => setScattered(true)}
+              onMouseLeave={() => setScattered(false)}
+              onTouchStart={() => setScattered(true)}
+              onTouchEnd={() => setScattered(false)}
+            >
+              {arrangement.map(({ hub, slot }) => {
                 const hubAccent = isDark ? hub.colorDark : hub.colorLight
-                const hubAccentFg = getArrowIconColor(hubAccent)
+                const sx = scattered ? slot.scatter.x : 0
+                const sy = scattered ? slot.scatter.y : 0
+                const rot = scattered ? slot.scatter.rotate : 0
+
                 return (
                   <div
                     key={hub.id}
-                    /* FIX: removed border-4 border-white/zinc-900 frame per
-                       "leave only raw images". Shadow swapped from an
-                       arbitrary inline value to the shared, deliberately
-                       subtle .abh-shadow-tile class. Hover is now a simple,
-                       cheap transform (scale + lift) — no filter/blur, just
-                       GPU-friendly transform + the class's own box-shadow
-                       swap, kept smooth via transition-all. */
-                    className="group/tile absolute aspect-square rounded-2xl overflow-hidden abh-shadow-tile transition-all duration-300 ease-out hover:z-[60] hover:scale-[1.05] hover:-translate-y-1 animate-in fade-in zoom-in-95 select-none"
+                    className="absolute flex flex-col items-center animate-in fade-in zoom-in-95 pointer-events-none"
                     style={{
-                      top: slot.top, bottom: slot.bottom, left: slot.left, right: slot.right,
-                      width: `${width}%`, zIndex: slot.z,
-                      animationDelay: `${slot.z * 40}ms`, animationDuration: "500ms", animationFillMode: "both",
-                      ["--hub-accent" as any]: hubAccent,
-                      ["--hub-accent-fg" as any]: hubAccentFg,
+                      top: slot.top,
+                      left: slot.left,
+                      zIndex: slot.z,
+                      width: "88px",
+                      animationDelay: `${slot.z * 40}ms`,
+                      animationDuration: "500ms",
+                      animationFillMode: "both",
+                      transform: `translate(-50%, -50%) translate(${sx}px, ${sy}px) rotate(${rot}deg)`,
+                      transition: "transform 550ms cubic-bezier(0.34, 1.56, 0.64, 1)",
                     }}
                   >
-                    <Image src={HUB_IMAGES[hub.id]} alt={`${hub.name} example`} fill sizes="(max-width: 768px) 45vw, 220px" className="object-cover" />
-                    {/* FIX: pill moved from an overhanging -top-2/-right-2
-                        position (which relied on the now-removed border for
-                        visual anchoring) to an inset top-2/right-2 position,
-                        sitting cleanly inside the raw image corner. Border
-                        dropped, background made semi-opaque + blurred so it
-                        stays legible over any image content underneath. */}
-                    <span className="absolute top-2 right-2 px-3 py-1 rounded-full text-[0.7rem] font-black uppercase tracking-widest bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm text-zinc-700 dark:text-zinc-200 shadow-sm transition-colors duration-200 group-hover/tile:bg-[var(--hub-accent)] group-hover/tile:text-[var(--hub-accent-fg)]">
+                    {/* Raw floating icon — already-transparent source PNG,
+                        object-contain (not cover, no square to fill).
+                        drop-shadow is an SVG filter that hugs the actual
+                        pixel silhouette, not a box-shadow on a rectangle,
+                        so it reads as floating above the page. */}
+                    <div className="relative w-20 h-20 sm:w-24 sm:h-24 drop-shadow-[0_10px_14px_rgba(0,0,0,0.25)] dark:drop-shadow-[0_10px_16px_rgba(0,0,0,0.55)]">
+                      <Image
+                        src={HUB_IMAGES[hub.id]}
+                        alt={`${hub.name} example`}
+                        fill
+                        sizes="96px"
+                        className="object-contain"
+                      />
+                    </div>
+                    {/* Pill sits immediately under the icon, inside the
+                        same transformed wrapper — travels WITH the icon
+                        during scatter, stays touching it at every
+                        position. */}
+                    <span
+                      className="mt-1 px-2 py-0.5 rounded-full text-[0.6rem] font-black uppercase tracking-wide bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm shadow-sm whitespace-nowrap"
+                      style={{ color: hubAccent }}
+                    >
                       {pillLabel(hub.name)}
                     </span>
                   </div>
@@ -322,4 +348,4 @@ export function HeroSection() {
       <BackToTopButton visible={showBackToTop} />
     </section>
   )
-    } 
+                  } 
