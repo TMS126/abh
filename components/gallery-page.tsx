@@ -1,8 +1,9 @@
-// components/gallery/gallery-page.tsx — only the import line changes, full file below
+// components/gallery/gallery-page.tsx — full file, paste over the current one
 "use client"
 
 import { useCallback, useEffect, useRef, useState, Suspense } from "react"
 import { useSearchParams, usePathname } from "next/navigation"
+import { motion } from "framer-motion"
 import { X, Info, MagnifyingGlass, Shuffle, WarningCircle } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
@@ -21,6 +22,7 @@ import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
 
 const LIKES_STORAGE_KEY = "apexbytes-gallery-likes"
 
+// ── Hub-filter circles ──
 function HubFilterCircles({
   activeFilter, onSelect, getAccent, isDark,
 }: {
@@ -85,6 +87,81 @@ function HubFilterCircles({
   )
 }
 
+// ── Hub section divider — subtle line + pill label, colored only on hover ──
+// FIX/NEW: groups the "All" view by hub instead of one flat mixed grid.
+// Neutral gray at rest (border + icon + text), the hub's accent color
+// only appears on hover/focus — matches "color only on hover" exactly.
+// The pill IS the section heading (h2), not a decorative label, so screen
+// readers get real document structure instead of a visual-only grouping.
+function HubSectionDivider({ hubId, accent }: { hubId: HubId; accent: string }) {
+  return (
+    <div className="relative flex items-center justify-center my-10" role="presentation">
+      <div className="absolute inset-x-0 top-1/2 h-px bg-zinc-200 dark:bg-zinc-800" aria-hidden="true" />
+      <h2
+        className="group/pill relative z-10 bg-background px-4 inline-flex items-center gap-2 rounded-full border border-zinc-200 dark:border-zinc-800 py-2 text-[0.78rem] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400 transition-colors duration-200 hover:text-[var(--hub-accent)] hover:border-[var(--hub-accent)] focus-within:text-[var(--hub-accent)] focus-within:border-[var(--hub-accent)]"
+        style={{ ["--hub-accent" as any]: accent }}
+      >
+        <span className="text-zinc-400 dark:text-zinc-500 transition-colors duration-200 group-hover/pill:text-[var(--hub-accent)]">
+          <HubIcon id={hubId} size={14} color="currentColor" />
+        </span>
+        {hubLabelFor(hubId)}
+      </h2>
+    </div>
+  )
+}
+
+function ProjectCard({
+  p, liked, onToggleLike, onSelect, pathname,
+}: {
+  p: ProjectData
+  liked: boolean
+  onToggleLike: (id: string) => void
+  onSelect: (p: ProjectData) => void
+  pathname: string
+}) {
+  const shareUrl = typeof window !== "undefined" ? `${window.location.origin}${pathname}?project=${p.id}` : `${pathname}?project=${p.id}`
+  return (
+    <div className="flex flex-col">
+      <button
+        onClick={() => onSelect(p)}
+        aria-label={`View ${p.title}`}
+        className="group relative aspect-square rounded-[10px] overflow-hidden bg-zinc-100 dark:bg-zinc-900"
+      >
+        <SafeImage
+          src={p.image}
+          alt={p.title}
+          accent={BRAND.blue}
+          fill
+          sizes="(max-width: 640px) 50vw, 33vw"
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
+        />
+        <span
+          className="absolute top-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-full text-[0.68rem] font-black text-white backdrop-blur-md whitespace-nowrap"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+        >
+          {hubLabelFor(p.hub)}
+        </span>
+      </button>
+
+      <div className="flex items-start justify-between gap-2 mt-2 px-0.5">
+        <button onClick={() => onSelect(p)} className="flex items-center gap-1.5 min-w-0 text-left">
+          <HubIcon id={p.hub as HubId} size={14} color={BRAND.blue} />
+          <span className="min-w-0">
+            <span className="block text-[0.8rem] font-black text-zinc-800 dark:text-zinc-100 truncate">{p.title}</span>
+            {p.clientType && (
+              <span className="block text-[0.68rem] font-medium text-zinc-400 dark:text-zinc-500 truncate">{CLIENT_TYPE_LABEL[p.clientType]}</span>
+            )}
+          </span>
+        </button>
+        <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+          <ShareButton url={shareUrl} title={p.title} />
+          <LikeButton liked={liked} onToggle={(e) => { e.stopPropagation(); onToggleLike(p.id) }} context="card" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ProjectGrid({
   projects, likedIds, onToggleLike, onSelect, pathname,
 }: {
@@ -96,50 +173,49 @@ function ProjectGrid({
 }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-6">
-      {projects.map((p) => {
-        const liked = likedIds.has(p.id)
-        const shareUrl = typeof window !== "undefined" ? `${window.location.origin}${pathname}?project=${p.id}` : `${pathname}?project=${p.id}`
-        return (
-          <div key={p.id} className="flex flex-col">
-            <button
-              onClick={() => onSelect(p)}
-              aria-label={`View ${p.title}`}
-              className="group relative aspect-square rounded-[10px] overflow-hidden bg-zinc-100 dark:bg-zinc-900"
-            >
-              <SafeImage
-                src={p.image}
-                alt={p.title}
-                accent={BRAND.blue}
-                fill
-                sizes="(max-width: 640px) 50vw, 33vw"
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-              <span
-                className="absolute top-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-full text-[0.68rem] font-black text-white backdrop-blur-md whitespace-nowrap"
-                style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
-              >
-                {hubLabelFor(p.hub)}
-              </span>
-            </button>
+      {projects.map((p) => (
+        <ProjectCard key={p.id} p={p} liked={likedIds.has(p.id)} onToggleLike={onToggleLike} onSelect={onSelect} pathname={pathname} />
+      ))}
+    </div>
+  )
+}
 
-            <div className="flex items-start justify-between gap-2 mt-2 px-0.5">
-              <button onClick={() => onSelect(p)} className="flex items-center gap-1.5 min-w-0 text-left">
-                <HubIcon id={p.hub as HubId} size={14} color={BRAND.blue} />
-                <span className="min-w-0">
-                  <span className="block text-[0.8rem] font-black text-zinc-800 dark:text-zinc-100 truncate">{p.title}</span>
-                  {p.clientType && (
-                    <span className="block text-[0.68rem] font-medium text-zinc-400 dark:text-zinc-500 truncate">{CLIENT_TYPE_LABEL[p.clientType]}</span>
-                  )}
-                </span>
-              </button>
-              <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
-                <ShareButton url={shareUrl} title={p.title} />
-                <LikeButton liked={liked} onToggle={(e) => { e.stopPropagation(); onToggleLike(p.id) }} context="card" />
-              </div>
-            </div>
+// Grouped-by-hub view for the "All" filter — preserves ROW_ORDER so
+// sections always appear in the same sequence, skips any hub with zero
+// matching projects (e.g. mid-search), and only groups when there's
+// actually more than one hub represented — a single-hub result (from a
+// search) just renders flat, no point showing one lonely divider.
+function GroupedProjectGrid({
+  projects, likedIds, onToggleLike, onSelect, pathname, getAccent,
+}: {
+  projects: ProjectData[]
+  likedIds: Set<string>
+  onToggleLike: (id: string) => void
+  onSelect: (p: ProjectData) => void
+  pathname: string
+  getAccent: (id: HubId) => string
+}) {
+  const groups = ROW_ORDER
+    .map((row) => ({ hubId: row.id, items: projects.filter((p) => p.hub === row.id) }))
+    .filter((g) => g.items.length > 0)
+
+  if (groups.length <= 1) {
+    return <ProjectGrid projects={projects} likedIds={likedIds} onToggleLike={onToggleLike} onSelect={onSelect} pathname={pathname} />
+  }
+
+  return (
+    <div>
+      {groups.map((group, i) => (
+        <div key={group.hubId}>
+          {i > 0 && <HubSectionDivider hubId={group.hubId} accent={getAccent(group.hubId)} />}
+          {i === 0 && <span className="sr-only">{hubLabelFor(group.hubId)}</span>}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-6">
+            {group.items.map((p) => (
+              <ProjectCard key={p.id} p={p} liked={likedIds.has(p.id)} onToggleLike={onToggleLike} onSelect={onSelect} pathname={pathname} />
+            ))}
           </div>
-        )
-      })}
+        </div>
+      ))}
     </div>
   )
 }
@@ -249,7 +325,11 @@ function GalleryPageInner() {
 
   return (
     <section className="min-h-screen bg-background pt-[calc(var(--nav-h)+2rem)] pb-24 overflow-x-hidden">
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+      {/* FIX: was a plain <div> — now tracks its own height via
+          framer-motion's `layout` prop, so everything below the notice
+          pill shifts smoothly instead of snapping when it expands or
+          collapses. Same mechanism as services-page/index.tsx. */}
+      <motion.div layout transition={{ layout: { duration: 0.3, ease: "easeInOut" } }} className="max-w-[1400px] mx-auto px-4 md:px-8">
 
         <ScrollBounce>
           <div className="text-center mb-12">
@@ -336,7 +416,18 @@ function GalleryPageInner() {
         ) : (
           <ScrollBounce>
             <div className="max-w-6xl mx-auto">
-              <ProjectGrid projects={visibleProjects} likedIds={likedIds} onToggleLike={toggleLike} onSelect={setSelectedProject} pathname={pathname} />
+              {activeFilter === "all" ? (
+                <GroupedProjectGrid
+                  projects={visibleProjects}
+                  likedIds={likedIds}
+                  onToggleLike={toggleLike}
+                  onSelect={setSelectedProject}
+                  pathname={pathname}
+                  getAccent={getAccent}
+                />
+              ) : (
+                <ProjectGrid projects={visibleProjects} likedIds={likedIds} onToggleLike={toggleLike} onSelect={setSelectedProject} pathname={pathname} />
+              )}
             </div>
           </ScrollBounce>
         )}
@@ -344,7 +435,7 @@ function GalleryPageInner() {
         <ScrollBounce>
           <GalleryClosingTagline />
         </ScrollBounce>
-      </div>
+      </motion.div>
 
       <ProjectViewerModal
         project={selectedProject}
@@ -364,10 +455,6 @@ function GalleryPageInner() {
   )
 }
 
-// Small round badge — same visual language as services-page's hub-card
-// NoticeBadge, for project cards that need a notice indicator. FIX: was
-// referencing WarningCircle without importing it, which would fail
-// type-checking on build. Now imported above.
 function NoticeBadge() {
   return (
     <div className="absolute top-3 right-3 z-20 pointer-events-none">
@@ -399,4 +486,4 @@ export function GalleryPage() {
       <GalleryPageInner />
     </Suspense>
   )
-              } 
+              }
