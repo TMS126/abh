@@ -1,4 +1,4 @@
-// components/strip-section.tsx
+// components/strip-section.tsx — full file, paste over the current one
 "use client"
 
 import { useState, useEffect } from "react"
@@ -91,12 +91,16 @@ export function CtaBar({
   buttonText,
   buttonHref,
   onButtonClick,
+  badgeText = "Get In Touch",
 }: {
   title: string
   description: string
   buttonText: string
   buttonHref?: string
   onButtonClick?: () => void
+  /** Defaults to "Get In Touch" — Home/Services keep their existing text
+   *  unless a caller (e.g. Gallery) needs different framing. */
+  badgeText?: string
 }) {
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -113,22 +117,16 @@ export function CtaBar({
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand-blue rounded-full blur-[100px] opacity-20 -mr-32 -mt-32" aria-hidden="true" />
           <div className="absolute bottom-0 left-0 w-56 h-56 bg-brand-blue rounded-full blur-[100px] opacity-10 -ml-28 -mb-28" aria-hidden="true" />
 
-          {/* "Get In Touch" is a label badge, not a WhatsApp action —
-              stays blue on purpose. */}
           <span
             className="text-[0.84rem] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-6 inline-block relative z-10"
             style={{ backgroundColor: ctaBlue, color: ctaTextOnBlue }}
           >
-            Get In Touch
+            {badgeText}
           </span>
 
           <h2 className="abh-section-heading text-3xl mb-4 relative z-10">{title}</h2>
           <p className="abh-body text-xl max-w-[500px] mx-auto mb-10 relative z-10">{description}</p>
           <div className="flex justify-center relative z-10">
-            {/* FIX: this button opens WhatsApp but was styled blue — now
-                the shared .abh-wa-btn class (this is what Home's
-                "WhatsApp Us Now" and Services' "Chat With Us" both render
-                through, so this one swap fixes both pages). */}
             <a
               href={buttonHref || WA.general}
               target="_blank"
@@ -144,4 +142,4 @@ export function CtaBar({
       </ScrollBounce>
     </section>
   )
-          } 
+                                                                                          } 
