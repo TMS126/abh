@@ -1,9 +1,21 @@
-// components/services-page/index.tsx — full file, paste over the current one
+/* components/services-page/index.tsx */
 "use client"
+
+/**
+ * ════════════════════════════════════════════════════════════════════════
+ * SERVICES PAGE — the main /services page showing all 5 hub cards.
+ *
+ * NOTICE BADGE:
+ *   A small round orange "!" badge appears in the top-right corner of a
+ *   hub's card (both the desktop grid and the mobile stacked list) if ANY
+ *   service inside ANY section of that hub currently has a `notice` set.
+ *   Fully dynamic — no hub name hardcoded, just checks the data.
+ * ════════════════════════════════════════════════════════════════════════
+ */
 
 import { useState, useEffect, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { AnimatePresence } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
 import { Megaphone, ArrowRight, WarningCircle } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
@@ -74,13 +86,6 @@ function BulkRibbon() {
   )
 }
 
-// Small round badge shown on a hub card when at least one service inside
-// that hub currently has a notice set. FIX: was hardcoding `color:
-// BRAND.orange` on an always-white circle — worked, but wasn't running
-// through the token system at all, so it wouldn't inherit any future
-// theming. Now uses TOKEN.warningBg the same way NoticeBadge in
-// gallery-page.tsx does, for one consistent "notice" visual language
-// across both pages.
 function NoticeBadge() {
   return (
     <div className="absolute top-3 right-3 z-20 pointer-events-none">
@@ -190,7 +195,14 @@ export function ServicesPage() {
   return (
     <section className="min-h-screen bg-white dark:bg-[#081428] transition-colors duration-300 pb-24 overflow-x-hidden">
 
-      <div
+      {/* FIX: was a plain <div> — layout changes (the notice pill expanding/
+          collapsing above) now animate smoothly instead of snapping,
+          because this wrapper tracks and tweens its own height via
+          framer-motion's `layout` prop. Everything below the pill (search
+          bar, hub grid) shifts down/up in sync with it. */}
+      <motion.div
+        layout
+        transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
         className="max-w-[1248px] mx-auto px-4 md:px-8 flex flex-col items-center transition-opacity duration-200"
         style={{
           opacity: isModalOpen ? 0 : 1,
@@ -209,13 +221,6 @@ export function ServicesPage() {
           </div>
         </ScrollBounce>
 
-        {/* FIX: was calling NoticePill with the old `accentColor` prop,
-            which no longer exists on the component — it takes `variant`
-            now. Every color lookup inside NoticePill was resolving to
-            undefined, which is why this rendered as a flat, colorless
-            pill with no icon color, no border, and no dismiss X (onDismiss
-            wasn't passed either). Now matches Gallery's notice exactly:
-            same variant system, same dismiss behavior. */}
         {!clientNoticeDismissed && (
           <ScrollBounce delay={0.08} className="relative z-0 w-full flex justify-center mb-6">
             <NoticePill
@@ -239,6 +244,7 @@ export function ServicesPage() {
           </div>
         </ScrollBounce>
 
+        {/* ══════════════════ DESKTOP GRID ══════════════════ */}
         <div className="hidden md:grid md:grid-cols-6 gap-6 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub    = HUBS[hubId]
@@ -257,8 +263,12 @@ export function ServicesPage() {
                 )}
               >
                 <ScrollBounce delay={index * 0.06}>
+                  {/* FIX: p-6 → px-6 py-8. Same horizontal footprint, more
+                      breathing room top/bottom — bumped the internal gaps
+                      below too so it reads as one evenly-spaced card, not
+                      just padding at the edges. */}
                   <div
-                    className="group/hubcard relative flex flex-col items-center text-center h-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-300 hover:-translate-y-1 transform-gpu p-6 cursor-pointer"
+                    className="group/hubcard relative flex flex-col items-center text-center h-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-300 hover:-translate-y-1 transform-gpu px-6 py-8 cursor-pointer"
                     onClick={() => handleOpenHub(hubId, "right")}
                     role="button"
                     tabIndex={0}
@@ -270,11 +280,11 @@ export function ServicesPage() {
                     {hubHasBulk && <BulkRibbon />}
                     {hubHasNotice && <NoticeBadge />}
 
-                    <h3 className="relative z-10 font-sans font-black text-[1.45rem] leading-tight mb-1.5 text-zinc-900 dark:text-zinc-50 group-hover/hubcard:text-[var(--hub-accent)] transition-colors duration-200">
+                    <h3 className="relative z-10 font-sans font-black text-[1.45rem] leading-tight mb-2 text-zinc-900 dark:text-zinc-50 group-hover/hubcard:text-[var(--hub-accent)] transition-colors duration-200">
                       {hub.title}
                     </h3>
 
-                    <div className="relative z-10 flex flex-wrap justify-center gap-x-1.5 gap-y-0.5 mb-2">
+                    <div className="relative z-10 flex flex-wrap justify-center gap-x-1.5 gap-y-0.5 mb-2.5">
                       {HUB_PREVIEWS[hubId].map((hint, i) => (
                         <span key={i} className="text-[0.76rem] font-medium text-zinc-400 dark:text-zinc-500">
                           {hint}
@@ -282,7 +292,7 @@ export function ServicesPage() {
                       ))}
                     </div>
 
-                    <p className="relative z-10 abh-body text-[0.88rem] line-clamp-2 leading-snug mb-4 max-w-[190px]">
+                    <p className="relative z-10 abh-body text-[0.88rem] line-clamp-2 leading-snug mb-6 max-w-[190px]">
                       {hub.desc}
                     </p>
 
@@ -296,6 +306,7 @@ export function ServicesPage() {
           })}
         </div>
 
+        {/* ══════════════════ MOBILE STACKED CARDS ══════════════════ */}
         <div className="flex md:hidden flex-col gap-6 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub    = HUBS[hubId]
@@ -309,18 +320,18 @@ export function ServicesPage() {
                 <button
                   onClick={() => handleOpenHub(hubId, "right")}
                   aria-label={`Open ${hub.title}`}
-                  className="group/hubcard relative flex flex-col items-center text-center w-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-200 active:scale-[0.98] transform-gpu p-6"
+                  className="group/hubcard relative flex flex-col items-center text-center w-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-200 active:scale-[0.98] transform-gpu px-6 py-8"
                   style={{ ["--hub-accent" as any]: accent }}
                 >
                   <HubCornerIcon hubId={hubId} accent={accent} />
                   {hubHasBulk && <BulkRibbon />}
                   {hubHasNotice && <NoticeBadge />}
 
-                  <h3 className="relative z-10 font-sans font-black text-[1.45rem] leading-tight mb-1.5 text-zinc-900 dark:text-zinc-50 group-hover/hubcard:text-[var(--hub-accent)] transition-colors duration-200">
+                  <h3 className="relative z-10 font-sans font-black text-[1.45rem] leading-tight mb-2 text-zinc-900 dark:text-zinc-50 group-hover/hubcard:text-[var(--hub-accent)] transition-colors duration-200">
                     {hub.title}
                   </h3>
 
-                  <div className="relative z-10 flex flex-wrap justify-center gap-x-1.5 gap-y-0.5 mb-2">
+                  <div className="relative z-10 flex flex-wrap justify-center gap-x-1.5 gap-y-0.5 mb-2.5">
                     {HUB_PREVIEWS[hubId].map((hint, i) => (
                       <span key={i} className="text-[0.76rem] font-medium text-zinc-400 dark:text-zinc-500">
                         {hint}
@@ -328,7 +339,7 @@ export function ServicesPage() {
                     ))}
                   </div>
 
-                  <p className="relative z-10 abh-body text-[0.88rem] line-clamp-2 leading-snug mb-3 max-w-[260px]">
+                  <p className="relative z-10 abh-body text-[0.88rem] line-clamp-2 leading-snug mb-4 max-w-[260px]">
                     {hub.desc}
                   </p>
 
@@ -357,7 +368,7 @@ export function ServicesPage() {
         <ScrollBounce className="w-full mt-14 md:mt-20">
           <ClosingTagline />
         </ScrollBounce>
-      </div>
+      </motion.div>
 
       <AnimatePresence>
         {activeHub && (
@@ -378,4 +389,4 @@ export function ServicesPage() {
       <BackToTopButton visible={showBackToTop && !isModalOpen} />
     </section>
   )
-      } 
+} 
