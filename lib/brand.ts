@@ -28,8 +28,10 @@ export const TOKEN = {
   brandOrange: "var(--brand-orange)",
   brandGreen: "var(--brand-green)",
   warningBg: "var(--brand-warning-bg)",
-
-  // on-color pairs for the backgrounds above
+// lib/brand.ts — add these two lines inside TOKEN (near warningBg / orangeText)
+  errorBg: "var(--destructive)",       // already theme-invariant, already verified vs white icon (4.83:1)
+  errorText: "var(--brand-error-text)", // NEW — was missing, this is what broke Services
+// on-color pairs for the backgrounds above
   onBrandBlue: "var(--on-brand-blue)",
   onBrandOrange: "var(--on-brand-orange)",
   onBrandGreen: "var(--on-brand-green)",
