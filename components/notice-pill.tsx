@@ -1,7 +1,4 @@
-// components/notice-pill.tsx
-// Unified notice/announcement pill — canonical style is the Hero's old
-// NSFAS backlog notice. One component, one style, color only changes by
-// variant. Used by hero-section, gallery-page, services-page.
+// components/notice-pill.tsx — full file, paste over the current one
 "use client"
 
 import { useState } from "react"
@@ -11,8 +8,6 @@ import { BRAND, TOKEN } from "@/lib/brand"
 
 export type NoticeVariant = "success" | "info" | "warning" | "error"
 
-// Every bg/text/icon triple below is a TOKEN.* or BRAND.* reference, never
-// a raw hex — all four pairs are pre-verified in globals.css.
 const VARIANT_BG: Record<NoticeVariant, string> = {
   success: BRAND.green,
   info: BRAND.blue,
@@ -61,16 +56,28 @@ export function NoticePill({
 
   return (
     <div className={cn("w-full flex justify-center", className)}>
-      {!expanded ? (
+      {/* Both states stay mounted and share one grid cell (grid-area: 1/1),
+          so the container always sizes to the taller (expanded) panel and
+          switching states is a pure opacity/scale crossfade — no measuring,
+          no onAnimationEnd bookkeeping, no layout jump either direction. */}
+      <div className="relative grid w-full max-w-[440px] justify-center">
+        {/* ─── Collapsed pill ─── */}
         <div
           style={{ borderColor: textColor }}
-          className="flex items-center gap-2 pl-2 pr-1.5 py-1.5 rounded-full border bg-white dark:bg-zinc-900 shadow-[0_4px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-shadow duration-200 hover:shadow-[0_6px_16px_rgba(0,0,0,0.12)]"
+          aria-hidden={expanded}
+          className={cn(
+            "[grid-area:1/1] flex items-center gap-2 pl-2 pr-1.5 py-1.5 rounded-full border bg-white dark:bg-zinc-900 shadow-[0_4px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all duration-300 ease-out motion-reduce:transition-none",
+            expanded
+              ? "opacity-0 scale-95 pointer-events-none"
+              : "opacity-100 scale-100 pointer-events-auto hover:shadow-[0_6px_16px_rgba(0,0,0,0.12)]"
+          )}
         >
           <button
             type="button"
             onClick={() => setExpanded(true)}
             aria-expanded={false}
             aria-label={`Expand: ${collapsedLabel}`}
+            tabIndex={expanded ? -1 : 0}
             className="flex items-center gap-2"
           >
             <span
@@ -90,17 +97,25 @@ export function NoticePill({
               type="button"
               onClick={onDismiss}
               aria-label={`Dismiss: ${collapsedLabel}`}
+              tabIndex={expanded ? -1 : 0}
               className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
             >
               <X size={13} weight="bold" aria-hidden="true" />
             </button>
           )}
         </div>
-      ) : (
+
+        {/* ─── Expanded card ─── */}
         <div
           role="status"
           aria-live="polite"
-          className="relative w-full max-w-[440px] rounded-[14px] transition-colors duration-300"
+          aria-hidden={!expanded}
+          className={cn(
+            "[grid-area:1/1] w-full rounded-[14px] transition-all duration-300 ease-out motion-reduce:transition-none",
+            expanded
+              ? "opacity-100 scale-100 pointer-events-auto"
+              : "opacity-0 scale-95 pointer-events-none"
+          )}
           style={{ backgroundColor: tint }}
         >
           <button
@@ -108,6 +123,7 @@ export function NoticePill({
             onClick={() => setExpanded(false)}
             aria-expanded={true}
             aria-label={`Collapse: ${expandedLabel}`}
+            tabIndex={expanded ? 0 : -1}
             className={cn(
               "flex items-start gap-3 text-left w-full pl-4 py-4",
               onDismiss ? "pr-10" : "pr-4"
@@ -135,6 +151,7 @@ export function NoticePill({
               type="button"
               onClick={onDismiss}
               aria-label={`Dismiss: ${expandedLabel}`}
+              tabIndex={expanded ? 0 : -1}
               className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-70"
               style={{ color: textColor }}
             >
@@ -142,7 +159,7 @@ export function NoticePill({
             </button>
           )}
         </div>
-      )}
+      </div>
     </div>
   )
 } 
