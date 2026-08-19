@@ -1,8 +1,9 @@
-// components/stats-bar.tsx
+// components/stats-bar.tsx — full file, paste over the current one
 "use client"
 
 import { useState } from "react"
 import { PlusCircle, Gear, Wrench, CalendarCheck } from "@phosphor-icons/react"
+import { cn } from "@/lib/utils"
 import { BRAND, BIZ } from "@/lib/brand"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { getReadableTextColor } from "@/lib/color-utils"
@@ -48,12 +49,17 @@ export function StatsBar() {
                 className="abh-card flex flex-col items-center justify-center gap-2 py-6 px-3 text-center transition-all duration-300 hover:shadow-md hover:-translate-y-1 cursor-pointer"
                 style={{ borderColor: isHov ? stat.color : undefined, backgroundColor: isHov ? stat.color : undefined }}
               >
+                {/* FIX: icon was hardcoded to stat.color at all times —
+                    the only piece of this card that wasn't actually neutral
+                    by default. Value/label/border/background were already
+                    correct (neutral at rest, colored on hover); icon now
+                    matches that same pattern. */}
                 <Icon
                   size={24}
                   weight="fill"
                   aria-hidden="true"
-                  style={{ color: isHov ? textOnColor : stat.color }}
-                  className="mb-0.5 transition-colors duration-300"
+                  style={{ color: isHov ? textOnColor : undefined }}
+                  className={cn("mb-0.5 transition-colors duration-300", !isHov && "text-zinc-400 dark:text-zinc-500")}
                 />
                 <div className="text-2xl font-black transition-colors duration-300" style={{ color: isHov ? textOnColor : undefined }}>
                   <span className={isHov ? "" : "text-zinc-900 dark:text-zinc-50"}>{stat.value}</span>
@@ -68,4 +74,4 @@ export function StatsBar() {
       </div>
     </section>
   )
-                } 
+} 
