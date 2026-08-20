@@ -1,7 +1,7 @@
 // components/hero-section.tsx — full file, paste over the current one
 "use client"
 
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import Image from "next/image"
@@ -37,9 +37,7 @@ function getArrowIconColor(bgHex: string) {
   return contrastWhite >= contrastDark ? "#ffffff" : "#14202b"
 }
 
-// ─── HUB ICON IMAGES — already-transparent PNGs (verified: full alpha=0
-// border, 28–42% subject-pixel coverage). No frame, no crop, no chip
-// needed — rendered raw with object-contain. ─────────────────────────────
+// ─── HUB ICON IMAGES — already-transparent PNGs. ─────────────────────────────
 const HUB_IMAGES: Record<string, string> = {
   print: "/phub.png",
   doc: "/dochub.png",
@@ -61,23 +59,52 @@ function shuffleArray<T>(arr: T[]): T[] {
   return a
 }
 
-// Tight center cluster — icons sit close together with small breathing
-// gaps ("cluttered but with breathing space"). Each slot carries its own
-// `scatter` vector: the short-distance direction + rotation that icon
-// flies to on hover (desktop) / touch (mobile), pointing roughly away
-// from the cluster's own center so the motion reads as icons fleeing
-// each other, not a random jitter.
-const CLUSTER_SLOTS: { top: string; left: string; z: number; scatter: { x: number; y: number; rotate: number } }[] = [
-  { top: "16%", left: "34%", z: 10, scatter: { x: -70, y: -50, rotate: -8 } },
-  { top: "20%", left: "64%", z: 20, scatter: { x: 65,  y: -45, rotate: 8 } },
-  { top: "48%", left: "20%", z: 30, scatter: { x: -75, y: 35,  rotate: -10 } },
-  { top: "52%", left: "50%", z: 50, scatter: { x: 0,   y: 75,  rotate: 4 } },
-  { top: "46%", left: "78%", z: 40, scatter: { x: 75,  y: 30,  rotate: 10 } },
+function randBetween(min: number, max: number) {
+  return min + Math.random() * (max - min)
+}
+
+// Five loose zones (not fixed points) — each mount/refresh, every icon
+// gets a fresh random position WITHIN its zone, so placement is randomized
+// every visit ("random places when entering a page again or refreshing")
+// while still keeping icons roughly spaced apart instead of colliding.
+const ZONES: { topRange: [number, number]; leftRange: [number, number] }[] = [
+  { topRange: [6, 24],  leftRange: [16, 42] },
+  { topRange: [8, 26],  leftRange: [56, 82] },
+  { topRange: [42, 60], leftRange: [4, 28] },
+  { topRange: [46, 66], leftRange: [38, 62] },
+  { topRange: [40, 58], leftRange: [70, 94] },
 ]
 
-function buildArrangement() {
+type IconEntry = {
+  hub: (typeof HUBS_DATA)[number]
+  top: string
+  left: string
+  z: number
+  // Idle ambient animation — randomized per icon, per mount, so all 5
+  // drift/rotate out of sync with each other rather than looking robotic.
+  idleDuration: string
+  idleDelay: string
+  rotA: string
+  rotB: string
+}
+
+function buildArrangement(): IconEntry[] {
   const shuffledHubs = shuffleArray(HUBS_DATA)
-  return CLUSTER_SLOTS.map((slot, i) => ({ hub: shuffledHubs[i], slot }))
+  const shuffledZones = shuffleArray(ZONES)
+  return shuffledHubs.map((hub, i) => {
+    const zone = shuffledZones[i]
+    const rotSwing = randBetween(5, 11)
+    return {
+      hub,
+      top: `${randBetween(...zone.topRange).toFixed(1)}%`,
+      left: `${randBetween(...zone.leftRange).toFixed(1)}%`,
+      z: 10 + i * 10,
+      idleDuration: `${randBetween(3.6, 6.2).toFixed(2)}s`,
+      idleDelay: `${randBetween(0, 1.6).toFixed(2)}s`,
+      rotA: `${(-rotSwing).toFixed(1)}deg`,
+      rotB: `${rotSwing.toFixed(1)}deg`,
+    }
+  })
 }
 
 const WEATHER_ICON_MAP: Record<WeatherCategory, { Icon: React.ElementType; color: string }> = {
@@ -110,14 +137,26 @@ export function HeroSection() {
   const [status, setStatus] = useState<BusinessStatus | null>(null)
   const [weatherCategory, setWeatherCategory] = useState<WeatherCategory | null>(null)
   const [backlogDismissed, setBacklogDismissed] = useState(false)
-  // Drives the "expel apart" cluster animation. True while hovered
-  // (desktop) or actively touched (mobile); false snaps everyone back to
-  // their clustered rest position.
-  const [scattered, setScattered] = useState(false)
   const showBackToTop = useBackToTop()
 
-  const [arrangement, setArrangement] = useState(() =>
-    CLUSTER_SLOTS.map((slot, i) => ({ hub: HUBS_DATA[i], slot }))
+  // Only true bounce-on-hover on an actual mouse/trackpad — never on
+  // touch, so tapping on mobile can't be mistaken for a "hover".
+  const [canHover, setCanHover] = useState(false)
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [shakingId, setShakingId] = useState<string | null>(null)
+  const shakeTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
+
+  const [arrangement, setArrangement] = useState<IconEntry[]>(() =>
+    HUBS_DATA.map((hub, i) => ({
+      hub,
+      top: `${ZONES[i].topRange[0]}%`,
+      left: `${ZONES[i].leftRange[0]}%`,
+      z: 10 + i * 10,
+      idleDuration: "4.5s",
+      idleDelay: "0s",
+      rotA: "-6deg",
+      rotB: "6deg",
+    }))
   )
 
   const ctaBtnRef = useRef<HTMLButtonElement>(null)
@@ -128,6 +167,15 @@ export function HeroSection() {
     setStatus(getBusinessStatus())
     const id = setInterval(() => setStatus(getBusinessStatus()), 60_000)
     return () => clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return
+    const mq = window.matchMedia("(hover: hover) and (pointer: fine)")
+    setCanHover(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setCanHover(e.matches)
+    mq.addEventListener("change", handler)
+    return () => mq.removeEventListener("change", handler)
   }, [])
 
   useEffect(() => {
@@ -153,6 +201,12 @@ export function HeroSection() {
   const handleNavigate = (path: string) => router.push(path)
   const handleCtaClick = () => handleNavigate("/services")
 
+  const triggerShake = (hubId: string) => {
+    setShakingId(hubId)
+    if (shakeTimeoutRef.current) clearTimeout(shakeTimeoutRef.current)
+    shakeTimeoutRef.current = setTimeout(() => setShakingId((cur) => (cur === hubId ? null : cur)), 550)
+  }
+
   return (
     <section
       aria-label="Hero"
@@ -166,6 +220,29 @@ export function HeroSection() {
           }}
         />
       </div>
+
+      <style>{`
+        @keyframes abh-icon-idle {
+          0%   { transform: translateY(0) scale(1) rotate(var(--rot-a)); }
+          100% { transform: translateY(-8px) scale(1.03) rotate(var(--rot-b)); }
+        }
+        @keyframes abh-icon-bounce {
+          0%, 100% { transform: translateY(0) scale(1); }
+          50%      { transform: translateY(-26px) scale(1.05); }
+        }
+        @keyframes abh-icon-shake {
+          0%, 100%   { transform: translateX(0) rotate(0deg); }
+          15%        { transform: translateX(-7px) rotate(-7deg); }
+          30%        { transform: translateX(6px) rotate(6deg); }
+          45%        { transform: translateX(-5px) rotate(-5deg); }
+          60%        { transform: translateX(4px) rotate(4deg); }
+          75%        { transform: translateX(-2px) rotate(-2deg); }
+        }
+        @keyframes abh-shadow-bounce {
+          0%, 100% { transform: translateX(-50%) scaleX(1); opacity: 0.32; }
+          50%      { transform: translateX(-50%) scaleX(0.5); opacity: 0.14; }
+        }
+      `}</style>
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center relative z-10 w-full mb-6">
 
@@ -246,61 +323,90 @@ export function HeroSection() {
             </ScrollBounce>
           </div>
 
-          {/* Right column — hub icon cluster. Raw transparent PNGs, no
-              frame/crop/chip. Whole container is the scatter trigger:
-              hover (desktop) or touch (mobile) sends all 5 icons flying
-              a short distance apart with a springy overshoot, release
-              snaps them back into their clustered rest position. */}
+          {/* Right column — hub icon field. Bumped back up to the earlier
+              larger size. No container-level touch/scatter handling
+              anymore — that was swallowing scroll gestures — so a finger
+              can scroll straight through this area. Each icon owns its
+              own hover/click handlers instead. */}
           <ScrollBounce delay={0.1} className="w-full">
-            <div
-              className="relative w-full h-[300px] sm:h-[340px] md:h-[400px] touch-none"
-              onMouseEnter={() => setScattered(true)}
-              onMouseLeave={() => setScattered(false)}
-              onTouchStart={() => setScattered(true)}
-              onTouchEnd={() => setScattered(false)}
-            >
-              {arrangement.map(({ hub, slot }) => {
+            <div className="relative w-full h-[420px] sm:h-[480px] md:h-[540px]">
+              {arrangement.map((entry) => {
+                const { hub, top, left, z, idleDuration, idleDelay, rotA, rotB } = entry
                 const hubAccent = isDark ? hub.colorDark : hub.colorLight
-                const sx = scattered ? slot.scatter.x : 0
-                const sy = scattered ? slot.scatter.y : 0
-                const rot = scattered ? slot.scatter.rotate : 0
+                const isHovered = canHover && hoveredId === hub.id
+                const isShaking = shakingId === hub.id
+
+                const animationName = isShaking ? "abh-icon-shake" : isHovered ? "abh-icon-bounce" : "abh-icon-idle"
+                const animationDuration = isShaking ? "0.55s" : isHovered ? "1.8s" : idleDuration
+                const animationIterationCount = isShaking ? "1" : "infinite"
+                const animationDirection = isHovered ? "normal" : isShaking ? "normal" : "alternate"
+                const animationTimingFn = "ease-in-out"
 
                 return (
                   <div
                     key={hub.id}
-                    className="absolute flex flex-col items-center animate-in fade-in zoom-in-95 pointer-events-none"
+                    className="absolute flex flex-col items-center animate-in fade-in zoom-in-95"
                     style={{
-                      top: slot.top,
-                      left: slot.left,
-                      zIndex: slot.z,
-                      width: "88px",
-                      animationDelay: `${slot.z * 40}ms`,
+                      top,
+                      left,
+                      zIndex: z,
+                      animationDelay: `${z * 20}ms`,
                       animationDuration: "500ms",
                       animationFillMode: "both",
-                      transform: `translate(-50%, -50%) translate(${sx}px, ${sy}px) rotate(${rot}deg)`,
-                      transition: "transform 550ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+                      ["--rot-a" as any]: rotA,
+                      ["--rot-b" as any]: rotB,
                     }}
                   >
-                    {/* Raw floating icon — already-transparent source PNG,
-                        object-contain (not cover, no square to fill).
-                        drop-shadow is an SVG filter that hugs the actual
-                        pixel silhouette, not a box-shadow on a rectangle,
-                        so it reads as floating above the page. */}
-                    <div className="relative w-20 h-20 sm:w-24 sm:h-24 drop-shadow-[0_10px_14px_rgba(0,0,0,0.25)] dark:drop-shadow-[0_10px_16px_rgba(0,0,0,0.55)]">
+                    {/* Icon — much bigger than the previous pass, no
+                        frame/crop/chip. drop-shadow is intentionally OFF
+                        here; the "real" shadow is the separate ground
+                        ellipse below, so the icon casts only ONE shadow,
+                        not a silhouette-hugging one plus a ground one. */}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      aria-label={hub.name}
+                      onMouseEnter={() => canHover && setHoveredId(hub.id)}
+                      onMouseLeave={() => canHover && setHoveredId((cur) => (cur === hub.id ? null : cur))}
+                      onClick={() => triggerShake(hub.id)}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); triggerShake(hub.id) } }}
+                      className="relative w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 cursor-pointer outline-none"
+                      style={{
+                        animationName,
+                        animationDuration,
+                        animationTimingFunction: animationTimingFn,
+                        animationIterationCount,
+                        animationDirection,
+                      }}
+                    >
                       <Image
                         src={HUB_IMAGES[hub.id]}
                         alt={`${hub.name} example`}
                         fill
-                        sizes="96px"
+                        sizes="(max-width: 640px) 112px, (max-width: 768px) 144px, 160px"
                         className="object-contain"
                       />
                     </div>
-                    {/* Pill sits immediately under the icon, inside the
-                        same transformed wrapper — travels WITH the icon
-                        during scatter, stays touching it at every
-                        position. */}
+
+                    {/* Real ground shadow — a blurred ellipse sitting
+                        below the icon, not wrapped around it. Static at
+                        rest/shake; compresses + fades on hover-bounce to
+                        sell the "icon rising off the ground" effect. */}
+                    <div
+                      aria-hidden="true"
+                      className="w-16 sm:w-20 md:w-24 h-3 sm:h-3.5 rounded-full bg-black blur-[6px] -mt-2"
+                      style={{
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        opacity: 0.32,
+                        ...(isHovered
+                          ? { animationName: "abh-shadow-bounce", animationDuration: "1.8s", animationTimingFunction: "ease-in-out", animationIterationCount: "infinite" }
+                          : {}),
+                      }}
+                    />
+
                     <span
-                      className="mt-1 px-2 py-0.5 rounded-full text-[0.6rem] font-black uppercase tracking-wide bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm shadow-sm whitespace-nowrap"
+                      className="mt-2 px-2.5 py-1 rounded-full text-[0.65rem] sm:text-xs font-black uppercase tracking-wide bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm shadow-sm whitespace-nowrap"
                       style={{ color: hubAccent }}
                     >
                       {pillLabel(hub.name)}
@@ -348,4 +454,4 @@ export function HeroSection() {
       <BackToTopButton visible={showBackToTop} />
     </section>
   )
-                  } 
+} 
