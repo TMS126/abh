@@ -1,3 +1,4 @@
+/* components/services-page/service-detail-modal/TipsPanel.tsx */
 "use client"
 
 import { Copy, CheckCircle } from "@phosphor-icons/react"
@@ -15,10 +16,6 @@ export function TipsPanel({ tips, isGeneric, accent, copied, onCopy }: {
           </span>
         ) : <span />}
 
-        {/* Icon-only at rest; briefly swaps to a checkmark + "Copied"
-            label on copy. Plain conditional render + a keyed animate-in
-            fade for the swap — no framer-motion, no shared animation
-            state, nothing that can hang across instances. */}
         <button
           type="button"
           onClick={onCopy}
@@ -39,13 +36,28 @@ export function TipsPanel({ tips, isGeneric, accent, copied, onCopy }: {
         </button>
       </div>
       <ul className="space-y-3">
-        {tips.map((tip, idx) => (
-          <li key={idx} className="flex items-start gap-3">
-            <span className="shrink-0 w-1.5 h-1.5 rounded-full mt-2" style={{ backgroundColor: accent }} aria-hidden="true" />
-            <span className="abh-body text-base">{tip}</span>
-          </li>
-        ))}
+        {tips.map((tip, idx) => {
+          // Bold the label before the colon (e.g. "What to bring: ...")
+          // if present near the start of the line — leaves plain
+          // sentences that just happen to contain a colon untouched.
+          const colonIdx = tip.indexOf(":")
+          const hasHeading = colonIdx > 0 && colonIdx < 40
+          const heading = hasHeading ? tip.slice(0, colonIdx) : null
+          const rest = hasHeading ? tip.slice(colonIdx + 1).trim() : tip
+
+          return (
+            <li key={idx} className="flex items-start gap-3">
+              <span className="shrink-0 w-1.5 h-1.5 rounded-full mt-2" style={{ backgroundColor: accent }} aria-hidden="true" />
+              <span className="abh-body text-base">
+                {heading && (
+                  <strong className="font-black text-zinc-800 dark:text-zinc-100">{heading}: </strong>
+                )}
+                {rest}
+              </span>
+            </li>
+          )
+        })}
       </ul>
     </div>
   )
-            }
+} 
