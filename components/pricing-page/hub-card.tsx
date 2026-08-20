@@ -5,6 +5,40 @@ import { CaretDown, CaretUp, DownloadSimple, Plus, Check, SealPercent } from '@p
 import { HUBS, type HubId } from '@/lib/data'
 import { parsePrice } from './lib'
 
+const IMPORTANT_NOTE = "No hidden fees — the price shown is the price you pay."
+
+// ── Shared section header (bold label + short divider) ────────────────────────
+
+function SectionHeader({ title, color }: { title: string; color: string }) {
+  return (
+    <div className="mb-2.5">
+      <p className="text-xs font-black uppercase tracking-widest text-zinc-600 dark:text-zinc-200">
+        {title}
+      </p>
+      <span
+        className="block w-8 h-[3px] rounded-full mt-1.5"
+        style={{ backgroundColor: color }}
+        aria-hidden="true"
+      />
+    </div>
+  )
+}
+
+// ── Shared round download button ───────────────────────────────────────────────
+
+function DownloadPill({ onClick, size = 36 }: { onClick: () => void; size?: number }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label="Download hub PDF"
+      className="rounded-full flex items-center justify-center border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 transition-all duration-150 hover:!bg-red-500 hover:!border-red-500 hover:!text-white active:scale-90 shrink-0"
+      style={{ width: size, height: size }}
+    >
+      <DownloadSimple size={Math.round(size * 0.48)} weight="bold" aria-hidden="true" />
+    </button>
+  )
+}
+
 // ── Shared item row ───────────────────────────────────────────────────────────
 
 function ServiceRow({
@@ -28,9 +62,9 @@ function ServiceRow({
   const added = justAdded === key
 
   return (
-    <div className="flex items-center justify-between gap-4 py-3 group border-b border-zinc-50 dark:border-zinc-800/50 last:border-0">
+    <div className="flex items-center justify-between gap-4 py-3.5 group border-b border-zinc-50 dark:border-zinc-800/50 last:border-0">
       <div className="flex items-center gap-2 min-w-0">
-        <span className="text-sm text-zinc-700 dark:text-zinc-300 truncate">
+        <span className="text-base text-zinc-700 dark:text-zinc-300 truncate">
           {item.name}
         </span>
         {isBulk && (
@@ -44,7 +78,7 @@ function ServiceRow({
         )}
       </div>
       <div className="flex items-center gap-2.5 shrink-0">
-        <span className="text-sm font-black text-zinc-900 dark:text-white tabular-nums">
+        <span className="text-base font-black text-zinc-900 dark:text-white tabular-nums">
           {item.price}
         </span>
         <button
@@ -71,6 +105,7 @@ function ServiceRow({
 interface HubCompactCardProps {
   hubId: HubId
   isSelected: boolean
+  isDark: boolean
   accent: string
   hubHasBulk: boolean
   onSelect: () => void
@@ -79,6 +114,7 @@ interface HubCompactCardProps {
 export function HubCompactCard({
   hubId,
   isSelected,
+  isDark,
   accent,
   hubHasBulk,
   onSelect,
@@ -95,7 +131,7 @@ export function HubCompactCard({
         'w-full text-left rounded-2xl border px-4 py-4 transition-all duration-150',
         'bg-white dark:bg-zinc-900 hover:shadow-sm active:scale-[0.98]',
         isSelected
-          ? 'shadow-sm ring-1'
+          ? 'shadow-sm ring-1 rounded-b-none border-b-0 relative z-10'
           : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700',
       ].join(' ')}
       style={
@@ -107,7 +143,7 @@ export function HubCompactCard({
       {/* Hub name */}
       <p
         className="text-sm font-bold mb-2.5 truncate"
-        style={{ color: hubColor }}
+        style={{ color: hubColor, filter: isDark ? 'brightness(1.6) saturate(1.1)' : undefined }}
       >
         {hub.title}
       </p>
@@ -117,7 +153,7 @@ export function HubCompactCard({
         {hub.previews.slice(0, 3).map(p => (
           <li key={p} className="flex items-center gap-1.5">
             <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-600 shrink-0" />
-            <span className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{p}</span>
+            <span className="text-sm text-zinc-500 dark:text-zinc-400 truncate">{p}</span>
           </li>
         ))}
       </ul>
@@ -141,6 +177,7 @@ export function HubCompactCard({
 interface HubExpandedPanelProps {
   hubId: HubId
   accent: string
+  isDark: boolean
   justAdded: string | null
   onAdd: (section: string, name: string, price: string) => void
   onDownload: () => void
@@ -150,6 +187,7 @@ interface HubExpandedPanelProps {
 export function HubExpandedPanel({
   hubId,
   accent,
+  isDark,
   justAdded,
   onAdd,
   onDownload,
@@ -159,18 +197,18 @@ export function HubExpandedPanel({
   const hubColor = hub.tagStyle.color
 
   return (
-    <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
+    <div className="rounded-b-2xl rounded-t-none border border-t-0 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden -mt-px">
 
       {/* Panel header — image 2 large title */}
       <div className="px-8 pt-8 pb-6 border-b border-zinc-100 dark:border-zinc-800">
         <h2
           className="text-3xl font-black tracking-tight mb-1"
-          style={{ color: hubColor }}
+          style={{ color: hubColor, filter: isDark ? 'brightness(1.6) saturate(1.1)' : undefined }}
         >
           {hub.title}
         </h2>
-        <p className="text-sm text-zinc-400">
-          {hub.previews.join(' · ')} · ZAR
+        <p className="text-base text-zinc-400">
+          {hub.previews.join(' · ')}
         </p>
       </div>
 
@@ -182,9 +220,7 @@ export function HubExpandedPanel({
           )
           return (
             <div key={section.title} className="px-8 py-5">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400 mb-1">
-                {section.title}
-              </p>
+              <SectionHeader title={section.title} color={hubColor} />
               {sorted.map(item => (
                 <ServiceRow
                   key={item.name}
@@ -204,14 +240,8 @@ export function HubExpandedPanel({
 
       {/* Panel footer */}
       <div className="flex items-center justify-between px-8 py-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-800/30">
-        <p className="text-xs text-zinc-400">{hub.turnaround}</p>
-        <button
-          onClick={onDownload}
-          className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
-        >
-          <DownloadSimple size={13} aria-hidden="true" />
-          Download hub PDF
-        </button>
+        <p className="text-sm text-zinc-400">{IMPORTANT_NOTE}</p>
+        <DownloadPill onClick={onDownload} size={38} />
       </div>
     </div>
   )
@@ -265,10 +295,10 @@ export function HubAccordionCard({
             style={{ backgroundColor: hubColor }}
           />
           <div className="min-w-0">
-            <p className="text-sm font-bold text-zinc-900 dark:text-white truncate">
+            <p className="text-base font-bold text-zinc-900 dark:text-white truncate">
               {hub.title}
             </p>
-            <p className="text-xs text-zinc-400 mt-0.5">
+            <p className="text-sm text-zinc-400 mt-0.5">
               {total} services{hubHasBulk ? ' · Bulk deals available' : ''}
             </p>
           </div>
@@ -289,9 +319,7 @@ export function HubAccordionCard({
               )
               return (
                 <div key={section.title} className="px-4 py-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 mb-1">
-                    {section.title}
-                  </p>
+                  <SectionHeader title={section.title} color={hubColor} />
                   {sorted.map(item => (
                     <ServiceRow
                       key={item.name}
@@ -311,17 +339,11 @@ export function HubAccordionCard({
 
           {/* Footer */}
           <div className="flex items-center justify-between px-4 py-3 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-800/30">
-            <p className="text-xs text-zinc-400">{hub.turnaround}</p>
-            <button
-              onClick={onDownload}
-              className="flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
-            >
-              <DownloadSimple size={12} aria-hidden="true" />
-              PDF
-            </button>
+            <p className="text-xs text-zinc-400">{IMPORTANT_NOTE}</p>
+            <DownloadPill onClick={onDownload} size={32} />
           </div>
         </div>
       )}
     </div>
   )
-              }
+                          } 
