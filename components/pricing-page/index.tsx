@@ -29,7 +29,8 @@ export default function PricingPage() {
   const [selectedHub, setSelectedHub] = useState<HubId | null>(null)
 
   const [query, setQuery] = useState('')
-  const [pricingNoticeDismissed, setPricingNoticeDismissed] = useState(false)
+  const [rushNoticeDismissed, setRushNoticeDismissed] = useState(false)
+  const [bulkNoticeDismissed, setBulkNoticeDismissed] = useState(false)
   const [justAdded, setJustAdded] = useState<string | null>(null)
 
   const hubRefs = useRef<Partial<Record<HubId, HTMLDivElement | null>>>({})
@@ -157,8 +158,8 @@ export default function PricingPage() {
 
         <main className="flex-1">
 
-          {/* Page header */}
-          <section className="px-4 md:px-8 pt-[calc(var(--nav-h)+2rem)] pb-10">
+          {/* ── Page header ── */}
+          <section className="px-4 md:px-8 pt-[calc(var(--nav-h)+2rem)] pb-6">
             <div className="max-w-[980px] mx-auto">
               <ScrollBounce>
                 <h1 className="abh-page-title mb-3">Pricing</h1>
@@ -170,16 +171,62 @@ export default function PricingPage() {
             </div>
           </section>
 
+          {/* ── Rush fee + Bulk notice pills — below divider, above search ── */}
+          <div className="max-w-[980px] mx-auto px-4 pb-4">
+            <div className="flex flex-wrap justify-center gap-2">
+              {!rushNoticeDismissed && (
+                <ScrollBounce delay={0.06}>
+                  <NoticePill
+                    variant="warning"
+                    Icon={Lightning}
+                    collapsedLabel="Rush Fee"
+                    expandedLabel="Rush Fee"
+                    isDark={isDark}
+                    onDismiss={() => setRushNoticeDismissed(true)}
+                  >
+                    A{' '}
+                    <span className="font-black" style={{ color: TOKEN.orangeText }}>
+                      50% surcharge
+                    </span>{' '}
+                    applies when same-session or urgent turnaround is required.
+                  </NoticePill>
+                </ScrollBounce>
+              )}
+
+              {!bulkNoticeDismissed && (
+                <ScrollBounce delay={0.1}>
+                  <NoticePill
+                    variant="info"
+                    Icon={SealPercent}
+                    collapsedLabel="Bulk Deals"
+                    expandedLabel="Bulk Pricing"
+                    isDark={isDark}
+                    onDismiss={() => setBulkNoticeDismissed(true)}
+                  >
+                    Look for the{' '}
+                    <span
+                      className="inline-flex items-center gap-0.5 font-black"
+                      style={{ color: accent }}
+                    >
+                      <SealPercent size={12} weight="fill" aria-hidden="true" /> Bulk
+                    </span>{' '}
+                    tag — larger quantities get a better rate.
+                  </NoticePill>
+                </ScrollBounce>
+              )}
+            </div>
+          </div>
+
           <div className="max-w-[980px] mx-auto px-4 pb-16 space-y-8">
 
-            {/* Sticky search bar */}
+            {/* ── Sticky search bar ── */}
             <ScrollBounce delay={0.08}>
               <div className="no-print sticky top-[calc(var(--nav-h,74px)+0.5rem)] z-10 bg-background max-w-2xl mx-auto">
                 <PricingSearchInput query={query} setQuery={setQuery} />
               </div>
             </ScrollBounce>
 
-            {/* Mobile-only: hub nav pills + expand all */}
+            {/* ── Mobile-only: hub nav pills + expand all ── */}
             {results === null && (
               <div className="md:hidden space-y-4">
                 <ScrollBounce delay={0.1}>
@@ -191,7 +238,7 @@ export default function PricingPage() {
                           key={hubId}
                           onClick={() => jumpToHub(hubId)}
                           aria-pressed={isOpen}
-                          className="relative pb-1 text-sm font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 rounded-sm"
+                          className="relative pb-1 text-sm font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 rounded-sm"
                           style={
                             isOpen
                               ? { color: accent, ['--tw-ring-color' as string]: accent }
@@ -213,7 +260,7 @@ export default function PricingPage() {
                   <div className="no-print flex justify-center">
                     <button
                       onClick={toggleAll}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-[14px] text-xs font-bold border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 shadow-sm transition-all duration-150 active:scale-95 hover:shadow-md"
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-[14px] text-xs font-bold border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 shadow-sm transition-all duration-200 active:scale-95 hover:shadow-md"
                     >
                       {allOpen ? 'Collapse all' : 'Expand all'}
                     </button>
@@ -222,7 +269,7 @@ export default function PricingPage() {
               </div>
             )}
 
-            {/* Content — search results or hub layout */}
+            {/* ── Content — search results or hub layout ── */}
             {results !== null ? (
               results.length === 0 ? (
                 <ScrollBounce>
@@ -260,7 +307,7 @@ export default function PricingPage() {
                   {HUB_ORDER.map(hubId => renderAccordionCard(hubId))}
                 </div>
 
-                {/* ── Desktop: 5-card selector row + full-width expanded panel, fused ── */}
+                {/* ── Desktop: 5-card selector row + two-card expanded panel ── */}
                 <div className="hidden md:block">
 
                   {/* Selector row */}
@@ -281,21 +328,19 @@ export default function PricingPage() {
                     </div>
                   </ScrollBounce>
 
-                  {/* Expanded panel — sits flush against the selector row, no gap */}
+                  {/* Expanded panel — two cards fused below selector */}
                   {selectedHub && (
-                    <ScrollBounce delay={0.05}>
-                      <HubExpandedPanel
-                        hubId={selectedHub}
-                        accent={accent}
-                        isDark={isDark}
-                        justAdded={justAdded}
-                        onAdd={(section, name, price) =>
-                          handleAdd(selectedHub, section, name, price)
-                        }
-                        onDownload={() => handleHubDownload(selectedHub)}
-                        hasBulk={(section, name) => itemHasBulk(selectedHub, section, name)}
-                      />
-                    </ScrollBounce>
+                    <HubExpandedPanel
+                      hubId={selectedHub}
+                      accent={accent}
+                      isDark={isDark}
+                      justAdded={justAdded}
+                      onAdd={(section, name, price) =>
+                        handleAdd(selectedHub, section, name, price)
+                      }
+                      onDownload={() => handleHubDownload(selectedHub)}
+                      hasBulk={(section, name) => itemHasBulk(selectedHub, section, name)}
+                    />
                   )}
 
                   {/* Hint when nothing is selected */}
@@ -308,7 +353,7 @@ export default function PricingPage() {
               </>
             )}
 
-            {/* Download full catalog */}
+            {/* ── Download full catalog ── */}
             <ScrollBounce delay={0.24}>
               <div className="no-print flex justify-center pt-2">
                 <PdfPillButton
@@ -318,35 +363,6 @@ export default function PricingPage() {
                 />
               </div>
             </ScrollBounce>
-
-            {/* Rush fee / bulk notice */}
-            {!pricingNoticeDismissed && (
-              <ScrollBounce delay={0.3}>
-                <div className="flex justify-center">
-                  <NoticePill
-                    variant="warning"
-                    Icon={Lightning}
-                    collapsedLabel="Pricing Info"
-                    expandedLabel="Rush Fees & Bulk Pricing"
-                    isDark={isDark}
-                    onDismiss={() => setPricingNoticeDismissed(true)}
-                  >
-                    <span className="font-black" style={{ color: TOKEN.orangeText }}>
-                      Rush fee:
-                    </span>{' '}
-                    A 50% surcharge applies when same-session or urgent turnaround is required.
-                    {' '}Look for the{' '}
-                    <span
-                      className="inline-flex items-center gap-0.5 font-black"
-                      style={{ color: accent }}
-                    >
-                      <SealPercent size={12} weight="fill" aria-hidden="true" /> Bulk
-                    </span>{' '}
-                    tag next to a service — larger quantities get a better rate.
-                  </NoticePill>
-                </div>
-              </ScrollBounce>
-            )}
 
           </div>
 
@@ -366,4 +382,5 @@ export default function PricingPage() {
       </div>
     </>
   )
-      } 
+}
+ 
