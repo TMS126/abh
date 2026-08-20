@@ -3,20 +3,13 @@
 
 /**
  * ════════════════════════════════════════════════════════════════════════
- * HUB MODAL — the popup that opens when a customer taps a whole hub card
- * (e.g. "E-Service Hub"). Shows section tabs (SASSA, SARS, etc.) and the
- * list of individual services inside whichever tab is currently open.
+ * HUB MODAL — the popup that opens when a customer taps a whole hub card.
  *
- * NOTICE BADGES — TWO DIFFERENT STYLES ON PURPOSE:
- *   1. SECTION TAB badge (e.g. "Online Applications ⓘ") — a small SOLID
- *      CIRCLE sitting at the top-right corner of the tab label, like a
- *      notification dot on an app icon. Shows if ANY item in that
- *      section has a notice.
- *   2. ITEM ROW badge (e.g. "! NSFAS Status Check") — a plain, RAW "!"
- *      character, no circle or background behind it. Shows only for
- *      that specific item.
- * Both are computed dynamically from `item.notice` — nothing here is
- * hardcoded to any specific service name.
+ * STICKY HEADER CHANGE: the section DESCRIPTION now lives inside the
+ * GLUED HEADER block (same shrink-0 wrapper as the title and section
+ * tabs), instead of at the top of the scrollable body. On mobile, this
+ * means title + section tabs + description all stay pinned in place
+ * while only the item list underneath scrolls.
  * ════════════════════════════════════════════════════════════════════════
  */
 
@@ -51,7 +44,6 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
   const bodyRef = useRef<HTMLDivElement>(null)
   const touchStartRef = useRef<{ x: number; y: number } | null>(null)
 
-  // Reset state whenever a different hub is opened
   useEffect(() => {
     setOpenSectionIdx(0)
     setIsScrolled(false)
@@ -74,7 +66,6 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
     setIsScrolled(bodyRef.current.scrollTop > 4)
   }
 
-  // ── Swipe left/right between sections on mobile ──
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
     const t = e.touches[0]
     touchStartRef.current = { x: t.clientX, y: t.clientY }
@@ -104,7 +95,6 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
 
   return (
     <div className="fixed inset-0 z-[10100] flex flex-col items-center justify-center gap-4 p-3 md:p-4 overflow-y-auto">
-      {/* ===== BACKDROP ===== */}
       <motion.div
         className="absolute inset-0 bg-black/60"
         onClick={onClose}
@@ -114,7 +104,6 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
         transition={{ duration: 0.2 }}
       />
 
-      {/* ===== MODAL CONTAINER ===== */}
       <motion.div
         ref={containerRef}
         tabIndex={-1}
@@ -128,7 +117,9 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
         className="relative z-10 w-full max-w-2xl bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[76vh] flex flex-col outline-none rounded-[14px] overflow-hidden"
         style={{ boxShadow: "0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4)" }}
       >
-        {/* ===== GLUED HEADER — title row + section selector ===== */}
+        {/* ===== GLUED / STICKY HEADER — title row + section tabs +
+            section description, all pinned. shrink-0 keeps this block
+            fixed while only the item list below (in BODY) scrolls. ===== */}
         <div
           className="relative z-10 shrink-0 bg-white dark:bg-zinc-950 transition-shadow duration-200"
           style={{ boxShadow: isScrolled ? "0 10px 20px -14px rgba(0,0,0,0.35)" : "none" }}
@@ -165,7 +156,7 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
             </div>
           </div>
 
-          {/* ── Section tabs (SASSA / SARS / Online Applications / etc.) ── */}
+          {/* ── Section tabs ── */}
           <div
             role="tablist"
             aria-label="Service categories"
@@ -174,9 +165,6 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
             {hub.sections.map((section, sIdx) => {
               const isOpen = openSectionIdx === sIdx
               const hasBulk = sectionHasBulk(hubId, section.title, section.items)
-
-              // NOTICE CHECK: true if ANY item inside this section has a
-              // notice set. Fully dynamic — no service name is hardcoded.
               const hasNotice = section.items.some((i) => !!i.notice)
 
               return (
@@ -186,17 +174,12 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
                   aria-selected={isOpen}
                   onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)}
                 >
-                  {/* `relative` wrapper lets the notification dot below be
-                      absolutely positioned at this label's top-right corner */}
                   <span
                     className="relative pb-1.5 text-[1.05rem] font-black tracking-tight whitespace-nowrap transition-colors duration-200 border-b-2 -mb-[17px]"
                     style={{ borderColor: isOpen ? accent : "transparent", color: isOpen ? accent : (isDark ? "#a1a1aa" : "#71717a") }}
                   >
                     {section.title}
 
-                    {/* CIRCULAR notification dot — sits at the TOP-RIGHT
-                        CORNER of the section name, like an app badge.
-                        This is the "category-level" notice indicator. */}
                     {hasNotice && (
                       <span
                         aria-label="Notice for some services in this section"
@@ -217,9 +200,21 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
               )
             })}
           </div>
+
+          {/* ── SECTION DESCRIPTION — moved here from the scrollable body.
+              Now part of the sticky header block, so it stays pinned
+              alongside the title and tabs while the item list scrolls
+              underneath it. ── */}
+          {activeSectionDesc && (
+            <div key={openSectionIdx} className="px-5 md:px-8 py-4 border-b border-zinc-100 dark:border-zinc-800 animate-in fade-in duration-200">
+              <p className="text-[0.9rem] leading-relaxed text-zinc-600 dark:text-zinc-300">
+                {activeSectionDesc}
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* ===== BODY (scrollable) ===== */}
+        {/* ===== BODY — ONLY the item list scrolls now ===== */}
         <div
           ref={bodyRef}
           onScroll={handleBodyScroll}
@@ -227,16 +222,6 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
           onTouchEnd={handleTouchEnd}
           className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-8"
         >
-          {/* ===== SECTION DESCRIPTION ===== */}
-          {activeSectionDesc && (
-            <div key={openSectionIdx} className="mb-5 animate-in fade-in slide-in-from-top-1 duration-200">
-              <p className="text-[0.98rem] leading-relaxed text-zinc-600 dark:text-zinc-300">
-                {activeSectionDesc}
-              </p>
-            </div>
-          )}
-
-          {/* ===== SERVICE ITEMS LIST ===== */}
           {activeSection && (
             <div key={`items-${openSectionIdx}`} className="abh-shadow-nested-group rounded-[14px] bg-zinc-50 dark:bg-zinc-900/50 p-3 md:p-4 grid grid-cols-1 gap-2 animate-in fade-in duration-200">
               {activeSection.items.map((item, iIdx) => {
@@ -266,11 +251,6 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
                           Bulk ·
                         </span>
                       )}
-
-                      {/* RAW "!" — plain text character, deliberately NOT
-                          wrapped in a circle or icon component. This is the
-                          "item-level" notice indicator, distinct in style
-                          from the circular section-tab badge above. */}
                       {item.notice && (
                         <span
                           aria-label="Notice"
@@ -280,7 +260,6 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
                           !
                         </span>
                       )}
-
                       {item.name}
                     </span>
 
@@ -312,7 +291,6 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
           )}
         </div>
 
-        {/* ===== TURNAROUND / DISCLAIMER FOOTER — fixed, never scrolls ===== */}
         {hubDisclaimer && (
           <div className="shrink-0 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-6 md:px-8 py-4 flex items-start gap-2">
             <Info size={13} weight="bold" aria-hidden="true" className="text-zinc-400 dark:text-zinc-500 shrink-0 mt-0.5" />
@@ -321,7 +299,6 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
         )}
       </motion.div>
 
-      {/* ===== OTHER HUBS quick-switch row ===== */}
       {otherHubs.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
