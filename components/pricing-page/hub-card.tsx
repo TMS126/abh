@@ -9,7 +9,7 @@ import { BulkBadge, PdfPillButton } from './shared'
 import { parsePrice } from './lib'
 
 export function HubAccordionCard({
-  hubId, accent, isOpen, onToggle, justAdded, onAdd, onRemove, onDownload, hasBulk, cardRef,
+  hubId, accent, isOpen, onToggle, justAdded, onAdd, onRemove, onDownload, hasBulk, hubHasBulk, cardRef,
 }: {
   hubId: HubId
   accent: string
@@ -20,12 +20,13 @@ export function HubAccordionCard({
   onRemove?: (section: string, name: string, price: string) => void
   onDownload: () => void
   hasBulk?: (section: string, name: string) => boolean
+  // FIX: new — hub-level flag, shows a small "Bulk" indicator by the title
+  // (same idea as the services page's bulk ribbon on hub cards).
+  hubHasBulk?: boolean
   cardRef: (el: HTMLDivElement | null) => void
 }) {
   const hub = HUBS[hubId]
   const serviceCount = hub.sections.reduce((sum, s) => sum + s.items.length, 0)
-  // FIX: defensive fallbacks — if a parent ever forgets to pass these,
-  // the page renders instead of crashing the whole build like this one did.
   const checkBulk = hasBulk ?? (() => false)
   const handleRemove = onRemove ?? (() => {})
 
@@ -47,7 +48,10 @@ export function HubAccordionCard({
         style={{ ['--tw-ring-color' as any]: accent }}
       >
         <div className="min-w-0">
-          <p className="text-xl font-black text-zinc-900 dark:text-zinc-50 truncate tracking-tight">{hub.title}</p>
+          <div className="flex items-center gap-2 min-w-0">
+            <p className="text-xl font-black text-zinc-900 dark:text-zinc-50 truncate tracking-tight">{hub.title}</p>
+            {hubHasBulk && <BulkBadge />}
+          </div>
           <p className="text-[0.9rem] text-zinc-400 mt-1.5 truncate">{HUB_PREVIEWS[hubId].join(' · ')}</p>
         </div>
         <div className="flex items-center gap-4 shrink-0">
@@ -125,12 +129,13 @@ export function HubAccordionCard({
               </p>
             </div>
 
+            {/* FIX: color prop removed — matches the full-catalog button now */}
             <div className="no-print px-6 py-6 flex justify-center border-t-2 border-zinc-100 dark:border-zinc-800">
-              <PdfPillButton label="Download PDF" onClick={onDownload} color={accent} />
+              <PdfPillButton label="Download PDF" onClick={onDownload} />
             </div>
           </div>
         </div>
       </div>
     </div>
   )
-} 
+                            } 
