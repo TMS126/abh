@@ -260,8 +260,8 @@ export default function PricingPage() {
                   {HUB_ORDER.map(hubId => renderAccordionCard(hubId))}
                 </div>
 
-                {/* ── Desktop: 5-card selector row + full-width expanded panel ── */}
-                <div className="hidden md:block space-y-4">
+                {/* ── Desktop: 5-card selector row + full-width expanded panel, fused ── */}
+                <div className="hidden md:block">
 
                   {/* Selector row */}
                   <ScrollBounce delay={0.06}>
@@ -271,6 +271,7 @@ export default function PricingPage() {
                           <HubCompactCard
                             hubId={hubId}
                             accent={accent}
+                            isDark={isDark}
                             isSelected={selectedHub === hubId}
                             hubHasBulk={hubHasBulk(hubId)}
                             onSelect={() => selectHub(hubId)}
@@ -280,12 +281,13 @@ export default function PricingPage() {
                     </div>
                   </ScrollBounce>
 
-                  {/* Expanded panel — only shown when a hub is selected */}
+                  {/* Expanded panel — sits flush against the selector row, no gap */}
                   {selectedHub && (
                     <ScrollBounce delay={0.05}>
                       <HubExpandedPanel
                         hubId={selectedHub}
                         accent={accent}
+                        isDark={isDark}
                         justAdded={justAdded}
                         onAdd={(section, name, price) =>
                           handleAdd(selectedHub, section, name, price)
@@ -298,7 +300,7 @@ export default function PricingPage() {
 
                   {/* Hint when nothing is selected */}
                   {!selectedHub && (
-                    <p className="text-center text-sm text-zinc-400 py-4">
+                    <p className="text-center text-sm text-zinc-400 py-4 mt-4">
                       Select a hub above to see its services and pricing.
                     </p>
                   )}
@@ -364,4 +366,4 @@ export default function PricingPage() {
       </div>
     </>
   )
-                        } 
+      } 
