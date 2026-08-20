@@ -1,16 +1,4 @@
-/* components/services-page/service-detail-modal/index.tsx — PART 1 OF 2 */
-/**
- * ════════════════════════════════════════════════════════════════════════
- * SERVICE DETAIL MODAL — the popup that opens when a customer taps a
- * single service (e.g. "NSFAS Status Check") from inside a hub.
- *
- * FILE IS SPLIT INTO 2 PARTS because of its length + heavy commenting:
- *   PART 1 (this block)  = imports, constants, all state/handlers/logic
- *   PART 2 (next block)  = the actual JSX that gets rendered on screen
- * They belong in ONE file — paste Part 1 then Part 2 directly underneath,
- * nothing else in between.
- * ════════════════════════════════════════════════════════════════════════
- */
+/* components/services-page/service-detail-modal/index.tsx */
 "use client"
 
 import { useState, useEffect, useRef, type ChangeEvent, type TouchEvent } from "react"
@@ -37,6 +25,10 @@ const BULK_RIBBON_BLUE = BRAND.blue
 const HEADER_GRID = "grid grid-cols-[36px_1fr_36px] gap-2"
 const SWIPE_MIN_DX = 48
 const SWIPE_DOMINANCE = 1.4
+
+// Shared focus-visible ring so keyboard users can see where they are —
+// none of the icon buttons had this before (mouse-only affordance).
+const ICON_BTN_FOCUS = "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-500"
 
 type Tab = "bring" | "about"
 
@@ -90,6 +82,21 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
 
   useFocusTrap(!!svc, containerRef)
 
+  // Escape closes the innermost open layer first (Tips/Notice sub-modals
+  // already handle their own Escape internally and call stopPropagation
+  // via their own listener order — this only fires the main modal's
+  // close when neither sub-modal is open, so Esc never skips a layer).
+  useEffect(() => {
+    if (!svc) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return
+      if (tipsOpen || noticeOpen) return
+      onClose()
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [svc, tipsOpen, noticeOpen, onClose])
+
   const doUpload = (f: File) => {
     setUploadPhase("uploading")
     setUploadProgress(0)
@@ -106,6 +113,13 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         const data = JSON.parse(xhr.responseText)
         if (xhr.status < 200 || xhr.status >= 300) throw new Error(data?.error?.message || `HTTP ${xhr.status}`)
         if (!data.secure_url) throw new Error("No URL returned")
+        // Only trust a URL back from Cloudinary's own domain — defends
+        // against a compromised/misconfigured endpoint handing back an
+        // arbitrary URL that later gets sent straight into a WhatsApp
+        // message link.
+        if (!/^https:\/\/res\.cloudinary\.com\//.test(data.secure_url)) {
+          throw new Error("Unexpected upload response")
+        }
         setFileUrl(data.secure_url)
         setUploadPhase("done")
       } catch (err) {
@@ -252,14 +266,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
   const inQuote = quoteQty > 0
   const neutralIconColor = isDark ? "#e4e4e7" : "#3f3f46"
 
-  // ── PART 2 continues below with the actual JSX (the `return (...)` block) ──
-/* components/services-page/service-detail-modal/index.tsx — PART 2 OF 2 */
-/**
- * Continuation of ServiceDetailModal from Part 1. All four action icons
- * (Notice, Tips, Share, Close) are stacked vertically top-right, same
- * size, in that order top to bottom.
- */
-
   return (
     <div className="fixed inset-0 z-[10200] flex items-center justify-center p-3 md:p-4">
       <div className="absolute inset-0 bg-black/55 animate-in fade-in duration-200" onClick={onClose} />
@@ -288,14 +294,28 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           </div>
         )}
 
-        {/* ══════════════════ TOP-RIGHT ICON STACK ══════════════════ */}
-        <div className="absolute top-5 right-5 z-20 flex flex-col items-center gap-1.5">
+        {/* ══════════════════ TOP-RIGHT ICON STACK ══════════════════
+            When a bulk ribbon is present it occupies the full top-right
+            104×104 corner (diagonal band cuts straight through the old
+            top-5/right-5 position). Pushing the stack down below that
+            zone — instead of just stacking z-index on top of it — keeps
+            the ribbon fully legible and the buttons fully tappable,
+            with real spacing between the two instead of an overlap. */}
+        <div
+          className={cn(
+            "absolute right-5 z-20 flex flex-col items-center gap-1.5",
+            hasBulk ? "top-28" : "top-5"
+          )}
+        >
           {svc.notice && (
             <button
               type="button"
               onClick={() => setNoticeOpen(true)}
               aria-label="View service notice"
-              className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+              className={cn(
+                "w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95",
+                ICON_BTN_FOCUS
+              )}
               style={{ backgroundColor: `${BRAND.orange}15`, color: BRAND.orange }}
             >
               <WarningCircle size={18} weight="fill" aria-hidden="true" />
@@ -306,7 +326,10 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
             type="button"
             onClick={() => setTipsOpen(true)}
             aria-label="View helpful tips"
-            className="w-9 h-9 rounded-full flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors duration-150 active:scale-95"
+            className={cn(
+              "w-9 h-9 rounded-full flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors duration-150 active:scale-95",
+              ICON_BTN_FOCUS
+            )}
           >
             <Lightbulb size={18} weight="fill" aria-hidden="true" />
           </button>
@@ -316,21 +339,32 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
               type="button"
               onClick={handleShare}
               aria-label="Share this service"
-              className="w-9 h-9 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150 active:scale-95"
+              className={cn(
+                "w-9 h-9 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150 active:scale-95",
+                ICON_BTN_FOCUS
+              )}
             >
               <ShareNetwork size={16} weight="bold" aria-hidden="true" />
             </button>
             {shareCopied && (
-              <span className="absolute top-1/2 -translate-y-1/2 right-11 whitespace-nowrap text-[0.74rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full shadow-lg animate-in fade-in zoom-in-95 duration-150">
+              <span
+                role="status"
+                aria-live="polite"
+                className="absolute top-1/2 -translate-y-1/2 right-11 whitespace-nowrap text-[0.74rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full shadow-lg animate-in fade-in zoom-in-95 duration-150"
+              >
                 Copied!
               </span>
             )}
           </div>
 
           <button
+            type="button"
             onClick={onClose}
             aria-label="Close"
-            className="w-9 h-9 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150 active:scale-95"
+            className={cn(
+              "w-9 h-9 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150 active:scale-95",
+              ICON_BTN_FOCUS
+            )}
           >
             <X size={16} weight="bold" aria-hidden="true" />
           </button>
@@ -384,11 +418,15 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
                 return (
                   <button
                     key={t}
+                    id={`svc-tab-${t}`}
                     role="tab"
+                    type="button"
                     aria-selected={isActive}
+                    aria-controls={`svc-tabpanel-${t}`}
+                    tabIndex={isActive ? 0 : -1}
                     onClick={() => setTab(t)}
                     className={cn(
-                      "py-2.5 text-[0.95rem] font-black uppercase tracking-wider transition-colors duration-200 border-b-2 -mb-px",
+                      "py-2.5 text-[0.95rem] font-black uppercase tracking-wider transition-colors duration-200 border-b-2 -mb-px focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950",
                       isActive ? "border-current" : "border-transparent text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300"
                     )}
                     style={isActive ? { color: accent } : undefined}
@@ -409,22 +447,32 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           onTouchEnd={handleTouchEnd}
         >
           {tab === "bring" && (
-            <div className="animate-in fade-in duration-150 flex flex-col items-center w-full">
-              <ul className="w-full">
+            <div
+              id="svc-tabpanel-bring"
+              role="tabpanel"
+              aria-labelledby="svc-tab-bring"
+              className="animate-in fade-in duration-150 flex flex-col items-center w-full"
+            >
+              <ol className="w-full list-none">
                 {requirements.map((req, idx) => (
                   <li key={idx} className="flex items-start gap-3 py-2 text-left">
-                    <span className="shrink-0 font-black text-[0.8rem] text-zinc-400 dark:text-zinc-500 mt-0.5 w-4 text-right">
+                    <span className="shrink-0 font-black text-[0.8rem] text-zinc-400 dark:text-zinc-500 mt-0.5 w-4 text-right" aria-hidden="true">
                       {idx + 1}.
                     </span>
                     <span className="abh-body text-[0.95rem] leading-relaxed">{req}</span>
                   </li>
                 ))}
-              </ul>
+              </ol>
               <p className="abh-muted text-[0.88rem] mt-4 text-center">Not sure? Don&apos;t worry — just WhatsApp us first and we&apos;ll guide you step by step.</p>
             </div>
           )}
           {tab === "about" && (
-            <div className="animate-in fade-in duration-150">
+            <div
+              id="svc-tabpanel-about"
+              role="tabpanel"
+              aria-labelledby="svc-tab-about"
+              className="animate-in fade-in duration-150"
+            >
               {desc ? <p className="abh-body text-base">{desc}</p> : <p className="abh-muted text-base">No description available for this service yet.</p>}
               <p className="abh-muted mt-5">
                 Have questions? Switch to the <span className="font-black" style={{ color: accent }}>Needs</span> tab or chat with us directly.
@@ -480,7 +528,10 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackEvent("request_whatsapp", { hub_id: svc.hubId, service_name: svc.name, section_title: svc.sectionTitle, price: svc.price, had_file_attached: uploadPhase === "done" })}
-            className="flex items-center justify-center gap-2 w-full px-4 py-4 rounded-[14px] font-black text-base text-white text-center transition-all active:scale-95"
+            className={cn(
+              "flex items-center justify-center gap-2 w-full px-4 py-4 rounded-[14px] font-black text-base text-white text-center transition-all active:scale-95",
+              ICON_BTN_FOCUS
+            )}
             style={{ backgroundColor: "#25D366" }}
           >
             Request {naturalLabel}
@@ -515,4 +566,4 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
       )}
     </div>
   )
-}
+    }
