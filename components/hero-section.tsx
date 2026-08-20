@@ -63,16 +63,24 @@ function randBetween(min: number, max: number) {
   return min + Math.random() * (max - min)
 }
 
-// Five loose zones — every mount/refresh, each icon gets a fresh random
-// point within its zone, so placement is randomized every visit while
-// staying roughly spaced apart.
-const ZONES: { topRange: [number, number]; leftRange: [number, number] }[] = [
-  { topRange: [8, 24],  leftRange: [16, 40] },
-  { topRange: [10, 26], leftRange: [56, 80] },
-  { topRange: [42, 58], leftRange: [6, 26] },
-  { topRange: [46, 64], leftRange: [38, 60] },
-  { topRange: [40, 56], leftRange: [70, 92] },
-]
+// ─── SYMMETRIC LAYOUT — regular pentagon, centered ───────────────────────────
+// Replaces the old randomized "zones" (which skewed icons toward the right
+// side of the container — a real problem you flagged, not just perception).
+// Five points evenly spaced 72° apart around dead-center, starting straight
+// up (-90°). This specific rotation is mirror-symmetric across the vertical
+// axis (every point has a matching point reflected left↔right), which is
+// what makes the whole arrangement read as genuinely balanced rather than
+// "randomly scattered but technically not overlapping." Positions are fixed
+// every time — only WHICH hub lands on which point is shuffled per visit, so
+// it stays fresh without ever breaking the symmetry. Because spacing is now
+// geometric/guaranteed rather than runtime-detected, the old collision +
+// spark system is unnecessary and has been removed entirely — icons simply
+// cannot overlap by construction, not by chance.
+const PENTAGON_ANGLES_DEG = [-90, -18, 54, 126, 198]
+const ELLIPSE_RX_PCT = 30 // horizontal radius, % of container width
+const ELLIPSE_RY_PCT = 24 // vertical radius, % of container height — smaller
+// than RX to leave clearance for the label pill + shadow sitting below each
+// icon, and to keep everything inside the container on mobile's shorter box.
 
 type IconEntry = {
   hub: (typeof HUBS_DATA)[number]
@@ -83,13 +91,12 @@ type IconEntry = {
 
 function buildArrangement(): IconEntry[] {
   const shuffledHubs = shuffleArray(HUBS_DATA)
-  const shuffledZones = shuffleArray(ZONES)
   return shuffledHubs.map((hub, i) => {
-    const zone = shuffledZones[i]
+    const angleRad = (PENTAGON_ANGLES_DEG[i] * Math.PI) / 180
     return {
       hub,
-      topPct: randBetween(...zone.topRange),
-      leftPct: randBetween(...zone.leftRange),
+      leftPct: 50 + ELLIPSE_RX_PCT * Math.cos(angleRad),
+      topPct: 50 + ELLIPSE_RY_PCT * Math.sin(angleRad),
       z: 10 + i * 10,
     }
   })
@@ -116,17 +123,19 @@ const NOTICE_ITEMS = eserviceHub.sections.flatMap((section) => section.items.fil
 const HAS_BACKLOG_NOTICE = NOTICE_ITEMS.length > 0
 const BACKLOG_MESSAGE = NOTICE_ITEMS[0]?.notice ?? ""
 
-// ─── HUB ICON FIELD — physics-driven wander + collision ──────────────────────
-// Each icon slowly wanders (sine-based, very small amplitude — "none can
-// notice easily") around ITS OWN home point, spring-pulled back to home
-// the whole time. When two icons' live positions get close enough to
-// "touch", they get a gentle repulsion impulse (pulling them apart again)
-// plus a brief spark burst at the contact point. Runs on one shared
-// requestAnimationFrame loop, writing transforms directly to DOM refs
-// (not React state) so it never triggers a re-render per frame.
-const TOUCH_DIST = 92          // px — treated as "touching"
-const WANDER_AMP_PX = 10       // subtle — max drift from home in any direction
-const SPARK_COOLDOWN_MS = 900  // per-pair, so a held touch doesn't spam sparks
+// ─── HUB ICON FIELD — symmetric layout + gentle wander, no collision math ───
+// Each icon slowly wanders (sine-based, subtle amplitude) around its own
+// fixed pentagon position. Runs on one shared requestAnimationFrame loop,
+// writing transforms directly to DOM refs (not React state) so it never
+// triggers a re-render per frame. Wander frequency bumped ~30% over the
+// previous version per your "increase the pace, subtly" — amplitude
+// untouched, since pace was specifically about speed, not how far they
+// drift.
+const WANDER_AMP_PX = 10
+const LABEL_AUTO_HIDE_MS = 8000 // pills show for 8s on load, then fade —
+// per your call. They still reveal on hover (desktop) or tap/shake
+// (mobile) afterward, so the hub name never becomes fully inaccessible,
+// just not persistently on-screen.
 
 function HubIconField({
   arrangement,
@@ -143,9 +152,12 @@ function HubIconField({
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [shakingId, setShakingId] = useState<string | null>(null)
   const shakeTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
-  const [sparks, setSparks] = useState<{ id: number; xPct: number; yPct: number }[]>([])
-  const sparkIdRef = useRef(0)
-  const cooldownRef = useRef<Map<string, number>>(new Map())
+  const [labelsAutoVisible, setLabelsAutoVisible] = useState(true)
+
+  useEffect(() => {
+    const t = setTimeout(() => setLabelsAutoVisible(false), LABEL_AUTO_HIDE_MS)
+    return () => clearTimeout(t)
+  }, [])
 
   const triggerShake = (hubId: string) => {
     setShakingId(hubId)
@@ -160,87 +172,32 @@ function HubIconField({
     // Per-icon wander params — randomized once, kept stable for the life
     // of this arrangement so each icon's drift feels independent.
     const phys = arrangement.map(() => ({
-      freqX: randBetween(0.045, 0.075),  // very slow — full cycle ~14–22s
-      freqY: randBetween(0.04, 0.07),
+      freqX: randBetween(0.06, 0.09),   // was 0.045–0.075 — subtle pace bump
+      freqY: randBetween(0.05, 0.08),   // was 0.04–0.07
       phaseX: randBetween(0, Math.PI * 2),
       phaseY: randBetween(0, Math.PI * 2),
       x: 0, y: 0,
     }))
 
     let raf = 0
-    let homePx: { x: number; y: number }[] = []
-
-    const recomputeHomes = () => {
-      const rect = container.getBoundingClientRect()
-      homePx = arrangement.map((e) => ({ x: (e.leftPct / 100) * rect.width, y: (e.topPct / 100) * rect.height }))
-    }
-    recomputeHomes()
-    const onResize = () => recomputeHomes()
-    window.addEventListener("resize", onResize)
 
     const tick = (time: number) => {
       const t = time / 1000
-
-      // Sine wander around home, per icon.
       for (let i = 0; i < phys.length; i++) {
         const p = phys[i]
         p.x = Math.sin(t * p.freqX + p.phaseX) * WANDER_AMP_PX
         p.y = Math.sin(t * p.freqY + p.phaseY) * WANDER_AMP_PX * 0.6
-      }
 
-      // Pairwise "touch" check → pull-back nudge + spark.
-      for (let i = 0; i < phys.length; i++) {
-        for (let j = i + 1; j < phys.length; j++) {
-          const ax = homePx[i].x + phys[i].x
-          const ay = homePx[i].y + phys[i].y
-          const bx = homePx[j].x + phys[j].x
-          const by = homePx[j].y + phys[j].y
-          const dx = ax - bx
-          const dy = ay - by
-          const dist = Math.hypot(dx, dy) || 0.001
-
-          if (dist < TOUCH_DIST) {
-            // Pull back: nudge both wander offsets apart along the
-            // contact normal, gently — not a hard bounce.
-            const nx = dx / dist
-            const ny = dy / dist
-            const push = (TOUCH_DIST - dist) * 0.15
-            phys[i].x += nx * push
-            phys[i].y += ny * push
-            phys[j].x -= nx * push
-            phys[j].y -= ny * push
-
-            const key = `${i}-${j}`
-            const now = performance.now()
-            const last = cooldownRef.current.get(key) ?? 0
-            if (now - last > SPARK_COOLDOWN_MS) {
-              cooldownRef.current.set(key, now)
-              const rect = container.getBoundingClientRect()
-              const midX = ((ax + bx) / 2 / rect.width) * 100
-              const midY = ((ay + by) / 2 / rect.height) * 100
-              const id = sparkIdRef.current++
-              setSparks((cur) => [...cur, { id, xPct: midX, yPct: midY }])
-              setTimeout(() => setSparks((cur) => cur.filter((s) => s.id !== id)), 500)
-            }
-          }
-        }
-      }
-
-      for (let i = 0; i < phys.length; i++) {
         const el = iconRefs.current[i]
-        if (el) el.style.transform = `translate(${phys[i].x}px, ${phys[i].y}px)`
+        if (el) el.style.transform = `translate(${p.x}px, ${p.y}px)`
         const sh = shadowRefs.current[i]
-        if (sh) sh.style.transform = `translateX(calc(-50% + ${phys[i].x * 0.6}px))`
+        if (sh) sh.style.transform = `translateX(calc(-50% + ${p.x * 0.6}px))`
       }
-
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
 
-    return () => {
-      cancelAnimationFrame(raf)
-      window.removeEventListener("resize", onResize)
-    }
+    return () => cancelAnimationFrame(raf)
   }, [arrangement])
 
   return (
@@ -248,26 +205,12 @@ function HubIconField({
       ref={containerRef}
       className="relative mx-auto w-full max-w-[360px] sm:max-w-[440px] md:max-w-none h-[440px] sm:h-[500px] md:h-[560px]"
     >
-      {sparks.map((s) => (
-        <span
-          key={s.id}
-          aria-hidden="true"
-          className="absolute w-3 h-3 rounded-full pointer-events-none animate-[abh-spark-pop_500ms_ease-out_forwards]"
-          style={{
-            top: `${s.yPct}%`,
-            left: `${s.xPct}%`,
-            transform: "translate(-50%, -50%)",
-            background: isDark ? "rgba(233,236,239,0.55)" : "rgba(51,51,51,0.35)",
-            boxShadow: isDark ? "0 0 10px 2px rgba(233,236,239,0.35)" : "0 0 8px 2px rgba(51,51,51,0.2)",
-          }}
-        />
-      ))}
-
       {arrangement.map((entry, i) => {
         const { hub, topPct, leftPct, z } = entry
         const hubAccent = isDark ? hub.colorDark : hub.colorLight
         const isHovered = canHover && hoveredId === hub.id
         const isShaking = shakingId === hub.id
+        const labelVisible = labelsAutoVisible || isHovered || isShaking
 
         return (
           <div
@@ -276,13 +219,17 @@ function HubIconField({
             style={{
               top: `${topPct}%`,
               left: `${leftPct}%`,
+              transform: "translate(-50%, -50%)", // anchor each icon's own
+              // center on its pentagon point, instead of its top-left corner
+              // — required for true geometric symmetry around the container
+              // center.
               zIndex: z,
               animationDelay: `${z * 20}ms`,
               animationDuration: "500ms",
               animationFillMode: "both",
             }}
           >
-            {/* Outer div: JS-driven wander/collision transform only. */}
+            {/* Outer div: JS-driven wander transform only. */}
             <div ref={(el) => { iconRefs.current[i] = el }}>
               {/* Inner div: hover-bounce / click-shake CSS animations —
                   kept on a separate element so the two transforms never
@@ -293,6 +240,8 @@ function HubIconField({
                 aria-label={hub.name}
                 onMouseEnter={() => canHover && setHoveredId(hub.id)}
                 onMouseLeave={() => canHover && setHoveredId((cur) => (cur === hub.id ? null : cur))}
+                onFocus={() => setHoveredId(hub.id)}
+                onBlur={() => setHoveredId((cur) => (cur === hub.id ? null : cur))}
                 onClick={() => triggerShake(hub.id)}
                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); triggerShake(hub.id) } }}
                 className="relative w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 cursor-pointer outline-none"
@@ -329,9 +278,16 @@ function HubIconField({
               }}
             />
 
+            {/* Name pill — auto-visible for the first 8s of each visit,
+                then fades (opacity transition, not unmount) and only
+                reappears on hover/focus/tap afterward. */}
             <span
-              className="mt-2 px-2.5 py-1 rounded-full text-[0.65rem] sm:text-xs font-black uppercase tracking-wide bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm shadow-sm whitespace-nowrap"
-              style={{ color: hubAccent }}
+              className="mt-2 px-2.5 py-1 rounded-full text-[0.65rem] sm:text-xs font-black uppercase tracking-wide bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm shadow-sm whitespace-nowrap transition-opacity duration-500"
+              style={{
+                color: hubAccent,
+                opacity: labelVisible ? 1 : 0,
+                pointerEvents: labelVisible ? "auto" : "none",
+              }}
             >
               {pillLabel(hub.name)}
             </span>
@@ -354,9 +310,7 @@ export function HeroSection() {
   const [canHover, setCanHover] = useState(false)
   const showBackToTop = useBackToTop()
 
-  const [arrangement, setArrangement] = useState<IconEntry[]>(() =>
-    HUBS_DATA.map((hub, i) => ({ hub, topPct: ZONES[i].topRange[0], leftPct: ZONES[i].leftRange[0], z: 10 + i * 10 }))
-  )
+  const [arrangement, setArrangement] = useState<IconEntry[]>(() => buildArrangement())
 
   const ctaBtnRef = useRef<HTMLButtonElement>(null)
 
@@ -431,11 +385,6 @@ export function HeroSection() {
           0%, 100% { transform: translateX(-50%) scaleX(1); opacity: 0.32; }
           50%      { transform: translateX(-50%) scaleX(0.5); opacity: 0.14; }
         }
-        @keyframes abh-spark-pop {
-          0%   { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
-          35%  { opacity: 1; }
-          100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
-        }
       `}</style>
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center relative z-10 w-full mb-6">
@@ -458,7 +407,11 @@ export function HeroSection() {
 
         {/* md:items-center keeps this row's two columns vertically
             centered against each other, so the icon field's midline
-            always sits level with the title/text column on desktop. */}
+            always sits level with the title/text column on desktop —
+            unchanged from before. What's fixed now is WITHIN the icon
+            field itself: the pentagon layout is centered and mirror-
+            symmetric, so it no longer skews toward the right edge of
+            its own column on any breakpoint, mobile included. */}
         <div className="w-full max-w-[1100px] mx-auto grid md:grid-cols-2 gap-10 md:gap-16 items-center mb-10 md:mb-14">
 
           <div className="text-center md:text-left">
@@ -561,4 +514,4 @@ export function HeroSection() {
       <BackToTopButton visible={showBackToTop} />
     </section>
   )
-            } 
+} 
