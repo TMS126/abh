@@ -1,22 +1,36 @@
-/* components/services-page/index.tsx */
+/* components/services-page/index.tsx — PART 1 OF 2 */
 "use client"
 
 /**
  * ════════════════════════════════════════════════════════════════════════
- * SERVICES PAGE — the main /services page showing all 5 hub cards.
+ * SERVICES PAGE
  *
- * NOTICE BADGE:
- *   A small round orange "!" badge appears in the top-right corner of a
- *   hub's card (both the desktop grid and the mobile stacked list) if ANY
- *   service inside ANY section of that hub currently has a `notice` set.
- *   Fully dynamic — no hub name hardcoded, just checks the data.
+ * TWO COMPLETELY DIFFERENT LAYOUTS, SAME DATA/LOGIC UNDERNEATH:
+ *
+ * MOBILE (< md breakpoint):
+ *   Same 5 hubs, same tap-to-open-HubModal behavior as before — ONLY the
+ *   visual card style changed, to the icon-tile look with images from
+ *   /public (phub.png, dochub.png, dhub.png, ehub.png, thub.png).
+ *
+ * DESKTOP (>= md breakpoint):
+ *   On first load: the original 5 big cards, completely unchanged.
+ *   Click a card -> it shrinks into a small pill and joins a pill row at
+ *   the top alongside pills for the other 4 hubs (the clicked one is
+ *   highlighted). Below the pills, that hub's SECTIONS render as cards
+ *   (e.g. "SASSA", "SARS", "Online Applications"). Click a section card
+ *   and it expands in place (accordion) to show that section's individual
+ *   services as a simple list. Click a service -> opens the existing
+ *   ServiceDetailModal, exactly as before. Click a different pill to
+ *   switch hubs; nothing here changes the underlying HUBS data or the
+ *   modals themselves.
  * ════════════════════════════════════════════════════════════════════════
  */
 
 import { useState, useEffect, useRef } from "react"
+import Image from "next/image"
 import { useSearchParams, useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
-import { Megaphone, ArrowRight, WarningCircle } from "@phosphor-icons/react"
+import { Megaphone, ArrowRight, CaretRight, CaretDown, WarningCircle } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { BRAND, TOKEN, HUB_COLORS, HubKey } from "@/lib/brand"
@@ -27,9 +41,18 @@ import { InlineSearchBar } from "./search-bar"
 import { HubModal } from "./hub-modal"
 import { ServiceDetailModal } from "./service-detail-modal"
 import { HUB_ORDER, HUB_PREVIEWS, NOTICE, trackEvent, getTurnaround, SelectedService } from "./lib"
-import { sectionHasBulk } from "../quote-calculator/lib"
+import { sectionHasBulk, itemHasBulk } from "../quote-calculator/lib"
 import { NoticePill } from "@/components/notice-pill"
 import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
+
+// ── Icon image path per hub — files already live in /public ──
+const HUB_ICON_SRC: Record<HubId, string> = {
+  print: "/phub.png",
+  doc: "/dochub.png",
+  design: "/dhub.png",
+  eservice: "/ehub.png",
+  tech: "/thub.png",
+}
 
 function ClosingTagline() {
   return (
@@ -73,6 +96,11 @@ function HubCornerIcon({ hubId, accent }: { hubId: HubId; accent: string }) {
   )
 }
 
+// Diagonal "Bulk" ribbon — ONLY used on the original, untouched 5-card
+// desktop landing view (kept "like now", per instruction). Never used on
+// the new mobile tiles or desktop pill/section cards — those use the
+// smaller CornerDot below instead, since a diagonal ribbon would collide
+// with the new icon artwork in a denser layout.
 function BulkRibbon() {
   return (
     <div className="absolute top-4 -right-8 rotate-45 z-20 pointer-events-none">
@@ -86,6 +114,8 @@ function BulkRibbon() {
   )
 }
 
+// Circular orange badge — ONLY used on the original 5-card desktop
+// landing view, same reasoning as BulkRibbon above.
 function NoticeBadge() {
   return (
     <div className="absolute top-3 right-3 z-20 pointer-events-none">
@@ -100,6 +130,223 @@ function NoticeBadge() {
   )
 }
 
+// Small unobtrusive dot — used on the NEW mobile tiles and desktop
+// pill/section cards. Two independent dots can render side by side
+// (bulk + notice) without ever overlapping the icon artwork or text.
+function CornerDot({ color, label }: { color: string; label: string }) {
+  return (
+    <span
+      aria-label={label}
+      className="w-2.5 h-2.5 rounded-full shrink-0"
+      style={{ backgroundColor: color, boxShadow: "0 0 0 2px var(--card)" }}
+    />
+  )
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// MOBILE HUB CARD — icon-tile style, using the /public hub images.
+// Interaction is UNCHANGED from before: tapping it still calls
+// onClick -> handleOpenHub -> opens the existing HubModal. Only the
+// visuals are new. Info shown (title, preview tags, description) is the
+// same info that was already there, just laid out differently.
+// ══════════════════════════════════════════════════════════════════════
+function MobileHubCard({
+  hubId, hub, accent, gradient, hubHasBulk, hubHasNotice, onClick,
+}: {
+  hubId: HubId
+  hub: (typeof HUBS)[HubId]
+  accent: string
+  gradient: string
+  hubHasBulk: boolean
+  hubHasNotice: boolean
+  onClick: () => void
+}) {
+  const itemCount = hub.sections.reduce((sum, s) => sum + s.items.length, 0)
+
+  return (
+    <button
+      onClick={onClick}
+      aria-label={`Open ${hub.title}`}
+      className="w-full text-left rounded-[18px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-200 active:scale-[0.98] transform-gpu p-4"
+    >
+      {/* Top row: title + chevron affordance */}
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-sans font-black text-[1.1rem] leading-tight text-zinc-900 dark:text-zinc-50 truncate pr-2">
+          {hub.title}
+        </h3>
+        <span
+          className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: "var(--muted)", color: accent }}
+          aria-hidden="true"
+        >
+          <CaretRight size={13} weight="bold" />
+        </span>
+      </div>
+
+      {/* Icon tile — gradient square with the hub's PNG icon centered */}
+      <div
+        className="relative w-full aspect-[2/1.15] rounded-[14px] flex items-center justify-center mb-3 overflow-hidden"
+        style={{ background: gradient }}
+      >
+        <Image
+          src={HUB_ICON_SRC[hubId]}
+          alt=""
+          width={72}
+          height={72}
+          className="object-contain drop-shadow-lg"
+          aria-hidden="true"
+        />
+
+        {/* Bulk/Notice dots — top-right of the tile, small and stacked
+            horizontally, never overlapping the centered icon artwork */}
+        {(hubHasBulk || hubHasNotice) && (
+          <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
+            {hubHasNotice && <CornerDot color={TOKEN.warningBg} label="Notice for some services" />}
+            {hubHasBulk && <CornerDot color="#ffffff" label="Bulk pricing available" />}
+          </div>
+        )}
+      </div>
+
+      {/* Info line — service count + category count, real data only */}
+      <p className="text-[0.82rem] font-bold text-zinc-500 dark:text-zinc-400">
+        {itemCount} services <span className="opacity-50">·</span> {hub.sections.length} categories
+      </p>
+    </button>
+  )
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// DESKTOP PILL — the shrunk version of a hub card once any hub has been
+// selected. All 5 hubs render as pills; the currently-active one is
+// visually highlighted (solid accent fill), the rest are outlined.
+// ══════════════════════════════════════════════════════════════════════
+function DesktopHubPill({
+  hubId, title, accent, isActive, onClick,
+}: {
+  hubId: HubId
+  title: string
+  accent: string
+  isActive: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={isActive}
+      className={cn(
+        "inline-flex items-center gap-2 pl-2 pr-4 py-2 rounded-full font-black text-[0.9rem] transition-all duration-200 active:scale-95 border-2"
+      )}
+      style={
+        isActive
+          ? { backgroundColor: accent, borderColor: accent, color: "#ffffff" }
+          : { backgroundColor: "transparent", borderColor: accent, color: accent }
+      }
+    >
+      <span
+        className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
+        style={{ backgroundColor: isActive ? "rgba(255,255,255,0.25)" : `${accent}15` }}
+      >
+        <HubIcon id={hubId} size={13} color={isActive ? "#ffffff" : accent} />
+      </span>
+      {title}
+    </button>
+  )
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// DESKTOP SECTION CARD — shows one section of the active hub (e.g.
+// "SASSA"). Click toggles it open/closed; when open, its services list
+// out directly beneath it. Only one section is open at a time per hub,
+// keeping the view from getting overwhelming.
+// ══════════════════════════════════════════════════════════════════════
+function DesktopSectionCard({
+  section, hubId, accent, isExpanded, onToggle, onSelectService,
+}: {
+  section: (typeof HUBS)[HubId]["sections"][number]
+  hubId: HubId
+  accent: string
+  isExpanded: boolean
+  onToggle: () => void
+  onSelectService: (svc: SelectedService) => void
+}) {
+  const sectionHasNotice = section.items.some((i) => !!i.notice)
+  const sectionHasBulkFlag = sectionHasBulk(hubId, section.title, section.items)
+
+  return (
+    <div className="rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden">
+      <button
+        onClick={onToggle}
+        aria-expanded={isExpanded}
+        className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900/50"
+      >
+        <div className="min-w-0 flex items-center gap-2">
+          <span className="font-black text-[1.05rem] text-zinc-800 dark:text-zinc-100 truncate">
+            {section.title}
+          </span>
+          {sectionHasNotice && <CornerDot color={TOKEN.warningBg} label="Notice for some services in this section" />}
+          {sectionHasBulkFlag && <CornerDot color={accent} label="Bulk pricing available" />}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[0.78rem] font-bold text-zinc-400 dark:text-zinc-500">
+            {section.items.length}
+          </span>
+          <CaretDown
+            size={14}
+            weight="bold"
+            className={cn("transition-transform duration-200", isExpanded && "rotate-180")}
+            style={{ color: accent }}
+          />
+        </div>
+      </button>
+
+      {isExpanded && (
+        <div className="border-t border-zinc-100 dark:border-zinc-800 p-2 grid grid-cols-1 gap-1.5 animate-in fade-in duration-150">
+          {section.items.map((item, idx) => (
+            <button
+              key={idx}
+              onClick={() =>
+                onSelectService({
+                  name: item.name,
+                  price: item.price,
+                  hubId,
+                  sectionTitle: section.title,
+                  requirements: item.requirements,
+                  desc: item.description,
+                  turnaround: getTurnaround(section.title, item.name),
+                  tips: item.tips ? [...item.tips] : undefined,
+                  notice: item.notice,
+                })
+              }
+              className="flex items-center justify-between px-3.5 py-2.5 rounded-[10px] bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors duration-150 active:scale-[0.99] w-full text-left"
+            >
+              <span className="text-[0.92rem] font-semibold text-zinc-700 dark:text-zinc-200 flex items-center gap-1.5 min-w-0">
+                {itemHasBulk(hubId, section.title, item.name) && (
+                  <span className="shrink-0 text-[0.55rem] font-black uppercase tracking-wide text-zinc-400">Bulk ·</span>
+                )}
+                {item.notice && (
+                  <span aria-label="Notice" className="shrink-0 font-black text-[0.85rem] leading-none" style={{ color: TOKEN.warningBg }}>!</span>
+                )}
+                <span className="truncate">{item.name}</span>
+              </span>
+              <span className="shrink-0 ml-3 text-[0.92rem] font-black" style={{ color: accent }}>
+                {item.price}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── PART 2 continues with the main ServicesPage component ──
+/* components/services-page/index.tsx — PART 2 OF 2 */
+/**
+ * Continuation of the services page — the main exported component.
+ * Everything defined in Part 1 (MobileHubCard, DesktopHubPill,
+ * DesktopSectionCard, etc.) is used below.
+ */
+
 export function ServicesPage() {
   const { resolvedTheme } = useTheme()
   const isDark       = resolvedTheme === "dark"
@@ -112,6 +359,15 @@ export function ServicesPage() {
   const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
   const [clientNoticeDismissed, setClientNoticeDismissed] = useState(false)
   const showBackToTop = useBackToTop()
+
+  // ── DESKTOP-ONLY filter state ──
+  // desktopActiveHub: which hub's pill is highlighted / whose sections
+  // are showing below the pill row. null = still on the original 5-card
+  // landing view (nothing selected yet).
+  const [desktopActiveHub, setDesktopActiveHub] = useState<HubId | null>(null)
+  // desktopExpandedSection: index of the currently open (expanded)
+  // section card within the active hub. null = all collapsed.
+  const [desktopExpandedSection, setDesktopExpandedSection] = useState<number | null>(null)
 
   const isModalOpen = !!(activeHub || selectedService)
 
@@ -128,6 +384,27 @@ export function ServicesPage() {
     trackEvent("view_hub", { hub_id: hubId, hub_name: HUBS[hubId].title })
     setHubOriginSide(originSide)
     setActiveHub(hubId)
+  }
+
+  // Called when a desktop hub CARD (initial landing view) is clicked —
+  // switches into filter mode instead of opening the HubModal.
+  const handleDesktopSelectHub = (hubId: HubId) => {
+    trackEvent("view_hub", { hub_id: hubId, hub_name: HUBS[hubId].title })
+    setDesktopActiveHub(hubId)
+    setDesktopExpandedSection(null)
+  }
+
+  // Called when a PILL is clicked to switch to a different hub while
+  // already in filter mode.
+  const handleDesktopSwitchHub = (hubId: HubId) => {
+    if (hubId === desktopActiveHub) return
+    trackEvent("view_hub", { hub_id: hubId, hub_name: HUBS[hubId].title })
+    setDesktopActiveHub(hubId)
+    setDesktopExpandedSection(null)
+  }
+
+  const handleDesktopToggleSection = (idx: number) => {
+    setDesktopExpandedSection((prev) => (prev === idx ? null : idx))
   }
 
   useEffect(() => {
@@ -192,14 +469,11 @@ export function ServicesPage() {
     }
   }, [isModalOpen])
 
+  const desktopHub = desktopActiveHub ? HUBS[desktopActiveHub] : null
+
   return (
     <section className="min-h-screen bg-white dark:bg-[#081428] transition-colors duration-300 pb-24 overflow-x-hidden">
 
-      {/* FIX: was a plain <div> — layout changes (the notice pill expanding/
-          collapsing above) now animate smoothly instead of snapping,
-          because this wrapper tracks and tweens its own height via
-          framer-motion's `layout` prop. Everything below the pill (search
-          bar, hub grid) shifts down/up in sync with it. */}
       <motion.div
         layout
         transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
@@ -244,126 +518,138 @@ export function ServicesPage() {
           </div>
         </ScrollBounce>
 
-        {/* ══════════════════ DESKTOP GRID ══════════════════ */}
-        <div className="hidden md:grid md:grid-cols-6 gap-6 pb-2 w-full">
+        {/* ══════════════════ MOBILE — icon-tile cards, unchanged interaction ══════════════════ */}
+        <div className="grid md:hidden grid-cols-2 gap-4 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub    = HUBS[hubId]
             const colors = HUB_COLORS[hubId as HubKey]
             const accent = isDark ? colors.accentDark : colors.accentLight
             const hubHasBulk = hub.sections.some((s) => sectionHasBulk(hubId, s.title, s.items))
             const hubHasNotice = hub.sections.some((s) => s.items.some((i) => !!i.notice))
+            // Tech Hub is the odd one out (5th card) — spans both columns
+            // on its own row so the 2-column grid doesn't leave a gap.
+            const spansFull = index === HUB_ORDER.length - 1 && HUB_ORDER.length % 2 !== 0
 
             return (
-              <div
-                key={hubId}
-                className={cn(
-                  "col-span-2",
-                  index === 3 && "md:col-start-2",
-                  index === 4 && "md:col-start-4"
-                )}
-              >
+              <div key={hubId} className={cn(spansFull && "col-span-2")}>
                 <ScrollBounce delay={index * 0.06}>
-                  {/* FIX: p-6 → px-6 py-8. Same horizontal footprint, more
-                      breathing room top/bottom — bumped the internal gaps
-                      below too so it reads as one evenly-spaced card, not
-                      just padding at the edges. */}
-                  <div
-                    className="group/hubcard relative flex flex-col items-center text-center h-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-300 hover:-translate-y-1 transform-gpu px-6 py-8 cursor-pointer"
+                  <MobileHubCard
+                    hubId={hubId}
+                    hub={hub}
+                    accent={accent}
+                    gradient={colors.gradient}
+                    hubHasBulk={hubHasBulk}
+                    hubHasNotice={hubHasNotice}
                     onClick={() => handleOpenHub(hubId, "right")}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === "Enter" && handleOpenHub(hubId, "right")}
-                    aria-label={`Open ${hub.title}`}
-                    style={{ ["--hub-accent" as any]: accent }}
-                  >
-                    <HubCornerIcon hubId={hubId} accent={accent} />
-                    {hubHasBulk && <BulkRibbon />}
-                    {hubHasNotice && <NoticeBadge />}
-
-                    <h3 className="relative z-10 font-sans font-black text-[1.45rem] leading-tight mb-2 text-zinc-900 dark:text-zinc-50 group-hover/hubcard:text-[var(--hub-accent)] transition-colors duration-200">
-                      {hub.title}
-                    </h3>
-
-                    <div className="relative z-10 flex flex-wrap justify-center gap-x-1.5 gap-y-0.5 mb-2.5">
-                      {HUB_PREVIEWS[hubId].map((hint, i) => (
-                        <span key={i} className="text-[0.76rem] font-medium text-zinc-400 dark:text-zinc-500">
-                          {hint}
-                        </span>
-                      ))}
-                    </div>
-
-                    <p className="relative z-10 abh-body text-[0.88rem] line-clamp-2 leading-snug mb-6 max-w-[190px]">
-                      {hub.desc}
-                    </p>
-
-                    <div className="relative z-10 mt-auto">
-                      <HubCta label="View more" accent={accent} pointsRight={true} />
-                    </div>
-                  </div>
+                  />
                 </ScrollBounce>
               </div>
             )
           })}
         </div>
 
-        {/* ══════════════════ MOBILE STACKED CARDS ══════════════════ */}
-        <div className="flex md:hidden flex-col gap-6 pb-2 w-full">
-          {HUB_ORDER.map((hubId, index) => {
-            const hub    = HUBS[hubId]
-            const colors = HUB_COLORS[hubId as HubKey]
-            const accent = isDark ? colors.accentDark : colors.accentLight
-            const hubHasBulk = hub.sections.some((s) => sectionHasBulk(hubId, s.title, s.items))
-            const hubHasNotice = hub.sections.some((s) => s.items.some((i) => !!i.notice))
+        {/* ══════════════════ DESKTOP — original 5-card landing (unchanged) ══════════════════ */}
+        {!desktopActiveHub && (
+          <div className="hidden md:grid md:grid-cols-6 gap-6 pb-2 w-full">
+            {HUB_ORDER.map((hubId, index) => {
+              const hub    = HUBS[hubId]
+              const colors = HUB_COLORS[hubId as HubKey]
+              const accent = isDark ? colors.accentDark : colors.accentLight
+              const hubHasBulk = hub.sections.some((s) => sectionHasBulk(hubId, s.title, s.items))
+              const hubHasNotice = hub.sections.some((s) => s.items.some((i) => !!i.notice))
 
-            return (
-              <ScrollBounce key={hubId} delay={index * 0.08}>
-                <button
-                  onClick={() => handleOpenHub(hubId, "right")}
-                  aria-label={`Open ${hub.title}`}
-                  className="group/hubcard relative flex flex-col items-center text-center w-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-200 active:scale-[0.98] transform-gpu px-6 py-8"
-                  style={{ ["--hub-accent" as any]: accent }}
+              return (
+                <div
+                  key={hubId}
+                  className={cn(
+                    "col-span-2",
+                    index === 3 && "md:col-start-2",
+                    index === 4 && "md:col-start-4"
+                  )}
                 >
-                  <HubCornerIcon hubId={hubId} accent={accent} />
-                  {hubHasBulk && <BulkRibbon />}
-                  {hubHasNotice && <NoticeBadge />}
+                  <ScrollBounce delay={index * 0.06}>
+                    <div
+                      className="group/hubcard relative flex flex-col items-center text-center h-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-300 hover:-translate-y-1 transform-gpu px-6 py-8 cursor-pointer"
+                      onClick={() => handleDesktopSelectHub(hubId)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === "Enter" && handleDesktopSelectHub(hubId)}
+                      aria-label={`Open ${hub.title}`}
+                      style={{ ["--hub-accent" as any]: accent }}
+                    >
+                      <HubCornerIcon hubId={hubId} accent={accent} />
+                      {hubHasBulk && <BulkRibbon />}
+                      {hubHasNotice && <NoticeBadge />}
 
-                  <h3 className="relative z-10 font-sans font-black text-[1.45rem] leading-tight mb-2 text-zinc-900 dark:text-zinc-50 group-hover/hubcard:text-[var(--hub-accent)] transition-colors duration-200">
-                    {hub.title}
-                  </h3>
+                      <h3 className="relative z-10 font-sans font-black text-[1.45rem] leading-tight mb-2 text-zinc-900 dark:text-zinc-50 group-hover/hubcard:text-[var(--hub-accent)] transition-colors duration-200">
+                        {hub.title}
+                      </h3>
 
-                  <div className="relative z-10 flex flex-wrap justify-center gap-x-1.5 gap-y-0.5 mb-2.5">
-                    {HUB_PREVIEWS[hubId].map((hint, i) => (
-                      <span key={i} className="text-[0.76rem] font-medium text-zinc-400 dark:text-zinc-500">
-                        {hint}
-                      </span>
-                    ))}
-                  </div>
+                      <div className="relative z-10 flex flex-wrap justify-center gap-x-1.5 gap-y-0.5 mb-2.5">
+                        {HUB_PREVIEWS[hubId].map((hint, i) => (
+                          <span key={i} className="text-[0.76rem] font-medium text-zinc-400 dark:text-zinc-500">
+                            {hint}
+                          </span>
+                        ))}
+                      </div>
 
-                  <p className="relative z-10 abh-body text-[0.88rem] line-clamp-2 leading-snug mb-4 max-w-[260px]">
-                    {hub.desc}
-                  </p>
+                      <p className="relative z-10 abh-body text-[0.88rem] line-clamp-2 leading-snug mb-6 max-w-[190px]">
+                        {hub.desc}
+                      </p>
 
-                  <div className="relative z-10 flex flex-col items-center gap-1.5">
-                    <span className="inline-flex items-center gap-1 text-[0.88rem] font-black text-zinc-400 dark:text-zinc-500 group-hover/hubcard:text-[var(--hub-accent)] transition-colors duration-200">
-                      <span
-                        className="border-b-2 border-dotted pb-0.5 opacity-45 group-hover/hubcard:opacity-100 transition-opacity duration-200"
-                        style={{ borderColor: accent }}
-                      >
-                        Explore
-                      </span>
-                      <ArrowRight size={12} weight="bold" aria-hidden="true" />
-                    </span>
-                    <span
-                      className="block w-1.5 h-1.5 rounded-full opacity-0 group-hover/hubcard:opacity-100 transition-opacity duration-200"
-                      style={{ backgroundColor: accent }}
-                      aria-hidden="true"
-                    />
-                  </div>
-                </button>
-              </ScrollBounce>
-            )
-          })}
-        </div>
+                      <div className="relative z-10 mt-auto">
+                        <HubCta label="View more" accent={accent} pointsRight={true} />
+                      </div>
+                    </div>
+                  </ScrollBounce>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* ══════════════════ DESKTOP — filtered view (pills + sections) ══════════════════ */}
+        {desktopActiveHub && desktopHub && (
+          <div className="hidden md:flex flex-col items-center w-full animate-in fade-in duration-200">
+
+            {/* Pill row — all 5 hubs, active one highlighted */}
+            <div className="flex flex-wrap justify-center gap-2.5 mb-8">
+              {HUB_ORDER.map((hubId) => {
+                const colors = HUB_COLORS[hubId as HubKey]
+                const accent = isDark ? colors.accentDark : colors.accentLight
+                return (
+                  <DesktopHubPill
+                    key={hubId}
+                    hubId={hubId}
+                    title={HUBS[hubId].title}
+                    accent={accent}
+                    isActive={hubId === desktopActiveHub}
+                    onClick={() => handleDesktopSwitchHub(hubId)}
+                  />
+                )
+              })}
+            </div>
+
+            {/* Section cards for the active hub */}
+            <div className="w-full max-w-2xl flex flex-col gap-3">
+              {(() => {
+                const colors = HUB_COLORS[desktopActiveHub as HubKey]
+                const accent = isDark ? colors.accentDark : colors.accentLight
+                return desktopHub.sections.map((section, sIdx) => (
+                  <DesktopSectionCard
+                    key={sIdx}
+                    section={section}
+                    hubId={desktopActiveHub}
+                    accent={accent}
+                    isExpanded={desktopExpandedSection === sIdx}
+                    onToggle={() => handleDesktopToggleSection(sIdx)}
+                    onSelectService={handleSelectService}
+                  />
+                ))
+              })()}
+            </div>
+          </div>
+        )}
 
         <ScrollBounce className="w-full mt-14 md:mt-20">
           <ClosingTagline />
@@ -389,4 +675,4 @@ export function ServicesPage() {
       <BackToTopButton visible={showBackToTop && !isModalOpen} />
     </section>
   )
-} 
+    }
