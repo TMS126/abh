@@ -26,8 +26,6 @@ const HEADER_GRID = "grid grid-cols-[36px_1fr_36px] gap-2"
 const SWIPE_MIN_DX = 48
 const SWIPE_DOMINANCE = 1.4
 
-// Shared focus-visible ring so keyboard users can see where they are —
-// none of the icon buttons had this before (mouse-only affordance).
 const ICON_BTN_FOCUS = "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-500"
 
 type Tab = "bring" | "about"
@@ -82,10 +80,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
 
   useFocusTrap(!!svc, containerRef)
 
-  // Escape closes the innermost open layer first (Tips/Notice sub-modals
-  // already handle their own Escape internally and call stopPropagation
-  // via their own listener order — this only fires the main modal's
-  // close when neither sub-modal is open, so Esc never skips a layer).
   useEffect(() => {
     if (!svc) return
     const onKey = (e: KeyboardEvent) => {
@@ -113,10 +107,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
         const data = JSON.parse(xhr.responseText)
         if (xhr.status < 200 || xhr.status >= 300) throw new Error(data?.error?.message || `HTTP ${xhr.status}`)
         if (!data.secure_url) throw new Error("No URL returned")
-        // Only trust a URL back from Cloudinary's own domain — defends
-        // against a compromised/misconfigured endpoint handing back an
-        // arbitrary URL that later gets sent straight into a WhatsApp
-        // message link.
         if (!/^https:\/\/res\.cloudinary\.com\//.test(data.secure_url)) {
           throw new Error("Unexpected upload response")
         }
@@ -294,13 +284,7 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           </div>
         )}
 
-        {/* ══════════════════ TOP-RIGHT ICON STACK ══════════════════
-            When a bulk ribbon is present it occupies the full top-right
-            104×104 corner (diagonal band cuts straight through the old
-            top-5/right-5 position). Pushing the stack down below that
-            zone — instead of just stacking z-index on top of it — keeps
-            the ribbon fully legible and the buttons fully tappable,
-            with real spacing between the two instead of an overlap. */}
+        {/* ══════════════════ TOP-RIGHT ICON STACK ══════════════════ */}
         <div
           className={cn(
             "absolute right-5 z-20 flex flex-col items-center gap-1.5",
@@ -523,13 +507,15 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
 
           <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
 
+          {/* CTA — was text-white on the #25D366 fill; switched to dark
+              text (zinc-900) per request. Fill unchanged. */}
           <a
             href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waMessage)}`}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackEvent("request_whatsapp", { hub_id: svc.hubId, service_name: svc.name, section_title: svc.sectionTitle, price: svc.price, had_file_attached: uploadPhase === "done" })}
             className={cn(
-              "flex items-center justify-center gap-2 w-full px-4 py-4 rounded-[14px] font-black text-base text-white text-center transition-all active:scale-95",
+              "flex items-center justify-center gap-2 w-full px-4 py-4 rounded-[14px] font-black text-base text-zinc-900 text-center transition-all active:scale-95",
               ICON_BTN_FOCUS
             )}
             style={{ backgroundColor: "#25D366" }}
@@ -566,4 +552,4 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
       )}
     </div>
   )
-    }
+} 
