@@ -3,19 +3,20 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { useTheme } from 'next-themes'
-import { CaretDown, CaretUp, Lightning, SealPercent, WhatsappLogo } from '@phosphor-icons/react'
+import { Lightning, SealPercent, WhatsappLogo } from '@phosphor-icons/react'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { ScrollBounce } from '@/components/scroll-bounce'
 import { HUBS, type HubId } from '@/lib/data'
-import { BRAND, BIZ, waLink } from '@/lib/brand'
-import { itemHasBulk } from '@/components/quote-calculator/lib'
+import { BRAND, TOKEN, BIZ, waLink } from '@/lib/brand'
+import { itemHasBulk, hubHasBulk } from '@/components/quote-calculator/lib'
 import { PricingSearchInput, PricingSearchResults } from './search-bar'
 import { HubAccordionCard } from './hub-card'
 import { PdfPillButton } from './shared'
 import { HUB_ORDER, dispatchAddToQuote, dispatchRemoveFromQuote, parsePrice, searchHubs } from './lib'
 import { BackToTopButton, useBackToTop } from '@/components/back-to-top-button'
 import { CtaBar } from '@/components/strip-section'
+import { NoticePill } from '@/components/notice-pill'
 
 export default function PricingPage() {
   const { resolvedTheme } = useTheme()
@@ -25,6 +26,11 @@ export default function PricingPage() {
   const [query, setQuery] = useState('')
   const hubRefs = useRef<Partial<Record<HubId, HTMLDivElement | null>>>({})
   const showBackToTop = useBackToTop()
+
+  // FIX: new — dismissible state for the translucent rush-fee/bulk notice,
+  // replacing the old solid orange card. Matches the NoticePill pattern
+  // used on Services/Gallery.
+  const [pricingNoticeDismissed, setPricingNoticeDismissed] = useState(false)
 
   const [justAdded, setJustAdded] = useState<string | null>(null)
   const addedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -42,18 +48,24 @@ export default function PricingPage() {
     })
   }, [])
 
-  const allOpen = openHubs.size === HUB_ORDER.length
-  const toggleAll = useCallback(() => setOpenHubs(allOpen ? new Set() : new Set(HUB_ORDER)), [allOpen])
-
+  // FIX: clicking an already-open hub's top pill now closes it instead of
+  // being a no-op. Only scrolls when actually opening — closing shouldn't
+  // yank the page anywhere.
   const jumpToHub = useCallback((hubId: HubId) => {
+    const wasOpen = openHubs.has(hubId)
     setOpenHubs(prev => {
-      if (prev.has(hubId)) return prev
       const next = new Set(prev)
-      next.add(hubId)
+      if (wasOpen) next.delete(hubId)
+      else next.add(hubId)
       return next
     })
-    requestAnimationFrame(() => hubRefs.current[hubId]?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
-  }, [])
+    if (!wasOpen) {
+      requestAnimationFrame(() => hubRefs.current[hubId]?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+    }
+  }, [openHubs])
+
+  const allOpen = openHubs.size === HUB_ORDER.length
+  const toggleAll = useCallback(() => setOpenHubs(allOpen ? new Set() : new Set(HUB_ORDER)), [allOpen])
 
   const handleAdd = useCallback((hubId: HubId, sectionTitle: string, name: string, price: string) => {
     dispatchAddToQuote(hubId, sectionTitle, name, price)
@@ -84,6 +96,36 @@ export default function PricingPage() {
   }, [])
 
   const noResultsWaLink = waLink(`Hi ${BIZ.name}! I couldn't find "${query}" on your pricing page — is this something you offer?`)
+
+  // FIX: root fix for the desktop layout bug. A single 2-col CSS grid
+  // shares row height across BOTH columns — when one accordion opens tall,
+  // its whole grid row stretches and pushes the card next to AND below it
+  // out of alignment. Splitting into two independent flex columns means
+  // each column's height is its own; opening a card in column A never
+  // touches column B's position.
+  const leftColumn = HUB_ORDER.filter((_, i) => i % 2 === 0)
+  const rightColumn = HUB_ORDER.filter((_, i) => i % 2 === 1)
+
+  const renderHubCard = (hubId: HubId) => {
+    const idx = HUB_ORDER.indexOf(hubId)
+    return (
+      <ScrollBounce key={hubId} delay={idx * 0.06}>
+        <HubAccordionCard
+          hubId={hubId}
+          accent={accent}
+          isOpen={openHubs.has(hubId)}
+          onToggle={() => toggleHub(hubId)}
+          justAdded={justAdded}
+          onAdd={(section, name, price) => handleAdd(hubId, section, name, price)}
+          onRemove={(section, name, price) => handleRemove(hubId, section, name, price)}
+          onDownload={() => handleHubDownload(hubId)}
+          hasBulk={(section, name) => itemHasBulk(hubId, section, name)}
+          hubHasBulk={hubHasBulk(hubId)}
+          cardRef={(el) => { hubRefs.current[hubId] = el }}
+        />
+      </ScrollBounce>
+    )
+  }
 
   return (
     <>
@@ -127,8 +169,9 @@ export default function PricingPage() {
                           key={hubId}
                           onClick={() => jumpToHub(hubId)}
                           aria-pressed={isOpen}
-                          className="relative pb-1 text-sm font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150"
-                          style={isOpen ? { color: accent } : undefined}
+                          aria-label={isOpen ? `Collapse ${HUBS[hubId].title}` : `Expand and jump to ${HUBS[hubId].title}`}
+                          className="relative pb-1 text-sm font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 rounded-sm"
+                          style={isOpen ? { color: accent, ['--tw-ring-color' as any]: accent } : { ['--tw-ring-color' as any]: accent }}
                         >
                           {HUBS[hubId].title}
                           <span
@@ -150,7 +193,6 @@ export default function PricingPage() {
                       className="flex items-center gap-1.5 px-4 py-2 rounded-[14px] text-xs font-bold border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 shadow-sm transition-all duration-150 active:scale-95 hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-700 dark:hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2"
                       style={{ ['--tw-ring-color' as any]: accent }}
                     >
-                      {allOpen ? <CaretUp size={14} weight="bold" aria-hidden="true" /> : <CaretDown size={14} weight="bold" aria-hidden="true" />}
                       {allOpen ? 'Collapse all' : 'Expand all'}
                     </button>
                   </div>
@@ -182,24 +224,22 @@ export default function PricingPage() {
                 </ScrollBounce>
               )
             ) : (
-              <div className="grid md:grid-cols-2 gap-4 items-start">
-                {HUB_ORDER.map((hubId, idx) => (
-                  <ScrollBounce key={hubId} delay={idx * 0.06}>
-                    <HubAccordionCard
-                      hubId={hubId}
-                      accent={accent}
-                      isOpen={openHubs.has(hubId)}
-                      onToggle={() => toggleHub(hubId)}
-                      justAdded={justAdded}
-                      onAdd={(section, name, price) => handleAdd(hubId, section, name, price)}
-                      onRemove={(section, name, price) => handleRemove(hubId, section, name, price)}
-                      onDownload={() => handleHubDownload(hubId)}
-                      hasBulk={(section, name) => itemHasBulk(hubId, section, name)}
-                      cardRef={(el) => { hubRefs.current[hubId] = el }}
-                    />
-                  </ScrollBounce>
-                ))}
-              </div>
+              <>
+                {/* Mobile — single stacked column, natural document order */}
+                <div className="md:hidden space-y-4">
+                  {HUB_ORDER.map(hubId => renderHubCard(hubId))}
+                </div>
+
+                {/* Desktop — two independent flex columns, not a shared grid */}
+                <div className="hidden md:flex gap-4 items-start">
+                  <div className="flex-1 flex flex-col gap-4 min-w-0">
+                    {leftColumn.map(hubId => renderHubCard(hubId))}
+                  </div>
+                  <div className="flex-1 flex flex-col gap-4 min-w-0">
+                    {rightColumn.map(hubId => renderHubCard(hubId))}
+                  </div>
+                </div>
+              </>
             )}
 
             <ScrollBounce delay={0.24}>
@@ -208,18 +248,28 @@ export default function PricingPage() {
               </div>
             </ScrollBounce>
 
-            <ScrollBounce delay={0.3}>
-              <div className="abh-card px-5 py-5 space-y-3">
-                <p className="text-xs flex items-start gap-1.5 text-zinc-600 dark:text-zinc-300">
-                  <Lightning size={14} weight="fill" className="shrink-0 mt-0.5" style={{ color: BRAND.orange }} aria-hidden="true" />
-                  <span><span className="font-black">Rush fee:</span> A 50% surcharge applies when same-session or urgent turnaround is required.</span>
-                </p>
-                <p className="text-xs flex items-start gap-1.5 text-zinc-600 dark:text-zinc-300">
-                  <SealPercent size={14} weight="fill" className="shrink-0 mt-0.5" style={{ color: accent }} aria-hidden="true" />
-                  <span>Look for the "Bulk pricing" tag next to a service — larger quantities get a better rate.</span>
-                </p>
-              </div>
-            </ScrollBounce>
+            {/* FIX: solid orange card → translucent NoticePill, same
+                component used on Services/Gallery. Orange now comes from
+                TOKEN.orangeText (theme-aware CSS var) instead of the raw
+                BRAND.orange hex, which is what read as muddy brown on the
+                dark background. */}
+            {!pricingNoticeDismissed && (
+              <ScrollBounce delay={0.3}>
+                <div className="flex justify-center">
+                  <NoticePill
+                    variant="warning"
+                    Icon={Lightning}
+                    collapsedLabel="Pricing Info"
+                    expandedLabel="Rush Fees & Bulk Pricing"
+                    isDark={isDark}
+                    onDismiss={() => setPricingNoticeDismissed(true)}
+                  >
+                    <span className="font-black" style={{ color: TOKEN.orangeText }}>Rush fee:</span> A 50% surcharge applies when same-session or urgent turnaround is required.
+                    {' '}Look for the <span className="inline-flex items-center gap-0.5 font-black" style={{ color: accent }}><SealPercent size={12} weight="fill" aria-hidden="true" /> Bulk</span> tag next to a service — larger quantities get a better rate.
+                  </NoticePill>
+                </div>
+              </ScrollBounce>
+            )}
 
           </div>
 
@@ -238,4 +288,4 @@ export default function PricingPage() {
       </div>
     </>
   )
-                                                                       } 
+      } 
