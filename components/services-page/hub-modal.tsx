@@ -1,18 +1,6 @@
 /* components/services-page/hub-modal.tsx */
 "use client"
 
-/**
- * ════════════════════════════════════════════════════════════════════════
- * HUB MODAL — the popup that opens when a customer taps a whole hub card.
- *
- * STICKY HEADER CHANGE: the section DESCRIPTION now lives inside the
- * GLUED HEADER block (same shrink-0 wrapper as the title and section
- * tabs), instead of at the top of the scrollable body. On mobile, this
- * means title + section tabs + description all stay pinned in place
- * while only the item list underneath scrolls.
- * ════════════════════════════════════════════════════════════════════════
- */
-
 import { useState, useEffect, useRef, type TouchEvent } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
@@ -117,9 +105,6 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
         className="relative z-10 w-full max-w-2xl bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[76vh] flex flex-col outline-none rounded-[14px] overflow-hidden"
         style={{ boxShadow: "0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4)" }}
       >
-        {/* ===== GLUED / STICKY HEADER — title row + section tabs +
-            section description, all pinned. shrink-0 keeps this block
-            fixed while only the item list below (in BODY) scrolls. ===== */}
         <div
           className="relative z-10 shrink-0 bg-white dark:bg-zinc-950 transition-shadow duration-200"
           style={{ boxShadow: isScrolled ? "0 10px 20px -14px rgba(0,0,0,0.35)" : "none" }}
@@ -128,7 +113,7 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
             <div className="flex items-center gap-4 min-w-0">
               <HubIcon id={hubId} size={28} color={accent} />
               <div className="min-w-0">
-                <h2 className="font-sans font-black text-2xl text-zinc-900 dark:text-zinc-50 truncate">
+                <h2 className="font-sans font-black text-2xl text-zinc-900 dark:text-zinc-50 break-words">
                   {hub.title}
                 </h2>
                 <p className="text-[0.82rem] font-semibold text-zinc-400 dark:text-zinc-500 mt-0.5">
@@ -156,11 +141,11 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
             </div>
           </div>
 
-          {/* ── Section tabs ── */}
+          {/* ── Section tabs, dot-separated ── */}
           <div
             role="tablist"
             aria-label="Service categories"
-            className="flex flex-wrap justify-center gap-x-7 gap-y-3 px-5 md:px-8 pb-4 border-b border-zinc-100 dark:border-zinc-800"
+            className="flex flex-wrap justify-center items-center gap-x-3 gap-y-3 px-5 md:px-8 pb-4 border-b border-zinc-100 dark:border-zinc-800"
           >
             {hub.sections.map((section, sIdx) => {
               const isOpen = openSectionIdx === sIdx
@@ -168,43 +153,46 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
               const hasNotice = section.items.some((i) => !!i.notice)
 
               return (
-                <button
-                  key={sIdx}
-                  role="tab"
-                  aria-selected={isOpen}
-                  onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)}
-                >
-                  <span
-                    className="relative pb-1.5 text-[1.05rem] font-black tracking-tight whitespace-nowrap transition-colors duration-200 border-b-2 -mb-[17px]"
-                    style={{ borderColor: isOpen ? accent : "transparent", color: isOpen ? accent : (isDark ? "#a1a1aa" : "#71717a") }}
+                <div key={sIdx} className="flex items-center gap-3">
+                  {sIdx > 0 && (
+                    <span className="text-zinc-300 dark:text-zinc-700 select-none" aria-hidden="true">
+                      •
+                    </span>
+                  )}
+                  <button
+                    role="tab"
+                    aria-selected={isOpen}
+                    onClick={() => setOpenSectionIdx(isOpen ? null : sIdx)}
                   >
-                    {section.title}
+                    <span
+                      className="relative pb-1.5 text-[1.05rem] font-black tracking-tight whitespace-nowrap transition-colors duration-200 border-b-2 -mb-[17px]"
+                      style={{ borderColor: isOpen ? accent : "transparent", color: isOpen ? accent : (isDark ? "#a1a1aa" : "#71717a") }}
+                    >
+                      {section.title}
 
-                    {hasNotice && (
-                      <span
-                        aria-label="Notice for some services in this section"
-                        className="absolute -top-1 -right-3 w-3.5 h-3.5 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: BRAND.orange }}
-                      >
-                        <WarningCircle size={9} weight="fill" color="#ffffff" aria-hidden="true" />
-                      </span>
-                    )}
+                      {/* Raw icon, no chip — theme-adaptive brand orange */}
+                      {hasNotice && (
+                        <WarningCircle
+                          size={12}
+                          weight="fill"
+                          aria-label="Notice for some services in this section"
+                          className="absolute -top-1.5 -right-4"
+                          style={{ color: BRAND.orange }}
+                        />
+                      )}
 
-                    {hasBulk && (
-                      <span aria-label="Bulk pricing available" className="ml-1.5 text-[0.6rem] font-black uppercase tracking-wide opacity-60">
-                        · Bulk
-                      </span>
-                    )}
-                  </span>
-                </button>
+                      {hasBulk && (
+                        <span aria-label="Bulk pricing available" className="ml-1.5 text-[0.6rem] font-black uppercase tracking-wide opacity-60">
+                          · Bulk
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                </div>
               )
             })}
           </div>
 
-          {/* ── SECTION DESCRIPTION — moved here from the scrollable body.
-              Now part of the sticky header block, so it stays pinned
-              alongside the title and tabs while the item list scrolls
-              underneath it. ── */}
           {activeSectionDesc && (
             <div key={openSectionIdx} className="px-5 md:px-8 py-4 border-b border-zinc-100 dark:border-zinc-800 animate-in fade-in duration-200">
               <p className="text-[0.9rem] leading-relaxed text-zinc-600 dark:text-zinc-300">
@@ -214,7 +202,6 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
           )}
         </div>
 
-        {/* ===== BODY — ONLY the item list scrolls now ===== */}
         <div
           ref={bodyRef}
           onScroll={handleBodyScroll}
@@ -335,4 +322,4 @@ export function HubModal({ hubId, onClose, onSelectService, onSwitchHub }: {
       )}
     </div>
   )
-        } 
+              } 
