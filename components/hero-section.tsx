@@ -5,16 +5,14 @@ import React, { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import Image from "next/image"
-import { ArrowRight, Play, Pause, Warning, Sun, Moon, CloudSun, CloudMoon, Cloud, CloudFog, CloudRain, CloudLightning, Snowflake } from "@phosphor-icons/react"
+import { ArrowRight, Play, Pause, Sun, Moon, CloudSun, CloudMoon, Cloud, CloudFog, CloudRain, CloudLightning, Snowflake } from "@phosphor-icons/react"
 import { BRAND, BIZ, MARQUEE_ITEMS } from "@/lib/brand"
-import { eserviceHub } from "@/lib/data/hubs/eservice"
 import { ScrollBounce } from "@/components/scroll-bounce"
 import { HUBS_DATA } from "@/lib/hero-data"
 import { ClassicTagline } from "@/components/classic-tagline"
 import { getBusinessStatus, type BusinessStatus } from "@/lib/sa-time"
 import { getWeatherSnapshot, type WeatherCategory } from "@/lib/weather"
 import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
-import { NoticePill } from "@/components/notice-pill"
 
 // ─── COLOR HELPERS ───────────────────────────────────────────────────────────
 function hexToRgbLocal(hex: string) {
@@ -64,40 +62,37 @@ function randBetween(min: number, max: number) {
 }
 
 // ─── SYMMETRIC LAYOUT — regular pentagon, centered ───────────────────────────
-// Replaces the old randomized "zones" (which skewed icons toward the right
-// side of the container — a real problem you flagged, not just perception).
 // Five points evenly spaced 72° apart around dead-center, starting straight
-// up (-90°). This specific rotation is mirror-symmetric across the vertical
-// axis (every point has a matching point reflected left↔right), which is
-// what makes the whole arrangement read as genuinely balanced rather than
-// "randomly scattered but technically not overlapping." Positions are fixed
-// every time — only WHICH hub lands on which point is shuffled per visit, so
-// it stays fresh without ever breaking the symmetry. Because spacing is now
-// geometric/guaranteed rather than runtime-detected, the old collision +
-// spark system is unnecessary and has been removed entirely — icons simply
-// cannot overlap by construction, not by chance.
+// up (-90°). Mirror-symmetric across the vertical axis. Positions are fixed
+// every time — only WHICH hub lands on which point is shuffled per visit.
 const PENTAGON_ANGLES_DEG = [-90, -18, 54, 126, 198]
 const ELLIPSE_RX_PCT = 30 // horizontal radius, % of container width
-const ELLIPSE_RY_PCT = 24 // vertical radius, % of container height — smaller
-// than RX to leave clearance for the label pill + shadow sitting below each
-// icon, and to keep everything inside the container on mobile's shorter box.
+const ELLIPSE_RY_PCT = 24 // vertical radius, % of container height
 
 type IconEntry = {
   hub: (typeof HUBS_DATA)[number]
   topPct: number
   leftPct: number
   z: number
+  entryX: number // px offset the icon flies in FROM on landing — random each build
+  entryY: number
 }
 
 function buildArrangement(): IconEntry[] {
   const shuffledHubs = shuffleArray(HUBS_DATA)
   return shuffledHubs.map((hub, i) => {
     const angleRad = (PENTAGON_ANGLES_DEG[i] * Math.PI) / 180
+    // Random entry direction + distance — different every page load, so
+    // icons never fly in from the same spot twice.
+    const entryAngle = Math.random() * Math.PI * 2
+    const entryDist = randBetween(70, 130)
     return {
       hub,
       leftPct: 50 + ELLIPSE_RX_PCT * Math.cos(angleRad),
       topPct: 50 + ELLIPSE_RY_PCT * Math.sin(angleRad),
       z: 10 + i * 10,
+      entryX: Math.cos(entryAngle) * entryDist,
+      entryY: Math.sin(entryAngle) * entryDist,
     }
   })
 }
@@ -118,24 +113,15 @@ function fallbackCategory(greeting: BusinessStatus["greeting"]): WeatherCategory
   return greeting === "morning" || greeting === "afternoon" ? "clear-day" : "clear-night"
 }
 
-// ─── NSFAS BACKLOG NOTICE — DATA-DRIVEN ──────────────────────────────────────
-const NOTICE_ITEMS = eserviceHub.sections.flatMap((section) => section.items.filter((item) => item.notice))
-const HAS_BACKLOG_NOTICE = NOTICE_ITEMS.length > 0
-const BACKLOG_MESSAGE = NOTICE_ITEMS[0]?.notice ?? ""
-
 // ─── HUB ICON FIELD — symmetric layout + gentle wander, no collision math ───
-// Each icon slowly wanders (sine-based, subtle amplitude) around its own
-// fixed pentagon position. Runs on one shared requestAnimationFrame loop,
-// writing transforms directly to DOM refs (not React state) so it never
-// triggers a re-render per frame. Wander frequency bumped ~30% over the
-// previous version per your "increase the pace, subtly" — amplitude
-// untouched, since pace was specifically about speed, not how far they
-// drift.
+// Shadow now lives INSIDE the same wander element as the icon, so it's a true
+// child of the icon's motion (wander, hover-bounce parent, shake) rather than
+// a sibling synced by hand each frame. The pill sits pinned to the icon's own
+// bottom edge, overlapping ~40% of its own height into the icon, instead of
+// floating below it with a gap.
 const WANDER_AMP_PX = 10
 const LABEL_AUTO_HIDE_MS = 8000 // pills show for 8s on load, then fade —
-// per your call. They still reveal on hover (desktop) or tap/shake
-// (mobile) afterward, so the hub name never becomes fully inaccessible,
-// just not persistently on-screen.
+// still reveal on hover (desktop) or tap/shake (mobile) afterward.
 
 function HubIconField({
   arrangement,
@@ -148,7 +134,6 @@ function HubIconField({
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const iconRefs = useRef<(HTMLDivElement | null)[]>([])
-  const shadowRefs = useRef<(HTMLDivElement | null)[]>([])
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [shakingId, setShakingId] = useState<string | null>(null)
   const shakeTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
@@ -172,8 +157,8 @@ function HubIconField({
     // Per-icon wander params — randomized once, kept stable for the life
     // of this arrangement so each icon's drift feels independent.
     const phys = arrangement.map(() => ({
-      freqX: randBetween(0.06, 0.09),   // was 0.045–0.075 — subtle pace bump
-      freqY: randBetween(0.05, 0.08),   // was 0.04–0.07
+      freqX: randBetween(0.06, 0.09),
+      freqY: randBetween(0.05, 0.08),
       phaseX: randBetween(0, Math.PI * 2),
       phaseY: randBetween(0, Math.PI * 2),
       x: 0, y: 0,
@@ -188,10 +173,12 @@ function HubIconField({
         p.x = Math.sin(t * p.freqX + p.phaseX) * WANDER_AMP_PX
         p.y = Math.sin(t * p.freqY + p.phaseY) * WANDER_AMP_PX * 0.6
 
+        // This element now wraps BOTH the icon and its shadow, so a single
+        // write here moves them together — the shadow no longer needs its
+        // own damped/synced calculation to "follow" the icon; it just does,
+        // by construction, because it lives inside this same element.
         const el = iconRefs.current[i]
         if (el) el.style.transform = `translate(${p.x}px, ${p.y}px)`
-        const sh = shadowRefs.current[i]
-        if (sh) sh.style.transform = `translateX(calc(-50% + ${p.x * 0.6}px))`
       }
       raf = requestAnimationFrame(tick)
     }
@@ -206,7 +193,7 @@ function HubIconField({
       className="relative mx-auto w-full max-w-[360px] sm:max-w-[440px] md:max-w-none h-[440px] sm:h-[500px] md:h-[560px]"
     >
       {arrangement.map((entry, i) => {
-        const { hub, topPct, leftPct, z } = entry
+        const { hub, topPct, leftPct, z, entryX, entryY } = entry
         const hubAccent = isDark ? hub.colorDark : hub.colorLight
         const isHovered = canHover && hoveredId === hub.id
         const isShaking = shakingId === hub.id
@@ -215,82 +202,97 @@ function HubIconField({
         return (
           <div
             key={hub.id}
-            className="absolute flex flex-col items-center animate-in fade-in zoom-in-95"
+            className="absolute"
             style={{
               top: `${topPct}%`,
               left: `${leftPct}%`,
-              transform: "translate(-50%, -50%)", // anchor each icon's own
-              // center on its pentagon point, instead of its top-left corner
-              // — required for true geometric symmetry around the container
-              // center.
+              // Fixed pentagon anchor — never animated, so the point itself
+              // stays geometrically exact.
+              transform: "translate(-50%, -50%)",
               zIndex: z,
-              animationDelay: `${z * 20}ms`,
-              animationDuration: "500ms",
-              animationFillMode: "both",
             }}
           >
-            {/* Outer div: JS-driven wander transform only. */}
-            <div ref={(el) => { iconRefs.current[i] = el }}>
-              {/* Inner div: hover-bounce / click-shake CSS animations —
-                  kept on a separate element so the two transforms never
-                  fight over the same style property. */}
-              <div
-                role="button"
-                tabIndex={0}
-                aria-label={hub.name}
-                onMouseEnter={() => canHover && setHoveredId(hub.id)}
-                onMouseLeave={() => canHover && setHoveredId((cur) => (cur === hub.id ? null : cur))}
-                onFocus={() => setHoveredId(hub.id)}
-                onBlur={() => setHoveredId((cur) => (cur === hub.id ? null : cur))}
-                onClick={() => triggerShake(hub.id)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); triggerShake(hub.id) } }}
-                className="relative w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 cursor-pointer outline-none"
-                style={{
-                  animationName: isShaking ? "abh-icon-shake" : isHovered ? "abh-icon-bounce" : undefined,
-                  animationDuration: isShaking ? "0.55s" : isHovered ? "1.8s" : undefined,
-                  animationTimingFunction: "ease-in-out",
-                  animationIterationCount: isShaking ? 1 : isHovered ? "infinite" : undefined,
-                }}
-              >
-                <Image
-                  src={HUB_IMAGES[hub.id]}
-                  alt={`${hub.name} example`}
-                  fill
-                  sizes="(max-width: 640px) 128px, (max-width: 768px) 160px, 192px"
-                  className="object-contain"
+            {/* Entry animation — flies in from a random direction/distance
+                picked fresh each time buildArrangement() runs (i.e. every
+                page load), via CSS custom properties. */}
+            <div
+              className="flex flex-col items-center"
+              style={{
+                "--ex": `${entryX}px`,
+                "--ey": `${entryY}px`,
+                animationName: "abh-icon-enter",
+                animationDuration: "650ms",
+                animationTimingFunction: "cubic-bezier(0.16,1,0.3,1)",
+                animationDelay: `${z * 20}ms`,
+                animationFillMode: "both",
+              } as React.CSSProperties}
+            >
+              {/* Wander wrapper — JS-driven translate only, applied once to
+                  this element so icon + shadow move together as one unit. */}
+              <div ref={(el) => { iconRefs.current[i] = el }} className="flex flex-col items-center">
+                {/* Icon — hover-bounce / click-shake CSS animations live
+                    here, kept off the wander element so the two transforms
+                    never fight over the same style property. Pill is nested
+                    inside so it's pinned to and moves with the icon. */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  aria-label={hub.name}
+                  onMouseEnter={() => canHover && setHoveredId(hub.id)}
+                  onMouseLeave={() => canHover && setHoveredId((cur) => (cur === hub.id ? null : cur))}
+                  onFocus={() => setHoveredId(hub.id)}
+                  onBlur={() => setHoveredId((cur) => (cur === hub.id ? null : cur))}
+                  onClick={() => triggerShake(hub.id)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); triggerShake(hub.id) } }}
+                  className="relative w-36 h-36 sm:w-44 sm:h-44 md:w-52 md:h-52 cursor-pointer outline-none"
+                  style={{
+                    animationName: isShaking ? "abh-icon-shake" : isHovered ? "abh-icon-bounce" : undefined,
+                    animationDuration: isShaking ? "0.55s" : isHovered ? "1.8s" : undefined,
+                    animationTimingFunction: "ease-in-out",
+                    animationIterationCount: isShaking ? 1 : isHovered ? "infinite" : undefined,
+                  }}
+                >
+                  <Image
+                    src={HUB_IMAGES[hub.id]}
+                    alt={`${hub.name} example`}
+                    fill
+                    sizes="(max-width: 640px) 144px, (max-width: 768px) 176px, 208px"
+                    className="object-contain"
+                  />
+
+                  {/* Pill — pinned to the icon's own bottom edge, overlapping
+                      ~40% of its own height up into the icon instead of
+                      floating below it with a gap. Being nested inside the
+                      icon's own div means it rides along with hover-bounce
+                      and shake automatically. */}
+                  <span
+                    className="absolute left-1/2 top-full -translate-x-1/2 -translate-y-[40%] px-2.5 py-1 rounded-full text-[0.65rem] sm:text-xs font-black uppercase tracking-wide bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm shadow-sm whitespace-nowrap transition-opacity duration-500"
+                    style={{
+                      color: hubAccent,
+                      opacity: labelVisible ? 1 : 0,
+                      pointerEvents: labelVisible ? "auto" : "none",
+                    }}
+                  >
+                    {pillLabel(hub.name)}
+                  </span>
+                </div>
+
+                {/* Ground shadow — child of the same wander wrapper as the
+                    icon, so it tracks it 1:1. Its own local animation reacts
+                    to hover-bounce (squash) and now shake too. */}
+                <div
+                  aria-hidden="true"
+                  className="w-20 sm:w-24 md:w-28 h-3.5 sm:h-4 rounded-full bg-black blur-[7px] -mt-2"
+                  style={{
+                    opacity: 0.32,
+                    animationName: isShaking ? "abh-shadow-shake" : isHovered ? "abh-shadow-bounce" : undefined,
+                    animationDuration: isShaking ? "0.55s" : isHovered ? "1.8s" : undefined,
+                    animationTimingFunction: "ease-in-out",
+                    animationIterationCount: isShaking ? 1 : isHovered ? "infinite" : undefined,
+                  }}
                 />
               </div>
             </div>
-
-            {/* Real ground shadow — separate ellipse below the icon,
-                reacts (compresses/fades) only during hover-bounce. */}
-            <div
-              ref={(el) => { shadowRefs.current[i] = el }}
-              aria-hidden="true"
-              className="w-20 sm:w-24 md:w-28 h-3.5 sm:h-4 rounded-full bg-black blur-[7px] -mt-2"
-              style={{
-                left: "50%",
-                opacity: 0.32,
-                animationName: isHovered ? "abh-shadow-bounce" : undefined,
-                animationDuration: isHovered ? "1.8s" : undefined,
-                animationTimingFunction: "ease-in-out",
-                animationIterationCount: isHovered ? "infinite" : undefined,
-              }}
-            />
-
-            {/* Name pill — auto-visible for the first 8s of each visit,
-                then fades (opacity transition, not unmount) and only
-                reappears on hover/focus/tap afterward. */}
-            <span
-              className="mt-2 px-2.5 py-1 rounded-full text-[0.65rem] sm:text-xs font-black uppercase tracking-wide bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm shadow-sm whitespace-nowrap transition-opacity duration-500"
-              style={{
-                color: hubAccent,
-                opacity: labelVisible ? 1 : 0,
-                pointerEvents: labelVisible ? "auto" : "none",
-              }}
-            >
-              {pillLabel(hub.name)}
-            </span>
           </div>
         )
       })}
@@ -306,7 +308,6 @@ export function HeroSection() {
   const [marqueePaused, setMarqueePaused] = useState(false)
   const [status, setStatus] = useState<BusinessStatus | null>(null)
   const [weatherCategory, setWeatherCategory] = useState<WeatherCategory | null>(null)
-  const [backlogDismissed, setBacklogDismissed] = useState(false)
   const [canHover, setCanHover] = useState(false)
   const showBackToTop = useBackToTop()
 
@@ -369,6 +370,10 @@ export function HeroSection() {
       </div>
 
       <style>{`
+        @keyframes abh-icon-enter {
+          0%   { opacity: 0; transform: translate(var(--ex), var(--ey)) scale(0.6); }
+          100% { opacity: 1; transform: translate(0, 0) scale(1); }
+        }
         @keyframes abh-icon-bounce {
           0%, 100% { transform: translateY(0) scale(1); }
           50%      { transform: translateY(-26px) scale(1.05); }
@@ -382,36 +387,27 @@ export function HeroSection() {
           75%        { transform: translateX(-2px) rotate(-2deg); }
         }
         @keyframes abh-shadow-bounce {
-          0%, 100% { transform: translateX(-50%) scaleX(1); opacity: 0.32; }
-          50%      { transform: translateX(-50%) scaleX(0.5); opacity: 0.14; }
+          0%, 100% { transform: scaleX(1); opacity: 0.32; }
+          50%      { transform: scaleX(0.5); opacity: 0.14; }
+        }
+        @keyframes abh-shadow-shake {
+          0%, 100%   { transform: scaleX(1) translateX(0); opacity: 0.32; }
+          15%        { transform: scaleX(0.92) translateX(-3px); opacity: 0.26; }
+          30%        { transform: scaleX(0.92) translateX(3px); opacity: 0.26; }
+          45%        { transform: scaleX(0.95) translateX(-2px); opacity: 0.28; }
+          60%        { transform: scaleX(0.95) translateX(2px); opacity: 0.28; }
+          75%        { transform: scaleX(0.98) translateX(-1px); opacity: 0.3; }
         }
       `}</style>
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center relative z-10 w-full mb-6">
 
-        {/* ─── NOTIFICATION 1: NSFAS BACKLOG — shared NoticePill ─── */}
-        {HAS_BACKLOG_NOTICE && !backlogDismissed && (
-          <div className="w-full mb-8 md:mb-10">
-            <NoticePill
-              variant="warning"
-              Icon={Warning}
-              collapsedLabel="Important Announcement"
-              expandedLabel="Important Announcement"
-              isDark={isDark}
-              onDismiss={() => setBacklogDismissed(true)}
-            >
-              {BACKLOG_MESSAGE}
-            </NoticePill>
-          </div>
-        )}
-
         {/* md:items-center keeps this row's two columns vertically
             centered against each other, so the icon field's midline
             always sits level with the title/text column on desktop —
-            unchanged from before. What's fixed now is WITHIN the icon
-            field itself: the pentagon layout is centered and mirror-
-            symmetric, so it no longer skews toward the right edge of
-            its own column on any breakpoint, mobile included. */}
+            unchanged from before. The pentagon layout stays centered
+            and mirror-symmetric, so it doesn't skew toward the right
+            edge of its own column on any breakpoint, mobile included. */}
         <div className="w-full max-w-[1100px] mx-auto grid md:grid-cols-2 gap-10 md:gap-16 items-center mb-10 md:mb-14">
 
           <div className="text-center md:text-left">
@@ -514,4 +510,4 @@ export function HeroSection() {
       <BackToTopButton visible={showBackToTop} />
     </section>
   )
-} 
+    } 
