@@ -1,518 +1,618 @@
-/* components/services-page/service-detail-modal/index.tsx — PART 1 OF 2 */
-/**
- * ════════════════════════════════════════════════════════════════════════
- * SERVICE DETAIL MODAL — the popup that opens when a customer taps a
- * single service (e.g. "NSFAS Status Check") from inside a hub.
- *
- * FILE IS SPLIT INTO 2 PARTS because of its length + heavy commenting:
- *   PART 1 (this block)  = imports, constants, all state/handlers/logic
- *   PART 2 (next block)  = the actual JSX that gets rendered on screen
- * They belong in ONE file — paste Part 1 then Part 2 directly underneath,
- * nothing else in between.
- * ════════════════════════════════════════════════════════════════════════
- */
+/* components/services-page/index.tsx */
 "use client"
 
-import { useState, useEffect, useRef, type ChangeEvent, type TouchEvent } from "react"
-import { X, ShareNetwork, Clock, Lightbulb, WarningCircle } from "@phosphor-icons/react"
-import { useTheme } from "next-themes"
-import { cn } from "@/lib/utils"
-import { HUB_COLORS, HubKey, BIZ, BRAND } from "@/lib/brand"
-import { HUBS } from "@/lib/data"
-import { useFocusTrap, HubIcon } from "../shared"
-import {
-  SelectedService, naturalServiceLabel, cleanText, formatAcceptHint,
-  HUB_ACCEPT, CLD_MAX_MB, CLD_PRESET, BLOCKED_MIME_TYPES, BLOCKED_EXTENSIONS, getCldUrl, trackEvent,
-} from "../lib"
-import { getCartQtyForItem, getEffectiveRate, getBulkHint, parsePrice, itemHasBulk } from "@/components/quote-calculator/lib"
-import { UploadButton, UploadStatus } from "./UploadControl"
-import { QuoteControl } from "./QuoteControl"
-import { BulkHint } from "./BulkHint"
-import { TipsModal } from "./TipsModal"
-import { NoticeModal } from "./NoticeModal"
-import { getServiceTips } from "./fallback-tips"
-
-// ── Layout constants ──
-const BULK_RIBBON_BLUE = BRAND.blue
-const HEADER_GRID = "grid grid-cols-[36px_1fr_36px] gap-2"
-const SWIPE_MIN_DX = 48
-const SWIPE_DOMINANCE = 1.4
-
-type Tab = "bring" | "about"
-
-export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | null; onClose: () => void }) {
-  const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === "dark"
-
-  const [tab, setTab] = useState<Tab>("bring")
-  const [tipsOpen, setTipsOpen] = useState(false)
-  const [noticeOpen, setNoticeOpen] = useState(false)
-
-  const [file, setFile] = useState<File | null>(null)
-  const [uploadPhase, setUploadPhase] = useState<"idle" | "uploading" | "done" | "error">("idle")
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [fileUrl, setFileUrl] = useState<string | null>(null)
-  const [uploadErr, setUploadErr] = useState<string | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-
-  const [shareCopied, setShareCopied] = useState(false)
-  const [tipsCopied, setTipsCopied] = useState(false)
-  const [addedToQuote, setAddedToQuote] = useState(false)
-  const [quoteQty, setQuoteQty] = useState(0)
-
-  const fileRef = useRef<HTMLInputElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null)
-
-  useEffect(() => {
-    setTab("bring")
-    setTipsOpen(false)
-    setNoticeOpen(false)
-    setAddedToQuote(false)
-    setFile(null)
-    setFileUrl(null)
-    setUploadPhase("idle")
-    setUploadErr(null)
-    setUploadProgress(0)
-    setPreviewUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev)
-      return null
-    })
-    if (fileRef.current) fileRef.current.value = ""
-    if (svc) setQuoteQty(getCartQtyForItem(`${svc.hubId}-${svc.sectionTitle}-${svc.name}`))
-  }, [svc?.name])
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl)
-    }
-  }, [previewUrl])
-
-  useFocusTrap(!!svc, containerRef)
-
-  const doUpload = (f: File) => {
-    setUploadPhase("uploading")
-    setUploadProgress(0)
-    const fd = new FormData()
-    fd.append("file", f)
-    fd.append("upload_preset", CLD_PRESET)
-    const xhr = new XMLHttpRequest()
-    xhr.open("POST", getCldUrl(f))
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100))
-    }
-    xhr.onload = () => {
-      try {
-        const data = JSON.parse(xhr.responseText)
-        if (xhr.status < 200 || xhr.status >= 300) throw new Error(data?.error?.message || `HTTP ${xhr.status}`)
-        if (!data.secure_url) throw new Error("No URL returned")
-        setFileUrl(data.secure_url)
-        setUploadPhase("done")
-      } catch (err) {
-        setUploadErr(`Upload failed: ${err instanceof Error ? err.message : "Unknown error"}`)
-        setUploadPhase("error")
-      }
-    }
-    xhr.onerror = () => {
-      setUploadErr("Upload failed: network error")
-      setUploadPhase("error")
-    }
-    xhr.send(fd)
-  }
-
-  const handleFilePick = (e: ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0]
-    if (!f) return
-    if (BLOCKED_MIME_TYPES.has(f.type) || BLOCKED_EXTENSIONS.test(f.name)) {
-      setUploadErr("That file type isn't allowed. Please send a document, image, or PDF only.")
-      setUploadPhase("error")
-      return
-    }
-    if (f.size > CLD_MAX_MB * 1024 * 1024) {
-      setUploadErr(`File too large — please keep it under ${CLD_MAX_MB}MB.`)
-      setUploadPhase("error")
-      return
-    }
-    setFile(f)
-    setUploadErr(null)
-    setPreviewUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev)
-      return null
-    })
-    if (f.type.startsWith("image/")) setPreviewUrl(URL.createObjectURL(f))
-    doUpload(f)
-  }
-
-  const clearFile = () => {
-    setFile(null)
-    setFileUrl(null)
-    setUploadPhase("idle")
-    setUploadErr(null)
-    setUploadProgress(0)
-    setPreviewUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev)
-      return null
-    })
-    if (fileRef.current) fileRef.current.value = ""
-  }
-
-  if (!svc) return null
-
-  const colors = HUB_COLORS[svc.hubId as HubKey]
-  const accent = isDark ? colors.accentDark : colors.accentLight
-  const hubTitle = HUBS[svc.hubId]?.title || svc.sectionTitle
-  const naturalLabel = naturalServiceLabel(svc.name, svc.sectionTitle)
-  const acceptHint = formatAcceptHint(HUB_ACCEPT[svc.hubId])
-  const itemId = `${svc.hubId}-${svc.sectionTitle}-${svc.name}`
-  const hasBulk = itemHasBulk(svc.hubId, svc.sectionTitle, svc.name)
-
-  const { tips, isGeneric } = getServiceTips(svc.hubId, svc.sectionTitle, svc.name, svc.tips)
-  const tabs: Tab[] = ["bring", "about"]
-
-  const { amount: baseUnitPrice, unit: priceUnit } = parsePrice(svc.price)
-  const effectiveQty = Math.max(quoteQty, 1)
-  const effRate = getEffectiveRate(itemId, svc.name, effectiveQty, baseUnitPrice)
-  const isBulkDiscount = effRate < baseUnitPrice
-  const bulkHint = getBulkHint(itemId, svc.name, effectiveQty, effRate, baseUnitPrice)
-
-  const handleShare = async () => {
-    const shareText = `${naturalLabel} — ${svc.price} at ${BIZ.name}`
-    const shareUrl = typeof window !== "undefined"
-      ? `${window.location.origin}/services?${new URLSearchParams({
-          hub: svc.hubId,
-          section: svc.sectionTitle,
-          service: svc.name,
-        }).toString()}`
-      : ""
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({ title: `${naturalLabel} — ${BIZ.name}`, text: shareText, url: shareUrl })
-      } catch {}
-      return
-    }
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`)
-      setShareCopied(true)
-      setTimeout(() => setShareCopied(false), 2000)
-    }
-  }
-
-  const handleCopyTips = async () => {
-    if (!tips.length) return
-    const text = tips.map((t) => `• ${t}`).join("\n")
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      try {
-        await navigator.clipboard.writeText(text)
-        setTipsCopied(true)
-        setTimeout(() => setTipsCopied(false), 2000)
-      } catch {}
-    }
-  }
-
-  const handleAddToQuote = () => {
-    window.dispatchEvent(
-      new CustomEvent("abh:add-to-quote", { detail: { hubId: svc.hubId, sectionTitle: svc.sectionTitle, name: svc.name, price: svc.price } })
-    )
-    trackEvent("add_to_quote", { hub_id: svc.hubId, service_name: svc.name, section_title: svc.sectionTitle, price: svc.price })
-    setAddedToQuote(true)
-    setTimeout(() => setAddedToQuote(false), 2200)
-    setQuoteQty((prev) => prev + 1)
-  }
-
-  const handleStepQty = (delta: number) => {
-    const nextQty = Math.max(0, quoteQty + delta)
-    window.dispatchEvent(new CustomEvent("abh:step-quote-qty", { detail: { id: itemId, delta } }))
-    setQuoteQty(nextQty)
-  }
-
-  const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
-    const t = e.touches[0]
-    touchStartRef.current = { x: t.clientX, y: t.clientY }
-  }
-
-  const handleTouchEnd = (e: TouchEvent<HTMLDivElement>) => {
-    const start = touchStartRef.current
-    touchStartRef.current = null
-    if (!start) return
-    const t = e.changedTouches[0]
-    const dx = t.clientX - start.x
-    const dy = t.clientY - start.y
-    if (Math.abs(dx) < SWIPE_MIN_DX || Math.abs(dx) < Math.abs(dy) * SWIPE_DOMINANCE) return
-    const idx = tabs.indexOf(tab)
-    if (dx < 0 && idx < tabs.length - 1) setTab(tabs[idx + 1])
-    else if (dx > 0 && idx > 0) setTab(tabs[idx - 1])
-  }
-
-  const waMessage = fileUrl
-    ? `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). Price shown: ${svc.price}. My file: ${fileUrl}`
-    : `Hi ${BIZ.name}! I'd like to request ${naturalLabel} (${hubTitle}). Price shown: ${svc.price}. Can you assist?`
-
-  const requirements = svc.requirements?.length ? svc.requirements : ["Just bring your file, document or USB — we'll take care of the rest."]
-  const desc = svc.desc?.trim() || null
-  const inQuote = quoteQty > 0
-  const neutralIconColor = isDark ? "#e4e4e7" : "#3f3f46"
-
-  // ── PART 2 continues below with the actual JSX (the `return (...)` block) ──
-/* components/services-page/service-detail-modal/index.tsx — PART 2 OF 2 */
 /**
- * Continuation of ServiceDetailModal from Part 1. All four action icons
- * (Notice, Tips, Share, Close) are stacked vertically top-right, same
- * size, in that order top to bottom.
+ * ════════════════════════════════════════════════════════════════════════
+ * SERVICES PAGE
+ *
+ * MOBILE: 2-col portrait grid (first 4) + full-width landscape (5th).
+ *   Uses MobileHubCard — no card background colors, subtle icon gradient,
+ *   diagonal bulk ribbon matching desktop, dark-theme adaptive text.
+ *
+ * DESKTOP: original 5-card landing → hub selected → all 5 shrink to pills
+ *   at top, section cards below → section selected → section pills +
+ *   service cards below → service card clicked → ServiceDetailModal.
+ * ════════════════════════════════════════════════════════════════════════
  */
 
+import { useState, useEffect, useRef } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
+import { AnimatePresence, motion } from "framer-motion"
+import { Megaphone, ArrowRight, CaretRight, CaretLeft, WarningCircle } from "@phosphor-icons/react"
+import { useTheme } from "next-themes"
+import { cn } from "@/lib/utils"
+import { BRAND, TOKEN, HUB_COLORS, HubKey } from "@/lib/brand"
+import { HUBS, HubId } from "@/lib/data"
+import { ScrollBounce } from "@/components/scroll-bounce"
+import { useModalBackStack, HubIcon } from "./shared"
+import { InlineSearchBar } from "./search-bar"
+import { HubModal } from "./hub-modal"
+import { ServiceDetailModal } from "./service-detail-modal"
+import { HUB_ORDER, HUB_PREVIEWS, NOTICE, trackEvent, getTurnaround, SelectedService } from "./lib"
+import { sectionHasBulk, itemHasBulk } from "../quote-calculator/lib"
+import { NoticePill } from "@/components/notice-pill"
+import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
+import { MobileHubCard } from "./MobileHubCard"
+
+// Neutral pill colors — inactive state
+const PILL_NEUTRAL = {
+  border: "var(--border)",
+  text: "var(--muted-foreground)",
+}
+
+function ClosingTagline() {
   return (
-    <div className="fixed inset-0 z-[10200] flex items-center justify-center p-3 md:p-4">
-      <div className="absolute inset-0 bg-black/55 animate-in fade-in duration-200" onClick={onClose} />
-
-      <div
-        ref={containerRef}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label={svc.name}
-        className="relative w-full max-w-lg bg-white dark:bg-zinc-950 shadow-2xl border border-zinc-100 dark:border-zinc-800 max-h-[88vh] flex flex-col outline-none rounded-[14px] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
-        style={{ boxShadow: "0 45px 100px -20px rgba(0,0,0,0.55), 0 20px 48px -14px rgba(0,0,0,0.4)" }}
-      >
-        {hasBulk && (
-          <div className="absolute top-0 right-0 w-[104px] h-[104px] overflow-hidden pointer-events-none z-10" aria-hidden="true">
-            <span
-              className="absolute block text-center text-[0.66rem] font-black uppercase text-white"
-              style={{
-                top: "28px", right: "-34px", width: "150px", transform: "rotate(45deg)",
-                backgroundColor: BULK_RIBBON_BLUE, padding: "6px 0",
-                boxShadow: "0 4px 10px -2px rgba(30,111,168,0.55), 0 2px 4px -1px rgba(0,0,0,0.25)",
-              }}
-            >
-              Bulk
-            </span>
-          </div>
-        )}
-
-        {/* ══════════════════ TOP-RIGHT ICON STACK ══════════════════ */}
-        <div className="absolute top-5 right-5 z-20 flex flex-col items-center gap-1.5">
-          {svc.notice && (
-            <button
-              type="button"
-              onClick={() => setNoticeOpen(true)}
-              aria-label="View service notice"
-              className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95"
-              style={{ backgroundColor: `${BRAND.orange}15`, color: BRAND.orange }}
-            >
-              <WarningCircle size={18} weight="fill" aria-hidden="true" />
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setTipsOpen(true)}
-            aria-label="View helpful tips"
-            className="w-9 h-9 rounded-full flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors duration-150 active:scale-95"
-          >
-            <Lightbulb size={18} weight="fill" aria-hidden="true" />
-          </button>
-
-          <div className="relative">
-            <button
-              type="button"
-              onClick={handleShare}
-              aria-label="Share this service"
-              className="w-9 h-9 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150 active:scale-95"
-            >
-              <ShareNetwork size={16} weight="bold" aria-hidden="true" />
-            </button>
-            {shareCopied && (
-              <span className="absolute top-1/2 -translate-y-1/2 right-11 whitespace-nowrap text-[0.74rem] font-black uppercase tracking-widest text-white bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 px-2.5 py-1 rounded-full shadow-lg animate-in fade-in zoom-in-95 duration-150">
-                Copied!
-              </span>
-            )}
-          </div>
-
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="w-9 h-9 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-150 active:scale-95"
-          >
-            <X size={16} weight="bold" aria-hidden="true" />
-          </button>
-        </div>
-
-        {/* ══════════════════ HEADER ══════════════════ */}
-        <div className="px-6 pt-6 pb-5 flex-shrink-0">
-          <div className={cn(HEADER_GRID, "items-start mb-2")}>
-            <div aria-hidden="true" />
-            <div className="min-w-0 text-center">
-              <div className="flex items-center justify-center gap-1.5 mb-1.5">
-                <HubIcon id={svc.hubId} size={11} color={accent} />
-                <span className="text-[0.72rem] font-black uppercase tracking-widest" style={{ color: accent }}>{hubTitle}</span>
-              </div>
-              <span className="text-[0.72rem] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide mb-2.5 inline-block">
-                {cleanText(svc.sectionTitle)}
-              </span>
-              <h3 className="abh-card-heading text-[1.28rem] leading-tight">{svc.name}</h3>
-            </div>
-            <div aria-hidden="true" />
-          </div>
-
-          <div className="h-px bg-zinc-100 dark:bg-zinc-800 mb-4" />
-
-          <div className={cn(HEADER_GRID, "items-start")}>
-            <div aria-hidden="true" />
-            <div className="flex flex-col items-center gap-1.5">
-              <span className="text-5xl font-black tracking-tighter" style={{ color: accent }}>{svc.price}</span>
-              {svc.turnaround && (
-                <span
-                  className="flex items-center gap-1 text-[0.82rem] font-bold pb-0.5 border-b"
-                  style={{ color: accent, borderColor: `${accent}50` }}
-                >
-                  <Clock size={12} weight="bold" aria-hidden="true" />
-                  {svc.turnaround}
-                </span>
-              )}
-            </div>
-            <div aria-hidden="true" />
-          </div>
-        </div>
-
-        {/* ══════════════════ TABS ("Needs" / "Description") ══════════════════ */}
-        <div className="px-6 pt-1">
-          <div className={cn(HEADER_GRID, "items-center")}>
-            <div aria-hidden="true" />
-            <div role="tablist" aria-label="Service info sections" className="flex items-center justify-center gap-6 border-b border-zinc-100 dark:border-zinc-800">
-              {tabs.map((t) => {
-                const isActive = tab === t
-                const label = t === "bring" ? "Needs" : "Description"
-                return (
-                  <button
-                    key={t}
-                    role="tab"
-                    aria-selected={isActive}
-                    onClick={() => setTab(t)}
-                    className={cn(
-                      "py-2.5 text-[0.95rem] font-black uppercase tracking-wider transition-colors duration-200 border-b-2 -mb-px",
-                      isActive ? "border-current" : "border-transparent text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300"
-                    )}
-                    style={isActive ? { color: accent } : undefined}
-                  >
-                    {label}
-                  </button>
-                )
-              })}
-            </div>
-            <div aria-hidden="true" />
-          </div>
-        </div>
-
-        {/* ══════════════════ TAB CONTENT ══════════════════ */}
-        <div
-          className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 min-h-0 text-center"
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-        >
-          {tab === "bring" && (
-            <div className="animate-in fade-in duration-150 flex flex-col items-center w-full">
-              <ul className="w-full">
-                {requirements.map((req, idx) => (
-                  <li key={idx} className="flex items-start gap-3 py-2 text-left">
-                    <span className="shrink-0 font-black text-[0.8rem] text-zinc-400 dark:text-zinc-500 mt-0.5 w-4 text-right">
-                      {idx + 1}.
-                    </span>
-                    <span className="abh-body text-[0.95rem] leading-relaxed">{req}</span>
-                  </li>
-                ))}
-              </ul>
-              <p className="abh-muted text-[0.88rem] mt-4 text-center">Not sure? Don&apos;t worry — just WhatsApp us first and we&apos;ll guide you step by step.</p>
-            </div>
-          )}
-          {tab === "about" && (
-            <div className="animate-in fade-in duration-150">
-              {desc ? <p className="abh-body text-base">{desc}</p> : <p className="abh-muted text-base">No description available for this service yet.</p>}
-              <p className="abh-muted mt-5">
-                Have questions? Switch to the <span className="font-black" style={{ color: accent }}>Needs</span> tab or chat with us directly.
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* ══════════════════ FOOTER ══════════════════ */}
-        <div className="px-6 pb-8 pt-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
-          <input ref={fileRef} type="file" accept={HUB_ACCEPT[svc.hubId]} onChange={handleFilePick} className="hidden" />
-
-          <div className="grid grid-cols-[1fr_auto_1fr] gap-3">
-            <UploadButton phase={uploadPhase} accent={accent} onClick={() => fileRef.current?.click()} />
-            <div className="w-px bg-zinc-200 dark:bg-zinc-700/60" aria-hidden="true" />
-            <QuoteControl
-              inQuote={inQuote}
-              quoteQty={quoteQty}
-              accent={accent}
-              neutralIconColor={neutralIconColor}
-              onAdd={handleAddToQuote}
-              onStep={handleStepQty}
-            />
-          </div>
-
-          {bulkHint && (
-            <BulkHint
-              hint={bulkHint}
-              accent={accent}
-              isDiscount={isBulkDiscount}
-              baseUnitPrice={baseUnitPrice}
-              effRate={effRate}
-              priceUnit={priceUnit}
-            />
-          )}
-
-          <UploadStatus
-            phase={uploadPhase}
-            file={file}
-            uploadErr={uploadErr}
-            uploadProgress={uploadProgress}
-            previewUrl={previewUrl}
-            accent={accent}
-            acceptHint={acceptHint}
-            onClear={clearFile}
-            onRetry={() => { setUploadPhase("idle"); setUploadErr(null); fileRef.current?.click() }}
-          />
-
-          <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
-
-          <a
-            href={`https://wa.me/${BIZ.phoneE164.replace("+", "")}?text=${encodeURIComponent(waMessage)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => trackEvent("request_whatsapp", { hub_id: svc.hubId, service_name: svc.name, section_title: svc.sectionTitle, price: svc.price, had_file_attached: uploadPhase === "done" })}
-            className="flex items-center justify-center gap-2 w-full px-4 py-4 rounded-[14px] font-black text-base text-white text-center transition-all active:scale-95"
-            style={{ backgroundColor: "#25D366" }}
-          >
-            Request {naturalLabel}
-          </a>
-
-          {svc.hubId === "eservice" && (
-            <p className="text-[0.78rem] text-center text-zinc-400 dark:text-zinc-500 leading-relaxed pt-1">
-              NSFAS 2027 applications are expected to open around September 2026 (exact date not yet officially confirmed). Ask us for the latest details.
-            </p>
-          )}
-        </div>
-      </div>
-
-      <TipsModal
-        open={tipsOpen}
-        onClose={() => setTipsOpen(false)}
-        tips={tips}
-        isGeneric={isGeneric}
-        accent={accent}
-        copied={tipsCopied}
-        onCopy={handleCopyTips}
-        hubTitle={hubTitle}
-      />
-
-      {svc.notice && (
-        <NoticeModal
-          open={noticeOpen}
-          onClose={() => setNoticeOpen(false)}
-          notice={svc.notice}
-          hubTitle={hubTitle}
-        />
-      )}
+    <div className="mt-2 mb-4 text-center px-6 py-6">
+      <p className="abh-eyebrow text-zinc-400 dark:text-zinc-500 mb-3">Why ApexbytesHub</p>
+      <p className="font-sans font-black text-2xl md:text-3xl text-zinc-900 dark:text-zinc-50 leading-snug max-w-2xl mx-auto">
+        From your first CV to your next big idea — one hub does it all, right here in Bothaville.
+      </p>
+      <div className="abh-divider" />
     </div>
   )
 }
+
+// Desktop: "View more →" CTA with underline reveal on card hover
+function HubCta({ label, accent, pointsRight }: { label: string; accent: string; pointsRight: boolean }) {
+  return (
+    <span
+      className="relative inline-flex items-center gap-1 text-[0.94rem] font-black text-zinc-400 dark:text-zinc-500 transition-colors duration-200 group-hover/hubcard:text-[var(--hub-accent)]"
+      style={{ ["--hub-accent" as any]: accent }}
+    >
+      <span className="relative">
+        {label}
+        <span
+          aria-hidden="true"
+          className="absolute left-0 bottom-[-2px] h-[2px] w-0 bg-current transition-[width] duration-300 ease-linear group-hover/hubcard:w-full"
+        />
+      </span>
+      <ArrowRight size={12} weight="bold" aria-hidden="true" className={cn(!pointsRight && "rotate-180")} />
+    </span>
+  )
+}
+
+// Desktop: large faint icon watermark in the card corner
+function HubCornerIcon({ hubId, accent }: { hubId: HubId; accent: string }) {
+  return (
+    <div
+      className="pointer-events-none absolute -bottom-4 -right-4 w-24 h-24 flex items-center justify-center text-zinc-300 dark:text-zinc-600 opacity-90 transition-all duration-300 group-hover/hubcard:opacity-100 group-hover/hubcard:text-[var(--hub-accent)] group-hover/hubcard:scale-105"
+      style={{ ["--hub-accent" as any]: accent }}
+      aria-hidden="true"
+    >
+      <HubIcon id={hubId} size={72} color="currentColor" />
+    </div>
+  )
+}
+
+// Desktop: diagonal bulk ribbon — used on the 5-card landing grid
+function BulkRibbon() {
+  return (
+    <div className="absolute top-4 -right-8 rotate-45 z-20 pointer-events-none">
+      <span
+        className="block w-28 text-center py-0.5 text-[0.62rem] font-black uppercase tracking-wider text-white"
+        style={{
+          backgroundColor: BRAND.blue,
+          boxShadow: "0 4px 10px -2px rgba(30,111,168,0.55), 0 2px 4px -1px rgba(0,0,0,0.25)",
+        }}
+      >
+        Bulk
+      </span>
+    </div>
+  )
+}
+
+function NoticeBadge() {
+  return (
+    <div className="absolute top-3 right-3 z-20 pointer-events-none">
+      <div
+        className="w-7 h-7 rounded-full flex items-center justify-center"
+        style={{ backgroundColor: "#ffffff", color: TOKEN.warningBg, boxShadow: "0 2px 6px -1px rgba(0,0,0,0.2)" }}
+        aria-label="Notice for some services in this hub"
+      >
+        <WarningCircle size={16} weight="bold" aria-hidden="true" />
+      </div>
+    </div>
+  )
+}
+
+// ── Pill — hub and section filter rows ──
+function Pill({
+  icon, label, accent, fill, isActive, onClick, size = "md",
+}: {
+  icon?: React.ReactNode
+  label: string
+  accent: string
+  fill: string
+  isActive: boolean
+  onClick: () => void
+  size?: "md" | "sm"
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={isActive}
+      className={cn(
+        "inline-flex items-center gap-2 rounded-full font-black transition-all duration-200 active:scale-95 border",
+        size === "md" ? "pl-2 pr-4 py-2 text-[0.9rem]" : "pl-2 pr-3.5 py-1.5 text-[0.82rem]"
+      )}
+      style={
+        isActive
+          ? { backgroundColor: fill, borderColor: fill, color: "#ffffff", boxShadow: `0 0 0 4px ${fill}22` }
+          : { backgroundColor: "transparent", borderColor: PILL_NEUTRAL.border, color: PILL_NEUTRAL.text }
+      }
+    >
+      {icon && (
+        <span
+          className={cn("rounded-full flex items-center justify-center shrink-0", size === "md" ? "w-6 h-6" : "w-5 h-5")}
+          style={{ backgroundColor: isActive ? "rgba(255,255,255,0.25)" : "var(--muted)" }}
+        >
+          {icon}
+        </span>
+      )}
+      {label}
+    </button>
+  )
+}
+
+function BackPill({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className="inline-flex items-center gap-1.5 pl-2.5 pr-3.5 py-1.5 rounded-full font-black text-[0.82rem] border transition-all duration-200 active:scale-95 hover:bg-[var(--muted)]"
+      style={{ borderColor: PILL_NEUTRAL.border, color: PILL_NEUTRAL.text }}
+    >
+      <CaretLeft size={12} weight="bold" />
+      {label}
+    </button>
+  )
+}
+
+// ── Desktop level-1: section cards ──
+function SectionCard({
+  section, accent, onClick,
+}: {
+  section: (typeof HUBS)[HubId]["sections"][number]
+  accent: string
+  onClick: () => void
+}) {
+  const hasNotice = section.items.some((i) => !!i.notice)
+
+  return (
+    <button
+      onClick={onClick}
+      className="group/sectioncard text-left rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] p-5"
+    >
+      <div className="flex items-start justify-between gap-2 mb-3">
+        {/* Title — wraps, no truncation */}
+        <h4 className="font-black text-[1.02rem] text-zinc-800 dark:text-zinc-100 leading-tight break-words">
+          {section.title}
+        </h4>
+        {hasNotice && (
+          <WarningCircle
+            size={14}
+            weight="fill"
+            style={{ color: TOKEN.warningBg }}
+            aria-label="Notice for some services in this section"
+            className="shrink-0 mt-0.5"
+          />
+        )}
+      </div>
+
+      {section.desc && (
+        <p className="text-[0.82rem] text-zinc-500 dark:text-zinc-400 leading-snug mb-4 break-words">
+          {section.desc}
+        </p>
+      )}
+
+      <div className="flex items-center justify-between">
+        <span className="text-[0.78rem] font-bold" style={{ color: accent }}>
+          {section.items.length} service{section.items.length === 1 ? "" : "s"}
+        </span>
+        <span
+          className="w-7 h-7 rounded-full flex items-center justify-center transition-transform duration-200 group-hover/sectioncard:translate-x-0.5"
+          style={{ backgroundColor: `${accent}15`, color: accent }}
+        >
+          <CaretRight size={12} weight="bold" />
+        </span>
+      </div>
+    </button>
+  )
+}
+
+// ── Desktop level-2: service cards ──
+function ServiceCard({
+  item, accent, onClick,
+}: {
+  item: { name: string; price: string; notice?: string }
+  accent: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="text-left rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] p-4"
+    >
+      <div className="flex items-start justify-between gap-2 mb-2.5">
+        <span className="font-black text-[0.95rem] text-zinc-800 dark:text-zinc-100 leading-snug flex items-start gap-1.5 min-w-0 break-words">
+          {item.notice && (
+            <WarningCircle
+              size={13}
+              weight="fill"
+              style={{ color: TOKEN.warningBg }}
+              aria-label="Notice"
+              className="shrink-0 mt-0.5"
+            />
+          )}
+          <span>{item.name}</span>
+        </span>
+      </div>
+      <span className="text-[1.05rem] font-black" style={{ color: accent }}>
+        {item.price}
+      </span>
+    </button>
+  )
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SERVICES PAGE
+// ══════════════════════════════════════════════════════════════════════
+export function ServicesPage() {
+  const { resolvedTheme } = useTheme()
+  const isDark       = resolvedTheme === "dark"
+  const searchParams = useSearchParams()
+  const router       = useRouter()
+  const consumedParamsKey = useRef<string | null>(null)
+
+  const [activeHub,       setActiveHub]       = useState<HubId | null>(null)
+  const [hubOriginSide,   setHubOriginSide]   = useState<"left" | "right">("right")
+  const [selectedService, setSelectedService] = useState<SelectedService | null>(null)
+  const [clientNoticeDismissed, setClientNoticeDismissed] = useState(false)
+  const showBackToTop = useBackToTop()
+
+  const [desktopActiveHub,     setDesktopActiveHub]     = useState<HubId | null>(null)
+  const [desktopActiveSection, setDesktopActiveSection] = useState<number | null>(null)
+
+  const isModalOpen = !!(activeHub || selectedService)
+
+  const handleSelectService = (svc: SelectedService) => {
+    trackEvent("view_service", { hub_id: svc.hubId, service_name: svc.name, section_title: svc.sectionTitle })
+    setSelectedService(svc)
+  }
+
+  const handleOpenHub = (hubId: HubId, originSide: "left" | "right") => {
+    trackEvent("view_hub", { hub_id: hubId, hub_name: HUBS[hubId].title })
+    setHubOriginSide(originSide)
+    setActiveHub(hubId)
+  }
+
+  const handleDesktopSelectHub = (hubId: HubId) => {
+    trackEvent("view_hub", { hub_id: hubId, hub_name: HUBS[hubId].title })
+    setDesktopActiveHub(hubId)
+    setDesktopActiveSection(null)
+  }
+
+  const handleDesktopSwitchHub = (hubId: HubId) => {
+    if (hubId === desktopActiveHub) return
+    trackEvent("view_hub", { hub_id: hubId, hub_name: HUBS[hubId].title })
+    setDesktopActiveHub(hubId)
+    setDesktopActiveSection(null)
+  }
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const svc = (e as CustomEvent<SelectedService>).detail
+      if (svc) handleSelectService(svc)
+    }
+    window.addEventListener("abh:selectService", handler)
+    return () => window.removeEventListener("abh:selectService", handler)
+  }, [])
+
+  useEffect(() => {
+    const hubParam     = searchParams.get("hub")
+    const sectionParam = searchParams.get("section")
+    const serviceParam = searchParams.get("service")
+    if (!hubParam || !HUB_ORDER.includes(hubParam as HubId)) return
+
+    const paramsKey = `${hubParam}|${sectionParam ?? ""}|${serviceParam ?? ""}`
+    if (consumedParamsKey.current === paramsKey) return
+    consumedParamsKey.current = paramsKey
+
+    if (sectionParam && serviceParam) {
+      const section = HUBS[hubParam as HubId].sections.find((s) => s.title === sectionParam)
+      const item    = section?.items.find((i) => i.name === serviceParam)
+      if (section && item) {
+        handleSelectService({
+          name: item.name, price: item.price, hubId: hubParam as HubId,
+          sectionTitle: section.title, requirements: item.requirements,
+          desc: item.description, turnaround: getTurnaround(section.title, item.name),
+          tips: item.tips ? [...item.tips] : undefined,
+          notice: item.notice,
+        })
+        router.replace("/services", { scroll: false })
+        return
+      }
+    }
+
+    handleOpenHub(hubParam as HubId, "right")
+    router.replace("/services", { scroll: false })
+  }, [searchParams, router])
+
+  const { closeHub, closeService } = useModalBackStack(activeHub, setActiveHub, selectedService, setSelectedService)
+
+  // Scroll-lock while any modal is open — uses data attribute (consistent
+  // with gallery-page fix) rather than imperative body.style mutations
+  useEffect(() => {
+    if (!isModalOpen) return
+    const scrollY = window.scrollY
+    document.documentElement.dataset.scrollLocked = "true"
+    document.body.style.top = `-${scrollY}px`
+    return () => {
+      delete document.documentElement.dataset.scrollLocked
+      document.body.style.top = ""
+      window.scrollTo(0, scrollY)
+    }
+  }, [isModalOpen])
+
+  // Desktop derived values
+  const desktopHub        = desktopActiveHub ? HUBS[desktopActiveHub] : null
+  const desktopHubColors  = desktopActiveHub ? HUB_COLORS[desktopActiveHub as HubKey] : null
+  const desktopHubAccent  = desktopHubColors ? (isDark ? desktopHubColors.accentDark : desktopHubColors.accentLight) : "#000000"
+  const desktopHubFill    = desktopHubColors ? desktopHubColors.primary : "#000000"
+  const desktopActiveSectionData =
+    desktopHub && desktopActiveSection !== null ? desktopHub.sections[desktopActiveSection] : null
+
+  return (
+    <section className="min-h-screen bg-white dark:bg-[#081428] transition-colors duration-300 pb-24 overflow-x-hidden">
+
+      <motion.div
+        layout
+        transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
+        className="max-w-[1248px] mx-auto px-4 md:px-8 flex flex-col items-center transition-opacity duration-200"
+        style={{
+          opacity: isModalOpen ? 0 : 1,
+          pointerEvents: isModalOpen ? "none" : "auto",
+        }}
+        aria-hidden={isModalOpen}
+      >
+
+        <ScrollBounce className="w-full">
+          <div className="pt-[calc(var(--nav-h,74px)+2rem)] pb-8 text-center w-full">
+            <h1 className="abh-page-title mb-3">Our Service Hubs</h1>
+            <p className="abh-tagline max-w-xl mx-auto">
+              Explore our ecosystem. Tap a hub to view all available services and instant pricing.
+            </p>
+            <div className="abh-divider mx-auto" />
+          </div>
+        </ScrollBounce>
+
+        {!clientNoticeDismissed && (
+          <ScrollBounce delay={0.08} className="relative z-0 w-full flex justify-center mb-6">
+            <NoticePill
+              variant="warning"
+              Icon={Megaphone}
+              collapsedLabel="Notice"
+              expandedLabel="Notice to Clients"
+              isDark={isDark}
+              onDismiss={() => setClientNoticeDismissed(true)}
+            >
+              {NOTICE.text}
+              <span className="font-black" style={{ color: TOKEN.blueText }}>{NOTICE.date}</span>
+              {NOTICE.textAfter}
+            </NoticePill>
+          </ScrollBounce>
+        )}
+
+        <ScrollBounce delay={0.14} className="relative z-40 w-full mb-12 flex justify-center">
+          <div id="abh-inline-search" className="w-full flex justify-center">
+            <InlineSearchBar onSelect={handleSelectService} />
+          </div>
+        </ScrollBounce>
+
+        {/* ══════════════════ MOBILE GRID ══════════════════
+            First 4 hubs: portrait (2-col). Last hub: landscape (full-width).
+            MobileHubCard handles all card-level styling. */}
+        <div className="grid md:hidden grid-cols-2 gap-4 pb-2 w-full">
+          {HUB_ORDER.map((hubId, index) => {
+            const hub        = HUBS[hubId]
+            const colors     = HUB_COLORS[hubId as HubKey]
+            const accent     = isDark ? colors.accentDark : colors.accentLight
+            const hubHasBulk = hub.sections.some((s) => sectionHasBulk(hubId, s.title, s.items))
+            const isLast     = index === HUB_ORDER.length - 1
+
+            return (
+              <div key={hubId} className={cn(isLast && "col-span-2")}>
+                <ScrollBounce delay={index * 0.06}>
+                  <MobileHubCard
+                    hubId={hubId}
+                    hub={hub}
+                    accent={accent}
+                    isDark={isDark}
+                    hubHasBulk={hubHasBulk}
+                    onClick={() => handleOpenHub(hubId, "right")}
+                    variant={isLast ? "landscape" : "portrait"}
+                  />
+                </ScrollBounce>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* ══════════════════ DESKTOP — Level 0: 5-card landing ══════════════════ */}
+        {!desktopActiveHub && (
+          <div className="hidden md:grid md:grid-cols-6 gap-6 pb-2 w-full">
+            {HUB_ORDER.map((hubId, index) => {
+              const hub        = HUBS[hubId]
+              const colors     = HUB_COLORS[hubId as HubKey]
+              const accent     = isDark ? colors.accentDark : colors.accentLight
+              const hubHasBulk = hub.sections.some((s) => sectionHasBulk(hubId, s.title, s.items))
+              const hubHasNotice = hub.sections.some((s) => s.items.some((i) => !!i.notice))
+
+              return (
+                <div
+                  key={hubId}
+                  className={cn(
+                    "col-span-2",
+                    index === 3 && "md:col-start-2",
+                    index === 4 && "md:col-start-4"
+                  )}
+                >
+                  <ScrollBounce delay={index * 0.06}>
+                    <div
+                      className="group/hubcard relative flex flex-col items-center text-center h-full rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-300 hover:-translate-y-1 transform-gpu px-6 py-8 cursor-pointer"
+                      onClick={() => handleDesktopSelectHub(hubId)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === "Enter" && handleDesktopSelectHub(hubId)}
+                      aria-label={`Open ${hub.title}`}
+                      style={{ ["--hub-accent" as any]: accent }}
+                    >
+                      <HubCornerIcon hubId={hubId} accent={accent} />
+                      {hubHasBulk && <BulkRibbon />}
+                      {hubHasNotice && <NoticeBadge />}
+
+                      {/* Hub title — wraps, no truncation */}
+                      <h3 className="relative z-10 font-sans font-black text-[1.45rem] leading-tight mb-2 text-zinc-900 dark:text-zinc-50 group-hover/hubcard:text-[var(--hub-accent)] transition-colors duration-200 break-words">
+                        {hub.title}
+                      </h3>
+
+                      <div className="relative z-10 flex flex-wrap justify-center gap-x-1.5 gap-y-0.5 mb-2.5">
+                        {HUB_PREVIEWS[hubId].map((hint, i) => (
+                          <span key={i} className="text-[0.76rem] font-medium text-zinc-400 dark:text-zinc-500">
+                            {hint}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Description — no line-clamp, wraps fully */}
+                      <p className="relative z-10 abh-body text-[0.88rem] leading-snug mb-6 max-w-[190px] break-words text-zinc-500 dark:text-zinc-400">
+                        {hub.desc}
+                      </p>
+
+                      <div className="relative z-10 mt-auto">
+                        <HubCta label="View more" accent={accent} pointsRight={true} />
+                      </div>
+                    </div>
+                  </ScrollBounce>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* ══════════════════ DESKTOP — Level 1 & 2: pills + cards ══════════════════ */}
+        {desktopActiveHub && desktopHub && (
+          <div className="hidden md:flex flex-col items-center w-full animate-in fade-in duration-200">
+
+            {/* Hub pills row */}
+            <div className="flex flex-wrap justify-center gap-2.5 mb-6">
+              {HUB_ORDER.map((hubId) => {
+                const colors      = HUB_COLORS[hubId as HubKey]
+                const accent      = isDark ? colors.accentDark : colors.accentLight
+                const isActivePill = hubId === desktopActiveHub
+                return (
+                  <Pill
+                    key={hubId}
+                    label={HUBS[hubId].title}
+                    accent={accent}
+                    fill={colors.primary}
+                    isActive={isActivePill}
+                    onClick={() => handleDesktopSwitchHub(hubId)}
+                    icon={<HubIcon id={hubId} size={13} color={isActivePill ? "#ffffff" : accent} />}
+                  />
+                )
+              })}
+            </div>
+
+            {/* Section pills row (only when a section is active) */}
+            {desktopActiveSectionData && (
+              <div className="flex flex-wrap justify-center items-center gap-2 mb-8">
+                <BackPill onClick={() => setDesktopActiveSection(null)} label="All Sections" />
+                {desktopHub.sections.map((section, sIdx) => (
+                  <Pill
+                    key={sIdx}
+                    label={section.title}
+                    accent={desktopHubAccent}
+                    fill={desktopHubFill}
+                    isActive={sIdx === desktopActiveSection}
+                    onClick={() => setDesktopActiveSection(sIdx)}
+                    size="sm"
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Level 1: section cards */}
+            {!desktopActiveSectionData && (
+              <div className="w-full max-w-3xl grid grid-cols-2 lg:grid-cols-3 gap-4 mb-2">
+                {desktopHub.sections.map((section, sIdx) => (
+                  <SectionCard
+                    key={sIdx}
+                    section={section}
+                    accent={desktopHubAccent}
+                    onClick={() => setDesktopActiveSection(sIdx)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Level 2: service cards */}
+            {desktopActiveSectionData && (
+              <div className="w-full max-w-3xl">
+                {desktopActiveSectionData.desc && (
+                  <p className="text-center text-[0.9rem] text-zinc-500 dark:text-zinc-400 mb-5 max-w-xl mx-auto break-words">
+                    {desktopActiveSectionData.desc}
+                  </p>
+                )}
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                  {desktopActiveSectionData.items.map((item, iIdx) => (
+                    <ServiceCard
+                      key={iIdx}
+                      item={item}
+                      accent={desktopHubAccent}
+                      onClick={() =>
+                        handleSelectService({
+                          name: item.name,
+                          price: item.price,
+                          hubId: desktopActiveHub,
+                          sectionTitle: desktopActiveSectionData.title,
+                          requirements: item.requirements,
+                          desc: item.description,
+                          turnaround: getTurnaround(desktopActiveSectionData.title, item.name),
+                          tips: item.tips ? [...item.tips] : undefined,
+                          notice: item.notice,
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <ScrollBounce className="w-full mt-14 md:mt-20">
+          <ClosingTagline />
+        </ScrollBounce>
+      </motion.div>
+
+      <AnimatePresence>
+        {activeHub && (
+          <HubModal
+            key="hub-modal"
+            hubId={activeHub}
+            originSide={hubOriginSide}
+            onClose={closeHub}
+            onSelectService={handleSelectService}
+            onSwitchHub={(id) => handleOpenHub(id, "right")}
+          />
+        )}
+        {selectedService && (
+          <ServiceDetailModal key={selectedService.name} svc={selectedService} onClose={closeService} />
+        )}
+      </AnimatePresence>
+
+      <BackToTopButton visible={showBackToTop && !isModalOpen} />
+    </section>
+  )
+}
+ 
