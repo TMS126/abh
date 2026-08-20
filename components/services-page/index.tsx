@@ -5,24 +5,21 @@
  * ════════════════════════════════════════════════════════════════════════
  * SERVICES PAGE
  *
- * TWO COMPLETELY DIFFERENT LAYOUTS, SAME DATA/LOGIC UNDERNEATH:
+ * MOBILE: unchanged from previous pass — icon-tile cards, taps open the
+ * existing HubModal exactly as before.
  *
- * MOBILE (< md breakpoint):
- *   Same 5 hubs, same tap-to-open-HubModal behavior as before — ONLY the
- *   visual card style changed, to the icon-tile look with images from
- *   /public (phub.png, dochub.png, dhub.png, ehub.png, thub.png).
+ * DESKTOP — THREE LEVELS, ALL CARD GRIDS (no accordion anywhere):
+ *   Level 0: original 5 big hub cards (unchanged)
+ *   Level 1: hub pill row (top) + that hub's SECTION cards in a grid
+ *   Level 2: hub pill row + a smaller SECTION pill row + that section's
+ *            SERVICE cards in a grid (tapping a service card opens the
+ *            existing ServiceDetailModal, same as everywhere else)
  *
- * DESKTOP (>= md breakpoint):
- *   On first load: the original 5 big cards, completely unchanged.
- *   Click a card -> it shrinks into a small pill and joins a pill row at
- *   the top alongside pills for the other 4 hubs (the clicked one is
- *   highlighted). Below the pills, that hub's SECTIONS render as cards
- *   (e.g. "SASSA", "SARS", "Online Applications"). Click a section card
- *   and it expands in place (accordion) to show that section's individual
- *   services as a simple list. Click a service -> opens the existing
- *   ServiceDetailModal, exactly as before. Click a different pill to
- *   switch hubs; nothing here changes the underlying HUBS data or the
- *   modals themselves.
+ * PILL CONTRAST FIX: inactive pills (both hub-level and section-level)
+ * use a plain NEUTRAL border/text color, never the hub's own accent —
+ * only the currently active pill shows color, as a solid accent fill
+ * with a soft accent-tinted ring for depth. This stops the pill row from
+ * looking like 5 clashing colors when nothing is "selected" yet.
  * ════════════════════════════════════════════════════════════════════════
  */
 
@@ -30,7 +27,7 @@ import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import { useSearchParams, useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
-import { Megaphone, ArrowRight, CaretRight, CaretDown, WarningCircle } from "@phosphor-icons/react"
+import { Megaphone, ArrowRight, CaretRight, CaretLeft, WarningCircle } from "@phosphor-icons/react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { BRAND, TOKEN, HUB_COLORS, HubKey } from "@/lib/brand"
@@ -52,6 +49,16 @@ const HUB_ICON_SRC: Record<HubId, string> = {
   design: "/dhub.png",
   eservice: "/ehub.png",
   tech: "/thub.png",
+}
+
+// ── Neutral colors used for INACTIVE pills, everywhere on desktop.
+// Deliberately theme-aware but NOT hub-colored — this is the fix for
+// the "pills look bad" issue: 5 different accent colors sitting inactive
+// side by side reads as visual noise. Neutral until selected. ──
+const PILL_NEUTRAL = {
+  border: "var(--border)",
+  text: "var(--muted-foreground)",
+  hoverBg: "var(--muted)",
 }
 
 function ClosingTagline() {
@@ -96,11 +103,7 @@ function HubCornerIcon({ hubId, accent }: { hubId: HubId; accent: string }) {
   )
 }
 
-// Diagonal "Bulk" ribbon — ONLY used on the original, untouched 5-card
-// desktop landing view (kept "like now", per instruction). Never used on
-// the new mobile tiles or desktop pill/section cards — those use the
-// smaller CornerDot below instead, since a diagonal ribbon would collide
-// with the new icon artwork in a denser layout.
+// Diagonal "Bulk" ribbon — ONLY the original 5-card desktop landing view.
 function BulkRibbon() {
   return (
     <div className="absolute top-4 -right-8 rotate-45 z-20 pointer-events-none">
@@ -114,8 +117,7 @@ function BulkRibbon() {
   )
 }
 
-// Circular orange badge — ONLY used on the original 5-card desktop
-// landing view, same reasoning as BulkRibbon above.
+// Circular orange badge — ONLY the original 5-card desktop landing view.
 function NoticeBadge() {
   return (
     <div className="absolute top-3 right-3 z-20 pointer-events-none">
@@ -130,9 +132,7 @@ function NoticeBadge() {
   )
 }
 
-// Small unobtrusive dot — used on the NEW mobile tiles and desktop
-// pill/section cards. Two independent dots can render side by side
-// (bulk + notice) without ever overlapping the icon artwork or text.
+// Small unobtrusive dot — mobile tiles, section cards, service cards.
 function CornerDot({ color, label }: { color: string; label: string }) {
   return (
     <span
@@ -144,11 +144,7 @@ function CornerDot({ color, label }: { color: string; label: string }) {
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// MOBILE HUB CARD — icon-tile style, using the /public hub images.
-// Interaction is UNCHANGED from before: tapping it still calls
-// onClick -> handleOpenHub -> opens the existing HubModal. Only the
-// visuals are new. Info shown (title, preview tags, description) is the
-// same info that was already there, just laid out differently.
+// MOBILE HUB CARD — unchanged from previous pass.
 // ══════════════════════════════════════════════════════════════════════
 function MobileHubCard({
   hubId, hub, accent, gradient, hubHasBulk, hubHasNotice, onClick,
@@ -169,7 +165,6 @@ function MobileHubCard({
       aria-label={`Open ${hub.title}`}
       className="w-full text-left rounded-[18px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-200 active:scale-[0.98] transform-gpu p-4"
     >
-      {/* Top row: title + chevron affordance */}
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-sans font-black text-[1.1rem] leading-tight text-zinc-900 dark:text-zinc-50 truncate pr-2">
           {hub.title}
@@ -183,7 +178,6 @@ function MobileHubCard({
         </span>
       </div>
 
-      {/* Icon tile — gradient square with the hub's PNG icon centered */}
       <div
         className="relative w-full aspect-[2/1.15] rounded-[14px] flex items-center justify-center mb-3 overflow-hidden"
         style={{ background: gradient }}
@@ -196,9 +190,6 @@ function MobileHubCard({
           className="object-contain drop-shadow-lg"
           aria-hidden="true"
         />
-
-        {/* Bulk/Notice dots — top-right of the tile, small and stacked
-            horizontally, never overlapping the centered icon artwork */}
         {(hubHasBulk || hubHasNotice) && (
           <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
             {hubHasNotice && <CornerDot color={TOKEN.warningBg} label="Notice for some services" />}
@@ -207,7 +198,6 @@ function MobileHubCard({
         )}
       </div>
 
-      {/* Info line — service count + category count, real data only */}
       <p className="text-[0.82rem] font-bold text-zinc-500 dark:text-zinc-400">
         {itemCount} services <span className="opacity-50">·</span> {hub.sections.length} categories
       </p>
@@ -216,126 +206,149 @@ function MobileHubCard({
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// DESKTOP PILL — the shrunk version of a hub card once any hub has been
-// selected. All 5 hubs render as pills; the currently-active one is
-// visually highlighted (solid accent fill), the rest are outlined.
+// PILL — shared by both the hub row and the section row. Inactive state
+// is ALWAYS neutral (see PILL_NEUTRAL above) regardless of which hub or
+// section it represents. Active state gets the accent as a solid fill
+// plus a soft accent-tinted ring around it for a bit of depth, instead
+// of a flat block — this is the actual contrast fix.
 // ══════════════════════════════════════════════════════════════════════
-function DesktopHubPill({
-  hubId, title, accent, isActive, onClick,
+function Pill({
+  icon, label, accent, isActive, onClick, size = "md",
 }: {
-  hubId: HubId
-  title: string
+  icon?: React.ReactNode
+  label: string
   accent: string
   isActive: boolean
   onClick: () => void
+  size?: "md" | "sm"
 }) {
   return (
     <button
       onClick={onClick}
       aria-pressed={isActive}
       className={cn(
-        "inline-flex items-center gap-2 pl-2 pr-4 py-2 rounded-full font-black text-[0.9rem] transition-all duration-200 active:scale-95 border-2"
+        "inline-flex items-center gap-2 rounded-full font-black transition-all duration-200 active:scale-95 border",
+        size === "md" ? "pl-2 pr-4 py-2 text-[0.9rem]" : "pl-2 pr-3.5 py-1.5 text-[0.82rem]"
       )}
       style={
         isActive
-          ? { backgroundColor: accent, borderColor: accent, color: "#ffffff" }
-          : { backgroundColor: "transparent", borderColor: accent, color: accent }
+          ? {
+              backgroundColor: accent,
+              borderColor: accent,
+              color: "#ffffff",
+              boxShadow: `0 0 0 4px ${accent}22`,
+            }
+          : {
+              backgroundColor: "transparent",
+              borderColor: PILL_NEUTRAL.border,
+              color: PILL_NEUTRAL.text,
+            }
       }
     >
-      <span
-        className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
-        style={{ backgroundColor: isActive ? "rgba(255,255,255,0.25)" : `${accent}15` }}
-      >
-        <HubIcon id={hubId} size={13} color={isActive ? "#ffffff" : accent} />
-      </span>
-      {title}
+      {icon && (
+        <span
+          className={cn("rounded-full flex items-center justify-center shrink-0", size === "md" ? "w-6 h-6" : "w-5 h-5")}
+          style={{ backgroundColor: isActive ? "rgba(255,255,255,0.25)" : "var(--muted)" }}
+        >
+          {icon}
+        </span>
+      )}
+      {label}
+    </button>
+  )
+}
+
+// A pill that acts as a "back" control at the start of the section row —
+// visually neutral always (never colored), since it's a navigation
+// action, not a filter choice.
+function BackPill({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className="inline-flex items-center gap-1.5 pl-2.5 pr-3.5 py-1.5 rounded-full font-black text-[0.82rem] border transition-all duration-200 active:scale-95 hover:bg-[var(--muted)]"
+      style={{ borderColor: PILL_NEUTRAL.border, color: PILL_NEUTRAL.text }}
+    >
+      <CaretLeft size={12} weight="bold" />
+      {label}
     </button>
   )
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// DESKTOP SECTION CARD — shows one section of the active hub (e.g.
-// "SASSA"). Click toggles it open/closed; when open, its services list
-// out directly beneath it. Only one section is open at a time per hub,
-// keeping the view from getting overwhelming.
+// SECTION CARD — Level 1. Grid card (not a bar, not an accordion) that
+// represents one section of the active hub (e.g. "SASSA"). Clicking it
+// drills into Level 2 to show that section's services.
 // ══════════════════════════════════════════════════════════════════════
-function DesktopSectionCard({
-  section, hubId, accent, isExpanded, onToggle, onSelectService,
+function SectionCard({
+  section, accent, onClick,
 }: {
   section: (typeof HUBS)[HubId]["sections"][number]
-  hubId: HubId
   accent: string
-  isExpanded: boolean
-  onToggle: () => void
-  onSelectService: (svc: SelectedService) => void
+  onClick: () => void
 }) {
-  const sectionHasNotice = section.items.some((i) => !!i.notice)
-  const sectionHasBulkFlag = sectionHasBulk(hubId, section.title, section.items)
+  const hasNotice = section.items.some((i) => !!i.notice)
 
   return (
-    <div className="rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden">
-      <button
-        onClick={onToggle}
-        aria-expanded={isExpanded}
-        className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900/50"
-      >
-        <div className="min-w-0 flex items-center gap-2">
-          <span className="font-black text-[1.05rem] text-zinc-800 dark:text-zinc-100 truncate">
-            {section.title}
-          </span>
-          {sectionHasNotice && <CornerDot color={TOKEN.warningBg} label="Notice for some services in this section" />}
-          {sectionHasBulkFlag && <CornerDot color={accent} label="Bulk pricing available" />}
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[0.78rem] font-bold text-zinc-400 dark:text-zinc-500">
-            {section.items.length}
-          </span>
-          <CaretDown
-            size={14}
-            weight="bold"
-            className={cn("transition-transform duration-200", isExpanded && "rotate-180")}
-            style={{ color: accent }}
-          />
-        </div>
-      </button>
+    <button
+      onClick={onClick}
+      className="group/sectioncard text-left rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] p-5"
+    >
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <h4 className="font-black text-[1.02rem] text-zinc-800 dark:text-zinc-100 leading-tight">
+          {section.title}
+        </h4>
+        {hasNotice && <CornerDot color={TOKEN.warningBg} label="Notice for some services in this section" />}
+      </div>
 
-      {isExpanded && (
-        <div className="border-t border-zinc-100 dark:border-zinc-800 p-2 grid grid-cols-1 gap-1.5 animate-in fade-in duration-150">
-          {section.items.map((item, idx) => (
-            <button
-              key={idx}
-              onClick={() =>
-                onSelectService({
-                  name: item.name,
-                  price: item.price,
-                  hubId,
-                  sectionTitle: section.title,
-                  requirements: item.requirements,
-                  desc: item.description,
-                  turnaround: getTurnaround(section.title, item.name),
-                  tips: item.tips ? [...item.tips] : undefined,
-                  notice: item.notice,
-                })
-              }
-              className="flex items-center justify-between px-3.5 py-2.5 rounded-[10px] bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors duration-150 active:scale-[0.99] w-full text-left"
-            >
-              <span className="text-[0.92rem] font-semibold text-zinc-700 dark:text-zinc-200 flex items-center gap-1.5 min-w-0">
-                {itemHasBulk(hubId, section.title, item.name) && (
-                  <span className="shrink-0 text-[0.55rem] font-black uppercase tracking-wide text-zinc-400">Bulk ·</span>
-                )}
-                {item.notice && (
-                  <span aria-label="Notice" className="shrink-0 font-black text-[0.85rem] leading-none" style={{ color: TOKEN.warningBg }}>!</span>
-                )}
-                <span className="truncate">{item.name}</span>
-              </span>
-              <span className="shrink-0 ml-3 text-[0.92rem] font-black" style={{ color: accent }}>
-                {item.price}
-              </span>
-            </button>
-          ))}
-        </div>
+      {section.desc && (
+        <p className="text-[0.82rem] text-zinc-500 dark:text-zinc-400 leading-snug line-clamp-2 mb-4">
+          {section.desc}
+        </p>
       )}
-    </div>
+
+      <div className="flex items-center justify-between">
+        <span className="text-[0.78rem] font-bold" style={{ color: accent }}>
+          {section.items.length} service{section.items.length === 1 ? "" : "s"}
+        </span>
+        <span
+          className="w-7 h-7 rounded-full flex items-center justify-center transition-transform duration-200 group-hover/sectioncard:translate-x-0.5"
+          style={{ backgroundColor: `${accent}15`, color: accent }}
+        >
+          <CaretRight size={12} weight="bold" />
+        </span>
+      </div>
+    </button>
+  )
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SERVICE CARD — Level 2. Grid card for one individual service inside
+// the active section. Clicking it opens the existing ServiceDetailModal.
+// ══════════════════════════════════════════════════════════════════════
+function ServiceCard({
+  item, accent, onClick,
+}: {
+  item: { name: string; price: string; notice?: string }
+  accent: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="text-left rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] p-4"
+    >
+      <div className="flex items-start justify-between gap-2 mb-2.5">
+        <span className="font-black text-[0.95rem] text-zinc-800 dark:text-zinc-100 leading-snug flex items-start gap-1.5 min-w-0">
+          {item.notice && (
+            <span aria-label="Notice" className="shrink-0 font-black leading-none mt-0.5" style={{ color: TOKEN.warningBg }}>!</span>
+          )}
+          <span>{item.name}</span>
+        </span>
+      </div>
+      <span className="text-[1.05rem] font-black" style={{ color: accent }}>
+        {item.price}
+      </span>
+    </button>
   )
 }
 
@@ -343,8 +356,8 @@ function DesktopSectionCard({
 /* components/services-page/index.tsx — PART 2 OF 2 */
 /**
  * Continuation of the services page — the main exported component.
- * Everything defined in Part 1 (MobileHubCard, DesktopHubPill,
- * DesktopSectionCard, etc.) is used below.
+ * Everything defined in Part 1 (MobileHubCard, Pill, BackPill,
+ * SectionCard, ServiceCard, etc.) is used below.
  */
 
 export function ServicesPage() {
@@ -360,14 +373,13 @@ export function ServicesPage() {
   const [clientNoticeDismissed, setClientNoticeDismissed] = useState(false)
   const showBackToTop = useBackToTop()
 
-  // ── DESKTOP-ONLY filter state ──
-  // desktopActiveHub: which hub's pill is highlighted / whose sections
-  // are showing below the pill row. null = still on the original 5-card
-  // landing view (nothing selected yet).
+  // ── DESKTOP-ONLY navigation state ──
+  // desktopActiveHub: null = Level 0 (original 5-card landing).
+  //                   set = Level 1 or 2, this hub's pill is active.
   const [desktopActiveHub, setDesktopActiveHub] = useState<HubId | null>(null)
-  // desktopExpandedSection: index of the currently open (expanded)
-  // section card within the active hub. null = all collapsed.
-  const [desktopExpandedSection, setDesktopExpandedSection] = useState<number | null>(null)
+  // desktopActiveSection: null = Level 1 (section cards showing).
+  //                        set = Level 2 (service cards for this section).
+  const [desktopActiveSection, setDesktopActiveSection] = useState<number | null>(null)
 
   const isModalOpen = !!(activeHub || selectedService)
 
@@ -386,25 +398,35 @@ export function ServicesPage() {
     setActiveHub(hubId)
   }
 
-  // Called when a desktop hub CARD (initial landing view) is clicked —
-  // switches into filter mode instead of opening the HubModal.
+  // Desktop: clicking one of the original 5 landing cards -> Level 1
   const handleDesktopSelectHub = (hubId: HubId) => {
     trackEvent("view_hub", { hub_id: hubId, hub_name: HUBS[hubId].title })
     setDesktopActiveHub(hubId)
-    setDesktopExpandedSection(null)
+    setDesktopActiveSection(null)
   }
 
-  // Called when a PILL is clicked to switch to a different hub while
-  // already in filter mode.
+  // Desktop: clicking a hub PILL to switch hubs while already filtered —
+  // always drops back to Level 1 (section cards) for the new hub.
   const handleDesktopSwitchHub = (hubId: HubId) => {
     if (hubId === desktopActiveHub) return
     trackEvent("view_hub", { hub_id: hubId, hub_name: HUBS[hubId].title })
     setDesktopActiveHub(hubId)
-    setDesktopExpandedSection(null)
+    setDesktopActiveSection(null)
   }
 
-  const handleDesktopToggleSection = (idx: number) => {
-    setDesktopExpandedSection((prev) => (prev === idx ? null : idx))
+  // Desktop: clicking a section CARD -> Level 2
+  const handleDesktopSelectSection = (idx: number) => {
+    setDesktopActiveSection(idx)
+  }
+
+  // Desktop: clicking a section PILL to switch sections while in Level 2
+  const handleDesktopSwitchSection = (idx: number) => {
+    setDesktopActiveSection(idx)
+  }
+
+  // Desktop: "back" pill inside Level 2 -> return to Level 1
+  const handleDesktopBackToSections = () => {
+    setDesktopActiveSection(null)
   }
 
   useEffect(() => {
@@ -470,6 +492,11 @@ export function ServicesPage() {
   }, [isModalOpen])
 
   const desktopHub = desktopActiveHub ? HUBS[desktopActiveHub] : null
+  const desktopHubAccent = desktopActiveHub
+    ? (isDark ? HUB_COLORS[desktopActiveHub as HubKey].accentDark : HUB_COLORS[desktopActiveHub as HubKey].accentLight)
+    : "#000000"
+  const desktopActiveSectionData =
+    desktopHub && desktopActiveSection !== null ? desktopHub.sections[desktopActiveSection] : null
 
   return (
     <section className="min-h-screen bg-white dark:bg-[#081428] transition-colors duration-300 pb-24 overflow-x-hidden">
@@ -518,7 +545,7 @@ export function ServicesPage() {
           </div>
         </ScrollBounce>
 
-        {/* ══════════════════ MOBILE — icon-tile cards, unchanged interaction ══════════════════ */}
+        {/* ══════════════════ MOBILE — icon-tile cards, unchanged ══════════════════ */}
         <div className="grid md:hidden grid-cols-2 gap-4 pb-2 w-full">
           {HUB_ORDER.map((hubId, index) => {
             const hub    = HUBS[hubId]
@@ -526,8 +553,6 @@ export function ServicesPage() {
             const accent = isDark ? colors.accentDark : colors.accentLight
             const hubHasBulk = hub.sections.some((s) => sectionHasBulk(hubId, s.title, s.items))
             const hubHasNotice = hub.sections.some((s) => s.items.some((i) => !!i.notice))
-            // Tech Hub is the odd one out (5th card) — spans both columns
-            // on its own row so the 2-column grid doesn't leave a gap.
             const spansFull = index === HUB_ORDER.length - 1 && HUB_ORDER.length % 2 !== 0
 
             return (
@@ -548,7 +573,7 @@ export function ServicesPage() {
           })}
         </div>
 
-        {/* ══════════════════ DESKTOP — original 5-card landing (unchanged) ══════════════════ */}
+        {/* ══════════════════ DESKTOP — Level 0: original 5-card landing ══════════════════ */}
         {!desktopActiveHub && (
           <div className="hidden md:grid md:grid-cols-6 gap-6 pb-2 w-full">
             {HUB_ORDER.map((hubId, index) => {
@@ -608,46 +633,91 @@ export function ServicesPage() {
           </div>
         )}
 
-        {/* ══════════════════ DESKTOP — filtered view (pills + sections) ══════════════════ */}
+        {/* ══════════════════ DESKTOP — Level 1 & 2: pills + card grids ══════════════════ */}
         {desktopActiveHub && desktopHub && (
           <div className="hidden md:flex flex-col items-center w-full animate-in fade-in duration-200">
 
-            {/* Pill row — all 5 hubs, active one highlighted */}
-            <div className="flex flex-wrap justify-center gap-2.5 mb-8">
+            {/* Hub pill row — always visible once any hub is selected */}
+            <div className="flex flex-wrap justify-center gap-2.5 mb-6">
               {HUB_ORDER.map((hubId) => {
                 const colors = HUB_COLORS[hubId as HubKey]
                 const accent = isDark ? colors.accentDark : colors.accentLight
                 return (
-                  <DesktopHubPill
+                  <Pill
                     key={hubId}
-                    hubId={hubId}
-                    title={HUBS[hubId].title}
+                    label={HUBS[hubId].title}
                     accent={accent}
                     isActive={hubId === desktopActiveHub}
                     onClick={() => handleDesktopSwitchHub(hubId)}
+                    icon={<HubIcon id={hubId} size={13} color={hubId === desktopActiveHub ? "#ffffff" : accent} />}
                   />
                 )
               })}
             </div>
 
-            {/* Section cards for the active hub */}
-            <div className="w-full max-w-2xl flex flex-col gap-3">
-              {(() => {
-                const colors = HUB_COLORS[desktopActiveHub as HubKey]
-                const accent = isDark ? colors.accentDark : colors.accentLight
-                return desktopHub.sections.map((section, sIdx) => (
-                  <DesktopSectionCard
+            {/* Level 2 only: secondary section pill row + back pill */}
+            {desktopActiveSectionData && (
+              <div className="flex flex-wrap justify-center items-center gap-2 mb-8">
+                <BackPill onClick={handleDesktopBackToSections} label="All Sections" />
+                {desktopHub.sections.map((section, sIdx) => (
+                  <Pill
+                    key={sIdx}
+                    label={section.title}
+                    accent={desktopHubAccent}
+                    isActive={sIdx === desktopActiveSection}
+                    onClick={() => handleDesktopSwitchSection(sIdx)}
+                    size="sm"
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Level 1: section cards grid */}
+            {!desktopActiveSectionData && (
+              <div className="w-full max-w-3xl grid grid-cols-2 lg:grid-cols-3 gap-4 mb-2">
+                {desktopHub.sections.map((section, sIdx) => (
+                  <SectionCard
                     key={sIdx}
                     section={section}
-                    hubId={desktopActiveHub}
-                    accent={accent}
-                    isExpanded={desktopExpandedSection === sIdx}
-                    onToggle={() => handleDesktopToggleSection(sIdx)}
-                    onSelectService={handleSelectService}
+                    accent={desktopHubAccent}
+                    onClick={() => handleDesktopSelectSection(sIdx)}
                   />
-                ))
-              })()}
-            </div>
+                ))}
+              </div>
+            )}
+
+            {/* Level 2: service cards grid for the active section */}
+            {desktopActiveSectionData && (
+              <div className="w-full max-w-3xl">
+                {desktopActiveSectionData.desc && (
+                  <p className="text-center text-[0.9rem] text-zinc-500 dark:text-zinc-400 mb-5 max-w-xl mx-auto">
+                    {desktopActiveSectionData.desc}
+                  </p>
+                )}
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                  {desktopActiveSectionData.items.map((item, iIdx) => (
+                    <ServiceCard
+                      key={iIdx}
+                      item={item}
+                      accent={desktopHubAccent}
+                      onClick={() =>
+                        handleSelectService({
+                          name: item.name,
+                          price: item.price,
+                          hubId: desktopActiveHub,
+                          sectionTitle: desktopActiveSectionData.title,
+                          requirements: item.requirements,
+                          desc: item.description,
+                          turnaround: getTurnaround(desktopActiveSectionData.title, item.name),
+                          tips: item.tips ? [...item.tips] : undefined,
+                          notice: item.notice,
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
