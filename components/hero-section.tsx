@@ -1,7 +1,7 @@
 // components/hero-section.tsx — full file, paste over the current one
 "use client"
 
-import React, { useState, useEffect, useRef, useMemo } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import Image from "next/image"
@@ -63,29 +63,22 @@ function randBetween(min: number, max: number) {
   return min + Math.random() * (max - min)
 }
 
-// Five loose zones (not fixed points) — each mount/refresh, every icon
-// gets a fresh random position WITHIN its zone, so placement is randomized
-// every visit ("random places when entering a page again or refreshing")
-// while still keeping icons roughly spaced apart instead of colliding.
+// Five loose zones — every mount/refresh, each icon gets a fresh random
+// point within its zone, so placement is randomized every visit while
+// staying roughly spaced apart.
 const ZONES: { topRange: [number, number]; leftRange: [number, number] }[] = [
-  { topRange: [6, 24],  leftRange: [16, 42] },
-  { topRange: [8, 26],  leftRange: [56, 82] },
-  { topRange: [42, 60], leftRange: [4, 28] },
-  { topRange: [46, 66], leftRange: [38, 62] },
-  { topRange: [40, 58], leftRange: [70, 94] },
+  { topRange: [8, 24],  leftRange: [16, 40] },
+  { topRange: [10, 26], leftRange: [56, 80] },
+  { topRange: [42, 58], leftRange: [6, 26] },
+  { topRange: [46, 64], leftRange: [38, 60] },
+  { topRange: [40, 56], leftRange: [70, 92] },
 ]
 
 type IconEntry = {
   hub: (typeof HUBS_DATA)[number]
-  top: string
-  left: string
+  topPct: number
+  leftPct: number
   z: number
-  // Idle ambient animation — randomized per icon, per mount, so all 5
-  // drift/rotate out of sync with each other rather than looking robotic.
-  idleDuration: string
-  idleDelay: string
-  rotA: string
-  rotB: string
 }
 
 function buildArrangement(): IconEntry[] {
@@ -93,16 +86,11 @@ function buildArrangement(): IconEntry[] {
   const shuffledZones = shuffleArray(ZONES)
   return shuffledHubs.map((hub, i) => {
     const zone = shuffledZones[i]
-    const rotSwing = randBetween(5, 11)
     return {
       hub,
-      top: `${randBetween(...zone.topRange).toFixed(1)}%`,
-      left: `${randBetween(...zone.leftRange).toFixed(1)}%`,
+      topPct: randBetween(...zone.topRange),
+      leftPct: randBetween(...zone.leftRange),
       z: 10 + i * 10,
-      idleDuration: `${randBetween(3.6, 6.2).toFixed(2)}s`,
-      idleDelay: `${randBetween(0, 1.6).toFixed(2)}s`,
-      rotA: `${(-rotSwing).toFixed(1)}deg`,
-      rotB: `${rotSwing.toFixed(1)}deg`,
     }
   })
 }
@@ -128,6 +116,232 @@ const NOTICE_ITEMS = eserviceHub.sections.flatMap((section) => section.items.fil
 const HAS_BACKLOG_NOTICE = NOTICE_ITEMS.length > 0
 const BACKLOG_MESSAGE = NOTICE_ITEMS[0]?.notice ?? ""
 
+// ─── HUB ICON FIELD — physics-driven wander + collision ──────────────────────
+// Each icon slowly wanders (sine-based, very small amplitude — "none can
+// notice easily") around ITS OWN home point, spring-pulled back to home
+// the whole time. When two icons' live positions get close enough to
+// "touch", they get a gentle repulsion impulse (pulling them apart again)
+// plus a brief spark burst at the contact point. Runs on one shared
+// requestAnimationFrame loop, writing transforms directly to DOM refs
+// (not React state) so it never triggers a re-render per frame.
+const TOUCH_DIST = 92          // px — treated as "touching"
+const WANDER_AMP_PX = 10       // subtle — max drift from home in any direction
+const SPARK_COOLDOWN_MS = 900  // per-pair, so a held touch doesn't spam sparks
+
+function HubIconField({
+  arrangement,
+  isDark,
+  canHover,
+}: {
+  arrangement: IconEntry[]
+  isDark: boolean
+  canHover: boolean
+}) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const iconRefs = useRef<(HTMLDivElement | null)[]>([])
+  const shadowRefs = useRef<(HTMLDivElement | null)[]>([])
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [shakingId, setShakingId] = useState<string | null>(null)
+  const shakeTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
+  const [sparks, setSparks] = useState<{ id: number; xPct: number; yPct: number }[]>([])
+  const sparkIdRef = useRef(0)
+  const cooldownRef = useRef<Map<string, number>>(new Map())
+
+  const triggerShake = (hubId: string) => {
+    setShakingId(hubId)
+    if (shakeTimeoutRef.current) clearTimeout(shakeTimeoutRef.current)
+    shakeTimeoutRef.current = setTimeout(() => setShakingId((cur) => (cur === hubId ? null : cur)), 550)
+  }
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    // Per-icon wander params — randomized once, kept stable for the life
+    // of this arrangement so each icon's drift feels independent.
+    const phys = arrangement.map(() => ({
+      freqX: randBetween(0.045, 0.075),  // very slow — full cycle ~14–22s
+      freqY: randBetween(0.04, 0.07),
+      phaseX: randBetween(0, Math.PI * 2),
+      phaseY: randBetween(0, Math.PI * 2),
+      x: 0, y: 0,
+    }))
+
+    let raf = 0
+    let homePx: { x: number; y: number }[] = []
+
+    const recomputeHomes = () => {
+      const rect = container.getBoundingClientRect()
+      homePx = arrangement.map((e) => ({ x: (e.leftPct / 100) * rect.width, y: (e.topPct / 100) * rect.height }))
+    }
+    recomputeHomes()
+    const onResize = () => recomputeHomes()
+    window.addEventListener("resize", onResize)
+
+    const tick = (time: number) => {
+      const t = time / 1000
+
+      // Sine wander around home, per icon.
+      for (let i = 0; i < phys.length; i++) {
+        const p = phys[i]
+        p.x = Math.sin(t * p.freqX + p.phaseX) * WANDER_AMP_PX
+        p.y = Math.sin(t * p.freqY + p.phaseY) * WANDER_AMP_PX * 0.6
+      }
+
+      // Pairwise "touch" check → pull-back nudge + spark.
+      for (let i = 0; i < phys.length; i++) {
+        for (let j = i + 1; j < phys.length; j++) {
+          const ax = homePx[i].x + phys[i].x
+          const ay = homePx[i].y + phys[i].y
+          const bx = homePx[j].x + phys[j].x
+          const by = homePx[j].y + phys[j].y
+          const dx = ax - bx
+          const dy = ay - by
+          const dist = Math.hypot(dx, dy) || 0.001
+
+          if (dist < TOUCH_DIST) {
+            // Pull back: nudge both wander offsets apart along the
+            // contact normal, gently — not a hard bounce.
+            const nx = dx / dist
+            const ny = dy / dist
+            const push = (TOUCH_DIST - dist) * 0.15
+            phys[i].x += nx * push
+            phys[i].y += ny * push
+            phys[j].x -= nx * push
+            phys[j].y -= ny * push
+
+            const key = `${i}-${j}`
+            const now = performance.now()
+            const last = cooldownRef.current.get(key) ?? 0
+            if (now - last > SPARK_COOLDOWN_MS) {
+              cooldownRef.current.set(key, now)
+              const rect = container.getBoundingClientRect()
+              const midX = ((ax + bx) / 2 / rect.width) * 100
+              const midY = ((ay + by) / 2 / rect.height) * 100
+              const id = sparkIdRef.current++
+              setSparks((cur) => [...cur, { id, xPct: midX, yPct: midY }])
+              setTimeout(() => setSparks((cur) => cur.filter((s) => s.id !== id)), 500)
+            }
+          }
+        }
+      }
+
+      for (let i = 0; i < phys.length; i++) {
+        const el = iconRefs.current[i]
+        if (el) el.style.transform = `translate(${phys[i].x}px, ${phys[i].y}px)`
+        const sh = shadowRefs.current[i]
+        if (sh) sh.style.transform = `translateX(calc(-50% + ${phys[i].x * 0.6}px))`
+      }
+
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener("resize", onResize)
+    }
+  }, [arrangement])
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative mx-auto w-full max-w-[360px] sm:max-w-[440px] md:max-w-none h-[440px] sm:h-[500px] md:h-[560px]"
+    >
+      {sparks.map((s) => (
+        <span
+          key={s.id}
+          aria-hidden="true"
+          className="absolute w-3 h-3 rounded-full pointer-events-none animate-[abh-spark-pop_500ms_ease-out_forwards]"
+          style={{
+            top: `${s.yPct}%`,
+            left: `${s.xPct}%`,
+            transform: "translate(-50%, -50%)",
+            background: isDark ? "rgba(233,236,239,0.55)" : "rgba(51,51,51,0.35)",
+            boxShadow: isDark ? "0 0 10px 2px rgba(233,236,239,0.35)" : "0 0 8px 2px rgba(51,51,51,0.2)",
+          }}
+        />
+      ))}
+
+      {arrangement.map((entry, i) => {
+        const { hub, topPct, leftPct, z } = entry
+        const hubAccent = isDark ? hub.colorDark : hub.colorLight
+        const isHovered = canHover && hoveredId === hub.id
+        const isShaking = shakingId === hub.id
+
+        return (
+          <div
+            key={hub.id}
+            className="absolute flex flex-col items-center animate-in fade-in zoom-in-95"
+            style={{
+              top: `${topPct}%`,
+              left: `${leftPct}%`,
+              zIndex: z,
+              animationDelay: `${z * 20}ms`,
+              animationDuration: "500ms",
+              animationFillMode: "both",
+            }}
+          >
+            {/* Outer div: JS-driven wander/collision transform only. */}
+            <div ref={(el) => { iconRefs.current[i] = el }}>
+              {/* Inner div: hover-bounce / click-shake CSS animations —
+                  kept on a separate element so the two transforms never
+                  fight over the same style property. */}
+              <div
+                role="button"
+                tabIndex={0}
+                aria-label={hub.name}
+                onMouseEnter={() => canHover && setHoveredId(hub.id)}
+                onMouseLeave={() => canHover && setHoveredId((cur) => (cur === hub.id ? null : cur))}
+                onClick={() => triggerShake(hub.id)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); triggerShake(hub.id) } }}
+                className="relative w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 cursor-pointer outline-none"
+                style={{
+                  animationName: isShaking ? "abh-icon-shake" : isHovered ? "abh-icon-bounce" : undefined,
+                  animationDuration: isShaking ? "0.55s" : isHovered ? "1.8s" : undefined,
+                  animationTimingFunction: "ease-in-out",
+                  animationIterationCount: isShaking ? 1 : isHovered ? "infinite" : undefined,
+                }}
+              >
+                <Image
+                  src={HUB_IMAGES[hub.id]}
+                  alt={`${hub.name} example`}
+                  fill
+                  sizes="(max-width: 640px) 128px, (max-width: 768px) 160px, 192px"
+                  className="object-contain"
+                />
+              </div>
+            </div>
+
+            {/* Real ground shadow — separate ellipse below the icon,
+                reacts (compresses/fades) only during hover-bounce. */}
+            <div
+              ref={(el) => { shadowRefs.current[i] = el }}
+              aria-hidden="true"
+              className="w-20 sm:w-24 md:w-28 h-3.5 sm:h-4 rounded-full bg-black blur-[7px] -mt-2"
+              style={{
+                left: "50%",
+                opacity: 0.32,
+                animationName: isHovered ? "abh-shadow-bounce" : undefined,
+                animationDuration: isHovered ? "1.8s" : undefined,
+                animationTimingFunction: "ease-in-out",
+                animationIterationCount: isHovered ? "infinite" : undefined,
+              }}
+            />
+
+            <span
+              className="mt-2 px-2.5 py-1 rounded-full text-[0.65rem] sm:text-xs font-black uppercase tracking-wide bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm shadow-sm whitespace-nowrap"
+              style={{ color: hubAccent }}
+            >
+              {pillLabel(hub.name)}
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ─── COMPONENT ───────────────────────────────────────────────────────────────
 export function HeroSection() {
   const router = useRouter()
@@ -137,26 +351,11 @@ export function HeroSection() {
   const [status, setStatus] = useState<BusinessStatus | null>(null)
   const [weatherCategory, setWeatherCategory] = useState<WeatherCategory | null>(null)
   const [backlogDismissed, setBacklogDismissed] = useState(false)
+  const [canHover, setCanHover] = useState(false)
   const showBackToTop = useBackToTop()
 
-  // Only true bounce-on-hover on an actual mouse/trackpad — never on
-  // touch, so tapping on mobile can't be mistaken for a "hover".
-  const [canHover, setCanHover] = useState(false)
-  const [hoveredId, setHoveredId] = useState<string | null>(null)
-  const [shakingId, setShakingId] = useState<string | null>(null)
-  const shakeTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
-
   const [arrangement, setArrangement] = useState<IconEntry[]>(() =>
-    HUBS_DATA.map((hub, i) => ({
-      hub,
-      top: `${ZONES[i].topRange[0]}%`,
-      left: `${ZONES[i].leftRange[0]}%`,
-      z: 10 + i * 10,
-      idleDuration: "4.5s",
-      idleDelay: "0s",
-      rotA: "-6deg",
-      rotB: "6deg",
-    }))
+    HUBS_DATA.map((hub, i) => ({ hub, topPct: ZONES[i].topRange[0], leftPct: ZONES[i].leftRange[0], z: 10 + i * 10 }))
   )
 
   const ctaBtnRef = useRef<HTMLButtonElement>(null)
@@ -201,12 +400,6 @@ export function HeroSection() {
   const handleNavigate = (path: string) => router.push(path)
   const handleCtaClick = () => handleNavigate("/services")
 
-  const triggerShake = (hubId: string) => {
-    setShakingId(hubId)
-    if (shakeTimeoutRef.current) clearTimeout(shakeTimeoutRef.current)
-    shakeTimeoutRef.current = setTimeout(() => setShakingId((cur) => (cur === hubId ? null : cur)), 550)
-  }
-
   return (
     <section
       aria-label="Hero"
@@ -222,10 +415,6 @@ export function HeroSection() {
       </div>
 
       <style>{`
-        @keyframes abh-icon-idle {
-          0%   { transform: translateY(0) scale(1) rotate(var(--rot-a)); }
-          100% { transform: translateY(-8px) scale(1.03) rotate(var(--rot-b)); }
-        }
         @keyframes abh-icon-bounce {
           0%, 100% { transform: translateY(0) scale(1); }
           50%      { transform: translateY(-26px) scale(1.05); }
@@ -241,6 +430,11 @@ export function HeroSection() {
         @keyframes abh-shadow-bounce {
           0%, 100% { transform: translateX(-50%) scaleX(1); opacity: 0.32; }
           50%      { transform: translateX(-50%) scaleX(0.5); opacity: 0.14; }
+        }
+        @keyframes abh-spark-pop {
+          0%   { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+          35%  { opacity: 1; }
+          100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
         }
       `}</style>
 
@@ -262,6 +456,9 @@ export function HeroSection() {
           </div>
         )}
 
+        {/* md:items-center keeps this row's two columns vertically
+            centered against each other, so the icon field's midline
+            always sits level with the title/text column on desktop. */}
         <div className="w-full max-w-[1100px] mx-auto grid md:grid-cols-2 gap-10 md:gap-16 items-center mb-10 md:mb-14">
 
           <div className="text-center md:text-left">
@@ -323,98 +520,8 @@ export function HeroSection() {
             </ScrollBounce>
           </div>
 
-          {/* Right column — hub icon field. Bumped back up to the earlier
-              larger size. No container-level touch/scatter handling
-              anymore — that was swallowing scroll gestures — so a finger
-              can scroll straight through this area. Each icon owns its
-              own hover/click handlers instead. */}
           <ScrollBounce delay={0.1} className="w-full">
-            <div className="relative w-full h-[420px] sm:h-[480px] md:h-[540px]">
-              {arrangement.map((entry) => {
-                const { hub, top, left, z, idleDuration, idleDelay, rotA, rotB } = entry
-                const hubAccent = isDark ? hub.colorDark : hub.colorLight
-                const isHovered = canHover && hoveredId === hub.id
-                const isShaking = shakingId === hub.id
-
-                const animationName = isShaking ? "abh-icon-shake" : isHovered ? "abh-icon-bounce" : "abh-icon-idle"
-                const animationDuration = isShaking ? "0.55s" : isHovered ? "1.8s" : idleDuration
-                const animationIterationCount = isShaking ? "1" : "infinite"
-                const animationDirection = isHovered ? "normal" : isShaking ? "normal" : "alternate"
-                const animationTimingFn = "ease-in-out"
-
-                return (
-                  <div
-                    key={hub.id}
-                    className="absolute flex flex-col items-center animate-in fade-in zoom-in-95"
-                    style={{
-                      top,
-                      left,
-                      zIndex: z,
-                      animationDelay: `${z * 20}ms`,
-                      animationDuration: "500ms",
-                      animationFillMode: "both",
-                      ["--rot-a" as any]: rotA,
-                      ["--rot-b" as any]: rotB,
-                    }}
-                  >
-                    {/* Icon — much bigger than the previous pass, no
-                        frame/crop/chip. drop-shadow is intentionally OFF
-                        here; the "real" shadow is the separate ground
-                        ellipse below, so the icon casts only ONE shadow,
-                        not a silhouette-hugging one plus a ground one. */}
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      aria-label={hub.name}
-                      onMouseEnter={() => canHover && setHoveredId(hub.id)}
-                      onMouseLeave={() => canHover && setHoveredId((cur) => (cur === hub.id ? null : cur))}
-                      onClick={() => triggerShake(hub.id)}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); triggerShake(hub.id) } }}
-                      className="relative w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 cursor-pointer outline-none"
-                      style={{
-                        animationName,
-                        animationDuration,
-                        animationTimingFunction: animationTimingFn,
-                        animationIterationCount,
-                        animationDirection,
-                      }}
-                    >
-                      <Image
-                        src={HUB_IMAGES[hub.id]}
-                        alt={`${hub.name} example`}
-                        fill
-                        sizes="(max-width: 640px) 112px, (max-width: 768px) 144px, 160px"
-                        className="object-contain"
-                      />
-                    </div>
-
-                    {/* Real ground shadow — a blurred ellipse sitting
-                        below the icon, not wrapped around it. Static at
-                        rest/shake; compresses + fades on hover-bounce to
-                        sell the "icon rising off the ground" effect. */}
-                    <div
-                      aria-hidden="true"
-                      className="w-16 sm:w-20 md:w-24 h-3 sm:h-3.5 rounded-full bg-black blur-[6px] -mt-2"
-                      style={{
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        opacity: 0.32,
-                        ...(isHovered
-                          ? { animationName: "abh-shadow-bounce", animationDuration: "1.8s", animationTimingFunction: "ease-in-out", animationIterationCount: "infinite" }
-                          : {}),
-                      }}
-                    />
-
-                    <span
-                      className="mt-2 px-2.5 py-1 rounded-full text-[0.65rem] sm:text-xs font-black uppercase tracking-wide bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm shadow-sm whitespace-nowrap"
-                      style={{ color: hubAccent }}
-                    >
-                      {pillLabel(hub.name)}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
+            <HubIconField arrangement={arrangement} isDark={isDark} canHover={canHover} />
           </ScrollBounce>
         </div>
 
@@ -454,4 +561,4 @@ export function HeroSection() {
       <BackToTopButton visible={showBackToTop} />
     </section>
   )
-} 
+            } 
