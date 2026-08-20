@@ -1,141 +1,327 @@
 // components/pricing-page/hub-card.tsx
-"use client"
+'use client'
 
-import { CaretDown, CaretUp, Check, PlusCircle, MinusCircle } from '@phosphor-icons/react'
+import { CaretDown, CaretUp, DownloadSimple, Plus, Check, SealPercent } from '@phosphor-icons/react'
 import { HUBS, type HubId } from '@/lib/data'
-import { HUB_PREVIEWS } from '@/components/services-page/lib'
-import { cn } from '@/lib/utils'
-import { BulkBadge, PdfPillButton } from './shared'
 import { parsePrice } from './lib'
 
-export function HubAccordionCard({
-  hubId, accent, isOpen, onToggle, justAdded, onAdd, onRemove, onDownload, hasBulk, hubHasBulk, cardRef,
+// ── Shared item row ───────────────────────────────────────────────────────────
+
+function ServiceRow({
+  hubId,
+  section,
+  item,
+  accent,
+  justAdded,
+  isBulk,
+  onAdd,
 }: {
+  hubId: HubId
+  section: string
+  item: { name: string; price: string }
+  accent: string
+  justAdded: string | null
+  isBulk: boolean
+  onAdd: (section: string, name: string, price: string) => void
+}) {
+  const key = `${hubId}-${section}-${item.name}`
+  const added = justAdded === key
+
+  return (
+    <div className="flex items-center justify-between gap-4 py-3 group border-b border-zinc-50 dark:border-zinc-800/50 last:border-0">
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="text-sm text-zinc-700 dark:text-zinc-300 truncate">
+          {item.name}
+        </span>
+        {isBulk && (
+          <span
+            className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
+            style={{ backgroundColor: `${accent}15`, color: accent }}
+          >
+            <SealPercent size={9} weight="fill" aria-hidden="true" />
+            Bulk
+          </span>
+        )}
+      </div>
+      <div className="flex items-center gap-2.5 shrink-0">
+        <span className="text-sm font-black text-zinc-900 dark:text-white tabular-nums">
+          {item.price}
+        </span>
+        <button
+          onClick={() => onAdd(section, item.name, item.price)}
+          aria-label={added ? 'Added to quote' : `Add ${item.name} to quote`}
+          className="w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-150 active:scale-90 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+          style={{
+            backgroundColor: added ? accent : `${accent}18`,
+            color: added ? 'white' : accent,
+          }}
+        >
+          {added
+            ? <Check size={11} weight="bold" aria-hidden="true" />
+            : <Plus size={11} weight="bold" aria-hidden="true" />
+          }
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── HubCompactCard — desktop 5-column selector card (image 1) ─────────────────
+
+interface HubCompactCardProps {
+  hubId: HubId
+  isSelected: boolean
+  accent: string
+  hubHasBulk: boolean
+  onSelect: () => void
+}
+
+export function HubCompactCard({
+  hubId,
+  isSelected,
+  accent,
+  hubHasBulk,
+  onSelect,
+}: HubCompactCardProps) {
+  const hub = HUBS[hubId]
+  const hubColor = hub.tagStyle.color
+  const total = hub.sections.reduce((n, s) => n + s.items.length, 0)
+
+  return (
+    <button
+      onClick={onSelect}
+      aria-pressed={isSelected}
+      className={[
+        'w-full text-left rounded-2xl border px-4 py-4 transition-all duration-150',
+        'bg-white dark:bg-zinc-900 hover:shadow-sm active:scale-[0.98]',
+        isSelected
+          ? 'shadow-sm ring-1'
+          : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700',
+      ].join(' ')}
+      style={
+        isSelected
+          ? { borderColor: hubColor, ['--tw-ring-color' as string]: hubColor }
+          : undefined
+      }
+    >
+      {/* Hub name */}
+      <p
+        className="text-sm font-bold mb-2.5 truncate"
+        style={{ color: hubColor }}
+      >
+        {hub.title}
+      </p>
+
+      {/* Preview bullets */}
+      <ul className="space-y-1 mb-3">
+        {hub.previews.slice(0, 3).map(p => (
+          <li key={p} className="flex items-center gap-1.5">
+            <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-600 shrink-0" />
+            <span className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{p}</span>
+          </li>
+        ))}
+      </ul>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] text-zinc-400">{total} services</span>
+        {hubHasBulk && (
+          <span className="inline-flex items-center gap-0.5 text-[10px] text-zinc-400">
+            <SealPercent size={10} weight="fill" aria-hidden="true" />
+            Bulk
+          </span>
+        )}
+      </div>
+    </button>
+  )
+}
+
+// ── HubExpandedPanel — desktop full-width expanded panel (image 2) ────────────
+
+interface HubExpandedPanelProps {
+  hubId: HubId
+  accent: string
+  justAdded: string | null
+  onAdd: (section: string, name: string, price: string) => void
+  onDownload: () => void
+  hasBulk: (section: string, name: string) => boolean
+}
+
+export function HubExpandedPanel({
+  hubId,
+  accent,
+  justAdded,
+  onAdd,
+  onDownload,
+  hasBulk,
+}: HubExpandedPanelProps) {
+  const hub = HUBS[hubId]
+  const hubColor = hub.tagStyle.color
+
+  return (
+    <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
+
+      {/* Panel header — image 2 large title */}
+      <div className="px-8 pt-8 pb-6 border-b border-zinc-100 dark:border-zinc-800">
+        <h2
+          className="text-3xl font-black tracking-tight mb-1"
+          style={{ color: hubColor }}
+        >
+          {hub.title}
+        </h2>
+        <p className="text-sm text-zinc-400">
+          {hub.previews.join(' · ')} · ZAR
+        </p>
+      </div>
+
+      {/* Sections */}
+      <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+        {hub.sections.map(section => {
+          const sorted = [...section.items].sort(
+            (a, b) => parsePrice(a.price) - parsePrice(b.price)
+          )
+          return (
+            <div key={section.title} className="px-8 py-5">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400 mb-1">
+                {section.title}
+              </p>
+              {sorted.map(item => (
+                <ServiceRow
+                  key={item.name}
+                  hubId={hubId}
+                  section={section.title}
+                  item={item}
+                  accent={accent}
+                  justAdded={justAdded}
+                  isBulk={hasBulk(section.title, item.name)}
+                  onAdd={onAdd}
+                />
+              ))}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Panel footer */}
+      <div className="flex items-center justify-between px-8 py-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-800/30">
+        <p className="text-xs text-zinc-400">{hub.turnaround}</p>
+        <button
+          onClick={onDownload}
+          className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+        >
+          <DownloadSimple size={13} aria-hidden="true" />
+          Download hub PDF
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── HubAccordionCard — mobile full-width accordion ────────────────────────────
+
+interface HubAccordionCardProps {
   hubId: HubId
   accent: string
   isOpen: boolean
   onToggle: () => void
   justAdded: string | null
   onAdd: (section: string, name: string, price: string) => void
-  onRemove?: (section: string, name: string, price: string) => void
+  onRemove: (section: string, name: string, price: string) => void
   onDownload: () => void
-  hasBulk?: (section: string, name: string) => boolean
-  // FIX: new — hub-level flag, shows a small "Bulk" indicator by the title
-  // (same idea as the services page's bulk ribbon on hub cards).
-  hubHasBulk?: boolean
+  hasBulk: (section: string, name: string) => boolean
+  hubHasBulk: boolean
   cardRef: (el: HTMLDivElement | null) => void
-}) {
+}
+
+export function HubAccordionCard({
+  hubId,
+  accent,
+  isOpen,
+  onToggle,
+  justAdded,
+  onAdd,
+  onDownload,
+  hasBulk,
+  hubHasBulk,
+  cardRef,
+}: HubAccordionCardProps) {
   const hub = HUBS[hubId]
-  const serviceCount = hub.sections.reduce((sum, s) => sum + s.items.length, 0)
-  const checkBulk = hasBulk ?? (() => false)
-  const handleRemove = onRemove ?? (() => {})
+  const hubColor = hub.tagStyle.color
+  const total = hub.sections.reduce((n, s) => n + s.items.length, 0)
 
   return (
     <div
       ref={cardRef}
-      className={cn('abh-card overflow-hidden transition-shadow duration-300 hover:shadow-md', isOpen && 'border-zinc-300 dark:border-zinc-700')}
-      style={{ scrollMarginTop: 'calc(var(--nav-h, 74px) + 4.5rem)' }}
+      className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden"
     >
+      {/* Toggle header */}
       <button
         onClick={onToggle}
-        aria-expanded={isOpen}
-        aria-controls={`pricing-hub-${hubId}`}
-        className={cn(
-          'w-full flex items-center justify-between gap-3 px-6 py-6 transition-colors duration-200 text-left',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-900',
-          isOpen && 'bg-zinc-50 dark:bg-white/[0.03]'
-        )}
-        style={{ ['--tw-ring-color' as any]: accent }}
+        className="w-full flex items-center justify-between gap-3 px-4 py-4 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
       >
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <p className="text-xl font-black text-zinc-900 dark:text-zinc-50 truncate tracking-tight">{hub.title}</p>
-            {hubHasBulk && <BulkBadge />}
+        <div className="flex items-center gap-3 min-w-0">
+          <div
+            className="w-1 h-8 rounded-full shrink-0"
+            style={{ backgroundColor: hubColor }}
+          />
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-zinc-900 dark:text-white truncate">
+              {hub.title}
+            </p>
+            <p className="text-xs text-zinc-400 mt-0.5">
+              {total} services{hubHasBulk ? ' · Bulk deals available' : ''}
+            </p>
           </div>
-          <p className="text-[0.9rem] text-zinc-400 mt-1.5 truncate">{HUB_PREVIEWS[hubId].join(' · ')}</p>
         </div>
-        <div className="flex items-center gap-4 shrink-0">
-          <span className="w-6 text-right text-[1.05rem] font-black tabular-nums text-zinc-400 dark:text-zinc-500" aria-label={`${serviceCount} services in this hub`}>
-            {serviceCount}
-          </span>
-          <div className={cn('w-7 h-7 rounded-full flex items-center justify-center transition-colors duration-200 shrink-0', isOpen && 'bg-zinc-100 dark:bg-white/10')} aria-hidden="true">
-            {isOpen ? <CaretUp size={16} weight="bold" className="text-zinc-500 dark:text-zinc-400" /> : <CaretDown size={16} weight="bold" className="text-zinc-400" />}
-          </div>
-        </div>
+        {isOpen
+          ? <CaretUp size={14} className="text-zinc-400 shrink-0" aria-hidden="true" />
+          : <CaretDown size={14} className="text-zinc-400 shrink-0" aria-hidden="true" />
+        }
       </button>
 
-      <div className={cn('grid transition-[grid-template-rows] duration-300 ease-in-out', isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}>
-        <div className="overflow-hidden">
-          <div id={`pricing-hub-${hubId}`} className="border-t-2 border-zinc-100 dark:border-zinc-800">
-            {hub.sections.map((section, si) => {
-              const sorted = [...section.items].sort((a, b) => parsePrice(a.price) - parsePrice(b.price))
+      {/* Expanded content */}
+      {isOpen && (
+        <div className="border-t border-zinc-100 dark:border-zinc-800">
+          <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            {hub.sections.map(section => {
+              const sorted = [...section.items].sort(
+                (a, b) => parsePrice(a.price) - parsePrice(b.price)
+              )
               return (
-                <div key={section.title} className={cn('px-6 py-7', si > 0 && 'border-t-2 border-zinc-100 dark:border-zinc-800')}>
-                  <h3 className="text-[1.15rem] font-black tracking-tight mb-5" style={{ color: accent }}>
+                <div key={section.title} className="px-4 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 mb-1">
                     {section.title}
-                  </h3>
-
-                  <div className="space-y-1" role="list">
-                    {sorted.map(item => {
-                      const key = `${hubId}-${section.title}-${item.name}`
-                      const showBulk = checkBulk(section.title, item.name)
-                      return (
-                        <div
-                          key={item.name}
-                          role="listitem"
-                          className="flex items-center justify-between gap-3 py-3 px-2 -mx-2 rounded-[10px] transition-colors duration-150 hover:bg-zinc-50 dark:hover:bg-white/[0.03]"
-                        >
-                          <span className="text-[1.05rem] text-zinc-700 dark:text-zinc-300 flex items-center gap-2 min-w-0">
-                            <span className="truncate">{item.name}</span>
-                            {showBulk && <BulkBadge />}
-                          </span>
-
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button
-                              onClick={() => handleRemove(section.title, item.name, item.price)}
-                              aria-label={`Remove ${item.name} from your quote cart`}
-                              title="Remove from quote"
-                              className="w-6 h-6 rounded-full flex items-center justify-center text-zinc-300 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-150 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-                            >
-                              <MinusCircle size={18} weight="fill" aria-hidden="true" />
-                            </button>
-
-                            <span className="text-[1.05rem] font-black tabular-nums" style={{ color: accent }}>
-                              {item.price}
-                            </span>
-
-                            <button
-                              onClick={() => onAdd(section.title, item.name, item.price)}
-                              aria-label={justAdded === key ? `${item.name} added to your quote cart` : `Add ${item.name} to your quote cart`}
-                              title="Add to quote"
-                              className="w-6 h-6 rounded-full flex items-center justify-center transition-transform duration-150 active:scale-90 hover:scale-110 focus-visible:outline-none focus-visible:ring-2"
-                              style={{ color: justAdded === key ? '#16a34a' : accent, ['--tw-ring-color' as any]: accent }}
-                            >
-                              {justAdded === key ? <Check size={16} weight="bold" aria-hidden="true" /> : <PlusCircle size={18} weight="fill" aria-hidden="true" />}
-                            </button>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
+                  </p>
+                  {sorted.map(item => (
+                    <ServiceRow
+                      key={item.name}
+                      hubId={hubId}
+                      section={section.title}
+                      item={item}
+                      accent={accent}
+                      justAdded={justAdded}
+                      isBulk={hasBulk(section.title, item.name)}
+                      onAdd={onAdd}
+                    />
+                  ))}
                 </div>
               )
             })}
+          </div>
 
-            <div className="px-6 py-4 border-t-2 border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-white/[0.02]">
-              <p className="text-[0.9rem] text-zinc-400">
-                <span className="font-semibold text-zinc-600 dark:text-zinc-300">Turnaround: </span>
-                {hub.turnaround}
-              </p>
-            </div>
-
-            {/* FIX: color prop removed — matches the full-catalog button now */}
-            <div className="no-print px-6 py-6 flex justify-center border-t-2 border-zinc-100 dark:border-zinc-800">
-              <PdfPillButton label="Download PDF" onClick={onDownload} />
-            </div>
+          {/* Footer */}
+          <div className="flex items-center justify-between px-4 py-3 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-800/30">
+            <p className="text-xs text-zinc-400">{hub.turnaround}</p>
+            <button
+              onClick={onDownload}
+              className="flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+            >
+              <DownloadSimple size={12} aria-hidden="true" />
+              PDF
+            </button>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
-                            } 
+              }
