@@ -1,27 +1,5 @@
-/* components/services-page/index.tsx — PART 1 OF 2 */
+/* components/services-page/index.tsx */
 "use client"
-
-/**
- * ════════════════════════════════════════════════════════════════════════
- * SERVICES PAGE
- *
- * MOBILE CARDS — rebuilt to match the reference design exactly:
- *   - First 4 hubs: PORTRAIT cards in a 2-column grid, large immersive
- *     gradient icon tile (no extra "background" box around it — the
- *     gradient tile itself IS the background), short description line,
- *     stats line below.
- *   - 5th hub (Tech): LANDSCAPE card, full width, icon square on the
- *     left, title/description/stats stacked on the right.
- *
- * CONTRAST FIX: any surface that is a SOLID color fill with WHITE text/
- * icon on top (Pill active state, ribbons, badges) now uses each hub's
- * `.primary` color from HUB_COLORS — the one value in that object that's
- * actually verified ≥4.5:1 against white. `accentLight`/`accentDark`
- * (theme-flipped) are ONLY ever used as colored TEXT sitting on a card/
- * page background, never as a fill behind white text — that mismatch is
- * exactly what made the E-Service pill unreadable.
- * ════════════════════════════════════════════════════════════════════════
- */
 
 import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
@@ -42,7 +20,6 @@ import { sectionHasBulk, itemHasBulk } from "../quote-calculator/lib"
 import { NoticePill } from "@/components/notice-pill"
 import { BackToTopButton, useBackToTop } from "@/components/back-to-top-button"
 
-// ── Icon image path per hub — files already live in /public ──
 const HUB_ICON_SRC: Record<HubId, string> = {
   print: "/phub.png",
   doc: "/dochub.png",
@@ -51,9 +28,6 @@ const HUB_ICON_SRC: Record<HubId, string> = {
   tech: "/thub.png",
 }
 
-// ── Small "stat" tag shown under the description on mobile cards, e.g.
-// "Active" or "Updated" — muted label + accent-colored value, mirroring
-// the reference image's "Active • Today +3" / "Updated • 5 min ago" style. ──
 const HUB_STAT_TAG: Record<HubId, string> = {
   print: "Active",
   doc: "Popular",
@@ -62,7 +36,6 @@ const HUB_STAT_TAG: Record<HubId, string> = {
   tech: "On-site support",
 }
 
-// ── Neutral colors used for INACTIVE pills, everywhere on desktop. ──
 const PILL_NEUTRAL = {
   border: "var(--border)",
   text: "var(--muted-foreground)",
@@ -111,14 +84,28 @@ function HubCornerIcon({ hubId, accent }: { hubId: HubId; accent: string }) {
   )
 }
 
-// Diagonal "Bulk" ribbon — ONLY the original 5-card desktop landing view.
-// Solid fill + white text -> uses `.primary`, verified vs white.
+// Diagonal "Bulk" ribbon — desktop 5-card landing view.
 function BulkRibbon() {
   return (
     <div className="absolute top-4 -right-8 rotate-45 z-20 pointer-events-none">
       <span
         className="block w-28 text-center py-0.5 text-[0.62rem] font-black uppercase tracking-wider text-white"
         style={{ backgroundColor: BRAND.blue, boxShadow: "0 4px 10px -2px rgba(30,111,168,0.55), 0 2px 4px -1px rgba(0,0,0,0.25)" }}
+      >
+        Bulk
+      </span>
+    </div>
+  )
+}
+
+// Smaller ribbon variant for the mobile icon tile — same visual language
+// as BulkRibbon above, scaled down to fit the card icon tile corner.
+function MobileBulkRibbon({ fill }: { fill: string }) {
+  return (
+    <div className="absolute -top-1 -right-1 z-20 pointer-events-none w-16 h-16 overflow-hidden">
+      <span
+        className="absolute top-[11px] right-[-21px] rotate-45 block w-20 text-center py-0.5 text-[0.56rem] font-black uppercase tracking-wider text-white"
+        style={{ backgroundColor: fill, boxShadow: "0 3px 8px -2px rgba(0,0,0,0.35)" }}
       >
         Bulk
       </span>
@@ -140,35 +127,16 @@ function NoticeBadge() {
   )
 }
 
-function CornerDot({ color, label }: { color: string; label: string }) {
-  return (
-    <span
-      aria-label={label}
-      className="w-2.5 h-2.5 rounded-full shrink-0"
-      style={{ backgroundColor: color, boxShadow: "0 0 0 2px var(--card)" }}
-    />
-  )
-}
-
 // ══════════════════════════════════════════════════════════════════════
-// MOBILE HUB CARD — rebuilt to match the reference image exactly.
-//
-// PORTRAIT variant (first 4 hubs, 2-column grid):
-//   title + chevron  ->  large gradient icon tile (immersive, no extra
-//   wrapper box)  ->  short description  ->  stats line
-//
-// LANDSCAPE variant (5th/last hub, full width):
-//   icon square on the LEFT (fixed size)  ->  title+chevron, description,
-//   and stats stacked on the RIGHT
+// MOBILE HUB CARD
 // ══════════════════════════════════════════════════════════════════════
 function MobileHubCard({
-  hubId, hub, accent, primary, gradient, hubHasBulk, hubHasNotice, onClick, variant,
+  hubId, hub, accent, primary, hubHasBulk, hubHasNotice, onClick, variant,
 }: {
   hubId: HubId
   hub: (typeof HUBS)[HubId]
   accent: string
   primary: string
-  gradient: string
   hubHasBulk: boolean
   hubHasNotice: boolean
   onClick: () => void
@@ -176,17 +144,17 @@ function MobileHubCard({
 }) {
   const itemCount = hub.sections.reduce((sum, s) => sum + s.items.length, 0)
 
-  // The icon tile itself — this IS the card's visual centerpiece, no
-  // separate muted/grey background box wrapping it. Icon is scaled up
-  // significantly (per instruction) so it fills the tile immersively,
-  // matching the reference image's proportions.
+  // No more solid hub-color fill on the tile — just a soft, muted glow
+  // behind the icon, on a neutral base so it holds up in both themes.
   const iconTile = (
     <div
       className={cn(
-        "relative rounded-[16px] flex items-center justify-center overflow-hidden shrink-0",
+        "relative rounded-[16px] flex items-center justify-center overflow-hidden shrink-0 bg-zinc-50 dark:bg-zinc-900/40",
         variant === "portrait" ? "w-full aspect-square mb-3" : "w-[104px] h-[104px]"
       )}
-      style={{ background: gradient }}
+      style={{
+        background: `radial-gradient(circle at 50% 42%, ${accent}26 0%, ${accent}0d 55%, transparent 78%)`,
+      }}
     >
       <Image
         src={HUB_ICON_SRC[hubId]}
@@ -196,18 +164,22 @@ function MobileHubCard({
         className="object-contain drop-shadow-lg"
         aria-hidden="true"
       />
-      {(hubHasBulk || hubHasNotice) && (
-        <div className="absolute top-2 right-2 flex items-center gap-1.5">
-          {hubHasNotice && <CornerDot color={TOKEN.warningBg} label="Notice for some services" />}
-          {hubHasBulk && <CornerDot color="#ffffff" label="Bulk pricing available" />}
-        </div>
+      {hubHasNotice && (
+        <WarningCircle
+          size={16}
+          weight="fill"
+          aria-label="Notice for some services"
+          className="absolute top-2 left-2 z-20"
+          style={{ color: BRAND.orange }}
+        />
       )}
+      {hubHasBulk && <MobileBulkRibbon fill={primary} />}
     </div>
   )
 
   const titleRow = (
-    <div className="flex items-center justify-between gap-2 mb-1.5">
-      <h3 className="font-sans font-black text-[1.08rem] leading-tight text-zinc-900 dark:text-zinc-50 truncate">
+    <div className="flex items-start justify-between gap-2 mb-1.5">
+      <h3 className="font-sans font-black text-[1.08rem] leading-tight text-zinc-900 dark:text-zinc-50 break-words">
         {hub.title}
       </h3>
       <span
@@ -221,15 +193,18 @@ function MobileHubCard({
   )
 
   const description = (
-    <p className="text-[0.8rem] text-zinc-500 dark:text-zinc-400 leading-snug line-clamp-2 mb-2">
+    <p className="text-[0.8rem] text-zinc-500 dark:text-zinc-400 leading-snug mb-2">
       {hub.desc}
     </p>
   )
 
+  // Stat tag now uses `accent` (theme-flipped) instead of `primary`
+  // (fixed hex) — this is what was reading as always-dark text in
+  // dark mode.
   const statsLine = (
     <p className="text-[0.78rem] font-bold text-zinc-700 dark:text-zinc-300">
       {itemCount} services <span className="opacity-40 mx-0.5">•</span>
-      <span style={{ color: primary }}> {HUB_STAT_TAG[hubId]}</span>
+      <span style={{ color: accent }}> {HUB_STAT_TAG[hubId]}</span>
     </p>
   )
 
@@ -265,12 +240,7 @@ function MobileHubCard({
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// PILL — shared by both the hub row and the section row.
-// `accent`: theme-flipped color, used ONLY for text/icon-on-card (inactive
-//           state icon color) — never as a solid fill.
-// `fill`:   each hub's `.primary` — the ONLY color used as a solid
-//           background when the pill is active, since it's the one
-//           guaranteed ≥4.5:1 against the white text/icon sitting on it.
+// PILL
 // ══════════════════════════════════════════════════════════════════════
 function Pill({
   icon, label, accent, fill, isActive, onClick, size = "md",
@@ -333,8 +303,7 @@ function BackPill({ onClick, label }: { onClick: () => void; label: string }) {
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// SECTION CARD — Level 1 (desktop). Text sits on the card background,
-// so it correctly uses the theme-flipped `accent`, not `fill`.
+// SECTION CARD — Level 1 (desktop)
 // ══════════════════════════════════════════════════════════════════════
 function SectionCard({
   section, accent, onClick,
@@ -351,14 +320,22 @@ function SectionCard({
       className="group/sectioncard text-left rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] p-5"
     >
       <div className="flex items-start justify-between gap-2 mb-3">
-        <h4 className="font-black text-[1.02rem] text-zinc-800 dark:text-zinc-100 leading-tight">
+        <h4 className="font-black text-[1.02rem] text-zinc-800 dark:text-zinc-100 leading-tight break-words">
           {section.title}
         </h4>
-        {hasNotice && <CornerDot color={TOKEN.warningBg} label="Notice for some services in this section" />}
+        {hasNotice && (
+          <WarningCircle
+            size={14}
+            weight="fill"
+            aria-label="Notice for some services in this section"
+            className="shrink-0 mt-0.5"
+            style={{ color: BRAND.orange }}
+          />
+        )}
       </div>
 
       {section.desc && (
-        <p className="text-[0.82rem] text-zinc-500 dark:text-zinc-400 leading-snug line-clamp-2 mb-4">
+        <p className="text-[0.82rem] text-zinc-500 dark:text-zinc-400 leading-snug mb-4">
           {section.desc}
         </p>
       )}
@@ -379,44 +356,56 @@ function SectionCard({
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// SERVICE CARD — Level 2 (desktop).
+// SERVICE CARD — Level 2 (desktop). Last step before the detail modal:
+// price is hidden here now, description shown instead, plus a CTA so
+// it reads as clickable rather than a static price tile.
 // ══════════════════════════════════════════════════════════════════════
 function ServiceCard({
   item, accent, onClick,
 }: {
-  item: { name: string; price: string; notice?: string }
+  item: { name: string; price: string; notice?: string; description?: string }
   accent: string
   onClick: () => void
 }) {
   return (
     <button
       onClick={onClick}
-      className="text-left rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] p-4"
+      className="group/svccard text-left rounded-[14px] bg-white dark:bg-zinc-950 abh-shadow-card overflow-hidden transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] p-4 flex flex-col"
     >
-      <div className="flex items-start justify-between gap-2 mb-2.5">
+      <div className="flex items-start justify-between gap-2 mb-2">
         <span className="font-black text-[0.95rem] text-zinc-800 dark:text-zinc-100 leading-snug flex items-start gap-1.5 min-w-0">
           {item.notice && (
-            <span aria-label="Notice" className="shrink-0 font-black leading-none mt-0.5" style={{ color: TOKEN.warningBg }}>!</span>
+            <WarningCircle
+              size={13}
+              weight="fill"
+              aria-label="Notice"
+              className="shrink-0 mt-0.5"
+              style={{ color: BRAND.orange }}
+            />
           )}
-          <span>{item.name}</span>
+          <span className="break-words">{item.name}</span>
         </span>
       </div>
-      <span className="text-[1.05rem] font-black" style={{ color: accent }}>
-        {item.price}
+
+      <p className="text-[0.8rem] text-zinc-500 dark:text-zinc-400 leading-snug mb-3 flex-1">
+        {item.description || "Tap to view full pricing and details."}
+      </p>
+
+      <span
+        className="inline-flex items-center gap-1 text-[0.78rem] font-black transition-colors duration-200"
+        style={{ color: accent }}
+      >
+        View details
+        <ArrowRight
+          size={11}
+          weight="bold"
+          aria-hidden="true"
+          className="transition-transform duration-200 group-hover/svccard:translate-x-0.5"
+        />
       </span>
     </button>
   )
 }
-
-// ── PART 2 continues with the main ServicesPage component ──
-/* components/services-page/index.tsx — PART 2 OF 2 */
-/**
- * Continuation of the services page. Uses everything from Part 1.
- * Only change vs before: Pill calls now pass BOTH `accent` (theme-flipped,
- * text/icon color) and `fill` (each hub's `.primary`, the solid-background
- * color) — this is the actual contrast fix flowing through from Part 1.
- * Mobile card grid below also now alternates portrait/landscape per hub.
- */
 
 export function ServicesPage() {
   const { resolvedTheme } = useTheme()
@@ -610,7 +599,6 @@ export function ServicesPage() {
                     hub={hub}
                     accent={accent}
                     primary={colors.primary}
-                    gradient={colors.gradient}
                     hubHasBulk={hubHasBulk}
                     hubHasNotice={hubHasNotice}
                     onClick={() => handleOpenHub(hubId, "right")}
@@ -667,7 +655,7 @@ export function ServicesPage() {
                         ))}
                       </div>
 
-                      <p className="relative z-10 abh-body text-[0.88rem] line-clamp-2 leading-snug mb-6 max-w-[190px]">
+                      <p className="relative z-10 abh-body text-[0.88rem] leading-snug mb-6 max-w-[190px]">
                         {hub.desc}
                       </p>
 
@@ -793,4 +781,4 @@ export function ServicesPage() {
       <BackToTopButton visible={showBackToTop && !isModalOpen} />
     </section>
   )
-      }
+      } 
