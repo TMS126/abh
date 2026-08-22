@@ -1,3 +1,4 @@
+// app/privacy/page.tsx
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { PrivacyPage } from "@/components/privacy-page"
@@ -11,10 +12,10 @@ export default function PrivacyRoute() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main id="main-content">
+      <div>
         <PrivacyPage />
-      </main>
+      </div>
       <Footer />
     </div>
   )
-}
+} 
