@@ -1,165 +1,75 @@
-// hooks/use-navbar.ts
+// components/maintenance-banner.tsx
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useEffect, useState } from "react"
+import { Wrench, X } from "@phosphor-icons/react"
+import { MAINTENANCE_BANNER } from "@/lib/brand"
 
-// ── useNavContrast ─────────────────────────────────────────────────────────
-// Samples the element stack at the right-side controls position (where the
-// hamburger lives) on every scroll and resize event. Resolves the effective
-// background color of whatever is visually beneath, computes its relative
-// luminance, and returns `true` when that background is dark enough to make
-// the default dark icon invisible. Consumers should swap to a light icon
-// when this is true (and vice-versa), regardless of the active theme.
-//
-// Strategy: document.elementsFromPoint() gives us the stacking order at a
-// pixel. We walk from innermost outward, resolve getComputedStyle().backgroundColor
-// for each, skip transparent ones, and use the first opaque hit. This works
-// for solid fills, CSS var backgrounds, and Tailwind utility classes.
+const DISMISS_KEY = `abh-maintenance-dismissed-v${MAINTENANCE_BANNER.version}`
 
-function parseRgba(str: string): { r: number; g: number; b: number; a: number } | null {
-  const m = str.match(/rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:[,/\s]+([\d.]+))?\s*\)/)
-  if (!m) return null
-  return { r: +m[1], g: +m[2], b: +m[3], a: m[4] !== undefined ? +m[4] : 1 }
-}
-
-function luminance(r: number, g: number, b: number) {
-  const ch = [r, g, b].map((c) => {
-    const s = c / 255
-    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
-  })
-  return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2]
-}
-
-// FIX: reads the live --banner-h CSS var (set by MaintenanceBanner toggling
-// `.banner-active` on <html>) so the sample point moves down with the
-// header when the banner is showing. Previously yPx was a fixed pixel
-// position that assumed the header always started at the very top of the
-// viewport — once the banner pushed the header down, that fixed point
-// landed inside the banner's own background instead of behind the nav,
-// making the banner's blue fill (not actual page content) decide icon
-// contrast for as long as the banner was visible.
-function getBannerOffsetPx(): number {
-  if (typeof document === "undefined") return 0
-  const raw = getComputedStyle(document.documentElement).getPropertyValue("--banner-h")
-  const px = parseFloat(raw)
-  return Number.isFinite(px) ? px : 0
-}
-
-export function useNavContrast(xFraction = 0.93, yPx = 37) {
-  // xFraction: horizontal position as fraction of window width (right side)
-  // yPx: vertical position in px from top — mid-point of the controls pill,
-  // relative to the header's own top edge (banner offset added at sample time)
-  const [isDarkBehind, setIsDarkBehind] = useState(false)
+export function MaintenanceBanner() {
+  const [mounted, setMounted] = useState(false)
+  const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
-    let rafId: number | null = null
-
-    const sample = () => {
-      const x = window.innerWidth * xFraction
-      const y = getBannerOffsetPx() + yPx
-      const elements = document.elementsFromPoint(x, y) as HTMLElement[]
-
-      for (const el of elements) {
-        // Skip the navbar itself — we want what's behind it
-        if (el.closest("header")) continue
-        // NEW — skip the maintenance banner itself for the same reason;
-        // it isn't inside <header> so the check above doesn't catch it.
-        if (el.closest("[data-maintenance-banner]")) continue
-
-        const bg = getComputedStyle(el).backgroundColor
-        const rgba = parseRgba(bg)
-        if (!rgba || rgba.a < 0.1) continue
-
-        // Found first opaque-ish layer
-        const lum = luminance(rgba.r, rgba.g, rgba.b)
-        // Luminance < 0.18 ≈ roughly as dark as #666 — icons need to flip
-        setIsDarkBehind(lum < 0.18)
-        return
-      }
-      // Nothing opaque found — treat as light (default)
-      setIsDarkBehind(false)
-    }
-
-    const onFrame = () => { rafId = null; sample() }
-    const scheduleSample = () => {
-      // FIX: previously reassigned rafId without cancelling any frame
-      // already pending, so fast scrolling could queue up multiple
-      // redundant sample() calls (each walking elementsFromPoint +
-      // getComputedStyle — real DOM cost) instead of coalescing to one
-      // per frame.
-      if (rafId !== null) cancelAnimationFrame(rafId)
-      rafId = requestAnimationFrame(onFrame)
-    }
-
-    // Initial sample
-    sample()
-
-    window.addEventListener("scroll", scheduleSample, { passive: true })
-    window.addEventListener("resize", scheduleSample, { passive: true })
-
-    return () => {
-      window.removeEventListener("scroll", scheduleSample)
-      window.removeEventListener("resize", scheduleSample)
-      if (rafId !== null) cancelAnimationFrame(rafId)
-    }
-  }, [xFraction, yPx])
-
-  return isDarkBehind
-}
-
-export function useNavVisibility() {
-  const [navVisible, setNavVisible] = useState(true)
-  const lastScrollY = useRef(0)
-
-  useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY
-      if (y > 80) {
-        setNavVisible(y <= lastScrollY.current)
-      } else {
-        setNavVisible(true)
-      }
-      lastScrollY.current = y
-    }
-
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
-  }, [])
-
-  return navVisible
-}
-
-export function useMobileMenu() {
-  const [menuOpen, setMenuOpen] = useState(false)
-
-  useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : ""
-    return () => { document.body.style.overflow = "" }
-  }, [menuOpen])
-
-  return { menuOpen, setMenuOpen }
-}
-
-export function useLogoAnimation() {
-  const [isTextExpanded, setIsTextExpanded] = useState(true)
-  const logoTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-
-  const handleLogoMouseEnter = useCallback(() => {
-    if (logoTimeoutRef.current) clearTimeout(logoTimeoutRef.current)
-    setIsTextExpanded(true)
-  }, [])
-
-  const handleLogoMouseLeave = useCallback(() => {
-    if (logoTimeoutRef.current) clearTimeout(logoTimeoutRef.current)
-    logoTimeoutRef.current = setTimeout(() => setIsTextExpanded(false), 1200)
-  }, [])
-
-  useEffect(() => {
-    logoTimeoutRef.current = setTimeout(() => setIsTextExpanded(false), 2670)
-    return () => {
-      if (logoTimeoutRef.current) clearTimeout(logoTimeoutRef.current)
+    setMounted(true)
+    try {
+      setDismissed(localStorage.getItem(DISMISS_KEY) === "1")
+    } catch {
+      // localStorage unavailable (private browsing, etc.) — default to showing the banner
     }
   }, [])
 
-  return { isTextExpanded, handleLogoMouseEnter, handleLogoMouseLeave }
+  const visible = MAINTENANCE_BANNER.active && mounted && !dismissed
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("banner-active", visible)
+    return () => { document.documentElement.classList.remove("banner-active") }
+  }, [visible])
+
+  if (!visible) return null
+
+  const handleDismiss = () => {
+    setDismissed(true)
+    try {
+      localStorage.setItem(DISMISS_KEY, "1")
+    } catch {
+      // ignore — worst case the banner just reappears next visit
     }
+  }
+
+  return (
+    <div
+      role="region"
+      aria-label="Site notice"
+      // NEW — lets hooks/use-navbar.ts's useNavContrast exclude this
+      // element the same way it already excludes <header>, so the
+      // banner's own background never gets mistaken for page content
+      // when deciding nav icon contrast.
+      data-maintenance-banner="true"
+      className="fixed inset-x-0 top-0 z-[10000] flex items-center justify-center gap-3 px-4 py-2.5 text-white text-sm md:text-[0.92rem] font-medium shadow-md animate-in fade-in slide-in-from-top-2 duration-500"
+      style={{ background: "linear-gradient(90deg, var(--brand-blue-dark) 0%, var(--brand-blue) 100%)" }}
+    >
+      <Wrench size={16} weight="fill" className="shrink-0 hidden sm:block opacity-90" aria-hidden="true" />
+      <p className="flex-1 min-w-0 text-center leading-snug">
+        {MAINTENANCE_BANNER.message}{" "}
+        <a
+          href={MAINTENANCE_BANNER.linkHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2 font-bold whitespace-nowrap hover:text-white/90 transition-colors"
+        >
+          {MAINTENANCE_BANNER.linkText}
+        </a>
+      </p>
+      <button
+        type="button"
+        onClick={handleDismiss}
+        aria-label="Dismiss notice"
+        className="shrink-0 flex items-center justify-center w-6 h-6 rounded-full hover:bg-white/15 active:scale-90 transition-all"
+      >
+        <X size={14} weight="bold" />
+      </button>
+    </div>
+  )
+}
