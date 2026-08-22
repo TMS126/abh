@@ -12,12 +12,12 @@ import { LocalBusinessJsonLd } from '@/components/ui/json-ld'
 import { FloatingSearchWidget } from '@/components/floating-search-widget'
 import { QuoteCalculatorWidget } from "@/components/quote-calculator"
 import { WhatsAppFAB } from '@/components/whatsapp-fab'
+import { MaintenanceBanner } from '@/components/maintenance-banner'
 import './globals.css'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://apexbytes.vercel.app'
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-3FJ8QET6RE'
 
-// ─── Poppins First + Modern Fallbacks ──────────────────────────────
 const poppinsHeading = Poppins({
   subsets: ['latin'],
   weight: ['600', '700', '800'],
@@ -48,12 +48,6 @@ const dmSansBody = DM_Sans({
   display: 'swap',
 })
 
-// FIX: renamed from '--font-mono' to '--font-jetbrains-mono'. Tailwind's
-// own @theme inline block in globals.css wants --font-mono as ITS
-// output variable name for the "mono" font-family utility — having the
-// font loader claim that same name created a self-referential CSS custom
-// property (a cycle), which silently invalidated the whole declaration.
-// globals.css now points --font-mono at --font-jetbrains-mono instead.
 const monoFont = JetBrains_Mono({
   subsets: ['latin'],
   weight: ['400', '500'],
@@ -109,11 +103,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           Skip to main content
         </a>
 
+        <MaintenanceBanner />
+
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange={false}>
           <LocalBusinessJsonLd />
-          {/* This is the ONLY <main id="main-content"> in the whole app.
-              Every route's page.tsx below now renders a plain <div> for its
-              own wrapper instead of a second <main> with the same id. */}
           <InstanceGuardProvider><main id="main-content">{children}</main></InstanceGuardProvider>
           <FloatingSearchWidget />
           <QuoteCalculatorWidget />
@@ -131,4 +124,4 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       </body>
     </html>
   )
-        } 
+              } 
