@@ -26,7 +26,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Add cloudinary package
-        run: pnpm add cloudinary
+        run: pnpm add cloudinary -w
 
       - name: Commit updated package.json and lockfile
         run: |
