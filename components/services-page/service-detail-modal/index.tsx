@@ -10,7 +10,7 @@ import { HUBS } from "@/lib/data"
 import { useFocusTrap, HubIcon } from "../shared"
 import {
   SelectedService, naturalServiceLabel, cleanText, formatAcceptHint,
-  HUB_ACCEPT, CLD_MAX_MB, CLD_PRESET, BLOCKED_MIME_TYPES, BLOCKED_EXTENSIONS, getCldUrl, trackEvent,
+  HUB_ACCEPT, CLD_MAX_MB, BLOCKED_MIME_TYPES, BLOCKED_EXTENSIONS, trackEvent,
 } from "../lib"
 import { getCartQtyForItem, getEffectiveRate, getBulkHint, parsePrice, itemHasBulk } from "@/components/quote-calculator/lib"
 import { UploadButton, UploadStatus } from "./UploadControl"
@@ -96,20 +96,16 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
     setUploadProgress(0)
     const fd = new FormData()
     fd.append("file", f)
-    fd.append("upload_preset", CLD_PRESET)
     const xhr = new XMLHttpRequest()
-    xhr.open("POST", getCldUrl(f))
+    xhr.open("POST", "/api/upload")
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100))
     }
     xhr.onload = () => {
       try {
         const data = JSON.parse(xhr.responseText)
-        if (xhr.status < 200 || xhr.status >= 300) throw new Error(data?.error?.message || `HTTP ${xhr.status}`)
+        if (xhr.status < 200 || xhr.status >= 300) throw new Error(data?.error || `HTTP ${xhr.status}`)
         if (!data.secure_url) throw new Error("No URL returned")
-        if (!/^https:\/\/res\.cloudinary\.com\//.test(data.secure_url)) {
-          throw new Error("Unexpected upload response")
-        }
         setFileUrl(data.secure_url)
         setUploadPhase("done")
       } catch (err) {
