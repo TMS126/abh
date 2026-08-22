@@ -2,7 +2,7 @@
 "use client"
 
 import { useState } from "react"
-import { Paperclip, CheckCircle, WarningCircle, ShieldCheck, X } from "@phosphor-icons/react"
+import { Paperclip, CheckCircle, WarningCircle, ShieldCheck, X, ArrowClockwise } from "@phosphor-icons/react"
 import { BRAND } from "@/lib/brand"
 
 type UploadPhase = "idle" | "uploading" | "done" | "error"
@@ -51,7 +51,7 @@ export function UploadStatus({
       <div className="flex items-start gap-2 px-1">
         <ShieldCheck size={13} weight="fill" aria-hidden="true" className="text-[#6FBF1A] shrink-0 mt-0.5" />
         <p className="abh-muted text-[0.78rem] leading-relaxed">
-          Accepts: {acceptHint}. Your file goes directly to ApexbytesHub only — safe, private, used only for your order.
+          Accepts: {acceptHint}. Your file is uploaded securely for processing and used only for your order.
         </p>
       </div>
     )
@@ -109,8 +109,14 @@ export function UploadStatus({
           <WarningCircle size={17} weight="fill" aria-hidden="true" className="shrink-0 mt-0.5" />
           <span className="leading-snug font-medium">{uploadErr}</span>
         </div>
-        <button type="button" onClick={onRetry} className="text-sm font-black underline" style={{ color: accent }}>
-          Try a different file
+        <button
+          type="button"
+          onClick={onRetry}
+          className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-[12px] text-sm font-black transition-all active:scale-[0.98]"
+          style={{ backgroundColor: `${accent}12`, color: accent }}
+        >
+          <ArrowClockwise size={14} weight="bold" aria-hidden="true" />
+          Try a Different File
         </button>
       </div>
     )
