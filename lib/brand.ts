@@ -3,35 +3,16 @@
  * ────────────────────────────────────────────────────────────────────────────
  * APEXBYTES HUB — CORE BUSINESS LAYER
  * lib/brand.ts
- *
- * PURPOSE:
- * Business logic, content, and UI structure. Visual color is NEVER decided
- * here anymore — globals.css is the only source. This file only re-exports
- * CSS var strings via TOKEN below.
- *
- * ── RULE FOR EVERY COMPONENT ──
- * Never write `isDark ? someHex : someOtherHex` for a color again. Use
- * `TOKEN.*` — each one is a CSS var string, the browser resolves light/dark
- * automatically because the var itself flips inside `.dark` in globals.css.
- * If TOKEN doesn't have the role you need, add it to globals.css first
- * (verified against the real surface it lands on), then add it here —
- * never invent a one-off hex inline in a component.
  * ────────────────────────────────────────────────────────────────────────────
  */
 
-// ─── THEME-AWARE COLOR TOKENS — use these in components ─────────────────────
-// Plain CSS var strings. Drop directly into `style={{ color: TOKEN.x }}` or
-// `style={{ backgroundColor: TOKEN.x }}`. No isDark check needed — ever.
 export const TOKEN = {
-  // solid backgrounds (verified for a white icon/label on top)
   brandBlue: "var(--brand-blue)",
   brandOrange: "var(--brand-orange)",
   brandGreen: "var(--brand-green)",
   warningBg: "var(--brand-warning-bg)",
-// lib/brand.ts — add these two lines inside TOKEN (near warningBg / orangeText)
-  errorBg: "var(--destructive)",       // already theme-invariant, already verified vs white icon (4.83:1)
-  errorText: "var(--brand-error-text)", // NEW — was missing, this is what broke Services
-// on-color pairs for the backgrounds above
+  errorBg: "var(--brand-error-bg)",
+  errorText: "var(--brand-error-text)",
   onBrandBlue: "var(--on-brand-blue)",
   onBrandOrange: "var(--on-brand-orange)",
   onBrandGreen: "var(--on-brand-green)",
@@ -41,28 +22,12 @@ export const TOKEN = {
   onPastel: "var(--on-pastel)",
   onNeutralDark: "var(--on-neutral-dark)",
   onDestructive: "var(--on-destructive)",
-
-  // text-on-page/card/tint roles — the ones that used to break in dark mode
   blueText: "var(--brand-blue-text)",
-  orangeText: "var(--brand-orange-text)",   // also covers the warning-badge label role
+  orangeText: "var(--brand-orange-text)",
   greenText: "var(--brand-green-text)",
-
   white: "var(--brand-white)",
-
-  // Add to the TOKEN object if not already present:
-errorBg: "var(--brand-error-bg)",
-errorText: "var(--brand-error-text)",
-onBrandGreen: "var(--on-brand-green)",
-onBrandBlue: "var(--on-brand-blue)",
-onBrandOrange: "var(--on-brand-orange)",
-onDestructive: "var(--on-destructive)",
 } as const
 
-// ─── RAW HEX — ONLY for JS math that CSS vars can't do (alpha-blended
-// strings like `${hex}26`, canvas, gradients built at render time). If you
-// don't need string math, use TOKEN above instead. This object mirrors
-// globals.css exactly — do not let it drift; if you change a value here,
-// change it in globals.css too, same names.
 export const HEX = {
   light: {
     blue: "#1E6FA8", blueMid: "#15537D", blueDark: "#0F3F66",
@@ -74,11 +39,11 @@ export const HEX = {
     dark100: "#333333", dark200: "#555555", techGreyDark: "#B8CCE0",
   },
   dark: {
-    blue: "#1E6FA8", blueMid: "#15537D", blueDark: "#0F3F66", // theme-invariant raw swatches stay identical
+    blue: "#1E6FA8", blueMid: "#15537D", blueDark: "#0F3F66",
     green: "#4A8011", greenDeep: "#3E6B0E",
     orange: "#B9590D", orangeDark: "#B06225", orangeBrown: "#A86530",
     teal: "#0F766E", tealDark: "#115E59", tealLight: "#99F6E4",
-    warningBg: "#7A3B0E", // the one raw swatch with an actual dark-surface variant
+    warningBg: "#7A3B0E",
     lightBlue: "#A9D6F2", lightGreen: "#CDEB9F", lightOrange: "#F9D1B0",
     dark100: "#333333", dark200: "#555555", techGreyDark: "#B8CCE0",
   },
@@ -90,17 +55,10 @@ export const HEX = {
   whatsappText: "#0f172a",
 } as const
 
-/** Pick the right raw hex for the current theme. Only reach for this when
- *  you genuinely need a hex string (alpha blending, gradients) — everything
- *  else should use TOKEN. */
 export function pickHex<K extends keyof typeof HEX.light>(role: K, isDark: boolean): string {
   return isDark ? HEX.dark[role] : HEX.light[role]
 }
 
-// ─── BUSINESS INFO ───────────────────────────────────────────────────────────
-// Kept for anything still reading BRAND.* directly by name (dot indicators,
-// non-contrast-critical decorative colors). Prefer TOKEN for anything that
-// needs to be legible as text or on a solid fill.
 export const BRAND = {
   green: HEX.light.green,
   orange: HEX.light.orange,
@@ -133,45 +91,38 @@ export const BRAND = {
   whatsappText: HEX.whatsappText,
 } as const
 
-// ─── THEME-FLIPPING BACKGROUND HEX ──────────────────────────────────────────
 export const THEME_BG = {
   light: { page: "#FFFFFF", card: "#FFFFFF" },
   dark: { page: "#0D1B2A", card: "#1A2C3E" },
 } as const
 
-// ─── HUB COLORS ───────────────────────────────────────────────────────────────
 export const HUB_COLORS = {
   print: {
-    primary: BRAND.blue,
-    light: BRAND.lightBlue,
+    primary: BRAND.blue, light: BRAND.lightBlue,
     gradient: `linear-gradient(135deg, ${BRAND.blue} 0%, ${BRAND.blueMid} 100%)`,
     tagBg: 'transparent', tagText: '#374151', tagBgDark: '#1e40af', tagTextDark: '#ffffff',
     accentLight: BRAND.blue, accentDark: BRAND.lightBlue,
   },
   doc: {
-    primary: BRAND.green,
-    light: BRAND.lightGreen,
+    primary: BRAND.green, light: BRAND.lightGreen,
     gradient: `linear-gradient(135deg, ${BRAND.greenDeep} 0%, ${BRAND.green} 100%)`,
     tagBg: 'transparent', tagText: '#374151', tagBgDark: '#166534', tagTextDark: '#ffffff',
     accentLight: BRAND.green, accentDark: BRAND.lightGreen,
   },
   design: {
-    primary: BRAND.orangeDark,
-    light: BRAND.lightOrange,
+    primary: BRAND.orangeDark, light: BRAND.lightOrange,
     gradient: `linear-gradient(135deg, ${BRAND.orangeBrown} 0%, ${BRAND.orange} 100%)`,
     tagBg: 'transparent', tagText: '#374151', tagBgDark: '#9a3412', tagTextDark: '#ffffff',
     accentLight: BRAND.orangeDark, accentDark: BRAND.lightOrange,
   },
   eservice: {
-    primary: BRAND.teal,
-    light: BRAND.tealLight,
+    primary: BRAND.teal, light: BRAND.tealLight,
     gradient: `linear-gradient(135deg, ${BRAND.teal} 0%, ${BRAND.tealDark} 100%)`,
     tagBg: 'transparent', tagText: '#374151', tagBgDark: BRAND.tealDark, tagTextDark: '#ffffff',
     accentLight: BRAND.teal, accentDark: BRAND.tealLight,
   },
   tech: {
-    primary: BRAND.dark100,
-    light: BRAND.techGreyDark,
+    primary: BRAND.dark100, light: BRAND.techGreyDark,
     gradient: `linear-gradient(135deg, ${BRAND.dark100} 0%, ${BRAND.dark200} 100%)`,
     tagBg: 'transparent', tagText: '#374151', tagBgDark: '#1f2937', tagTextDark: '#ffffff',
     accentLight: BRAND.dark100, accentDark: BRAND.techGreyDark,
@@ -293,26 +244,11 @@ export const GALLERY_ALERT =
   "We are currently curating our gallery to feature our latest local business success stories. The current imagery demonstrates the visual aesthetic and service style of ApexbytesHub. Check back often for fresh project work!"
 
 export const FAQS = [
-  {
-    question: "How do I send my files, photos, or CV information to you?",
-    answer: "All services connect via WhatsApp where you can upload documents, notes, or images directly.",
-  },
-  {
-    question: "Where do I collect my completed documents or prints?",
-    answer: `${BIZ.name} operates from ${BIZ.location}. We notify you when items are ready for collection.`,
-  },
-  {
-    question: "How long does it take to complete a design or document task?",
-    answer: "Print and Document Hub tasks are same-day. Design Hub work (logos, flyers, business cards, invitations) takes 2–3 business days.",
-  },
-  {
-    question: "What are your payment terms?",
-    answer: "Clear upfront pricing. Payment is required before or upon completion depending on service type.",
-  },
-  {
-    question: "Do you use templates for design projects?",
-    answer: "No. All design work is custom-built using professional design tools.",
-  },
+  { question: "How do I send my files, photos, or CV information to you?", answer: "All services connect via WhatsApp where you can upload documents, notes, or images directly." },
+  { question: "Where do I collect my completed documents or prints?", answer: `${BIZ.name} operates from ${BIZ.location}. We notify you when items are ready for collection.` },
+  { question: "How long does it take to complete a design or document task?", answer: "Print and Document Hub tasks are same-day. Design Hub work (logos, flyers, business cards, invitations) takes 2–3 business days." },
+  { question: "What are your payment terms?", answer: "Clear upfront pricing. Payment is required before or upon completion depending on service type." },
+  { question: "Do you use templates for design projects?", answer: "No. All design work is custom-built using professional design tools." },
 ] as const
 
 export const ABOUT_VALUES = [
@@ -331,13 +267,7 @@ export const CONTACT_LINKS = [
   { title: "WhatsApp Us", value: BIZ.phone, href: WA.contact, dot: BRAND.whatsapp },
   { title: "Call Us", value: BIZ.phone, href: `tel:${BIZ.phoneE164}`, dot: BRAND.blue },
   { title: "Email Us", value: BIZ.email, href: `mailto:${BIZ.email}`, dot: BRAND.orange },
-  {
-    title: "Visit Us",
-    value: BIZ.addressFull,
-    href: BIZ.mapsUrl,
-    dotLight: BRAND.blueDark,
-    dotDark: BRAND.lightBlue,
-  },
+  { title: "Visit Us", value: BIZ.addressFull, href: BIZ.mapsUrl, dotLight: BRAND.blueDark, dotDark: BRAND.lightBlue },
 ] as const
 
 export const FOOTER_NAV = [
