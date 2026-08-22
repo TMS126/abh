@@ -1,3 +1,4 @@
+// components/navbar.tsx
 "use client"
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
@@ -9,18 +10,7 @@ import { cn } from "@/lib/utils"
 import { useNavVisibility, useMobileMenu, useLogoAnimation, useNavContrast } from "@/hooks/use-navbar"
 import { MobileMenu } from "@/components/navbar/mobile-menu"
 
-// Hover accent for plain-text nav links
 const HOVER_ORANGE = "#F4A261"
-
-// Route → accent color. Only used by the scroll-progress bar now — nav
-// links themselves are neutral by default and pick up HOVER_ORANGE when
-// active, regardless of route.
-const NAV_ROUTE_COLORS: Record<string, string> = {
-  "/": BRAND.blue,
-  "/services": BRAND.green,
-  "/gallery": BRAND.orange,
-  "/about": BRAND.blueDark,
-}
 
 export function Navbar() {
   const router = useRouter()
@@ -30,7 +20,6 @@ export function Navbar() {
   const [mounted, setMounted] = useState(false)
   const [desktopNavOpen, setDesktopNavOpen] = useState(false)
   const [contactHovered, setContactHovered] = useState(false)
-  const [scrollProgress, setScrollProgress] = useState(0)
   const [ctaPulse, setCtaPulse] = useState(false)
 
   const navVisible = useNavVisibility()
@@ -55,38 +44,7 @@ export function Navbar() {
     return () => document.removeEventListener("pointerdown", onPointerDown)
   }, [desktopNavOpen])
 
-  // ── Scroll progress bar ──────────────────────────────────────────────
-  // Thin bar under the header, fills 0→100% as the visitor scrolls the
-  // current page. rAF-throttled so it doesn't add scroll-jank on top of
-  // whatever useNavVisibility is already doing.
-  useEffect(() => {
-    let ticking = false
-    const update = () => {
-      const scrollTop = window.scrollY
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight
-      const pct = docHeight > 0 ? Math.min(100, Math.max(0, (scrollTop / docHeight) * 100)) : 0
-      setScrollProgress(pct)
-      ticking = false
-    }
-    const onScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(update)
-        ticking = true
-      }
-    }
-    update()
-    window.addEventListener("scroll", onScroll, { passive: true })
-    window.addEventListener("resize", onScroll)
-    return () => {
-      window.removeEventListener("scroll", onScroll)
-      window.removeEventListener("resize", onScroll)
-    }
-  }, [])
-
   // ── CTA emphasis after deep scroll ───────────────────────────────────
-  // If someone scrolls deep into a page without hitting Contact, give the
-  // CTA a one-time soft pulse to draw the eye back to it. Resets whenever
-  // the route changes, and never fires while already on /contact.
   useEffect(() => {
     setCtaPulse(false)
     if (pathname === "/contact") return
@@ -128,8 +86,6 @@ export function Navbar() {
     return "#3f3f46"
   }, [mounted, theme, isLogoDarkBehind])
 
-  // Drives the logo's <img> filter — see comment on the <img> below for
-  // why this replaced the old mask-image technique.
   const useLightLogoIcon = mounted && (isLogoDarkBehind || theme === "dark")
 
   const hubColor = useMemo(() => {
@@ -138,12 +94,6 @@ export function Navbar() {
     return theme === "dark" ? BRAND.lightGreen : BRAND.green
   }, [mounted, theme, isLogoDarkBehind])
 
-  // ── Keyboard access for the desktop flyout ───────────────────────────
-  // The flyout previously only opened on hover/click. Tab-only users had
-  // no way to reveal it. onFocus opens it; onBlur closes it, but only
-  // once focus has actually left the whole nav group (checked via
-  // relatedTarget), so tabbing between links inside the flyout doesn't
-  // slam it shut mid-navigation.
   const handleNavFocus = () => setDesktopNavOpen(true)
   const handleNavBlur = (e: React.FocusEvent<HTMLDivElement>) => {
     if (!desktopNavRef.current?.contains(e.relatedTarget as Node)) {
@@ -153,10 +103,6 @@ export function Navbar() {
 
   return (
     <>
-      {/* Skip-to-content link — invisible until keyboard-focused, jumps
-          past the entire nav straight to the page's main content. Needs
-          a matching `id="main-content"` on each page's root wrapper to
-          actually land somewhere; add that id wherever it's missing. */}
       <a
         href="#main-content"
         className="fixed left-4 top-4 z-[10000] -translate-y-24 focus:translate-y-0 transition-transform duration-200 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-bold text-sm px-4 py-2 rounded-[10px] shadow-lg outline-2 outline-brand-blue"
@@ -164,15 +110,14 @@ export function Navbar() {
         Skip to content
       </a>
 
-      <style>{`
-        @keyframes abh-cta-pulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(30,111,168,0.45); }
-          50% { box-shadow: 0 0 0 8px rgba(30,111,168,0); }
-        }
-        .abh-cta-pulse { animation: abh-cta-pulse 1.8s ease-out 2; }
-      `}</style>
+      {/* NOTE: .abh-cta-pulse keyframes now live in globals.css — see that
+          file's PART 1. Previously an inline <style> tag here got
+          re-injected into the DOM on every route change since this
+          component remounts per-page. */}
 
-      <header className="fixed left-0 right-0 top-0 z-[9999] flex flex-col pointer-events-none">
+      <header
+        className="fixed left-0 right-0 top-[var(--banner-h,0px)] z-[9999] flex flex-col pointer-events-none transition-[top] duration-300 ease-out"
+      >
         <div className="flex justify-center px-4 md:px-8 pt-5 h-[--nav-h] items-center">
           <div className="relative flex items-center justify-between w-full max-w-[1200px]">
             {/* Logo */}
@@ -196,17 +141,6 @@ export function Navbar() {
                 if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate("/") }
               }}
             >
-              {/* Fixed: was a CSS mask-image div (background-color +
-                  mask-image: url(/logo.png)), which was visibly clipping
-                  part of the artwork. Swapped for a plain <img> with
-                  object-contain — structurally cannot clip, since contain
-                  sizing is handled by the browser's normal image layout
-                  rather than the mask compositor. Color-adaptiveness is
-                  now done with `filter` instead of mask + backgroundColor:
-                  brightness(0) forces the artwork to solid black, and
-                  invert(1) flips that to solid white when a light icon is
-                  needed (dark theme or dark content detected behind the
-                  pill) — same two visual states as before, no clipping. */}
               <img
                 src="/logo.png"
                 alt=""
@@ -240,9 +174,6 @@ export function Navbar() {
               )}
             >
               <div className={cn("flex items-center py-2 transition-all duration-300 ease-out", desktopNavOpen ? "gap-1 px-1" : "px-2")}>
-                {/* Trigger — now doubles as an animated hamburger/X, same
-                    morph treatment as the mobile control below, since it
-                    toggles a menu-like flyout too. */}
                 <button
                   onClick={() => setDesktopNavOpen((v) => !v)}
                   aria-label={desktopNavOpen ? "Collapse navigation" : "Expand navigation"}
@@ -309,8 +240,6 @@ export function Navbar() {
                       )
                     }
 
-                    // Non-CTA links: neutral by default, brand-orange text
-                    // when active — no per-route color, no underline.
                     return (
                       <button
                         key={item.id}
@@ -352,7 +281,7 @@ export function Navbar() {
               <button
                 onClick={handleThemeToggle}
                 className="flex items-center justify-center w-7 h-7 active:scale-90 transition-transform"
-                aria-label="Toggle theme"
+                aria-label={mounted ? (theme === "dark" ? "Switch to light mode" : "Switch to dark mode") : "Toggle theme"}
               >
                 {mounted &&
                   (theme === "dark" ? (
@@ -362,11 +291,6 @@ export function Navbar() {
                   ))}
               </button>
 
-              {/* Mobile menu trigger — single button now, smoothly morphs
-                  between hamburger and X instead of crossfading two
-                  separate buttons. Each bar animates its own transform on
-                  toggle: top/bottom rotate into an X, middle bar
-                  scales/fades out. */}
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
                 aria-label={menuOpen ? "Close menu" : "Open menu"}
@@ -401,28 +325,9 @@ export function Navbar() {
             </div>
           </div>
         </div>
-
-        {/* Scroll progress bar — thin strip under the header, fills with
-            the current page's scroll depth. Tinted with the active
-            route's color when one is defined, brand blue otherwise.
-            Opacity is now constant instead of tied to navVisible — it
-            used to hide/fade with the header itself, which meant it only
-            became visible during the reveal-on-scroll-up animation and
-            read as "growing backwards." It now always reflects absolute
-            scroll position. */}
-        <div className="w-full h-[2px] bg-transparent pointer-events-none">
-          <div
-            className="h-full transition-[width] duration-150 ease-out"
-            style={{
-              width: `${scrollProgress}%`,
-              backgroundColor: NAV_ROUTE_COLORS[pathname] ?? BRAND.blue,
-              opacity: 0.7,
-            }}
-          />
-        </div>
       </header>
 
       <MobileMenu menuOpen={menuOpen} setMenuOpen={setMenuOpen} pathname={pathname} navigate={navigate} neutralColor={neutralColor} />
     </>
   )
-                  } 
+                  }
