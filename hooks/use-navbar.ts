@@ -1,3 +1,4 @@
+// hooks/use-navbar.ts
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
@@ -29,22 +30,41 @@ function luminance(r: number, g: number, b: number) {
   return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2]
 }
 
+// FIX: reads the live --banner-h CSS var (set by MaintenanceBanner toggling
+// `.banner-active` on <html>) so the sample point moves down with the
+// header when the banner is showing. Previously yPx was a fixed pixel
+// position that assumed the header always started at the very top of the
+// viewport — once the banner pushed the header down, that fixed point
+// landed inside the banner's own background instead of behind the nav,
+// making the banner's blue fill (not actual page content) decide icon
+// contrast for as long as the banner was visible.
+function getBannerOffsetPx(): number {
+  if (typeof document === "undefined") return 0
+  const raw = getComputedStyle(document.documentElement).getPropertyValue("--banner-h")
+  const px = parseFloat(raw)
+  return Number.isFinite(px) ? px : 0
+}
+
 export function useNavContrast(xFraction = 0.93, yPx = 37) {
   // xFraction: horizontal position as fraction of window width (right side)
-  // yPx: vertical position in px from top — mid-point of the controls pill
+  // yPx: vertical position in px from top — mid-point of the controls pill,
+  // relative to the header's own top edge (banner offset added at sample time)
   const [isDarkBehind, setIsDarkBehind] = useState(false)
 
   useEffect(() => {
-    let rafId: number
+    let rafId: number | null = null
 
     const sample = () => {
       const x = window.innerWidth * xFraction
-      const y = yPx
+      const y = getBannerOffsetPx() + yPx
       const elements = document.elementsFromPoint(x, y) as HTMLElement[]
 
       for (const el of elements) {
         // Skip the navbar itself — we want what's behind it
         if (el.closest("header")) continue
+        // NEW — skip the maintenance banner itself for the same reason;
+        // it isn't inside <header> so the check above doesn't catch it.
+        if (el.closest("[data-maintenance-banner]")) continue
 
         const bg = getComputedStyle(el).backgroundColor
         const rgba = parseRgba(bg)
@@ -60,20 +80,27 @@ export function useNavContrast(xFraction = 0.93, yPx = 37) {
       setIsDarkBehind(false)
     }
 
-    const onFrame = () => { sample() }
-    const onScroll = () => { rafId = requestAnimationFrame(onFrame) }
-    const onResize = () => { rafId = requestAnimationFrame(onFrame) }
+    const onFrame = () => { rafId = null; sample() }
+    const scheduleSample = () => {
+      // FIX: previously reassigned rafId without cancelling any frame
+      // already pending, so fast scrolling could queue up multiple
+      // redundant sample() calls (each walking elementsFromPoint +
+      // getComputedStyle — real DOM cost) instead of coalescing to one
+      // per frame.
+      if (rafId !== null) cancelAnimationFrame(rafId)
+      rafId = requestAnimationFrame(onFrame)
+    }
 
     // Initial sample
     sample()
 
-    window.addEventListener("scroll", onScroll, { passive: true })
-    window.addEventListener("resize", onResize, { passive: true })
+    window.addEventListener("scroll", scheduleSample, { passive: true })
+    window.addEventListener("resize", scheduleSample, { passive: true })
 
     return () => {
-      window.removeEventListener("scroll", onScroll)
-      window.removeEventListener("resize", onResize)
-      cancelAnimationFrame(rafId)
+      window.removeEventListener("scroll", scheduleSample)
+      window.removeEventListener("resize", scheduleSample)
+      if (rafId !== null) cancelAnimationFrame(rafId)
     }
   }, [xFraction, yPx])
 
@@ -135,4 +162,4 @@ export function useLogoAnimation() {
   }, [])
 
   return { isTextExpanded, handleLogoMouseEnter, handleLogoMouseLeave }
-}
+          }
