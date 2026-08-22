@@ -1,3 +1,4 @@
+// proxy.ts
 import { NextRequest, NextResponse } from 'next/server';
 
 // Simple in-memory rate limiting (Note: This is per-instance and resets on restart)
@@ -6,7 +7,7 @@ const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const MAX_REQUESTS = 100; // Max requests per window
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   // ── Maintenance Mode ──
   const isMaintenanceMode = false;
   if (isMaintenanceMode) {
@@ -33,3 +34,12 @@ export function middleware(req: NextRequest) {
 
   return NextResponse.next();
 }
+
+// Scopes the proxy to actual page/route requests only — excludes static
+// assets, images, and fonts, which is what was causing it to run on every
+// single request a page load makes (HTML, JS chunks, CSS, images, fonts).
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|woff2?|ttf|otf)$).*)',
+  ],
+}; 
