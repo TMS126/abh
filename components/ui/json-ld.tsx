@@ -1,4 +1,7 @@
-import { BIZ } from '@/lib/brand'
+// components/ui/json-ld.tsx
+import { BIZ, HOURS } from '@/lib/brand'
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://apexbytes.vercel.app'
 
 export function LocalBusinessJsonLd() {
   const jsonLd = {
@@ -6,9 +9,9 @@ export function LocalBusinessJsonLd() {
     '@type': ['LocalBusiness', 'ProfessionalService'],
     name: BIZ.name,
     alternateName: ['Apexbytes Hub', 'Apexbytes'],
-    image: 'https://v0-apexbytes-hub-website.vercel.app/logo.png',
-    '@id': 'https://v0-apexbytes-hub-website.vercel.app',
-    url: 'https://v0-apexbytes-hub-website.vercel.app',
+    image: `${SITE_URL}/logo.png`,
+    '@id': SITE_URL,
+    url: SITE_URL,
     telephone: BIZ.phoneE164,
     priceRange: 'R',
     address: {
@@ -19,10 +22,13 @@ export function LocalBusinessJsonLd() {
       postalCode: '9660',
       addressCountry: 'ZA',
     },
+    // FIX: was hardcoded to an "Approximate for Bothaville" placeholder
+    // that didn't match BIZ.lat/BIZ.lng. Now derives from the one real
+    // source of truth.
     geo: {
       '@type': 'GeoCoordinates',
-      latitude: -27.3833, // Approximate for Bothaville
-      longitude: 26.6167,
+      latitude: BIZ.lat,
+      longitude: BIZ.lng,
     },
     areaServed: [
       { '@type': 'Place', name: 'Kgotsong' },
@@ -32,12 +38,32 @@ export function LocalBusinessJsonLd() {
       { '@type': 'AdministrativeArea', name: 'Lejweleputswa District Municipality' },
       { '@type': 'AdministrativeArea', name: 'Free State' },
     ],
+    // FIX: previously a single blanket "07:00–20:00, all 7 days" block that
+    // didn't reflect that Tech/Design/E-Service run shorter hours. Now built
+    // directly from the HOURS object in lib/brand.ts — the same single
+    // source of truth the rest of the site already displays to customers —
+    // instead of a second, separately-hardcoded guess.
     openingHoursSpecification: [
       {
         '@type': 'OpeningHoursSpecification',
         dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
         opens: '07:00',
         closes: '20:00',
+        // Print Hub · Document Hub — matches HOURS.printAndDoc
+      },
+      {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+        opens: '09:00',
+        closes: '17:00',
+        // Tech Hub · Design Hub · E-Service Hub — matches HOURS.techDesignEservice
+      },
+      {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: ['Saturday'],
+        opens: '09:00',
+        closes: '12:00',
+        // Tech Hub · Design Hub · E-Service Hub, Saturday — matches HOURS.techDesignEservice
       },
     ],
     sameAs: [
@@ -96,4 +122,4 @@ export function LocalBusinessJsonLd() {
       dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />
   )
-} 
+            } 
