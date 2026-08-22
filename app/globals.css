@@ -1,4 +1,4 @@
-/* app/globals.css — full file, paste over the current one */
+/* app/globals.css — PART 1 OF 2 — paste this, then Part 2, back-to-back into one file */
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
@@ -15,88 +15,64 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
 
 /* ═════════════════════════════════════════════════════════════════════════════
    BRAND TOKEN SYSTEM — THE ONLY SOURCE FOR COLOR
-   Every color decision in the entire codebase happens here and nowhere else.
-   lib/brand.ts no longer holds parallel raw hex logic for anything a
-   component renders — it only re-exports CSS var strings from this file
-   (see TOKEN in brand.ts). If a component ever needs a color, it asks for
-   a TOKEN.* entry, never a hex, never an isDark ternary.
-
-   ── RULE ──
-   Every entry below is verified against the REAL surface it lands on —
-   not just "vs white" — because that mismatch (verified for one surface,
-   reused on another) is the exact bug that kept recurring. Each comment
-   states which surface(s) were checked and the ratio.
 ───────────────────────────────────────────────────────────────────────────── */
 :root {
-  /* ── Raw palette ── */
-  --brand-green: #4A8011;        /* WCAG AA — 4.79:1 vs white */
-  --brand-orange: #B9590D;       /* WCAG AA — 4.67:1 vs white */
+  --brand-green: #4A8011;
+  --brand-orange: #B9590D;
   --brand-light-blue: #A9D6F2;
   --brand-light-green: #CDEB9F;
   --brand-light-orange: #F9D1B0;
 
-  --brand-blue: #1E6FA8;         /* WCAG AA — 5.39:1 vs white */
-  --brand-blue-mid: #15537D;     /* WCAG AA — 8.19:1 vs white */
-  --brand-blue-dark: #0F3F66;    /* WCAG AA — 10.92:1 vs white */
-  --brand-green-dark: #4C8212;   /* WCAG AA — 4.66:1 vs white */
-  --brand-orange-dark: #B06225;  /* WCAG AA — 4.55:1 vs white */
+  --brand-blue: #1E6FA8;
+  --brand-blue-mid: #15537D;
+  --brand-blue-dark: #0F3F66;
+  --brand-green-dark: #4C8212;
+  --brand-orange-dark: #B06225;
 
-  --brand-teal: #0F766E;         /* WCAG AA — 5.47:1 vs white */
-  --brand-teal-dark: #115E59;    /* WCAG AA — 7.58:1 vs white */
-  --brand-teal-light: #99F6E4;   /* WCAG AA — 10.02:1 vs --brand-dark-100 */
+  --brand-teal: #0F766E;
+  --brand-teal-dark: #115E59;
+  --brand-teal-light: #99F6E4;
 
   --brand-neutral-100: #EDEDED;
   --brand-neutral-200: #F4F4F4;
   --brand-neutral-300: #D6D6D6;
-  --brand-neutral-400: #9A9A9A;  /* on-pastel text = 4.49:1 — LARGE TEXT/ICONS ONLY, not body copy */
-  --brand-neutral-500: #747474;  /* WCAG AA — 4.67:1 vs white */
+  --brand-neutral-400: #9A9A9A;
+  --brand-neutral-500: #747474;
 
-  --brand-dark-100: #333333;     /* WCAG AA — 12.63:1 vs white */
-  --brand-dark-200: #555555;     /* WCAG AA — 7.46:1 vs white */
-  --brand-tech-grey-dark: #B8CCE0;  /* Tech Hub dark-mode accent — icon/text use only, not a background */
-  --brand-green-deep: #3E6B0E;   /* WCAG AA — 6.34:1 vs white */
-  --brand-orange-brown: #A86530; /* WCAG AA — 4.60:1 vs white */
+  --brand-dark-100: #333333;
+  --brand-dark-200: #555555;
+  --brand-tech-grey-dark: #B8CCE0;
+  --brand-green-deep: #3E6B0E;
+  --brand-orange-brown: #A86530;
   --brand-white: #FFFFFF;
 
-  --brand-whatsapp: #25D366;     /* white text FAILS (~1.98:1) — see --on-whatsapp below */
-  --brand-whatsapp-dark: #1ebe5a; /* hover state — --on-whatsapp text still 7.28:1 here, verified */
+  --brand-whatsapp: #25D366;
+  --brand-whatsapp-dark: #1ebe5a;
 
-  --brand-whatsapp-accessible: #178540;      /* WCAG AA — 4.70:1 with white text */
-  --brand-whatsapp-accessible-dark: #125F2F; /* hover state — 7.77:1 with white text */
+  --brand-whatsapp-accessible: #178540;
+  --brand-whatsapp-accessible-dark: #125F2F;
 
-  /* ── Warning/announcement role (badges, notice pills) ──
-     Two SEPARATE sub-roles that must never be collapsed into one value:
-       -bg   : solid fill behind a white icon/label (needs white to read on it)
-       -text : the role's color used AS text directly on page/card/tint bg
-     This split is what was missing before — orangeAccessible was doing
-     both jobs with only the -bg pairing ever verified. */
-  --brand-warning-bg: #9A4B12;        /* 6.20:1 vs white icon */
-  --brand-warning-bg-dark: #7A3B0E;   /* 8.54:1 vs white icon */
-   
-   /* Error role — same bg/text split as warning above. */
-  --brand-error-bg: var(--destructive);       /* 4.83:1 vs white icon (same red, already verified) */
-/* ── add inside :root, near --brand-warning-bg ── */
---brand-error-text: #d52222;   /* 5.15:1 vs white, 4.56:1 vs light red tint (was #DC2626 — 4.28:1 on the tint, just under AA) */
+  --brand-warning-bg: #9A4B12;
+  --brand-warning-bg-dark: #7A3B0E;
 
-  /* Theme-aware — overridden in .dark below. Used as TEXT directly on the
-     page background, a card, AND a tinted announcement panel — verified
-     against all three surfaces it's actually used on, not just white. */
-  --brand-blue-text: #16325f;    /* 12.68:1 vs white */
-  --brand-orange-text: #954911;  /* 6.48:1 vs white, 4.56:1 vs --brand-light-orange tint (was #b85c17/#9A4B12 — neither had been checked against the tint) */
-  --brand-green-text: #4d6f2f;   /* 5.78:1 vs white */
+  --brand-error-bg: var(--destructive);
+  --brand-error-text: #d52222;
 
-  --brand-whatsapp-text: #0f172a; /* AAA — 9.0:1 on --brand-whatsapp (fixed pairing, not page text — no dark variant needed) */
+  --brand-blue-text: #16325f;
+  --brand-orange-text: #954911;
+  --brand-green-text: #4d6f2f;
 
-  /* ── Semantic pairs (surface → on-surface). Every entry = verified ratio. ── */
-  --on-brand-blue: #FFFFFF;       /* 5.39–10.92:1 AA — for brand-blue / blue-mid / blue-dark bg */
-  --on-brand-green: #FFFFFF;      /* 4.66–6.34:1 AA — for brand-green / green-dark / green-deep bg (NOT whatsapp green) */
-  --on-brand-orange: #FFFFFF;     /* 4.55–8.54:1 AA — for brand-orange / orange-dark / orange-brown / warning-bg(-dark) bg */
-  --on-brand-teal: #FFFFFF;       /* 5.47–7.58:1 AA — for brand-teal / teal-dark bg */
-  --on-whatsapp: var(--brand-whatsapp-text);            /* 9.0:1 AAA — for raw brand-whatsapp bg. Never white. */
-  --on-whatsapp-accessible: #FFFFFF;                    /* 4.70:1 AA (7.77:1 on the -dark hover variant) */
-  --on-pastel: var(--brand-dark-100);        /* dark navy for light-blue/light-green/light-orange/neutral-100/200/300/teal-light bg chips. Vs neutral-400: 4.49:1 — large text/icons only. */
-  --on-neutral-dark: #FFFFFF;     /* 7.46–12.63:1 AA — for brand-dark-100 / brand-dark-200 / neutral-500 bg */
-  --on-destructive: #FFFFFF;      /* 4.83:1 AA — paired with corrected --destructive below */
+  --brand-whatsapp-text: #0f172a;
+
+  --on-brand-blue: #FFFFFF;
+  --on-brand-green: #FFFFFF;
+  --on-brand-orange: #FFFFFF;
+  --on-brand-teal: #FFFFFF;
+  --on-whatsapp: var(--brand-whatsapp-text);
+  --on-whatsapp-accessible: #FFFFFF;
+  --on-pastel: var(--brand-dark-100);
+  --on-neutral-dark: #FFFFFF;
+  --on-destructive: #FFFFFF;
 
   --radius: 14px;
 
@@ -128,9 +104,7 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
 }
 
 .dark {
-   
-/* ── add inside .dark ── */
-  --brand-error-text: #e76c6c;   /* 5.60:1 vs dark card, 5.14:1 vs dark red tint */
+  --brand-error-text: #e76c6c;
   --background: #0D1B2A;
   --foreground: #E8EFF6;
   --card: #1A2C3E;
@@ -155,23 +129,28 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --shadow: 0 4px 28px rgba(0, 0, 0, 0.3);
   --card-border: #243648;
 
-  /* Same warning-bg role, dark-surface value (bg role itself was already fine). */
   --brand-warning-bg: #7A3B0E;
 
-  /* The three tokens that previously had NO dark override at all — this
-     was the root cause of the circled badge and everything since. Each
-     verified ≥4.5:1 against BOTH #0D1B2A (page) and #1A2C3E (card). */
-  --brand-blue-text: #6693db;    /* 5.60:1 vs dark bg, 4.59:1 vs dark card */
-  --brand-orange-text: #e3731f;  /* 5.58:1 vs dark bg, 4.57:1 vs dark card */
-  --brand-green-text: #70a144;   /* 5.69:1 vs dark bg, 4.66:1 vs dark card */
-  --brand-error-text: #F87171;   /* 6.29:1 vs dark bg, 5.15:1 vs dark card — DC2626 only hit 3.6:1 in dark, failed AA */
+  --brand-blue-text: #6693db;
+  --brand-orange-text: #e3731f;
+  --brand-green-text: #70a144;
+  --brand-error-text: #F87171;
 }
 
-/* ── Tailwind theme mapping ── */
+/* ── Tailwind theme mapping ──
+   FIX: --font-heading and --font-mono were self-referential
+   (e.g. `--font-heading: var(--font-heading), ...`), which is an invalid
+   CSS custom-property cycle — the browser silently discards the value and
+   both fall through to the fallback stack, meaning Poppins/JetBrains Mono
+   were never actually being applied anywhere. Fixed by pointing at the
+   real font-loader variable names instead of at themselves. --font-mono
+   also required renaming the JetBrains Mono loader's own output variable
+   in app/layout.tsx from --font-mono to --font-jetbrains-mono, since
+   Tailwind's own theme wants --font-mono for itself — see layout.tsx. */
 @theme inline {
   --font-sans: var(--font-body), 'Inter Fallback', sans-serif;
-  --font-heading: var(--font-heading), 'Jost Fallback', sans-serif;
-  --font-mono: var(--font-mono), 'JetBrains Mono Fallback', monospace;
+  --font-heading: var(--font-poppins), 'Jost Fallback', sans-serif;
+  --font-mono: var(--font-jetbrains-mono), 'JetBrains Mono Fallback', monospace;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -222,8 +201,6 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --color-brand-green-deep: var(--brand-green-deep);
   --color-brand-orange-brown: var(--brand-orange-brown);
   --color-brand-warning-bg: var(--brand-warning-bg);
-   /* ── add inside @theme inline, near --color-brand-warning-bg ── */
-  --color-brand-error-text: var(--brand-error-text);
   --color-brand-white: var(--brand-white);
 
   --color-brand-whatsapp: var(--brand-whatsapp);
@@ -294,13 +271,12 @@ button, a, [role="button"] {
 @keyframes page-in { from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)} }
 @keyframes marquee-track { 0%{transform:translate3d(0,0,0)}100%{transform:translate3d(-50%,0,0)} }
 
-  .animate-marquee { animation: marquee-track 35s linear infinite; }
+.animate-marquee { animation: marquee-track 35s linear infinite; }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee { animation: none; }
-}
-
-     
+     }
+/* app/globals.css — PART 2 OF 2 — continues directly from Part 1, same file */
 @layer components {
   .abh-page-title {
     @apply font-heading font-black text-4xl md:text-5xl tracking-tight leading-tight text-center;
@@ -441,9 +417,6 @@ button, a, [role="button"] {
     box-shadow: 0 2px 16px -2px rgba(0, 0, 0, 0.50), 0 1px 4px -1px rgba(0, 0, 0, 0.28);
   }
 
-   /* Hero collage tile shadow — deliberately quieter than .abh-shadow-card;
-     these sit densely stacked with pill badges layered on top, so a strong
-     shadow would compete rather than add "life". */
   .abh-shadow-tile {
     box-shadow: 0 4px 14px -6px rgba(0, 0, 0, 0.12);
   }
@@ -456,7 +429,7 @@ button, a, [role="button"] {
   .dark .abh-shadow-tile:hover {
     box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.65);
   }
-   
+
   .abh-divider {
     @apply mt-6 h-[2px] w-[160px] max-w-full mx-auto rounded-full;
     background: var(--brand-blue);
@@ -509,4 +482,5 @@ button, a, [role="button"] {
   .abh-on-neutral-dark { color: var(--on-neutral-dark); }
   .abh-on-destructive { color: var(--on-destructive); }
   .abh-on-whatsapp-accessible { color: var(--on-whatsapp-accessible); }
-   } 
+     }
+   
