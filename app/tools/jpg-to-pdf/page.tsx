@@ -58,7 +58,7 @@ export default function JpgToPdfPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div>
+      <>
         {/* ─── HERO ───────────────────────────────────────────────────── */}
         <section className="px-4 md:px-8 pt-[calc(var(--nav-h)+2rem)] pb-6">
           <div className="max-w-[720px] mx-auto text-center">
@@ -155,11 +155,15 @@ export default function JpgToPdfPage() {
                       type="button"
                       onClick={t.requestConvert}
                       disabled={t.isConverting || t.selectedCount === 0}
+                      aria-busy={t.isConverting}
                       className="rounded-[14px] font-black py-3 px-8 text-white transition-transform active:scale-[0.98] disabled:opacity-60"
                       style={{ backgroundColor: accentColor }}
                     >
                       {t.isConverting ? `Converting… ${t.progress}%` : "Convert to PDF"}
                     </button>
+                    <span className="sr-only" aria-live="polite">
+                      {t.isConverting ? `Converting, ${t.progress} percent complete` : ""}
+                    </span>
                   </div>
                 </>
               )}
@@ -183,7 +187,7 @@ export default function JpgToPdfPage() {
           description={tip}
           buttonText={waPhrase}
         />
-      </div>
+      </>
       <Footer />
 
       <ImageLightbox
@@ -204,4 +208,4 @@ export default function JpgToPdfPage() {
       )}
     </div>
   )
-                    } 
+                  } 
