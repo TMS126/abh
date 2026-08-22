@@ -1,3 +1,4 @@
+// app/gallery/page.tsx
 import { GalleryPage } from "@/components/gallery-page"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -11,10 +12,10 @@ export default function GalleryRoute() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main id="main-content">
+      <div>
         <GalleryPage />
-      </main>
+      </div>
       <Footer />
     </div>
   )
-}
+} 
