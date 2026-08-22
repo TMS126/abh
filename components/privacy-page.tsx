@@ -78,6 +78,13 @@ export function PrivacyPage() {
                 collected by Vercel Analytics (no cookies, no personal identifiers), and standard analytics data
                 collected by Google Analytics (see below).
               </li>
+              <li>
+                <strong className="text-zinc-700 dark:text-zinc-300">WhatsApp widget name:</strong> If you enter
+                your name in our WhatsApp chat widget, it is saved in your browser&apos;s local storage for up to
+                90 days so we can remember it for your next visit, then automatically expires. This stays on your
+                own device — we don&apos;t receive or store it on our servers unless you actually send a WhatsApp
+                message.
+              </li>
             </ul>
           </section>
 
