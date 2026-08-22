@@ -5,12 +5,33 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useTheme } from "next-themes"
 import { useRouter, usePathname } from "next/navigation"
 import { Sun, Moon } from "@phosphor-icons/react"
-import { NAV_ITEMS, BRAND } from "@/lib/brand"
+import { NAV_ITEMS, BRAND, TOKEN } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 import { useNavVisibility, useMobileMenu, useLogoAnimation, useNavContrast } from "@/hooks/use-navbar"
 import { MobileMenu } from "@/components/navbar/mobile-menu"
 
-const HOVER_ORANGE = "#F4A261"
+// FIX: was a hardcoded "#F4A261" — that exact hex is documented in
+// globals.css as the OLD, failing --brand-orange value ("was #F4A261 at
+// 2.06:1"), already replaced everywhere else in the design system but
+// still in direct use here for nav text/border/hover-background. Ratio
+// is symmetric regardless of which side is text vs background, so this
+// affected: active link text, CTA hover fill (white text on top), and
+// the mobile menu's active border/text. Now uses verified tokens instead:
+// TOKEN.orangeText for text/border roles (5.78–6.48:1, theme-aware),
+// BRAND.orangeDark for solid-fill-behind-white-text roles (4.55:1,
+// the same pairing already verified for HUB_COLORS.design).
+const HOVER_TEXT = TOKEN.orangeText
+const HOVER_FILL = BRAND.orangeDark
+
+// Shared by both the logo icon's neutral color and the nav-controls'
+// neutral color — previously duplicated as two near-identical ternary
+// chains; same inputs, same logic, now one function.
+function resolveNeutralColor(mounted: boolean, theme: string | undefined, darkBehind: boolean): string {
+  if (!mounted) return "#3f3f46"
+  if (darkBehind) return "#f4f4f5"
+  if (theme === "dark") return "#e4e4e7"
+  return "#3f3f46"
+}
 
 export function Navbar() {
   const router = useRouter()
@@ -29,6 +50,7 @@ export function Navbar() {
   const isLogoDarkBehind = useNavContrast(0.07)
 
   const desktopNavRef = useRef<HTMLDivElement>(null)
+  const desktopNavToggleRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => setMounted(true), [])
   useEffect(() => setDesktopNavOpen(false), [pathname])
@@ -44,7 +66,23 @@ export function Navbar() {
     return () => document.removeEventListener("pointerdown", onPointerDown)
   }, [desktopNavOpen])
 
-  // ── CTA emphasis after deep scroll ───────────────────────────────────
+  // NEW — parity fix: MobileMenu already closes on Escape (see its own
+  // keydown handler), but this desktop flyout had no equivalent. Keyboard
+  // users previously had no way to close it except tabbing all the way
+  // past every link. Also restores focus to the trigger button, matching
+  // standard disclosure-widget behavior.
+  useEffect(() => {
+    if (!desktopNavOpen) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setDesktopNavOpen(false)
+        desktopNavToggleRef.current?.focus()
+      }
+    }
+    document.addEventListener("keydown", onKeyDown)
+    return () => document.removeEventListener("keydown", onKeyDown)
+  }, [desktopNavOpen])
+
   useEffect(() => {
     setCtaPulse(false)
     if (pathname === "/contact") return
@@ -72,19 +110,15 @@ export function Navbar() {
 
   const glassPillClass = "backdrop-blur-md py-2 rounded-[14px] pointer-events-auto"
 
-  const neutralColor = useMemo(() => {
-    if (!mounted) return "#3f3f46"
-    if (isDarkBehind) return "#f4f4f5"
-    if (theme === "dark") return "#e4e4e7"
-    return "#3f3f46"
-  }, [mounted, theme, isDarkBehind])
+  const neutralColor = useMemo(
+    () => resolveNeutralColor(mounted, theme, isDarkBehind),
+    [mounted, theme, isDarkBehind]
+  )
 
-  const logoNeutralColor = useMemo(() => {
-    if (!mounted) return "#3f3f46"
-    if (isLogoDarkBehind) return "#f4f4f5"
-    if (theme === "dark") return "#e4e4e7"
-    return "#3f3f46"
-  }, [mounted, theme, isLogoDarkBehind])
+  const logoNeutralColor = useMemo(
+    () => resolveNeutralColor(mounted, theme, isLogoDarkBehind),
+    [mounted, theme, isLogoDarkBehind]
+  )
 
   const useLightLogoIcon = mounted && (isLogoDarkBehind || theme === "dark")
 
@@ -109,11 +143,6 @@ export function Navbar() {
       >
         Skip to content
       </a>
-
-      {/* NOTE: .abh-cta-pulse keyframes now live in globals.css — see that
-          file's PART 1. Previously an inline <style> tag here got
-          re-injected into the DOM on every route change since this
-          component remounts per-page. */}
 
       <header
         className="fixed left-0 right-0 top-[var(--banner-h,0px)] z-[9999] flex flex-col pointer-events-none transition-[top] duration-300 ease-out"
@@ -175,6 +204,8 @@ export function Navbar() {
             >
               <div className={cn("flex items-center py-2 transition-all duration-300 ease-out", desktopNavOpen ? "gap-1 px-1" : "px-2")}>
                 <button
+                  ref={desktopNavToggleRef}
+                  type="button"
                   onClick={() => setDesktopNavOpen((v) => !v)}
                   aria-label={desktopNavOpen ? "Collapse navigation" : "Expand navigation"}
                   aria-expanded={desktopNavOpen}
@@ -219,14 +250,15 @@ export function Navbar() {
                       return (
                         <button
                           key={item.id}
+                          type="button"
                           onClick={() => navigate(item.path)}
                           onMouseEnter={() => setContactHovered(true)}
                           onMouseLeave={() => setContactHovered(false)}
                           aria-current={isActive ? "page" : undefined}
                           style={{
                             transitionDelay: desktopNavOpen ? `${idx * 30}ms` : "0ms",
-                            backgroundColor: contactHovered ? HOVER_ORANGE : BRAND.blue,
-                            borderColor: contactHovered ? HOVER_ORANGE : BRAND.blue,
+                            backgroundColor: contactHovered ? HOVER_FILL : BRAND.blue,
+                            borderColor: contactHovered ? HOVER_FILL : BRAND.blue,
                             color: "#ffffff",
                           }}
                           className={cn(
@@ -243,11 +275,12 @@ export function Navbar() {
                     return (
                       <button
                         key={item.id}
+                        type="button"
                         onClick={() => navigate(item.path)}
                         aria-current={isActive ? "page" : undefined}
                         style={{
                           transitionDelay: desktopNavOpen ? `${idx * 30}ms` : "0ms",
-                          color: isActive ? HOVER_ORANGE : neutralColor,
+                          color: isActive ? HOVER_TEXT : neutralColor,
                         }}
                         className={cn(
                           "px-3.5 py-2 text-base whitespace-nowrap bg-transparent border-2 border-transparent transition-all duration-200",
@@ -255,7 +288,7 @@ export function Navbar() {
                           isActive ? "font-black" : "font-medium"
                         )}
                         onMouseEnter={(e) => {
-                          if (!isActive) (e.currentTarget as HTMLElement).style.color = HOVER_ORANGE
+                          if (!isActive) (e.currentTarget as HTMLElement).style.color = HOVER_TEXT
                         }}
                         onMouseLeave={(e) => {
                           if (!isActive) (e.currentTarget as HTMLElement).style.color = neutralColor
@@ -279,6 +312,7 @@ export function Navbar() {
               style={{ transition: "opacity 300ms, transform 300ms" }}
             >
               <button
+                type="button"
                 onClick={handleThemeToggle}
                 className="flex items-center justify-center w-7 h-7 active:scale-90 transition-transform"
                 aria-label={mounted ? (theme === "dark" ? "Switch to light mode" : "Switch to dark mode") : "Toggle theme"}
@@ -292,6 +326,7 @@ export function Navbar() {
               </button>
 
               <button
+                type="button"
                 onClick={() => setMenuOpen(!menuOpen)}
                 aria-label={menuOpen ? "Close menu" : "Open menu"}
                 aria-expanded={menuOpen}
@@ -330,4 +365,4 @@ export function Navbar() {
       <MobileMenu menuOpen={menuOpen} setMenuOpen={setMenuOpen} pathname={pathname} navigate={navigate} neutralColor={neutralColor} />
     </>
   )
-                  }
+              }
