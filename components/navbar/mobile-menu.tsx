@@ -1,11 +1,18 @@
+// components/navbar/mobile-menu.tsx
 "use client"
 
 import { useEffect, useRef } from "react"
-import { NAV_ITEMS, BRAND } from "@/lib/brand"
+import { NAV_ITEMS, BRAND, TOKEN } from "@/lib/brand"
 import { cn } from "@/lib/utils"
 
-// Keep in sync with HOVER_ORANGE in navbar.tsx
-const HOVER_ORANGE = "#F4A261"
+// FIX: was a hardcoded "#F4A261" duplicated from navbar.tsx via a
+// "keep in sync" comment. That hex is the OLD, WCAG-failing --brand-orange
+// value (documented in globals.css as "was #F4A261 at 2.06:1") — still
+// failing here as both text color AND border color (border also needs
+// ≥3:1 for non-text UI components, which 2.06:1 fails too). Now imports
+// the same verified TOKEN.orangeText used in navbar.tsx directly, so
+// there's a real single source of truth instead of a manually-synced copy.
+const HOVER_TEXT = TOKEN.orangeText
 
 interface MobileMenuProps {
   menuOpen: boolean
@@ -62,12 +69,11 @@ export function MobileMenu({ menuOpen, setMenuOpen, pathname, navigate, neutralC
           {NAV_ITEMS.map((item, idx) => {
             const isActive = pathname === item.path
 
-            // CTA: always a solid blue filled pill, active or not —
-            // matches the desktop treatment exactly.
             if (item.isCta) {
               return (
                 <button
                   key={item.id}
+                  type="button"
                   onClick={() => navigate(item.path)}
                   aria-current={isActive ? "page" : undefined}
                   tabIndex={menuOpen ? 0 : -1}
@@ -86,19 +92,17 @@ export function MobileMenu({ menuOpen, setMenuOpen, pathname, navigate, neutralC
               )
             }
 
-            // Non-CTA links: neutral by default, orange-bordered pill
-            // (border + text, transparent fill) when active. No solid
-            // per-route background anymore.
             return (
               <button
                 key={item.id}
+                type="button"
                 onClick={() => navigate(item.path)}
                 aria-current={isActive ? "page" : undefined}
                 tabIndex={menuOpen ? 0 : -1}
                 style={{
                   transitionDelay: menuOpen ? `${idx * 60}ms` : "0ms",
-                  color: isActive ? HOVER_ORANGE : neutralColor,
-                  borderColor: isActive ? HOVER_ORANGE : "transparent",
+                  color: isActive ? HOVER_TEXT : neutralColor,
+                  borderColor: isActive ? HOVER_TEXT : "transparent",
                 }}
                 className={cn(
                   "py-3 px-8 rounded-[14px] font-sans text-[1.2rem] border-2 bg-transparent transition-all duration-300 active:scale-95 text-center w-[180px] shadow-sm",
@@ -120,8 +124,6 @@ export function MobileMenu({ menuOpen, setMenuOpen, pathname, navigate, neutralC
         )}
         aria-hidden="true"
       >
-        {/* Same mask→img fix applied here for consistency, even though
-            this watermark wasn't the one reported as clipped. */}
         <img
           src="/logo.png"
           alt=""
@@ -131,4 +133,4 @@ export function MobileMenu({ menuOpen, setMenuOpen, pathname, navigate, neutralC
       </div>
     </div>
   )
-        } 
+    }
