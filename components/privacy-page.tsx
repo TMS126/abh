@@ -1,6 +1,7 @@
+// components/privacy-page.tsx
 import { BIZ } from "@/lib/brand"
 
-const LAST_UPDATED = "July 2026"
+const LAST_UPDATED = "August 2026"
 
 export function PrivacyPage() {
   return (
@@ -74,7 +75,8 @@ export function PrivacyPage() {
               </li>
               <li>
                 <strong className="text-zinc-700 dark:text-zinc-300">Usage data:</strong> Anonymous site visit data
-                collected by Vercel Analytics (no cookies, no personal identifiers).
+                collected by Vercel Analytics (no cookies, no personal identifiers), and standard analytics data
+                collected by Google Analytics (see below).
               </li>
             </ul>
           </section>
@@ -100,13 +102,28 @@ export function PrivacyPage() {
             <ul className="mt-3 space-y-2 list-disc list-inside pl-1">
               <li>
                 <strong className="text-zinc-700 dark:text-zinc-300">Cloudinary (USA):</strong> Files you upload via
-                our website (e.g. for design or document services) are stored temporarily on Cloudinary&apos;s
-                servers. Cloudinary is GDPR-compliant. Files are used only for service delivery and are not shared.
+                our website (e.g. for design or document services) are stored on Cloudinary&apos;s servers and used
+                only for service delivery. They are not shared with third parties.
               </li>
               <li>
                 <strong className="text-zinc-700 dark:text-zinc-300">Vercel Analytics:</strong> Our website uses
                 Vercel&apos;s privacy-first analytics. It does not use cookies and does not collect personal
                 identifiers — only anonymous aggregate traffic data.
+              </li>
+              <li>
+                <strong className="text-zinc-700 dark:text-zinc-300">Google Analytics:</strong> Our website also
+                uses Google Analytics to understand how visitors use our site (pages viewed, general location by
+                region, device/browser type, and referral source). Google Analytics may use cookies and is not
+                anonymous in the same way Vercel Analytics is. You can opt out using a browser extension such as the{" "}
+                <a
+                  href="https://tools.google.com/dlpage/gaoptout"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-brand-blue underline underline-offset-2"
+                >
+                  Google Analytics Opt-out Browser Add-on
+                </a>
+                .
               </li>
               <li>
                 <strong className="text-zinc-700 dark:text-zinc-300">WhatsApp (Meta):</strong> If you contact us via
@@ -118,7 +135,7 @@ export function PrivacyPage() {
           <section>
             <h2 className="font-black text-xl text-zinc-900 dark:text-zinc-50 mb-3">5. How Long We Keep Your Information</h2>
             <ul className="mt-3 space-y-2 list-disc list-inside pl-1">
-              <li><strong className="text-zinc-700 dark:text-zinc-300">Uploaded files:</strong> Deleted from Cloudinary within 30 days of service completion.</li>
+              <li><strong className="text-zinc-700 dark:text-zinc-300">Uploaded files:</strong> Retained only for as long as needed to complete your service, then removed as part of our regular account cleanup. We do not keep files indefinitely.</li>
               <li><strong className="text-zinc-700 dark:text-zinc-300">Physical documents:</strong> Returned to you immediately after service or destroyed on the same day.</li>
               <li><strong className="text-zinc-700 dark:text-zinc-300">Government application records:</strong> Retained only as long as needed to resolve your application (typically same day to 7 days).</li>
               <li><strong className="text-zinc-700 dark:text-zinc-300">Contact information:</strong> Not stored in any database unless you have an ongoing order.</li>
@@ -201,4 +218,4 @@ export function PrivacyPage() {
       </div>
     </div>
   )
-} 
+              }
