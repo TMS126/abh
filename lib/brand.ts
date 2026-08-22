@@ -167,6 +167,22 @@ export const WA = {
   contact: waLink(`Hi ${BIZ.name}! I'd like to get in touch.`),
 } as const
 
+// ─── MAINTENANCE BANNER ──────────────────────────────────────────────────────
+// Toggle `active` to show/hide the dismissible site-wide notice strip above
+// the nav. The site stays fully live and browsable either way — this is
+// NOT the same as `isMaintenanceMode` in middleware.ts, which fully
+// redirects every request to a standalone /maintenance page instead.
+// Bump `version` any time you change the message text — it forces the
+// banner to reappear even for people who already dismissed an older one,
+// since the dismiss state is keyed by version in localStorage.
+export const MAINTENANCE_BANNER = {
+  active: true,
+  version: "1",
+  message: "We're upgrading our website behind the scenes. Some features may briefly change.",
+  linkText: "Message us on WhatsApp",
+  linkHref: WA.general,
+} as const
+
 export const HOURS = {
   printAndDoc: {
     label: "Print Hub · Document Hub",
