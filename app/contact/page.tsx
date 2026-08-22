@@ -1,3 +1,4 @@
+// app/contact/page.tsx
 import { ContactPage } from "@/components/contact-page"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -11,10 +12,10 @@ export default function ContactRoute() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main id="main-content">
+      <div>
         <ContactPage />
-      </main>
+      </div>
       <Footer />
     </div>
   )
-}
+} 
