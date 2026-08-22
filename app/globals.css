@@ -13,9 +13,6 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
 
 @custom-variant dark (&:is(.dark *));
 
-/* ═════════════════════════════════════════════════════════════════════════════
-   BRAND TOKEN SYSTEM — THE ONLY SOURCE FOR COLOR
-───────────────────────────────────────────────────────────────────────────── */
 :root {
   --brand-green: #4A8011;
   --brand-orange: #B9590D;
@@ -77,6 +74,9 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --radius: 14px;
 
   --nav-h: 74px;
+  /* NEW — maintenance banner height, 0 by default. Toggled by
+     MaintenanceBanner adding/removing `.banner-active` on <html>. */
+  --banner-h: 0px;
   --nav-bg: rgba(255, 255, 255, 0.97);
   --footer-bg: #0F3F66;
   --shadow: 0 4px 28px rgba(30, 111, 168, 0.07);
@@ -101,6 +101,15 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --border: #D6D6D6;
   --input: #EDEDED;
   --ring: #1E6FA8;
+}
+
+/* NEW — maintenance banner active state. Bumping --nav-h here (rather than
+   only --banner-h) means every page's existing
+   `pt-[calc(var(--nav-h,74px)+2rem)]` padding grows automatically too —
+   no page file needs to know the banner exists. */
+.banner-active {
+  --banner-h: 44px;
+  --nav-h: 118px;
 }
 
 .dark {
@@ -137,16 +146,6 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
   --brand-error-text: #F87171;
 }
 
-/* ── Tailwind theme mapping ──
-   FIX: --font-heading and --font-mono were self-referential
-   (e.g. `--font-heading: var(--font-heading), ...`), which is an invalid
-   CSS custom-property cycle — the browser silently discards the value and
-   both fall through to the fallback stack, meaning Poppins/JetBrains Mono
-   were never actually being applied anywhere. Fixed by pointing at the
-   real font-loader variable names instead of at themselves. --font-mono
-   also required renaming the JetBrains Mono loader's own output variable
-   in app/layout.tsx from --font-mono to --font-jetbrains-mono, since
-   Tailwind's own theme wants --font-mono for itself — see layout.tsx. */
 @theme inline {
   --font-sans: var(--font-body), 'Inter Fallback', sans-serif;
   --font-heading: var(--font-poppins), 'Jost Fallback', sans-serif;
@@ -261,20 +260,36 @@ input, button, textarea, select { font: inherit; max-width: 100%; }
 }
 .dark :focus-visible { outline-color: var(--brand-light-blue); }
 
+/* FIX: removed blanket `will-change: transform` — this was previously
+   flagged and fixed as a PageSpeed regression (forces a compositor layer
+   on every button/link/role=button on the page permanently, not just
+   while actually animating) but had crept back in. Only
+   -webkit-tap-highlight-color is a genuinely global concern; will-change
+   should be applied per-element only where something is actually
+   animating (e.g. .abh-shadow-tile:hover already does this correctly). */
 button, a, [role="button"] {
   -webkit-tap-highlight-color: transparent;
-  will-change: transform;
 }
 
 @keyframes float { 0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)} }
 @keyframes fadeUp { from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)} }
 @keyframes page-in { from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)} }
 @keyframes marquee-track { 0%{transform:translate3d(0,0,0)}100%{transform:translate3d(-50%,0,0)} }
+/* NEW — moved from an inline <style> tag in components/navbar.tsx. That
+   tag was being re-injected into the DOM on every route change (Navbar
+   remounts per-page in this router setup), duplicating the same
+   keyframes repeatedly. Defined once, globally, here instead. */
+@keyframes abh-cta-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(30,111,168,0.45); }
+  50% { box-shadow: 0 0 0 8px rgba(30,111,168,0); }
+}
 
 .animate-marquee { animation: marquee-track 35s linear infinite; }
+.abh-cta-pulse { animation: abh-cta-pulse 1.8s ease-out 2; }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee { animation: none; }
+  .abh-cta-pulse { animation: none; }
      }
 /* app/globals.css — PART 2 OF 2 — continues directly from Part 1, same file */
 @layer components {
