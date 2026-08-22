@@ -35,6 +35,24 @@ function getArrowIconColor(bgHex: string) {
   return contrastWhite >= contrastDark ? "#ffffff" : "#14202b"
 }
 
+// ─── REDUCED MOTION ───────────────────────────────────────────────────────────
+// Site-wide pattern elsewhere (whatsapp-fab, contact page) uses
+// motion-reduce: Tailwind variants on CSS-driven animations. This section's
+// animations are all inline-style/JS-driven (wander loop, fly-in, hover
+// bounce, shake) so they need an explicit media query check instead.
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false)
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
+    setReduced(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setReduced(e.matches)
+    mq.addEventListener("change", handler)
+    return () => mq.removeEventListener("change", handler)
+  }, [])
+  return reduced
+}
+
 // ─── HUB ICON IMAGES — already-transparent PNGs. ─────────────────────────────
 const HUB_IMAGES: Record<string, string> = {
   print: "/phub.png",
@@ -62,19 +80,16 @@ function randBetween(min: number, max: number) {
 }
 
 // ─── SYMMETRIC LAYOUT — regular pentagon, centered ───────────────────────────
-// Five points evenly spaced 72° apart around dead-center, starting straight
-// up (-90°). Mirror-symmetric across the vertical axis. Positions are fixed
-// every time — only WHICH hub lands on which point is shuffled per visit.
 const PENTAGON_ANGLES_DEG = [-90, -18, 54, 126, 198]
-const ELLIPSE_RX_PCT = 30 // horizontal radius, % of container width
-const ELLIPSE_RY_PCT = 24 // vertical radius, % of container height
+const ELLIPSE_RX_PCT = 30
+const ELLIPSE_RY_PCT = 24
 
 type IconEntry = {
   hub: (typeof HUBS_DATA)[number]
   topPct: number
   leftPct: number
   z: number
-  entryX: number // px offset the icon flies in FROM on landing — random each build
+  entryX: number
   entryY: number
 }
 
@@ -82,8 +97,6 @@ function buildArrangement(): IconEntry[] {
   const shuffledHubs = shuffleArray(HUBS_DATA)
   return shuffledHubs.map((hub, i) => {
     const angleRad = (PENTAGON_ANGLES_DEG[i] * Math.PI) / 180
-    // Random entry direction + distance — different every page load, so
-    // icons never fly in from the same spot twice.
     const entryAngle = Math.random() * Math.PI * 2
     const entryDist = randBetween(70, 130)
     return {
@@ -114,23 +127,19 @@ function fallbackCategory(greeting: BusinessStatus["greeting"]): WeatherCategory
 }
 
 // ─── HUB ICON FIELD — symmetric layout + gentle wander, no collision math ───
-// Shadow now lives INSIDE the same wander element as the icon, so it's a true
-// child of the icon's motion (wander, hover-bounce parent, shake) rather than
-// a sibling synced by hand each frame. The pill sits pinned to the icon's own
-// bottom edge, overlapping ~40% of its own height into the icon, instead of
-// floating below it with a gap.
 const WANDER_AMP_PX = 10
-const LABEL_AUTO_HIDE_MS = 8000 // pills show for 8s on load, then fade —
-// still reveal on hover (desktop) or tap/shake (mobile) afterward.
+const LABEL_AUTO_HIDE_MS = 8000
 
 function HubIconField({
   arrangement,
   isDark,
   canHover,
+  prefersReducedMotion,
 }: {
   arrangement: IconEntry[]
   isDark: boolean
   canHover: boolean
+  prefersReducedMotion: boolean
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const iconRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -145,17 +154,20 @@ function HubIconField({
   }, [])
 
   const triggerShake = (hubId: string) => {
+    if (prefersReducedMotion) return
     setShakingId(hubId)
     if (shakeTimeoutRef.current) clearTimeout(shakeTimeoutRef.current)
     shakeTimeoutRef.current = setTimeout(() => setShakingId((cur) => (cur === hubId ? null : cur)), 550)
   }
 
   useEffect(() => {
+    // Wander drift is purely decorative motion — skip the RAF loop
+    // entirely under reduced motion, leaving icons static at their
+    // pentagon anchor points.
+    if (prefersReducedMotion) return
     const container = containerRef.current
     if (!container) return
 
-    // Per-icon wander params — randomized once, kept stable for the life
-    // of this arrangement so each icon's drift feels independent.
     const phys = arrangement.map(() => ({
       freqX: randBetween(0.06, 0.09),
       freqY: randBetween(0.05, 0.08),
@@ -173,10 +185,6 @@ function HubIconField({
         p.x = Math.sin(t * p.freqX + p.phaseX) * WANDER_AMP_PX
         p.y = Math.sin(t * p.freqY + p.phaseY) * WANDER_AMP_PX * 0.6
 
-        // This element now wraps BOTH the icon and its shadow, so a single
-        // write here moves them together — the shadow no longer needs its
-        // own damped/synced calculation to "follow" the icon; it just does,
-        // by construction, because it lives inside this same element.
         const el = iconRefs.current[i]
         if (el) el.style.transform = `translate(${p.x}px, ${p.y}px)`
       }
@@ -185,7 +193,7 @@ function HubIconField({
     raf = requestAnimationFrame(tick)
 
     return () => cancelAnimationFrame(raf)
-  }, [arrangement])
+  }, [arrangement, prefersReducedMotion])
 
   return (
     <div
@@ -195,8 +203,8 @@ function HubIconField({
       {arrangement.map((entry, i) => {
         const { hub, topPct, leftPct, z, entryX, entryY } = entry
         const hubAccent = isDark ? hub.colorDark : hub.colorLight
-        const isHovered = canHover && hoveredId === hub.id
-        const isShaking = shakingId === hub.id
+        const isHovered = canHover && !prefersReducedMotion && hoveredId === hub.id
+        const isShaking = !prefersReducedMotion && shakingId === hub.id
         const labelVisible = labelsAutoVisible || isHovered || isShaking
 
         return (
@@ -206,18 +214,15 @@ function HubIconField({
             style={{
               top: `${topPct}%`,
               left: `${leftPct}%`,
-              // Fixed pentagon anchor — never animated, so the point itself
-              // stays geometrically exact.
               transform: "translate(-50%, -50%)",
               zIndex: z,
             }}
           >
-            {/* Entry animation — flies in from a random direction/distance
-                picked fresh each time buildArrangement() runs (i.e. every
-                page load), via CSS custom properties. */}
+            {/* Entry animation — skipped entirely under reduced motion,
+                icons simply appear in place instead of flying in. */}
             <div
               className="flex flex-col items-center"
-              style={{
+              style={prefersReducedMotion ? undefined : ({
                 "--ex": `${entryX}px`,
                 "--ey": `${entryY}px`,
                 animationName: "abh-icon-enter",
@@ -225,15 +230,9 @@ function HubIconField({
                 animationTimingFunction: "cubic-bezier(0.16,1,0.3,1)",
                 animationDelay: `${z * 20}ms`,
                 animationFillMode: "both",
-              } as React.CSSProperties}
+              } as React.CSSProperties)}
             >
-              {/* Wander wrapper — JS-driven translate only, applied once to
-                  this element so icon + shadow move together as one unit. */}
               <div ref={(el) => { iconRefs.current[i] = el }} className="flex flex-col items-center">
-                {/* Icon — hover-bounce / click-shake CSS animations live
-                    here, kept off the wander element so the two transforms
-                    never fight over the same style property. Pill is nested
-                    inside so it's pinned to and moves with the icon. */}
                 <div
                   role="button"
                   tabIndex={0}
@@ -260,11 +259,6 @@ function HubIconField({
                     className="object-contain"
                   />
 
-                  {/* Pill — pinned to the icon's own bottom edge, overlapping
-                      ~40% of its own height up into the icon instead of
-                      floating below it with a gap. Being nested inside the
-                      icon's own div means it rides along with hover-bounce
-                      and shake automatically. */}
                   <span
                     className="absolute left-1/2 top-full -translate-x-1/2 -translate-y-[40%] px-2.5 py-1 rounded-full text-[0.65rem] sm:text-xs font-black uppercase tracking-wide bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm shadow-sm whitespace-nowrap transition-opacity duration-500"
                     style={{
@@ -277,9 +271,6 @@ function HubIconField({
                   </span>
                 </div>
 
-                {/* Ground shadow — child of the same wander wrapper as the
-                    icon, so it tracks it 1:1. Its own local animation reacts
-                    to hover-bounce (squash) and now shake too. */}
                 <div
                   aria-hidden="true"
                   className="w-20 sm:w-24 md:w-28 h-3.5 sm:h-4 rounded-full bg-black blur-[7px] -mt-2"
@@ -310,6 +301,7 @@ export function HeroSection() {
   const [weatherCategory, setWeatherCategory] = useState<WeatherCategory | null>(null)
   const [canHover, setCanHover] = useState(false)
   const showBackToTop = useBackToTop()
+  const prefersReducedMotion = usePrefersReducedMotion()
 
   const [arrangement, setArrangement] = useState<IconEntry[]>(() => buildArrangement())
 
@@ -402,12 +394,6 @@ export function HeroSection() {
 
       <div className="max-w-[1240px] mx-auto flex flex-col items-center relative z-10 w-full mb-6">
 
-        {/* md:items-center keeps this row's two columns vertically
-            centered against each other, so the icon field's midline
-            always sits level with the title/text column on desktop —
-            unchanged from before. The pentagon layout stays centered
-            and mirror-symmetric, so it doesn't skew toward the right
-            edge of its own column on any breakpoint, mobile included. */}
         <div className="w-full max-w-[1100px] mx-auto grid md:grid-cols-2 gap-10 md:gap-16 items-center mb-10 md:mb-14">
 
           <div className="text-center md:text-left">
@@ -470,7 +456,12 @@ export function HeroSection() {
           </div>
 
           <ScrollBounce delay={0.1} className="w-full">
-            <HubIconField arrangement={arrangement} isDark={isDark} canHover={canHover} />
+            <HubIconField
+              arrangement={arrangement}
+              isDark={isDark}
+              canHover={canHover}
+              prefersReducedMotion={prefersReducedMotion}
+            />
           </ScrollBounce>
         </div>
 
@@ -490,7 +481,10 @@ export function HeroSection() {
           >
             {marqueePaused ? <Play size={11} weight="fill" aria-hidden="true" /> : <Pause size={11} weight="fill" aria-hidden="true" />}
           </button>
-          <div className="flex whitespace-nowrap w-max animate-marquee" style={{ animationPlayState: marqueePaused ? "paused" : "running" }}>
+          <div
+            className="flex whitespace-nowrap w-max animate-marquee"
+            style={{ animationPlayState: marqueePaused || prefersReducedMotion ? "paused" : "running" }}
+          >
             {[0, 1].map((copy) => (
               <div key={copy} className="flex items-center shrink-0" aria-hidden={copy === 1 ? "true" : undefined}>
                 {MARQUEE_ITEMS.map((item, idx) => (
@@ -510,4 +504,4 @@ export function HeroSection() {
       <BackToTopButton visible={showBackToTop} />
     </section>
   )
-    } 
+            } 
