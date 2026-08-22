@@ -518,12 +518,6 @@ export function ServiceDetailModal({ svc, onClose }: { svc: SelectedService | nu
           >
             Request {naturalLabel}
           </a>
-
-          {svc.hubId === "eservice" && (
-            <p className="text-[0.78rem] text-center text-zinc-400 dark:text-zinc-500 leading-relaxed pt-1">
-              NSFAS 2027 applications are expected to open around September 2026 (exact date not yet officially confirmed). Ask us for the latest details.
-            </p>
-          )}
         </div>
       </div>
 
