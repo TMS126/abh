@@ -18,6 +18,7 @@ const WA_NUMBER  = "27753338260"
 const GREETING   = "Hi there 👋 Tell us what you need and we'll get back to you right away!"
 const REPLY_TIME_NOTE = "We usually reply within 15–30 minutes."
 const NAME_STORAGE_KEY = "apexbytes-wa-name"
+const NAME_RETENTION_MS = 90 * 24 * 60 * 60 * 1000 // 90 days — matches the site's other data-retention commitments
 
 // Shown once, only at open — exactly 2.6s, never replayed before later
 // bubbles (name/hub/message all reveal together right after this).
@@ -49,14 +50,11 @@ const WA = {
   avatarBgDark:   "#2A3942",
 } as const
 
-// ── Consistent type scale — everything in the panel now traces back to
-// one of these four sizes instead of a dozen slightly-different rem
-// values, per the "consistency in font sizing" request. ──
 const TXT = {
-  body:   "text-[0.86rem]",                 // greeting, inputs, textarea, dropdown option title
-  label:  "text-[0.66rem] uppercase tracking-widest font-black", // "Your Name", section labels
-  hint:   "text-[0.72rem]",                 // dropdown option subtext, hub hint
-  time:   "text-[0.6rem]",                  // timestamps
+  body:   "text-[0.86rem]",
+  label:  "text-[0.66rem] uppercase tracking-widest font-black",
+  hint:   "text-[0.72rem]",
+  time:   "text-[0.6rem]",
 } as const
 
 const HUBS = [
@@ -68,9 +66,6 @@ const HUBS = [
   { id: "other",    label: "Not sure yet",  hint: "We'll help you figure it out" },
 ]
 
-// Pool of quick-reply phrases for the optional note. Only ONE is shown at
-// a time — tapping the shuffle icon swaps in a different random phrase;
-// tapping the chip appends the currently-shown phrase to the note.
 const QUICK_NOTES = [
   "Need it today", "Can I WhatsApp a photo?", "What time do you close?",
   "How much will this cost?", "Do I need to book first?", "Can you collect from me?",
@@ -121,11 +116,6 @@ function randomQuickNoteIdx(exclude?: number) {
   return next as number
 }
 
-// ── Typing loader — "typing" spells itself out letter by letter on a
-// loop, three orbiting dots (big blue / medium green / small orange) spin
-// around a shared center, and both the dot order and spin speed/direction
-// are randomized once per mount so it plays a little differently every
-// time the widget opens. Shown ONLY at the very start, for TYPING_DURATION. ──
 function TypingLoader({ subColor }: { subColor: string }) {
   const word = "typing"
   const [letters, setLetters] = useState(1)
@@ -202,13 +192,10 @@ export function WhatsAppFAB() {
   const [openTime, setOpenTime]      = useState("")
   const [openDate, setOpenDate]      = useState<Date | null>(null)
   const [sentTime, setSentTime]      = useState("")
-  const [showGreeting, setShowGreeting] = useState(false) // gated by the 2.6s typing loader, shown once only
+  const [showGreeting, setShowGreeting] = useState(false)
   const [nameRemembered, setNameRemembered] = useState(false)
   const [quickNoteIdx, setQuickNoteIdx] = useState(() => randomQuickNoteIdx())
 
-  // Dead-button shake — any control with no real action (kebab menu,
-  // paperclip, camera, or the send button while the form's incomplete)
-  // triggers a brief shake instead of silently doing nothing.
   const [shakeKey, setShakeKey] = useState<string | null>(null)
   const shakeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const triggerShake = (key: string) => {
@@ -221,16 +208,33 @@ export function WhatsAppFAB() {
   const scrollTimer                  = useRef<ReturnType<typeof setTimeout> | null>(null)
   const greetingTimer                = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Remember the person's name across visits.
+  // Remember the person's name across visits — expires after
+  // NAME_RETENTION_MS (90 days) to match the site's stated data-retention
+  // window rather than persisting indefinitely.
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(NAME_STORAGE_KEY)
-      if (saved) { setName(saved); setNameRemembered(true) }
-    } catch {}
+      const raw = localStorage.getItem(NAME_STORAGE_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw) as { name?: string; savedAt?: number }
+        if (parsed?.name && typeof parsed.savedAt === "number" && Date.now() - parsed.savedAt < NAME_RETENTION_MS) {
+          setName(parsed.name)
+          setNameRemembered(true)
+        } else {
+          localStorage.removeItem(NAME_STORAGE_KEY)
+        }
+      }
+    } catch {
+      // Malformed or legacy (pre-expiry) plain-string value — drop it
+      // silently; the next save below writes a fresh, correctly-shaped one.
+      try { localStorage.removeItem(NAME_STORAGE_KEY) } catch {}
+    }
   }, [])
+
   useEffect(() => {
     try {
-      if (name.trim().length > 1) localStorage.setItem(NAME_STORAGE_KEY, name.trim())
+      if (name.trim().length > 1) {
+        localStorage.setItem(NAME_STORAGE_KEY, JSON.stringify({ name: name.trim(), savedAt: Date.now() }))
+      }
     } catch {}
   }, [name])
 
@@ -260,8 +264,6 @@ export function WhatsAppFAB() {
       setShowGreeting(false)
       setQuickNoteIdx(randomQuickNoteIdx())
       if (greetingTimer.current) clearTimeout(greetingTimer.current)
-      // Typing loader shown for exactly TYPING_DURATION (2.6s), once,
-      // before greeting/name/hub/message all reveal together.
       greetingTimer.current = setTimeout(() => setShowGreeting(true), TYPING_DURATION)
       setTimeout(() => nameRef.current?.focus(), TYPING_DURATION + 150)
     }
@@ -295,7 +297,6 @@ export function WhatsAppFAB() {
       setHub("");
       setNote("");
       setHubPicking(false);
-      // Name is intentionally NOT cleared — it's remembered for next time.
     }, 400)
   }
 
@@ -311,8 +312,6 @@ export function WhatsAppFAB() {
     setQuickNoteIdx(randomQuickNoteIdx())
   }
 
-  // Gallery button: navigates AND closes the widget, rather than leaving
-  // the panel open behind the new page.
   const handleGalleryClick = () => {
     handleClose()
     router.push("/gallery")
@@ -386,7 +385,6 @@ export function WhatsAppFAB() {
         .wa-shake { animation: wa-shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
       `}</style>
 
-      {/* ── Backdrop ──────────────────────────────────────────────── */}
       {isOpen && (
         <div
           className="fixed inset-0 z-[9989] bg-black/30 transition-opacity duration-200 ease-out motion-reduce:transition-none"
@@ -395,7 +393,6 @@ export function WhatsAppFAB() {
         />
       )}
 
-      {/* ── Panel ─────────────────────────────────────────────────── */}
       {isOpen && (
         <div
           className={cn(
@@ -405,7 +402,6 @@ export function WhatsAppFAB() {
           )}
           style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.25)" }}
         >
-          {/* ── Header ── */}
           <div
             className="relative flex items-center gap-2.5 px-3 py-3 shrink-0"
             style={{ backgroundColor: headerBg }}
@@ -444,7 +440,6 @@ export function WhatsAppFAB() {
             </div>
 
             <div className="flex items-center gap-0.5 shrink-0">
-              {/* Functional — navigates AND closes the widget */}
               <button
                 onClick={handleGalleryClick}
                 aria-label="View our gallery"
@@ -452,7 +447,6 @@ export function WhatsAppFAB() {
               >
                 <ImageSquare size={18} weight="fill" />
               </button>
-              {/* Functional — real phone call */}
               <a
                 href={`tel:${BIZ.phoneE164}`}
                 aria-label="Call us"
@@ -460,7 +454,6 @@ export function WhatsAppFAB() {
               >
                 <Phone size={18} weight="fill" />
               </a>
-              {/* Dead — no longer opens WhatsApp. Shakes on tap instead. */}
               <button
                 onClick={() => triggerShake("kebab")}
                 aria-label="More options"
@@ -474,7 +467,6 @@ export function WhatsAppFAB() {
             </div>
           </div>
 
-          {/* ── Chat area ─────────────────────────────────────────── */}
           <div
             className="flex-1 overflow-y-auto overscroll-contain min-h-0 relative"
             style={{ backgroundColor: wallpaperBg, backgroundImage: wallpaperPattern, backgroundSize: "240px 240px" }}
@@ -484,8 +476,6 @@ export function WhatsAppFAB() {
 
                 {openDate && <DateDivider />}
 
-                {/* Typing loader — shown exactly once, for 2.6s, never
-                    repeated before later bubbles. */}
                 {!showGreeting && (
                   <div
                     className="self-start px-4 py-3 rounded-lg rounded-tl-none shadow-sm"
@@ -539,8 +529,6 @@ export function WhatsAppFAB() {
                   </div>
                 </div>
 
-                {/* Hub picker — same bubble/label layout as before, but
-                    now a simple dropdown instead of accordion-of-pills. */}
                 <div
                   className={cn(
                     "relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-lg rounded-tl-none shadow-sm transition-opacity duration-200 ease-out motion-reduce:transition-none",
@@ -581,8 +569,6 @@ export function WhatsAppFAB() {
                     />
                   </button>
 
-                  {/* Simple dropdown list — replaces the old inline-pill
-                      accordion, floats over the content below it. */}
                   {hubPicking && (
                     <div
                       className="absolute left-0 right-0 top-full mt-2 z-30 rounded-[14px] shadow-xl overflow-hidden border animate-in fade-in slide-in-from-top-1 duration-150 ease-out motion-reduce:animate-none"
@@ -617,7 +603,6 @@ export function WhatsAppFAB() {
                   </div>
                 </div>
 
-                {/* Message bubble — real WhatsApp-style free typing */}
                 <div
                   className={cn(
                     "relative self-start w-[92%] max-w-[92%] px-4 py-3 rounded-lg rounded-tl-none shadow-sm transition-opacity duration-200 ease-out motion-reduce:transition-none",
@@ -637,7 +622,6 @@ export function WhatsAppFAB() {
                     style={{ color: textColor }}
                   />
 
-                  {/* Single random quick-reply chip */}
                   <div className="flex items-center gap-1.5 mt-2">
                     <button
                       type="button"
@@ -703,7 +687,6 @@ export function WhatsAppFAB() {
             )}
           </div>
 
-          {/* ── Compose bar ── */}
           {step === "form" && (
             <div
               className="relative shrink-0 flex items-end gap-2 px-2.5 py-2"
@@ -717,7 +700,6 @@ export function WhatsAppFAB() {
                 <span className={cn(TXT.body, "flex-1 min-w-0 font-medium truncate")} style={{ color: isValid ? textColor : subColor }}>
                   {isValid ? "Ready to send your message" : "Fill in your name & topic to continue"}
                 </span>
-                {/* Dead decorative icons — shake instead of doing nothing silently */}
                 <button
                   type="button"
                   onClick={() => triggerShake("paperclip")}
@@ -752,7 +734,6 @@ export function WhatsAppFAB() {
         </div>
       )}
 
-      {/* ── FAB ───────────────────────────────────────────────────── */}
       <div
         data-widget="whatsapp-fab"
         className={cn(
@@ -790,4 +771,4 @@ export function WhatsAppFAB() {
       </div>
     </>
   )
-  } 
+      } 
