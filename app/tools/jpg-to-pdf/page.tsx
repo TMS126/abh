@@ -58,7 +58,7 @@ export default function JpgToPdfPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main id="main-content">
+      <div>
         {/* ─── HERO ───────────────────────────────────────────────────── */}
         <section className="px-4 md:px-8 pt-[calc(var(--nav-h)+2rem)] pb-6">
           <div className="max-w-[720px] mx-auto text-center">
@@ -183,7 +183,7 @@ export default function JpgToPdfPage() {
           description={tip}
           buttonText={waPhrase}
         />
-      </main>
+      </div>
       <Footer />
 
       <ImageLightbox
@@ -204,4 +204,4 @@ export default function JpgToPdfPage() {
       )}
     </div>
   )
-        } 
+                    } 
