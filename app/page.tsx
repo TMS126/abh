@@ -1,3 +1,4 @@
+// app/page.tsx
 import { Navbar } from "@/components/navbar"
 import { HeroSection } from "@/components/hero-section"
 import { StatsBar } from "@/components/stats-bar"
@@ -10,7 +11,7 @@ export default function HomeRoute() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main id="main-content">
+      <div>
         <div className="animate-fade-up">
           <HeroSection />
           <StatsBar />
@@ -23,7 +24,7 @@ export default function HomeRoute() {
             buttonHref={`https://wa.me/${BIZ.phoneE164.replace("+", "")}`}
           />
         </div>
-      </main>
+      </div>
       <Footer />
     </div>
   )
